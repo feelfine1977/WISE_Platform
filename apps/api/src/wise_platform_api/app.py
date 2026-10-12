@@ -8,17 +8,24 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
+from .boundary import read_object
 from .examples import PACKAGED_EXAMPLES
 from .generated.health import HealthResponse
+from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
+from .workspace import program_folders
 
 
 def create_app(static_dir: Path | None = None, examples_dir: Path | None = None) -> FastAPI:
-    """Build the application; ``examples_dir`` replaces the packaged synthetic examples."""
+    """Build the application; ``examples_dir`` replaces the packaged synthetic examples.
+
+    Workspaces are refused inside the program's own folders, so that nothing is written there.
+    """
     application = FastAPI(title="WISE Platform", version=__version__)
     investigations = Investigations(
         examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
     )
+    imports = Imports(forbidden=program_folders())
 
     @application.get("/api/health", response_model=HealthResponse)
     def health() -> HealthResponse:
@@ -30,7 +37,38 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
 
     @application.post("/api/investigations/case-evidence")
     async def case_evidence(request: Request) -> JSONResponse:
-        return _sent(await run_in_threadpool(investigations.case_evidence, await request.body()))
+        body = await request.body()
+        if _message_type(body) == "imported_case_evidence_request":
+            return _sent_import(await run_in_threadpool(imports.case_evidence, body))
+        return _sent(await run_in_threadpool(investigations.case_evidence, body))
+
+    @application.post("/api/workspaces/open")
+    async def open_workspace(request: Request) -> JSONResponse:
+        return _sent_import(await run_in_threadpool(imports.open_workspace, await request.body()))
+
+    @application.put("/api/sources")
+    async def upload_source(request: Request) -> JSONResponse:
+        raw = await request.body()
+        return _sent_import(
+            await run_in_threadpool(
+                imports.upload_source,
+                request.query_params.multi_items(),
+                request.headers.get("content-type"),
+                raw,
+            )
+        )
+
+    @application.post("/api/sources/inspect")
+    async def inspect_source(request: Request) -> JSONResponse:
+        return _sent_import(await run_in_threadpool(imports.inspect, await request.body()))
+
+    @application.post("/api/preparations")
+    async def confirm_mapping(request: Request) -> JSONResponse:
+        return _sent_import(await run_in_threadpool(imports.confirm_mapping, await request.body()))
+
+    @application.post("/api/investigations/open-population")
+    async def open_population(request: Request) -> JSONResponse:
+        return _sent_import(await run_in_threadpool(imports.open_population, await request.body()))
 
     @application.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:
@@ -53,3 +91,13 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
 
 def _sent(reply: Reply) -> JSONResponse:
     return JSONResponse(reply.body.model_dump(mode="json"), status_code=reply.status)
+
+
+def _sent_import(reply: ImportReply) -> JSONResponse:
+    return JSONResponse(reply.body, status_code=reply.status)
+
+
+def _message_type(body: bytes) -> object:
+    """The message type a request body names, if it is a JSON object."""
+    message = read_object(body)
+    return None if isinstance(message, str) else message.get("message_type")
