@@ -305,6 +305,42 @@ describe("the investigation screen", () => {
     expect(first.classList.contains("left-out")).toBe(false);
   });
 
+  it("shows the pending line while a request of the current question is unanswered", async () => {
+    const scripted = renderScreen();
+    const { user } = scripted;
+    const line = () => document.querySelector(".progress") as HTMLElement;
+    expect(line().hidden).toBe(false);
+
+    await openPopulationZero(scripted);
+    expect(line().hidden).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "INC01" }));
+    expect(line().hidden).toBe(false);
+    await deliver(() => scripted.cases[0].reply({ ok: false, problem: { kind: "unreachable" } }));
+    expect(line().hidden).toBe(true);
+
+    await user.selectOptions(screen.getByLabelText("Source"), "S1");
+    expect(line().hidden).toBe(false);
+    await deliver(() => scripted.opens[1].reply({ ok: false, problem: { kind: "http", status: 500 } }));
+    expect(line().hidden).toBe(true);
+  });
+
+  it("keeps the full text of an incident id and an activity name that may be shortened", async () => {
+    const scripted = renderScreen();
+    const { user } = scripted;
+    await openPopulationZero(scripted);
+    const row = screen.getByRole("button", { name: "INC03" });
+    expect(row.title).toBe("INC03");
+
+    await user.click(row);
+    await deliver(() => scripted.cases[0].reply({ ok: true, answer: evidenceZero(scripted.cases[0].request) }));
+    const heading = screen.getByRole("heading", { name: "Incident INC03" });
+    expect(heading.querySelector("[title]")?.getAttribute("title")).toBe("INC03");
+    const [opened, unlabelled] = within(screen.getByRole("list", { name: /Every record of incident INC03/ })).getAllByRole("listitem");
+    expect(opened.querySelector(".record-activity")?.getAttribute("title")).toBe("Opened");
+    expect(unlabelled.querySelector(".record-activity")?.hasAttribute("title")).toBe(false);
+  });
+
   it("says investigations are not available when the local service does not offer them, and retries", async () => {
     const fetch = vi.fn(async () => new Response(JSON.stringify({ detail: "API route not found" }), { status: 404 }));
     vi.stubGlobal("fetch", fetch);
