@@ -1,0 +1,5 @@
+ Vorgang ; Aktivität ; Zeitpunkt ; Reihenfolge ; Bearbeitergruppe 
+AR-01;Erfasst;09.10.2026 08:00;1;Büro Nord
+AR-01;Prüfung;09.10.2026 08:30;2;
+AR-01;Abschließen;09.10.2026 10:00;3;Büro Süd
+AR-02;Übernahme;11.10.2026 12:15;1;Größe & Maß

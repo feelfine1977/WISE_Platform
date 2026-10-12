@@ -1,0 +1,7 @@
+Ticket,Event,At,Seq,Desk
+M-01,Recorded,2026-10-09T08:00:00Z,1,East
+M-01,Routed,2026-02-30T09:00:00Z,2,East
+,Observed,2026-10-09T09:00:00Z,1,East
+   ,Observed,2026-10-09T09:30:00Z,1,East
+M-02,Recorded,not-a-time,1,
+M-03,Observed,2026-10-09T11:00:00Z,1,Unknown
