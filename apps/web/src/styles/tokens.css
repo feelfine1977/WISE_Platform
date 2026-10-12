@@ -32,6 +32,10 @@
   /* Red only for errors. */
   --color-error: var(--wf-fail);
 
+  /* Orange only for what needs the analyst's attention before it is confirmed. */
+  --color-attention: var(--wf-warn);
+  --color-attention-ink: #8a5a00;
+
   /* The app bar is the map's dark surface. */
   --color-bar: #1f2229;
   --color-bar-ink: #ececec;
@@ -66,12 +70,15 @@
   --radius-round: 50%;
   --line-width: 1px;
   --bar-width: 2px;
+  /* A bar drawn inside the lower edge of the current area's button. */
+  --bar-rise: calc(var(--bar-width) * -1);
   --focus-width: var(--wf-stroke-focus);
   --focus-offset: 2px;
   --focus-offset-inside: calc(var(--focus-width) * -1);
   --shadow-float: var(--wf-shadow-menu);
 
-  /* Spacing on a 4 px grid. */
+  /* Spacing on a 4 px grid; the half step only between a label and its own value. */
+  --space-half: 2px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -105,6 +112,23 @@
   --facts-separator: calc(var(--space-4) + var(--line-width));
   --facts-pull: calc(var(--facts-separator) * -1);
   --size-viewport-height: 100dvh;
+
+  /* The Data area and the investigation of an imported preparation. */
+  --size-page: 1280px;
+  --size-fact-text: 28ch;
+  --size-path-input: 360px;
+  --size-figure-column: 220px;
+  --size-table-least: 320px;
+  --size-table-surround: 280px;
+  --size-inspector-surround: 160px;
+  --size-row-inset: 6px;
+  --row-overhang: -3px;
+  /* The vertical line of a record history and the marker of each record on it. */
+  --size-history-marker: 9px;
+  --history-line-inset: 6px;
+  --history-line-left: 7px;
+  --history-marker-top: 5px;
+  --history-marker-pull: 3px;
 
   /* Layers */
   --z-sticky: var(--wf-z-comparison-header);

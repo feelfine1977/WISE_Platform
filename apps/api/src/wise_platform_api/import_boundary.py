@@ -74,8 +74,13 @@ _TIME_POLICIES = {
     "UtcTimePolicy": "incident.time.explicit_format_timezone_utc.v1",
     "WallTimePolicy": "incident.time.wall_clock_as_recorded.v1",
 }
+_ROW_POLICIES = {
+    "StrictImportRowPolicy": "incident.rows.missing_id_outside_invalid_time_retained.v1",
+    "TolerantImportRowPolicy": "incident.rows.missing_id_outside_invalid_time_retained.v2",
+}
 _ZONE_MODES = {"RecordedTimezone": "from_values", "FixedOffsetTimezone": "fixed_offset"}
 _TIME = ("policies", "time")
+_ROWS = ("policies", "rows")
 _ZONE = ("policies", "time", "parameters", "timezone")
 _DECIMAL = re.compile(r"0|[1-9][0-9]*")
 
@@ -197,9 +202,11 @@ def parse_import(
 def _chosen_alternatives(
     message: Mapping[str, object], failures: list[tuple[Location, str, str]]
 ) -> list[tuple[Location, str, str]]:
-    """Keep the failures of the time policy and zone mode the request chose, without their tags."""
+    """Keep the failures of the time policy, row policy and zone mode the request chose, without their tags."""
     time = _at(message, _TIME)
     chosen_id = time.get("id") if isinstance(time, Mapping) else None
+    rows = _at(message, _ROWS)
+    chosen_rows = rows.get("id") if isinstance(rows, Mapping) else None
     zone = _at(message, _ZONE)
     chosen_mode = zone.get("mode") if isinstance(zone, Mapping) else None
     kept: list[tuple[Location, str, str]] = []
@@ -215,6 +222,17 @@ def _chosen_alternatives(
                 continue
             else:
                 path = (*_TIME, *path[3:])
+        if path[:2] == _ROWS and len(path) > 2 and path[2] in _ROW_POLICIES:
+            if not isinstance(rows, Mapping):
+                path, kind = _ROWS, "model_type"
+            elif "id" not in rows:
+                path, kind = (*_ROWS, "id"), "missing"
+            elif chosen_rows not in _ROW_POLICIES.values():
+                path, kind, reason = (*_ROWS, "id"), "literal_error", "it is not a row policy of this contract"
+            elif _ROW_POLICIES[str(path[2])] != chosen_rows:
+                continue
+            else:
+                path = (*_ROWS, *path[3:])
         if path[:4] == _ZONE and len(path) > 4 and path[4] in _ZONE_MODES:
             if not isinstance(zone, Mapping):
                 path, kind = _ZONE, "model_type"

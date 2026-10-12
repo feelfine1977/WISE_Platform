@@ -67,6 +67,12 @@ export const formatLabels: Record<TimestampFormat, string> = {
   mdy_dot_minute: "Month first with dots: mm.dd.yyyy HH:MM",
   dmy_slash_minute: "Day first with slashes: dd/mm/yyyy HH:MM",
   mdy_slash_minute: "Month first with slashes: mm/dd/yyyy HH:MM",
+  dmy_dot_second: "Day first with dots, with seconds: dd.mm.yyyy HH:MM:SS",
+  mdy_dot_second: "Month first with dots, with seconds: mm.dd.yyyy HH:MM:SS",
+  dmy_slash_second: "Day first with slashes, with seconds: dd/mm/yyyy HH:MM:SS",
+  mdy_slash_second: "Month first with slashes, with seconds: mm/dd/yyyy HH:MM:SS",
+  mdy_slash_12h_minute: "Month first with slashes, 12-hour clock: mm/dd/yyyy hh:MM AM",
+  mdy_slash_12h_second: "Month first with slashes, 12-hour clock with seconds: mm/dd/yyyy hh:MM:SS AM",
 };
 
 /** The registered version 1 policies of every role but time; each is fixed by the contract. */

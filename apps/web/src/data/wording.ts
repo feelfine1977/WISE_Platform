@@ -89,6 +89,7 @@ export const issueLabels: Record<RowIssue["code"], string> = {
   invalid_sequence: "Sequence number not a whole number: blocks the reading",
   duplicate_candidate: "Same cells as an earlier row: both kept",
   timestamp_sequence_disagreement: "Time and sequence number disagree: time decides",
+  ragged_record: "Another number of cells than the header: kept as a raw row, outside every incident",
 };
 
 export const severityLabels: Record<RowIssue["severity"], string> = {
