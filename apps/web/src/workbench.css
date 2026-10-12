@@ -143,9 +143,10 @@
 .inline-error button { margin-top: var(--wb-space-1); }
 
 /* Data area: steps one under the other. */
-.data-steps { display: grid; gap: var(--wb-space-4); padding: var(--wb-space-4) var(--wb-space-6) var(--wb-space-6); max-width: 1280px; }
+.data-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--wb-space-4); padding: var(--wb-space-4) var(--wb-space-6) var(--wb-space-6); max-width: 1280px; }
 .step {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wb-space-3);
   min-width: 0;
   padding: var(--wb-space-4);
@@ -159,7 +160,8 @@
 .settled { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--wb-space-2); }
 .choice-row { display: flex; flex-wrap: wrap; gap: var(--wb-space-3) var(--wb-space-6); align-items: flex-start; }
 .choice { display: grid; gap: var(--wb-space-1); min-width: 0; max-width: 100%; }
-.choice select { max-width: 100%; }
+.choice select,
+.choice input { max-width: 100%; min-width: 0; }
 .choice.nested { margin-left: var(--wb-space-6); }
 .figure-inline { font-variant-numeric: tabular-nums; font-weight: 600; }
 .checks { display: grid; gap: var(--wb-space-1); margin: 0; padding: 0; border: 0; min-width: 0; }
@@ -167,7 +169,7 @@
 .check { display: flex; align-items: center; gap: var(--wb-space-2); min-height: var(--wb-control); }
 .limitation { margin-left: var(--wb-space-6); padding-left: var(--wb-space-2); border-left: 2px solid var(--wb-orange); color: var(--wb-muted); }
 .notes { margin: 0; padding-left: var(--wb-space-4); color: var(--wb-muted); }
-.stored-list { display: grid; gap: var(--wb-space-2); }
+.stored-list { display: grid; gap: var(--wb-space-2); min-width: 0; overflow-x: auto; }
 .stored-list h4 { margin: 0; }
 
 .table-scroll { overflow-x: auto; }
@@ -184,7 +186,8 @@
 .column-index { font-weight: 400; text-transform: none; letter-spacing: 0; }
 
 /* Interpretation report */
-.report { display: grid; gap: var(--wb-space-4); }
+.report { display: grid; gap: var(--wb-space-4); min-width: 0; }
+.report-more { overflow-x: auto; }
 .state-line { padding: var(--wb-space-2) var(--wb-space-3); border-left: 2px solid var(--wb-strong-line); background: var(--wb-canvas); }
 .state-ready { border-left-color: var(--wb-blue); }
 .state-confirm { border-left-color: var(--wb-orange); }
