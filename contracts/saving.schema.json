@@ -1,0 +1,1769 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/saving.v1.schema.json",
+  "title": "SavingMessage",
+  "description": "Unscored immutable investigation revisions with verified source/interpretation/selection meaning and atomic expected-head publication.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SaveInvestigationRequest"
+    },
+    {
+      "$ref": "#/$defs/SaveInvestigationAnswer"
+    },
+    {
+      "$ref": "#/$defs/ListSavedRequest"
+    },
+    {
+      "$ref": "#/$defs/ListSavedAnswer"
+    },
+    {
+      "$ref": "#/$defs/ReopenInvestigationRequest"
+    },
+    {
+      "$ref": "#/$defs/ReopenInvestigationAnswer"
+    },
+    {
+      "$ref": "#/$defs/SavingRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "PopulationSupport": {
+      "title": "PopulationSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count"
+      ]
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "PredicateResult": {
+      "title": "PredicateResult",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "predicate": {
+          "$ref": "#/$defs/SelectionPredicate"
+        },
+        "kept": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "removed": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "predicate",
+        "kept",
+        "removed",
+        "unevaluable"
+      ]
+    },
+    "SelectionPredicate": {
+      "title": "SelectionPredicate",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ContainsActivity"
+        },
+        {
+          "$ref": "#/$defs/DirectlyFollows"
+        },
+        {
+          "$ref": "#/$defs/OpeningAttributeEquals"
+        }
+      ]
+    },
+    "ContainsActivity": {
+      "title": "ContainsActivity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "contains_activity"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "activity",
+        "negate"
+      ]
+    },
+    "DirectlyFollows": {
+      "title": "DirectlyFollows",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "directly_follows"
+        },
+        "source_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "source_activity",
+        "target_activity",
+        "negate"
+      ]
+    },
+    "OpeningAttributeEquals": {
+      "title": "OpeningAttributeEquals",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "opening_attribute_equals"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        },
+        "anchor_policy": {
+          "type": "string",
+          "const": "incident.context.first_record_in_declared_order.v1"
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "value",
+        "negate",
+        "anchor_policy"
+      ]
+    },
+    "RowId": {
+      "title": "RowId",
+      "type": "string",
+      "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ColumnIndex": {
+      "title": "ColumnIndex",
+      "type": "integer",
+      "minimum": 0
+    },
+    "UtcInstant": {
+      "title": "UtcInstant",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "LocalTimestamp": {
+      "title": "LocalTimestamp",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?$"
+    },
+    "InvestigationId": {
+      "title": "InvestigationId",
+      "type": "string",
+      "pattern": "^investigation\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SavedRevisionId": {
+      "title": "SavedRevisionId",
+      "type": "string",
+      "pattern": "^saved-revision\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ComparisonId": {
+      "title": "ComparisonId",
+      "type": "string",
+      "pattern": "^comparison\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ContextPolicy": {
+      "title": "ContextPolicy",
+      "type": "string",
+      "const": "incident.context.first_record_in_declared_order.v1"
+    },
+    "FrozenSelectionRecipe": {
+      "title": "FrozenSelectionRecipe",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parent_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "predicates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SelectionPredicate"
+          }
+        }
+      },
+      "required": [
+        "parent_case_ids",
+        "predicates"
+      ]
+    },
+    "GroupComparisonDefinition": {
+      "title": "GroupComparisonDefinition",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TwoNamedGroups"
+        },
+        {
+          "$ref": "#/$defs/SelectionPartition"
+        }
+      ]
+    },
+    "TwoNamedGroups": {
+      "title": "TwoNamedGroups",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "two_named_groups"
+        },
+        "target": {
+          "$ref": "#/$defs/NamedGroup"
+        },
+        "reference": {
+          "$ref": "#/$defs/NamedGroup"
+        }
+      },
+      "required": [
+        "mode",
+        "target",
+        "reference"
+      ]
+    },
+    "NamedGroup": {
+      "title": "NamedGroup",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "definition": {
+          "$ref": "#/$defs/NamedGroupDefinition"
+        }
+      },
+      "required": [
+        "name",
+        "definition"
+      ]
+    },
+    "Name": {
+      "title": "ComparisonName",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "\\S"
+    },
+    "NamedGroupDefinition": {
+      "title": "NamedGroupDefinition",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PredicateGroupDefinition"
+        },
+        {
+          "$ref": "#/$defs/ExplicitCaseGroupDefinition"
+        }
+      ]
+    },
+    "PredicateGroupDefinition": {
+      "title": "PredicateGroupDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "predicates"
+        },
+        "predicates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SelectionPredicate"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "predicates"
+      ]
+    },
+    "ExplicitCaseGroupDefinition": {
+      "title": "ExplicitCaseGroupDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "explicit_case_ids"
+        },
+        "case_ids": {
+          "$ref": "#/$defs/CaseIds"
+        }
+      },
+      "required": [
+        "kind",
+        "case_ids"
+      ]
+    },
+    "CaseIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CaseId"
+      },
+      "uniqueItems": true
+    },
+    "SelectionPartition": {
+      "title": "SelectionPartition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "selection_partition"
+        },
+        "target_name": {
+          "$ref": "#/$defs/Name"
+        },
+        "reference_name": {
+          "$ref": "#/$defs/Name"
+        },
+        "predicates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SelectionPredicate"
+          }
+        },
+        "target_side": {
+          "type": "string",
+          "enum": [
+            "kept",
+            "removed"
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "target_name",
+        "reference_name",
+        "predicates",
+        "target_side"
+      ]
+    },
+    "PeriodComparisonDefinition": {
+      "title": "PeriodComparisonDefinition",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcPeriodComparisonDefinition"
+        },
+        {
+          "$ref": "#/$defs/WallPeriodComparisonDefinition"
+        }
+      ]
+    },
+    "UtcPeriodComparisonDefinition": {
+      "title": "UtcPeriodComparisonDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/NamedUtcPeriod"
+        },
+        "reference": {
+          "$ref": "#/$defs/NamedUtcPeriod"
+        },
+        "minimum_followup_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endpoint_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "target",
+        "reference",
+        "minimum_followup_hours",
+        "endpoint_activity"
+      ]
+    },
+    "NamedUtcPeriod": {
+      "title": "NamedUtcPeriod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "window": {
+          "$ref": "#/$defs/UtcCaseStartWindow"
+        }
+      },
+      "required": [
+        "name",
+        "window"
+      ]
+    },
+    "UtcCaseStartWindow": {
+      "title": "UtcCaseStartWindow",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "start_inclusive": {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        "end_exclusive": {
+          "$ref": "#/$defs/UtcInstant"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "start_inclusive",
+        "end_exclusive"
+      ]
+    },
+    "WallPeriodComparisonDefinition": {
+      "title": "WallPeriodComparisonDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/NamedWallPeriod"
+        },
+        "reference": {
+          "$ref": "#/$defs/NamedWallPeriod"
+        },
+        "minimum_followup_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endpoint_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "target",
+        "reference",
+        "minimum_followup_hours",
+        "endpoint_activity"
+      ]
+    },
+    "NamedWallPeriod": {
+      "title": "NamedWallPeriod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "window": {
+          "$ref": "#/$defs/WallCaseStartWindow"
+        }
+      },
+      "required": [
+        "name",
+        "window"
+      ]
+    },
+    "WallCaseStartWindow": {
+      "title": "WallCaseStartWindow",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "start_inclusive": {
+          "$ref": "#/$defs/LocalTimestamp"
+        },
+        "end_exclusive": {
+          "$ref": "#/$defs/LocalTimestamp"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "start_inclusive",
+        "end_exclusive"
+      ]
+    },
+    "SavedGroupComparison": {
+      "title": "SavedGroupComparison",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "group"
+        },
+        "comparison_id": {
+          "$ref": "#/$defs/ComparisonId"
+        },
+        "parent_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "context_column_index": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "context_policy": {
+          "$ref": "#/$defs/ContextPolicy"
+        },
+        "definition": {
+          "$ref": "#/$defs/GroupComparisonDefinition"
+        }
+      },
+      "required": [
+        "kind",
+        "comparison_id",
+        "parent_case_ids",
+        "context_column_index",
+        "context_policy",
+        "definition"
+      ]
+    },
+    "SavedPeriodComparison": {
+      "title": "SavedPeriodComparison",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "period"
+        },
+        "comparison_id": {
+          "$ref": "#/$defs/ComparisonId"
+        },
+        "parent_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "context_column_index": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "context_policy": {
+          "$ref": "#/$defs/ContextPolicy"
+        },
+        "definition": {
+          "$ref": "#/$defs/PeriodComparisonDefinition"
+        }
+      },
+      "required": [
+        "kind",
+        "comparison_id",
+        "parent_case_ids",
+        "context_column_index",
+        "context_policy",
+        "definition"
+      ]
+    },
+    "SavedComparison": {
+      "title": "SavedComparison",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SavedGroupComparison"
+        },
+        {
+          "$ref": "#/$defs/SavedPeriodComparison"
+        }
+      ]
+    },
+    "OpaqueReferenceId": {
+      "title": "OpaqueReferenceId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"
+    },
+    "ScoreRunReference": {
+      "title": "ScoreRunReference",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "score_run_id": {
+          "$ref": "#/$defs/ScoreRunId"
+        },
+        "scored_population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "calibration_id": {
+          "$ref": "#/$defs/CalibrationId"
+        }
+      },
+      "required": [
+        "score_run_id",
+        "scored_population_id",
+        "calibration_id"
+      ]
+    },
+    "EvidenceBookmark": {
+      "title": "EvidenceBookmark",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          },
+          "uniqueItems": true
+        },
+        "note": {
+          "type": "string",
+          "minLength": 0
+        }
+      },
+      "required": [
+        "label",
+        "identity",
+        "case_id",
+        "row_ids",
+        "note"
+      ]
+    },
+    "PositionPoint": {
+      "title": "PositionPoint",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ]
+    },
+    "PositionBox": {
+      "title": "PositionBox",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    },
+    "PositionEdgeRoute": {
+      "title": "PositionEdgeRoute",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PositionPoint"
+          }
+        },
+        "labelX": {
+          "type": "number"
+        },
+        "labelY": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "points"
+      ]
+    },
+    "FlowPositions": {
+      "title": "FlowPositions",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/PositionBox"
+          }
+        },
+        "groups": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/PositionBox"
+          }
+        },
+        "edges": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/PositionEdgeRoute"
+          }
+        },
+        "bounds": {
+          "$ref": "#/$defs/PositionBox"
+        },
+        "engine": {
+          "type": "string",
+          "enum": [
+            "elk",
+            "dagre",
+            "di",
+            "given",
+            "provisional"
+          ]
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "RIGHT",
+            "DOWN",
+            "LEFT",
+            "UP"
+          ]
+        },
+        "final": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "nodes",
+        "groups",
+        "edges",
+        "bounds",
+        "engine",
+        "direction"
+      ]
+    },
+    "TableSort": {
+      "title": "TableSort",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "table": {
+          "type": "string",
+          "enum": [
+            "population",
+            "evidence"
+          ]
+        },
+        "column_index": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ColumnIndex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "field": {
+          "type": "string",
+          "enum": [
+            "case_id",
+            "record_count",
+            "source_column"
+          ]
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "ascending",
+            "descending"
+          ]
+        }
+      },
+      "required": [
+        "table",
+        "column_index",
+        "field",
+        "direction"
+      ]
+    },
+    "PresentationRecovery": {
+      "title": "PresentationRecovery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "active_view": {
+          "type": "string",
+          "enum": [
+            "incidents",
+            "process_map",
+            "context",
+            "variants",
+            "comparison"
+          ]
+        },
+        "table_sorts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TableSort"
+          }
+        },
+        "flow_artifact_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "graph_positions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FlowPositions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "active_view",
+        "table_sorts",
+        "flow_artifact_sha256",
+        "graph_positions"
+      ]
+    },
+    "RecoveryWarning": {
+      "title": "RecoveryWarning",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "presentation_unavailable",
+            "presentation_invalid",
+            "layout_version_mismatch"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "RecoveryAnswer": {
+      "title": "RecoveryAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "presentation_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PresentationRecovery"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecoveryWarning"
+          }
+        }
+      },
+      "required": [
+        "presentation_state",
+        "warnings"
+      ]
+    },
+    "SavedInvestigationContent": {
+      "title": "SavedInvestigationContent",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "selection_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "selection_recipe": {
+          "$ref": "#/$defs/FrozenSelectionRecipe"
+        },
+        "context_policy": {
+          "$ref": "#/$defs/ContextPolicy"
+        },
+        "comparison": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedComparison"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0
+        },
+        "bookmarks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EvidenceBookmark"
+          }
+        },
+        "score_run_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScoreRunReference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "format_version",
+        "name",
+        "base_identity",
+        "selection_identity",
+        "selection_recipe",
+        "context_policy",
+        "comparison",
+        "notes",
+        "bookmarks",
+        "score_run_ref"
+      ]
+    },
+    "SavedRevision": {
+      "title": "SavedRevision",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "investigation_id": {
+          "$ref": "#/$defs/InvestigationId"
+        },
+        "saved_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        },
+        "content": {
+          "$ref": "#/$defs/SavedInvestigationContent"
+        }
+      },
+      "required": [
+        "investigation_id",
+        "saved_revision_id",
+        "content"
+      ]
+    },
+    "RestoredSelection": {
+      "title": "RestoredSelection",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "kept": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "removed": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "predicate_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PredicateResult"
+          }
+        }
+      },
+      "required": [
+        "identity",
+        "parent_identity",
+        "parent",
+        "kept",
+        "removed",
+        "unevaluable",
+        "predicate_results"
+      ]
+    },
+    "SavedInvestigationSummary": {
+      "title": "SavedInvestigationSummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "investigation_id": {
+          "$ref": "#/$defs/InvestigationId"
+        },
+        "latest_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "selected_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "selected_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "comparison_kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "group",
+            "period",
+            null
+          ]
+        },
+        "has_score_run": {
+          "type": "boolean"
+        },
+        "source_validation": {
+          "type": "string",
+          "const": "not_checked"
+        }
+      },
+      "required": [
+        "investigation_id",
+        "latest_revision_id",
+        "name",
+        "source_id",
+        "preparation_id",
+        "selected_case_count",
+        "selected_record_count",
+        "comparison_kind",
+        "has_score_run",
+        "source_validation"
+      ]
+    },
+    "SaveInvestigationRequest": {
+      "title": "SaveInvestigationRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "save_investigation_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "investigation_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InvestigationId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_revision_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedRevisionId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "selection_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "selection_recipe": {
+          "$ref": "#/$defs/FrozenSelectionRecipe"
+        },
+        "context_policy": {
+          "$ref": "#/$defs/ContextPolicy"
+        },
+        "comparison": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedComparison"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0
+        },
+        "bookmarks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EvidenceBookmark"
+          }
+        },
+        "score_run_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScoreRunReference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "presentation_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PresentationRecovery"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "investigation_id",
+        "expected_revision_id",
+        "name",
+        "base_identity",
+        "selection_identity",
+        "selection_recipe",
+        "context_policy",
+        "comparison",
+        "notes",
+        "bookmarks"
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "investigation_id": {
+              "type": "null"
+            },
+            "expected_revision_id": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "investigation_id": {
+              "$ref": "#/$defs/InvestigationId"
+            },
+            "expected_revision_id": {
+              "$ref": "#/$defs/SavedRevisionId"
+            }
+          }
+        }
+      ]
+    },
+    "SaveInvestigationAnswer": {
+      "title": "SaveInvestigationAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "save_investigation_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "revision": {
+          "$ref": "#/$defs/SavedRevision"
+        },
+        "created_investigation": {
+          "type": "boolean"
+        },
+        "semantic_change": {
+          "type": "boolean"
+        },
+        "recovery": {
+          "$ref": "#/$defs/RecoveryAnswer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "revision",
+        "created_investigation",
+        "semantic_change",
+        "recovery"
+      ]
+    },
+    "ListSavedRequest": {
+      "title": "ListSavedRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "list_saved_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id"
+      ]
+    },
+    "ListSavedAnswer": {
+      "title": "ListSavedAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "list_saved_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "investigations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SavedInvestigationSummary"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "investigations"
+      ]
+    },
+    "ReopenInvestigationRequest": {
+      "title": "ReopenInvestigationRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "reopen_investigation_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "saved_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "saved_revision_id"
+      ]
+    },
+    "ReopenInvestigationAnswer": {
+      "title": "ReopenInvestigationAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "reopen_investigation_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "revision": {
+          "$ref": "#/$defs/SavedRevision"
+        },
+        "restored_selection": {
+          "$ref": "#/$defs/RestoredSelection"
+        },
+        "restored_comparison_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComparisonId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recovery": {
+          "$ref": "#/$defs/RecoveryAnswer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "revision",
+        "restored_selection",
+        "restored_comparison_id",
+        "recovery"
+      ]
+    },
+    "SavingRefusal": {
+      "title": "SavingRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "saving_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "save_investigation",
+            "list_saved",
+            "reopen_investigation"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "source_unavailable",
+            "source_changed",
+            "preparation_unavailable",
+            "preparation_changed",
+            "identity_mismatch",
+            "selection_mismatch",
+            "comparison_unavailable",
+            "comparison_mismatch",
+            "invalid_bookmark",
+            "score_reference_unavailable",
+            "unsupported_score_reference",
+            "investigation_unavailable",
+            "revision_unavailable",
+            "revision_conflict",
+            "malformed_saved_revision",
+            "incompatible_saved_revision",
+            "publication_failed",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "investigation_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InvestigationId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_revision_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedRevisionId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "current_revision_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedRevisionId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "revision_conflict"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "investigation_id",
+              "expected_revision_id",
+              "current_revision_id"
+            ],
+            "properties": {
+              "investigation_id": {
+                "$ref": "#/$defs/InvestigationId"
+              },
+              "expected_revision_id": {
+                "$ref": "#/$defs/SavedRevisionId"
+              },
+              "current_revision_id": {
+                "$ref": "#/$defs/SavedRevisionId"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ScoreRunId": {
+      "title": "ScoreRunId",
+      "type": "string",
+      "pattern": "^score-run\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CalibrationId": {
+      "title": "CalibrationId",
+      "type": "string",
+      "pattern": "^calibration\\.v1:sha256:[a-f0-9]{64}$"
+    }
+  }
+}

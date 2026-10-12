@@ -1,0 +1,751 @@
+{
+  "validate-expectation.request": {
+    "schema_version": 1,
+    "message_type": "validate_expectation_request",
+    "request_id": "synthetic-scoring-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:synthetic-test",
+    "base_identity": {
+      "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+      "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+      "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+      "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+      "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+      "implementation_version": "0.1.0"
+    },
+    "named_population": {
+      "name": "All fictional incidents",
+      "identity": {
+        "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+        "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+        "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+        "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+        "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+        "implementation_version": "0.1.0"
+      }
+    },
+    "definition": {
+      "kind": "resolution_first_after.v1",
+      "name": "Fictional first-resolution target",
+      "definition_revision": 1,
+      "review_state": "reviewed",
+      "provenance": {
+        "kind": "locally_entered",
+        "owner_label": "Synthetic acceptance author",
+        "source_label": "Fictional target; no company authority",
+        "rationale": "Independent boundary check, not a company requirement."
+      },
+      "role": "negotiable_target",
+      "scope": {
+        "kind": "all_cases"
+      },
+      "endpoints": {
+        "activation_activity": "Opened",
+        "response_activity": "Resolved",
+        "activation": "first",
+        "response": "first_after",
+        "response_time_comparison": "at_or_after"
+      },
+      "clock_kind": "utc_instant",
+      "target": 4,
+      "width": 2,
+      "unit": "days",
+      "missing_activation": "skip",
+      "missing_response": "skip",
+      "calibration": "fixed_threshold"
+    }
+  },
+  "validate-expectation.answer": {
+    "schema_version": 1,
+    "message_type": "expectation_validation_answer",
+    "request_id": "synthetic-scoring-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:synthetic-test",
+    "state": "ready",
+    "definition_version": {
+      "definition_version_id": "definition-version.v1:sha256:baf4060ef526f5cc0f9897545905ea0cf781caa69930f8642c6f719a566c1f9c",
+      "source_binding": {
+        "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+        "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+        "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+        "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+        "implementation_version": "0.1.0"
+      },
+      "definition": {
+        "kind": "resolution_first_after.v1",
+        "name": "Fictional first-resolution target",
+        "definition_revision": 1,
+        "review_state": "reviewed",
+        "provenance": {
+          "kind": "locally_entered",
+          "owner_label": "Synthetic acceptance author",
+          "source_label": "Fictional target; no company authority",
+          "rationale": "Independent boundary check, not a company requirement."
+        },
+        "role": "negotiable_target",
+        "scope": {
+          "kind": "all_cases"
+        },
+        "endpoints": {
+          "activation_activity": "Opened",
+          "response_activity": "Resolved",
+          "activation": "first",
+          "response": "first_after",
+          "response_time_comparison": "at_or_after"
+        },
+        "clock_kind": "utc_instant",
+        "target": 4,
+        "width": 2,
+        "unit": "days",
+        "missing_activation": "skip",
+        "missing_response": "skip",
+        "calibration": "fixed_threshold"
+      },
+      "norm": {
+        "norm_version_id": "norm-version.v1:sha256:64a1ee878d1fd65e6767db74f0b3bc413321e087f98a43276c9b8da4928150fa",
+        "norm_fingerprint": "b280569ed357a71eccc67c2e85335c2de722e450e3dd191d914862a4c06e9d50",
+        "document": {
+          "schema_version": 3,
+          "name": "Fictional first-resolution target",
+          "version": "1",
+          "missing_values": "three_valued",
+          "scoring_mode": "flat",
+          "layers": [
+            {
+              "id": "Timing"
+            }
+          ],
+          "views": [
+            {
+              "name": "Resolution",
+              "constraint_weights": {
+                "resolution": 1
+              }
+            }
+          ],
+          "constraints": [
+            {
+              "id": "resolution",
+              "layer": "Timing",
+              "type": "lag",
+              "params": {
+                "a": "Opened",
+                "b": "Resolved",
+                "activation": "first",
+                "response": "first_after",
+                "delta": 4,
+                "width": 2,
+                "unit": "D",
+                "missing_a": "skip",
+                "missing_b": "skip"
+              }
+            }
+          ]
+        }
+      },
+      "compilation": {
+        "requested_constraint_count": 1,
+        "compiled_constraint_count": 1,
+        "omitted_constraint_count": 0,
+        "scope_kind": "all_cases",
+        "pairing": "first_after",
+        "unsupported_meaning_omitted": false
+      },
+      "method_artifact": {
+        "distribution": "wise-pm",
+        "version": "0.2.0",
+        "source_commit": "6883db5269e622d9ce5274d207e831d12ab134fe",
+        "wheel_sha256": "7329b7929bb8a3e40c596b359f352aace23cc233d8f29322ee063612733aecc3",
+        "qualification": "candidate_component_checked_release_pending",
+        "eligible_release": false
+      }
+    },
+    "readiness": {
+      "method_artifact": {
+        "distribution": "wise-pm",
+        "version": "0.2.0",
+        "source_commit": "6883db5269e622d9ce5274d207e831d12ab134fe",
+        "wheel_sha256": "7329b7929bb8a3e40c596b359f352aace23cc233d8f29322ee063612733aecc3",
+        "qualification": "candidate_component_checked_release_pending",
+        "eligible_release": false
+      },
+      "supported_definition": true,
+      "preparation_gate_passed": true,
+      "method_check_passed": true,
+      "release_gate_pending": true
+    },
+    "blockers": []
+  },
+  "scoring-refusal": {
+    "schema_version": 1,
+    "message_type": "scoring_refusal",
+    "request_id": "synthetic-scoring-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:synthetic-test",
+    "operation": "score_expectation",
+    "code": "unevaluable_sequence",
+    "message": "First chronology is unavailable for one incident; inspect quality or explicitly choose a qualified named population.",
+    "field": "named_population",
+    "retryable": false,
+    "case_ids": [
+      "BAD"
+    ],
+    "case_count": 1,
+    "recovery_actions": [
+      "inspect_quality",
+      "choose_qualified_named_population"
+    ]
+  },
+  "case-witness.answer": {
+    "schema_version": 1,
+    "message_type": "score_case_witness_answer",
+    "request_id": "synthetic-scoring-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:synthetic-test",
+    "run_identity": {
+      "run_id": "score-run.v1:sha256:d47c72da2e9a870bcdbdf1833c8aeeec5ef68fc89773b7e9af46704394505596",
+      "base_identity": {
+        "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+        "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+        "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+        "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+        "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+        "implementation_version": "0.1.0"
+      },
+      "scored_population_identity": {
+        "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+        "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+        "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+        "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+        "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+        "implementation_version": "0.1.0"
+      },
+      "definition_version_id": "definition-version.v1:sha256:baf4060ef526f5cc0f9897545905ea0cf781caa69930f8642c6f719a566c1f9c",
+      "norm_version_id": "norm-version.v1:sha256:64a1ee878d1fd65e6767db74f0b3bc413321e087f98a43276c9b8da4928150fa",
+      "norm_fingerprint": "b280569ed357a71eccc67c2e85335c2de722e450e3dd191d914862a4c06e9d50",
+      "method_log_fingerprint": "a01c3c791115fb800dfa72892027f4941bd7955da8d7864e83bbb9527c718f78",
+      "calibration_id": "calibration.v1:sha256:0af5c4553377765fe1dae47769d23e2e00277451b897e9437928b7da8abd1bf6",
+      "method_artifact": {
+        "distribution": "wise-pm",
+        "version": "0.2.0",
+        "source_commit": "6883db5269e622d9ce5274d207e831d12ab134fe",
+        "wheel_sha256": "7329b7929bb8a3e40c596b359f352aace23cc233d8f29322ee063612733aecc3",
+        "qualification": "candidate_component_checked_release_pending",
+        "eligible_release": false
+      },
+      "clock": {
+        "timestamp_kind": "utc_instant",
+        "duration_meaning": "elapsed_utc",
+        "observation_start_utc": "2026-10-01T00:00:00Z",
+        "snapshot_cutoff_utc": "2026-10-09T00:00:00Z",
+        "observation_start_local": null,
+        "snapshot_cutoff_local": null
+      }
+    },
+    "case": {
+      "case_id": "GAP",
+      "value": 0.5,
+      "in_scope": true,
+      "reason": "evaluated",
+      "measurement": {
+        "status": "observed",
+        "value": 5.0,
+        "unit": "days",
+        "activation_known": true,
+        "response_known": true,
+        "censor_age": null
+      }
+    },
+    "trace": {
+      "kind": "imported_csv",
+      "columns": [
+        {
+          "index": 0,
+          "name": "Case"
+        },
+        {
+          "index": 1,
+          "name": "Activity"
+        },
+        {
+          "index": 2,
+          "name": "Recorded at"
+        },
+        {
+          "index": 3,
+          "name": "Desk"
+        }
+      ],
+      "records": [
+        {
+          "row_id": "row.v1:sha256:93c7b00dd556d7a84e5a46eb810888f9ed7e73970ca2996aafde4ccfd30bcadf",
+          "source_position": 10,
+          "source_sequence": null,
+          "activity": "Opened",
+          "timestamp_kind": "utc_instant",
+          "utc_instant": "2026-10-01T00:00:00Z",
+          "local_timestamp": null,
+          "timestamp_status": "usable",
+          "context": [
+            {
+              "column_index": 3,
+              "value": "Known"
+            }
+          ],
+          "original_cells": [
+            "GAP",
+            "Opened",
+            "2026-10-01T00:00:00Z",
+            "Known"
+          ]
+        },
+        {
+          "row_id": "row.v1:sha256:942eb189b274736f8a9dba488c8205e875f57a3e32b1c115fcea8029ee735d3f",
+          "source_position": 11,
+          "source_sequence": null,
+          "activity": null,
+          "timestamp_kind": "utc_instant",
+          "utc_instant": "2026-10-02T00:00:00Z",
+          "local_timestamp": null,
+          "timestamp_status": "usable",
+          "context": [
+            {
+              "column_index": 3,
+              "value": null
+            }
+          ],
+          "original_cells": [
+            "GAP",
+            "",
+            "2026-10-02T00:00:00Z",
+            ""
+          ]
+        },
+        {
+          "row_id": "row.v1:sha256:df0e15fe5692e3e0a70b36687e2c09b297adb3328ff9598d6aea03f083ae0dff",
+          "source_position": 12,
+          "source_sequence": null,
+          "activity": "Resolved",
+          "timestamp_kind": "utc_instant",
+          "utc_instant": "2026-10-06T00:00:00Z",
+          "local_timestamp": null,
+          "timestamp_status": "usable",
+          "context": [
+            {
+              "column_index": 3,
+              "value": "Unknown"
+            }
+          ],
+          "original_cells": [
+            "GAP",
+            "Resolved",
+            "2026-10-06T00:00:00Z",
+            "Unknown"
+          ]
+        }
+      ],
+      "coverage": {
+        "raw_record_count": 3,
+        "mapped_record_count": 2,
+        "omitted_activity_record_count": 1
+      },
+      "mapped_row_ids": [
+        "row.v1:sha256:93c7b00dd556d7a84e5a46eb810888f9ed7e73970ca2996aafde4ccfd30bcadf",
+        "row.v1:sha256:df0e15fe5692e3e0a70b36687e2c09b297adb3328ff9598d6aea03f083ae0dff"
+      ],
+      "omitted_activity_row_ids": [
+        "row.v1:sha256:942eb189b274736f8a9dba488c8205e875f57a3e32b1c115fcea8029ee735d3f"
+      ]
+    },
+    "method_trace_row_ids": [
+      "row.v1:sha256:93c7b00dd556d7a84e5a46eb810888f9ed7e73970ca2996aafde4ccfd30bcadf",
+      "row.v1:sha256:942eb189b274736f8a9dba488c8205e875f57a3e32b1c115fcea8029ee735d3f",
+      "row.v1:sha256:df0e15fe5692e3e0a70b36687e2c09b297adb3328ff9598d6aea03f083ae0dff"
+    ],
+    "activation_candidate_row_ids": [
+      "row.v1:sha256:93c7b00dd556d7a84e5a46eb810888f9ed7e73970ca2996aafde4ccfd30bcadf"
+    ],
+    "response_candidate_row_ids": [
+      "row.v1:sha256:df0e15fe5692e3e0a70b36687e2c09b297adb3328ff9598d6aea03f083ae0dff"
+    ],
+    "endpoint_tie_policy": "matching_timestamp_candidates_in_declared_order.v1"
+  },
+  "score-run.answer": {
+    "schema_version": 1,
+    "message_type": "score_run_answer",
+    "request_id": "synthetic-scoring-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:synthetic-test",
+    "run": {
+      "identity": {
+        "run_id": "score-run.v1:sha256:d47c72da2e9a870bcdbdf1833c8aeeec5ef68fc89773b7e9af46704394505596",
+        "base_identity": {
+          "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+          "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+          "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+          "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+          "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+          "implementation_version": "0.1.0"
+        },
+        "scored_population_identity": {
+          "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+          "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+          "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+          "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+          "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+          "implementation_version": "0.1.0"
+        },
+        "definition_version_id": "definition-version.v1:sha256:baf4060ef526f5cc0f9897545905ea0cf781caa69930f8642c6f719a566c1f9c",
+        "norm_version_id": "norm-version.v1:sha256:64a1ee878d1fd65e6767db74f0b3bc413321e087f98a43276c9b8da4928150fa",
+        "norm_fingerprint": "b280569ed357a71eccc67c2e85335c2de722e450e3dd191d914862a4c06e9d50",
+        "method_log_fingerprint": "a01c3c791115fb800dfa72892027f4941bd7955da8d7864e83bbb9527c718f78",
+        "calibration_id": "calibration.v1:sha256:0af5c4553377765fe1dae47769d23e2e00277451b897e9437928b7da8abd1bf6",
+        "method_artifact": {
+          "distribution": "wise-pm",
+          "version": "0.2.0",
+          "source_commit": "6883db5269e622d9ce5274d207e831d12ab134fe",
+          "wheel_sha256": "7329b7929bb8a3e40c596b359f352aace23cc233d8f29322ee063612733aecc3",
+          "qualification": "candidate_component_checked_release_pending",
+          "eligible_release": false
+        },
+        "clock": {
+          "timestamp_kind": "utc_instant",
+          "duration_meaning": "elapsed_utc",
+          "observation_start_utc": "2026-10-01T00:00:00Z",
+          "snapshot_cutoff_utc": "2026-10-09T00:00:00Z",
+          "observation_start_local": null,
+          "snapshot_cutoff_local": null
+        }
+      },
+      "named_population": {
+        "name": "All fictional incidents",
+        "identity": {
+          "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+          "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+          "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+          "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+          "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+          "implementation_version": "0.1.0"
+        }
+      },
+      "population": {
+        "case_ids": [
+          "D3",
+          "D4",
+          "D5",
+          "D6",
+          "GAP",
+          "MISSING",
+          "NOOPEN",
+          "REOPEN",
+          "TIED"
+        ],
+        "case_count": 9,
+        "record_count": 19
+      },
+      "definition_version": {
+        "definition_version_id": "definition-version.v1:sha256:baf4060ef526f5cc0f9897545905ea0cf781caa69930f8642c6f719a566c1f9c",
+        "source_binding": {
+          "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+          "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+          "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+          "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+          "implementation_version": "0.1.0"
+        },
+        "definition": {
+          "kind": "resolution_first_after.v1",
+          "name": "Fictional first-resolution target",
+          "definition_revision": 1,
+          "review_state": "reviewed",
+          "provenance": {
+            "kind": "locally_entered",
+            "owner_label": "Synthetic acceptance author",
+            "source_label": "Fictional target; no company authority",
+            "rationale": "Independent boundary check, not a company requirement."
+          },
+          "role": "negotiable_target",
+          "scope": {
+            "kind": "all_cases"
+          },
+          "endpoints": {
+            "activation_activity": "Opened",
+            "response_activity": "Resolved",
+            "activation": "first",
+            "response": "first_after",
+            "response_time_comparison": "at_or_after"
+          },
+          "clock_kind": "utc_instant",
+          "target": 4,
+          "width": 2,
+          "unit": "days",
+          "missing_activation": "skip",
+          "missing_response": "skip",
+          "calibration": "fixed_threshold"
+        },
+        "norm": {
+          "norm_version_id": "norm-version.v1:sha256:64a1ee878d1fd65e6767db74f0b3bc413321e087f98a43276c9b8da4928150fa",
+          "norm_fingerprint": "b280569ed357a71eccc67c2e85335c2de722e450e3dd191d914862a4c06e9d50",
+          "document": {
+            "schema_version": 3,
+            "name": "Fictional first-resolution target",
+            "version": "1",
+            "missing_values": "three_valued",
+            "scoring_mode": "flat",
+            "layers": [
+              {
+                "id": "Timing"
+              }
+            ],
+            "views": [
+              {
+                "name": "Resolution",
+                "constraint_weights": {
+                  "resolution": 1
+                }
+              }
+            ],
+            "constraints": [
+              {
+                "id": "resolution",
+                "layer": "Timing",
+                "type": "lag",
+                "params": {
+                  "a": "Opened",
+                  "b": "Resolved",
+                  "activation": "first",
+                  "response": "first_after",
+                  "delta": 4,
+                  "width": 2,
+                  "unit": "D",
+                  "missing_a": "skip",
+                  "missing_b": "skip"
+                }
+              }
+            ]
+          }
+        },
+        "compilation": {
+          "requested_constraint_count": 1,
+          "compiled_constraint_count": 1,
+          "omitted_constraint_count": 0,
+          "scope_kind": "all_cases",
+          "pairing": "first_after",
+          "unsupported_meaning_omitted": false
+        },
+        "method_artifact": {
+          "distribution": "wise-pm",
+          "version": "0.2.0",
+          "source_commit": "6883db5269e622d9ce5274d207e831d12ab134fe",
+          "wheel_sha256": "7329b7929bb8a3e40c596b359f352aace23cc233d8f29322ee063612733aecc3",
+          "qualification": "candidate_component_checked_release_pending",
+          "eligible_release": false
+        }
+      },
+      "calibration": {
+        "calibration_id": "calibration.v1:sha256:0af5c4553377765fe1dae47769d23e2e00277451b897e9437928b7da8abd1bf6",
+        "policy": "fixed_threshold",
+        "scored_population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+        "target": 4,
+        "width": 2,
+        "unit": "days",
+        "population_fitted": false,
+        "method_calibration_count": 0,
+        "method_calibrations": {}
+      },
+      "support": {
+        "scored_case_count": 9,
+        "in_scope_case_count": 9,
+        "out_of_scope_case_count": 0,
+        "scope_unknown_case_count": 0,
+        "numeric_value_case_count": 7,
+        "unavailable_value_case_count": 2,
+        "affected_case_count": 3,
+        "zero_value_case_count": 4,
+        "observed_interval_case_count": 7,
+        "activation_known_case_count": 8,
+        "response_known_case_count": 7,
+        "missing_activation_case_count": 1,
+        "missing_response_case_count": 1,
+        "censored_case_count": 0,
+        "method_reason_counts": [
+          {
+            "reason": "evaluated",
+            "case_count": 7
+          },
+          {
+            "reason": "missing_activation",
+            "case_count": 1
+          },
+          {
+            "reason": "missing_response",
+            "case_count": 1
+          }
+        ]
+      },
+      "cases": [
+        {
+          "case_id": "D3",
+          "value": 0.0,
+          "in_scope": true,
+          "reason": "evaluated",
+          "measurement": {
+            "status": "observed",
+            "value": 3.0,
+            "unit": "days",
+            "activation_known": true,
+            "response_known": true,
+            "censor_age": null
+          }
+        },
+        {
+          "case_id": "D4",
+          "value": 0.0,
+          "in_scope": true,
+          "reason": "evaluated",
+          "measurement": {
+            "status": "observed",
+            "value": 4.0,
+            "unit": "days",
+            "activation_known": true,
+            "response_known": true,
+            "censor_age": null
+          }
+        },
+        {
+          "case_id": "D5",
+          "value": 0.5,
+          "in_scope": true,
+          "reason": "evaluated",
+          "measurement": {
+            "status": "observed",
+            "value": 5.0,
+            "unit": "days",
+            "activation_known": true,
+            "response_known": true,
+            "censor_age": null
+          }
+        },
+        {
+          "case_id": "D6",
+          "value": 1.0,
+          "in_scope": true,
+          "reason": "evaluated",
+          "measurement": {
+            "status": "observed",
+            "value": 6.0,
+            "unit": "days",
+            "activation_known": true,
+            "response_known": true,
+            "censor_age": null
+          }
+        },
+        {
+          "case_id": "GAP",
+          "value": 0.5,
+          "in_scope": true,
+          "reason": "evaluated",
+          "measurement": {
+            "status": "observed",
+            "value": 5.0,
+            "unit": "days",
+            "activation_known": true,
+            "response_known": true,
+            "censor_age": null
+          }
+        },
+        {
+          "case_id": "MISSING",
+          "value": null,
+          "in_scope": true,
+          "reason": "missing_response",
+          "measurement": {
+            "status": "missing_response",
+            "value": null,
+            "unit": "days",
+            "activation_known": true,
+            "response_known": false,
+            "censor_age": null
+          }
+        },
+        {
+          "case_id": "NOOPEN",
+          "value": null,
+          "in_scope": true,
+          "reason": "missing_activation",
+          "measurement": {
+            "status": "missing_activation",
+            "value": null,
+            "unit": "days",
+            "activation_known": false,
+            "response_known": false,
+            "censor_age": null
+          }
+        },
+        {
+          "case_id": "REOPEN",
+          "value": 0.0,
+          "in_scope": true,
+          "reason": "evaluated",
+          "measurement": {
+            "status": "observed",
+            "value": 3.0,
+            "unit": "days",
+            "activation_known": true,
+            "response_known": true,
+            "censor_age": null
+          }
+        },
+        {
+          "case_id": "TIED",
+          "value": 0.0,
+          "in_scope": true,
+          "reason": "evaluated",
+          "measurement": {
+            "status": "observed",
+            "value": 0.0,
+            "unit": "days",
+            "activation_known": true,
+            "response_known": true,
+            "censor_age": null
+          }
+        }
+      ]
+    }
+  },
+  "score-expectation.request": {
+    "schema_version": 1,
+    "message_type": "score_expectation_request",
+    "request_id": "synthetic-scoring-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:synthetic-test",
+    "base_identity": {
+      "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+      "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+      "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+      "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+      "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+      "implementation_version": "0.1.0"
+    },
+    "named_population": {
+      "name": "All fictional incidents",
+      "identity": {
+        "source_id": "source.v1:sha256:fa8ec88dd7f959fc9223e87c75c92bfc1465ac9ae7b0b36228267bfb2ffa6487",
+        "preparation_id": "preparation.v1:sha256:36c478db05fe507eb5f20d705c32ad0e01fa18f0dcdb33ebb00693357c407286",
+        "representation_id": "representation.v1:sha256:504b2f1b23e8742f02e48c8bc2cb7468159c72e78afe5963d17204195f694835",
+        "case_dictionary_id": "case-dictionary.v1:sha256:9cdd102c1fcd9d50fcfbc1aa7970fee54364d78b235596c270ca73e2e0dbe592",
+        "population_id": "population.v1:sha256:33e5bc3c32c8cc0dd69bbd6de02f923b0208a1bb45b56f06ba9b98ce87a54f0c",
+        "implementation_version": "0.1.0"
+      }
+    },
+    "definition_version_id": "definition-version.v1:sha256:baf4060ef526f5cc0f9897545905ea0cf781caa69930f8642c6f719a566c1f9c"
+  },
+  "case-witness.request": {
+    "schema_version": 1,
+    "message_type": "score_case_witness_request",
+    "request_id": "synthetic-scoring-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:synthetic-test",
+    "run_id": "score-run.v1:sha256:d47c72da2e9a870bcdbdf1833c8aeeec5ef68fc89773b7e9af46704394505596",
+    "case_id": "GAP"
+  }
+}

@@ -74,9 +74,11 @@ def select(client, workspace, base, predicates=(), parent=None, revision=1, requ
     request = selection_request(workspace, base, predicates, parent, revision, request_id)
     VALIDATOR.validate(request)
     answer = checked_c(client.post(SELECT_ROUTE, json=request), "selection_answer", request)
-    assert answer["parent_identity"] == base["identity"]
     for field in ("source_id", "preparation_id", "representation_id", "case_dictionary_id", "implementation_version"):
         assert answer["identity"][field] == base["identity"][field]
+        assert answer["parent_identity"][field] == base["identity"][field]
+    if not predicates:
+        assert answer["parent_identity"] == answer["identity"]
     assert [result["predicate"] for result in answer["predicate_results"]] == request["predicates"]
     return answer
 
