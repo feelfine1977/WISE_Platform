@@ -60,7 +60,7 @@
   color: var(--color-ink-muted);
 }
 .label-text-strong { font-weight: var(--font-weight-strong); }
-.identifier { font-family: var(--font-mono); font-size: var(--font-size-small); overflow-wrap: anywhere; }
+:is(.data-area, .workbench) .identifier { font-family: var(--font-mono); font-size: var(--font-size-small); overflow-wrap: anywhere; }
 .identifier-cut {
   display: inline-block;
   max-width: var(--size-fact-text);
@@ -75,7 +75,7 @@
 .flag { color: var(--color-attention-ink); font-weight: var(--font-weight-strong); }
 
 /* Toolbar under the app bar: breadcrumb and facts. */
-.toolbar {
+:is(.data-area, .workbench) .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -84,13 +84,13 @@
   background: var(--color-surface);
   border-bottom: var(--line-width) solid var(--color-line);
 }
-.breadcrumb { display: flex; align-items: baseline; gap: var(--space-1); }
-.breadcrumb-current { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
-.facts { display: flex; flex-wrap: wrap; margin: 0; }
-.fact { padding: 0 var(--space-4); border-left: var(--line-width) solid var(--color-line); }
-.fact:first-child { padding-left: 0; border-left: 0; }
-.fact dt { font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
-.fact dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-weight: var(--font-weight-strong); font-variant-numeric: tabular-nums; }
+:is(.data-area, .workbench) .breadcrumb { display: flex; align-items: baseline; gap: var(--space-1); }
+:is(.data-area, .workbench) .breadcrumb-current { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+:is(.data-area, .workbench) .facts { display: flex; flex-wrap: wrap; margin: 0; clip-path: none; }
+:is(.data-area, .workbench) .fact { padding: 0 var(--space-4); border-left: var(--line-width) solid var(--color-line); }
+:is(.data-area, .workbench) .fact:first-child { padding-left: 0; border-left: 0; }
+:is(.data-area, .workbench) .fact dt { font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+:is(.data-area, .workbench) .fact dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-weight: var(--font-weight-strong); font-variant-numeric: tabular-nums; }
 
 /* Pending work: a thin blue line, what is being done, and a way to stop waiting. */
 .progress-line { position: relative; height: var(--size-progress); overflow: hidden; background: var(--color-accent-tint); }
@@ -183,8 +183,8 @@
 .workbench-body[data-inspector="full"] .table-pane { display: none; }
 .workbench-body[data-inspector="collapsed"] .imported-inspector { order: -1; }
 .table-pane { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-4) var(--space-6); }
-.pane-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
-.pane-hint { font-size: var(--font-size-small); }
+:is(.data-area, .workbench) .pane-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+:is(.data-area, .workbench) .pane-hint { font-size: var(--font-size-small); }
 
 .window-scroll {
   max-height: max(var(--size-table-least), calc(var(--size-viewport-height) - var(--size-table-surround)));
@@ -223,8 +223,9 @@
 .window-table tbody th { font-weight: var(--font-weight-plain); }
 .window-table .window-spacer,
 .window-table .window-spacer:hover { cursor: default; background: none; }
-/* A spacer stands for the rows that are not rendered: its one cell has their height and nothing else. */
-.window-table .window-spacer td { padding: 0; border: 0; }
+/* A spacer stands for the rows that are not rendered: its one cell holds an empty drawing of their height and nothing else. */
+.window-table .window-spacer td { height: auto; padding: 0; border: 0; }
+.window-table .window-spacer svg { display: block; }
 .workbench .row-open {
   display: block;
   width: 100%;
