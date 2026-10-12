@@ -114,7 +114,61 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
     onOpen(caseId);
   }
 
-  const shown = cases.slice(first, end);
+  /** The rows to render: those in view, and the current row wherever it is, so that it keeps the focus. */
+  const indexes: number[] = [];
+  if (cases.length > 0 && active < first) indexes.push(active);
+  for (let index = first; index < end; index += 1) indexes.push(index);
+  if (cases.length > 0 && active >= end && active < cases.length) indexes.push(active);
+
+  function row(index: number) {
+    const summary = cases[index];
+    const open = summary.case_id === openCaseId;
+    return (
+      <tr
+        key={summary.case_id}
+        aria-rowindex={index + 2}
+        className={open ? "selected" : undefined}
+        onClick={(event) => openFromRow(event, summary.case_id, index)}
+      >
+        <th scope="row">
+          <button
+            type="button"
+            className="row-open"
+            tabIndex={index === active ? 0 : -1}
+            aria-current={open ? "true" : undefined}
+            title={summary.case_id}
+            ref={(element) => {
+              if (element) controls.set(index, element);
+              else controls.delete(index);
+            }}
+            onFocus={() => setActive(index)}
+            onKeyDown={(event) => onKeyDown(event, index)}
+            onClick={() => {
+              setActive(index);
+              onOpen(summary.case_id);
+            }}
+          >
+            {summary.case_id}
+          </button>
+        </th>
+        <td className="number">{summary.record_count}</td>
+        <td className="number">{summary.mapped_record_count}</td>
+        <td className="number">{summary.omitted_activity_record_count}</td>
+        <td>{summary.sequence_evaluable ? "By time" : <span className="flag">Not fully known</span>}</td>
+      </tr>
+    );
+  }
+
+  /** Rendered rows with spacers of the height of the rows between them, so every row keeps its place. */
+  const body = [];
+  let next = 0;
+  for (const index of indexes) {
+    if (index > next) body.push(<tr key={`gap-${next}`} className="window-spacer" aria-hidden="true" style={{ height: (index - next) * ROW_HEIGHT }} />);
+    body.push(row(index));
+    next = index + 1;
+  }
+  if (next < cases.length) body.push(<tr key={`gap-${next}`} className="window-spacer" aria-hidden="true" style={{ height: (cases.length - next) * ROW_HEIGHT }} />);
+
   return (
     <div
       className="window-scroll"
@@ -132,48 +186,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
           </tr>
         </thead>
         <tbody>
-          {first > 0 && <tr className="window-spacer" aria-hidden="true" style={{ height: first * ROW_HEIGHT }} />}
-          {shown.map((summary, offset) => {
-            const index = first + offset;
-            const open = summary.case_id === openCaseId;
-            return (
-              <tr
-                key={summary.case_id}
-                aria-rowindex={index + 2}
-                className={open ? "selected" : undefined}
-                onClick={(event) => openFromRow(event, summary.case_id, index)}
-              >
-                <th scope="row">
-                  <button
-                    type="button"
-                    className="row-open"
-                    tabIndex={index === active ? 0 : -1}
-                    aria-current={open ? "true" : undefined}
-                    title={summary.case_id}
-                    ref={(element) => {
-                      if (element) controls.set(index, element);
-                      else controls.delete(index);
-                    }}
-                    onFocus={() => setActive(index)}
-                    onKeyDown={(event) => onKeyDown(event, index)}
-                    onClick={() => {
-                      setActive(index);
-                      onOpen(summary.case_id);
-                    }}
-                  >
-                    {summary.case_id}
-                  </button>
-                </th>
-                <td className="number">{summary.record_count}</td>
-                <td className="number">{summary.mapped_record_count}</td>
-                <td className="number">{summary.omitted_activity_record_count}</td>
-                <td>{summary.sequence_evaluable ? "By time" : <span className="flag">Not fully known</span>}</td>
-              </tr>
-            );
-          })}
-          {end < cases.length && (
-            <tr className="window-spacer" aria-hidden="true" style={{ height: (cases.length - end) * ROW_HEIGHT }} />
-          )}
+          {body}
         </tbody>
       </table>
     </div>

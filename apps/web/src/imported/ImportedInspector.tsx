@@ -19,7 +19,7 @@ interface ImportedInspectorProps {
 export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, headingRef }: ImportedInspectorProps) {
   const collapsed = layout === "collapsed";
   return (
-    <section className="inspector imported-inspector" aria-labelledby="imported-inspector-title">
+    <section className="imported-inspector" aria-labelledby="imported-inspector-title">
       <div className="inspector-head">
         <div>
           <h2 id="imported-inspector-title" tabIndex={-1} ref={headingRef}>

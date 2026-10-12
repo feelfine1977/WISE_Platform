@@ -87,18 +87,24 @@ describe("the investigation of an imported preparation", () => {
     expect(focusedText()).toBe("INC-00000");
   });
 
-  it("follows scrolling by rendering the rows that come into view", async () => {
+  it("follows scrolling by rendering the rows that come into view, and keeps the focused row", async () => {
     const app = renderInvestigation();
     await deliver(() => app.populations[0].reply({ ok: true, answer: populationAnswer(app.populations[0].request, caseSummaries(40000)) }));
     const scroller = screen.getByRole("table", { name: "Incidents of this preparation" }).parentElement!;
+    await app.user.tab();
+    await app.user.tab();
+    await app.user.keyboard("{End}");
+    expect(focusedText()).toBe("INC-39999");
 
     Object.defineProperty(scroller, "scrollTop", { configurable: true, value: 32 * 20000 });
     fireEvent.scroll(scroller);
 
     const shown = shownIncidents();
-    expect(shown[0]).toBe("INC-19992");
-    expect(shown).toContain("INC-20014");
-    expect(shown).not.toContain("INC-00000");
+    // 8 rows above the view, the 15 in view and 8 below, and the focused row in its own place.
+    expect(shown).toEqual([...caseSummaries(20023).slice(19992).map((item) => item.case_id), "INC-39999"]);
+    expect(focusedText()).toBe("INC-39999");
+    await app.user.keyboard("{Enter}");
+    expect(app.evidence[0].request.case_id).toBe("INC-39999");
   });
 
   it("shows every record of an incident: missing cells as missing, distinct from the text Unknown", async () => {

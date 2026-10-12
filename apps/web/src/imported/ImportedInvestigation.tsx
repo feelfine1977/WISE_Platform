@@ -162,7 +162,7 @@ function PreparationDetails({ answer }: { answer: ImportedPopulationAnswer }) {
     ["Request", answer.request_id],
   ];
   return (
-    <details className="data-details">
+    <details className="preparation-details">
       <summary>Data details</summary>
       <dl className="pairs">
         {rows.map(([label, value]) => (
