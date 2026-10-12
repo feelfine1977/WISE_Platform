@@ -2,7 +2,7 @@
 export function Missing({ written }: { written: string }) {
   return (
     <span className="missing">
-      Missing<span className="visually-hidden">{written === "" ? " value: the source cell is empty" : " value"}</span>
+      missing<span className="visually-hidden">{written === "" ? " value: the source cell is empty" : " value"}</span>
       {written !== "" && <span className="written"> written as “{written}”</span>}
     </span>
   );

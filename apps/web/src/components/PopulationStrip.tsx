@@ -1,46 +1,51 @@
 import type { ExampleId, InputPolicies, PopulationAnswer, PopulationPartition, PopulationSupport } from "../generated/investigation";
 import type { PopulationState } from "../investigation/coordinator";
 import { defaultExampleId, exampleIds } from "../investigation/policies";
-import { countOf, partitionLabel, utcInstant } from "../investigation/wording";
+import { countOf, countParts, partitionLabel } from "../investigation/wording";
 
 interface PopulationStripProps {
   population: PopulationState;
+  /** Whether a request of the current question is still unanswered. */
+  pending: boolean;
   onChooseExample: (exampleId: ExampleId) => void;
 }
 
-/** Source, population and status of the current question in one horizontal strip. */
-export function PopulationStrip({ population, onChooseExample }: PopulationStripProps) {
+/** The toolbar of the current question: where it is, its source, its status and the supplied facts. */
+export function PopulationStrip({ population, pending, onChooseExample }: PopulationStripProps) {
   const exampleId = population.phase === "idle" ? defaultExampleId : population.exampleId;
   const answer = population.phase === "ready" ? population.answer : null;
   return (
-    <section className="strip" aria-label="Source and population">
-      <div className="strip-row">
-        <div className="strip-group strip-source">
-          <label className="strip-label" htmlFor="example-select">Source</label>
+    <section className="toolbar" aria-label="Source and population">
+      <div className="toolbar-row">
+        <div className="crumb">
+          <span>Investigations</span>
+          <span aria-hidden="true">/</span>
+          <h1>Incident investigation</h1>
+        </div>
+        <div className="source-control">
+          <label className="label" htmlFor="example-select">Source</label>
           <select id="example-select" value={exampleId} onChange={(event) => onChooseExample(event.target.value as ExampleId)}>
             {exampleIds.map((id) => (
               <option key={id} value={id}>Synthetic example {id}</option>
             ))}
           </select>
-          {answer && (
-            <p className="source-label">
-              <span className="tag">Synthetic</span> {answer.source.label}
-              <span className="muted"> · snapshot cutoff {utcInstant(answer.source.snapshot_cutoff_utc)}</span>
-            </p>
-          )}
         </div>
-        <div className="strip-group strip-population">
-          <h2 className="strip-label">Population</h2>
-          {answer ? <PopulationCounts answer={answer} /> : <p className="muted">No population is shown until the current request is answered.</p>}
-        </div>
-        <div className="strip-group strip-status">
-          <span className="strip-label" id="status-label">Status</span>
+        <div className="status-group">
+          <span className="label" id="status-label">Status</span>
           <p role="status" aria-labelledby="status-label" className={`status status-${population.phase}`}>
             <StatusText population={population} />
           </p>
         </div>
       </div>
-      {answer && <DataDetails answer={answer} />}
+      {answer ? (
+        <>
+          <PopulationCounts answer={answer} />
+          <DataDetails answer={answer} />
+        </>
+      ) : (
+        <p className="toolbar-note">No population is shown until the current request is answered.</p>
+      )}
+      <div className="progress" hidden={!pending} aria-hidden="true" />
     </section>
   );
 }
@@ -58,13 +63,25 @@ function StatusText({ population }: { population: PopulationState }) {
   }
 }
 
+/** A supplied count as a figure with the unit it counts. */
+function Figure({ count, unit }: { count: number; unit: "incident" | "record" }) {
+  const parts = countParts(count, unit);
+  return (
+    <>
+      <span className="figure">{parts.figure}</span> {parts.unit}
+    </>
+  );
+}
+
 function Count({ label, support }: { label: string; support: PopulationSupport }) {
   return (
-    <div className="count">
-      <dt>{label}</dt>
+    <div className="fact">
+      <dt className="label">{label}</dt>
       <dd>
-        <span className="count-main">{countOf(support.case_count, "incident")}</span>
-        <span className="count-sub">{countOf(support.record_count, "record")}</span>
+        <span className="fact-main">
+          <Figure count={support.case_count} unit="incident" />
+        </span>
+        <span className="fact-sub">{countOf(support.record_count, "record")}</span>
       </dd>
     </div>
   );
@@ -73,20 +90,20 @@ function Count({ label, support }: { label: string; support: PopulationSupport }
 function PopulationCounts({ answer }: { answer: PopulationAnswer }) {
   const { populations, coverage, policies } = answer;
   return (
-    <dl className="counts">
+    <dl className="facts">
       <Count label="Parent population" support={populations.parent} />
       <Count label={partitionLabel("kept", policies)} support={populations.kept} />
       <Count label={partitionLabel("removed", policies)} support={populations.removed} />
       <Count label="Unevaluable" support={populations.unevaluable} />
       <Count label="Outside the parent" support={populations.outside} />
       <Count label="All incidents in the source" support={populations.base} />
-      <div className="count">
-        <dt>Mapped sequence</dt>
+      <div className="fact">
+        <dt className="label">Mapped sequence</dt>
         <dd>
-          <span className="count-main">
-            {countOf(coverage.mapped_record_count, "record")} of {countOf(coverage.raw_record_count, "record")}
+          <span className="fact-main">
+            <Figure count={coverage.mapped_record_count} unit="record" /> of {countOf(coverage.raw_record_count, "record")}
           </span>
-          <span className="count-sub">{countOf(coverage.omitted_activity_record_count, "record")} left out: no activity</span>
+          <span className="fact-sub">{countOf(coverage.omitted_activity_record_count, "record")} left out: no activity</span>
         </dd>
       </div>
     </dl>
@@ -131,8 +148,8 @@ function DataDetails({ answer }: { answer: PopulationAnswer }) {
   ];
   return (
     <details className="data-details">
-      <summary>Data details</summary>
-      <div className="details-grid">
+      <summary className="disclosure">Data details</summary>
+      <div className="details-panel" role="region" aria-label="Data details of the current answer" tabIndex={0}>
         <section aria-labelledby="details-identity">
           <h3 id="details-identity">Identity</h3>
           <dl className="pairs">

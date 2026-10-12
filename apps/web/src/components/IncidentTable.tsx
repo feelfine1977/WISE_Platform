@@ -35,51 +35,57 @@ export function IncidentTable({ answer, openCaseId, onOpen, rowControls }: Incid
 
   return (
     <>
-      <p className="muted section-hint" id="incidents-hint">
+      <p className="pane-hint" id="incidents-hint">
         {countOf(answer.populations.parent.case_count, "incident")} with {countOf(answer.populations.parent.record_count, "record")}.{" "}
         {partitionRule(answer.policies)} Move with Tab or the arrow keys; Enter opens every record of an incident.
       </p>
-      <div className="table-scroll">
-        <table className="incident-table" aria-labelledby="incidents-title" aria-describedby="incidents-hint">
-          <thead>
-            <tr>
-              <th scope="col">Incident</th>
-              <th scope="col" className="number">Records</th>
-              <th scope="col" className="number">Mapped records</th>
-              <th scope="col" className="number">Left out: no activity</th>
-              <th scope="col">Partition</th>
-            </tr>
-          </thead>
-          <tbody>
-            {answer.cases.map((summary, index) => {
-              const open = summary.case_id === openCaseId;
-              return (
-                <tr key={summary.case_id} className={open ? "selected" : undefined} onClick={(event) => openFromRow(event, summary.case_id)}>
-                  <th scope="row">
-                    <button
-                      type="button"
-                      className="row-open"
-                      aria-current={open ? "true" : undefined}
-                      ref={(element) => {
-                        if (element) rowControls.set(summary.case_id, element);
-                        else rowControls.delete(summary.case_id);
-                      }}
-                      onKeyDown={(event) => moveFocus(event, index)}
-                      onClick={() => onOpen(summary.case_id)}
-                    >
-                      {summary.case_id}
-                    </button>
-                  </th>
-                  <td className="number">{summary.record_count}</td>
-                  <td className="number">{summary.mapped_record_count}</td>
-                  <td className="number">{summary.omitted_activity_record_count}</td>
-                  <td>{summary.partition === "kept" ? "Kept" : "Removed"}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <table className="incident-table" aria-labelledby="incidents-title" aria-describedby="incidents-hint">
+        <colgroup>
+          <col />
+          <col className="column-number" />
+          <col className="column-number" />
+          <col className="column-number" />
+          <col className="column-label" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">Incident</th>
+            <th scope="col" className="number">Records</th>
+            <th scope="col" className="number">Mapped records</th>
+            <th scope="col" className="number">Left out: no activity</th>
+            <th scope="col">Partition</th>
+          </tr>
+        </thead>
+        <tbody>
+          {answer.cases.map((summary, index) => {
+            const open = summary.case_id === openCaseId;
+            return (
+              <tr key={summary.case_id} className={open ? "selected" : undefined} onClick={(event) => openFromRow(event, summary.case_id)}>
+                <th scope="row">
+                  <button
+                    type="button"
+                    className="row-open identifier"
+                    title={summary.case_id}
+                    aria-current={open ? "true" : undefined}
+                    ref={(element) => {
+                      if (element) rowControls.set(summary.case_id, element);
+                      else rowControls.delete(summary.case_id);
+                    }}
+                    onKeyDown={(event) => moveFocus(event, index)}
+                    onClick={() => onOpen(summary.case_id)}
+                  >
+                    {summary.case_id}
+                  </button>
+                </th>
+                <td className="number">{summary.record_count}</td>
+                <td className="number">{summary.mapped_record_count}</td>
+                <td className="number">{summary.omitted_activity_record_count}</td>
+                <td>{summary.partition === "kept" ? "Kept" : "Removed"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </>
   );
 }

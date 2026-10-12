@@ -101,8 +101,8 @@ describe("the investigation screen", () => {
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Incident INC02" }));
 
     await deliver(() => scripted.cases[0].reply({ ok: true, answer: evidenceZero(request) }));
-    const records = screen.getByRole("table", { name: /Every record of incident INC02/ });
-    expect(within(records).getAllByRole("row")).toHaveLength(3);
+    const records = screen.getByRole("list", { name: /Every record of incident INC02/ });
+    expect(within(records).getAllByRole("listitem")).toHaveLength(2);
 
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("heading", { name: "Incident INC02" })).toBeNull();
@@ -156,14 +156,14 @@ describe("the investigation screen", () => {
     const alert = screen.getByRole("alert");
     expect(alert.textContent).toContain("The records of INC01 could not be shown");
     expect(alert.textContent).toContain("The source changed since the population was opened.");
-    expect(screen.queryByRole("table", { name: /Every record/ })).toBeNull();
+    expect(screen.queryByRole("list", { name: /Every record/ })).toBeNull();
 
     await user.click(within(alert).getByRole("button", { name: "Try again" }));
     expect(scripted.cases).toHaveLength(2);
     expect(scripted.cases[1].request.case_id).toBe("INC01");
     await deliver(() => scripted.cases[1].reply({ ok: true, answer: evidenceZero(scripted.cases[1].request) }));
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByRole("table", { name: /Every record of incident INC01/ })).toBeTruthy();
+    expect(screen.getByRole("list", { name: /Every record of incident INC01/ })).toBeTruthy();
   });
 
   it("does not let a late success of an older revision replace the current population", async () => {
@@ -235,7 +235,7 @@ describe("the investigation screen", () => {
     );
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByRole("heading", { name: "Incident INC03" })).toBeTruthy();
-    expect(screen.getByRole("table", { name: /Every record of incident INC03/ })).toBeTruthy();
+    expect(screen.getByRole("list", { name: /Every record of incident INC03/ })).toBeTruthy();
 
     // A history requested under a revision that is no longer current.
     await user.click(screen.getByRole("button", { name: "INC01" }));
@@ -272,31 +272,73 @@ describe("the investigation screen", () => {
     await user.click(screen.getByRole("button", { name: "INC03" }));
     await deliver(() => scripted.cases[0].reply({ ok: true, answer: evidenceZero(scripted.cases[0].request) }));
 
-    expect(document.querySelector(".coverage")?.textContent).toBe(
+    expect(document.querySelector(".inspector-head .coverage")?.textContent).toBe(
       "2 records of this incident · 1 record in the mapped sequence · 1 record left out: no activity",
     );
-    const table = screen.getByRole("table", { name: /Every record of incident INC03/ });
-    const headers = within(table).getAllByRole("columnheader").map((cell) => cell.textContent);
-    const [first, second] = within(table).getAllByRole("row").slice(1);
-    const cell = (row: HTMLElement, header: string) => cellsOf(row)[headers.indexOf(header)];
+    const list = screen.getByRole("list", { name: /Every record of incident INC03/ });
+    const [first, second] = within(list).getAllByRole("listitem");
+    const field = (item: HTMLElement, label: string) => {
+      const term = Array.from(item.querySelectorAll("dt")).find((element) => element.textContent === label);
+      if (!term?.nextElementSibling) throw new Error(`No value named ${label}`);
+      return term.nextElementSibling;
+    };
 
-    expect(cell(first, "Source position").textContent).toBe("5");
-    expect(cell(second, "Source position").textContent).toBe("6");
-    expect(cell(first, "Event").textContent).toBe("e-INC03-01");
+    expect(field(first, "Source position").textContent).toBe("5");
+    expect(field(second, "Source position").textContent).toBe("6");
+    expect(field(first, "Event").textContent).toBe("e-INC03-01");
 
-    const literal = cell(first, "Assignment group");
+    const literal = field(first, "Assignment group");
     expect(literal.textContent).toBe("Unknown");
     expect(literal.querySelector(".missing")).toBeNull();
 
-    for (const header of ["Activity", "Assignment group"]) {
-      const missing = cell(second, header);
+    for (const label of ["Activity", "Assignment group"]) {
+      const missing = field(second, label);
       expect(missing.querySelector(".missing")).not.toBeNull();
-      expect(missing.textContent).toContain("Missing");
+      expect(missing.textContent).toContain("missing");
       expect(missing.textContent).not.toContain("Unknown");
       expect(missing.textContent?.trim()).not.toBe("");
     }
-    expect(cell(first, "Mapped sequence").textContent).toBe("Included");
-    expect(cell(second, "Mapped sequence").textContent).toBe("Left out: no activity");
+    expect(field(first, "Mapped sequence").textContent).toBe("Included");
+    expect(field(second, "Mapped sequence").textContent).toBe("Left out: no activity");
+    expect(second.textContent).toContain("no activity label");
+    expect(second.classList.contains("left-out")).toBe(true);
+    expect(first.classList.contains("left-out")).toBe(false);
+  });
+
+  it("shows the pending line while a request of the current question is unanswered", async () => {
+    const scripted = renderScreen();
+    const { user } = scripted;
+    const line = () => document.querySelector(".progress") as HTMLElement;
+    expect(line().hidden).toBe(false);
+
+    await openPopulationZero(scripted);
+    expect(line().hidden).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "INC01" }));
+    expect(line().hidden).toBe(false);
+    await deliver(() => scripted.cases[0].reply({ ok: false, problem: { kind: "unreachable" } }));
+    expect(line().hidden).toBe(true);
+
+    await user.selectOptions(screen.getByLabelText("Source"), "S1");
+    expect(line().hidden).toBe(false);
+    await deliver(() => scripted.opens[1].reply({ ok: false, problem: { kind: "http", status: 500 } }));
+    expect(line().hidden).toBe(true);
+  });
+
+  it("keeps the full text of an incident id and an activity name that may be shortened", async () => {
+    const scripted = renderScreen();
+    const { user } = scripted;
+    await openPopulationZero(scripted);
+    const row = screen.getByRole("button", { name: "INC03" });
+    expect(row.title).toBe("INC03");
+
+    await user.click(row);
+    await deliver(() => scripted.cases[0].reply({ ok: true, answer: evidenceZero(scripted.cases[0].request) }));
+    const heading = screen.getByRole("heading", { name: "Incident INC03" });
+    expect(heading.querySelector("[title]")?.getAttribute("title")).toBe("INC03");
+    const [opened, unlabelled] = within(screen.getByRole("list", { name: /Every record of incident INC03/ })).getAllByRole("listitem");
+    expect(opened.querySelector(".record-activity")?.getAttribute("title")).toBe("Opened");
+    expect(unlabelled.querySelector(".record-activity")?.hasAttribute("title")).toBe(false);
   });
 
   it("says investigations are not available when the local service does not offer them, and retries", async () => {

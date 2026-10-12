@@ -9,7 +9,8 @@ import type { HealthResponse } from "./generated/health";
 import type { CaseId } from "./generated/investigation";
 import { httpInvestigationClient, type InvestigationClient } from "./investigation/client";
 import { InvestigationCoordinator, type PopulationState } from "./investigation/coordinator";
-import { countOf } from "./investigation/wording";
+import { defaultExampleId } from "./investigation/policies";
+import { countOf, utcInstant } from "./investigation/wording";
 
 interface AppProps {
   client?: InvestigationClient;
@@ -74,19 +75,20 @@ export default function App({ client = httpInvestigationClient, checkHealth = fe
 
   return (
     <div className="app">
-      <header className="app-header">
-        <div className="brand">
-          <span className="brand-mark" aria-hidden="true">W</span>
-          <span className="brand-name">WISE Platform</span>
-        </div>
-        <h1>Incident investigation</h1>
+      <header className="app-bar">
+        <span className="app-name">WISE Platform</span>
+        <SourceLine population={population} />
         <ServiceStatus checkHealth={checkHealth} />
       </header>
       <main className="investigation">
-        <PopulationStrip population={population} onChooseExample={(exampleId) => coordinator.openExample(exampleId)} />
+        <PopulationStrip
+          population={population}
+          pending={population.phase === "loading" || inspected.phase === "loading"}
+          onChooseExample={(exampleId) => coordinator.openExample(exampleId)}
+        />
         <div className="work" data-inspector={inspectorOpen ? layout : "none"}>
           <section className="incidents" aria-labelledby="incidents-title">
-            <h2 id="incidents-title" className="section-title" tabIndex={-1} ref={incidentsHeading}>
+            <h2 id="incidents-title" className="pane-title" tabIndex={-1} ref={incidentsHeading}>
               Incidents in the parent population
             </h2>
             <IncidentArea
@@ -115,6 +117,21 @@ export default function App({ client = httpInvestigationClient, checkHealth = fe
   );
 }
 
+/** The source of the current question as quiet text in the app bar. */
+function SourceLine({ population }: { population: PopulationState }) {
+  if (population.phase !== "ready") {
+    const exampleId = population.phase === "idle" ? defaultExampleId : population.exampleId;
+    return <p className="app-source">Synthetic example {exampleId}</p>;
+  }
+  const { label, snapshot_cutoff_utc } = population.answer.source;
+  const cutoff = `snapshot cutoff ${utcInstant(snapshot_cutoff_utc)}`;
+  return (
+    <p className="app-source" title={`${label} · ${cutoff}`}>
+      <span>{label}</span> · {cutoff}
+    </p>
+  );
+}
+
 interface IncidentAreaProps {
   population: PopulationState;
   openCaseId: CaseId | null;
@@ -128,13 +145,13 @@ function IncidentArea({ population, openCaseId, onOpen, onRetry, rowControls }: 
   switch (population.phase) {
     case "idle":
     case "loading":
-      return <p className="pending">Opening the synthetic example and its population…</p>;
+      return <p className="pane-note">Opening the synthetic example and its population…</p>;
     case "failed":
       return <ProblemNotice title="The population could not be opened" problem={population.problem} onRetry={onRetry} />;
     case "ready":
       if (population.answer.cases.length === 0) {
         return (
-          <p className="pending">
+          <p className="pane-note">
             The local service answered with {countOf(population.answer.populations.parent.case_count, "incident")} in the parent
             population, so there is no incident to open.
           </p>

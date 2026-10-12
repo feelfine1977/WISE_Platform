@@ -1,7 +1,7 @@
-import type { RefObject } from "react";
-import type { CaseEvidenceAnswer, CaseSummary, InputPolicies } from "../generated/investigation";
+import type { ReactNode, RefObject } from "react";
+import type { CaseEvidenceAnswer, CaseSummary, InputPolicies, SourceRecord } from "../generated/investigation";
 import type { InspectedCaseState } from "../investigation/coordinator";
-import { countOf, partitionLabel } from "../investigation/wording";
+import { countOf, partitionLabel, utcInstant } from "../investigation/wording";
 import { ProblemNotice } from "./ProblemNotice";
 import { Value } from "./Values";
 
@@ -25,14 +25,15 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
   return (
     <section className="inspector" aria-labelledby="inspector-title">
       <div className="inspector-head">
-        <div>
+        <div className="inspector-heading">
           <h2 id="inspector-title" tabIndex={-1} ref={headingRef}>
-            Incident {inspected.caseId}
+            Incident <span className="identifier truncated" title={inspected.caseId}>{inspected.caseId}</span>
           </h2>
-          <p className="muted">
+          <p className="inspector-note">
             {summary && <>{partitionLabel(summary.partition, policies)} · </>}
             Complete history in the declared order. Escape returns to the incidents.
           </p>
+          {inspected.phase === "ready" && <Coverage coverage={inspected.answer.coverage} />}
         </div>
         <div className="inspector-actions">
           <button type="button" aria-expanded={!collapsed} aria-controls="inspector-body" onClick={() => onLayout(collapsed ? "side" : "collapsed")}>
@@ -48,9 +49,9 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
           </button>
         </div>
       </div>
-      <div id="inspector-body" hidden={collapsed}>
+      <div id="inspector-body" className="inspector-body" hidden={collapsed}>
         {inspected.phase === "loading" && (
-          <p role="status" className="pending">
+          <p role="status" className="pane-note">
             Loading every record of {inspected.caseId}…
           </p>
         )}
@@ -63,81 +64,74 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
   );
 }
 
+/** The supplied counts of the incident's records. */
+function Coverage({ coverage }: { coverage: CaseEvidenceAnswer["coverage"] }) {
+  return (
+    <p className="coverage">
+      <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this incident ·{" "}
+      {countOf(coverage.mapped_record_count, "record")} in the mapped sequence ·{" "}
+      {countOf(coverage.omitted_activity_record_count, "record")} left out: no activity
+    </p>
+  );
+}
+
 function Records({ answer }: { answer: CaseEvidenceAnswer }) {
-  const { coverage } = answer;
   const mapped = new Set(answer.mapped_row_ids);
   const omitted = new Set(answer.omitted_activity_row_ids);
   return (
-    <>
-      <p className="coverage">
-        <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this incident ·{" "}
-        {countOf(coverage.mapped_record_count, "record")} in the mapped sequence ·{" "}
-        {countOf(coverage.omitted_activity_record_count, "record")} left out: no activity
-      </p>
-      <div className="table-scroll" role="region" aria-labelledby="inspector-title" tabIndex={0}>
-        <table className="record-table">
-          <caption className="visually-hidden">Every record of incident {answer.case_id} in the declared order</caption>
-          <thead>
-            <tr>
-              <th scope="col" className="number">Order</th>
-              <th scope="col" className="number">Source position</th>
-              <th scope="col">Event</th>
-              <th scope="col" className="number">Sequence</th>
-              <th scope="col">Timestamp (UTC)</th>
-              <th scope="col">Activity</th>
-              <th scope="col">Service</th>
-              <th scope="col">Assignment group</th>
-              <th scope="col">Mapped sequence</th>
-            </tr>
-          </thead>
-          <tbody>
-            {answer.records.map((record, index) => {
-              const written = record.original_values;
-              const membership = mapped.has(record.row_id)
-                ? "Included"
-                : omitted.has(record.row_id)
-                  ? "Left out: no activity"
-                  : "Not stated";
-              return (
-                <tr key={record.row_id} className={omitted.has(record.row_id) ? "left-out" : undefined}>
-                  <td className="number">{index + 1}</td>
-                  <td className="number">{record.source_position}</td>
-                  <th scope="row">
-                    <Value interpreted={record.source_event_id} written={written.source_event_id} />
-                  </th>
-                  <td className="number">
-                    <Value interpreted={record.source_sequence} written={written.source_sequence} />
-                  </td>
-                  <td>
-                    <Value interpreted={record.timestamp_utc} written={written.timestamp_utc} />
-                  </td>
-                  <td>
-                    <Value interpreted={record.activity} written={written.activity} />
-                  </td>
-                  <td>
-                    <Value interpreted={record.service} written={written.service} />
-                  </td>
-                  <td>
-                    <Value interpreted={record.assignment_group} written={written.assignment_group} />
-                  </td>
-                  <td>{membership}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <details className="row-identities">
-        <summary>Record identities</summary>
-        <dl className="pairs">
-          {answer.records.map((record) => (
-            <div key={record.row_id}>
-              <dt>Source position {record.source_position}</dt>
-              <dd><code>{record.row_id}</code></dd>
-            </div>
-          ))}
-        </dl>
-      </details>
-    </>
+    <ol className="sequence" aria-label={`Every record of incident ${answer.case_id} in the declared order`}>
+      {answer.records.map((record) => {
+        const membership = mapped.has(record.row_id)
+          ? "Included"
+          : omitted.has(record.row_id)
+            ? "Left out: no activity"
+            : "Not stated";
+        return (
+          <li key={record.row_id} className={omitted.has(record.row_id) ? "record left-out" : "record"}>
+            <p className="record-activity" title={record.activity ?? undefined}>
+              {record.activity === null ? (
+                <span className="no-label">no activity label</span>
+              ) : (
+                <Value interpreted={record.activity} written={record.original_values.activity} />
+              )}
+            </p>
+            <RecordValues record={record} membership={membership} />
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** When and where the record was written; every value of it, as interpreted and as written, on demand. */
+function RecordValues({ record, membership }: { record: SourceRecord; membership: string }) {
+  const written = record.original_values;
+  const rows: [string, ReactNode][] = [
+    ["Source position", record.source_position],
+    ["Event", <Value interpreted={record.source_event_id} written={written.source_event_id} />],
+    ["Sequence", <Value interpreted={record.source_sequence} written={written.source_sequence} />],
+    ["Timestamp (UTC)", <Value interpreted={record.timestamp_utc} written={written.timestamp_utc} />],
+    ["Activity", <Value interpreted={record.activity} written={written.activity} />],
+    ["Service", <Value interpreted={record.service} written={written.service} />],
+    ["Assignment group", <Value interpreted={record.assignment_group} written={written.assignment_group} />],
+    ["Mapped sequence", membership],
+    ["Record identity", <code>{record.row_id}</code>],
+  ];
+  return (
+    <details className="record-values">
+      <summary className="record-meta">
+        {utcInstant(record.timestamp_utc)} · source position {record.source_position} · {membership}
+        {" · "}
+        <span className="values-cue">values</span>
+      </summary>
+      <dl className="value-list">
+        {rows.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
   );
 }
