@@ -1,0 +1,8 @@
+incident_id,source_event_id,source_sequence,activity,timestamp_utc,service,assignment_group
+BOUNDARY3,e-BOUNDARY3-01,1,Opened,2026-10-01T09:00:00Z,S,Synthetic
+BOUNDARY3,e-BOUNDARY3-02,2,Resolved,2026-10-01T12:00:00Z,S,Synthetic
+BOUNDARY4,e-BOUNDARY4-01,1,Opened,2026-10-01T09:00:00Z,S,Synthetic
+BOUNDARY4,e-BOUNDARY4-02,2,Resolved,2026-10-01T13:00:00Z,S,Synthetic
+BOUNDARY5,e-BOUNDARY5-01,1,Opened,2026-10-01T09:00:00Z,S,Synthetic
+BOUNDARY5,e-BOUNDARY5-02,2,Resolved,2026-10-01T14:00:00Z,S,Synthetic
+BOUNDARYMISSING,e-BOUNDARYMISSING-01,1,Opened,2026-10-01T09:00:00Z,S,Synthetic

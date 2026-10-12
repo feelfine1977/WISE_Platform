@@ -6,5 +6,7 @@
   "parent": "incident.parent.all_service_s_and_has_opened.v1",
   "predicate": "incident.predicate.has_recorded_resolved.v1",
   "comparison": "incident.comparison.target_removed_reference_kept.v1",
-  "nullable_measure": "incident.measure.unevaluable_separate_from_true_false.v1"
+  "nullable_measure": "incident.measure.unevaluable_separate_from_true_false.v1",
+  "missing_values": "incident.missing.empty_activity_context_cells.v1",
+  "clock": "incident.clock.elapsed_utc_hours.v1"
 }

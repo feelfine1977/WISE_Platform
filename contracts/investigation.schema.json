@@ -1,0 +1,1020 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/investigation.v1.schema.json",
+  "title": "InvestigationMessage",
+  "description": "Closed version 1 synthetic population and complete-case evidence boundary.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/OpenExampleRequest"
+    },
+    {
+      "$ref": "#/$defs/PopulationAnswer"
+    },
+    {
+      "$ref": "#/$defs/CaseEvidenceRequest"
+    },
+    {
+      "$ref": "#/$defs/CaseEvidenceAnswer"
+    },
+    {
+      "$ref": "#/$defs/Refusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1
+    },
+    "ExampleId": {
+      "title": "ExampleId",
+      "type": "string",
+      "enum": [
+        "S0",
+        "S1",
+        "S2",
+        "S3"
+      ]
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "UtcInstant": {
+      "title": "UtcInstant",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RowId": {
+      "title": "RowId",
+      "type": "string",
+      "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "OrderPolicy": {
+      "title": "OrderPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.order.timestamp_sequence_source_position.v1"
+        },
+        "parameters": {
+          "title": "OrderPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "primary": {
+              "type": "string",
+              "const": "timestamp_utc_ascending"
+            },
+            "secondary": {
+              "type": "string",
+              "const": "source_sequence_ascending"
+            },
+            "tie_breaker": {
+              "type": "string",
+              "const": "source_position_ascending"
+            }
+          },
+          "required": [
+            "primary",
+            "secondary",
+            "tie_breaker"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ActivityProjectionPolicy": {
+      "title": "ActivityProjectionPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.activity.omit_missing_retain_raw_gaps.v1"
+        },
+        "parameters": {
+          "title": "ActivityProjectionPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "missing_activity": {
+              "type": "string",
+              "const": "omit_from_mapped_sequence"
+            },
+            "raw_records": {
+              "type": "string",
+              "const": "retain_all"
+            },
+            "gap_evidence": {
+              "type": "string",
+              "const": "omitted_row_ids"
+            }
+          },
+          "required": [
+            "missing_activity",
+            "raw_records",
+            "gap_evidence"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ContextProjectionPolicy": {
+      "title": "ContextProjectionPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.context.first_opened_assignment_group_retain_missing.v1"
+        },
+        "parameters": {
+          "title": "ContextProjectionPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "anchor_activity": {
+              "type": "string",
+              "const": "Opened"
+            },
+            "anchor_occurrence": {
+              "type": "string",
+              "const": "first_in_declared_order"
+            },
+            "attribute": {
+              "type": "string",
+              "const": "assignment_group"
+            },
+            "missing_at_anchor": {
+              "type": "string",
+              "const": "retain"
+            }
+          },
+          "required": [
+            "anchor_activity",
+            "anchor_occurrence",
+            "attribute",
+            "missing_at_anchor"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ParentPolicy": {
+      "title": "ParentPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.parent.all_service_s_and_has_opened.v1"
+        },
+        "parameters": {
+          "title": "ParentPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "service": {
+              "type": "string",
+              "const": "S"
+            },
+            "service_quantifier": {
+              "type": "string",
+              "const": "all_records"
+            },
+            "contains_activity": {
+              "type": "string",
+              "const": "Opened"
+            }
+          },
+          "required": [
+            "service",
+            "service_quantifier",
+            "contains_activity"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "PredicatePolicy": {
+      "title": "PredicatePolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.predicate.has_recorded_resolved.v1"
+        },
+        "parameters": {
+          "title": "PredicatePolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "contains_activity": {
+              "type": "string",
+              "const": "Resolved"
+            },
+            "semantics": {
+              "type": "string",
+              "const": "recorded_event_presence"
+            }
+          },
+          "required": [
+            "contains_activity",
+            "semantics"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ComparisonPolicy": {
+      "title": "ComparisonPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.comparison.target_removed_reference_kept.v1"
+        },
+        "parameters": {
+          "title": "ComparisonPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "target": {
+              "type": "string",
+              "const": "removed"
+            },
+            "comparator": {
+              "type": "string",
+              "const": "kept"
+            }
+          },
+          "required": [
+            "target",
+            "comparator"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "MissingValuePolicy": {
+      "title": "MissingValuePolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.missing.empty_activity_context_cells.v1"
+        },
+        "parameters": {
+          "title": "MissingValuePolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "activity_empty_cell": {
+              "type": "string",
+              "const": "missing"
+            },
+            "assignment_group_empty_cell": {
+              "type": "string",
+              "const": "missing"
+            },
+            "literal_Unknown": {
+              "type": "string",
+              "const": "value"
+            }
+          },
+          "required": [
+            "activity_empty_cell",
+            "assignment_group_empty_cell",
+            "literal_Unknown"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ClockPolicy": {
+      "title": "ClockPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.clock.elapsed_utc_hours.v1"
+        },
+        "parameters": {
+          "title": "ClockPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "timestamp_field": {
+              "type": "string",
+              "const": "timestamp_utc"
+            },
+            "timezone": {
+              "type": "string",
+              "const": "UTC"
+            },
+            "unit": {
+              "type": "string",
+              "const": "hours"
+            }
+          },
+          "required": [
+            "timestamp_field",
+            "timezone",
+            "unit"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "NullableMeasurePolicy": {
+      "title": "NullableMeasurePolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.measure.unevaluable_separate_from_true_false.v1"
+        },
+        "parameters": {
+          "title": "NullableMeasurePolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "missing_endpoint": {
+              "type": "string",
+              "const": "unevaluable"
+            },
+            "missing_as_false": {
+              "type": "boolean",
+              "const": false
+            }
+          },
+          "required": [
+            "missing_endpoint",
+            "missing_as_false"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "InputPolicies": {
+      "title": "InputPolicies",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "order": {
+          "$ref": "#/$defs/OrderPolicy"
+        },
+        "activity_projection": {
+          "$ref": "#/$defs/ActivityProjectionPolicy"
+        },
+        "context_projection": {
+          "$ref": "#/$defs/ContextProjectionPolicy"
+        },
+        "parent": {
+          "$ref": "#/$defs/ParentPolicy"
+        },
+        "predicate": {
+          "$ref": "#/$defs/PredicatePolicy"
+        },
+        "comparison": {
+          "$ref": "#/$defs/ComparisonPolicy"
+        },
+        "missing_values": {
+          "$ref": "#/$defs/MissingValuePolicy"
+        },
+        "clock": {
+          "$ref": "#/$defs/ClockPolicy"
+        },
+        "nullable_measure": {
+          "$ref": "#/$defs/NullableMeasurePolicy"
+        }
+      },
+      "required": [
+        "order",
+        "activity_projection",
+        "context_projection",
+        "parent",
+        "predicate",
+        "comparison",
+        "missing_values",
+        "clock",
+        "nullable_measure"
+      ]
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "PopulationSupport": {
+      "title": "PopulationSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count"
+      ]
+    },
+    "PopulationPartition": {
+      "title": "PopulationPartition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "parent": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "kept": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "removed": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "outside": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "base",
+        "parent",
+        "kept",
+        "removed",
+        "unevaluable",
+        "outside"
+      ]
+    },
+    "CaseSummary": {
+      "title": "CaseSummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mapped_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_activity_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "partition": {
+          "type": "string",
+          "enum": [
+            "kept",
+            "removed"
+          ]
+        }
+      },
+      "required": [
+        "case_id",
+        "record_count",
+        "mapped_record_count",
+        "omitted_activity_record_count",
+        "partition"
+      ]
+    },
+    "Coverage": {
+      "title": "Coverage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "raw_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mapped_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_activity_record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "raw_record_count",
+        "mapped_record_count",
+        "omitted_activity_record_count"
+      ]
+    },
+    "SyntheticSource": {
+      "title": "SyntheticSource",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "example_id": {
+          "$ref": "#/$defs/ExampleId"
+        },
+        "synthetic": {
+          "type": "boolean",
+          "const": true
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "snapshot_cutoff_utc": {
+          "$ref": "#/$defs/UtcInstant"
+        }
+      },
+      "required": [
+        "example_id",
+        "synthetic",
+        "label",
+        "snapshot_cutoff_utc"
+      ]
+    },
+    "OriginalValues": {
+      "title": "OriginalValues",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "incident_id": {
+          "type": "string"
+        },
+        "source_event_id": {
+          "type": "string"
+        },
+        "source_sequence": {
+          "type": "string"
+        },
+        "activity": {
+          "type": "string"
+        },
+        "timestamp_utc": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "assignment_group": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "incident_id",
+        "source_event_id",
+        "source_sequence",
+        "activity",
+        "timestamp_utc",
+        "service",
+        "assignment_group"
+      ]
+    },
+    "SourceRecord": {
+      "title": "SourceRecord",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "source_position": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "activity": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "timestamp_utc": {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        "service": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assignment_group": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "original_values": {
+          "$ref": "#/$defs/OriginalValues"
+        }
+      },
+      "required": [
+        "row_id",
+        "source_position",
+        "source_event_id",
+        "source_sequence",
+        "activity",
+        "timestamp_utc",
+        "service",
+        "assignment_group",
+        "original_values"
+      ]
+    },
+    "OpenExampleRequest": {
+      "title": "OpenExampleRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "open_example_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "example_id": {
+          "$ref": "#/$defs/ExampleId"
+        },
+        "policies": {
+          "$ref": "#/$defs/InputPolicies"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "example_id",
+        "policies"
+      ]
+    },
+    "PopulationAnswer": {
+      "title": "PopulationAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "population_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "source": {
+          "$ref": "#/$defs/SyntheticSource"
+        },
+        "policies": {
+          "$ref": "#/$defs/InputPolicies"
+        },
+        "populations": {
+          "$ref": "#/$defs/PopulationPartition"
+        },
+        "coverage": {
+          "$ref": "#/$defs/Coverage"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseSummary"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "identity",
+        "source",
+        "policies",
+        "populations",
+        "coverage",
+        "cases"
+      ]
+    },
+    "CaseEvidenceRequest": {
+      "title": "CaseEvidenceRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "case_evidence_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "identity",
+        "case_id"
+      ]
+    },
+    "CaseEvidenceAnswer": {
+      "title": "CaseEvidenceAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "case_evidence_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "coverage": {
+          "$ref": "#/$defs/Coverage"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SourceRecord"
+          },
+          "minItems": 1
+        },
+        "mapped_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          },
+          "uniqueItems": true
+        },
+        "omitted_activity_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "identity",
+        "case_id",
+        "coverage",
+        "records",
+        "mapped_row_ids",
+        "omitted_activity_row_ids"
+      ]
+    },
+    "Refusal": {
+      "title": "Refusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "open_example",
+            "case_evidence"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "invalid_request",
+            "source_unavailable",
+            "malformed_source",
+            "case_not_found",
+            "case_not_in_population",
+            "identity_mismatch",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

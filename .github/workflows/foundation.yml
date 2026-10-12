@@ -37,7 +37,7 @@ jobs:
       - name: Generate contract models and types
         run: npm run generate
       - name: Verify reproducible contract generation
-        run: git diff --exit-code -- apps/api/src/wise_platform_api/generated/health.py apps/web/src/generated/health.ts
+        run: git diff --exit-code -- apps/api/src/wise_platform_api/generated apps/web/src/generated
       - name: Check browser and contract types
         run: npm run check
       - name: Build the local browser assets

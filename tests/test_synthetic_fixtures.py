@@ -123,7 +123,7 @@ def test_named_policy_registry_is_machine_readable_and_versioned():
     registry = json.loads((FIXTURES / 'policy_ids.json').read_text(encoding='utf-8'))
     assert registry.pop('schema_version') == 1
     assert set(registry) == {'order', 'activity_projection', 'context_projection',
-                             'parent', 'predicate', 'comparison', 'nullable_measure'}
+                             'parent', 'predicate', 'comparison', 'nullable_measure', 'missing_values', 'clock'}
     assert len(set(registry.values())) == len(registry)
     assert all(re.fullmatch(r'incident\.[a-z0-9_.]+\.v1', value) for value in registry.values())
     assert registry['comparison'] == 'incident.comparison.target_removed_reference_kept.v1'
