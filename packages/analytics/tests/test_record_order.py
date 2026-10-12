@@ -4,7 +4,7 @@ from wise_platform_analytics.ordering import order_records
 from wise_platform_analytics.parsing import ParsedSource, parse_source
 from wise_platform_analytics.policies import REGISTRY, PolicyChoice
 from wise_platform_analytics.projection import omitted_from_mapped_sequence
-from wise_platform_analytics.selection import in_parent, predicate_holds
+from wise_platform_analytics.membership_rules import in_parent, predicate_holds
 
 ORDER = PolicyChoice("incident.order.timestamp_sequence_source_position.v1")
 PROJECTION = PolicyChoice("incident.activity.omit_missing_retain_raw_gaps.v1")

@@ -21,7 +21,7 @@ from .parsing import SourceRecord, parse_source
 from .policies import AppliedPolicies, PolicyChoice, PolicySelection, resolve_policies
 from .projection import omitted_from_mapped_sequence
 from .refusals import Refusal
-from .selection import in_parent, predicate_holds
+from .membership_rules import in_parent, predicate_holds
 
 MEMBERSHIP_ORDER = "first_appearance_in_source"
 
