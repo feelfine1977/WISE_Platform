@@ -7,6 +7,7 @@ import type { ImportedInvestigationCoordinator } from "./coordinator";
 import { ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
 import { OpenedAs } from "../views/OpenedAs";
+import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
 
 interface ImportedInvestigationProps {
@@ -20,6 +21,7 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
+  const [focusIncidents, setFocusIncidents] = useState(0);
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
   const incidentsHeading = useRef<HTMLHeadingElement>(null);
   const { population, inspected, openingContext, variants, chosenVariant } = state;
@@ -29,6 +31,29 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
   useEffect(() => {
     if (focusInspector > 0) inspectorHeading.current?.focus();
   }, [focusInspector]);
+
+  // Runs after the table of the new view has mounted, so the heading keeps the focus.
+  useEffect(() => {
+    if (focusIncidents > 0) incidentsHeading.current?.focus();
+  }, [focusIncidents]);
+
+  /** The table is rendered anew for each view; a focus request for the earlier table is not repeated. */
+  const chooseVariant = useCallback(
+    (variantId: VariantId) => {
+      setFocusRequest(null);
+      coordinator.chooseVariant(variantId);
+    },
+    [coordinator],
+  );
+
+  const clearVariant = useCallback(
+    (focusTable: boolean) => {
+      setFocusRequest(null);
+      coordinator.clearVariant();
+      if (focusTable) setFocusIncidents((count) => count + 1);
+    },
+    [coordinator],
+  );
 
   const openCase = useCallback(
     (caseId: CaseId) => {
@@ -103,10 +128,7 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    coordinator.clearVariant();
-                    incidentsHeading.current?.focus();
-                  }}
+                  onClick={() => clearVariant(true)}
                 >
                   Show every incident
                 </button>
@@ -144,8 +166,8 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
               <Variants
                 state={variants}
                 chosen={chosenVariant}
-                onChoose={(variantId) => coordinator.chooseVariant(variantId)}
-                onClear={() => coordinator.clearVariant()}
+                onChoose={chooseVariant}
+                onClear={() => clearVariant(false)}
                 onRetry={() => coordinator.retryVariants()}
               />
             </div>

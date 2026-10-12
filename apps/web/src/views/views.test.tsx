@@ -204,6 +204,15 @@ describe("the views of the population of an imported preparation", () => {
     await app.user.click(screen.getByRole("button", { name: "K-3" }));
     expect(app.imports.evidence[0].request.case_id).toBe("K-3");
     expect(app.imports.evidence[0].request.identity).toEqual(app.population.identity);
+    await app.user.keyboard("{Escape}");
+    expect(document.activeElement?.textContent).toBe("K-3");
+    // Showing every incident again moves the focus to the table's heading, not back to the row last returned to.
+    await app.user.click(screen.getByRole("button", { name: "Show every incident" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Incidents of this preparation" }));
+    // Choosing another variant keeps the focus on its button.
+    const choose = screen.getByRole("button", { name: "List the 1 incident of variant 3 in the table" });
+    await app.user.click(choose);
+    expect(document.activeElement).toBe(choose);
   });
 
   it("forgets the chosen variant when the population is opened again", async () => {
