@@ -26,12 +26,20 @@ def test_import_schema_and_generated_mapping_request_agree():
     assert ConfirmMappingRequest.model_validate(VALID).model_dump(mode="json") == VALID
 
 
-@pytest.mark.parametrize("time_format", ["dmy_dot_minute", "mdy_dot_minute", "dmy_slash_minute", "mdy_slash_minute", "iso8601"])
+@pytest.mark.parametrize("time_format", ["dmy_dot_minute", "mdy_dot_minute", "dmy_slash_minute", "mdy_slash_minute", "iso8601", "dmy_dot_second", "mdy_dot_second", "dmy_slash_second", "mdy_slash_second", "mdy_slash_12h_minute", "mdy_slash_12h_second"])
 def test_timestamp_candidates_require_a_named_explicit_interpretation(time_format):
     value = deepcopy(VALID)
     value["policies"]["time"]["parameters"]["format"] = time_format
     Draft202012Validator(SCHEMA, format_checker=FormatChecker()).validate(value)
     assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json") == value
+
+
+def test_date_time_format_checker_is_installed_and_rejects_impossible_dates():
+    checker = FormatChecker()
+    assert "date-time" in checker.checkers
+    validator = Draft202012Validator({"$ref": "#/$defs/UtcInstant", "$defs": SCHEMA["$defs"]}, format_checker=checker)
+    validator.validate("2026-02-28T09:00:00Z")
+    assert list(validator.iter_errors("2026-02-30T09:00:00Z"))
 
 
 @pytest.mark.parametrize("mutation", ["boolean-revision", "unsafe-revision", "text-confirmation", "unknown-policy", "IANA", "extra-field"])

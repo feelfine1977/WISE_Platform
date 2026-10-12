@@ -351,6 +351,32 @@ def test_dotted_dates_preserve_both_explicit_day_month_interpretations(client, w
     assert answers[0]["identity"]["preparation_id"] != answers[1]["identity"]["preparation_id"]
 
 
+def test_german_seconds_and_fractional_seconds_preserve_exact_instants_and_cells(client, workspace):
+    raw = ("Ticket;Activity;At;Desk\r\nS-01;Erfasst;15.08.2026 12:09:00.123456;Büro Nord\r\n"
+           "S-01;Prüfung;15.08.2026 12:09:01;Büro Süd\r\n").encode("cp1252")
+    source = upload(client, workspace, raw, "seconds.csv")
+    inspected = checked(client.post("/api/sources/inspect", json=envelope("inspect_csv_request", workspace_id=workspace["workspace_id"], source_id=source["source_id"])), "csv_inspection_answer")
+    assert any(role["column_index"] == 2 and {"format": "dmy_dot_second", "parsed_count": 2} in role["timestamp_matches"] for role in inspected["role_suggestions"])
+    request = mapping_request(workspace, source, "B3")
+    request["dialect"]["encoding"] = "windows-1252"
+    request["mapping"]["context_columns"] = [3]
+    request["policies"]["time"] = policies("dmy_dot_second", 120)["time"]
+    answer = population(client, workspace, prepare(client, request))
+    rows = evidence(client, workspace, answer, "S-01")["records"]
+    assert [row["utc_instant"] for row in rows] == ["2026-08-15T10:09:00.123456Z", "2026-08-15T10:09:01Z"]
+    assert rows[0]["original_cells"] == ["S-01", "Erfasst", "15.08.2026 12:09:00.123456", "Büro Nord"]
+    assert rows[1]["activity"] == "Prüfung"
+
+
+def test_twelve_hour_midnight_and_noon_use_the_declared_format(client, workspace):
+    raw = b"Ticket;Activity;At\r\nC;Recorded;10/12/2026 12:05:00 AM\r\nC;Completed;10/12/2026 12:05:00 PM\r\n"
+    source = upload(client, workspace, raw)
+    request = mapping_request(workspace, source, "B3")
+    request["policies"]["time"] = policies("mdy_slash_12h_second", 0)["time"]
+    answer = population(client, workspace, prepare(client, request))
+    assert [row["utc_instant"] for row in evidence(client, workspace, answer, "C")["records"]] == ["2026-10-12T00:05:00Z", "2026-10-12T12:05:00Z"]
+
+
 def test_literal_zero_false_and_whitespace_identifiers_preserve_original_cells(client, workspace):
     raw = b"Ticket;Activity;At;Context\r\n 0 ;False;2026-10-09T08:00:00Z;0\r\nFalse;0;2026-10-09T09:00:00Z;False\r\n"
     source = upload(client, workspace, raw)
