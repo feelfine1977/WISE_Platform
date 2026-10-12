@@ -22,9 +22,6 @@ dev = [
   "pytest>=8,<10",
   "rfc3339-validator>=0.1.4,<1"
 ]
-method = [
-  "wise-pm==0.2.0"
-]
 
 [tool.setuptools.packages.find]
 where = ["apps/api/src", "packages/analytics/src"]
