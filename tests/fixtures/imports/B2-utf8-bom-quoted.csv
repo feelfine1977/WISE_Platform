@@ -1,0 +1,6 @@
+﻿ Case ID , Activity , Recorded at , Comment 
+Q-01,"Customer, called",2026-10-09T08:00:00Z,"He said ""retry"", please."
+Q-01,"Hand-off
+review",2026-10-09T08:05:00Z,Note spans a quoted field
+Q-02,,2026-10-09T08:15:00Z,Unknown
+Q-02,Completed,2026-10-09T09:00:00Z,"Queue, Süd"

@@ -1,0 +1,6 @@
+Ticket;Event;At;Seq;Desk
+T-01;Reviewed;2026-10-09T10:00:00Z;3;West
+T-01;Recorded;2026-10-09T09:00:00Z;1;East
+T-01;Routed;2026-10-09T10:00:00Z;2;
+T-01;;2026-10-09T10:00:00Z;2;Unknown
+T-02;Observed;2026-10-09T11:00:00Z;1;West
