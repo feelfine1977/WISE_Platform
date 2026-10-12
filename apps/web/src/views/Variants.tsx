@@ -20,7 +20,7 @@ interface VariantsProps {
 export function Variants({ state, chosen, onChoose, onClear, onRetry }: VariantsProps) {
   return (
     <section className="view-panel" aria-labelledby="variants-title" aria-busy={state.phase === "loading"}>
-      <h3 id="variants-title" className="pane-title">
+      <h3 id="variants-title" className="view-title">
         Variants
       </h3>
       {state.phase === "loading" && <p className="working-text">Reading the sequence of every incident…</p>}
@@ -45,7 +45,7 @@ function VariantList({ answer, chosen, onChoose, onClear }: VariantListProps) {
   const rest = summary.variants.length - listed.length;
   return (
     <>
-      <p className="muted pane-hint">
+      <p className="muted view-hint">
         Each variant is one actual sequence of labelled activities in the declared order, repeats included. Shares are of the{" "}
         {countOf(summary.sequence_evaluable_case_count, "incident")} whose order is known.
       </p>
@@ -56,7 +56,7 @@ function VariantList({ answer, chosen, onChoose, onClear }: VariantListProps) {
         </p>
       )}
       {summary.omitted_activity_record_count > 0 && (
-        <p className="muted pane-hint">
+        <p className="muted view-hint">
           {countOf(summary.omitted_activity_record_count, "record")} without an activity label {summary.omitted_activity_record_count === 1 ? "is" : "are"} left
           out of the sequences.
         </p>
@@ -65,7 +65,7 @@ function VariantList({ answer, chosen, onChoose, onClear }: VariantListProps) {
         <p className="working-text">No incident here has a known order, so there is no variant to show.</p>
       ) : (
         <>
-          <p className="muted pane-hint">
+          <p className="muted view-hint">
             {listed.length < summary.variant_count
               ? `Showing ${listed.length} of ${countOf(summary.variant_count, "variant")}.`
               : `${countOf(summary.variant_count, "variant")}.`}{" "}

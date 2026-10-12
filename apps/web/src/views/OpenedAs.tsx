@@ -14,7 +14,7 @@ interface OpenedAsProps {
 export function OpenedAs({ state, onRetry }: OpenedAsProps) {
   return (
     <section className="view-panel" aria-labelledby="opened-as-title" aria-busy={state.phase === "loading"}>
-      <h3 id="opened-as-title" className="pane-title">
+      <h3 id="opened-as-title" className="view-title">
         Opened as
       </h3>
       {state.phase === "loading" && <p className="working-text">Reading the first record of every incident…</p>}
@@ -29,7 +29,7 @@ function Opening({ answer }: { answer: OpeningContextAnswer }) {
   const isParent = sameJson(answer.identity, answer.parent_identity);
   return (
     <>
-      <p className="muted pane-hint">
+      <p className="muted view-hint">
         The value of each context column at the first record of every incident, in the declared order. A value recorded later does not
         count.
       </p>
@@ -43,7 +43,7 @@ function Opening({ answer }: { answer: OpeningContextAnswer }) {
           Parent population: {countOf(parent.evaluable_case_count, "incident")} with a readable first record
         </li>
       </ul>
-      {isParent && <p className="muted pane-hint">These incidents are the whole parent population, so both bars are the same.</p>}
+      {isParent && <p className="muted view-hint">These incidents are the whole parent population, so both bars are the same.</p>}
       {parent.unevaluable_case_count > 0 && (
         <p className="order-note">
           {countOf(parent.unevaluable_case_count, "incident")} of the parent {parent.unevaluable_case_count === 1 ? "has" : "have"} no readable

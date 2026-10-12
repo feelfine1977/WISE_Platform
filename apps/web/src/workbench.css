@@ -321,6 +321,8 @@
   border-radius: var(--radius);
 }
 .view-panel > button { justify-self: start; }
+.view-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+.view-hint { font-size: var(--font-size-small); }
 
 /* Opened as: per value two thin bars, these incidents above the parent population. */
 .share-legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; color: var(--color-ink-muted); font-size: var(--font-size-small); }
@@ -331,17 +333,25 @@
 .opening-column { display: grid; gap: var(--space-1); min-width: 0; }
 .opening-column-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); overflow-wrap: anywhere; }
 .opening-column-title .muted { font-weight: var(--font-weight-plain); }
-.opening-values { display: grid; margin: 0; padding: 0; list-style: none; }
+/* Every row of a list shares its columns, so that all bars of a column are drawn on one scale. */
+.opening-values {
+  display: grid;
+  grid-template-columns: minmax(0, var(--size-value-label)) minmax(var(--size-share-least), 1fr) minmax(var(--size-share-figures), auto);
+  column-gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 .opening-value {
   display: grid;
-  grid-template-columns: minmax(0, var(--size-value-label)) minmax(var(--size-share-least), 1fr) auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: var(--space-2);
   min-height: var(--size-row);
   border-bottom: var(--line-width) solid var(--color-line-row);
 }
 .opening-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.opening-figures { font-size: var(--font-size-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.opening-figures { font-size: var(--font-size-small); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 .share-bars { display: block; width: 100%; height: var(--size-share-bars); }
 .share-track { fill: var(--color-line-row); }
 .share-bar-population { fill: var(--color-accent); }
