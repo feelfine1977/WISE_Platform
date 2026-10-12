@@ -272,7 +272,7 @@ describe("the investigation screen", () => {
     await user.click(screen.getByRole("button", { name: "INC03" }));
     await deliver(() => scripted.cases[0].reply({ ok: true, answer: evidenceZero(scripted.cases[0].request) }));
 
-    expect(document.querySelector(".coverage")?.textContent).toBe(
+    expect(document.querySelector(".inspector-head .coverage")?.textContent).toBe(
       "2 records of this incident · 1 record in the mapped sequence · 1 record left out: no activity",
     );
     const list = screen.getByRole("list", { name: /Every record of incident INC03/ });

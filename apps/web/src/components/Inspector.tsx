@@ -33,6 +33,7 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
             {summary && <>{partitionLabel(summary.partition, policies)} · </>}
             Complete history in the declared order. Escape returns to the incidents.
           </p>
+          {inspected.phase === "ready" && <Coverage coverage={inspected.answer.coverage} />}
         </div>
         <div className="inspector-actions">
           <button type="button" aria-expanded={!collapsed} aria-controls="inspector-body" onClick={() => onLayout(collapsed ? "side" : "collapsed")}>
@@ -63,39 +64,42 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
   );
 }
 
+/** The supplied counts of the incident's records. */
+function Coverage({ coverage }: { coverage: CaseEvidenceAnswer["coverage"] }) {
+  return (
+    <p className="coverage">
+      <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this incident ·{" "}
+      {countOf(coverage.mapped_record_count, "record")} in the mapped sequence ·{" "}
+      {countOf(coverage.omitted_activity_record_count, "record")} left out: no activity
+    </p>
+  );
+}
+
 function Records({ answer }: { answer: CaseEvidenceAnswer }) {
-  const { coverage } = answer;
   const mapped = new Set(answer.mapped_row_ids);
   const omitted = new Set(answer.omitted_activity_row_ids);
   return (
-    <>
-      <p className="coverage">
-        <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this incident ·{" "}
-        {countOf(coverage.mapped_record_count, "record")} in the mapped sequence ·{" "}
-        {countOf(coverage.omitted_activity_record_count, "record")} left out: no activity
-      </p>
-      <ol className="sequence" aria-label={`Every record of incident ${answer.case_id} in the declared order`}>
-        {answer.records.map((record) => {
-          const membership = mapped.has(record.row_id)
-            ? "Included"
-            : omitted.has(record.row_id)
-              ? "Left out: no activity"
-              : "Not stated";
-          return (
-            <li key={record.row_id} className={omitted.has(record.row_id) ? "record left-out" : "record"}>
-              <p className="record-activity" title={record.activity ?? undefined}>
-                {record.activity === null ? (
-                  <span className="no-label">no activity label</span>
-                ) : (
-                  <Value interpreted={record.activity} written={record.original_values.activity} />
-                )}
-              </p>
-              <RecordValues record={record} membership={membership} />
-            </li>
-          );
-        })}
-      </ol>
-    </>
+    <ol className="sequence" aria-label={`Every record of incident ${answer.case_id} in the declared order`}>
+      {answer.records.map((record) => {
+        const membership = mapped.has(record.row_id)
+          ? "Included"
+          : omitted.has(record.row_id)
+            ? "Left out: no activity"
+            : "Not stated";
+        return (
+          <li key={record.row_id} className={omitted.has(record.row_id) ? "record left-out" : "record"}>
+            <p className="record-activity" title={record.activity ?? undefined}>
+              {record.activity === null ? (
+                <span className="no-label">no activity label</span>
+              ) : (
+                <Value interpreted={record.activity} written={record.original_values.activity} />
+              )}
+            </p>
+            <RecordValues record={record} membership={membership} />
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 

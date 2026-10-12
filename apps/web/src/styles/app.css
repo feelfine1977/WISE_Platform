@@ -313,7 +313,7 @@ tr.selected .row-open { font-weight: var(--font-weight-strong); }
 .inspector-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .inspector-body { padding: var(--space-3) var(--space-4) var(--space-4); }
 .inspector-body > .pane-note { padding: 0; }
-.coverage { margin-bottom: var(--space-3); color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
+.coverage { margin-top: var(--space-1); color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
 .coverage strong { color: var(--color-ink); }
 
 .sequence { margin: 0; padding: 0; list-style: none; }
