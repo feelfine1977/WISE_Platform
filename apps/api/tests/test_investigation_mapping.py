@@ -196,6 +196,30 @@ def test_columns_the_contract_cannot_carry_are_a_malformed_source(tmp_path):
     assert "priority" in answer["message"]
 
 
+def test_an_incident_id_longer_than_the_contract_carries_is_a_malformed_source(tmp_path):
+    # Outside the parent population, so every incident of the base is checked.
+    write_example(tmp_path, "S0", "L" * 257 + ",l-a,1,Opened,2026-10-01T09:00:00Z,T,Desk")
+
+    answer = refused(
+        Investigations(tmp_path).open_example(body(open_request("S0", "long-1", 2))),
+        "malformed_source",
+        422,
+    )
+
+    assert (answer["request_id"], answer["query_revision"]) == ("long-1", 2)
+    assert answer["retryable"] is False
+    assert "incident id" in answer["message"]
+    assert "L" * 257 not in answer["message"]
+
+
+def test_an_incident_id_of_the_longest_length_the_contract_carries_is_answered(tmp_path):
+    write_example(tmp_path, "S0", "M" * 256 + ",m-a,1,Opened,2026-10-01T09:00:00Z,S,Desk")
+
+    answer = opened(Investigations(tmp_path), open_request())
+
+    assert answer["populations"]["parent"]["case_ids"] == ["M" * 256]
+
+
 def test_a_malformed_source_names_the_row_and_the_reason(tmp_path):
     write_example(tmp_path, "S0", "P1,p1-a,-1,Opened,2026-10-01T09:00:00Z,S,Desk")
 

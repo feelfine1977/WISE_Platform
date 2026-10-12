@@ -3,7 +3,9 @@
 This module maps between the generated contract models and the analytics
 package. The package computes every population, count, order, identity and
 refusal; the answers here carry its values onto the contract and add nothing
-to their meaning.
+to their meaning. A source the contract cannot carry, such as one with a
+column it does not name or an incident id longer than it allows, is refused
+here as malformed rather than failing while the answer is written.
 
 An evidence request names a population only by its identities, so the
 application remembers, for every population it has opened, which example and
@@ -22,7 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from wise_platform_analytics import (
     CaseEvidence,
     Identities,
@@ -42,6 +44,7 @@ from .generated.investigation import (
     AnswerIdentity,
     CaseEvidenceAnswer,
     CaseEvidenceRequest,
+    CaseId,
     CaseSummary,
     Coverage,
     InputPolicies,
@@ -70,6 +73,7 @@ _CODES: Mapping[RefusalCode, str] = {
     RefusalCode.CASE_NOT_IN_POPULATION: "case_not_in_population",
 }
 _COLUMNS = tuple(OriginalValues.model_fields)
+_SHOWN_LENGTH = 60
 
 
 @dataclass(frozen=True)
@@ -109,15 +113,14 @@ class Investigations:
         answer = open_population(source, policies)
         if isinstance(answer, AnalyticsRefusal):
             return _refused(OPEN_EXAMPLE, answer, request, example.example_id)
-        foreign = [column for column in answer.columns if column not in _COLUMNS]
-        if foreign:
+        uncarried = _not_carried(answer)
+        if uncarried is not None:
             return _reply(
                 _echoing(
                     OPEN_EXAMPLE,
                     request,
                     "malformed_source",
-                    f"The synthetic example {example.example_id} has columns the example "
-                    f"format does not carry: {', '.join(foreign)}.",
+                    f"The synthetic example {example.example_id} {uncarried}",
                 )
             )
         with self._lock:
@@ -288,6 +291,24 @@ def _refused(
             example_id,
         )
     )
+
+
+def _not_carried(answer: AnalyticsPopulation) -> str | None:
+    """Say what of a source the contract cannot carry, or ``None`` when it carries all."""
+    foreign = [column for column in answer.columns if column not in _COLUMNS]
+    if foreign:
+        return f"has columns the example format does not carry: {', '.join(foreign)}."
+    for case_id in answer.base.case_ids:
+        try:
+            CaseId.model_validate(case_id)
+        except ValidationError as error:
+            reason = error.errors(include_url=False)[0]["msg"]
+            shown = case_id if len(case_id) <= _SHOWN_LENGTH else case_id[:_SHOWN_LENGTH] + "..."
+            return (
+                f"has an incident id the contract cannot carry "
+                f"({reason[0].lower()}{reason[1:]}): {shown!r}."
+            )
+    return None
 
 
 def _reply(body: BaseModel) -> Reply:
