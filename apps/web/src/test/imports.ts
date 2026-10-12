@@ -28,7 +28,7 @@ import { fixedPolicies } from "../data/interpretation";
  *   2  (no incident id) Eröffnet  05.04.2026 07:15  Unknown
  *   3  B-2  Prüfung      xx                Größe & Maß
  * Every time reads both day first and month first, so the format is a question. Read day first at
- * UTC+02:00: 3 incidents' worth of records identified (0, 1, 3), record 2 outside every incident,
+ * UTC+02:00: records 0, 1 and 3 have an incident id, record 2 is outside every incident,
  * record 3 without a usable time; 2 incidents, A-1 in a known order, B-2 not.
  */
 
