@@ -98,6 +98,10 @@ def parse_request(
         message = json.loads(body.decode("utf-8"), parse_constant=_no_constant)
     except (UnicodeDecodeError, ValueError):
         return refusal(operation, "invalid_request", "The request body is not JSON.")
+    except RecursionError:
+        return refusal(
+            operation, "invalid_request", "The request body is nested too deeply to be read."
+        )
     if not isinstance(message, dict):
         return refusal(operation, "invalid_request", "The request body is not a JSON object.")
 

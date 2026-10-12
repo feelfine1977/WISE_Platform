@@ -71,6 +71,16 @@ def test_a_body_that_is_not_a_json_object_is_an_invalid_request(raw):
     assert result.query_revision is None
 
 
+@pytest.mark.parametrize("raw", [b"[" * 100_000 + b"]" * 100_000, b'{"a":' + b"[" * 100_000 + b"]" * 100_000 + b"}"])
+def test_a_body_nested_deeper_than_can_be_read_is_an_invalid_request(raw):
+    result = parse_request(raw, OpenExampleRequest, "open_example")
+
+    assert isinstance(result, Refusal)
+    assert result.code == "invalid_request"
+    assert result.request_id is None
+    VALIDATOR.validate(result.model_dump(mode="json"))
+
+
 @pytest.mark.parametrize("version", [2, 0, -1, 10**20])
 def test_another_whole_schema_version_is_unsupported(version):
     request = open_request(request_id="schema-9", revision=5)
