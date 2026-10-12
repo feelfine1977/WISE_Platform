@@ -3,7 +3,7 @@ import type { CaseEvidenceAnswer, CaseSummary, InputPolicies, SourceRecord } fro
 import type { InspectedCaseState } from "../investigation/coordinator";
 import { countOf, partitionLabel, utcInstant } from "../investigation/wording";
 import { ProblemNotice } from "./ProblemNotice";
-import { Missing, Value } from "./Values";
+import { Value } from "./Values";
 
 export type InspectorLayout = "side" | "full" | "collapsed";
 
@@ -120,8 +120,7 @@ function RecordValues({ record, membership }: { record: SourceRecord; membership
   return (
     <details className="record-values">
       <summary className="record-meta">
-        {record.timestamp_utc === null ? <Missing written={written.timestamp_utc} /> : utcInstant(record.timestamp_utc)}
-        {" · "}source position {record.source_position} · {membership}
+        {utcInstant(record.timestamp_utc)} · source position {record.source_position} · {membership}
         <span className="values-cue"> · values</span>
       </summary>
       <dl className="value-list">
