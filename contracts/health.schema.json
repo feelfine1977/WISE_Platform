@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HealthResponse",
+  "description": "Availability of the local foundation service; this does not certify analytical capabilities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "stage", "version"],
+  "properties": {
+    "status": { "type": "string", "const": "ok" },
+    "stage": { "type": "string", "const": "foundation" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+  }
+}

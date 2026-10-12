@@ -1,0 +1,58 @@
+# Development
+
+The source checkout develops the Python API and TypeScript/React browser application together. One Python host serves the built browser files and API. Node is a source development/build dependency; it is not intended as an analyst runtime for a complete release containing built assets.
+
+## Setup and commands
+
+Run setup, generation, checks and builds from the repository root using the runtime versions in the manifests. Create an isolated Python environment and install the documented development dependencies before building. Do not use a global environment containing unrelated analytical packages.
+
+The source browser toolchain supports Node 22.19 through 24; consult the package manifest for the exact range. Python uses the range in `pyproject.toml`. From the repository root, create and activate an isolated environment first. On Windows PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+If activation is restricted by company policy, invoke `.\.venv\Scripts\python.exe` directly and make that environment available to the build commands through an approved terminal configuration. On macOS/Linux use `python3 -m venv .venv` and `source .venv/bin/activate`. Python installation and company policy remain prerequisites; no administrator-free installation is assumed.
+
+Then run:
+
+```text
+python -m pip install -c requirements-dev.lock -e ".[dev]"
+npm ci
+npm run generate
+npm run check
+npm test
+npm run build
+python -m wise_platform_api --port 8765
+```
+
+The root Python project finds the API package under `apps/api/src`; there is no separate API-project install. `npm test` runs `python -m pytest`: foundation behavior and independent fixture checks, with actual analytics acceptance explicitly pending. See [test groups](../tests/README.md). Open `http://127.0.0.1:8765` after the build. The health endpoint is `/api/health`; Ctrl+C stops the host. A health response is a foundation result, not an analytical result.
+
+For the optional browser development loop, run the API host and `npm run dev` in separate terminals. The browser development server runs at `http://127.0.0.1:5173` and proxies API requests to port 8765. The finished local deployment still uses one Python host and built files.
+
+## Target responsibilities
+
+- `apps/api` contains the local host, thin HTTP boundary, application use cases and adapters.
+- `apps/web` contains routes, linked views and typed user intents. It displays supplied answers rather than recomputing analytical measures.
+- `contracts` is the schema authority for platform envelopes and generated Python/TypeScript boundary types. Update the schema, regenerate and check generated outputs together; do not maintain divergent hand-written copies.
+- `tests` contains synthetic cross-layer fixtures and acceptance checks.
+- `docs` contains product/developer instructions matched to current status.
+
+Introduce `packages/analytics` with its first tested pure implementation. It owns canonical descriptive representations, selection, graph/variant/context queries and answers. No web/database/UI application imports belong in its core. A faster execution adapter must agree with canonical expected results before use. Add additional packages only when real responsibilities and reuse require them.
+
+## Dependency and module discipline
+
+Method owns supported norm validation, measurement, applicability and WISE scoring. Flow owns supplied-scene rendering and its public scene format. Both are exact external release dependencies; eligible pins are an integration gate. The foundation does not bypass missing releases or simulate their results.
+
+Shared platform contracts carry source/preparation/representation/population/definition identity, typed support and query revision. Application services own persistence, jobs and coherent publication; the browser owns convenient view state. A single descriptive definition must feed charts, profiles, matrix, variants and scenes. Nullable measures and unevaluable scores must never fall into a passed bucket.
+
+Local expectation authoring is a workflow module, not a second analytical evaluator or mandatory service. Unscored investigations can be opened and saved without norm/score references.
+
+## Local files and maintenance
+
+Keep runtime CSVs, databases, artifacts, investigations, diagnostics, environments and credentials outside tracked source. Use a chosen external workspace for product state. Commit only appropriate source/configuration, synthetic fixtures, generated boundary artifacts and normal documentation. Preserve real dependency notices and scoped licence terms.
+
+A program upgrade and workspace upgrade are separate operations. Refresh creates new source/result revisions; it does not silently reinterpret old findings. Qualification must cover incompatible schemas, stale or relocated sources, atomic publication and database-aware backup/restoration before those workflows are advertised.
+
+Update the status and guide when a capability becomes available. A placeholder screen or type declaration is not a completed customer journey. See [testing](testing.md) and [roadmap](roadmap.md) for evidence required at each gate.

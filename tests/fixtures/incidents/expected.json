@@ -1,0 +1,557 @@
+{
+  "fixture_format_version": 1,
+  "provenance": "All incident IDs, organizations, activities and timestamps in these files are fictional. No company or public event-log records are included.",
+  "policies": {
+    "parent": {
+      "service": "S",
+      "contains_activity": "Opened"
+    },
+    "predicate": {
+      "contains_activity": "Resolved"
+    },
+    "A": "parent cases with a recorded Resolved activity",
+    "B": "parent cases without a recorded Resolved activity",
+    "target": "B",
+    "reference": "A",
+    "outcome": "no recorded resolution",
+    "order": "timestamp ascending, then source_sequence ascending, then original CSV position",
+    "activity_projection": "omit missing labels from mapped sequences; retain raw records and disclose omitted records",
+    "context_opening": "assignment_group on first Opened record, including missing; never substitute first nonmissing value",
+    "context_ever": "deduplicated whole-case category memberships including observed missing values; memberships may overlap",
+    "csv_missing": "empty activity or assignment_group cell means missing; literal Unknown is a string category",
+    "clock": "elapsed UTC hours",
+    "snapshot_cutoff_utc": "2026-10-02T00:00:00Z",
+    "qualifies": "ties, missing labels, whole cases, repeated passages, typed missing context and exact descriptive denominators",
+    "does_not_qualify": "conflicting timestamp/sequence order, strict 4-hour boundary, native Windows paths/locking or production capacity"
+  },
+  "fixtures": {
+    "S0": {
+      "base_cases": 14,
+      "base_records": 28,
+      "parent_ids": [
+        "INC01",
+        "INC02",
+        "INC03",
+        "INC04",
+        "INC05",
+        "INC06",
+        "INC07",
+        "INC08",
+        "INC09",
+        "INC10",
+        "INC11",
+        "INC12"
+      ],
+      "parent_cases": 12,
+      "parent_records": 25,
+      "outside_ids": [
+        "INC13",
+        "INC14"
+      ],
+      "A_ids": [
+        "INC01",
+        "INC02",
+        "INC03",
+        "INC04",
+        "INC05",
+        "INC06",
+        "INC07"
+      ],
+      "A_records": 18,
+      "B_ids": [
+        "INC08",
+        "INC09",
+        "INC10",
+        "INC11",
+        "INC12"
+      ],
+      "B_records": 7,
+      "variants": {
+        "Opened > Resolved": [
+          "INC01",
+          "INC04",
+          "INC06"
+        ],
+        "Opened > Assigned > Resolved": [
+          "INC02",
+          "INC03",
+          "INC05",
+          "INC07"
+        ],
+        "Opened > Assigned": [
+          "INC08",
+          "INC10"
+        ],
+        "Opened": [
+          "INC09",
+          "INC11",
+          "INC12"
+        ]
+      },
+      "edges": {
+        "Opened > Assigned": {
+          "case_ids": [
+            "INC02",
+            "INC03",
+            "INC05",
+            "INC07",
+            "INC08",
+            "INC10"
+          ],
+          "cases": 6,
+          "passages": 6,
+          "gap_hours": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "mean_hours": "1",
+          "median_hours": "1"
+        },
+        "Opened > Resolved": {
+          "case_ids": [
+            "INC01",
+            "INC04",
+            "INC06"
+          ],
+          "cases": 3,
+          "passages": 3,
+          "gap_hours": [
+            3,
+            3,
+            3
+          ],
+          "mean_hours": "3",
+          "median_hours": "3"
+        },
+        "Assigned > Resolved": {
+          "case_ids": [
+            "INC02",
+            "INC03",
+            "INC05",
+            "INC07"
+          ],
+          "cases": 4,
+          "passages": 4,
+          "gap_hours": [
+            2,
+            2,
+            2,
+            2
+          ],
+          "mean_hours": "2",
+          "median_hours": "2"
+        }
+      },
+      "start": {
+        "Opened": 12
+      },
+      "end": {
+        "Resolved": 7,
+        "Assigned": 2,
+        "Opened": 3
+      },
+      "selected_pair_ids": [
+        "INC02",
+        "INC03",
+        "INC05",
+        "INC07",
+        "INC08",
+        "INC10"
+      ],
+      "selected_pair_records": 16,
+      "opened_assigned_cohort_support": "1/2",
+      "opened_assigned_outgoing_passage_share": "2/3",
+      "opening_profile": {
+        "value:Desktop": {
+          "A_ids": [
+            "INC01",
+            "INC02",
+            "INC03"
+          ],
+          "B_ids": [
+            "INC08"
+          ],
+          "share_A": "3/7",
+          "share_B": "1/5",
+          "delta_B_A_pp": "-160/7",
+          "composition_B_A": "7/15",
+          "outcome_no_resolution_rate": "1/4",
+          "outcome_lift": "3/5"
+        },
+        "value:App": {
+          "A_ids": [
+            "INC04",
+            "INC05"
+          ],
+          "B_ids": [
+            "INC09",
+            "INC10"
+          ],
+          "share_A": "2/7",
+          "share_B": "2/5",
+          "delta_B_A_pp": "80/7",
+          "composition_B_A": "7/5",
+          "outcome_no_resolution_rate": "1/2",
+          "outcome_lift": "6/5"
+        },
+        "value:Network": {
+          "A_ids": [
+            "INC06"
+          ],
+          "B_ids": [],
+          "share_A": "1/7",
+          "share_B": "0",
+          "delta_B_A_pp": "-100/7",
+          "composition_B_A": "0",
+          "outcome_no_resolution_rate": "0",
+          "outcome_lift": "0"
+        },
+        "missing:assignment_group": {
+          "A_ids": [
+            "INC07"
+          ],
+          "B_ids": [
+            "INC12"
+          ],
+          "share_A": "1/7",
+          "share_B": "1/5",
+          "delta_B_A_pp": "40/7",
+          "composition_B_A": "7/5",
+          "outcome_no_resolution_rate": "1/2",
+          "outcome_lift": "6/5"
+        },
+        "value:Email": {
+          "A_ids": [],
+          "B_ids": [
+            "INC11"
+          ],
+          "share_A": "0",
+          "share_B": "1/5",
+          "delta_B_A_pp": "20",
+          "composition_B_A": "no_reference_support",
+          "outcome_no_resolution_rate": "1",
+          "outcome_lift": "12/5"
+        }
+      },
+      "outcome_baseline": "5/12",
+      "ever_profile": {
+        "value:Desktop": {
+          "A_ids": [
+            "INC01",
+            "INC02",
+            "INC03",
+            "INC05",
+            "INC07"
+          ],
+          "B_ids": [
+            "INC08"
+          ]
+        },
+        "value:App": {
+          "A_ids": [
+            "INC02",
+            "INC04",
+            "INC05"
+          ],
+          "B_ids": [
+            "INC08",
+            "INC09",
+            "INC10"
+          ]
+        },
+        "value:Network": {
+          "A_ids": [
+            "INC03",
+            "INC06"
+          ],
+          "B_ids": [
+            "INC10"
+          ]
+        },
+        "missing:assignment_group": {
+          "A_ids": [
+            "INC07"
+          ],
+          "B_ids": [
+            "INC12"
+          ]
+        },
+        "value:Email": {
+          "A_ids": [],
+          "B_ids": [
+            "INC11"
+          ]
+        }
+      },
+      "ever_memberships_A": 11,
+      "ever_memberships_B": 7,
+      "assignment_changes": {
+        "Desktop > App": [
+          "INC02",
+          "INC08"
+        ],
+        "Desktop > Network": [
+          "INC03"
+        ],
+        "App > Desktop": [
+          "INC05"
+        ],
+        "App > Network": [
+          "INC10"
+        ]
+      },
+      "assignment_prior_unavailable_ids": [
+        "INC07"
+      ],
+      "resolution_measured_ids": [
+        "INC01",
+        "INC02",
+        "INC03",
+        "INC04",
+        "INC05",
+        "INC06",
+        "INC07"
+      ],
+      "first_resolution_hours": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "missing_resolution_age_hours": [
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "INC07_opening_group": "missing:assignment_group",
+      "INC07_first_nonmissing_group": "value:Desktop",
+      "fixed_parent_service": "S"
+    },
+    "S1": {
+      "base_cases": 14,
+      "base_records": 31,
+      "parent_cases": 12,
+      "parent_records": 28,
+      "A_records": 21,
+      "B_records": 7,
+      "A_ids": [
+        "INC01",
+        "INC02",
+        "INC03",
+        "INC04",
+        "INC05",
+        "INC06",
+        "INC07"
+      ],
+      "B_ids": [
+        "INC08",
+        "INC09",
+        "INC10",
+        "INC11",
+        "INC12"
+      ],
+      "variants": {
+        "Opened > Resolved": [
+          "INC01",
+          "INC04",
+          "INC06"
+        ],
+        "Opened > Assigned > Resolved": [
+          "INC02",
+          "INC03",
+          "INC07"
+        ],
+        "Opened > Assigned > Resolved > Reopened > Assigned > Resolved": [
+          "INC05"
+        ],
+        "Opened > Assigned": [
+          "INC08",
+          "INC10"
+        ],
+        "Opened": [
+          "INC09",
+          "INC11",
+          "INC12"
+        ]
+      },
+      "assigned_resolved": {
+        "case_ids": [
+          "INC02",
+          "INC03",
+          "INC05",
+          "INC07"
+        ],
+        "cases": 4,
+        "passages": 5,
+        "gap_hours": [
+          1,
+          2,
+          2,
+          2,
+          2
+        ],
+        "mean_hours": "9/5",
+        "median_hours": "2"
+      },
+      "reopened_pairs": {
+        "Resolved > Reopened": {
+          "case_ids": [
+            "INC05"
+          ],
+          "cases": 1,
+          "passages": 1,
+          "gap_hours": [
+            1
+          ],
+          "mean_hours": "1",
+          "median_hours": "1"
+        },
+        "Reopened > Assigned": {
+          "case_ids": [
+            "INC05"
+          ],
+          "cases": 1,
+          "passages": 1,
+          "gap_hours": [
+            1
+          ],
+          "mean_hours": "1",
+          "median_hours": "1"
+        }
+      },
+      "INC05_first_resolution_hours": "3",
+      "INC05_final_resolution_hours": "6",
+      "start": {
+        "Opened": 12
+      },
+      "end": {
+        "Resolved": 7,
+        "Assigned": 2,
+        "Opened": 3
+      }
+    },
+    "Q1": {
+      "fixture": "S0.csv",
+      "predicate": "elapsed first Opened to first Resolved > 4 hours",
+      "true_ids": [],
+      "false_ids": [
+        "INC01",
+        "INC02",
+        "INC03",
+        "INC04",
+        "INC05",
+        "INC06",
+        "INC07"
+      ],
+      "unknown_ids": [
+        "INC08",
+        "INC09",
+        "INC10",
+        "INC11",
+        "INC12"
+      ],
+      "unknown_reason": "missing_resolution_endpoint",
+      "comparison_state": "empty_true_target"
+    },
+    "S2": {
+      "cases": 2,
+      "raw_records": 8,
+      "mapped_records": 6,
+      "omitted_activity_records": 2,
+      "variants": {
+        "Opened > Assigned > Resolved": [
+          "S2A"
+        ],
+        "Opened > Resolved > Assigned": [
+          "S2B"
+        ]
+      },
+      "edges": {
+        "Opened > Assigned": {
+          "case_ids": [
+            "S2A"
+          ],
+          "cases": 1,
+          "passages": 1,
+          "gap_hours": [
+            1
+          ],
+          "mean_hours": "1",
+          "median_hours": "1"
+        },
+        "Assigned > Resolved": {
+          "case_ids": [
+            "S2A"
+          ],
+          "cases": 1,
+          "passages": 1,
+          "gap_hours": [
+            1
+          ],
+          "mean_hours": "1",
+          "median_hours": "1"
+        },
+        "Opened > Resolved": {
+          "case_ids": [
+            "S2B"
+          ],
+          "cases": 1,
+          "passages": 1,
+          "gap_hours": [
+            1
+          ],
+          "mean_hours": "1",
+          "median_hours": "1"
+        },
+        "Resolved > Assigned": {
+          "case_ids": [
+            "S2B"
+          ],
+          "cases": 1,
+          "passages": 1,
+          "gap_hours": [
+            0
+          ],
+          "mean_hours": "0",
+          "median_hours": "0"
+        }
+      },
+      "start": {
+        "Opened": 2
+      },
+      "end": {
+        "Resolved": 1,
+        "Assigned": 1
+      },
+      "bridged_null_gap_passages": 2
+    },
+    "S3": {
+      "cases": 2,
+      "records": 2,
+      "opening_profile": {
+        "value:Unknown": [
+          "S3A"
+        ],
+        "missing:assignment_group": [
+          "S3B"
+        ]
+      },
+      "distinct_typed_keys": 2
+    }
+  },
+  "file_sha256": {
+    "S0.csv": "795a78f842a08e292de49651f309549578b18e80bcc179b6db01aec5eff0db3b",
+    "S1.csv": "73d6e28c3a4a85daa635eed7938b4c0809d28e9f62014cfe31a315e34bcc6856",
+    "S2.csv": "c133fbc366bd9c20b518e3a3e445bf064bb5d789978b78fecef560027b40923a",
+    "S3.csv": "3b4e64d704704c51ace18fdcefba2248c2f1f946599676f1782e59650362b058"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "wise-platform",
+  "version": "0.1.0",
+  "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19 <25"
+  },
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "generate:python": "python -m datamodel_code_generator --input contracts/health.schema.json --input-file-type jsonschema --output-model-type pydantic_v2.BaseModel --target-python-version 3.11 --enum-field-as-literal all --disable-timestamp --formatters black isort --output apps/api/src/wise_platform_api/generated/health.py",
+    "generate:ts": "json2ts --input contracts/health.schema.json --output apps/web/src/generated/health.ts",
+    "generate": "npm run generate:python && npm run generate:ts",
+    "check": "npm run check --workspace @wise-platform/web && tsc --noEmit -p tests/contracts/tsconfig.json",
+    "test": "python -m pytest",
+    "build": "npm run build --workspace @wise-platform/web",
+    "dev": "npm run dev --workspace @wise-platform/web"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^16.0.0"
+  }
+}

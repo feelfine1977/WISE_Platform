@@ -1,0 +1,13 @@
+.venv/
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+apps/api/src/wise_platform_api/static/
+.env
+.env.local
+.DS_Store
+Thumbs.db

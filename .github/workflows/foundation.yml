@@ -1,0 +1,31 @@
+name: Foundation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: python -m pip install -c requirements-dev.lock -e ".[dev]"
+      - run: npm ci
+      - run: npm run generate
+      - run: git diff --exit-code -- apps/api/src/wise_platform_api/generated apps/web/src/generated
+      - run: npm run check
+      - run: npm run build
+      - run: npm test
