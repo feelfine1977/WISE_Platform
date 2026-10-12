@@ -118,8 +118,8 @@ def open_case(
     if differing is not None:
         return Refusal(
             RefusalCode.IDENTITY_MISMATCH,
-            f"The given {differing.replace('_', ' ')} is not the one of this source "
-            "under these policies.",
+            f"The given {differing.replace('_', ' ')} does not match the population "
+            "computed from this source under these policies.",
             {
                 "identity": differing,
                 "supplied": getattr(identities, differing),
