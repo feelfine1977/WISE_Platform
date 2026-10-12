@@ -140,7 +140,7 @@ function SourceStep({
         <label htmlFor={exampleId} className="label-text">
           Or load an example into the workspace
         </label>
-        <select id={exampleId} value={example} onChange={(event) => setExample(event.target.value as typeof example)}>
+        <select id={exampleId} className="example-select" value={example} onChange={(event) => setExample(event.target.value as typeof example)}>
           {workspaceExamples.map((item) => (
             <option key={item.id} value={item.id}>
               {item.label}

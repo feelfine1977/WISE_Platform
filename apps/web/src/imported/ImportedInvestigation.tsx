@@ -124,7 +124,7 @@ function Facts({ answer, revision }: { answer: ImportedPopulationAnswer; revisio
   const facts: [string, string][] = [
     ["Incidents", countOf(answer.population.case_count, "incident")],
     ["Records of these incidents", countOf(answer.population.record_count, "record")],
-    ["Rows without incident id", countOf(answer.unassigned_record_count, "row")],
+    ["Rows outside every incident", countOf(answer.unassigned_record_count, "row")],
     ["Records without activity label", countOf(answer.coverage.omitted_activity_record_count, "record")],
     ["Revision", String(revision)],
   ];

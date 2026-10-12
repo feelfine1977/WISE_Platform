@@ -37,7 +37,8 @@ const remedies: Record<ImportRefusal["code"], string> = {
   invalid_mapping: "Choose a different column for each of incident, activity, time and sequence.",
   unsupported_timezone: "Choose “as recorded”, the offsets written in the values, or one fixed offset.",
   timezone_required: "These times carry no zone. Choose “as recorded” or a fixed offset.",
-  malformed_source: "Check the encoding and the delimiter. If they are right, the file does not hold complete CSV records.",
+  malformed_source:
+    "Check the encoding and the delimiter. If they are right, some records do not fit the header: the strict rule stops at the first of them, the tolerant rule keeps up to 5 % of the records outside every incident. Choose the rule, or correct the export.",
   mixed_timezone_values: "Some times carry a zone and others do not. Choose the zone choice that fits the values, or correct the export.",
   cutoff_before_records:
     "Set “Export taken at” to the latest usable time of the source or later, for example the cutoff proposed from the data.",

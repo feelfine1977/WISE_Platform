@@ -516,7 +516,7 @@ function FormatChoice({
         {status}
       </p>
       {evidence.readings.map((item) => (
-        <label key={item.format} className="check">
+        <label key={item.format} className="check check-long">
           <input
             type="radio"
             name="time-format"
@@ -524,12 +524,14 @@ function FormatChoice({
             checked={draft.timeFormat === item.format}
             onChange={() => coordinator.choose({ timeFormat: item.format as TimestampFormat })}
           />
-          {formatLabels[item.format]}{" "}
-          <span className="muted">
-            —{" "}
-            {item.parsed === null
-              ? "not inspected"
-              : `reads ${countOf(item.parsed, "filled cell")} of ${countOf(evidence.filled, "filled cell")}`}
+          <span>
+            {formatLabels[item.format]}{" "}
+            <span className="muted">
+              —{" "}
+              {item.parsed === null
+                ? "not inspected"
+                : `reads ${countOf(item.parsed, "filled cell")} of ${countOf(evidence.filled, "filled cell")}`}
+            </span>
           </span>
         </label>
       ))}

@@ -26,7 +26,7 @@ export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps
   const figures: [string, string][] = [
     ["Records read", countOf(report.raw_record_count, "record")],
     ["With an incident id", countOf(report.identified_record_count, "record")],
-    ["Without incident id: outside every incident", countOf(report.unassigned_record_count, "record")],
+    ["Outside every incident", countOf(report.unassigned_record_count, "record")],
     ["With a usable time", countOf(report.usable_timestamp_record_count, "record")],
     ["Without a usable time: kept, order not known", countOf(report.unavailable_timestamp_record_count, "record")],
     ["Incidents", countOf(report.case_count, "incident")],
@@ -46,7 +46,7 @@ export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps
   if (report.blank_record_count !== undefined) figures.splice(1, 0, ["Blank lines skipped", countOf(report.blank_record_count, "blank line")]);
   if (report.ragged_record_count !== undefined) {
     figures.splice(report.blank_record_count !== undefined ? 4 : 3, 0, [
-      "With another number of cells than the header: outside every incident",
+      "Of these, with another number of cells than the header",
       countOf(report.ragged_record_count, "record"),
     ]);
   }

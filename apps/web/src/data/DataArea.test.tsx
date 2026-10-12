@@ -249,7 +249,7 @@ describe("the Data area", () => {
     expect(screen.getByText(/Some rows have issues/)).toBeTruthy();
     expect(figure("Records read")).toBe("4 records");
     expect(figure("With an incident id")).toBe("3 records");
-    expect(figure("Without incident id: outside every incident")).toBe("1 record");
+    expect(figure("Outside every incident")).toBe("1 record");
     expect(figure("With a usable time")).toBe("3 records");
     expect(figure("Without a usable time: kept, order not known")).toBe("1 record");
     expect(figure("Incidents")).toBe("2 incidents");
@@ -292,7 +292,7 @@ describe("the Data area", () => {
 
     expect(screen.getByRole("heading", { name: "Vorgänge.csv" })).toBeTruthy();
     const facts = screen.getByLabelText("Population");
-    expect(facts.textContent).toBe("Incidents2 incidentsRecords of these incidents3 recordsRows without incident id1 rowRecords without activity label0 recordsRevision1");
+    expect(facts.textContent).toBe("Incidents2 incidentsRecords of these incidents3 recordsRows outside every incident1 rowRecords without activity label0 recordsRevision1");
     const table = screen.getByRole("table", { name: "Incidents of this preparation" });
     expect(within(table).getAllByRole("row").slice(1).map((row) => Array.from(row.children).map((cell) => cell.textContent))).toEqual([
       ["A-1", "2", "2", "0", "By time"],
@@ -510,8 +510,8 @@ describe("the Data area", () => {
 
     expect(figure("Records read")).toBe("4 records");
     expect(figure("Blank lines skipped")).toBe("1 blank line");
-    expect(figure("Without incident id: outside every incident")).toBe("1 record");
-    expect(figure("With another number of cells than the header: outside every incident")).toBe("1 record");
+    expect(figure("Outside every incident")).toBe("1 record");
+    expect(figure("Of these, with another number of cells than the header")).toBe("1 record");
     expect(figure("Incidents")).toBe("2 incidents");
     const excluded = screen.getByRole("table", { name: "Records outside every incident, as written in the file" });
     expect(within(excluded).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual([
@@ -535,7 +535,16 @@ describe("the Data area", () => {
     await app.user.click(screen.getByRole("radio", { name: /^Strict:/ }));
     expect(screen.queryByRole("table", { name: "Records outside every incident, as written in the file" })).toBeNull();
     await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
-    expect(app.imports.confirmations[1].request.policies.rows).toEqual({
+    const strict = app.imports.confirmations[1];
+    await deliver(() =>
+      strict.reply(
+        importRefusal(strict.request, "confirm_mapping", "malformed_source", "Source record 2, physical lines 4..4 has 5 cells; expected 4. No row was discarded.", "source"),
+      ),
+    );
+    expect(screen.getByRole("alert").textContent).toContain(
+      "What to do Check the encoding and the delimiter. If they are right, some records do not fit the header: the strict rule stops at the first of them, the tolerant rule keeps up to 5 % of the records outside every incident. Choose the rule, or correct the export.",
+    );
+    expect(strict.request.policies.rows).toEqual({
       id: "incident.rows.missing_id_outside_invalid_time_retained.v1",
       parameters: {
         missing_case_id: "outside_population_preserve_source",
