@@ -23,11 +23,11 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["apps/api/src"]
+where = ["apps/api/src", "packages/analytics/src"]
 
 [tool.setuptools.package-data]
 wise_platform_api = ["static/*", "static/**/*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "packages/analytics/tests"]
 addopts = "-ra"
