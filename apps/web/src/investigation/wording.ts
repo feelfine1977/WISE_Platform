@@ -3,9 +3,15 @@ import type { Problem } from "./client";
 
 const integer = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 
+/** A supplied count, formatted, and the unit it counts: "12" and "incidents". */
+export function countParts(count: number, singular: "incident" | "record"): { figure: string; unit: string } {
+  return { figure: integer.format(count), unit: count === 1 ? singular : `${singular}s` };
+}
+
 /** Formats a supplied count with the unit it counts, for example "12 incidents". */
 export function countOf(count: number, singular: "incident" | "record"): string {
-  return `${integer.format(count)} ${count === 1 ? singular : `${singular}s`}`;
+  const { figure, unit } = countParts(count, singular);
+  return `${figure} ${unit}`;
 }
 
 export function utcInstant(value: string): string {

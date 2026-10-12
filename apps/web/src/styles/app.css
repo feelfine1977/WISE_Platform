@@ -1,0 +1,407 @@
+/*
+ * The investigation screen: a graphite app bar, a white toolbar with the facts of the current
+ * answer, the incident table and the history inspector. Every value is a token of tokens.css.
+ */
+
+/* Base */
+* { box-sizing: border-box; }
+html, body { background: var(--color-canvas); }
+body {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  font-synthesis: none;
+}
+h1, h2, h3, p { margin: 0; font-size: inherit; }
+strong { font-weight: var(--font-weight-strong); }
+code, .identifier { font-family: var(--font-mono); font-size: var(--font-size-mono); }
+code { overflow-wrap: anywhere; }
+.visually-hidden {
+  position: absolute;
+  width: var(--line-width);
+  height: var(--line-width);
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+[hidden] { display: none !important; }
+.truncated { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.label {
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-plain);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+/* Controls: 32 px high with a 40 px hit area, one blue for action, always a visible focus. */
+button, select, summary { font: inherit; color: inherit; }
+button, select {
+  position: relative;
+  min-height: var(--size-control);
+  padding: 0 var(--space-3);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+button::before { content: ""; position: absolute; inset: var(--hit-overhang); }
+button:hover, select:hover { background: var(--color-hover); }
+button.primary { color: var(--color-on-accent); background: var(--color-accent); border-color: var(--color-accent); }
+button.primary:hover { background: var(--color-accent-strong); border-color: var(--color-accent-strong); }
+button:disabled { opacity: var(--opacity-disabled); cursor: wait; }
+summary { cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+:focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--focus-offset); }
+/* Headings receive focus only programmatically, to announce where the work moved; they are not controls. */
+h2[tabindex="-1"]:focus { outline: none; }
+
+/* A disclosure names its state with a small triangle after its text. */
+.disclosure::after { content: "▸"; margin-left: var(--space-1); }
+details[open] > .disclosure::after { content: "▾"; }
+
+/* App bar */
+.app-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-height: var(--size-app-bar);
+  padding: 0 var(--space-4);
+  color: var(--color-bar-ink);
+  background: var(--color-bar);
+}
+.app-name { flex: none; font-weight: var(--font-weight-strong); letter-spacing: var(--letter-spacing-name); }
+.app-source {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-bar-ink-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.service { position: relative; flex: none; }
+.service > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-control);
+  padding: 0 var(--space-2);
+  color: var(--color-bar-ink-muted);
+  border-radius: var(--radius);
+}
+.service > summary:hover { color: var(--color-bar-ink); background: var(--color-bar-hover); }
+.service > summary:focus-visible { outline-color: var(--color-accent-on-bar); }
+.service-dot {
+  flex: none;
+  width: var(--size-dot);
+  height: var(--size-dot);
+  background: var(--color-status-checking);
+  border-radius: var(--radius-round);
+}
+.service-ready { background: var(--color-status-ready); }
+.service-unavailable { background: var(--color-status-unavailable); }
+.service-body {
+  position: absolute;
+  right: 0;
+  z-index: var(--z-float);
+  display: grid;
+  gap: var(--space-2);
+  width: var(--size-popover);
+  max-width: calc(var(--size-viewport-width) - var(--space-6));
+  margin-top: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius-float);
+  box-shadow: var(--shadow-float);
+}
+.service-body .muted { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.service-body button { justify-self: start; }
+
+/* Toolbar: where the question is, its source and status, and the supplied facts. */
+.investigation { display: flex; flex-direction: column; min-width: 0; }
+.toolbar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: var(--line-width) solid var(--color-line);
+}
+.toolbar-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); min-width: 0; }
+.crumb { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; color: var(--color-ink-muted); }
+.crumb h1 { color: var(--color-ink); font-weight: var(--font-weight-strong); }
+.source-control { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.source-control select { min-width: 0; max-width: var(--size-source-select); }
+.status-group { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; }
+.status { display: flex; align-items: center; gap: var(--space-2); font-variant-numeric: tabular-nums; }
+.status::before {
+  content: "";
+  flex: none;
+  width: var(--size-dot);
+  height: var(--size-dot);
+  background: var(--color-line-strong);
+  border-radius: var(--radius-round);
+}
+.status-ready::before { background: var(--color-accent); }
+.status-failed { font-weight: var(--font-weight-strong); }
+.status-failed::before { background: var(--color-error); }
+.toolbar-note { color: var(--color-ink-muted); }
+
+.toolbar-row { grid-column: 1; grid-row: 1; }
+.facts, .toolbar-note { grid-column: 1 / -1; grid-row: 2; }
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+  min-width: 0;
+  margin: 0 0 0 var(--facts-pull);
+  clip-path: inset(0 0 0 var(--facts-separator));
+}
+.fact { display: grid; align-content: start; min-width: 0; padding: 0 var(--space-4); border-left: var(--line-width) solid var(--color-line); }
+.fact dd { display: grid; margin: 0; }
+.fact-main, .fact-sub { color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.figure {
+  color: var(--color-ink);
+  font-size: var(--font-size-figure);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-strong);
+  line-height: var(--line-height-figure);
+}
+
+/* The pending line: a request of the current question is not answered yet. */
+.progress { position: absolute; right: 0; bottom: 0; left: 0; height: var(--size-progress); background: var(--color-accent); }
+
+/* Data details float over the page, just below the toolbar and as wide as it. */
+.data-details { grid-column: 2; grid-row: 1; }
+.data-details > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-control);
+  padding: 0 var(--space-2);
+  color: var(--color-ink-muted);
+  border-radius: var(--radius);
+}
+.data-details > summary:hover { color: var(--color-ink); background: var(--color-hover); }
+.details-panel {
+  position: absolute;
+  top: var(--offset-below);
+  right: var(--space-4);
+  left: var(--space-4);
+  z-index: var(--z-float);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--size-details-column), 100%), 1fr));
+  gap: var(--space-4) var(--space-6);
+  max-height: var(--size-floating-max-height);
+  margin-top: var(--space-1);
+  padding: var(--space-4);
+  overflow: auto;
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius-float);
+  box-shadow: var(--shadow-float);
+}
+.details-panel h3 {
+  margin-bottom: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-strong);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+.pairs { display: grid; gap: var(--space-2); margin: 0; }
+.pairs dt { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.pairs dd { margin: 0; }
+.parameters { margin: var(--space-1) 0 0; padding-left: var(--space-4); }
+
+/* Main area: the incident table and, beside it, the inspector. */
+.work { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.work[data-inspector="side"] { grid-template-columns: minmax(0, 1fr) var(--size-inspector); }
+.work[data-inspector="full"] .incidents { display: none; }
+.work[data-inspector="collapsed"] { grid-template-rows: auto minmax(0, 1fr); }
+.work[data-inspector="collapsed"] .inspector { order: -1; border-bottom: var(--line-width) solid var(--color-line); }
+.incidents, .inspector { min-width: 0; background: var(--color-surface); }
+.work[data-inspector="side"] .inspector { border-left: var(--line-width) solid var(--color-line); }
+.pane-title { padding: var(--space-3) var(--space-4) 0; font-weight: var(--font-weight-strong); }
+.pane-hint { padding: 0 var(--space-4) var(--space-2); color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.pane-note { padding: var(--space-3) var(--space-4); color: var(--color-ink-muted); }
+.incidents > .problem { margin: var(--space-3) var(--space-4); }
+
+/* Incident table: sticky labels, hairline rows, one blue for the open incident. */
+table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+th, td {
+  height: var(--size-row);
+  padding: 0 var(--space-4);
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  border-bottom: var(--line-width) solid var(--color-line-row);
+}
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-strong);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  white-space: normal;
+  vertical-align: bottom;
+  background: var(--color-surface);
+  border-bottom-color: var(--color-line-strong);
+}
+tbody th { padding: 0; font-weight: var(--font-weight-plain); }
+.column-number { width: var(--size-column-number); }
+.column-label { width: var(--size-column-label); }
+.number { text-align: right; font-variant-numeric: tabular-nums; }
+.incident-table tbody tr { cursor: pointer; }
+.incident-table tbody tr:hover > * { background: var(--color-hover); }
+.incident-table tbody tr.selected > * { background: var(--color-accent-tint); }
+.incident-table tbody tr.selected > th { box-shadow: inset var(--bar-width) 0 var(--color-accent); }
+.row-open {
+  display: block;
+  width: 100%;
+  min-height: var(--size-row);
+  padding: 0 var(--space-4);
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+/* The whole row opens the incident; the button needs no larger hit area, which would cover its neighbours. */
+.row-open::before { content: none; }
+.row-open:hover { text-decoration: underline; background: transparent; }
+.row-open:focus-visible { outline-offset: var(--focus-offset-inside); }
+tr.selected .row-open { font-weight: var(--font-weight-strong); }
+
+/* Inspector: the incident and its counts, then its history as a vertical sequence. */
+.inspector { display: flex; flex-direction: column; }
+.inspector-head {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: var(--line-width) solid var(--color-line);
+}
+.inspector-heading { display: grid; flex: 1 1 auto; min-width: 0; }
+.inspector-heading h2 { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; font-size: var(--font-size-title); white-space: nowrap; }
+.inspector-heading h2 .identifier { font-size: inherit; font-weight: var(--font-weight-strong); }
+.inspector-note { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.inspector-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.inspector-body { padding: var(--space-3) var(--space-4) var(--space-4); }
+.inspector-body > .pane-note { padding: 0; }
+.coverage { margin-top: var(--space-1); color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
+.coverage strong { color: var(--color-ink); }
+
+.sequence { margin: 0; padding: 0; list-style: none; }
+.record { display: grid; grid-template-columns: var(--size-sequence-gutter) minmax(0, 1fr); grid-template-rows: auto auto; }
+.record > * { grid-column: 2; }
+/* The thin line through the markers; it starts at the first marker and ends at the last. */
+.record::after { content: ""; grid-column: 1; grid-row: 1 / -1; justify-self: center; width: var(--line-width); background: var(--color-line-strong); }
+.record:first-child::after { margin-top: var(--sequence-line-inset); }
+.record:last-child::after { grid-row: 1; align-self: start; height: var(--sequence-line-inset); }
+.record:only-child::after { content: none; }
+.record::before {
+  content: "";
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  justify-self: center;
+  width: var(--size-marker);
+  height: var(--size-marker);
+  background: var(--color-ink);
+  border-radius: var(--radius-round);
+  box-shadow: 0 0 0 var(--bar-width) var(--color-surface);
+}
+/* A record without an activity label stays in the evidence but not on the map: a hollow marker. */
+.record.left-out::before { background: var(--color-surface); border: var(--bar-width) solid var(--color-line-strong); }
+.record-activity { overflow: hidden; font-weight: var(--font-weight-strong); text-overflow: ellipsis; white-space: nowrap; }
+.no-label { color: var(--color-ink-muted); font-style: italic; font-weight: var(--font-weight-plain); }
+.record-values { margin-bottom: var(--space-2); }
+.record-meta {
+  display: block;
+  padding: var(--space-1) 0;
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--radius);
+}
+.record-meta:hover .values-cue { text-decoration: underline; }
+.values-cue { color: var(--color-accent); white-space: nowrap; }
+.values-cue::after { content: " ▸"; }
+.record-values[open] .values-cue::after { content: " ▾"; }
+.value-list { display: grid; gap: var(--space-1); margin: var(--space-1) 0 0; font-size: var(--font-size-small); }
+.value-list > div { display: grid; grid-template-columns: var(--size-value-label) minmax(0, 1fr); gap: var(--space-3); }
+.value-list dt { color: var(--color-ink-muted); }
+.value-list dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+
+/* Missing cells read "missing"; the text "Unknown" is an ordinary value. */
+.missing { color: var(--color-ink-muted); font-style: italic; }
+.written { color: var(--color-ink-muted); font-size: var(--font-size-small); font-style: normal; }
+
+/* A failed request: an inline box with a red bar, the message and a retry; nothing else is blocked. */
+.problem {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-left: var(--bar-width) solid var(--color-error);
+  border-radius: var(--radius);
+}
+.problem-title { font-weight: var(--font-weight-strong); }
+.problem-reason { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.problem button { margin-top: var(--space-1); }
+
+/* Wide and tall windows: a workbench whose table and inspector scroll on their own. */
+@media (width > 1100px) and (min-height: 560px) {
+  .app { display: flex; flex-direction: column; height: var(--size-viewport-height); }
+  .investigation { flex: 1 1 auto; min-height: 0; }
+  .work { flex: 1 1 auto; min-height: 0; }
+  .incidents, .inspector { overflow: auto; }
+}
+
+/* Narrow windows and high zoom: the evidence takes the full width; Return brings back the table. */
+@media (max-width: 1100px) {
+  .work[data-inspector="side"] { grid-template-columns: minmax(0, 1fr); }
+  .work[data-inspector="side"] .incidents { display: none; }
+  .work[data-inspector="side"] .inspector { border-left: 0; }
+  .wide-only { display: none; }
+}
+@media (max-width: 640px) {
+  .app-bar { gap: var(--space-3); }
+  .status-group { margin-left: 0; }
+}
+
+/* Motion only when something opens, and none when reduced motion is asked. */
+@media (prefers-reduced-motion: no-preference) {
+  .inspector, .details-panel, .service-body, .record-values[open] > .value-list { animation: open var(--motion-open); }
+}
+@keyframes open {
+  from { opacity: 0; }
+}
