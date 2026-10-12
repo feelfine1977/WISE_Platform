@@ -1,0 +1,116 @@
+/*
+ * The only place where colours, radii, type sizes, spacing and sizes are written as values.
+ * Every other stylesheet refers to these custom properties.
+ *
+ * The shell takes its colours, shapes and type scale from the process map library, so a panel of
+ * the application and a panel on the map look the same. Its tokens are read from the library
+ * rather than repeated; the values below are the application's own additions. The page pins the
+ * light scheme of the library (data-theme="light" on the document), because the contrast of every
+ * pair below is checked against the light values.
+ */
+@import "wise-flow/tokens.css";
+
+:root {
+  color-scheme: light;
+
+  /* Colour: neutral chrome; the data carries the colour. */
+  --color-canvas: var(--wf-surface);
+  --color-surface: var(--wf-paper);
+  --color-ink: var(--wf-ink);
+  --color-ink-muted: var(--wf-ink-muted);
+  --color-line: var(--wf-line);
+  --color-line-strong: var(--wf-line-strong);
+  --color-line-row: #e6e9ed;
+  --color-hover: #f0f2f5;
+
+  /* The one interaction colour: focus ring, selected row, primary action. */
+  --color-accent: var(--wf-focus);
+  --color-accent-strong: #005a8c;
+  --color-accent-tint: var(--wf-selection);
+  --color-on-accent: var(--wf-on-pressed);
+
+  /* Red only for errors. */
+  --color-error: var(--wf-fail);
+
+  /* The app bar is the map's dark surface. */
+  --color-bar: #1f2229;
+  --color-bar-ink: #ececec;
+  --color-bar-ink-muted: #a7adb8;
+  --color-bar-hover: rgba(255, 255, 255, 0.07);
+  /* The map's selection blue on its dark surface: focus ring and ready state on the bar. */
+  --color-accent-on-bar: #56b4e9;
+  --color-status-ready: var(--color-accent-on-bar);
+  --color-status-checking: var(--color-bar-ink-muted);
+  --color-status-unavailable: var(--wf-fail);
+
+  /* Type */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: var(--wf-font-mono);
+  --font-size-base: var(--wf-text-panel);
+  --font-size-label: var(--wf-text-panel-label);
+  --font-size-small: 12px;
+  --font-size-mono: 12px;
+  --font-size-title: var(--wf-text-panel-symbol);
+  --font-size-figure: 20px;
+  --line-height-base: 1.45;
+  --line-height-figure: 1.2;
+  --letter-spacing-label: 0.04em;
+  --letter-spacing-name: 0.02em;
+  --font-weight-plain: var(--wf-weight-panel-plain);
+  --font-weight-strong: var(--wf-weight-panel-heading);
+
+  /* Shape */
+  --radius: var(--wf-radius);
+  --radius-float: var(--wf-radius-lg);
+  --radius-pill: var(--wf-radius-pill);
+  --radius-round: 50%;
+  --line-width: 1px;
+  --bar-width: 2px;
+  --focus-width: var(--wf-stroke-focus);
+  --focus-offset: 2px;
+  --focus-offset-inside: calc(var(--focus-width) * -1);
+  --shadow-float: var(--wf-shadow-menu);
+
+  /* Spacing on a 4 px grid. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+
+  /* Sizes */
+  --size-app-bar: 44px;
+  --size-row: 32px;
+  --size-control: 32px;
+  --size-hit: 40px;
+  --hit-overhang: calc((var(--size-control) - var(--size-hit)) / 2);
+  --size-dot: 8px;
+  --size-marker: 10px;
+  --size-sequence-gutter: 24px;
+  /* The vertical line of a history starts and ends at the centre of the first and last marker. */
+  --sequence-line-inset: calc(var(--font-size-base) * var(--line-height-base) / 2);
+  --size-progress: 2px;
+  --size-inspector: 440px;
+  --size-column-number: 128px;
+  --size-column-label: 120px;
+  --size-source-select: 240px;
+  --size-popover: 340px;
+  --size-details-column: 300px;
+  --size-value-label: 136px;
+  --size-floating-max-height: 60vh;
+  --size-viewport-width: 100vw;
+  /* A floating panel starts just below the bar it belongs to. */
+  --offset-below: 100%;
+  /* Facts that begin a wrapped line lose their separator: the facts bar is pulled left by it and clipped. */
+  --facts-separator: calc(var(--space-4) + var(--line-width));
+  --facts-pull: calc(var(--facts-separator) * -1);
+  --size-viewport-height: 100dvh;
+
+  /* Layers */
+  --z-sticky: var(--wf-z-comparison-header);
+  --z-float: var(--wf-z-menu);
+
+  /* Motion: only on open and close, and none when reduced motion is asked. */
+  --motion-open: 120ms ease-out;
+  --opacity-disabled: var(--wf-opacity-disabled);
+}
