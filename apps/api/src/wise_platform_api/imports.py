@@ -12,6 +12,10 @@ prepares the stored bytes again under the stored confirmation and must arrive
 at the same preparation id; the last prepared snapshots are held in memory so
 that the population and the evidence of their incidents answer at once.
 
+The evidence of an incident may name a population selected from a
+preparation; it is then answered only through the selection kept under that
+population identity, which refuses an incident it did not keep.
+
 Every answer is checked against the generated models before it is sent, but
 sent with the package's own values, so that a confirmed interpretation comes
 back exactly as it was confirmed.
@@ -31,6 +35,7 @@ from wise_platform_analytics.csv_inspection import inspect_csv
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
 from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare
 from wise_platform_analytics.prepared_operations import open_prepared_case, open_prepared_population
+from wise_platform_analytics.selection import open_selected_case
 
 from .boundary import SCHEMA_VERSION
 from .generated.imports import (
@@ -56,6 +61,7 @@ from .import_boundary import (
     parse_import_body,
     upload_message,
 )
+from .registry import SelectionRegistry
 from .workspace import Problem, StoredPreparation, Workspace
 
 logger = logging.getLogger(__name__)
@@ -82,8 +88,9 @@ class ImportReply:
 class Imports:
     """The import operations over the workspaces opened in this run of the application."""
 
-    def __init__(self, forbidden: Iterable[Path] = ()) -> None:
+    def __init__(self, forbidden: Iterable[Path] = (), selections: SelectionRegistry | None = None) -> None:
         self._forbidden = tuple(forbidden)
+        self.selections = selections if selections is not None else SelectionRegistry()
         self._workspaces: dict[str, Workspace] = {}
         self._prepared: OrderedDict[str, PreparedData] = OrderedDict()
         self._inspections: OrderedDict[tuple[str, str | None, str | None], dict] = OrderedDict()
@@ -220,7 +227,7 @@ class Imports:
         workspace = self._workspace(OPEN_POPULATION, given)
         if isinstance(workspace, ImportReply):
             return workspace
-        found = self._prepared_snapshot(workspace, given["preparation_id"], "preparation_id")
+        found = self.prepared_snapshot(workspace, given["preparation_id"], "preparation_id")
         if isinstance(found, Problem):
             return _problem(OPEN_POPULATION, found, given)
         if isinstance(found, PackageRefusal):
@@ -238,12 +245,18 @@ class Imports:
         if isinstance(workspace, ImportReply):
             return workspace
         identity = given["identity"]
-        found = self._prepared_snapshot(workspace, identity["preparation_id"], "identity.preparation_id")
+        found = self.prepared_snapshot(workspace, identity["preparation_id"], "identity.preparation_id")
         if isinstance(found, Problem):
             return _problem(CASE_EVIDENCE, found, given)
         if isinstance(found, PackageRefusal):
             return _from_package(CASE_EVIDENCE, found, given)
-        evidence = open_prepared_case(found[0], identity, given["case_id"])
+        # A selected population is answered only through the selection it names, which validates
+        # the whole identity and that the incident is kept; any other identity is the prepared one.
+        selection = self.selections.find(workspace.workspace_id, identity["population_id"])
+        if selection is None:
+            evidence = open_prepared_case(found[0], identity, given["case_id"])
+        else:
+            evidence = open_selected_case(found[0], selection, identity, given["case_id"])
         if isinstance(evidence, PackageRefusal):
             return _from_package(CASE_EVIDENCE, evidence, given)
         return _answer(ImportedCaseEvidenceAnswer, _envelope("imported_case_evidence_answer", given) | evidence)
@@ -251,26 +264,29 @@ class Imports:
     # Workspaces and prepared snapshots -----------------------------------------------------
 
     def _workspace(self, operation: str, given: dict) -> Workspace | ImportReply:
+        workspace = self.opened_workspace(given["workspace_id"])
+        if isinstance(workspace, Problem):
+            return _problem(operation, workspace, given)
+        return workspace
+
+    def opened_workspace(self, workspace_id: str) -> Workspace | Problem:
+        """The workspace of this id opened in this run, while its folder is still that workspace."""
         with self._lock:
-            workspace = self._workspaces.get(given["workspace_id"])
+            workspace = self._workspaces.get(workspace_id)
         if workspace is None:
-            return _problem(
-                operation,
-                Problem(
-                    "workspace_unavailable",
-                    "This workspace is not open in the application. Open the workspace folder again.",
-                    "workspace_id",
-                ),
-                given,
+            return Problem(
+                "workspace_unavailable",
+                "This workspace is not open in the application. Open the workspace folder again.",
+                "workspace_id",
             )
         problem = workspace.check()
         if problem is not None:
             with self._lock:
                 self._workspaces.pop(workspace.workspace_id, None)
-            return _problem(operation, problem, given)
+            return problem
         return workspace
 
-    def _prepared_snapshot(
+    def prepared_snapshot(
         self, workspace: Workspace, preparation_id: str, field: str
     ) -> tuple[PreparedData, dict] | Problem | PackageRefusal:
         """The prepared snapshot of a kept preparation and its stored source."""
