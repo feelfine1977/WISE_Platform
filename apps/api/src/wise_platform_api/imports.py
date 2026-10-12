@@ -250,24 +250,37 @@ class Imports:
 
     # Workspaces and prepared snapshots -----------------------------------------------------
 
+    def prepared(self, workspace_id: str, preparation_id: str) -> tuple[PreparedData, dict] | Problem | PackageRefusal:
+        """The prepared snapshot of a preparation kept in an open workspace, and its stored source.
+
+        A problem names the field ``identity.preparation_id`` for the preparation, as the
+        investigation operations that use it carry the preparation inside their identity.
+        """
+        workspace = self._open(workspace_id)
+        if isinstance(workspace, Problem):
+            return workspace
+        return self._prepared_snapshot(workspace, preparation_id, "identity.preparation_id")
+
     def _workspace(self, operation: str, given: dict) -> Workspace | ImportReply:
+        workspace = self._open(given["workspace_id"])
+        if isinstance(workspace, Problem):
+            return _problem(operation, workspace, given)
+        return workspace
+
+    def _open(self, workspace_id: str) -> Workspace | Problem:
         with self._lock:
-            workspace = self._workspaces.get(given["workspace_id"])
+            workspace = self._workspaces.get(workspace_id)
         if workspace is None:
-            return _problem(
-                operation,
-                Problem(
-                    "workspace_unavailable",
-                    "This workspace is not open in the application. Open the workspace folder again.",
-                    "workspace_id",
-                ),
-                given,
+            return Problem(
+                "workspace_unavailable",
+                "This workspace is not open in the application. Open the workspace folder again.",
+                "workspace_id",
             )
         problem = workspace.check()
         if problem is not None:
             with self._lock:
                 self._workspaces.pop(workspace.workspace_id, None)
-            return _problem(operation, problem, given)
+            return problem
         return workspace
 
     def _prepared_snapshot(
