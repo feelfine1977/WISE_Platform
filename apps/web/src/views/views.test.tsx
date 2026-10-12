@@ -186,7 +186,8 @@ describe("the views of the population of an imported preparation", () => {
     expect(tableIncidents()).toEqual(["K-4"]);
     await app.user.click(screen.getByRole("button", { name: "Show every incident" }));
     expect(tableIncidents()).toEqual(["K-1", "K-2", "K-3", "K-4", "K-5"]);
-    expect(screen.getByRole("heading", { name: "Incidents of this preparation" })).toBeTruthy();
+    // The button that cleared the choice is gone; the focus moves to the heading of the table.
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Incidents of this preparation" }));
     expect(app.coordinator.getState().chosenVariant).toBeNull();
 
     // Pressing the chosen variant again clears the choice as well.

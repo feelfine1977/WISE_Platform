@@ -21,6 +21,7 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
+  const incidentsHeading = useRef<HTMLHeadingElement>(null);
   const { population, inspected, openingContext, variants, chosenVariant } = state;
   const inspectorOpen = inspected.phase !== "closed";
   const openCaseId = inspected.phase === "closed" ? null : inspected.caseId;
@@ -88,7 +89,7 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
       <div className="workbench-body" data-inspector={inspectorOpen ? layout : "none"}>
         <div className="main-column">
           <section className="table-pane" aria-labelledby="imported-incidents-title">
-            <h3 id="imported-incidents-title" className="pane-title">
+            <h3 id="imported-incidents-title" className="pane-title" tabIndex={-1} ref={incidentsHeading}>
               {variantView ? `Incidents of variant ${variantView.rank}` : "Incidents of this preparation"}
             </h3>
             <p role="status" className="visually-hidden">
@@ -100,7 +101,13 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
                   The table lists the {countOf(variantView.cases.length, "incident")} of variant {variantView.rank}. This is a view: the population and
                   every count stay as they are.
                 </p>
-                <button type="button" onClick={() => coordinator.clearVariant()}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    coordinator.clearVariant();
+                    incidentsHeading.current?.focus();
+                  }}
+                >
                   Show every incident
                 </button>
               </div>
