@@ -1,63 +1,145 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { fetchHealth } from "./api";
+import { IncidentTable } from "./components/IncidentTable";
+import { Inspector, type InspectorLayout } from "./components/Inspector";
+import { PopulationStrip } from "./components/PopulationStrip";
+import { ProblemNotice } from "./components/ProblemNotice";
+import { ServiceStatus } from "./components/ServiceStatus";
 import type { HealthResponse } from "./generated/health";
+import type { CaseId } from "./generated/investigation";
+import { httpInvestigationClient, type InvestigationClient } from "./investigation/client";
+import { InvestigationCoordinator, type PopulationState } from "./investigation/coordinator";
+import { countOf } from "./investigation/wording";
 
-type Connection =
-  | { state: "checking" }
-  | { state: "ready"; health: HealthResponse }
-  | { state: "unavailable"; message: string };
+interface AppProps {
+  client?: InvestigationClient;
+  checkHealth?: (signal: AbortSignal) => Promise<HealthResponse>;
+}
 
-export default function App() {
-  const [connection, setConnection] = useState<Connection>({ state: "checking" });
-  const [revision, setRevision] = useState(0);
+type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
+
+export default function App({ client = httpInvestigationClient, checkHealth = fetchHealth }: AppProps) {
+  const [coordinator] = useState(() => new InvestigationCoordinator(client));
+  const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
+  const [layout, setLayout] = useState<InspectorLayout>("side");
+  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+  const rowControls = useRef(new Map<CaseId, HTMLButtonElement>()).current;
+  const inspectorHeading = useRef<HTMLHeadingElement>(null);
+  const incidentsHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    setConnection({ state: "checking" });
-    fetchHealth(controller.signal).then(
-      (health) => {
-        if (!controller.signal.aborted) setConnection({ state: "ready", health });
-      },
-      (error: unknown) => {
-        if (!controller.signal.aborted) {
-          setConnection({ state: "unavailable", message: error instanceof Error ? error.message : "The local service is unavailable." });
-        }
-      },
-    );
-    return () => controller.abort();
-  }, [revision]);
+    coordinator.start();
+    return () => coordinator.stop();
+  }, [coordinator]);
+
+  useEffect(() => {
+    if (focusTarget === null) return;
+    if (focusTarget.to === "inspector") inspectorHeading.current?.focus();
+    else (rowControls.get(focusTarget.caseId) ?? incidentsHeading.current)?.focus();
+    setFocusTarget(null);
+  }, [focusTarget, rowControls]);
+
+  const { population, inspected } = state;
+  const inspectorOpen = inspected.phase !== "closed";
+  const openCaseId = inspected.phase === "closed" ? null : inspected.caseId;
+
+  const openCase = useCallback(
+    (caseId: CaseId) => {
+      coordinator.openCase(caseId);
+      setLayout((current) => (current === "collapsed" ? "side" : current));
+      setFocusTarget({ to: "inspector" });
+    },
+    [coordinator],
+  );
+
+  const returnToIncidents = useCallback(() => {
+    const current = coordinator.getState().inspected;
+    if (current.phase === "closed") return;
+    coordinator.closeCase();
+    setFocusTarget({ to: "row", caseId: current.caseId });
+  }, [coordinator]);
+
+  useEffect(() => {
+    if (!inspectorOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented || event.target instanceof HTMLSelectElement) return;
+      event.preventDefault();
+      returnToIncidents();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [inspectorOpen, returnToIncidents]);
+
+  const summary = population.phase === "ready" ? population.answer.cases.find((item) => item.case_id === openCaseId) : undefined;
 
   return (
-    <main className="workspace">
-      <header className="brand">
-        <span className="brand-mark" aria-hidden="true">W</span>
-        <div><p className="eyebrow">Local process analysis</p><h1>WISE Platform</h1></div>
-      </header>
-      <section className="introduction" aria-labelledby="foundation-title">
-        <p className="stage">Foundation</p>
-        <h2 id="foundation-title">A clean home for your investigations</h2>
-        <p>The local application host and browser connection are the first foundation. Event-log analysis is being built next.</p>
-      </section>
-      <section className="connection panel" aria-labelledby="connection-title">
-        <div><h3 id="connection-title">Local service</h3>
-          <div role="status" aria-live="polite">
-            {connection.state === "checking" && <p>Checking the connection…</p>}
-            {connection.state === "ready" && <><p className="success">Connected to this computer</p><p className="detail">Version {connection.health.version} · {connection.health.stage}</p></>}
-            {connection.state === "unavailable" && <><p className="failure">Connection unavailable</p><p className="detail">{connection.message} Check that the Python application is running, then retry.</p></>}
-          </div>
+    <div className="app">
+      <header className="app-header">
+        <div className="brand">
+          <span className="brand-mark" aria-hidden="true">W</span>
+          <span className="brand-name">WISE Platform</span>
         </div>
-        <button type="button" disabled={connection.state === "checking"} onClick={() => setRevision((value) => value + 1)}>Check connection</button>
-      </section>
-      <section className="panel" aria-labelledby="next-title">
-        <h3 id="next-title">What comes next</h3>
-        <p>This foundation does not yet import CSVs, show process maps or charts, calculate WISE scores, or save investigations.</p>
-        <ol className="journey">
-          <li><strong>Data</strong><span>Import locally and review the event-log interpretation.</span></li>
-          <li><strong>Investigations</strong><span>Explore linked views, compare groups and inspect complete histories.</span></li>
-          <li><strong>Expectations</strong><span>Add reviewed local targets and scoring when useful.</span></li>
-        </ol>
-      </section>
-      <footer>No event log has been loaded. This page checks only the local foundation service.</footer>
-    </main>
+        <h1>Incident investigation</h1>
+        <ServiceStatus checkHealth={checkHealth} />
+      </header>
+      <main className="investigation">
+        <PopulationStrip population={population} onChooseExample={(exampleId) => coordinator.openExample(exampleId)} />
+        <div className="work" data-inspector={inspectorOpen ? layout : "none"}>
+          <section className="incidents" aria-labelledby="incidents-title">
+            <h2 id="incidents-title" className="section-title" tabIndex={-1} ref={incidentsHeading}>
+              Incidents in the parent population
+            </h2>
+            <IncidentArea
+              population={population}
+              openCaseId={openCaseId}
+              onOpen={openCase}
+              onRetry={() => coordinator.retryPopulation()}
+              rowControls={rowControls}
+            />
+          </section>
+          {inspected.phase !== "closed" && population.phase === "ready" && (
+            <Inspector
+              inspected={inspected}
+              summary={summary}
+              policies={population.answer.policies}
+              layout={layout}
+              onLayout={setLayout}
+              onReturn={returnToIncidents}
+              onRetry={() => coordinator.retryCase()}
+              headingRef={inspectorHeading}
+            />
+          )}
+        </div>
+      </main>
+    </div>
   );
+}
+
+interface IncidentAreaProps {
+  population: PopulationState;
+  openCaseId: CaseId | null;
+  onOpen: (caseId: CaseId) => void;
+  onRetry: () => void;
+  rowControls: Map<CaseId, HTMLButtonElement>;
+}
+
+/** The incident table of the current answer, or what stands in its place while there is none. */
+function IncidentArea({ population, openCaseId, onOpen, onRetry, rowControls }: IncidentAreaProps) {
+  switch (population.phase) {
+    case "idle":
+    case "loading":
+      return <p className="pending">Opening the synthetic example and its population…</p>;
+    case "failed":
+      return <ProblemNotice title="The population could not be opened" problem={population.problem} onRetry={onRetry} />;
+    case "ready":
+      if (population.answer.cases.length === 0) {
+        return (
+          <p className="pending">
+            The local service answered with {countOf(population.answer.populations.parent.case_count, "incident")} in the parent
+            population, so there is no incident to open.
+          </p>
+        );
+      }
+      return <IncidentTable answer={population.answer} openCaseId={openCaseId} onOpen={onOpen} rowControls={rowControls} />;
+  }
 }
