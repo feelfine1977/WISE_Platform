@@ -1,6 +1,7 @@
 import type {
   ConfirmMappingRequest,
   CsvInspectionAnswer,
+  Dialect,
   DialectHints,
   InspectCsvRequest,
   InterpretationAnswer,
@@ -46,6 +47,8 @@ export interface DataState {
   preparations: StoredPreparation[];
   source: SourceState;
   inspection: InspectionState;
+  /** How the inspection without hints read the current source; a reading asked for is not a detection. */
+  detected: Dialect | null;
   draft: Draft;
   interpretation: InterpretationState;
 }
@@ -59,6 +62,7 @@ const initialState: DataState = {
   preparations: [],
   source: { phase: "none" },
   inspection: { phase: "none" },
+  detected: null,
   draft: emptyDraft,
   interpretation: { phase: "none" },
 };
@@ -136,6 +140,7 @@ export class DataCoordinator {
       revision,
       source: { phase: "uploading", filename: metadata.filename, byteCount: file.size, startedAt: this.now().getTime() },
       inspection: { phase: "none" },
+      detected: null,
       interpretation: { phase: "none" },
       draft: emptyDraft,
     });
@@ -150,7 +155,7 @@ export class DataCoordinator {
     if (this.state.workspace.phase !== "open") return;
     this.abort(["source", "inspection", "interpretation"]);
     this.columns = null;
-    this.publish({ ...this.state, source: { phase: "stored", source }, draft: emptyDraft, interpretation: { phase: "none" } });
+    this.publish({ ...this.state, source: { phase: "stored", source }, detected: null, draft: emptyDraft, interpretation: { phase: "none" } });
     this.inspect(null);
   }
 
@@ -304,7 +309,8 @@ export class DataCoordinator {
     }
     const draft = draftAfterInspection(this.state.draft, this.columns, checked.answer, this.now());
     this.columns = checked.answer.columns.map((column) => column.name);
-    this.publish({ ...this.state, inspection: { phase: "ready", hints, answer: checked.answer }, draft });
+    const detected = hints === null ? (checked.answer.dialect_candidates[0] ?? null) : this.state.detected;
+    this.publish({ ...this.state, inspection: { phase: "ready", hints, answer: checked.answer }, detected, draft });
   }
 
   private receiveInterpretation(request: ConfirmMappingRequest, outcome: ImportOutcome<InterpretationAnswer>): void {

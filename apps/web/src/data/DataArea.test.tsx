@@ -150,6 +150,10 @@ describe("the Data area", () => {
     expect(screen.getByText(/Inspecting Vorgänge\.csv/)).toBeTruthy();
     await deliver(() => comma.reply({ ok: true, answer: commaInspectionAnswer(comma.request) }));
     expect(within(screen.getByRole("table", { name: "The first records as read, by source position" })).getAllByRole("columnheader")).toHaveLength(2);
+    // The reading asked for is not a detection; the detected delimiter keeps its mark.
+    const delimiterOptions = Array.from((screen.getByLabelText("Delimiter") as HTMLSelectElement).options).map((option) => option.textContent);
+    expect(delimiterOptions).toEqual(["Comma ,", "Semicolon ; (detected)", "Tab", "Vertical bar |"]);
+    expect((screen.getByLabelText("Delimiter") as HTMLSelectElement).value).toBe(",");
 
     await app.user.selectOptions(screen.getByLabelText("Encoding"), "utf-8");
     const utf8 = app.imports.inspections[2];

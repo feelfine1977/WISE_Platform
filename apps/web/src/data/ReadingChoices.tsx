@@ -42,7 +42,7 @@ export function ReadingChoices({ state, coordinator, onOpenIncidents }: ReadingC
         </h3>
         {inspection.phase !== "none" && (
           <Dialect
-            detected={inspection.phase === "ready" ? inspection.answer.dialect_candidates[0] : undefined}
+            detected={state.detected}
             draft={state.draft}
             coordinator={coordinator}
           />
@@ -76,8 +76,8 @@ export function ReadingChoices({ state, coordinator, onOpenIncidents }: ReadingC
 }
 
 interface DialectProps {
-  /** The first way the inspection found to read the source, once it has answered. */
-  detected: CsvInspectionAnswer["dialect_candidates"][number] | undefined;
+  /** The first way the inspection without hints found to read the source, once it has answered. */
+  detected: CsvInspectionAnswer["dialect_candidates"][number] | null;
   draft: Draft;
   coordinator: DataCoordinator;
 }
