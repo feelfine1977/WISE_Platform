@@ -21,6 +21,9 @@ dev = [
   "jsonschema>=4.23,<5",
   "pytest>=8,<10"
 ]
+method = [
+  "wise-pm==0.2.0"
+]
 
 [tool.setuptools.packages.find]
 where = ["apps/api/src", "packages/analytics/src"]
