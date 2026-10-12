@@ -121,7 +121,8 @@ function RecordValues({ record, membership }: { record: SourceRecord; membership
     <details className="record-values">
       <summary className="record-meta">
         {utcInstant(record.timestamp_utc)} · source position {record.source_position} · {membership}
-        <span className="values-cue"> · values</span>
+        {" · "}
+        <span className="values-cue">values</span>
       </summary>
       <dl className="value-list">
         {rows.map(([label, value]) => (
