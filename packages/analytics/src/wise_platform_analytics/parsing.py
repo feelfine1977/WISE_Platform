@@ -11,14 +11,18 @@ Rules of this parser version:
   columns are kept as raw cells. A column named twice or not named is refused.
 * A cell with no characters is a missing value (``None``). Every other cell is
   kept exactly as written; nothing is trimmed, and text such as ``Unknown`` is
-  an ordinary value. This is the fixed missing-value policy
-  ``MISSING_VALUE_POLICY``.
-* ``incident_id``, ``source_sequence`` and ``timestamp_utc`` must have a value.
+  an ordinary value.
+* ``incident_id``, ``source_event_id``, ``source_sequence``, ``timestamp_utc``
+  and ``service`` must have a value, so only ``activity``,
+  ``assignment_group`` and further columns can be missing. This is what the
+  missing-value policy ``incident.missing.empty_activity_context_cells.v1``
+  declares.
 * ``timestamp_utc`` has the form ``2026-01-31T09:30:00Z`` with an optional
-  fraction of one to nine digits. The ``Z`` is required: a time without it, or
-  with another offset, is refused rather than guessed.
-* ``source_sequence`` is a whole number of at most eighteen digits, optionally
-  negative.
+  fraction of one to six digits. The ``Z`` is required: a time without it, or
+  with another offset, is refused rather than guessed, and so is a finer
+  fraction than a microsecond rather than rounded.
+* ``source_sequence`` is a whole number from 0, of at most eighteen digits,
+  without a sign.
 * Every row with cells is one record. Rows are never merged, dropped or
   reordered here: two identical rows are two records.
 * A line with no cells at all carries no record. It is skipped and does not
@@ -26,9 +30,10 @@ Rules of this parser version:
 * Broken quoting, and a cell longer than the standard CSV reader accepts, are
   refused.
 
+A record's source position is its index among the data rows, counting from 0.
 Anything else is refused with the reason, the 1-based line of the source and,
-for a data row, its 1-based position among the data rows. The first offending
-row in source order is the one reported.
+for a data row, its source position; messages count data rows from 1 for the
+reader. The first offending row in source order is the one reported.
 """
 
 from __future__ import annotations
@@ -39,13 +44,12 @@ import re
 from collections import Counter
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Protocol
 
 from .refusals import DetailValue, Refusal, RefusalCode
 
 PARSER_VERSION = "incident.event_history_csv.v1"
-MISSING_VALUE_POLICY = "incident.missing_value.empty_cell_only.v1"
 
 INCIDENT_ID = "incident_id"
 SOURCE_EVENT_ID = "source_event_id"
@@ -65,15 +69,16 @@ REQUIRED_COLUMNS: tuple[str, ...] = (
     ASSIGNMENT_GROUP,
 )
 
+_REQUIRED_VALUES: tuple[str, ...] = (INCIDENT_ID, SOURCE_EVENT_ID, SERVICE)
+"""Columns whose cell must not be empty; sequence and timestamp are read below."""
+
 _BYTE_ORDER_MARK = "﻿"
-_NANOSECONDS_PER_SECOND = 1_000_000_000
-_EPOCH = datetime(1970, 1, 1)
 _TIMESTAMP = re.compile(
     r"(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})"
     r"T(?P<hour>[0-9]{2}):(?P<minute>[0-9]{2}):(?P<second>[0-9]{2})"
-    r"(?:\.(?P<fraction>[0-9]{1,9}))?Z"
+    r"(?:\.(?P<fraction>[0-9]{1,6}))?Z"
 )
-_SEQUENCE = re.compile(r"-?[0-9]{1,18}")
+_SEQUENCE = re.compile(r"[0-9]{1,18}")
 _SHOWN_LENGTH = 60
 
 
@@ -81,18 +86,20 @@ _SHOWN_LENGTH = 60
 class SourceRecord:
     """One data row: its place in the source, its raw cells and its parsed keys."""
 
-    position: int
-    """1-based position among the data rows of the source."""
+    source_position: int
+    """Index of the row among the data rows of the source, counting from 0."""
     line: int
     """1-based line of the source on which the row starts."""
     cells: tuple[str | None, ...]
     """Original cell text in column order; ``None`` for an empty cell."""
     incident_id: str
-    source_event_id: str | None
-    activity: str | None
-    instant_ns: int
-    """The timestamp as whole nanoseconds since 1970-01-01T00:00:00Z."""
+    source_event_id: str
     sequence: int
+    timestamp_utc: datetime
+    """The timestamp as an exact instant in UTC."""
+    activity: str | None
+    service: str
+    assignment_group: str | None
 
 
 @dataclass(frozen=True)
@@ -103,26 +110,24 @@ class ParsedSource:
     records: tuple[SourceRecord, ...]
 
 
-def parse_instant(text: str) -> int | None:
-    """Return the nanoseconds since the epoch for a UTC timestamp, or ``None``."""
+def parse_instant(text: str) -> datetime | None:
+    """Return the instant a UTC timestamp names, or ``None``."""
     match = _TIMESTAMP.fullmatch(text)
     if match is None:
         return None
     try:
-        moment = datetime(
+        return datetime(
             int(match["year"]),
             int(match["month"]),
             int(match["day"]),
             int(match["hour"]),
             int(match["minute"]),
             int(match["second"]),
+            int((match["fraction"] or "").ljust(6, "0")),
+            tzinfo=timezone.utc,
         )
     except ValueError:
         return None
-    elapsed = moment - _EPOCH
-    seconds = elapsed.days * 86_400 + elapsed.seconds
-    fraction = (match["fraction"] or "").ljust(9, "0")
-    return seconds * _NANOSECONDS_PER_SECOND + int(fraction)
 
 
 def parse_sequence(text: str) -> int | None:
@@ -162,7 +167,7 @@ def parse_source(source: bytes) -> ParsedSource | Refusal:
         columns = tuple(names)
         index = {name: columns.index(name) for name in REQUIRED_COLUMNS}
         for line, row in rows:
-            record = _read_record(row, line, len(records) + 1, columns, index)
+            record = _read_record(row, line, len(records), columns, index)
             if isinstance(record, Refusal):
                 return record
             records.append(record)
@@ -172,7 +177,7 @@ def parse_source(source: bytes) -> ParsedSource | Refusal:
             f"The row starting at line {unreadable.line} is not well-formed CSV: "
             f"{unreadable.reason}.",
             line=unreadable.line,
-            source_position=None if columns is None else len(records) + 1,
+            source_position=None if columns is None else len(records),
         )
     if not records:
         return _malformed("no_data_rows", "The source has a header but no data rows.")
@@ -245,7 +250,7 @@ def _read_record(
     columns: tuple[str, ...],
     index: Mapping[str, int],
 ) -> SourceRecord | Refusal:
-    where = f"Data row {position} (line {line})"
+    where = f"Data row {position + 1} (line {line})"
     if len(row) != len(columns):
         return _malformed(
             "wrong_cell_count",
@@ -257,15 +262,15 @@ def _read_record(
         )
     cells = tuple(cell if cell != "" else None for cell in row)
 
-    incident_id = cells[index[INCIDENT_ID]]
-    if incident_id is None:
-        return _malformed(
-            "empty_incident_id",
-            f"{where} has an empty {INCIDENT_ID}.",
-            line=line,
-            source_position=position,
-            column=INCIDENT_ID,
-        )
+    for column in _REQUIRED_VALUES:
+        if cells[index[column]] is None:
+            return _malformed(
+                f"empty_{column}",
+                f"{where} has an empty {column}.",
+                line=line,
+                source_position=position,
+                column=column,
+            )
 
     sequence_text = cells[index[SOURCE_SEQUENCE]]
     sequence = None if sequence_text is None else parse_sequence(sequence_text)
@@ -273,7 +278,7 @@ def _read_record(
         return _malformed(
             "unparsable_sequence",
             f"{where} has a {SOURCE_SEQUENCE} that cannot be read: {_shown(sequence_text)}. "
-            "Expected a whole number of at most eighteen digits.",
+            "Expected a whole number from 0 of at most eighteen digits, without a sign.",
             line=line,
             source_position=position,
             column=SOURCE_SEQUENCE,
@@ -281,12 +286,13 @@ def _read_record(
         )
 
     timestamp_text = cells[index[TIMESTAMP_UTC]]
-    instant_ns = None if timestamp_text is None else parse_instant(timestamp_text)
-    if instant_ns is None:
+    instant = None if timestamp_text is None else parse_instant(timestamp_text)
+    if instant is None:
         return _malformed(
             "unparsable_timestamp",
             f"{where} has a {TIMESTAMP_UTC} that cannot be read: {_shown(timestamp_text)}. "
-            "Expected the form 2026-01-31T09:30:00Z, optionally with fractional seconds.",
+            "Expected the form 2026-01-31T09:30:00Z, optionally with one to six "
+            "fractional digits of a second.",
             line=line,
             source_position=position,
             column=TIMESTAMP_UTC,
@@ -294,15 +300,23 @@ def _read_record(
         )
 
     return SourceRecord(
-        position=position,
+        source_position=position,
         line=line,
         cells=cells,
-        incident_id=incident_id,
-        source_event_id=cells[index[SOURCE_EVENT_ID]],
-        activity=cells[index[ACTIVITY]],
-        instant_ns=instant_ns,
+        incident_id=_present(cells[index[INCIDENT_ID]]),
+        source_event_id=_present(cells[index[SOURCE_EVENT_ID]]),
         sequence=sequence,
+        timestamp_utc=instant,
+        activity=cells[index[ACTIVITY]],
+        service=_present(cells[index[SERVICE]]),
+        assignment_group=cells[index[ASSIGNMENT_GROUP]],
     )
+
+
+def _present(value: str | None) -> str:
+    """Return a cell already checked to have a value."""
+    assert value is not None
+    return value
 
 
 def _shown(value: str | None) -> str:

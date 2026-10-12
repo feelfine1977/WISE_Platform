@@ -1,13 +1,14 @@
 """The refusal record, its closed set of codes, and how each code is reached."""
 
 import json
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 
 import pytest
+from supported_policies import SUPPORTED_CHOICES, selection_with
 
 from wise_platform_analytics import (
+    Identities,
     PolicyChoice,
-    PolicySelection,
     PopulationAnswer,
     Refusal,
     RefusalCode,
@@ -17,37 +18,40 @@ from wise_platform_analytics import (
 
 ORDER = "incident.order.timestamp_sequence_source_position.v1"
 ACTIVITY_PROJECTION = "incident.activity.omit_missing_retain_raw_gaps.v1"
+# A is in the parent population; Z, with service T, is outside it.
 SOURCE = (
     b"incident_id,source_event_id,source_sequence,activity,timestamp_utc,service,assignment_group\n"
     b"A,a-1,1,Opened,2026-10-01T09:00:00Z,S,Desk\n"
+    b"Z,z-1,1,Opened,2026-10-01T09:00:00Z,T,Desk\n"
 )
-SUPPORTED = PolicySelection.of(order=ORDER, activity_projection=ACTIVITY_PROJECTION)
+SUPPORTED = selection_with()
+ANY_IDENTITIES = Identities("s", "p", "r", "d", "population", "0.1.0")
 
 # A source or a selection that neither operation can use, by the code it must be refused with.
 UNUSABLE = {
     "malformed_source": (SOURCE.replace(b"09:00:00Z", b"09:00"), SUPPORTED),
     "unknown_policy": (
         SOURCE,
-        PolicySelection.of(order=ORDER + "0", activity_projection=ACTIVITY_PROJECTION),
+        selection_with(
+            order=PolicyChoice(ORDER + "0", SUPPORTED_CHOICES["order"].parameters)
+        ),
     ),
     "unsupported_parameter": (
         SOURCE,
-        PolicySelection(
-            {
-                "order": PolicyChoice(ORDER),
-                "activity_projection": PolicyChoice(ACTIVITY_PROJECTION, {"keep": 1}),
-            }
+        selection_with(
+            activity_projection=PolicyChoice(
+                ACTIVITY_PROJECTION,
+                {**SUPPORTED_CHOICES["activity_projection"].parameters, "keep": 1},
+            )
         ),
     ),
-    "missing_policy": (
-        SOURCE,
-        PolicySelection.of(activity_projection=ACTIVITY_PROJECTION),
-    ),
+    "missing_policy": (SOURCE, selection_with(order=None)),
 }
-# What only the opening of a case can be refused with: (population identity, case).
+# What only the opening of a case can be refused with: (another population identity, case).
 UNBOUND = {
-    "identity_mismatch": ("pop_other", "A"),
-    "unknown_case": (None, "Z"),
+    "identity_mismatch": ("population.v1:sha256:other", "A"),
+    "unknown_case": (None, "Y"),
+    "case_not_in_population": (None, "Z"),
 }
 
 
@@ -59,6 +63,7 @@ def test_the_set_of_codes_is_closed():
         "missing_policy",
         "identity_mismatch",
         "unknown_case",
+        "case_not_in_population",
     }
     assert set(UNUSABLE) | set(UNBOUND) == {code.value for code in RefusalCode}
 
@@ -73,7 +78,7 @@ def test_both_operations_return_the_same_refusal_for_what_they_cannot_use(code):
     source, selection = UNUSABLE[code]
 
     from_population = open_population(source, selection)
-    from_case = open_case(source, selection, "pop_any", "A")
+    from_case = open_case(source, selection, ANY_IDENTITIES, "A")
 
     assert isinstance(from_population, Refusal), from_population
     assert from_population.code == code
@@ -87,9 +92,11 @@ def test_opening_a_case_is_refused_when_it_is_not_bound_to_the_population(code):
     assert isinstance(population, PopulationAnswer), population
     supplied, case_id = UNBOUND[code]
 
-    refusal = open_case(
-        SOURCE, SUPPORTED, supplied or population.identities.population_id, case_id
-    )
+    identities = population.identities
+    if supplied is not None:
+        identities = replace(identities, population_id=supplied)
+
+    refusal = open_case(SOURCE, SUPPORTED, identities, case_id)
 
     assert isinstance(refusal, Refusal), refusal
     assert refusal.code == code

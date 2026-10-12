@@ -24,13 +24,14 @@ def test_two_operations_are_public_beside_the_records_they_use():
     assert sorted(name for name, value in public.items() if inspect.isclass(value)) == [
         "AppliedPolicies",
         "CaseEvidence",
+        "CaseSummary",
+        "Coverage",
         "EvidenceRecord",
         "Identities",
-        "IncidentRecordCount",
-        "OmittedLabelCoverage",
         "PolicyChoice",
         "PolicySelection",
         "PopulationAnswer",
+        "PopulationSupport",
         "Refusal",
         "RefusalCode",
     ]
@@ -42,7 +43,7 @@ def test_the_operations_take_their_arguments_in_the_agreed_order():
     assert list(inspect.signature(open_case).parameters) == [
         "source",
         "policies",
-        "population_id",
+        "identities",
         "case_id",
     ]
 
