@@ -1,1 +1,3 @@
 tests/fixtures/imports/*.csv -text
+vendor/*.tgz binary
+vendor/*.whl binary
