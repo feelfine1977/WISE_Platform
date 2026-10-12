@@ -187,20 +187,22 @@ describe("the investigation screen", () => {
   it("does not let a late failure of an older revision replace the current population", async () => {
     const scripted = renderScreen();
     const { user } = scripted;
+    await user.selectOptions(screen.getByLabelText("Source"), "S0");
     await user.selectOptions(screen.getByLabelText("Source"), "S1");
-    await deliver(() => scripted.opens[1].reply({ ok: true, answer: populationOne(scripted.opens[1].request) }));
+    expect(scripted.opens.map((call) => call.request.query_revision)).toEqual([1, 2, 3]);
+    await deliver(() => scripted.opens[2].reply({ ok: true, answer: populationOne(scripted.opens[2].request) }));
     await deliver(() =>
       scripted.opens[0].reply({
         ok: false,
         problem: { kind: "refusal", refusal: refusalOf(scripted.opens[0].request, "open_example", "computation_failed", "Late failure.") },
       }),
     );
-    await deliver(() => scripted.opens[0].reply({ ok: false, problem: { kind: "unreachable" } }));
+    await deliver(() => scripted.opens[1].reply({ ok: false, problem: { kind: "unreachable" } }));
 
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByText("Late failure.")).toBeNull();
     expect(screen.getByRole("button", { name: "INC05" })).toBeTruthy();
-    expect(status()).toBe("Current answer · revision 2");
+    expect(status()).toBe("Current answer · revision 3");
   });
 
   it("does not let a late failure of an older revision replace a current request that is still pending", async () => {
@@ -217,28 +219,50 @@ describe("the investigation screen", () => {
     const { user } = scripted;
     await openPopulationZero(scripted);
 
-    // A history requested before a newer one of the same revision.
+    // A history and a refusal requested before a newer one of the same revision.
     await user.click(screen.getByRole("button", { name: "INC01" }));
     await user.click(screen.getByRole("button", { name: "INC02" }));
-    expect(scripted.cases[0].signal.aborted).toBe(true);
-    await deliver(() => scripted.cases[1].reply({ ok: true, answer: evidenceZero(scripted.cases[1].request) }));
-    await deliver(() => scripted.cases[0].reply({ ok: true, answer: evidenceZero(scripted.cases[0].request) }));
-    expect(screen.getByRole("heading", { name: "Incident INC02" })).toBeTruthy();
-    expect(screen.getByRole("table", { name: /Every record of incident INC02/ })).toBeTruthy();
-
-    // A history and a refusal requested under a revision that is no longer current.
     await user.click(screen.getByRole("button", { name: "INC03" }));
+    expect(scripted.cases[0].signal.aborted).toBe(true);
+    expect(scripted.cases[1].signal.aborted).toBe(true);
+    await deliver(() => scripted.cases[2].reply({ ok: true, answer: evidenceZero(scripted.cases[2].request) }));
+    await deliver(() => scripted.cases[0].reply({ ok: true, answer: evidenceZero(scripted.cases[0].request) }));
+    await deliver(() =>
+      scripted.cases[1].reply({
+        ok: false,
+        problem: { kind: "refusal", refusal: refusalOf(scripted.cases[1].request, "case_evidence", "case_not_found", "Late refusal.") },
+      }),
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Incident INC03" })).toBeTruthy();
+    expect(screen.getByRole("table", { name: /Every record of incident INC03/ })).toBeTruthy();
+
+    // A history requested under a revision that is no longer current.
+    await user.click(screen.getByRole("button", { name: "INC01" }));
     await user.selectOptions(screen.getByLabelText("Source"), "S1");
     await deliver(() => scripted.opens[1].reply({ ok: true, answer: populationOne(scripted.opens[1].request) }));
-    const stale = scripted.cases[2];
-    expect(stale.request.query_revision).toBe(1);
-    await deliver(() => stale.reply({ ok: true, answer: evidenceZero(stale.request) }));
+    const staleAnswer = scripted.cases[3];
+    expect(staleAnswer.request.query_revision).toBe(1);
+    await deliver(() => staleAnswer.reply({ ok: true, answer: evidenceZero(staleAnswer.request) }));
+    expect(screen.queryByRole("heading", { name: /Incident INC0/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "INC05" })).toBeTruthy();
+
+    // A refusal of an incident history requested under a revision that is no longer current.
+    await user.click(screen.getByRole("button", { name: "INC05" }));
+    await user.selectOptions(screen.getByLabelText("Source"), "S0");
+    await deliver(() => scripted.opens[2].reply({ ok: true, answer: populationZero(scripted.opens[2].request) }));
+    const staleRefusal = scripted.cases[4];
+    expect(staleRefusal.request.query_revision).toBe(2);
     await deliver(() =>
-      stale.reply({ ok: false, problem: { kind: "refusal", refusal: refusalOf(stale.request, "case_evidence", "case_not_found", "Late refusal.") } }),
+      staleRefusal.reply({
+        ok: false,
+        problem: { kind: "refusal", refusal: refusalOf(staleRefusal.request, "case_evidence", "case_not_found", "Late refusal.") },
+      }),
     );
     expect(screen.queryByRole("heading", { name: /Incident INC0/ })).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByRole("button", { name: "INC05" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "INC01" })).toBeTruthy();
+    expect(status()).toBe("Current answer · revision 3");
   });
 
   it("shows missing cells as missing, distinct from empty text and from the text Unknown", async () => {
