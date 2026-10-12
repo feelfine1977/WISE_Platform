@@ -15,12 +15,34 @@ from .time_formats import FORMATS, parse_format
 ENCODINGS = ("utf-8", "utf-8-sig", "windows-1252")
 DELIMITERS = (",", ";", "\t", "|")
 _CODECS = {"utf-8": "utf-8", "utf-8-sig": "utf-8-sig", "windows-1252": "cp1252"}
+FIELD_CHARACTER_LIMIT = 10_485_760
+MAXIMUM_RAGGED_FRACTION = 0.05
+# csv's limit is process-global. Set one supported limit at module load, never
+# temporarily raise/restore it around individual concurrent requests.
+csv.field_size_limit(FIELD_CHARACTER_LIMIT)
+
+
+@dataclass(frozen=True, slots=True)
+class SourceRecord:
+    source_position: int
+    physical_line_start: int
+    physical_line_end: int
+    cells: tuple[str, ...]
+    original_text: str
+
+    def excluded_dict(self, reason: str) -> dict[str, object]:
+        return {"source_position": self.source_position, "physical_line_start": self.physical_line_start,
+                "physical_line_end": self.physical_line_end, "cell_count": len(self.cells), "reason": reason,
+                "original_cells": list(self.cells), "original_text": self.original_text}
 
 
 @dataclass(frozen=True)
 class CsvData:
     columns: tuple[str, ...]
     rows: tuple[tuple[str, ...], ...]
+    records: tuple[SourceRecord, ...] = ()
+    blank_record_count: int = 0
+    ragged_record_count: int = 0
 
 
 def source_id(raw: bytes) -> str:
@@ -37,24 +59,42 @@ def validate_dialect(value: object) -> dict[str, str] | ImportRefusal:
     return dict(value)
 
 
-def read_csv(raw: bytes, dialect: Mapping[str, str]) -> CsvData | ImportRefusal:
+def read_csv(raw: bytes, dialect: Mapping[str, str], *, tolerant: bool = False) -> CsvData | ImportRefusal:
     try:
         text = raw.decode(_CODECS[dialect["encoding"]], errors="strict")
     except UnicodeDecodeError:
         return ImportRefusal("malformed_source", "The source cannot be decoded with the confirmed encoding.", "dialect.encoding")
+    stream = io.StringIO(text, newline="")
+    reader = csv.reader(stream, delimiter=dialect["delimiter"], quotechar='"', strict=True)
     try:
-        reader = csv.reader(io.StringIO(text, newline=""), delimiter=dialect["delimiter"], quotechar='"', strict=True)
         header = next(reader, None)
         if not header:
             return ImportRefusal("malformed_source", "The source has no readable header record.", "source")
-        rows = []
-        for position, row in enumerate(reader):
+    except (csv.Error, UnicodeError) as error:
+        return ImportRefusal("malformed_source", f"Header at physical lines 1..{max(reader.line_num, 1)} is unreadable: {error}.", "source")
+    records = []
+    blanks = ragged = position = 0
+    while True:
+        offset, line_start = stream.tell(), reader.line_num + 1
+        try:
+            row = next(reader)
+        except StopIteration:
+            break
+        except (csv.Error, UnicodeError) as error:
+            return ImportRefusal("malformed_source", f"Source record {position}, physical lines {line_start}..{max(reader.line_num, line_start)} is unreadable: {error}. The field character limit is {FIELD_CHARACTER_LIMIT}; check quoting and separators.", "source")
+        if not row and tolerant:
+            blanks += 1
+        else:
             if len(row) != len(header):
-                return ImportRefusal("malformed_source", f"Source record {position} has {len(row)} cells; expected {len(header)}. No row was discarded.", "source")
-            rows.append(tuple(row))
-        return CsvData(tuple(header), tuple(rows))
-    except (csv.Error, UnicodeError):
-        return ImportRefusal("malformed_source", "The confirmed format does not form readable, complete CSV records.", "source")
+                if not tolerant:
+                    return ImportRefusal("malformed_source", f"Source record {position}, physical lines {line_start}..{reader.line_num} has {len(row)} cells; expected {len(header)}. No row was discarded.", "source")
+                ragged += 1
+            records.append(SourceRecord(position, line_start, reader.line_num, tuple(row), text[offset:stream.tell()]))
+        position += 1
+    # Compare integer supports exactly: one of twenty is accepted; one of nineteen is not.
+    if tolerant and ragged * 20 > len(records):
+        return ImportRefusal("malformed_source", f"{ragged} of {len(records)} nonblank source records are ragged, exceeding the supported 5% maximum. Confirm the separator and quoting or recover the export; no rows were repaired.", "source")
+    return CsvData(tuple(header), tuple(record.cells for record in records), tuple(records), blanks, ragged)
 
 
 def inspect_csv(raw: bytes, hints: Mapping[str, object] | None = None) -> dict[str, object] | ImportRefusal:
@@ -78,24 +118,31 @@ def inspect_csv(raw: bytes, hints: Mapping[str, object] | None = None) -> dict[s
     separators = [hints["delimiter"]] if "delimiter" in hints else list(DELIMITERS)
     candidates = []
     parsed = []
+    failures = []
     for encoding in encodings:
         for separator in separators:
             dialect = {"encoding": encoding, "delimiter": separator, "quotechar": '"', "header": "first_record"}
-            result = read_csv(raw, dialect)
+            result = read_csv(raw, dialect, tolerant=True)
             if isinstance(result, CsvData) and (len(result.columns) > 1 or "delimiter" in hints):
                 candidates.append(dialect)
                 parsed.append(result)
+            elif isinstance(result, ImportRefusal):
+                failures.append(result.message)
     if not candidates:
         # Detection ambiguity or malformed CSV is represented without fabricated columns/counts.
         return {"source_id": source_id(raw), "dialect_candidates": [], "columns": [], "record_count": None,
-                "sample_rows": [], "role_suggestions": [], "unresolved": ["No supported dialect yields consistent records; confirm encoding/separator or correct malformed quoting/cells."]}
+                "sample_rows": [], "role_suggestions": [], "unresolved": ["No supported dialect yields consistent records; confirm encoding/separator or correct malformed quoting/cells.", *dict.fromkeys(failures)]}
     first = parsed[0]
     unresolved = ["Confirm the proposed encoding, separator and column roles."]
     if len(candidates) > 1:
         unresolved.append("Multiple dialects remain possible; confirm one before mapping.")
+    if first.blank_record_count:
+        unresolved.append(f"{first.blank_record_count} zero-cell blank records are skipped; source ordinals retain their gaps.")
+    if first.ragged_record_count:
+        unresolved.append(f"{first.ragged_record_count} ragged records must remain outside every population and require explicit row-issue confirmation.")
     suggestions = []
     for index, header in enumerate(first.columns):
-        values = Counter(row[index] for row in first.rows if row[index] != "")
+        values = Counter(row[index] for row in first.rows if len(row) == len(first.columns) and row[index] != "")
         matches = []
         has_unzoned_time = False
         for name in FORMATS:
@@ -122,5 +169,6 @@ def inspect_csv(raw: bytes, hints: Mapping[str, object] | None = None) -> dict[s
                             "distinct_nonempty_count": len(values), "timestamp_matches": matches})
     return {"source_id": source_id(raw), "dialect_candidates": candidates,
             "columns": [{"index": index, "name": name} for index, name in enumerate(first.columns)],
-            "record_count": len(first.rows), "sample_rows": [{"source_position": position, "cells": list(row)} for position, row in enumerate(first.rows[:10])],
+            "record_count": len(first.rows), "sample_rows": [{"source_position": record.source_position, "cells": list(record.cells)} for record in first.records[:10]],
+            "blank_record_count": first.blank_record_count, "ragged_record_count": first.ragged_record_count,
             "role_suggestions": suggestions, "unresolved": unresolved}

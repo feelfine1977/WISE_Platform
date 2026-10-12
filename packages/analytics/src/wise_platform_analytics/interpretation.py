@@ -55,8 +55,10 @@ def interpretation_report(data: CsvData, records: tuple[PreparedRecord, ...], hi
                      | ({mapping["sequence_column"]} if mapping["sequence_column"] is not None else set()))
     missing_cells = []
     for index in columns:
-        count = sum((cells[index].strip() == "" if index == mapping["case_column"] else cells[index] == "") for cells in data.rows)
+        count = sum((cells[index].strip() == "" if index == mapping["case_column"] else cells[index] == "") for cells in data.rows if index < len(cells))
         missing_cells.append({"column_index": index, "record_count": count})
+    excluded = [source.excluded_dict("ragged_record" if len(source.cells) != len(data.columns) else "missing_case_id")
+                for source, row in zip(data.records, records) if row.case_id is None]
     first, last = (min(usable), max(usable)) if usable else (None, None)
     wall = clock.kind == "wall_clock"
     assumptions = ["All identified incidents retain every original record; unassigned rows remain in the preserved source.",
@@ -81,4 +83,6 @@ def interpretation_report(data: CsvData, records: tuple[PreparedRecord, ...], hi
             "missing_cells": missing_cells, "tied_timestamp_groups": tied_groups, "tied_timestamp_record_count": tied_rows,
             "duplicate_candidate_record_count": duplicates,
             "activities": [{"activity": activity, "record_count": activity_rows[activity], "case_count": len(activity_cases[activity])} for activity in sorted(activity_rows)],
-            "issues": sorted(issues, key=lambda issue: (issue["source_position"], issue["code"])), "assumptions": assumptions}
+            "issues": sorted(issues, key=lambda issue: (issue["source_position"], issue["code"])), "assumptions": assumptions,
+            "blank_record_count": data.blank_record_count, "ragged_record_count": data.ragged_record_count,
+            "excluded_source_records": excluded}

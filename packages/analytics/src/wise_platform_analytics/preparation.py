@@ -11,7 +11,7 @@ import re
 from types import MappingProxyType
 
 from .csv_inspection import CsvData, read_csv, source_id, validate_dialect
-from .mapping import ImportRefusal, freeze_json, plain_json, validate_mapping, validate_policies
+from .mapping import ImportRefusal, ROWS_V2_ID, freeze_json, plain_json, validate_mapping, validate_policies
 from .time_formats import TimeInterpretation, iso_local, iso_utc, parse_format, validate_time_policy
 from .version import IMPLEMENTATION_VERSION
 
@@ -136,7 +136,7 @@ def prepare(raw: bytes, dialect: Mapping[str, object], mapping: Mapping[str, obj
     checked_policies = validate_policies(policies)
     if isinstance(checked_policies, ImportRefusal):
         return checked_policies
-    data = read_csv(raw, checked_dialect)
+    data = read_csv(raw, checked_dialect, tolerant=checked_policies["rows"]["id"] == ROWS_V2_ID)
     if isinstance(data, ImportRefusal):
         return data
     checked_mapping = validate_mapping(mapping, len(data.columns))
@@ -149,7 +149,7 @@ def prepare(raw: bytes, dialect: Mapping[str, object], mapping: Mapping[str, obj
         return clock
     assert isinstance(clock, TimeInterpretation)
     timestamp_column = checked_mapping["timestamp_column"]
-    awareness = {moment.tzinfo is not None for cells in data.rows
+    awareness = {moment.tzinfo is not None for cells in data.rows if len(cells) == len(data.columns)
                  if (moment := parse_format(cells[timestamp_column], clock.format_name)) is not None}
     if len(awareness) > 1:
         return ImportRefusal("mixed_timezone_values", "The selected timestamp column mixes zoned and unzoned values.", "mapping.timestamp_column")
@@ -158,7 +158,16 @@ def prepare(raw: bytes, dialect: Mapping[str, object], mapping: Mapping[str, obj
     sid = source_id(raw)
     case_column, activity_column = checked_mapping["case_column"], checked_mapping["activity_column"]
     sequence_column = checked_mapping["sequence_column"]
-    for position, cells in enumerate(data.rows):
+    for source_record in data.records:
+        position, cells = source_record.source_position, source_record.cells
+        if len(cells) != len(data.columns):
+            issues.append(_issue(position, None, None, "ragged_record", "confirmation",
+                                 f"This source record has {len(cells)} cells; expected {len(data.columns)}. Keep its exact raw text outside every case population; no fields were padded or associated."))
+            records.append(PreparedRecord(
+                row_id=content_identity("row", {"format_version": 1, "source_id": sid, "source_position": position}),
+                source_position=position, case_id=None, source_sequence=None, activity=None, timestamp_kind=clock.kind,
+                utc_instant=None, local_timestamp=None, timestamp_status="invalid", context=(), original_cells=cells, time_value=None))
+            continue
         case = cells[case_column].strip() or None
         if case is not None and len(case) > 256:
             return ImportRefusal("malformed_source", f"Source record {position} has an incident identifier exceeding the supported 256 characters.", "mapping.case_column")
