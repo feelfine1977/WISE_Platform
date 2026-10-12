@@ -48,6 +48,25 @@ function rootProperties(css: string): Map<string, string> {
 }
 
 const colourLiteral = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(/i;
+/** The colour keywords of CSS, which are colours in any property (gradients, shadows, decorations). */
+const namedColours = new Set(
+  (
+    "aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue " +
+    "chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey " +
+    "darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray " +
+    "darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen " +
+    "fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki " +
+    "lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen " +
+    "lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime " +
+    "limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue " +
+    "mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite navy oldlace olive " +
+    "olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum " +
+    "powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver " +
+    "skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white " +
+    "whitesmoke yellow yellowgreen canvas canvastext linktext visitedtext activetext buttonface buttontext buttonborder field " +
+    "fieldtext highlight highlighttext selecteditem selecteditemtext mark marktext graytext accentcolor accentcolortext"
+  ).split(" "),
+);
 const lengthLiteral = /\d*\.?\d+(?:px|r?em|ex|ch|pt|pc|cm|mm|in|q|r?lh|[dsl]?v(?:h|w|min|max)|cq(?:w|h|i|b|min|max))\b/i;
 
 /** Properties whose values are colours, radii, type sizes or spacing. */
@@ -63,6 +82,8 @@ function problemsOf(css: string): string[] {
     if (property.startsWith("--")) problems.push(`${where} (a token outside the token stylesheet)`);
     const literal = value.replace(/var\(--[\w-]+\)/g, "");
     if (colourLiteral.test(literal)) problems.push(`${where} (a colour)`);
+    const words = literal.replace(/"[^"]*"|'[^']*'/g, "").match(/[a-z]+/gi) ?? [];
+    if (words.some((word) => namedColours.has(word.toLowerCase()))) problems.push(`${where} (a named colour)`);
     if (lengthLiteral.test(literal)) problems.push(`${where} (a length)`);
     if (tokenOnly.test(property)) {
       const rest = literal.replace(/calc\(|[()*+/,-]/g, " ").split(/\s+/).filter(Boolean);
@@ -84,6 +105,9 @@ describe("the token stylesheet", () => {
     expect(problemsOf(".a { color: #1f1f1f; }")).not.toEqual([]);
     expect(problemsOf(".a { background: rgba(0, 0, 0, 0.1); }")).not.toEqual([]);
     expect(problemsOf(".a { color: white; }")).not.toEqual([]);
+    expect(problemsOf(".a { text-decoration: underline wavy red; }")).not.toEqual([]);
+    expect(problemsOf(".a { background-image: linear-gradient(RebeccaPurple, transparent); }")).not.toEqual([]);
+    expect(problemsOf(".a { text-shadow: 0 0 var(--space-1) black; }")).not.toEqual([]);
     expect(problemsOf(".a { padding: var(--space-2) 6px; }")).not.toEqual([]);
     expect(problemsOf(".a { margin-left: 5%; }")).not.toEqual([]);
     expect(problemsOf(".a { border-radius: 3px; }")).not.toEqual([]);
