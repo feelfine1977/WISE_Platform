@@ -308,24 +308,6 @@ class Parameters4(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    missing_case_id: Literal['outside_population_preserve_source']
-    unavailable_timestamp: Literal['retain_case_raw_flag_order_unknown']
-    invalid_mapped_sequence: Literal['block_preparation']
-    duplicate_candidates: Literal['retain_all']
-
-
-class ImportRowPolicy(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    id: Literal['incident.rows.missing_id_outside_invalid_time_retained.v1']
-    parameters: Parameters4 = Field(..., title='ImportRowPolicyParameters')
-
-
-class Parameters5(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
     empty_activity_context: Literal['missing']
     literal_values: Literal['preserve']
 
@@ -335,10 +317,10 @@ class ImportMissingPolicy(BaseModel):
         extra='forbid',
     )
     id: Literal['incident.missing.empty_mapped_activity_context.v1']
-    parameters: Parameters5 = Field(..., title='ImportMissingPolicyParameters')
+    parameters: Parameters4 = Field(..., title='ImportMissingPolicyParameters')
 
 
-class Parameters6(BaseModel):
+class Parameters5(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
@@ -350,10 +332,10 @@ class IdentifierPolicy(BaseModel):
         extra='forbid',
     )
     id: Literal['incident.identifier.trim_outer_whitespace.v1']
-    parameters: Parameters6 = Field(..., title='IdentifierPolicyParameters')
+    parameters: Parameters5 = Field(..., title='IdentifierPolicyParameters')
 
 
-class Parameters7(BaseModel):
+class Parameters6(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
@@ -365,20 +347,7 @@ class ImportParentPolicy(BaseModel):
         extra='forbid',
     )
     id: Literal['incident.parent.all_identified_cases.v1']
-    parameters: Parameters7 = Field(..., title='ImportParentPolicyParameters')
-
-
-class ImportPolicies(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    time: TimePolicy
-    order: ImportOrderPolicy
-    rows: ImportRowPolicy
-    missing_values: ImportMissingPolicy
-    identifier: IdentifierPolicy
-    activity_projection: ActivityProjectionPolicy
-    parent: ImportParentPolicy
+    parameters: Parameters6 = Field(..., title='ImportParentPolicyParameters')
 
 
 class StoredSource(BaseModel):
@@ -434,6 +403,7 @@ class RowIssue(BaseModel):
         'invalid_sequence',
         'duplicate_candidate',
         'timestamp_sequence_disagreement',
+        'ragged_record',
     ]
     severity: Literal['warning', 'confirmation', 'blocking']
     message: constr(min_length=1)
@@ -460,131 +430,8 @@ class Activity(BaseModel):
     case_count: conint(ge=0)
 
 
-class InterpretationReport1(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    raw_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over all parsed source records, including unassigned records.',
-    )
-    identified_record_count: conint(ge=0)
-    unassigned_record_count: conint(ge=0)
-    usable_timestamp_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over all parsed source records, including unassigned records.',
-    )
-    unavailable_timestamp_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over all parsed source records, including unassigned records.',
-    )
-    case_count: conint(ge=0)
-    sequence_evaluable_case_count: conint(ge=0)
-    sequence_unevaluable_case_count: conint(ge=0)
-    mapped_activity_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over records with valid incident identifiers; reconciles with population coverage.',
-    )
-    omitted_activity_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over records with valid incident identifiers; reconciles with population coverage.',
-    )
-    timestamp_kind: Literal['utc_instant']
-    first_usable_utc_instant: UtcInstant | None
-    last_usable_utc_instant: UtcInstant | None
-    first_usable_local_timestamp: LocalTimestamp | None
-    last_usable_local_timestamp: LocalTimestamp | None
-    snapshot_cutoff_utc: UtcInstant | SnapshotCutoffUtc | None = Field(
-        ..., title='UtcInstant'
-    )
-    snapshot_cutoff_local: LocalTimestamp | None
-    missing_cells: list[MissingCell] = Field(
-        ...,
-        description='Missing cells over all parsed source records for each mapped column.',
-    )
-    tied_timestamp_groups: conint(ge=0)
-    tied_timestamp_record_count: conint(ge=0)
-    duplicate_candidate_record_count: conint(ge=0)
-    activities: list[Activity] = Field(
-        ...,
-        description='Activity record/distinct incident supports over identified population records; no unassigned row contributes.',
-    )
-    issues: list[RowIssue]
-    assumptions: list[constr(min_length=1)]
-
-
 class SnapshotCutoffLocal(RootModel[None]):
     root: None = Field(..., title='LocalTimestamp')
-
-
-class InterpretationReport2(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    raw_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over all parsed source records, including unassigned records.',
-    )
-    identified_record_count: conint(ge=0)
-    unassigned_record_count: conint(ge=0)
-    usable_timestamp_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over all parsed source records, including unassigned records.',
-    )
-    unavailable_timestamp_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over all parsed source records, including unassigned records.',
-    )
-    case_count: conint(ge=0)
-    sequence_evaluable_case_count: conint(ge=0)
-    sequence_unevaluable_case_count: conint(ge=0)
-    mapped_activity_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over records with valid incident identifiers; reconciles with population coverage.',
-    )
-    omitted_activity_record_count: conint(ge=0) = Field(
-        ...,
-        description='Support over records with valid incident identifiers; reconciles with population coverage.',
-    )
-    timestamp_kind: Literal['wall_clock']
-    first_usable_utc_instant: UtcInstant | None
-    last_usable_utc_instant: UtcInstant | None
-    first_usable_local_timestamp: LocalTimestamp | None
-    last_usable_local_timestamp: LocalTimestamp | None
-    snapshot_cutoff_utc: UtcInstant | None
-    snapshot_cutoff_local: LocalTimestamp | SnapshotCutoffLocal | None = Field(
-        ..., title='LocalTimestamp'
-    )
-    missing_cells: list[MissingCell] = Field(
-        ...,
-        description='Missing cells over all parsed source records for each mapped column.',
-    )
-    tied_timestamp_groups: conint(ge=0)
-    tied_timestamp_record_count: conint(ge=0)
-    duplicate_candidate_record_count: conint(ge=0)
-    activities: list[Activity] = Field(
-        ...,
-        description='Activity record/distinct incident supports over identified population records; no unassigned row contributes.',
-    )
-    issues: list[RowIssue]
-    assumptions: list[constr(min_length=1)]
-
-
-class InterpretationReport(RootModel[InterpretationReport1 | InterpretationReport2]):
-    root: InterpretationReport1 | InterpretationReport2 = Field(
-        ..., title='InterpretationReport'
-    )
-
-
-class ImportPreparation(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    preparation_id: PreparationId
-    source_id: SourceId
-    dialect: Dialect
-    mapping: Mapping
-    policies: ImportPolicies
 
 
 class ImportedCaseSummary(BaseModel):
@@ -751,6 +598,297 @@ class CsvInspectionAnswer(BaseModel):
     sample_rows: list[SampleRow]
     role_suggestions: list[RoleSuggestion]
     unresolved: list[constr(min_length=1)]
+    blank_record_count: conint(ge=0, le=9007199254740991) | None = None
+    ragged_record_count: conint(ge=0, le=9007199254740991) | None = None
+
+
+class OpenPopulationRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['open_population_request']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    preparation_id: PreparationId
+
+
+class ImportedCaseEvidenceRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['imported_case_evidence_request']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    identity: AnswerIdentity
+    case_id: CaseId
+
+
+class ImportedCaseEvidenceAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['imported_case_evidence_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    identity: AnswerIdentity
+    case_id: CaseId
+    coverage: Coverage
+    columns: list[Column]
+    sequence_evaluable: bool
+    records: list[ImportedSourceRecord] = Field(..., min_length=1)
+    mapped_row_ids: list[RowId]
+    omitted_activity_row_ids: list[RowId]
+
+
+class ImportRefusal(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['import_refusal']
+    request_id: RequestId | None
+    query_revision: QueryRevision | None
+    workspace_id: WorkspaceId | None
+    operation: Literal[
+        'open_workspace',
+        'upload_source',
+        'inspect_csv',
+        'confirm_mapping',
+        'open_population',
+        'case_evidence',
+    ]
+    code: Literal[
+        'invalid_request',
+        'unsupported_schema',
+        'unsupported_policy',
+        'invalid_parameter',
+        'workspace_unavailable',
+        'workspace_not_writable',
+        'workspace_incompatible',
+        'source_unavailable',
+        'invalid_dialect',
+        'invalid_mapping',
+        'unsupported_timezone',
+        'timezone_required',
+        'malformed_source',
+        'mixed_timezone_values',
+        'cutoff_before_records',
+        'preparation_unavailable',
+        'interpretation_not_ready',
+        'case_not_found',
+        'identity_mismatch',
+        'computation_failed',
+    ]
+    message: constr(min_length=1)
+    field: str | None
+    retryable: bool
+
+
+class Parameters7(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    missing_case_id: Literal['outside_population_preserve_source']
+    unavailable_timestamp: Literal['retain_case_raw_flag_order_unknown']
+    invalid_mapped_sequence: Literal['block_preparation']
+    duplicate_candidates: Literal['retain_all']
+
+
+class StrictImportRowPolicy(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: Literal['incident.rows.missing_id_outside_invalid_time_retained.v1']
+    parameters: Parameters7 = Field(..., title='StrictImportRowPolicyParameters')
+
+
+class Parameters8(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    missing_case_id: Literal['outside_population_preserve_source']
+    unavailable_timestamp: Literal['retain_case_raw_flag_order_unknown']
+    invalid_mapped_sequence: Literal['block_preparation']
+    duplicate_candidates: Literal['retain_all']
+    blank_records: Literal['skip_count_preserve_source_ordinal']
+    ragged_records: Literal['outside_population_preserve_raw']
+    maximum_ragged_fraction: float
+    field_character_limit: Literal[10485760]
+
+
+class TolerantImportRowPolicy(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: Literal['incident.rows.missing_id_outside_invalid_time_retained.v2']
+    parameters: Parameters8 = Field(..., title='TolerantImportRowPolicyParameters')
+
+
+class ExcludedSourceRecord(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    source_position: conint(ge=0, le=9007199254740991)
+    physical_line_start: conint(ge=1, le=9007199254740991)
+    physical_line_end: conint(ge=1, le=9007199254740991)
+    cell_count: conint(ge=0, le=9007199254740991)
+    reason: Literal['missing_case_id', 'ragged_record']
+    original_cells: list[str]
+    original_text: str
+
+
+class ImportRowPolicy(RootModel[StrictImportRowPolicy | TolerantImportRowPolicy]):
+    root: StrictImportRowPolicy | TolerantImportRowPolicy = Field(
+        ..., title='ImportRowPolicy'
+    )
+
+
+class ImportPolicies(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    time: TimePolicy
+    order: ImportOrderPolicy
+    rows: ImportRowPolicy
+    missing_values: ImportMissingPolicy
+    identifier: IdentifierPolicy
+    activity_projection: ActivityProjectionPolicy
+    parent: ImportParentPolicy
+
+
+class InterpretationReport1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    raw_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over all parsed source records, including unassigned records.',
+    )
+    identified_record_count: conint(ge=0)
+    unassigned_record_count: conint(ge=0)
+    usable_timestamp_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over all parsed source records, including unassigned records.',
+    )
+    unavailable_timestamp_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over all parsed source records, including unassigned records.',
+    )
+    case_count: conint(ge=0)
+    sequence_evaluable_case_count: conint(ge=0)
+    sequence_unevaluable_case_count: conint(ge=0)
+    mapped_activity_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over records with valid incident identifiers; reconciles with population coverage.',
+    )
+    omitted_activity_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over records with valid incident identifiers; reconciles with population coverage.',
+    )
+    timestamp_kind: Literal['utc_instant']
+    first_usable_utc_instant: UtcInstant | None
+    last_usable_utc_instant: UtcInstant | None
+    first_usable_local_timestamp: LocalTimestamp | None
+    last_usable_local_timestamp: LocalTimestamp | None
+    snapshot_cutoff_utc: UtcInstant | SnapshotCutoffUtc | None = Field(
+        ..., title='UtcInstant'
+    )
+    snapshot_cutoff_local: LocalTimestamp | None
+    missing_cells: list[MissingCell] = Field(
+        ...,
+        description='Missing cells over all parsed source records for each mapped column.',
+    )
+    tied_timestamp_groups: conint(ge=0)
+    tied_timestamp_record_count: conint(ge=0)
+    duplicate_candidate_record_count: conint(ge=0)
+    activities: list[Activity] = Field(
+        ...,
+        description='Activity record/distinct incident supports over identified population records; no unassigned row contributes.',
+    )
+    issues: list[RowIssue]
+    assumptions: list[constr(min_length=1)]
+    blank_record_count: conint(ge=0, le=9007199254740991) | None = None
+    ragged_record_count: conint(ge=0, le=9007199254740991) | None = None
+    excluded_source_records: list[ExcludedSourceRecord] | None = None
+
+
+class InterpretationReport2(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    raw_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over all parsed source records, including unassigned records.',
+    )
+    identified_record_count: conint(ge=0)
+    unassigned_record_count: conint(ge=0)
+    usable_timestamp_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over all parsed source records, including unassigned records.',
+    )
+    unavailable_timestamp_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over all parsed source records, including unassigned records.',
+    )
+    case_count: conint(ge=0)
+    sequence_evaluable_case_count: conint(ge=0)
+    sequence_unevaluable_case_count: conint(ge=0)
+    mapped_activity_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over records with valid incident identifiers; reconciles with population coverage.',
+    )
+    omitted_activity_record_count: conint(ge=0) = Field(
+        ...,
+        description='Support over records with valid incident identifiers; reconciles with population coverage.',
+    )
+    timestamp_kind: Literal['wall_clock']
+    first_usable_utc_instant: UtcInstant | None
+    last_usable_utc_instant: UtcInstant | None
+    first_usable_local_timestamp: LocalTimestamp | None
+    last_usable_local_timestamp: LocalTimestamp | None
+    snapshot_cutoff_utc: UtcInstant | None
+    snapshot_cutoff_local: LocalTimestamp | SnapshotCutoffLocal | None = Field(
+        ..., title='LocalTimestamp'
+    )
+    missing_cells: list[MissingCell] = Field(
+        ...,
+        description='Missing cells over all parsed source records for each mapped column.',
+    )
+    tied_timestamp_groups: conint(ge=0)
+    tied_timestamp_record_count: conint(ge=0)
+    duplicate_candidate_record_count: conint(ge=0)
+    activities: list[Activity] = Field(
+        ...,
+        description='Activity record/distinct incident supports over identified population records; no unassigned row contributes.',
+    )
+    issues: list[RowIssue]
+    assumptions: list[constr(min_length=1)]
+    blank_record_count: conint(ge=0, le=9007199254740991) | None = None
+    ragged_record_count: conint(ge=0, le=9007199254740991) | None = None
+    excluded_source_records: list[ExcludedSourceRecord] | None = None
+
+
+class InterpretationReport(RootModel[InterpretationReport1 | InterpretationReport2]):
+    root: InterpretationReport1 | InterpretationReport2 = Field(
+        ..., title='InterpretationReport'
+    )
+
+
+class ImportPreparation(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    preparation_id: PreparationId
+    source_id: SourceId
+    dialect: Dialect
+    mapping: Mapping
+    policies: ImportPolicies
 
 
 class ConfirmMappingRequest(BaseModel):
@@ -831,18 +969,6 @@ class InterpretationAnswer(RootModel[InterpretationAnswer1 | InterpretationAnswe
     )
 
 
-class OpenPopulationRequest(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    message_type: Literal['open_population_request']
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    preparation_id: PreparationId
-
-
 class ImportedPopulationAnswer(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -859,82 +985,6 @@ class ImportedPopulationAnswer(BaseModel):
     coverage: Coverage
     unassigned_record_count: conint(ge=0)
     cases: list[ImportedCaseSummary]
-
-
-class ImportedCaseEvidenceRequest(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    message_type: Literal['imported_case_evidence_request']
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    identity: AnswerIdentity
-    case_id: CaseId
-
-
-class ImportedCaseEvidenceAnswer(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    message_type: Literal['imported_case_evidence_answer']
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    identity: AnswerIdentity
-    case_id: CaseId
-    coverage: Coverage
-    columns: list[Column]
-    sequence_evaluable: bool
-    records: list[ImportedSourceRecord] = Field(..., min_length=1)
-    mapped_row_ids: list[RowId]
-    omitted_activity_row_ids: list[RowId]
-
-
-class ImportRefusal(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    message_type: Literal['import_refusal']
-    request_id: RequestId | None
-    query_revision: QueryRevision | None
-    workspace_id: WorkspaceId | None
-    operation: Literal[
-        'open_workspace',
-        'upload_source',
-        'inspect_csv',
-        'confirm_mapping',
-        'open_population',
-        'case_evidence',
-    ]
-    code: Literal[
-        'invalid_request',
-        'unsupported_schema',
-        'unsupported_policy',
-        'invalid_parameter',
-        'workspace_unavailable',
-        'workspace_not_writable',
-        'workspace_incompatible',
-        'source_unavailable',
-        'invalid_dialect',
-        'invalid_mapping',
-        'unsupported_timezone',
-        'timezone_required',
-        'malformed_source',
-        'mixed_timezone_values',
-        'cutoff_before_records',
-        'preparation_unavailable',
-        'interpretation_not_ready',
-        'case_not_found',
-        'identity_mismatch',
-        'computation_failed',
-    ]
-    message: constr(min_length=1)
-    field: str | None
-    retryable: bool
 
 
 class ImportMessage(

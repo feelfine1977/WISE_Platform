@@ -70,3 +70,50 @@ def test_utc_and_recorded_wall_cutoff_domains_are_separate():
     value = deepcopy(VALID)
     value["policies"]["time"]["parameters"]["snapshot_cutoff_utc"] = "2027-01-01T00:00:00"
     assert list(Draft202012Validator(SCHEMA).iter_errors(value))
+
+
+def tolerant_policy():
+    value = deepcopy(VALID["policies"]["rows"])
+    value["id"] = "incident.rows.missing_id_outside_invalid_time_retained.v2"
+    value["parameters"].update({
+        "blank_records": "skip_count_preserve_source_ordinal",
+        "ragged_records": "outside_population_preserve_raw",
+        "maximum_ragged_fraction": 0.05,
+        "field_character_limit": 10485760,
+    })
+    return value
+
+
+def test_tolerant_reading_is_an_explicit_new_policy():
+    value = deepcopy(VALID)
+    value["policies"]["rows"] = tolerant_policy()
+    Draft202012Validator(SCHEMA).validate(value)
+    assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json") == value
+
+
+@pytest.mark.parametrize("mutation", ["v1-with-tolerance", "v2-without-limit", "changed-fraction", "changed-limit"])
+def test_tolerance_never_changes_a_recorded_v1_interpretation(mutation):
+    value = deepcopy(VALID)
+    value["policies"]["rows"] = tolerant_policy()
+    rows = value["policies"]["rows"]
+    if mutation == "v1-with-tolerance":
+        rows["id"] = VALID["policies"]["rows"]["id"]
+    elif mutation == "v2-without-limit":
+        del rows["parameters"]["field_character_limit"]
+    elif mutation == "changed-fraction":
+        rows["parameters"]["maximum_ragged_fraction"] = 0.051
+    else:
+        rows["parameters"]["field_character_limit"] = 10485761
+    assert list(Draft202012Validator(SCHEMA).iter_errors(value))
+
+
+def test_excluded_record_keeps_complete_raw_text_and_no_invented_identity():
+    schema = {"$ref": "#/$defs/ExcludedSourceRecord", "$defs": SCHEMA["$defs"]}
+    validator = Draft202012Validator(schema)
+    witness = {"source_position": 3, "physical_line_start": 5, "physical_line_end": 6,
+               "cell_count": 4, "reason": "ragged_record",
+               "original_cells": ["A", "Opened", "time", "extra\r\ncell"],
+               "original_text": 'A,Opened,time,"extra\r\ncell"\r\n'}
+    validator.validate(witness)
+    witness["case_id"] = "A"
+    assert list(validator.iter_errors(witness))

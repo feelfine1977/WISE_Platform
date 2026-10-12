@@ -46,6 +46,7 @@ export type TimePolicy = UtcTimePolicy | WallTimePolicy;
 export type Timezone = RecordedTimezone | FixedOffsetTimezone;
 export type UtcInstant = string;
 export type LocalTimestamp = string;
+export type ImportRowPolicy = StrictImportRowPolicy | TolerantImportRowPolicy;
 export type InterpretationAnswer = InterpretationAnswer1 & InterpretationAnswer2;
 export type InterpretationAnswer1 =
   | {
@@ -177,6 +178,8 @@ export interface CsvInspectionAnswer {
   sample_rows: SampleRow[];
   role_suggestions: RoleSuggestion[];
   unresolved: string[];
+  blank_record_count?: number;
+  ragged_record_count?: number;
 }
 export interface Dialect {
   encoding: Encoding;
@@ -267,15 +270,29 @@ export interface ImportOrderPolicyParameters {
   unavailable_timestamp: "presentation_tail_source_position";
   unavailable_timestamp_case_sequence: "unevaluable";
 }
-export interface ImportRowPolicy {
+export interface StrictImportRowPolicy {
   id: "incident.rows.missing_id_outside_invalid_time_retained.v1";
-  parameters: ImportRowPolicyParameters;
+  parameters: StrictImportRowPolicyParameters;
 }
-export interface ImportRowPolicyParameters {
+export interface StrictImportRowPolicyParameters {
   missing_case_id: "outside_population_preserve_source";
   unavailable_timestamp: "retain_case_raw_flag_order_unknown";
   invalid_mapped_sequence: "block_preparation";
   duplicate_candidates: "retain_all";
+}
+export interface TolerantImportRowPolicy {
+  id: "incident.rows.missing_id_outside_invalid_time_retained.v2";
+  parameters: TolerantImportRowPolicyParameters;
+}
+export interface TolerantImportRowPolicyParameters {
+  missing_case_id: "outside_population_preserve_source";
+  unavailable_timestamp: "retain_case_raw_flag_order_unknown";
+  invalid_mapped_sequence: "block_preparation";
+  duplicate_candidates: "retain_all";
+  blank_records: "skip_count_preserve_source_ordinal";
+  ragged_records: "outside_population_preserve_raw";
+  maximum_ragged_fraction: 0.05;
+  field_character_limit: 10485760;
 }
 export interface ImportMissingPolicy {
   id: "incident.missing.empty_mapped_activity_context.v1";
@@ -372,6 +389,9 @@ export interface InterpretationReport2 {
   activities: ActivitySupport[];
   issues: RowIssue[];
   assumptions: string[];
+  blank_record_count?: number;
+  ragged_record_count?: number;
+  excluded_source_records?: ExcludedSourceRecord[];
 }
 export interface MissingCells {
   column_index: ColumnIndex;
@@ -393,9 +413,22 @@ export interface RowIssue {
     | "missing_activity"
     | "invalid_sequence"
     | "duplicate_candidate"
-    | "timestamp_sequence_disagreement";
+    | "timestamp_sequence_disagreement"
+    | "ragged_record";
   severity: "warning" | "confirmation" | "blocking";
   message: string;
+}
+/**
+ * A complete nonblank source record outside every incident. Original decoded CSV text includes its original line endings and quoting.
+ */
+export interface ExcludedSourceRecord {
+  source_position: number;
+  physical_line_start: number;
+  physical_line_end: number;
+  cell_count: number;
+  reason: "missing_case_id" | "ragged_record";
+  original_cells: string[];
+  original_text: string;
 }
 export interface OpenPopulationRequest {
   schema_version: 1;

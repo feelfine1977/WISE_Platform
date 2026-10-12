@@ -576,46 +576,13 @@
     },
     "ImportRowPolicy": {
       "title": "ImportRowPolicy",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "type": "string",
-          "const": "incident.rows.missing_id_outside_invalid_time_retained.v1"
+      "oneOf": [
+        {
+          "$ref": "#/$defs/StrictImportRowPolicy"
         },
-        "parameters": {
-          "title": "ImportRowPolicyParameters",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "missing_case_id": {
-              "type": "string",
-              "const": "outside_population_preserve_source"
-            },
-            "unavailable_timestamp": {
-              "type": "string",
-              "const": "retain_case_raw_flag_order_unknown"
-            },
-            "invalid_mapped_sequence": {
-              "type": "string",
-              "const": "block_preparation"
-            },
-            "duplicate_candidates": {
-              "type": "string",
-              "const": "retain_all"
-            }
-          },
-          "required": [
-            "missing_case_id",
-            "unavailable_timestamp",
-            "invalid_mapped_sequence",
-            "duplicate_candidates"
-          ]
+        {
+          "$ref": "#/$defs/TolerantImportRowPolicy"
         }
-      },
-      "required": [
-        "id",
-        "parameters"
       ]
     },
     "ImportMissingPolicy": {
@@ -892,7 +859,8 @@
             "missing_activity",
             "invalid_sequence",
             "duplicate_candidate",
-            "timestamp_sequence_disagreement"
+            "timestamp_sequence_disagreement",
+            "ragged_record"
           ]
         },
         "severity": {
@@ -1107,6 +1075,22 @@
           "items": {
             "type": "string",
             "minLength": 1
+          }
+        },
+        "blank_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ragged_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "excluded_source_records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedSourceRecord"
           }
         }
       },
@@ -1677,6 +1661,16 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "blank_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ragged_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
       },
       "required": [
@@ -2154,6 +2148,167 @@
         "message",
         "field",
         "retryable"
+      ]
+    },
+    "StrictImportRowPolicy": {
+      "title": "StrictImportRowPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.rows.missing_id_outside_invalid_time_retained.v1"
+        },
+        "parameters": {
+          "title": "StrictImportRowPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "missing_case_id": {
+              "type": "string",
+              "const": "outside_population_preserve_source"
+            },
+            "unavailable_timestamp": {
+              "type": "string",
+              "const": "retain_case_raw_flag_order_unknown"
+            },
+            "invalid_mapped_sequence": {
+              "type": "string",
+              "const": "block_preparation"
+            },
+            "duplicate_candidates": {
+              "type": "string",
+              "const": "retain_all"
+            }
+          },
+          "required": [
+            "missing_case_id",
+            "unavailable_timestamp",
+            "invalid_mapped_sequence",
+            "duplicate_candidates"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "TolerantImportRowPolicy": {
+      "title": "TolerantImportRowPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.rows.missing_id_outside_invalid_time_retained.v2"
+        },
+        "parameters": {
+          "title": "TolerantImportRowPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "missing_case_id": {
+              "type": "string",
+              "const": "outside_population_preserve_source"
+            },
+            "unavailable_timestamp": {
+              "type": "string",
+              "const": "retain_case_raw_flag_order_unknown"
+            },
+            "invalid_mapped_sequence": {
+              "type": "string",
+              "const": "block_preparation"
+            },
+            "duplicate_candidates": {
+              "type": "string",
+              "const": "retain_all"
+            },
+            "blank_records": {
+              "type": "string",
+              "const": "skip_count_preserve_source_ordinal"
+            },
+            "ragged_records": {
+              "type": "string",
+              "const": "outside_population_preserve_raw"
+            },
+            "maximum_ragged_fraction": {
+              "type": "number",
+              "const": 0.05
+            },
+            "field_character_limit": {
+              "type": "integer",
+              "const": 10485760
+            }
+          },
+          "required": [
+            "missing_case_id",
+            "unavailable_timestamp",
+            "invalid_mapped_sequence",
+            "duplicate_candidates",
+            "blank_records",
+            "ragged_records",
+            "maximum_ragged_fraction",
+            "field_character_limit"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ExcludedSourceRecord": {
+      "title": "ExcludedSourceRecord",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A complete nonblank source record outside every incident. Original decoded CSV text includes its original line endings and quoting.",
+      "properties": {
+        "source_position": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "physical_line_start": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "physical_line_end": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "cell_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "missing_case_id",
+            "ragged_record"
+          ]
+        },
+        "original_cells": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "original_text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_position",
+        "physical_line_start",
+        "physical_line_end",
+        "cell_count",
+        "reason",
+        "original_cells",
+        "original_text"
       ]
     }
   }
