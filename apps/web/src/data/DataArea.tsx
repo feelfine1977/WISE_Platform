@@ -66,7 +66,7 @@ function WorkspaceStep({ state, coordinator, onOpenExample }: { state: DataState
           value={path}
           spellCheck={false}
           autoComplete="off"
-          placeholder="C:\Users\name\Documents\Investigations"
+          placeholder="D:\Investigations\Incidents"
           onChange={(event) => setPath(event.target.value)}
         />
         <button type="submit" className="primary" disabled={path.trim() === ""}>
