@@ -30,7 +30,18 @@ export type PreparationId = string;
 export type Encoding = "utf-8" | "utf-8-sig" | "windows-1252";
 export type Delimiter = "," | ";" | "\t" | "|";
 export type ColumnIndex = number;
-export type TimestampFormat = "iso8601" | "dmy_dot_minute" | "dmy_slash_minute" | "mdy_slash_minute" | "mdy_dot_minute";
+export type TimestampFormat =
+  | "iso8601"
+  | "dmy_dot_minute"
+  | "dmy_slash_minute"
+  | "mdy_slash_minute"
+  | "mdy_dot_minute"
+  | "dmy_dot_second"
+  | "mdy_dot_second"
+  | "dmy_slash_second"
+  | "mdy_slash_second"
+  | "mdy_slash_12h_minute"
+  | "mdy_slash_12h_second";
 export type TimePolicy = UtcTimePolicy | WallTimePolicy;
 export type Timezone = RecordedTimezone | FixedOffsetTimezone;
 export type UtcInstant = string;

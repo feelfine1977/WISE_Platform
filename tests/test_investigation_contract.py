@@ -57,7 +57,7 @@ def test_named_policy_parameters_are_closed_and_do_not_interpret_prose(mutation)
         OpenExampleRequest.model_validate(payload)
 
 
-@pytest.mark.parametrize("value", [True, False, "1", None])
+@pytest.mark.parametrize("value", [True, False, "1", None, 9007199254740992])
 def test_source_schema_distinguishes_query_integer_from_coercible_values(value):
     payload = {**VALID, "query_revision": value}
     assert list(Draft202012Validator(SCHEMA).iter_errors(payload))
