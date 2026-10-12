@@ -3,7 +3,7 @@
 import pytest
 from api_requests import VALIDATOR, body, evidence_request, open_request
 
-from wise_platform_api.boundary import STATUS, parse_request, refusal
+from wise_platform_api.boundary import STATUS, parse_request, read_object, refusal
 from wise_platform_api.generated.investigation import (
     CaseEvidenceRequest,
     OpenExampleRequest,
@@ -79,6 +79,32 @@ def test_a_body_nested_deeper_than_can_be_read_is_an_invalid_request(raw):
     assert result.code == "invalid_request"
     assert result.request_id is None
     VALIDATOR.validate(result.model_dump(mode="json"))
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        body(open_request(request_id="half", revision=2)).replace(b'"half"', b'"\\ud800"'),
+        body(open_request(request_id="half", revision=2)).replace(b'"half"', b'"left \\udfff right"'),
+        b'{"\\ud83d": 1}',
+        b'{"policies": {"order": {"id": ["\\ud800"]}}}',
+    ],
+)
+def test_text_that_holds_half_a_surrogate_pair_is_an_invalid_request_and_is_not_repeated(raw):
+    result = parse_request(raw, OpenExampleRequest, "open_example")
+
+    assert isinstance(result, Refusal)
+    assert result.code == "invalid_request"
+    assert result.request_id is None
+    assert result.query_revision is None
+    written = result.model_dump_json()
+    assert "\\ud8" not in written.lower() and "\\udf" not in written.lower()
+    written.encode("utf-8")
+    VALIDATOR.validate(result.model_dump(mode="json"))
+
+
+def test_a_whole_surrogate_pair_is_ordinary_text():
+    assert read_object(b'{"note": "\\ud83d\\ude00 and \\u00dc"}') == {"note": "\U0001f600 and \u00dc"}
 
 
 @pytest.mark.parametrize("version", [2, 0, -1, 10**20])

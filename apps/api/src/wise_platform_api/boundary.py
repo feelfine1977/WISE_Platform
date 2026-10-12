@@ -37,6 +37,7 @@ RequestModel = TypeVar("RequestModel", bound=BaseModel)
 Location = tuple[str | int, ...]
 
 SCHEMA_VERSION = 1
+_HALF_A_CHARACTER = re.compile("[\\ud800-\\udfff]")
 
 STATUS: dict[str, int] = {
     "unsupported_schema": 400,
@@ -164,7 +165,29 @@ def read_object(body: bytes) -> dict | str:
         return "The request body is nested too deeply to be read."
     if not isinstance(message, dict):
         return "The request body is not a JSON object."
+    if _holds_half_a_character(message):
+        return "The request body holds text that is not valid Unicode."
     return message
+
+
+def _holds_half_a_character(value: object) -> bool:
+    """Whether any text or name in a JSON value holds one half of a surrogate pair.
+
+    JSON may escape such a half by itself. It is no character, cannot be written as UTF-8, and
+    would fail far from here, in the first identity that is made from it.
+    """
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str):
+            if _HALF_A_CHARACTER.search(item) is not None:
+                return True
+        elif isinstance(item, dict):
+            pending.extend(item)
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
+    return False
 
 
 def echo_of(message: dict) -> dict[str, str | int | None]:
