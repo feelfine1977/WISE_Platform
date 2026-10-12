@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { importContract } from "../data/client";
 import { caseSummaries, evidenceAnswer, importRefusal, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
+import { scriptedViewClient } from "../test/views";
 import { ImportedInvestigationCoordinator } from "./coordinator";
 import { ImportedInvestigation } from "./ImportedInvestigation";
 
@@ -14,7 +15,7 @@ async function deliver(action: () => void) {
 
 function renderInvestigation() {
   const scripted = scriptedImportClient();
-  const coordinator = new ImportedInvestigationCoordinator(scripted.client);
+  const coordinator = new ImportedInvestigationCoordinator(scripted.client, scriptedViewClient().client);
   const user = userEvent.setup();
   render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId }));

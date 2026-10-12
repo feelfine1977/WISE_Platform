@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { InspectorLayout } from "../components/Inspector";
 import type { CaseId, ImportedPopulationAnswer } from "../generated/imports";
 import { ImportProblemNotice } from "../data/ImportProblemNotice";
@@ -6,6 +6,8 @@ import { countOf, delimiterName, encodingName } from "../data/wording";
 import type { ImportedInvestigationCoordinator } from "./coordinator";
 import { ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
+import { OpenedAs } from "../views/OpenedAs";
+import { Variants } from "../views/Variants";
 
 interface ImportedInvestigationProps {
   coordinator: ImportedInvestigationCoordinator;
@@ -19,7 +21,7 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
-  const { population, inspected } = state;
+  const { population, inspected, openingContext, variants, chosenVariant } = state;
   const inspectorOpen = inspected.phase !== "closed";
   const openCaseId = inspected.phase === "closed" ? null : inspected.caseId;
 
@@ -56,6 +58,15 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
 
   const answer = population.phase === "ready" ? population.answer : null;
   const summary = answer?.cases.find((item) => item.case_id === openCaseId);
+  const variantView = useMemo(() => {
+    if (chosenVariant === null || variants.phase !== "ready" || !answer) return null;
+    const ranked = variants.answer.variants.variants;
+    const rank = ranked.findIndex((variant) => variant.id === chosenVariant);
+    if (rank < 0) return null;
+    const members = new Set(ranked[rank].case_ids);
+    return { rank: rank + 1, cases: answer.cases.filter((item) => members.has(item.case_id)) };
+  }, [chosenVariant, variants, answer]);
+  const shownCases = variantView ? variantView.cases : answer?.cases ?? [];
   return (
     <main className="workbench" aria-labelledby="imported-title">
       <div className="toolbar">
@@ -75,35 +86,64 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
       </div>
       {population.phase === "loading" && <div className="progress-line" aria-hidden="true" />}
       <div className="workbench-body" data-inspector={inspectorOpen ? layout : "none"}>
-        <section className="table-pane" aria-labelledby="imported-incidents-title">
-          <h3 id="imported-incidents-title" className="pane-title">
-            Incidents of this preparation
-          </h3>
-          {population.phase === "loading" && <p className="working-text">Opening the incidents of this preparation…</p>}
-          {population.phase === "failed" && (
-            <ImportProblemNotice title="The incidents could not be opened" problem={population.problem} onRetry={() => coordinator.retryPopulation()} />
-          )}
-          {answer && answer.cases.length === 0 && (
-            <p className="working-text">This preparation has no incident with an incident id, so there is no incident to open.</p>
-          )}
-          {answer && answer.cases.length > 0 && (
-            <>
-              <p className="muted pane-hint" id="imported-incidents-hint">
-                Every incident with an incident id. Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every
-                record of an incident.
-              </p>
-              <IncidentWindow
-                cases={answer.cases}
-                openCaseId={openCaseId}
-                onOpen={openCase}
-                focusRequest={focusRequest}
-                labelledBy="imported-incidents-title"
-                describedBy="imported-incidents-hint"
+        <div className="main-column">
+          <section className="table-pane" aria-labelledby="imported-incidents-title">
+            <h3 id="imported-incidents-title" className="pane-title">
+              {variantView ? `Incidents of variant ${variantView.rank}` : "Incidents of this preparation"}
+            </h3>
+            <p role="status" className="visually-hidden">
+              {variantView ? `The table lists the ${countOf(variantView.cases.length, "incident")} of variant ${variantView.rank}.` : ""}
+            </p>
+            {variantView && (
+              <div className="view-note">
+                <p>
+                  The table lists the {countOf(variantView.cases.length, "incident")} of variant {variantView.rank}. This is a view: the population and
+                  every count stay as they are.
+                </p>
+                <button type="button" onClick={() => coordinator.clearVariant()}>
+                  Show every incident
+                </button>
+              </div>
+            )}
+            {population.phase === "loading" && <p className="working-text">Opening the incidents of this preparation…</p>}
+            {population.phase === "failed" && (
+              <ImportProblemNotice title="The incidents could not be opened" problem={population.problem} onRetry={() => coordinator.retryPopulation()} />
+            )}
+            {answer && answer.cases.length === 0 && (
+              <p className="working-text">This preparation has no incident with an incident id, so there is no incident to open.</p>
+            )}
+            {answer && answer.cases.length > 0 && (
+              <>
+                <p className="muted pane-hint" id="imported-incidents-hint">
+                  {variantView ? `The incidents that follow variant ${variantView.rank}.` : "Every incident with an incident id."} Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every
+                  record of an incident.
+                </p>
+                <IncidentWindow
+                  key={variantView ? `variant-${chosenVariant}` : "every-incident"}
+                  cases={shownCases}
+                  openCaseId={openCaseId}
+                  onOpen={openCase}
+                  focusRequest={focusRequest}
+                  labelledBy="imported-incidents-title"
+                  describedBy="imported-incidents-hint"
+                />
+                <PreparationDetails answer={answer} />
+              </>
+            )}
+          </section>
+          {answer && (
+            <div className="views">
+              <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} />
+              <Variants
+                state={variants}
+                chosen={chosenVariant}
+                onChoose={(variantId) => coordinator.chooseVariant(variantId)}
+                onClear={() => coordinator.clearVariant()}
+                onRetry={() => coordinator.retryVariants()}
               />
-              <PreparationDetails answer={answer} />
-            </>
+            </div>
           )}
-        </section>
+        </div>
         {inspected.phase !== "closed" && answer && (
           <ImportedInspector
             inspected={inspected}

@@ -129,6 +129,12 @@
   --history-line-left: 7px;
   --history-marker-top: 5px;
   --history-marker-pull: 3px;
+  /* The views of the population: panels side by side when they fit, and the thin share bars. */
+  --size-view-panel: 380px;
+  --size-share-bars: 10px;
+  --size-share-least: 80px;
+  --size-swatch: 12px;
+  --size-swatch-height: 4px;
 
   /* Layers */
   --z-sticky: var(--wf-z-comparison-header);

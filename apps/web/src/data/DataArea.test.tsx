@@ -13,6 +13,7 @@ import {
   sourceAnswer,
   workspaceAnswer,
 } from "../test/imports";
+import { scriptedViewClient } from "../test/views";
 import { importContract } from "./client";
 
 const FOLDER = "C:\\Users\\Analyst\\Investigations";
@@ -23,7 +24,7 @@ function renderApp() {
   const examples = scriptedClient();
   const imports = scriptedImportClient();
   const user = userEvent.setup();
-  render(<App client={examples.client} importClient={imports.client} checkHealth={healthy} />);
+  render(<App client={examples.client} importClient={imports.client} viewClient={scriptedViewClient().client} checkHealth={healthy} />);
   return { imports, user };
 }
 
