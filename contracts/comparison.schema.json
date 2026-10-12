@@ -1,0 +1,1636 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/comparison.v1.schema.json",
+  "title": "ComparisonMessage",
+  "description": "Descriptive comparisons over one frozen parent and complete histories; missing context, unevaluable support and observation exposure remain explicit.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/GroupComparisonRequest"
+    },
+    {
+      "$ref": "#/$defs/GroupComparisonAnswer"
+    },
+    {
+      "$ref": "#/$defs/PeriodComparisonRequest"
+    },
+    {
+      "$ref": "#/$defs/PeriodComparisonAnswer"
+    },
+    {
+      "$ref": "#/$defs/ComparisonRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "PopulationSupport": {
+      "title": "PopulationSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count"
+      ]
+    },
+    "ContainsActivity": {
+      "title": "ContainsActivity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "contains_activity"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "activity",
+        "negate"
+      ]
+    },
+    "DirectlyFollows": {
+      "title": "DirectlyFollows",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "directly_follows"
+        },
+        "source_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "source_activity",
+        "target_activity",
+        "negate"
+      ]
+    },
+    "OpeningAttributeEquals": {
+      "title": "OpeningAttributeEquals",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "opening_attribute_equals"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        },
+        "anchor_policy": {
+          "type": "string",
+          "const": "incident.context.first_record_in_declared_order.v1"
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "value",
+        "negate",
+        "anchor_policy"
+      ]
+    },
+    "SelectionPredicate": {
+      "title": "SelectionPredicate",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ContainsActivity"
+        },
+        {
+          "$ref": "#/$defs/DirectlyFollows"
+        },
+        {
+          "$ref": "#/$defs/OpeningAttributeEquals"
+        }
+      ]
+    },
+    "UtcInstant": {
+      "title": "UtcInstant",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "LocalTimestamp": {
+      "title": "LocalTimestamp",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "CaseIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CaseId"
+      },
+      "uniqueItems": true
+    },
+    "Name": {
+      "title": "ComparisonName",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "\\S"
+    },
+    "ContextPolicy": {
+      "type": "string",
+      "const": "incident.context.first_record_in_declared_order.v1"
+    },
+    "ComparisonId": {
+      "title": "ComparisonId",
+      "type": "string",
+      "pattern": "^comparison\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PredicateGroupDefinition": {
+      "title": "PredicateGroupDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "predicates"
+        },
+        "predicates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SelectionPredicate"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "predicates"
+      ]
+    },
+    "ExplicitCaseGroupDefinition": {
+      "title": "ExplicitCaseGroupDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "explicit_case_ids"
+        },
+        "case_ids": {
+          "$ref": "#/$defs/CaseIds"
+        }
+      },
+      "required": [
+        "kind",
+        "case_ids"
+      ]
+    },
+    "NamedGroupDefinition": {
+      "title": "NamedGroupDefinition",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PredicateGroupDefinition"
+        },
+        {
+          "$ref": "#/$defs/ExplicitCaseGroupDefinition"
+        }
+      ]
+    },
+    "NamedGroup": {
+      "title": "NamedGroup",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "definition": {
+          "$ref": "#/$defs/NamedGroupDefinition"
+        }
+      },
+      "required": [
+        "name",
+        "definition"
+      ]
+    },
+    "TwoNamedGroups": {
+      "title": "TwoNamedGroups",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "two_named_groups"
+        },
+        "target": {
+          "$ref": "#/$defs/NamedGroup"
+        },
+        "reference": {
+          "$ref": "#/$defs/NamedGroup"
+        }
+      },
+      "required": [
+        "mode",
+        "target",
+        "reference"
+      ]
+    },
+    "SelectionPartition": {
+      "title": "SelectionPartition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "selection_partition"
+        },
+        "target_name": {
+          "$ref": "#/$defs/Name"
+        },
+        "reference_name": {
+          "$ref": "#/$defs/Name"
+        },
+        "predicates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SelectionPredicate"
+          }
+        },
+        "target_side": {
+          "type": "string",
+          "enum": [
+            "kept",
+            "removed"
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "target_name",
+        "reference_name",
+        "predicates",
+        "target_side"
+      ]
+    },
+    "GroupComparisonDefinition": {
+      "title": "GroupComparisonDefinition",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TwoNamedGroups"
+        },
+        {
+          "$ref": "#/$defs/SelectionPartition"
+        }
+      ]
+    },
+    "UtcCaseStartWindow": {
+      "title": "UtcCaseStartWindow",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "start_inclusive": {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        "end_exclusive": {
+          "$ref": "#/$defs/UtcInstant"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "start_inclusive",
+        "end_exclusive"
+      ]
+    },
+    "WallCaseStartWindow": {
+      "title": "WallCaseStartWindow",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "start_inclusive": {
+          "$ref": "#/$defs/LocalTimestamp"
+        },
+        "end_exclusive": {
+          "$ref": "#/$defs/LocalTimestamp"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "start_inclusive",
+        "end_exclusive"
+      ]
+    },
+    "CaseStartWindow": {
+      "title": "CaseStartWindow",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcCaseStartWindow"
+        },
+        {
+          "$ref": "#/$defs/WallCaseStartWindow"
+        }
+      ]
+    },
+    "NamedPeriod": {
+      "title": "NamedPeriod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "window": {
+          "$ref": "#/$defs/CaseStartWindow"
+        }
+      },
+      "required": [
+        "name",
+        "window"
+      ]
+    },
+    "PeriodComparisonDefinition": {
+      "title": "PeriodComparisonDefinition",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcPeriodComparisonDefinition"
+        },
+        {
+          "$ref": "#/$defs/WallPeriodComparisonDefinition"
+        }
+      ]
+    },
+    "AvailableShare": {
+      "title": "AvailableShare",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "available"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "status",
+        "value"
+      ]
+    },
+    "UnavailableShare": {
+      "title": "UnavailableShare",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "const": "empty_profile_denominator"
+        }
+      },
+      "required": [
+        "status",
+        "reason"
+      ]
+    },
+    "Share": {
+      "title": "Share",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AvailableShare"
+        },
+        {
+          "$ref": "#/$defs/UnavailableShare"
+        }
+      ]
+    },
+    "CategorySupport": {
+      "title": "CategorySupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "denominator": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "$ref": "#/$defs/Share"
+        }
+      },
+      "required": [
+        "case_count",
+        "denominator",
+        "share"
+      ]
+    },
+    "AvailableDifference": {
+      "title": "AvailableDifference",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "available"
+        },
+        "value": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "status",
+        "value"
+      ]
+    },
+    "UnavailableDifference": {
+      "title": "UnavailableDifference",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "empty_target_profile",
+            "empty_reference_profile",
+            "empty_both_profiles"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "reason"
+      ]
+    },
+    "ShareDifference": {
+      "title": "ShareDifference",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AvailableDifference"
+        },
+        {
+          "$ref": "#/$defs/UnavailableDifference"
+        }
+      ]
+    },
+    "AvailableRatio": {
+      "title": "AvailableRatio",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "available"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "status",
+        "value"
+      ]
+    },
+    "UnavailableRatio": {
+      "title": "UnavailableRatio",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "empty_target_profile",
+            "empty_reference_profile",
+            "empty_both_profiles",
+            "zero_reference_share"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "reason"
+      ]
+    },
+    "ConcentrationRatio": {
+      "title": "ConcentrationRatio",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AvailableRatio"
+        },
+        {
+          "$ref": "#/$defs/UnavailableRatio"
+        }
+      ]
+    },
+    "CategoryComparison": {
+      "title": "CategoryComparison",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parent": {
+          "$ref": "#/$defs/CategorySupport"
+        },
+        "target": {
+          "$ref": "#/$defs/CategorySupport"
+        },
+        "reference": {
+          "$ref": "#/$defs/CategorySupport"
+        },
+        "difference_percentage_points": {
+          "$ref": "#/$defs/ShareDifference"
+        },
+        "concentration_ratio": {
+          "$ref": "#/$defs/ConcentrationRatio"
+        }
+      },
+      "required": [
+        "value",
+        "parent",
+        "target",
+        "reference",
+        "difference_percentage_points",
+        "concentration_ratio"
+      ]
+    },
+    "FixedParentContext": {
+      "title": "FixedParentContext",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "fixed"
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "status",
+        "value",
+        "reason"
+      ]
+    },
+    "VaryingParentContext": {
+      "title": "VaryingParentContext",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "varying"
+        },
+        "value": {
+          "type": "null"
+        },
+        "reason": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "status",
+        "value",
+        "reason"
+      ]
+    },
+    "UnavailableParentContext": {
+      "title": "UnavailableParentContext",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "value": {
+          "type": "null"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "empty_parent",
+            "unevaluable_context"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "value",
+        "reason"
+      ]
+    },
+    "ParentFixedContext": {
+      "title": "ParentFixedContext",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/FixedParentContext"
+        },
+        {
+          "$ref": "#/$defs/VaryingParentContext"
+        },
+        {
+          "$ref": "#/$defs/UnavailableParentContext"
+        }
+      ]
+    },
+    "ContextProfile": {
+      "title": "ContextProfile",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "denominator_basis": {
+          "type": "string",
+          "const": "context_evaluable_cases"
+        },
+        "parent_evaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "parent_unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "target_evaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "target_unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "reference_evaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "reference_unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "parent_fixed": {
+          "$ref": "#/$defs/ParentFixedContext"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CategoryComparison"
+          }
+        }
+      },
+      "required": [
+        "denominator_basis",
+        "parent_evaluable",
+        "parent_unevaluable",
+        "target_evaluable",
+        "target_unevaluable",
+        "reference_evaluable",
+        "reference_unevaluable",
+        "parent_fixed",
+        "categories"
+      ]
+    },
+    "GroupCohort": {
+      "title": "GroupCohort",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "included": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "excluded": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "name",
+        "identity",
+        "included",
+        "excluded",
+        "unevaluable"
+      ]
+    },
+    "PairSupport": {
+      "title": "PairSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "overlap": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "target_only": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "reference_only": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "neither": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "overlap",
+        "target_only",
+        "reference_only",
+        "neither",
+        "unevaluable"
+      ]
+    },
+    "UtcClockPoint": {
+      "title": "UtcClockPoint",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "utc_instant": {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        "local_timestamp": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "utc_instant",
+        "local_timestamp"
+      ]
+    },
+    "WallClockPoint": {
+      "title": "WallClockPoint",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "utc_instant": {
+          "type": "null"
+        },
+        "local_timestamp": {
+          "$ref": "#/$defs/LocalTimestamp"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "utc_instant",
+        "local_timestamp"
+      ]
+    },
+    "ClockPoint": {
+      "title": "ClockPoint",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcClockPoint"
+        },
+        {
+          "$ref": "#/$defs/WallClockPoint"
+        }
+      ]
+    },
+    "UtcFollowupClock": {
+      "title": "UtcFollowupClock",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "duration_clock": {
+          "type": "string",
+          "const": "elapsed_utc_hours"
+        },
+        "clock_limitation": {
+          "type": "null"
+        },
+        "snapshot_cutoff": {
+          "$ref": "#/$defs/UtcClockPoint"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "duration_clock",
+        "clock_limitation",
+        "snapshot_cutoff"
+      ]
+    },
+    "WallFollowupClock": {
+      "title": "WallFollowupClock",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "duration_clock": {
+          "type": "string",
+          "const": "recorded_wall_clock_hours"
+        },
+        "clock_limitation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "snapshot_cutoff": {
+          "$ref": "#/$defs/WallClockPoint"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "duration_clock",
+        "clock_limitation",
+        "snapshot_cutoff"
+      ]
+    },
+    "FollowupClock": {
+      "title": "FollowupClock",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcFollowupClock"
+        },
+        {
+          "$ref": "#/$defs/WallFollowupClock"
+        }
+      ]
+    },
+    "CaseExposure": {
+      "title": "CaseExposure",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "case_start": {
+          "$ref": "#/$defs/ClockPoint"
+        },
+        "followup_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "adequate",
+            "inadequate"
+          ]
+        }
+      },
+      "required": [
+        "case_id",
+        "case_start",
+        "followup_hours",
+        "status"
+      ]
+    },
+    "FollowupExposure": {
+      "title": "FollowupExposure",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "adequate": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "inadequate": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseExposure"
+          }
+        }
+      },
+      "required": [
+        "adequate",
+        "inadequate",
+        "cases"
+      ]
+    },
+    "EndpointCoverage": {
+      "title": "EndpointCoverage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "basis": {
+          "type": "string",
+          "const": "recorded_activity_presence_in_complete_history"
+        },
+        "recorded": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "not_recorded": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "activity",
+        "basis",
+        "recorded",
+        "not_recorded"
+      ]
+    },
+    "PeriodCohort": {
+      "title": "PeriodCohort",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "included": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "excluded": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "exposure": {
+          "$ref": "#/$defs/FollowupExposure"
+        },
+        "endpoint_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EndpointCoverage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "identity",
+        "included",
+        "excluded",
+        "unevaluable",
+        "exposure",
+        "endpoint_coverage"
+      ]
+    },
+    "GroupComparisonRequest": {
+      "title": "GroupComparisonRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "compare_groups_request"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_case_ids": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaseIds"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "context_column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "context_policy": {
+          "$ref": "#/$defs/ContextPolicy"
+        },
+        "definition": {
+          "$ref": "#/$defs/GroupComparisonDefinition"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "parent_case_ids",
+        "context_column_index",
+        "context_policy",
+        "definition"
+      ]
+    },
+    "GroupComparisonAnswer": {
+      "title": "GroupComparisonAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "group_comparison_answer"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "comparison_id": {
+          "$ref": "#/$defs/ComparisonId"
+        },
+        "context_column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "context_policy": {
+          "$ref": "#/$defs/ContextPolicy"
+        },
+        "pair_support": {
+          "$ref": "#/$defs/PairSupport"
+        },
+        "context_profile": {
+          "$ref": "#/$defs/ContextProfile"
+        },
+        "definition": {
+          "$ref": "#/$defs/GroupComparisonDefinition"
+        },
+        "target": {
+          "$ref": "#/$defs/GroupCohort"
+        },
+        "reference": {
+          "$ref": "#/$defs/GroupCohort"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "parent_identity",
+        "parent",
+        "comparison_id",
+        "context_column_index",
+        "context_policy",
+        "pair_support",
+        "context_profile",
+        "definition",
+        "target",
+        "reference"
+      ]
+    },
+    "PeriodComparisonRequest": {
+      "title": "PeriodComparisonRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "compare_periods_request"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_case_ids": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaseIds"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "context_column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "context_policy": {
+          "$ref": "#/$defs/ContextPolicy"
+        },
+        "definition": {
+          "$ref": "#/$defs/PeriodComparisonDefinition"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "parent_case_ids",
+        "context_column_index",
+        "context_policy",
+        "definition"
+      ]
+    },
+    "PeriodComparisonAnswer": {
+      "title": "PeriodComparisonAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "period_comparison_answer"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "comparison_id": {
+          "$ref": "#/$defs/ComparisonId"
+        },
+        "context_column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "context_policy": {
+          "$ref": "#/$defs/ContextPolicy"
+        },
+        "pair_support": {
+          "$ref": "#/$defs/PairSupport"
+        },
+        "context_profile": {
+          "$ref": "#/$defs/ContextProfile"
+        },
+        "definition": {
+          "$ref": "#/$defs/PeriodComparisonDefinition"
+        },
+        "target": {
+          "$ref": "#/$defs/PeriodCohort"
+        },
+        "reference": {
+          "$ref": "#/$defs/PeriodCohort"
+        },
+        "case_start_basis": {
+          "type": "string",
+          "const": "first_record_in_declared_order_of_sequence_evaluable_case"
+        },
+        "followup_clock": {
+          "$ref": "#/$defs/FollowupClock"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "parent_identity",
+        "parent",
+        "comparison_id",
+        "context_column_index",
+        "context_policy",
+        "pair_support",
+        "context_profile",
+        "definition",
+        "target",
+        "reference",
+        "case_start_basis",
+        "followup_clock"
+      ]
+    },
+    "ComparisonRefusal": {
+      "title": "ComparisonRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "comparison_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "compare_groups",
+            "compare_periods"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_predicate",
+            "invalid_parent",
+            "unknown_case",
+            "case_outside_parent",
+            "unmapped_context_column",
+            "invalid_window",
+            "clock_mismatch",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    },
+    "NamedUtcPeriod": {
+      "title": "NamedUtcPeriod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "window": {
+          "$ref": "#/$defs/UtcCaseStartWindow"
+        }
+      },
+      "required": [
+        "name",
+        "window"
+      ]
+    },
+    "NamedWallPeriod": {
+      "title": "NamedWallPeriod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "window": {
+          "$ref": "#/$defs/WallCaseStartWindow"
+        }
+      },
+      "required": [
+        "name",
+        "window"
+      ]
+    },
+    "UtcPeriodComparisonDefinition": {
+      "title": "UtcPeriodComparisonDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/NamedUtcPeriod"
+        },
+        "reference": {
+          "$ref": "#/$defs/NamedUtcPeriod"
+        },
+        "minimum_followup_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endpoint_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "target",
+        "reference",
+        "minimum_followup_hours",
+        "endpoint_activity"
+      ]
+    },
+    "WallPeriodComparisonDefinition": {
+      "title": "WallPeriodComparisonDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/NamedWallPeriod"
+        },
+        "reference": {
+          "$ref": "#/$defs/NamedWallPeriod"
+        },
+        "minimum_followup_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endpoint_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "target",
+        "reference",
+        "minimum_followup_hours",
+        "endpoint_activity"
+      ]
+    }
+  }
+}

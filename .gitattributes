@@ -1,1 +1,3 @@
 tests/fixtures/imports/*.csv -text
+tests/fixtures/comparisons/*.csv -text
+tests/fixtures/expectations/*.csv -text
