@@ -79,6 +79,10 @@ _POLICIES = {
         "missing_activity": "omit_from_mapped_sequence", "raw_records": "retain_all", "gap_evidence": "omitted_row_ids"}),
     "parent": ("incident.parent.all_identified_cases.v1", {"eligibility": "nonempty_normalized_case_identifier"}),
 }
+ROWS_V2_ID = "incident.rows.missing_id_outside_invalid_time_retained.v2"
+_ROWS_V2_PARAMETERS = {**_POLICIES["rows"][1], "blank_records": "skip_count_preserve_source_ordinal",
+                       "ragged_records": "outside_population_preserve_raw", "maximum_ragged_fraction": 0.05,
+                       "field_character_limit": 10_485_760}
 
 
 def validate_policies(value: object) -> dict[str, object] | ImportRefusal:
@@ -92,6 +96,8 @@ def validate_policies(value: object) -> dict[str, object] | ImportRefusal:
         if refusal is not None:
             return refusal
         assert isinstance(choice, Mapping)
+        if role == "rows" and choice["id"] == ROWS_V2_ID:
+            policy_id, parameters = ROWS_V2_ID, _ROWS_V2_PARAMETERS
         if choice["id"] != policy_id:
             return ImportRefusal("unsupported_policy", "The policy identifier or version is unsupported.", "policies." + role + ".id")
         if not isinstance(choice["parameters"], Mapping) or dict(choice["parameters"]) != parameters:
