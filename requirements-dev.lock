@@ -37,6 +37,7 @@ python-dateutil==2.9.0.post0
 pytokens==0.4.1
 PyYAML==6.0.3
 referencing==0.37.0
+rfc3339-validator==0.1.4
 rpds-py==2026.9.1
 six==1.17.0
 starlette==1.7.0
