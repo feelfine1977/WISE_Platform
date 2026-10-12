@@ -21,8 +21,9 @@ Rules of this parser version:
   fraction of one to six digits. The ``Z`` is required: a time without it, or
   with another offset, is refused rather than guessed, and so is a finer
   fraction than a microsecond rather than rounded.
-* ``source_sequence`` is a whole number from 0, of at most eighteen digits,
-  without a sign.
+* ``source_sequence`` is a whole number from 0 to 9007199254740991, without a
+  sign. A larger number is refused rather than read, because a browser cannot
+  carry it without changing it.
 * Every row with cells is one record. Rows are never merged, dropped or
   reordered here: two identical rows are two records.
 * A line with no cells at all carries no record. It is skipped and does not
@@ -79,6 +80,8 @@ _TIMESTAMP = re.compile(
     r"(?:\.(?P<fraction>[0-9]{1,6}))?Z"
 )
 _SEQUENCE = re.compile(r"[0-9]{1,18}")
+LARGEST_SEQUENCE = 2**53 - 1
+"""The largest whole number every reader of the answers carries unchanged."""
 _SHOWN_LENGTH = 60
 
 
@@ -134,7 +137,8 @@ def parse_sequence(text: str) -> int | None:
     """Return the whole number written in ``text``, or ``None``."""
     if _SEQUENCE.fullmatch(text) is None:
         return None
-    return int(text)
+    number = int(text)
+    return number if number <= LARGEST_SEQUENCE else None
 
 
 def parse_source(source: bytes) -> ParsedSource | Refusal:
@@ -278,7 +282,7 @@ def _read_record(
         return _malformed(
             "unparsable_sequence",
             f"{where} has a {SOURCE_SEQUENCE} that cannot be read: {_shown(sequence_text)}. "
-            "Expected a whole number from 0 of at most eighteen digits, without a sign.",
+            f"Expected a whole number from 0 to {LARGEST_SEQUENCE}, without a sign.",
             line=line,
             source_position=position,
             column=SOURCE_SEQUENCE,

@@ -219,12 +219,20 @@ def test_the_sequence_is_a_whole_number_from_zero(csv_source):
         csv_source(
             "A,a-1,007,x,2026-10-01T09:00:00Z,S,",
             "A,a-2,0,x,2026-10-01T09:00:00Z,S,",
-            "A,a-3,123456789012345678,x,2026-10-01T09:00:00Z,S,",
+            "A,a-3,9007199254740991,x,2026-10-01T09:00:00Z,S,",
         )
     )
 
-    assert [record.sequence for record in result.records] == [7, 0, 123456789012345678]
+    assert [record.sequence for record in result.records] == [7, 0, 9007199254740991]
     assert result.records[0].cells[2] == "007"
+
+
+def test_a_sequence_no_browser_carries_unchanged_is_refused(csv_source):
+    refusal = refused(csv_source("A,a-1,9007199254740992,x,2026-10-01T09:00:00Z,S,"))
+
+    assert refusal.detail["reason"] == "unparsable_sequence"
+    assert refusal.detail["column"] == "source_sequence"
+    assert refusal.detail["value"] == "9007199254740992"
 
 
 def test_bytes_that_are_not_utf8_are_refused_with_the_line():
