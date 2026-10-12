@@ -24,6 +24,7 @@ class RefusalCode(StrEnum):
     MISSING_POLICY = "missing_policy"
     IDENTITY_MISMATCH = "identity_mismatch"
     UNKNOWN_CASE = "unknown_case"
+    CASE_NOT_IN_POPULATION = "case_not_in_population"
 
 
 @dataclass(frozen=True)

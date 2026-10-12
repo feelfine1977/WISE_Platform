@@ -1,15 +1,25 @@
 """Opening one incident of a population: every raw record, in the declared order."""
 
+import hashlib
 import json
+from dataclasses import replace
+from datetime import datetime, timezone
+
+import pytest
+from supported_policies import selection_with
 
 from wise_platform_analytics import (
     CaseEvidence,
+    Coverage,
+    Identities,
+    PolicyChoice,
     PolicySelection,
     PopulationAnswer,
     Refusal,
     open_case,
     open_population,
 )
+from wise_platform_analytics.evidence import utc_text
 
 COLUMNS = (
     "incident_id",
@@ -20,8 +30,10 @@ COLUMNS = (
     "service",
     "assignment_group",
 )
+UTC = timezone.utc
 
-# Incident B is not contiguous in the source; three records have no activity label.
+# B (kept) and A (removed) form the parent population; C, D and E are outside.
+# B is not contiguous in the source and two of its records have no activity label.
 ROWS = (
     "B,b-1,1,Opened,2026-10-01T09:00:00Z,S,Desk",
     "A,a-1,1,Opened,2026-10-01T09:05:00Z,S,Unknown",
@@ -30,6 +42,9 @@ ROWS = (
     "A,a-2,2,Unknown,2026-10-01T11:00:00Z,S,",
     "B,b-3,3,,2026-10-01T11:30:00Z,S,Network",
     "B,b-4,4,Resolved,2026-10-01T12:00:00Z,S,Network",
+    "D,d-1,1,Assigned,2026-10-01T09:00:00Z,S,Desk",
+    "E,e-1,1,Opened,2026-10-01T09:00:00Z,S,Desk",
+    "E,e-2,2,Resolved,2026-10-01T10:00:00Z,T,Desk",
 )
 
 
@@ -40,13 +55,22 @@ def population_of(source: bytes, policies: PolicySelection) -> PopulationAnswer:
 
 
 def evidence_of(source: bytes, policies: PolicySelection, case_id: str) -> CaseEvidence:
-    population_id = population_of(source, policies).identities.population_id
-    evidence = open_case(source, policies, population_id, case_id)
+    identities = population_of(source, policies).identities
+    evidence = open_case(source, policies, identities, case_id)
     assert isinstance(evidence, CaseEvidence), evidence
     return evidence
 
 
-def cells(*values: str | None) -> dict[str, str | None]:
+def expected_row_id(source: bytes, position: int) -> str:
+    """The row identity written out from the scheme: source digest and position."""
+    source_id = "source.v1:sha256:" + hashlib.sha256(source).hexdigest()
+    canonical = (
+        '{"kind":"row","source_id":"' + source_id + '","source_position":' + str(position) + "}"
+    ).encode("ascii")
+    return "row.v1:sha256:" + hashlib.sha256(canonical).hexdigest()
+
+
+def originals(*values: str) -> dict[str, str]:
     return dict(zip(COLUMNS, values, strict=True))
 
 
@@ -54,37 +78,58 @@ def test_it_returns_every_raw_record_of_the_incident_and_no_other(csv_source, po
     evidence = evidence_of(csv_source(*ROWS), policies, "B")
 
     assert evidence.case_id == "B"
-    assert evidence.raw_record_count == 4
-    assert [record.cells for record in evidence.records] == [
-        cells("B", "b-1", "1", "Opened", "2026-10-01T09:00:00Z", "S", "Desk"),
-        cells("B", "b-2", "2", None, "2026-10-01T10:00:00Z", "S", "Desk"),
-        cells("B", "b-3", "3", None, "2026-10-01T11:30:00Z", "S", "Network"),
-        cells("B", "b-4", "4", "Resolved", "2026-10-01T12:00:00Z", "S", "Network"),
+    assert [record.original_values for record in evidence.records] == [
+        originals("B", "b-1", "1", "Opened", "2026-10-01T09:00:00Z", "S", "Desk"),
+        originals("B", "b-2", "2", "", "2026-10-01T10:00:00Z", "S", "Desk"),
+        originals("B", "b-3", "3", "", "2026-10-01T11:30:00Z", "S", "Network"),
+        originals("B", "b-4", "4", "Resolved", "2026-10-01T12:00:00Z", "S", "Network"),
     ]
-    assert [record.source_position for record in evidence.records] == [1, 3, 6, 7]
+    assert [record.source_position for record in evidence.records] == [0, 2, 5, 6]
+    assert evidence.coverage == Coverage(4, 2, 2)
 
 
-def test_every_incident_of_the_population_can_be_opened_and_together_they_hold_every_record(
+def test_each_record_carries_the_values_read_from_its_cells(csv_source, policies):
+    records = evidence_of(csv_source(*ROWS), policies, "B").records
+
+    assert [record.source_event_id for record in records] == ["b-1", "b-2", "b-3", "b-4"]
+    assert [record.source_sequence for record in records] == [1, 2, 3, 4]
+    assert [record.timestamp_utc for record in records] == [
+        datetime(2026, 10, 1, 9, tzinfo=UTC),
+        datetime(2026, 10, 1, 10, tzinfo=UTC),
+        datetime(2026, 10, 1, 11, 30, tzinfo=UTC),
+        datetime(2026, 10, 1, 12, tzinfo=UTC),
+    ]
+    assert [record.activity for record in records] == ["Opened", None, None, "Resolved"]
+    assert [record.service for record in records] == ["S", "S", "S", "S"]
+    assert [record.assignment_group for record in records] == [
+        "Desk",
+        "Desk",
+        "Network",
+        "Network",
+    ]
+
+
+def test_every_incident_of_the_parent_can_be_opened_and_together_they_hold_its_records(
     csv_source, policies
 ):
     source = csv_source(*ROWS)
     population = population_of(source, policies)
 
     positions = []
-    for count in population.raw_record_counts:
-        evidence = evidence_of(source, policies, count.incident_id)
-        assert (
-            evidence.raw_record_count == len(evidence.records) == count.raw_record_count
-        )
+    for summary in population.cases:
+        evidence = evidence_of(source, policies, summary.case_id)
+        assert len(evidence.records) == summary.record_count
+        assert evidence.coverage.mapped_record_count == summary.mapped_record_count
         positions.extend(record.source_position for record in evidence.records)
 
-    assert sorted(positions) == [1, 2, 3, 4, 5, 6, 7]
+    assert sorted(positions) == [0, 1, 2, 4, 5, 6]
 
 
-def test_records_without_a_label_stay_in_the_evidence_and_are_flagged_as_omitted(
+def test_records_without_a_label_stay_in_the_evidence_and_their_rows_are_named(
     csv_source, policies
 ):
-    evidence = evidence_of(csv_source(*ROWS), policies, "B")
+    source = csv_source(*ROWS)
+    evidence = evidence_of(source, policies, "B")
 
     assert [record.omitted_from_mapped_sequence for record in evidence.records] == [
         False,
@@ -92,22 +137,27 @@ def test_records_without_a_label_stay_in_the_evidence_and_are_flagged_as_omitted
         True,
         False,
     ]
-    assert evidence.omitted_record_count == 2
+    assert evidence.mapped_row_ids == (
+        expected_row_id(source, 0),
+        expected_row_id(source, 6),
+    )
+    assert evidence.omitted_activity_row_ids == (
+        expected_row_id(source, 2),
+        expected_row_id(source, 5),
+    )
+    assert [record.row_id for record in evidence.records] == [
+        expected_row_id(source, position) for position in (0, 2, 5, 6)
+    ]
 
 
-def test_a_missing_cell_is_none_and_never_empty_text_or_unknown(csv_source, policies):
-    source = csv_source(*ROWS)
+def test_a_missing_value_is_none_and_never_empty_text_or_unknown(csv_source, policies):
+    records = evidence_of(csv_source(*ROWS), policies, "A").records
 
-    missing = evidence_of(source, policies, "C").records[0]
-    literal = evidence_of(source, policies, "A").records
-
-    assert missing.cells["activity"] is None
-    assert missing.cells["assignment_group"] is None
-    assert missing.omitted_from_mapped_sequence is True
-    assert literal[0].cells["assignment_group"] == "Unknown"
-    assert literal[1].cells["activity"] == "Unknown"
-    assert literal[1].cells["assignment_group"] is None
-    assert [record.omitted_from_mapped_sequence for record in literal] == [False, False]
+    assert records[0].assignment_group == "Unknown"
+    assert records[1].activity == "Unknown"
+    assert records[1].assignment_group is None
+    assert records[1].original_values["assignment_group"] == ""
+    assert [record.omitted_from_mapped_sequence for record in records] == [False, False]
 
 
 def test_records_sharing_a_timestamp_follow_the_sequence_and_then_the_source_position(
@@ -123,64 +173,35 @@ def test_records_sharing_a_timestamp_follow_the_sequence_and_then_the_source_pos
 
     evidence = evidence_of(source, policies, "T")
 
-    assert [record.row_id for record in evidence.records] == [
+    assert [record.source_event_id for record in evidence.records] == [
         "t-opened",
         "t-gap",
         "t-resolved",
         "t-noted",
         "t-assigned",
     ]
-    assert [record.source_position for record in evidence.records] == [5, 2, 1, 4, 3]
-
-
-def test_the_row_id_is_the_source_event_id_when_it_is_present_and_unique_in_the_source(
-    csv_source, policies
-):
-    source = csv_source(
-        "A,e-1,1,Opened,2026-10-01T09:00:00Z,S,Desk",
-        "A,,2,Assigned,2026-10-01T10:00:00Z,S,Desk",
-        "A,twice,3,Resolved,2026-10-01T11:00:00Z,S,Desk",
-        "B,twice,1,Opened,2026-10-01T09:00:00Z,S,Desk",
-        "B,e-2,2,Resolved,2026-10-01T10:00:00Z,S,Desk",
+    assert [record.source_position for record in evidence.records] == [4, 1, 0, 3, 2]
+    assert evidence.mapped_row_ids == tuple(
+        expected_row_id(source, position) for position in (4, 0, 3, 2)
     )
 
-    first = evidence_of(source, policies, "A").records
-    second = evidence_of(source, policies, "B").records
 
-    assert [
-        (record.row_id, record.row_id_kind, record.source_position) for record in first
-    ] == [
-        ("e-1", "source_event_id", 1),
-        ("source_position:2", "source_position", 2),
-        ("source_position:3", "source_position", 3),
-    ]
-    assert [
-        (record.row_id, record.row_id_kind, record.source_position) for record in second
-    ] == [
-        ("source_position:4", "source_position", 4),
-        ("e-2", "source_event_id", 5),
-    ]
-    assert first[2].cells["source_event_id"] == "twice"
-    assert first[1].cells["source_event_id"] is None
-
-
-def test_row_ids_are_unique_in_a_source_even_when_an_event_id_imitates_a_position(
-    csv_source, policies
-):
+def test_row_ids_are_unique_in_a_source_even_when_event_ids_repeat(csv_source, policies):
     source = csv_source(
-        "A,source_position:2,1,Opened,2026-10-01T09:00:00Z,S,Desk",
-        "A,,2,Assigned,2026-10-01T10:00:00Z,S,Desk",
+        "A,twice,1,Opened,2026-10-01T09:00:00Z,S,Desk",
+        "A,twice,2,Assigned,2026-10-01T10:00:00Z,S,Desk",
     )
 
     records = evidence_of(source, policies, "A").records
 
-    assert [(record.row_id, record.row_id_kind) for record in records] == [
-        ("source_position:1", "source_position"),
-        ("source_position:2", "source_position"),
+    assert [record.source_event_id for record in records] == ["twice", "twice"]
+    assert [record.row_id for record in records] == [
+        expected_row_id(source, 0),
+        expected_row_id(source, 1),
     ]
 
 
-def test_columns_beyond_the_required_ones_are_part_of_the_evidence(
+def test_columns_beyond_the_required_ones_are_part_of_the_original_values(
     csv_source, policies
 ):
     source = csv_source(
@@ -191,24 +212,23 @@ def test_columns_beyond_the_required_ones_are_part_of_the_evidence(
 
     records = evidence_of(source, policies, "A").records
 
-    assert list(records[0].cells) == [*COLUMNS, "priority", "note"]
-    assert (records[0].cells["priority"], records[0].cells["note"]) == ("High", None)
-    assert (records[1].cells["priority"], records[1].cells["note"]) == (
-        None,
-        "by phone",
-    )
+    assert list(records[0].original_values) == [*COLUMNS, "priority", "note"]
+    assert (records[0].original_values["priority"], records[0].original_values["note"]) == ("High", "")
+    assert (records[1].original_values["priority"], records[1].original_values["note"]) == ("", "by phone")
 
 
-def test_a_byte_order_mark_and_windows_line_ends_do_not_change_the_evidence(
+def test_a_byte_order_mark_and_windows_line_ends_change_only_the_identities(
     csv_source, policies
 ):
     plain = evidence_of(csv_source(*ROWS), policies, "B")
     windows = evidence_of(csv_source(*ROWS, newline="\r\n", bom=True), policies, "B")
 
-    assert windows.records == plain.records
-    assert list(windows.records[0].cells) == list(COLUMNS)
-    assert windows.records[-1].cells["assignment_group"] == "Network"
+    assert [replace(record, row_id="") for record in windows.records] == [
+        replace(record, row_id="") for record in plain.records
+    ]
+    assert list(windows.records[0].original_values) == list(COLUMNS)
     assert windows.identities != plain.identities
+    assert windows.records[0].row_id != plain.records[0].row_id
 
 
 def test_the_evidence_is_bound_to_the_population_it_was_opened_from(
@@ -223,47 +243,82 @@ def test_the_evidence_is_bound_to_the_population_it_was_opened_from(
     assert evidence.policies == population.policies
 
 
-def test_a_population_identity_that_does_not_match_is_refused(csv_source, policies):
+@pytest.mark.parametrize(
+    "field",
+    [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version",
+    ],
+)
+def test_every_identity_that_does_not_match_is_refused_by_name(
+    csv_source, policies, field
+):
     source = csv_source(*ROWS)
-    computed = population_of(source, policies).identities.population_id
-    other_source = population_of(
-        csv_source(*ROWS, newline="\r\n"), policies
-    ).identities.population_id
+    computed = population_of(source, policies).identities
+    supplied = replace(computed, **{field: getattr(computed, field) + "0"})
 
-    for supplied in (
-        "",
-        "pop_" + "0" * 64,
-        other_source,
-        computed.upper(),
-        computed + " ",
-    ):
-        refusal = open_case(source, policies, supplied, "A")
+    refusal = open_case(source, policies, supplied, "A")
 
-        assert isinstance(refusal, Refusal), refusal
-        assert refusal.code == "identity_mismatch"
-        assert refusal.detail == {
-            "identity": "population_id",
-            "supplied": supplied,
-            "computed": computed,
-        }
-        assert refusal.message
+    assert isinstance(refusal, Refusal), refusal
+    assert refusal.code == "identity_mismatch"
+    assert refusal.detail == {
+        "identity": field,
+        "supplied": getattr(supplied, field),
+        "computed": getattr(computed, field),
+    }
+    assert refusal.message
 
 
-def test_a_case_that_is_not_in_the_population_is_refused(csv_source, policies):
+def test_identities_of_the_same_source_under_another_parent_are_refused(
+    csv_source, policies
+):
     source = csv_source(*ROWS)
-    population_id = population_of(source, policies).identities.population_id
+    computed = population_of(source, policies).identities
+    other = population_of(
+        csv_source(*ROWS[:-1], "E,e-2,2,Resolved,2026-10-01T10:00:00Z,S,Desk"), policies
+    ).identities
 
-    for case_id in ("Z", "b", "B ", "", "b-1"):
-        refusal = open_case(source, policies, population_id, case_id)
+    refusal = open_case(source, policies, replace(computed, population_id=other.population_id), "A")
 
-        assert isinstance(refusal, Refusal), refusal
-        assert refusal.code == "unknown_case"
-        assert refusal.detail == {"case_id": case_id, "population_id": population_id}
-        assert refusal.message
+    assert isinstance(refusal, Refusal) and refusal.code == "identity_mismatch"
+    assert refusal.detail["identity"] == "population_id"
 
 
-def test_the_population_identity_is_checked_before_the_case(csv_source, policies):
-    refusal = open_case(csv_source(*ROWS), policies, "pop_elsewhere", "Z")
+@pytest.mark.parametrize("case_id", ["Z", "b", "B ", "", "b-1"])
+def test_a_case_that_is_not_in_the_source_is_refused(csv_source, policies, case_id):
+    source = csv_source(*ROWS)
+    identities = population_of(source, policies).identities
+
+    refusal = open_case(source, policies, identities, case_id)
+
+    assert isinstance(refusal, Refusal), refusal
+    assert refusal.code == "unknown_case"
+    assert refusal.detail == {"case_id": case_id, "population_id": identities.population_id}
+    assert refusal.message
+
+
+@pytest.mark.parametrize("case_id", ["C", "D", "E"])
+def test_a_case_outside_the_parent_population_is_refused(csv_source, policies, case_id):
+    source = csv_source(*ROWS)
+    identities = population_of(source, policies).identities
+
+    refusal = open_case(source, policies, identities, case_id)
+
+    assert isinstance(refusal, Refusal), refusal
+    assert refusal.code == "case_not_in_population"
+    assert refusal.detail == {"case_id": case_id, "population_id": identities.population_id}
+    assert case_id in refusal.message
+
+
+def test_the_identities_are_checked_before_the_case(csv_source, policies):
+    source = csv_source(*ROWS)
+    identities = population_of(source, policies).identities
+
+    refusal = open_case(source, policies, replace(identities, population_id="other"), "Z")
 
     assert isinstance(refusal, Refusal), refusal
     assert refusal.code == "identity_mismatch"
@@ -271,24 +326,34 @@ def test_the_population_identity_is_checked_before_the_case(csv_source, policies
 
 def test_a_malformed_source_or_an_unusable_selection_is_refused(csv_source, policies):
     source = csv_source(*ROWS)
-    population_id = population_of(source, policies).identities.population_id
+    identities = population_of(source, policies).identities
 
     malformed = open_case(
         csv_source("A,a-1,one,Opened,2026-10-01T09:00:00Z,S,Desk"),
         policies,
-        population_id,
+        identities,
         "A",
     )
     unselected = open_case(
-        source, PolicySelection.of(activity_projection="x.v1"), population_id, "A"
+        source, selection_with(activity_projection=PolicyChoice("x.v1")), identities, "A"
     )
 
     assert isinstance(malformed, Refusal) and malformed.code == "malformed_source"
     assert isinstance(unselected, Refusal) and unselected.code == "unknown_policy"
 
 
+def test_utc_instants_are_written_with_a_z_and_microseconds_only_when_present():
+    assert utc_text(datetime(2026, 10, 1, 9, tzinfo=UTC)) == "2026-10-01T09:00:00Z"
+    assert (
+        utc_text(datetime(2026, 10, 1, 9, 0, 0, 500_000, tzinfo=UTC))
+        == "2026-10-01T09:00:00.500000Z"
+    )
+    assert utc_text(datetime(1, 1, 1, tzinfo=UTC)) == "0001-01-01T00:00:00Z"
+
+
 def test_the_evidence_is_plain_json_when_asked(csv_source, policies):
-    evidence = evidence_of(csv_source(*ROWS), policies, "C")
+    source = csv_source(*ROWS)
+    evidence = evidence_of(source, policies, "A")
 
     as_dict = evidence.to_dict()
 
@@ -296,25 +361,44 @@ def test_the_evidence_is_plain_json_when_asked(csv_source, policies):
         "kind": "case_evidence",
         "identities": evidence.identities.to_dict(),
         "policies": evidence.policies.to_dict(),
-        "case_id": "C",
-        "raw_record_count": 1,
-        "omitted_record_count": 1,
+        "case_id": "A",
+        "coverage": {
+            "raw_record_count": 2,
+            "mapped_record_count": 2,
+            "omitted_activity_record_count": 0,
+        },
         "records": [
             {
-                "row_id": "c-1",
-                "row_id_kind": "source_event_id",
+                "row_id": expected_row_id(source, 1),
+                "source_position": 1,
+                "source_event_id": "a-1",
+                "source_sequence": 1,
+                "timestamp_utc": "2026-10-01T09:05:00Z",
+                "activity": "Opened",
+                "service": "S",
+                "assignment_group": "Unknown",
+                "original_values": originals(
+                    "A", "a-1", "1", "Opened", "2026-10-01T09:05:00Z", "S", "Unknown"
+                ),
+                "omitted_from_mapped_sequence": False,
+            },
+            {
+                "row_id": expected_row_id(source, 4),
                 "source_position": 4,
-                "cells": {
-                    "incident_id": "C",
-                    "source_event_id": "c-1",
-                    "source_sequence": "1",
-                    "activity": None,
-                    "timestamp_utc": "2026-10-01T10:00:00Z",
-                    "service": "T",
-                    "assignment_group": None,
-                },
-                "omitted_from_mapped_sequence": True,
-            }
+                "source_event_id": "a-2",
+                "source_sequence": 2,
+                "timestamp_utc": "2026-10-01T11:00:00Z",
+                "activity": "Unknown",
+                "service": "S",
+                "assignment_group": None,
+                "original_values": originals(
+                    "A", "a-2", "2", "Unknown", "2026-10-01T11:00:00Z", "S", ""
+                ),
+                "omitted_from_mapped_sequence": False,
+            },
         ],
+        "mapped_row_ids": [expected_row_id(source, 1), expected_row_id(source, 4)],
+        "omitted_activity_row_ids": [],
     }
     assert json.loads(json.dumps(as_dict)) == as_dict
+    assert isinstance(evidence.identities, Identities)

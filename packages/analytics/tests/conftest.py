@@ -4,6 +4,8 @@ from collections.abc import Callable
 
 import pytest
 
+from supported_policies import selection_with
+
 from wise_platform_analytics import PolicySelection
 
 HEADER = "incident_id,source_event_id,source_sequence,activity,timestamp_utc,service,assignment_group"
@@ -24,8 +26,5 @@ def csv_source() -> Callable[..., bytes]:
 
 @pytest.fixture
 def policies() -> PolicySelection:
-    """The selection of the two supported policies."""
-    return PolicySelection.of(
-        order="incident.order.timestamp_sequence_source_position.v1",
-        activity_projection="incident.activity.omit_missing_retain_raw_gaps.v1",
-    )
+    """The selection of every supported policy."""
+    return selection_with()

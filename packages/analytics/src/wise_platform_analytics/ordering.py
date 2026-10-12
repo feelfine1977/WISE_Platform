@@ -10,15 +10,18 @@ unique, so no two records ever tie.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
+from datetime import datetime
 
 from .parsing import SourceRecord
 from .policies import ORDER_TIMESTAMP_SEQUENCE_SOURCE_POSITION_V1, PolicyChoice
 
-OrderKey = Callable[[SourceRecord], tuple[int, ...]]
+OrderKey = Callable[[SourceRecord], tuple[datetime, int, int]]
 
 
-def _timestamp_sequence_source_position(record: SourceRecord) -> tuple[int, ...]:
-    return (record.instant_ns, record.sequence, record.position)
+def _timestamp_sequence_source_position(
+    record: SourceRecord,
+) -> tuple[datetime, int, int]:
+    return (record.timestamp_utc, record.sequence, record.source_position)
 
 
 _ORDER_KEYS: Mapping[str, OrderKey] = {
