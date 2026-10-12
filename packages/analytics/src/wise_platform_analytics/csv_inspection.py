@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
 import csv
@@ -94,8 +95,17 @@ def inspect_csv(raw: bytes, hints: Mapping[str, object] | None = None) -> dict[s
         unresolved.append("Multiple dialects remain possible; confirm one before mapping.")
     suggestions = []
     for index, header in enumerate(first.columns):
-        values = [row[index] for row in first.rows if row[index] != ""]
-        matches = [{"format": name, "parsed_count": sum(parse_format(value, name) is not None for value in values)} for name in FORMATS]
+        values = Counter(row[index] for row in first.rows if row[index] != "")
+        matches = []
+        has_unzoned_time = False
+        for name in FORMATS:
+            parsed_count = 0
+            for value, frequency in values.items():
+                moment = parse_format(value, name)
+                if moment is not None:
+                    parsed_count += frequency
+                    has_unzoned_time = has_unzoned_time or moment.tzinfo is None
+            matches.append({"format": name, "parsed_count": parsed_count})
         matching_formats = [item["format"] for item in matches if item["parsed_count"] > 0]
         roles = ["context"]
         if values:
@@ -106,10 +116,10 @@ def inspect_csv(raw: bytes, hints: Mapping[str, object] | None = None) -> dict[s
             roles.append("source_sequence")
         if len(matching_formats) > 1:
             unresolved.append(f"Column {index} has multiple possible timestamp formats; choose day/month order explicitly.")
-        if matching_formats and any(parse_format(value, name) is not None and parse_format(value, name).tzinfo is None for value in values for name in matching_formats):
+        if has_unzoned_time:
             unresolved.append(f"Column {index} has unzoned timestamps; explicitly choose recorded wall clock or fixed offset.")
-        suggestions.append({"column_index": index, "roles": roles, "nonempty_count": len(values),
-                            "distinct_nonempty_count": len(set(values)), "timestamp_matches": matches})
+        suggestions.append({"column_index": index, "roles": roles, "nonempty_count": sum(values.values()),
+                            "distinct_nonempty_count": len(values), "timestamp_matches": matches})
     return {"source_id": source_id(raw), "dialect_candidates": candidates,
             "columns": [{"index": index, "name": name} for index, name in enumerate(first.columns)],
             "record_count": len(first.rows), "sample_rows": [{"source_position": position, "cells": list(row)} for position, row in enumerate(first.rows[:10])],

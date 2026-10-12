@@ -9,9 +9,25 @@ import re
 
 from .mapping import ImportRefusal, exact_object
 
-FORMATS = ("iso8601", "dmy_dot_minute", "mdy_dot_minute", "dmy_slash_minute", "mdy_slash_minute")
+FORMATS = ("iso8601", "dmy_dot_minute", "mdy_dot_minute", "dmy_slash_minute", "mdy_slash_minute",
+           "dmy_dot_second", "mdy_dot_second", "dmy_slash_second", "mdy_slash_second",
+           "mdy_slash_12h_minute", "mdy_slash_12h_second")
 _STRPTIME = {"dmy_dot_minute": "%d.%m.%Y %H:%M", "mdy_dot_minute": "%m.%d.%Y %H:%M",
-             "dmy_slash_minute": "%d/%m/%Y %H:%M", "mdy_slash_minute": "%m/%d/%Y %H:%M"}
+             "dmy_slash_minute": "%d/%m/%Y %H:%M", "mdy_slash_minute": "%m/%d/%Y %H:%M",
+             "dmy_dot_second": "%d.%m.%Y %H:%M:%S", "mdy_dot_second": "%m.%d.%Y %H:%M:%S",
+             "dmy_slash_second": "%d/%m/%Y %H:%M:%S", "mdy_slash_second": "%m/%d/%Y %H:%M:%S"}
+# Keep guards broader than strptime's legitimate one-digit/space-padded day fields.
+# Impossible labels/IDs do not need an exception-driven date parse during inspection.
+_NUMERIC = {name: re.compile(r" ?\d{1,2}" + (r"\." if "_dot_" in name else "/") +
+                           r" ?\d{1,2}" + (r"\." if "_dot_" in name else "/") +
+                           r"\d{4}\s+\d{1,2}:\d{1,2}" +
+                           (r":\d{1,2}(?:\.\d{1,6})?" if name.endswith("_second") else ""))
+            for name in _STRPTIME}
+_AMPM = {name: re.compile(r"(?P<date> ?\d{1,2}/ ?\d{1,2}/\d{4})\s+"
+                         r"(?P<hour>\d{1,2}):(?P<minute>\d{1,2})" +
+                         (r":(?P<second>\d{1,2})(?:\.(?P<fraction>\d{1,6}))?" if name.endswith("_second") else "") +
+                         r"\s+(?P<period>AM|PM)", re.IGNORECASE)
+         for name in ("mdy_slash_12h_minute", "mdy_slash_12h_second")}
 _ISO = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:\d{2})?")
 _LOCAL = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?")
 _UTC = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z")
@@ -27,10 +43,26 @@ def parse_format(value: str, format_name: str) -> datetime | None:
                 if int(value[-5:-3]) > 23 or int(value[-2:]) > 59:
                     return None
             return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if format_name in _AMPM:
+            match = _AMPM[format_name].fullmatch(value)
+            if match is None:
+                return None
+            hour = int(match["hour"])
+            if not 1 <= hour <= 12:
+                return None
+            # English AM/PM is intentional; %p would depend on the host locale.
+            hour = hour % 12 + (12 if match["period"].upper() == "PM" else 0)
+            parts = match.groupdict()
+            fraction = parts.get("fraction") or ""
+            return datetime.strptime(match["date"], "%m/%d/%Y").replace(
+                hour=hour, minute=int(match["minute"]), second=int(parts.get("second") or 0),
+                microsecond=int(fraction.ljust(6, "0") or "0"))
         template = _STRPTIME.get(format_name)
-        if template is None:
+        if template is None or _NUMERIC[format_name].fullmatch(value) is None:
             return None
         # Strptime accepts one-digit fields; preserve that legitimate source precision.
+        if format_name.endswith("_second") and "." in value.rsplit(":", 1)[-1]:
+            template += ".%f"
         return datetime.strptime(value, template)
     except (ValueError, OverflowError):
         return None
