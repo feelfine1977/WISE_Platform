@@ -3,13 +3,20 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import App from "../App";
 import { healthy, scriptedClient } from "../test/answers";
+import type { CsvInspectionAnswer, InspectCsvRequest } from "../generated/imports";
 import {
+  bothWaysInspectionAnswer,
   commaInspectionAnswer,
+  exampleInspectionAnswer,
   importRefusal,
   inspectionAnswer,
   interpretationAnswer,
   populationAnswer,
+  proposalAnswer,
+  raggedText,
   scriptedImportClient,
+  secondsInspectionAnswer,
+  secondsInterpretationAnswer,
   sourceAnswer,
   workspaceAnswer,
 } from "../test/imports";
@@ -44,26 +51,33 @@ async function openWorkspace(app: Screen, earlier = false) {
   await deliver(() => call.reply({ ok: true, answer: workspaceAnswer(call.request, earlier) }));
 }
 
-async function addSource(app: Screen) {
+async function addSource(app: Screen, answer: (request: InspectCsvRequest) => CsvInspectionAnswer = inspectionAnswer) {
   const file = new File([BYTES], "Vorgänge.csv", { type: "text/csv" });
   await app.user.upload(screen.getByLabelText("Add an event-history CSV"), file);
   const upload = app.imports.uploads.at(-1)!;
   await deliver(() => upload.reply({ ok: true, answer: sourceAnswer(upload.request, file.size) }));
   const inspection = app.imports.inspections.at(-1)!;
-  await deliver(() => inspection.reply({ ok: true, answer: inspectionAnswer(inspection.request) }));
+  await deliver(() => inspection.reply({ ok: true, answer: answer(inspection.request) }));
   return { file, upload, inspection };
 }
 
+const DAY_FIRST_DOTS = /^Day\.Month\.Year, 24-hour clock \(/;
+
 /** Chooses the roles, the day-first format, UTC+02:00 and the cutoff for the hand-made source. */
-async function chooseReading(app: Screen, format = "Day first with dots") {
+async function chooseReading(app: Screen) {
   await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
   await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
   await app.user.selectOptions(screen.getByLabelText("Time"), "2");
   await app.user.click(screen.getByLabelText("Gruppe — 3 filled cells, 3 distinct values"));
-  await app.user.click(screen.getByLabelText(new RegExp(format)));
+  await app.user.click(screen.getByLabelText(DAY_FIRST_DOTS));
   await app.user.click(screen.getByLabelText("One fixed offset for every time"));
   await app.user.selectOptions(screen.getByLabelText("Offset from UTC"), "120");
   fireEvent.change(screen.getByLabelText("Export taken at (UTC)"), { target: { value: "2027-01-01T00:00:00" } });
+}
+
+/** The label and evidence of every offered time format, in the order shown. */
+function formatChoices(group: HTMLElement): string[] {
+  return (within(group).getAllByRole("radio") as HTMLInputElement[]).map((choice) => choice.parentElement?.textContent ?? "");
 }
 
 function figure(label: string): string {
@@ -178,18 +192,27 @@ describe("the Data area", () => {
     await app.user.selectOptions(screen.getByLabelText("Time"), "2");
 
     const question = screen.getByRole("group", { name: "These times can be read in more than one way. Which comes first: the day or the month?" });
-    const choices = within(question).getAllByRole("radio") as HTMLInputElement[];
-    expect(choices.map((choice) => choice.parentElement?.textContent)).toEqual([
-      "Day first with dots: dd.mm.yyyy HH:MM — reads 3 filled cells of 4 filled cells",
-      "Month first with dots: mm.dd.yyyy HH:MM — reads 3 filled cells of 4 filled cells",
+    expect(formatChoices(question)).toEqual([
+      "Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45) — reads 0 filled cells of 4 filled cells",
+      "Day.Month.Year, 24-hour clock (31.12.2026 17:45) — reads 3 filled cells of 4 filled cells",
+      "Day.Month.Year, 24-hour clock with seconds (31.12.2026 17:45:10) — reads 0 filled cells of 4 filled cells",
+      "Month.Day.Year, 24-hour clock (12.31.2026 17:45) — reads 3 filled cells of 4 filled cells",
+      "Month.Day.Year, 24-hour clock with seconds (12.31.2026 17:45:10) — reads 0 filled cells of 4 filled cells",
+      "Day/Month/Year, 24-hour clock (31/12/2026 17:45) — reads 0 filled cells of 4 filled cells",
+      "Day/Month/Year, 24-hour clock with seconds (31/12/2026 17:45:10) — reads 0 filled cells of 4 filled cells",
+      "Month/Day/Year, 24-hour clock (12/31/2026 17:45) — reads 0 filled cells of 4 filled cells",
+      "Month/Day/Year, 24-hour clock with seconds (12/31/2026 17:45:10) — reads 0 filled cells of 4 filled cells",
+      "Month/Day/Year, 12-hour clock (12/31/2026 5:45 PM) — reads 0 filled cells of 4 filled cells",
+      "Month/Day/Year, 12-hour clock with seconds (12/31/2026 5:45:10 PM) — reads 0 filled cells of 4 filled cells",
     ]);
-    expect(choices.some((choice) => choice.checked)).toBe(false);
+    expect((within(question).getAllByRole("radio") as HTMLInputElement[]).some((choice) => choice.checked)).toBe(false);
+    expect(within(question).getByText(/^No format reads every filled cell, so none is proposed\./)).toBeTruthy();
     expect(within(question).getByText("03.04.2026 08:00 · 04.04.2026 09:30 · 05.04.2026 07:15")).toBeTruthy();
     const read = screen.getByRole("button", { name: "Read the source with these choices" }) as HTMLButtonElement;
     expect(read.disabled).toBe(true);
-    expect(screen.getByText(/Still to choose: the time format, the zone of the times\./)).toBeTruthy();
+    expect(screen.getByText(/Still to choose: the time format, the zone of the times, when the export was taken\./)).toBeTruthy();
 
-    await app.user.click(within(question).getByLabelText(/Month first with dots/));
+    await app.user.click(within(question).getByLabelText(/^Month\.Day\.Year, 24-hour clock \(/));
     await app.user.click(screen.getByLabelText("As recorded: no zone is applied"));
     expect(screen.getByText(/the difference between two times can be off by an hour/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Export taken at (as recorded)"), { target: { value: "2027-01-01T00:00" } });
@@ -329,5 +352,258 @@ describe("the Data area", () => {
       stale.reply(importRefusal(stale.request, "confirm_mapping", "computation_failed", "The answer could not be computed.")),
     );
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("offers every time format with what the inspection read and proposes the one that reads every value", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, secondsInspectionAnswer);
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
+    await app.user.selectOptions(screen.getByLabelText("Time"), "2");
+
+    const group = screen.getByRole("group", { name: "Time format" });
+    expect(formatChoices(group)).toEqual([
+      "Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45) — reads 0 filled cells of 3 filled cells",
+      "Day.Month.Year, 24-hour clock (31.12.2026 17:45) — reads 0 filled cells of 3 filled cells",
+      "Day.Month.Year, 24-hour clock with seconds (31.12.2026 17:45:10) — reads 3 filled cells of 3 filled cells",
+      "Month.Day.Year, 24-hour clock (12.31.2026 17:45) — reads 0 filled cells of 3 filled cells",
+      "Month.Day.Year, 24-hour clock with seconds (12.31.2026 17:45:10) — reads 2 filled cells of 3 filled cells",
+      "Day/Month/Year, 24-hour clock (31/12/2026 17:45) — reads 0 filled cells of 3 filled cells",
+      "Day/Month/Year, 24-hour clock with seconds (31/12/2026 17:45:10) — reads 0 filled cells of 3 filled cells",
+      "Month/Day/Year, 24-hour clock (12/31/2026 17:45) — reads 0 filled cells of 3 filled cells",
+      "Month/Day/Year, 24-hour clock with seconds (12/31/2026 17:45:10) — reads 0 filled cells of 3 filled cells",
+      "Month/Day/Year, 12-hour clock (12/31/2026 5:45 PM) — reads 0 filled cells of 3 filled cells",
+      "Month/Day/Year, 12-hour clock with seconds (12/31/2026 5:45:10 PM) — reads 0 filled cells of 3 filled cells",
+    ]);
+    expect(within(group).getByRole("radio", { checked: true }).parentElement?.textContent).toMatch(
+      /^Day\.Month\.Year, 24-hour clock with seconds \(31\.12\.2026 17:45:10\)/,
+    );
+    expect(
+      within(group).getByText(
+        "Proposed: Day.Month.Year, 24-hour clock with seconds (31.12.2026 17:45:10), the only format that reads every filled cell.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Which comes first/)).toBeNull();
+  });
+
+  it("asks when two formats read every value and proposes neither", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, bothWaysInspectionAnswer);
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
+    await app.user.selectOptions(screen.getByLabelText("Time"), "2");
+    await app.user.click(screen.getByLabelText("One fixed offset for every time"));
+
+    const question = screen.getByRole("group", { name: "These times can be read in more than one way. Which comes first: the day or the month?" });
+    const choices = formatChoices(question);
+    expect(choices[1]).toBe("Day.Month.Year, 24-hour clock (31.12.2026 17:45) — reads 4 filled cells of 4 filled cells");
+    expect(choices[3]).toBe("Month.Day.Year, 24-hour clock (12.31.2026 17:45) — reads 4 filled cells of 4 filled cells");
+    expect(within(question).queryByRole("radio", { checked: true })).toBeNull();
+    expect(within(question).getByText(/^2 formats read every filled cell, so none is proposed\./)).toBeTruthy();
+    expect(within(question).queryByText(/^Proposed:/)).toBeNull();
+    // Without a format there is nothing to propose a cutoff from.
+    expect(app.imports.proposals).toHaveLength(0);
+
+    await app.user.click(within(question).getByLabelText(DAY_FIRST_DOTS));
+    expect(app.imports.proposals).toHaveLength(1);
+    expect(app.imports.proposals[0].request.policies.time.parameters.format).toBe("dmy_dot_minute");
+  });
+
+  it("proposes the cutoff from the data, lets the analyst change it, and shows a refused cutoff with what to do", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, secondsInspectionAnswer);
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
+    await app.user.selectOptions(screen.getByLabelText("Time"), "2");
+    expect(app.imports.proposals).toHaveLength(0);
+    await app.user.click(screen.getByLabelText("One fixed offset for every time"));
+    await app.user.selectOptions(screen.getByLabelText("Offset from UTC"), "120");
+
+    const [abandoned, current] = app.imports.proposals;
+    expect(abandoned.signal.aborted).toBe(true);
+    expect(importContract.confirmMappingRequest(current.request)).toBe(true);
+    expect(current.request.policies.time).toEqual({
+      id: "incident.time.explicit_format_timezone_utc.v1",
+      parameters: { format: "dmy_dot_second", timezone: { mode: "fixed_offset", offset_minutes: 120 }, snapshot_cutoff_utc: "9999-12-31T23:59:59Z" },
+    });
+    expect(current.request.policies.rows.id).toBe("incident.rows.missing_id_outside_invalid_time_retained.v2");
+    expect(current.request.accept_report_issues).toBe(false);
+    const cutoff = screen.getByLabelText("Export taken at (UTC)") as HTMLInputElement;
+    expect(cutoff.value).toBe("");
+    expect(screen.getByText(/^Proposing a cutoff/)).toBeTruthy();
+
+    // The proposal for UTC+00:00 arrives late and is dropped.
+    await deliver(() => abandoned.reply({ ok: true, answer: proposalAnswer(abandoned.request, "2026-04-14T09:30:20Z", "2026-04-14T09:31:00Z") }));
+    expect(cutoff.value).toBe("");
+    await deliver(() => current.reply({ ok: true, answer: proposalAnswer(current.request, "2026-04-14T07:30:20Z", "2026-04-14T07:31:00Z") }));
+    // The field writes the proposed 07:31:00 the way the browser shows it.
+    expect(cutoff.value).toBe("2026-04-14T07:31");
+    expect(
+      screen.getByText("Proposed from the data: 2026-04-14 07:31:00 UTC, the latest usable time 2026-04-14 07:30:20 UTC rounded up to a full minute."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Use the proposal" })).toBeNull();
+
+    fireEvent.change(cutoff, { target: { value: "2026-04-14T07:00:00" } });
+    expect(screen.getByRole("button", { name: "Use the proposal" })).toBeTruthy();
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    const early = app.imports.confirmations[0];
+    expect(early.request.policies.time.parameters).toMatchObject({ snapshot_cutoff_utc: "2026-04-14T07:00:00Z" });
+    await deliver(() =>
+      early.reply(
+        importRefusal(early.request, "confirm_mapping", "cutoff_before_records", "The declared cutoff precedes a usable source record.", "policies.time.parameters"),
+      ),
+    );
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("The declared cutoff precedes a usable source record.");
+    expect(alert.textContent).toContain(
+      "What to do Set “Export taken at” to the latest usable time of the source or later, for example the cutoff proposed from the data.",
+    );
+
+    await app.user.click(screen.getByRole("button", { name: "Use the proposed cutoff 2026-04-14 07:31:00 UTC" }));
+    expect(cutoff.value).toBe("2026-04-14T07:31");
+    expect(screen.queryByRole("alert")).toBeNull();
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    expect(app.imports.confirmations[1].request.policies.time.parameters).toMatchObject({ snapshot_cutoff_utc: "2026-04-14T07:31:00Z" });
+  });
+
+  it("shows blank lines and records of another length before confirming, and lists the records outside every incident", async () => {
+    const tolerant = {
+      id: "incident.rows.missing_id_outside_invalid_time_retained.v2",
+      parameters: {
+        missing_case_id: "outside_population_preserve_source",
+        unavailable_timestamp: "retain_case_raw_flag_order_unknown",
+        invalid_mapped_sequence: "block_preparation",
+        duplicate_candidates: "retain_all",
+        blank_records: "skip_count_preserve_source_ordinal",
+        ragged_records: "outside_population_preserve_raw",
+        maximum_ragged_fraction: 0.05,
+        field_character_limit: 10485760,
+      },
+    };
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, secondsInspectionAnswer);
+
+    expect(screen.getByText("Blank lines").parentElement?.textContent).toBe("Blank lines 1 blank line");
+    expect(screen.getByText("Records with another number of cells than the header").parentElement?.textContent).toBe(
+      "Records with another number of cells than the header 1 record",
+    );
+    const tolerantChoice = screen.getByRole("radio", { name: /^Tolerant:/ }) as HTMLInputElement;
+    expect(tolerantChoice.checked).toBe(true);
+    expect(tolerantChoice.parentElement?.textContent).toBe(
+      "Tolerant: Blank lines are skipped and counted, and records without an incident id or with another number of cells than the header are kept as written outside every incident, as long as those with another number of cells are at most 5 % of the records.",
+    );
+
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
+    await app.user.selectOptions(screen.getByLabelText("Time"), "2");
+    await app.user.click(screen.getByLabelText("One fixed offset for every time"));
+    await app.user.selectOptions(screen.getByLabelText("Offset from UTC"), "120");
+    fireEvent.change(screen.getByLabelText("Export taken at (UTC)"), { target: { value: "2026-04-14T07:31:00" } });
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    const first = app.imports.confirmations[0];
+    expect(first.request.policies.rows).toEqual(tolerant);
+    await deliver(() => first.reply({ ok: true, answer: secondsInterpretationAnswer(first.request) }));
+
+    expect(figure("Records read")).toBe("4 records");
+    expect(figure("Blank lines skipped")).toBe("1 blank line");
+    expect(figure("Without incident id: outside every incident")).toBe("1 record");
+    expect(figure("With another number of cells than the header: outside every incident")).toBe("1 record");
+    expect(figure("Incidents")).toBe("2 incidents");
+    const excluded = screen.getByRole("table", { name: "Records outside every incident, as written in the file" });
+    expect(within(excluded).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual([
+      "Position",
+      "Lines in the file",
+      "Cells",
+      "Reason",
+      "Original text",
+    ]);
+    expect(within(excluded).getAllByRole("row").slice(1).map((row) => Array.from(row.children).map((cell) => cell.textContent))).toEqual([
+      ["2", "line 4", "5", "Another number of cells than the header", raggedText],
+    ]);
+    const issues = screen.getByText("Rows with issues, by reason").parentElement!;
+    expect(within(issues).getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "Another number of cells than the header: kept as a raw row, outside every incidentNeeds your confirmationSource position 2",
+    ]);
+    // The confirmation of rows with issues stays explicit.
+    expect((screen.getByRole("button", { name: "Confirm and prepare" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Open incidents" })).toBeNull();
+
+    await app.user.click(screen.getByRole("radio", { name: /^Strict:/ }));
+    expect(screen.queryByRole("table", { name: "Records outside every incident, as written in the file" })).toBeNull();
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    expect(app.imports.confirmations[1].request.policies.rows).toEqual({
+      id: "incident.rows.missing_id_outside_invalid_time_retained.v1",
+      parameters: {
+        missing_case_id: "outside_population_preserve_source",
+        unavailable_timestamp: "retain_case_raw_flag_order_unknown",
+        invalid_mapped_sequence: "block_preparation",
+        duplicate_candidates: "retain_all",
+      },
+    });
+  });
+
+  it("loads an example into the workspace and reads it with its fixed reading through the ordinary operations", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    const examples = screen.getByLabelText("Or load an example into the workspace") as HTMLSelectElement;
+    expect(Array.from(examples.options).map((option) => option.value)).toEqual(["S0", "S1", "S2", "S3"]);
+    await app.user.selectOptions(examples, "S3");
+    await app.user.click(screen.getByRole("button", { name: "Load the example" }));
+
+    const fetched = app.imports.examples[0];
+    expect(fetched.request).toBe("S3");
+    expect(screen.getByText(/Fetching Synthetic example S3\.csv/)).toBeTruthy();
+    const bytes = new Blob(["incident_id,source_event_id\r\n"], { type: "text/csv" });
+    await deliver(() => fetched.reply({ ok: true, answer: bytes }));
+    const upload = app.imports.uploads[0];
+    expect(upload.file).toBe(bytes);
+    expect(importContract.uploadSourceMetadata(upload.request)).toBe(true);
+    expect(upload.request.filename).toBe("Synthetic example S3.csv");
+    await deliver(() => upload.reply({ ok: true, answer: sourceAnswer(upload.request, 186) }));
+    const inspection = app.imports.inspections[0];
+    expect(inspection.request.hints).toBeUndefined();
+    await deliver(() => inspection.reply({ ok: true, answer: exampleInspectionAnswer(inspection.request) }));
+
+    const fixed = screen.getByLabelText("Fixed reading of the example");
+    expect(Array.from(fixed.children).map((pair) => pair.textContent)).toEqual([
+      "EncodingUTF-8",
+      "DelimiterComma ,",
+      "Incident idincident_id",
+      "Activityactivity",
+      "Timetimestamp_utc, Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45)",
+      "Zone of the timesOffsets written in the values",
+      "Sequence numbersource_sequence",
+      "Context attributesservice, assignment_group",
+      "Export taken at2026-10-02 00:00:00 UTC",
+      "Rows that do not fitTolerant",
+    ]);
+    expect((screen.getByLabelText("Incident id") as HTMLSelectElement).value).toBe("0");
+    expect((screen.getByLabelText("Time") as HTMLSelectElement).value).toBe("4");
+    expect((screen.getByLabelText("Export taken at (UTC)") as HTMLInputElement).value).toBe("2026-10-02T00:00");
+
+    const confirmation = app.imports.confirmations[0].request;
+    expect(importContract.confirmMappingRequest(confirmation)).toBe(true);
+    expect(confirmation.source_id).toBe(inspection.request.source_id);
+    expect(confirmation.dialect).toEqual({ encoding: "utf-8", delimiter: ",", quotechar: '"', header: "first_record" });
+    expect(confirmation.mapping).toEqual({ case_column: 0, activity_column: 3, timestamp_column: 4, sequence_column: 2, context_columns: [5, 6] });
+    expect(confirmation.policies.time).toEqual({
+      id: "incident.time.explicit_format_timezone_utc.v1",
+      parameters: { format: "iso8601", timezone: { mode: "from_values" }, snapshot_cutoff_utc: "2026-10-02T00:00:00Z" },
+    });
+    expect(confirmation.policies.rows.id).toBe("incident.rows.missing_id_outside_invalid_time_retained.v2");
+    expect(confirmation.accept_report_issues).toBe(false);
+
+    await deliver(() =>
+      app.imports.confirmations[0].reply({ ok: true, answer: interpretationAnswer({ ...confirmation, accept_report_issues: true }) }),
+    );
+    expect(within(screen.getByRole("table", { name: "Sources in this workspace" })).getByRole("rowheader").textContent).toBe(
+      "Synthetic example S3.csv",
+    );
+    await app.user.click(screen.getByRole("button", { name: "Open incidents" }));
+    expect(app.imports.populations[0].request.preparation_id).toBe(`preparation.v1:sha256:${"6".repeat(64)}`);
   });
 });

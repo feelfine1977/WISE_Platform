@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { UploadSourceMetadata } from "../generated/imports";
 import { caseSummaries, evidenceAnswer, importRefusal, inspectionAnswer, populationAnswer, workspaceId } from "../test/imports";
-import { httpImportClient, importContract, routes, uploadQuery } from "./client";
+import { exampleSourceRoute, httpImportClient, importContract, isCutoffProposal, routes, uploadQuery } from "./client";
 
 const populationRequest = {
   schema_version: 1,
@@ -133,5 +133,52 @@ describe("the import client", () => {
       ok: false,
       problem: { kind: "unreachable" },
     });
+  });
+});
+
+describe("the cutoff proposal and the example bytes", () => {
+  const proposal = {
+    schema_version: 1,
+    message_type: "cutoff_proposal_answer",
+    request_id: "proposal-3",
+    query_revision: 3,
+    workspace_id: workspaceId,
+    source_id: `source.v1:sha256:${"5".repeat(64)}`,
+    timestamp_kind: "utc_instant",
+    last_usable_time: "2026-04-14T07:30:20Z",
+    proposed_cutoff: "2026-04-14T07:31:00Z",
+  };
+
+  it("accept a proposal on one clock and refuse one that mixes clocks, adds a field or has only one time", () => {
+    expect(isCutoffProposal(proposal)).toBe(true);
+    expect(isCutoffProposal({ ...proposal, last_usable_time: null, proposed_cutoff: null })).toBe(true);
+    expect(isCutoffProposal({ ...proposal, timestamp_kind: "wall_clock", last_usable_time: "2026-04-14T07:30:20.500000", proposed_cutoff: "2026-04-14T07:31:00" })).toBe(true);
+    expect(isCutoffProposal({ ...proposal, timestamp_kind: "wall_clock" })).toBe(false);
+    expect(isCutoffProposal({ ...proposal, proposed_cutoff: null })).toBe(false);
+    expect(isCutoffProposal({ ...proposal, note: "extra" })).toBe(false);
+    expect(isCutoffProposal({ ...proposal, query_revision: "3" })).toBe(false);
+  });
+
+  it("fetch an example's bytes from its route and report a missing example as an HTTP failure", async () => {
+    const fetchMock = vi.fn(async (_route: string, _init: RequestInit) => new Response("incident_id\r\n", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const outcome = await httpImportClient.exampleSource("S2", new AbortController().signal);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/examples/S2/source");
+    expect(exampleSourceRoute("S2")).toBe("/api/examples/S2/source");
+    expect(outcome.ok && (await outcome.answer.text())).toBe("incident_id\r\n");
+
+    replying(404, { detail: "The application ships no example of this name." });
+    expect(await httpImportClient.exampleSource("S2", new AbortController().signal)).toEqual({ ok: false, problem: { kind: "http", status: 404 } });
+  });
+
+  it("post the proposal request to its route and pass on the refusal of a confirmation", async () => {
+    const fetchMock = replying(200, proposal);
+    const request = { request_id: "proposal-3", query_revision: 3, workspace_id: workspaceId } as never;
+    expect(await httpImportClient.proposeCutoff(request, new AbortController().signal)).toEqual({ ok: true, answer: proposal });
+    expect(fetchMock.mock.calls[0][0]).toBe(routes.cutoffProposal);
+
+    const refusal = importRefusal(proposal, "confirm_mapping", "timezone_required", "A timestamp without a zone needs an explicit zone.");
+    replying(422, refusal.ok ? null : refusal.problem.kind === "refusal" ? refusal.problem.refusal : null);
+    expect(await httpImportClient.proposeCutoff(request, new AbortController().signal)).toEqual(refusal);
   });
 });

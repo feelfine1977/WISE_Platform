@@ -153,6 +153,7 @@ function PreparationDetails({ answer }: { answer: ImportedPopulationAnswer }) {
     ["Sequence column", mapping.sequence_column === null ? "none" : `column ${mapping.sequence_column}`],
     ["Context columns", mapping.context_columns.length === 0 ? "none" : mapping.context_columns.map((index) => `column ${index}`).join(", ")],
     ["Time policy", preparation.policies.time.id],
+    ["Row rule", preparation.policies.rows.id],
     ["Source", identity.source_id],
     ["Preparation", identity.preparation_id],
     ["Representation", identity.representation_id],

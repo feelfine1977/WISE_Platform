@@ -15,6 +15,7 @@ import type {
   UploadSourceMetadata,
   WorkspaceAnswer,
 } from "../generated/imports";
+import type { ExampleId } from "../generated/investigation";
 import { uniqueItemsHold, withoutUniqueItems } from "./uniqueItems";
 
 export const routes = {
@@ -22,9 +23,62 @@ export const routes = {
   sources: "/api/sources",
   inspect: "/api/sources/inspect",
   preparations: "/api/preparations",
+  cutoffProposal: "/api/preparations/cutoff-proposal",
   openPopulation: "/api/investigations/open-population",
   caseEvidence: "/api/investigations/case-evidence",
 } as const;
+
+/** Where the unchanged bytes of a packaged example are fetched from. */
+export function exampleSourceRoute(exampleId: ExampleId): string {
+  return `/api/examples/${encodeURIComponent(exampleId)}/source`;
+}
+
+/**
+ * The latest usable time of a source under a reading, and the cutoff proposed from it: that time
+ * rounded up to a full minute, on the same clock. Both are null when no record has a usable time.
+ * The local service answers it for a confirmation request without keeping anything; the import
+ * contract has no message for it yet, so its shape is checked here.
+ */
+export interface CutoffProposal {
+  schema_version: 1;
+  message_type: "cutoff_proposal_answer";
+  request_id: string;
+  query_revision: number;
+  workspace_id: string;
+  source_id: string;
+  timestamp_kind: "utc_instant" | "wall_clock";
+  last_usable_time: string | null;
+  proposed_cutoff: string | null;
+}
+
+const proposalTimes = {
+  utc_instant: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/,
+  wall_clock: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?$/,
+} as const;
+
+export function isCutoffProposal(value: unknown): value is CutoffProposal {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const answer = value as Record<string, unknown>;
+  const keys = [
+    "schema_version", "message_type", "request_id", "query_revision", "workspace_id", "source_id",
+    "timestamp_kind", "last_usable_time", "proposed_cutoff",
+  ];
+  if (Object.keys(answer).length !== keys.length || !keys.every((key) => Object.hasOwn(answer, key))) return false;
+  const kind = answer.timestamp_kind;
+  if (kind !== "utc_instant" && kind !== "wall_clock") return false;
+  const time = (item: unknown) => item === null || (typeof item === "string" && proposalTimes[kind].test(item));
+  return (
+    answer.schema_version === 1 &&
+    answer.message_type === "cutoff_proposal_answer" &&
+    typeof answer.request_id === "string" &&
+    Number.isSafeInteger(answer.query_revision) &&
+    typeof answer.workspace_id === "string" &&
+    typeof answer.source_id === "string" &&
+    time(answer.last_usable_time) &&
+    time(answer.proposed_cutoff) &&
+    (answer.last_usable_time === null) === (answer.proposed_cutoff === null)
+  );
+}
 
 /**
  * Why an import request produced no answer: a typed refusal from the local service, or a failure
@@ -44,6 +98,10 @@ export interface ImportClient {
   uploadSource(metadata: UploadSourceMetadata, file: Blob, signal: AbortSignal): Promise<ImportOutcome<SourceAnswer>>;
   inspect(request: InspectCsvRequest, signal: AbortSignal): Promise<ImportOutcome<CsvInspectionAnswer>>;
   confirmMapping(request: ConfirmMappingRequest, signal: AbortSignal): Promise<ImportOutcome<InterpretationAnswer>>;
+  /** The cutoff proposed from the data under a reading; nothing is kept in the workspace. */
+  proposeCutoff(request: ConfirmMappingRequest, signal: AbortSignal): Promise<ImportOutcome<CutoffProposal>>;
+  /** The unchanged bytes of a packaged synthetic example, to be stored like any source. */
+  exampleSource(exampleId: ExampleId, signal: AbortSignal): Promise<ImportOutcome<Blob>>;
   openPopulation(request: OpenPopulationRequest, signal: AbortSignal): Promise<ImportOutcome<ImportedPopulationAnswer>>;
   caseEvidence(request: ImportedCaseEvidenceRequest, signal: AbortSignal): Promise<ImportOutcome<ImportedCaseEvidenceAnswer>>;
 }
@@ -141,6 +199,21 @@ export const httpImportClient: ImportClient = {
   inspect: (request, signal) => postJson(routes.inspect, request, "inspect_csv", importContract.inspectionAnswer, signal),
   confirmMapping: (request, signal) =>
     postJson(routes.preparations, request, "confirm_mapping", importContract.interpretationAnswer, signal),
+  proposeCutoff: (request, signal) => postJson(routes.cutoffProposal, request, "confirm_mapping", isCutoffProposal, signal),
+  exampleSource: async (exampleId, signal) => {
+    let response: Response;
+    try {
+      response = await fetch(exampleSourceRoute(exampleId), { cache: "no-store", signal });
+    } catch {
+      return { ok: false, problem: { kind: "unreachable" } };
+    }
+    if (!response.ok) return { ok: false, problem: { kind: "http", status: response.status } };
+    try {
+      return { ok: true, answer: await response.blob() };
+    } catch {
+      return { ok: false, problem: { kind: "unreachable" } };
+    }
+  },
   openPopulation: (request, signal) =>
     postJson(routes.openPopulation, request, "open_population", importContract.populationAnswer, signal),
   caseEvidence: (request, signal) =>
