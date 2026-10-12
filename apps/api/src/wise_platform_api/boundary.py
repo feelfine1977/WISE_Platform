@@ -94,25 +94,10 @@ def parse_request(
     body: bytes, model: type[RequestModel], operation: str
 ) -> RequestModel | Refusal:
     """Return the request model of a body, or the refusal the contract names for it."""
-    try:
-        message = json.loads(body.decode("utf-8"), parse_constant=_no_constant)
-    except (UnicodeDecodeError, ValueError):
-        return refusal(operation, "invalid_request", "The request body is not JSON.")
-    except RecursionError:
-        return refusal(
-            operation, "invalid_request", "The request body is nested too deeply to be read."
-        )
-    if not isinstance(message, dict):
-        return refusal(operation, "invalid_request", "The request body is not a JSON object.")
-
-    request_id = message.get("request_id")
-    revision = message.get("query_revision")
-    echo = {
-        "request_id": request_id
-        if isinstance(request_id, str) and _REQUEST_ID.fullmatch(request_id)
-        else None,
-        "query_revision": revision if type(revision) is int and revision >= 1 else None,
-    }
+    message = read_object(body)
+    if isinstance(message, str):
+        return refusal(operation, "invalid_request", message)
+    echo = echo_of(message)
 
     version = message.get("schema_version")
     if type(version) is int and version != SCHEMA_VERSION:
@@ -151,7 +136,7 @@ def _weaker_than_the_contract(
     message: dict, parsed: BaseModel
 ) -> list[tuple[Location, str, str]]:
     failures = []
-    different = _first_difference(message, parsed.model_dump(mode="json"), ())
+    different = first_difference(message, parsed.model_dump(mode="json"))
     if different is not None:
         failures.append(
             (different, "type", "the value has another JSON type than the contract requires")
@@ -169,16 +154,47 @@ def _weaker_than_the_contract(
     return failures
 
 
-def _first_difference(
-    given: object, validated: object, path: Location
+def read_object(body: bytes) -> dict | str:
+    """The JSON object of a request body, or the sentence that says why it is not one."""
+    try:
+        message = json.loads(body.decode("utf-8"), parse_constant=_no_constant)
+    except (UnicodeDecodeError, ValueError):
+        return "The request body is not JSON."
+    except RecursionError:
+        return "The request body is nested too deeply to be read."
+    if not isinstance(message, dict):
+        return "The request body is not a JSON object."
+    return message
+
+
+def echo_of(message: dict) -> dict[str, str | int | None]:
+    """The request id and query revision of a message, each only when it is valid itself."""
+    request_id = message.get("request_id")
+    revision = message.get("query_revision")
+    return {
+        "request_id": request_id
+        if isinstance(request_id, str) and _REQUEST_ID.fullmatch(request_id)
+        else None,
+        "query_revision": revision if type(revision) is int and revision >= 1 else None,
+    }
+
+
+def first_difference(
+    given: object, validated: object, path: Location = (), *, compare_text: bool = True
 ) -> Location | None:
-    """Return the location of the first value whose type or content differs, if any."""
+    """Return the location of the first value whose type or content differs, if any.
+
+    With ``compare_text=False`` two texts count as equal: a model may write a valid text value,
+    such as an instant, in another spelling, and only the type of the given value matters.
+    """
     if isinstance(given, dict) and isinstance(validated, dict):
         for name in [*given, *validated]:
             if name not in given or name not in validated:
                 return (*path, name)
         for name in given:
-            found = _first_difference(given[name], validated[name], (*path, name))
+            found = first_difference(
+                given[name], validated[name], (*path, name), compare_text=compare_text
+            )
             if found is not None:
                 return found
         return None
@@ -186,11 +202,13 @@ def _first_difference(
         if len(given) != len(validated):
             return path
         for index, (item, checked) in enumerate(zip(given, validated)):
-            found = _first_difference(item, checked, (*path, index))
+            found = first_difference(item, checked, (*path, index), compare_text=compare_text)
             if found is not None:
                 return found
         return None
-    if type(given) is not type(validated) or given != validated:
+    if type(given) is not type(validated):
+        return path
+    if given != validated and (compare_text or not isinstance(given, str)):
         return path
     return None
 
