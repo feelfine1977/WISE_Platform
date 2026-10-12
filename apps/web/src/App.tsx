@@ -5,6 +5,11 @@ import { Inspector, type InspectorLayout } from "./components/Inspector";
 import { PopulationStrip } from "./components/PopulationStrip";
 import { ProblemNotice } from "./components/ProblemNotice";
 import { ServiceStatus } from "./components/ServiceStatus";
+import { httpImportClient, type ImportClient } from "./data/client";
+import { DataCoordinator } from "./data/coordinator";
+import { DataArea } from "./data/DataArea";
+import { ImportedInvestigationCoordinator, type PreparationTarget } from "./imported/coordinator";
+import { ImportedInvestigation } from "./imported/ImportedInvestigation";
 import type { HealthResponse } from "./generated/health";
 import type { CaseId } from "./generated/investigation";
 import { httpInvestigationClient, type InvestigationClient } from "./investigation/client";
@@ -13,13 +18,21 @@ import { countOf } from "./investigation/wording";
 
 interface AppProps {
   client?: InvestigationClient;
+  importClient?: ImportClient;
   checkHealth?: (signal: AbortSignal) => Promise<HealthResponse>;
 }
 
+/** The area shown: the Data area, or the investigation of the example or of an imported preparation. */
+type Area = "data" | "example" | "imported";
+
 type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
 
-export default function App({ client = httpInvestigationClient, checkHealth = fetchHealth }: AppProps) {
+export default function App({ client = httpInvestigationClient, importClient = httpImportClient, checkHealth = fetchHealth }: AppProps) {
   const [coordinator] = useState(() => new InvestigationCoordinator(client));
+  const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
+  const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient));
+  const [area, setArea] = useState<Area>("example");
+  const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
@@ -31,6 +44,22 @@ export default function App({ client = httpInvestigationClient, checkHealth = fe
     coordinator.start();
     return () => coordinator.stop();
   }, [coordinator]);
+
+  useEffect(() => {
+    return () => {
+      dataCoordinator.stop();
+      importedCoordinator.stop();
+    };
+  }, [dataCoordinator, importedCoordinator]);
+
+  const openIncidents = useCallback(
+    (target: PreparationTarget) => {
+      importedCoordinator.open(target);
+      setImportedOpen(true);
+      setArea("imported");
+    },
+    [importedCoordinator],
+  );
 
   useEffect(() => {
     if (focusTarget === null) return;
@@ -60,7 +89,7 @@ export default function App({ client = httpInvestigationClient, checkHealth = fe
   }, [coordinator]);
 
   useEffect(() => {
-    if (!inspectorOpen) return;
+    if (!inspectorOpen || area !== "example") return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented || event.target instanceof HTMLSelectElement) return;
       event.preventDefault();
@@ -68,7 +97,7 @@ export default function App({ client = httpInvestigationClient, checkHealth = fe
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [inspectorOpen, returnToIncidents]);
+  }, [inspectorOpen, area, returnToIncidents]);
 
   const summary = population.phase === "ready" ? population.answer.cases.find((item) => item.case_id === openCaseId) : undefined;
 
@@ -80,9 +109,28 @@ export default function App({ client = httpInvestigationClient, checkHealth = fe
           <span className="brand-name">WISE Platform</span>
         </div>
         <h1>Incident investigation</h1>
+        <nav className="areas" aria-label="Areas">
+          <button type="button" aria-current={area === "data" ? "page" : undefined} onClick={() => setArea("data")}>
+            Data
+          </button>
+          <button
+            type="button"
+            aria-current={area !== "data" ? "page" : undefined}
+            onClick={() => setArea(importedOpen ? "imported" : "example")}
+          >
+            Investigations
+          </button>
+        </nav>
         <ServiceStatus checkHealth={checkHealth} />
       </header>
-      <main className="investigation">
+      {area === "data" && (
+        <DataArea coordinator={dataCoordinator} onOpenIncidents={openIncidents} onOpenExample={() => {
+          setImportedOpen(false);
+          setArea("example");
+        }} />
+      )}
+      {area === "imported" && <ImportedInvestigation coordinator={importedCoordinator} onShowData={() => setArea("data")} />}
+      <main className="investigation" hidden={area !== "example"}>
         <PopulationStrip population={population} onChooseExample={(exampleId) => coordinator.openExample(exampleId)} />
         <div className="work" data-inspector={inspectorOpen ? layout : "none"}>
           <section className="incidents" aria-labelledby="incidents-title">
