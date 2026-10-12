@@ -4,12 +4,12 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .boundary import read_object
-from .examples import PACKAGED_EXAMPLES
+from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
 from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
@@ -22,9 +22,8 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     Workspaces are refused inside the program's own folders, so that nothing is written there.
     """
     application = FastAPI(title="WISE Platform", version=__version__)
-    investigations = Investigations(
-        examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
-    )
+    examples = examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
+    investigations = Investigations(examples)
     imports = Imports(forbidden=program_folders())
 
     @application.get("/api/health", response_model=HealthResponse)
@@ -41,6 +40,19 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
         if _message_type(body) == "imported_case_evidence_request":
             return _sent_import(await run_in_threadpool(imports.case_evidence, body))
         return _sent(await run_in_threadpool(investigations.case_evidence, body))
+
+    @application.get("/api/examples/{example_id}/source")
+    def example_source(example_id: str) -> Response:
+        """The unchanged bytes of a packaged example, to be stored in a workspace like any CSV."""
+        if example_id not in CATALOG:
+            raise HTTPException(status_code=404, detail="The application ships no example of this name.")
+        raw = read_example(examples, example_id)
+        if raw is None:
+            raise HTTPException(
+                status_code=503,
+                detail=f"The bytes of example {example_id} cannot be read. Reinstall the application.",
+            )
+        return Response(raw, media_type="text/csv; charset=utf-8")
 
     @application.post("/api/workspaces/open")
     async def open_workspace(request: Request) -> JSONResponse:
@@ -65,6 +77,10 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     @application.post("/api/preparations")
     async def confirm_mapping(request: Request) -> JSONResponse:
         return _sent_import(await run_in_threadpool(imports.confirm_mapping, await request.body()))
+
+    @application.post("/api/preparations/cutoff-proposal")
+    async def propose_cutoff(request: Request) -> JSONResponse:
+        return _sent_import(await run_in_threadpool(imports.propose_cutoff, await request.body()))
 
     @application.post("/api/investigations/open-population")
     async def open_population(request: Request) -> JSONResponse:
