@@ -4,12 +4,24 @@ The source checkout develops the Python API and TypeScript/React browser applica
 
 ## Setup and commands
 
-Run setup, generation, checks and builds from the repository root using the runtime versions in the manifests. Create an isolated Python environment and install the documented development dependencies before building. Do not use a global environment containing unrelated analytical packages.
+For the Windows source setup, use **Python 3.13.16**, **Node.js 24.19.0 LTS**, and the **npm 11.17.0 bundled with that Node release**. Download matching Windows installers from the official [Python release](https://www.python.org/downloads/release/python-31316/) and [Node release](https://nodejs.org/en/blog/release/v24.19.0). Use the installer matching your CPU. The first CI tier is Windows x64; ARM still needs separate qualification.
 
-The source browser toolchain supports Node 22.19 through 24; consult the package manifest for the exact range. Python uses the range in `pyproject.toml`. From the repository root, create and activate an isolated environment first. On Windows PowerShell:
+Reopen the terminal after installing and check before creating the environment:
 
 ```powershell
-py -3.11 -m venv .venv
+py -3.13 --version
+node --version
+npm --version
+```
+
+Expected versions are `Python 3.13.16`, `v24.19.0` and `11.17.0`. This is the recommended qualification combination configured in CI; Windows qualification is complete only after its actual checks and human journey pass. Other Python 3.11–3.14 and Node 22/24 compatibility lanes are secondary, not a request to choose your own initial combination.
+
+Run setup, generation, checks and builds from the repository root using the runtime versions in the manifests. Create an isolated Python environment and install the documented development dependencies before building. Do not use a global environment containing unrelated analytical packages.
+
+The source browser toolchain supports Node 22.19 or 24.14 and later patches in those majors; consult the package manifest for the exact range. Python uses the range in `pyproject.toml`. From the repository root, create and activate an isolated environment first. On Windows PowerShell:
+
+```powershell
+py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
@@ -56,3 +68,5 @@ Keep runtime CSVs, databases, artifacts, investigations, diagnostics, environmen
 A program upgrade and workspace upgrade are separate operations. Refresh creates new source/result revisions; it does not silently reinterpret old findings. Qualification must cover incompatible schemas, stale or relocated sources, atomic publication and database-aware backup/restoration before those workflows are advertised.
 
 Update the status and guide when a capability becomes available. A placeholder screen or type declaration is not a completed customer journey. See [testing](testing.md) and [roadmap](roadmap.md) for evidence required at each gate.
+
+The first Windows POV qualification uses this source setup on an existing compatible development machine. Confirm Python/Node/npm versions early; a no-development-tools distribution is a separate later packaging gate.

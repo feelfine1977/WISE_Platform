@@ -6,15 +6,27 @@ WISE_Platform is a local web application for investigating event histories with 
 
 ## Development setup
 
-Use the Python and Node versions specified by the project manifests. Node is required to develop and build the browser application. A future analyst release carrying built browser assets is intended to run with its documented Python runtime and native dependencies; no executable is required.
+For the Windows source setup, use **Python 3.13.16**, **Node.js 24.19.0 LTS**, and the **npm 11.17.0 bundled with that Node release**. Download matching Windows installers from the official [Python release](https://www.python.org/downloads/release/python-31316/) and [Node release](https://nodejs.org/en/blog/release/v24.19.0). Use the installer matching your CPU. The first CI tier is Windows x64; ARM still needs separate qualification.
+
+Reopen the terminal after installing and check before creating the environment:
+
+```powershell
+py -3.13 --version
+node --version
+npm --version
+```
+
+Expected versions are `Python 3.13.16`, `v24.19.0` and `11.17.0`. This is the recommended qualification combination configured in CI; Windows qualification is complete only after its actual checks and human journey pass. Other Python 3.11–3.14 and Node 22/24 compatibility lanes are secondary, not a request to choose your own initial combination.
+
+Node is required to develop and build the browser application. A future analyst release carrying built browser assets is intended to run with its documented Python runtime and native dependencies; no executable is required.
 
 Run from the repository root. Windows PowerShell:
 
 ```powershell
-python -m venv .venv
+py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-npm install
+python -m pip install -c requirements-dev.lock -e ".[dev]"
+npm ci
 npm run generate
 npm run check
 npm test
@@ -41,6 +53,8 @@ This workflow is the M1 target, not a list of currently available controls. Comp
 ## Project guide
 
 - [Architecture](docs/architecture.md): module ownership, contracts, state and local deployment.
+- [Requirements](docs/requirements.md), [design perspectives](docs/design.md), [decisions](docs/adr/README.md) and [glossary](GLOSSARY.md).
+- [Goal authoring](docs/goal-authoring.md): capability scope, review and scoring boundaries.
 - [Roadmap](docs/roadmap.md): 48 capabilities, priorities and completion gates.
 - [Development](docs/development.md): setup, generation, build and module rules.
 - [Testing](docs/testing.md): exact analytical fixtures, recovery and Windows acceptance.

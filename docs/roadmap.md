@@ -79,3 +79,11 @@ M1 is one release gate with staged implementation. Scoring is optional while exp
 Use synthetic incidents to find a delay tail, inspect reassignment/reopening, compare groups and periods with follow-up coverage, and compare context between recorded-resolution and no-recorded-resolution cohorts. Open a matrix pair or actual variant, inspect complete histories and a counterexample, optionally define a local expectation, then save, stop and reopen the same finding.
 
 A missing resolution record does not establish an unresolved business incident. A vendor/group association is not a cause or performance verdict. Every useful finding must retain the population, interpretation, evidence and limits needed for review.
+
+## Integration and setup conditions
+
+The linked-views gate requires an eligible Flow release whose tests/reference rendering and host integration are qualified. Readable labels for removed activities and attribute filters, stable activity positions across refinements, explicit rearrangement, and accessible evidence actions are acceptance conditions.
+
+First Windows qualification uses a source checkout or source download with documented locked dependency installation and a browser build, on a machine with compatible Python and Node. Check installed versions and approved setup before implementation assumes a runtime. A prebuilt-assets wheel with offline dependencies or a portable runtime for machines without development tools is a later packaging decision, not required to prove the initial incident journey.
+
+Scored selections retain their named run population/calibration and Method applicability; subset rescoring creates a new run. Graded values and library-defined affected support remain distinct from descriptive threshold partitions.

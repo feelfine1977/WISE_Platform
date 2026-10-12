@@ -6,6 +6,7 @@ import pytest
 
 FIXTURES = Path(__file__).parent / 'fixtures' / 'incidents'
 EXPECTED = json.loads((FIXTURES / 'expected.json').read_text(encoding='utf-8'))
+POLICY_IDS = json.loads((FIXTURES / 'policy_ids.json').read_text(encoding='utf-8'))
 
 
 def actual_companion_adapter():
@@ -23,7 +24,7 @@ def actual_companion_adapter():
 @pytest.mark.parametrize('name', ['S0', 'S1', 'S2', 'S3'])
 def test_actual_companion_matches_complete_cases_context_graphs_and_variants(name):
     analyze = actual_companion_adapter()
-    actual = analyze(FIXTURES / (name + '.csv'), EXPECTED['policies'])
+    actual = analyze(FIXTURES / (name + '.csv'), POLICY_IDS)
     expected = EXPECTED['fixtures'][name]
     # Each expected field is a contractual answer, not a replacement for real computation.
     for field, value in expected.items():
@@ -32,7 +33,7 @@ def test_actual_companion_matches_complete_cases_context_graphs_and_variants(nam
 
 def test_actual_companion_reports_measured_true_false_and_unevaluable_separately():
     analyze = actual_companion_adapter()
-    policies = {**EXPECTED['policies'], 'measured_query': {'interval': 'first_resolution', 'operator': 'gt', 'hours': 4}}
+    policies = {**POLICY_IDS, 'measured_query': {'interval': 'first_resolution', 'operator': 'gt', 'hours': 4}}
     actual = analyze(FIXTURES / 'S0.csv', policies)
     for field in ('true_ids', 'false_ids', 'unknown_ids'):
         assert actual['measured_query'][field] == EXPECTED['fixtures']['Q1'][field]
