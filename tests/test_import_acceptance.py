@@ -389,6 +389,24 @@ def test_malformed_mapped_sequence_blocks_even_with_issue_acceptance(client, wor
     assert any(issue["code"] == "invalid_sequence" and issue["severity"] == "blocking" and issue["source_position"] == 1 for issue in blocked["report"]["issues"])
 
 
+def test_sequence_precision_survives_browser_json_numbers_or_blocks_publication(client, workspace):
+    for value, state in [("9007199254740991", "ready"), ("9007199254740992", "blocked"),
+                         ("9007199254740993", "blocked")]:
+        raw = ("Ticket;Activity;At;Seq\r\nX;Recorded;2026-10-09T08:00:00Z;" + value + "\r\n").encode()
+        source = upload(client, workspace, raw)
+        request = mapping_request(workspace, source, "B3")
+        request["mapping"]["sequence_column"] = 3
+        request["policies"]["time"] = policies()["time"]
+        result = prepare(client, request, state)
+        if state == "blocked":
+            assert any(issue["code"] == "invalid_sequence" and issue["severity"] == "blocking" for issue in result["report"]["issues"])
+        else:
+            answer = population(client, workspace, result)
+            row = evidence(client, workspace, answer, "X")["records"][0]
+            assert row["source_sequence"] == 9007199254740991
+            assert row["original_cells"][-1] == value
+
+
 def test_confirmed_source_and_mapping_reopen_in_a_fresh_application(tmp_path):
     path = tmp_path / "persistent external workspace"
     path.mkdir()

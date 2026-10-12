@@ -1,0 +1,959 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/selection.v1.schema.json",
+  "title": "SelectionMessage",
+  "description": "Complete-case selection with explicit unevaluable support and supplied descriptive graph, without layout.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SelectCasesRequest"
+    },
+    {
+      "$ref": "#/$defs/SelectionAnswer"
+    },
+    {
+      "$ref": "#/$defs/ProcessGraphRequest"
+    },
+    {
+      "$ref": "#/$defs/ProcessGraphAnswer"
+    },
+    {
+      "$ref": "#/$defs/SelectionRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RowId": {
+      "title": "RowId",
+      "type": "string",
+      "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "PopulationSupport": {
+      "title": "PopulationSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count"
+      ]
+    },
+    "ContainsActivity": {
+      "title": "ContainsActivity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "contains_activity"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "activity",
+        "negate"
+      ]
+    },
+    "DirectlyFollows": {
+      "title": "DirectlyFollows",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "directly_follows"
+        },
+        "source_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "source_activity",
+        "target_activity",
+        "negate"
+      ]
+    },
+    "OpeningAttributeEquals": {
+      "title": "OpeningAttributeEquals",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "opening_attribute_equals"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        },
+        "anchor_policy": {
+          "type": "string",
+          "const": "incident.context.first_record_in_declared_order.v1"
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "value",
+        "negate",
+        "anchor_policy"
+      ]
+    },
+    "SelectionPredicate": {
+      "title": "SelectionPredicate",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ContainsActivity"
+        },
+        {
+          "$ref": "#/$defs/DirectlyFollows"
+        },
+        {
+          "$ref": "#/$defs/OpeningAttributeEquals"
+        }
+      ]
+    },
+    "PredicateResult": {
+      "title": "PredicateResult",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "predicate": {
+          "$ref": "#/$defs/SelectionPredicate"
+        },
+        "kept": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "removed": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "predicate",
+        "kept",
+        "removed",
+        "unevaluable"
+      ]
+    },
+    "NodeMetrics": {
+      "title": "NodeMetrics",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cases": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "starts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ends": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "count",
+        "events",
+        "cases",
+        "starts",
+        "ends"
+      ]
+    },
+    "ActivityNode": {
+      "title": "ActivityNode",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^activity\\.v1:sha256:[0-9a-f]{64}$"
+        },
+        "kind": {
+          "type": "string",
+          "const": "activity"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metrics": {
+          "$ref": "#/$defs/NodeMetrics"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "metrics"
+      ]
+    },
+    "PathMetrics": {
+      "title": "PathMetrics",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cases": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "medianLagHours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "usableLagCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "count",
+        "cases",
+        "medianLagHours",
+        "usableLagCount"
+      ]
+    },
+    "PathWitnesses": {
+      "title": "PathWitnesses",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "gap_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "omitted_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          },
+          "uniqueItems": true
+        },
+        "bridged_passage_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "source_activity",
+        "target_activity",
+        "case_ids",
+        "gap_case_ids",
+        "omitted_row_ids",
+        "bridged_passage_count"
+      ]
+    },
+    "FollowsEdge": {
+      "title": "FollowsEdge",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^path\\.v1:sha256:[0-9a-f]{64}$"
+        },
+        "kind": {
+          "type": "string",
+          "const": "follows"
+        },
+        "source": {
+          "$ref": "#/$defs/ActivityNodeId"
+        },
+        "target": {
+          "$ref": "#/$defs/ActivityNodeId"
+        },
+        "metrics": {
+          "$ref": "#/$defs/PathMetrics"
+        },
+        "payload": {
+          "$ref": "#/$defs/PathWitnesses"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "const": "bridged_missing_activity"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "source",
+        "target",
+        "metrics",
+        "payload"
+      ]
+    },
+    "ActivityNodeId": {
+      "type": "string",
+      "pattern": "^activity\\.v1:sha256:[0-9a-f]{64}$"
+    },
+    "GraphCoverage": {
+      "title": "GraphCoverage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "selected_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "sequence_evaluable_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "sequence_unevaluable_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "selected_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cases": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "raw_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mapped_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_activity_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence_evaluable_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence_unevaluable_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence_unevaluable_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "node_case_denominator": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "path_case_denominator": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "node_support_basis": {
+          "type": "string",
+          "const": "all_selected_raw_histories"
+        },
+        "path_support_basis": {
+          "type": "string",
+          "const": "sequence_evaluable_cases"
+        },
+        "activity_projection_policy": {
+          "type": "string",
+          "const": "incident.activity.omit_missing_retain_raw_gaps.v1"
+        },
+        "path_adjacency": {
+          "type": "string",
+          "const": "mapped_sequence_with_disclosed_raw_gaps"
+        },
+        "boundary_support_basis": {
+          "type": "string",
+          "const": "sequence_evaluable_cases_with_labeled_raw_boundaries"
+        },
+        "lag_unit": {
+          "type": "string",
+          "const": "hours"
+        },
+        "boundary_policy": {
+          "type": "string",
+          "const": "incident.boundary.raw_labeled_start_end.v1"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "lag_clock": {
+          "type": "string",
+          "enum": [
+            "recorded_wall_clock_hours",
+            "elapsed_utc_hours"
+          ]
+        },
+        "clock_limitation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "representation_id",
+        "case_dictionary_id",
+        "selected_case_ids",
+        "sequence_evaluable_case_ids",
+        "sequence_unevaluable_case_ids",
+        "selected_case_count",
+        "cases",
+        "events",
+        "raw_record_count",
+        "mapped_record_count",
+        "omitted_activity_record_count",
+        "sequence_evaluable_case_count",
+        "sequence_unevaluable_case_count",
+        "sequence_unevaluable_record_count",
+        "node_case_denominator",
+        "path_case_denominator",
+        "node_support_basis",
+        "path_support_basis",
+        "activity_projection_policy",
+        "path_adjacency",
+        "boundary_support_basis",
+        "lag_unit",
+        "boundary_policy",
+        "timestamp_kind",
+        "lag_clock",
+        "clock_limitation"
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "timestamp_kind": {
+              "type": "string",
+              "const": "wall_clock"
+            },
+            "lag_clock": {
+              "type": "string",
+              "const": "recorded_wall_clock_hours"
+            },
+            "clock_limitation": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "timestamp_kind": {
+              "type": "string",
+              "const": "utc_instant"
+            },
+            "lag_clock": {
+              "type": "string",
+              "const": "elapsed_utc_hours"
+            },
+            "clock_limitation": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "SuppliedGraph": {
+      "title": "SuppliedGraph",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ActivityNode"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FollowsEdge"
+          }
+        },
+        "meta": {
+          "$ref": "#/$defs/GraphCoverage"
+        }
+      },
+      "required": [
+        "nodes",
+        "edges",
+        "meta"
+      ]
+    },
+    "SelectCasesRequest": {
+      "title": "SelectCasesRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "select_cases_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_case_ids": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/CaseId"
+              },
+              "uniqueItems": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "predicates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SelectionPredicate"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "parent_case_ids",
+        "predicates"
+      ]
+    },
+    "SelectionAnswer": {
+      "title": "SelectionAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "selection_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "kept": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "removed": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "predicate_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PredicateResult"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "parent_identity",
+        "parent",
+        "kept",
+        "removed",
+        "unevaluable",
+        "predicate_results"
+      ]
+    },
+    "ProcessGraphRequest": {
+      "title": "ProcessGraphRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "process_graph_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity"
+      ]
+    },
+    "ProcessGraphAnswer": {
+      "title": "ProcessGraphAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "process_graph_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "graph": {
+          "$ref": "#/$defs/SuppliedGraph"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "graph"
+      ]
+    },
+    "SelectionRefusal": {
+      "title": "SelectionRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "selection_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "select_cases",
+            "process_graph"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_predicate",
+            "invalid_parent",
+            "unknown_case",
+            "unmapped_context_column",
+            "inconsistent_sequence",
+            "mixed_time_kinds",
+            "inconsistent_time_kind",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

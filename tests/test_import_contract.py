@@ -34,11 +34,13 @@ def test_timestamp_candidates_require_a_named_explicit_interpretation(time_forma
     assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json") == value
 
 
-@pytest.mark.parametrize("mutation", ["boolean-revision", "text-confirmation", "unknown-policy", "IANA", "extra-field"])
+@pytest.mark.parametrize("mutation", ["boolean-revision", "unsafe-revision", "text-confirmation", "unknown-policy", "IANA", "extra-field"])
 def test_authoritative_import_schema_rejects_coercion_and_unqualified_policies(mutation):
     value = deepcopy(VALID)
     if mutation == "boolean-revision":
         value["query_revision"] = True
+    elif mutation == "unsafe-revision":
+        value["query_revision"] = 9007199254740992
     elif mutation == "text-confirmation":
         value["accept_report_issues"] = "yes"
     elif mutation == "unknown-policy":

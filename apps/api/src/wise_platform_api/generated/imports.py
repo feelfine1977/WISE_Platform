@@ -22,8 +22,8 @@ class RequestId(RootModel[constr(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$')
     )
 
 
-class QueryRevision(RootModel[conint(ge=1)]):
-    root: conint(ge=1) = Field(..., title='QueryRevision')
+class QueryRevision(RootModel[conint(ge=1, le=9007199254740991)]):
+    root: conint(ge=1, le=9007199254740991) = Field(..., title='QueryRevision')
 
 
 class SourceId(RootModel[constr(pattern=r'^source\.v1:sha256:[a-f0-9]{64}$')]):
@@ -604,7 +604,7 @@ class ImportedSourceRecord1(BaseModel):
     )
     row_id: RowId
     source_position: conint(ge=0)
-    source_sequence: conint(ge=0) | None
+    source_sequence: conint(ge=0, le=9007199254740991) | None
     activity: constr(min_length=1) | None
     timestamp_kind: Literal['utc_instant']
     utc_instant: UtcInstant | UtcInstant1 | None = Field(..., title='UtcInstant')
@@ -624,7 +624,7 @@ class ImportedSourceRecord2(BaseModel):
     )
     row_id: RowId
     source_position: conint(ge=0)
-    source_sequence: conint(ge=0) | None
+    source_sequence: conint(ge=0, le=9007199254740991) | None
     activity: constr(min_length=1) | None
     timestamp_kind: Literal['wall_clock']
     utc_instant: UtcInstant | None
@@ -642,7 +642,7 @@ class ImportedSourceRecord3(BaseModel):
     )
     row_id: RowId
     source_position: conint(ge=0)
-    source_sequence: conint(ge=0) | None
+    source_sequence: conint(ge=0, le=9007199254740991) | None
     activity: constr(min_length=1) | None
     timestamp_kind: Literal['utc_instant', 'wall_clock']
     utc_instant: UtcInstant | None

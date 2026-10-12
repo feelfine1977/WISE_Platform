@@ -22,8 +22,8 @@ class RequestId(RootModel[constr(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$')
     )
 
 
-class QueryRevision(RootModel[conint(ge=1)]):
-    root: conint(ge=1) = Field(..., title='QueryRevision')
+class QueryRevision(RootModel[conint(ge=1, le=9007199254740991)]):
+    root: conint(ge=1, le=9007199254740991) = Field(..., title='QueryRevision')
 
 
 class ExampleId(RootModel[Literal['S0', 'S1', 'S2', 'S3']]):
@@ -331,7 +331,7 @@ class SourceRecord(BaseModel):
     row_id: RowId
     source_position: conint(ge=0)
     source_event_id: constr(min_length=1)
-    source_sequence: conint(ge=0)
+    source_sequence: conint(ge=0, le=9007199254740991)
     activity: constr(min_length=1) | None
     timestamp_utc: UtcInstant
     service: constr(min_length=1)
