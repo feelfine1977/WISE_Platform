@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { FlowGraph } from "wise-flow";
-import { normalizeGraph, validateGraph } from "wise-flow";
+import { abstract, normalizeGraph, validateGraph } from "wise-flow";
 import type { SuppliedGraph } from "../generated/selection";
 import { checked, closed, opened, suppliedGraph } from "../test/selections";
-import { END_ID, endFlowId, flowCoverage, leastFlowIncidents, START_ID, startFlowId, toFlowGraph } from "./graph";
+import { END_ID, endFlowId, flowCoverage, leastFlowIncidents, rankedDetail, START_ID, startFlowId, toFlowGraph } from "./graph";
 
 describe("the supplied graph as the map library's graph", () => {
   it("passes every node, path and coverage field on unchanged, between a start and an end", () => {
@@ -67,8 +67,8 @@ describe("the supplied graph as the map library's graph", () => {
         id: `path.v1:sha256:${String(index).padStart(64, "0")}`,
         source: id(index % starts.length),
         target: id((index + 1) % starts.length),
-        // More passages than incidents on the first path: the flows follow the incidents, not the passages.
-        metrics: { ...base.edges[0].metrics, count: index === 0 ? cases * 50 : cases, cases },
+        // Passages run against the incidents: the weakest path by incidents has the most passages.
+        metrics: { ...base.edges[0].metrics, count: 10000 - cases, cases },
       })),
     };
   };
@@ -83,21 +83,28 @@ describe("the supplied graph as the map library's graph", () => {
 
     // Every path shown, or no detail set: every flow.
     expect(leastFlowIncidents(supplied, undefined)).toBe(0);
-    expect(leastFlowIncidents(supplied, 1)).toBe(0);
+    expect(leastFlowIncidents(supplied, { activityDetail: 1, pathDetail: 1 })).toBe(0);
     expect(flowsOf(0)).toEqual([startFlowId(a), startFlowId(b), startFlowId(c), endFlowId(a), endFlowId(b), endFlowId(c), endFlowId(d)]);
     expect(flowCoverage(supplied, 0)).toEqual({ flows: 7, drawn: 7 });
 
-    // Half of the four paths: the second place by incidents carries 80, whatever its passages are.
-    expect(leastFlowIncidents(supplied, 0.5)).toBe(80);
+    // Half of the four paths: the map library draws the two with the most incidents, whatever their passages are,
+    // and the weaker of them carries 80.
+    const half = { activityDetail: 1, pathDetail: 0.5 };
+    expect(rankedDetail(half)).toEqual({ activityDetail: 1, pathDetail: 0.5, edgeMetric: "cases" });
+    expect(rankedDetail(undefined)).toBeUndefined();
+    const drawn = abstract(toFlowGraph(supplied, 80), rankedDetail(half));
+    const byFrequency = drawn.edges.filter((edge) => edge.kind === "follows" && !edge.tags?.includes("anchor") && !edge.tags?.includes("indirect"));
+    expect(byFrequency.map((edge) => edge.metrics?.cases).sort((a, b) => Number(b) - Number(a))).toEqual([500, 80]);
+    expect(leastFlowIncidents(supplied, half)).toBe(80);
     expect(flowsOf(80)).toEqual([startFlowId(a), endFlowId(b)]);
     expect(flowCoverage(supplied, 80)).toEqual({ flows: 7, drawn: 2 });
     // Three of four: 50 incidents.
-    expect(leastFlowIncidents(supplied, 0.75)).toBe(50);
+    expect(leastFlowIncidents(supplied, { activityDetail: 1, pathDetail: 0.75 })).toBe(50);
     expect(flowsOf(50)).toEqual([startFlowId(a), endFlowId(b), endFlowId(c)]);
     // No path asked for: Start and End keep their strongest flow.
-    expect(leastFlowIncidents(supplied, 0)).toBe(Number.POSITIVE_INFINITY);
+    expect(leastFlowIncidents(supplied, { activityDetail: 1, pathDetail: 0 })).toBe(Number.POSITIVE_INFINITY);
     expect(flowsOf(Number.POSITIVE_INFINITY)).toEqual([startFlowId(a), endFlowId(b)]);
-    expect(leastFlowIncidents({ ...supplied, edges: [] }, 0.2)).toBe(0);
+    expect(leastFlowIncidents({ ...supplied, edges: [] }, { activityDetail: 1, pathDetail: 0.2 })).toBe(0);
 
     // Start and End say every start and end, whichever flows are drawn, and what is supplied is not changed.
     const before = JSON.stringify(supplied);

@@ -1,4 +1,4 @@
-import type { FlowEdge, FlowGraph, FlowNode } from "wise-flow";
+import { abstract, type AbstractOptions, type FlowEdge, type FlowGraph, type FlowNode, type ShownMeta } from "wise-flow";
 import type { SuppliedGraph } from "../generated/selection";
 
 /** The id of the event every incident's flow begins at on the map. */
@@ -30,18 +30,30 @@ function drawnFlows(nodes: SuppliedNode[], side: Side, least: number): SuppliedN
   return nodes.filter((node) => node === strongest || node.metrics[side] >= least);
 }
 
+/** What the map ranks its paths by when its detail reduces them: the incidents on a path, the number it also writes on it. */
+export const PATH_RANK = "cases";
+
+/** The detail as the map library is given it: the paths ranked by their incidents instead of by their passages. */
+export function rankedDetail(detail: AbstractOptions | undefined): AbstractOptions | undefined {
+  return detail === undefined ? undefined : { ...detail, edgeMetric: PATH_RANK };
+}
+
 /**
- * The incidents a flow from Start or to End has to carry to be drawn while the map shows this share
- * of its paths: as many as the path in the last place that share reaches, with the paths ranked by
- * their incidents. Zero, so that every flow is drawn, when every path is shown or there is none.
- * The flows follow the paths this way: fewer paths, fewer flows, and never a flow weaker than every
- * path beside it.
+ * The incidents a flow from Start or to End has to carry to be drawn at this detail: as many as the
+ * weakest path the map library draws by frequency. The number is the library's own, taken from the
+ * same reduction of the same paths with the same rank, so the flows and the paths cannot disagree.
+ * Zero, so that every flow is drawn, when every path is shown or there is none; without any path
+ * drawn by frequency only the strongest flow of each side is left.
  */
-export function leastFlowIncidents(graph: SuppliedGraph, pathDetail: number | undefined): number {
-  if (pathDetail === undefined || pathDetail >= 1 || graph.edges.length === 0) return 0;
-  const places = Math.ceil(Math.max(0, pathDetail) * graph.edges.length - 1e-9);
-  if (places < 1) return Number.POSITIVE_INFINITY;
-  return graph.edges.map((edge) => edge.metrics.cases).sort((a, b) => b - a)[places - 1];
+export function leastFlowIncidents(graph: SuppliedGraph, detail: AbstractOptions | undefined): number {
+  if (detail === undefined || (detail.pathDetail ?? 1) >= 1 || graph.edges.length === 0) return 0;
+  const observed: FlowGraph = {
+    nodes: graph.nodes.map((node) => ({ ...node, metrics: { ...node.metrics } })),
+    edges: graph.edges.map((edge) => ({ ...edge, metrics: { ...edge.metrics } })),
+    meta: { ...graph.meta },
+  };
+  const shown = abstract(observed, rankedDetail(detail)).meta?.shown as ShownMeta | undefined;
+  return shown?.weakestByFrequency ?? Number.POSITIVE_INFINITY;
 }
 
 /** How many flows from Start and to End the supplied graph has, and how many of them are drawn at this least number of incidents. */

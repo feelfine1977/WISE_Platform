@@ -11,7 +11,7 @@ import { countOf } from "../data/wording";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
 import { elementOf, selectedElement, stepChoices } from "./elements";
-import { flowCoverage, leastFlowIncidents, toFlowGraph } from "./graph";
+import { flowCoverage, leastFlowIncidents, rankedDetail, toFlowGraph } from "./graph";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { activityTimeLines, boundaryLine, coverageRows, flowsLine, mapCaption } from "./wording";
 
@@ -119,8 +119,10 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
     (next: AbstractOptions) => setDetail(least !== null && (next.pathDetail ?? 1) < least ? { ...next, pathDetail: least } : next),
     [least],
   );
-  // The flows from Start and to End follow the paths: a flow weaker than every path the detail asks for is not drawn.
-  const leastFlow = useMemo(() => leastFlowIncidents(shown.graph, detail?.pathDetail), [shown.graph, detail?.pathDetail]);
+  // The paths are ranked by their incidents, the number the map writes on them.
+  const ranked = useMemo(() => rankedDetail(detail), [detail]);
+  // The flows from Start and to End follow the paths: a flow weaker than the weakest path drawn by frequency is not drawn.
+  const leastFlow = useMemo(() => leastFlowIncidents(shown.graph, detail), [shown.graph, detail]);
   const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow), [shown.graph, leastFlow]);
   const flowsNotDrawn = useMemo(() => flowsLine(flowCoverage(shown.graph, leastFlow), leastFlow), [shown.graph, leastFlow]);
   /**
@@ -180,7 +182,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
             graph={graph}
             positions={positions}
             layout={workers}
-            abstraction={detail}
+            abstraction={ranked}
             onAbstractionChange={changeDetail}
             activityLabels={activityLabels}
             // The chosen measure, with what is laid over the library's style of it.
