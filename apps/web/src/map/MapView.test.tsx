@@ -71,9 +71,14 @@ async function answer(app: App, place: number, figures: Figures) {
   await deliver(() => graph.reply({ ok: true, answer: supplied }));
 }
 
-async function openMap(app: App) {
+async function openMap(app: App, activities: (keyof typeof nodeIds)[] = []) {
   await app.user.click(screen.getByRole("button", { name: "Map" }));
-  return screen.findByLabelText("Process map of the kept incidents");
+  const map = await screen.findByLabelText("Process map of the kept incidents");
+  // The container precedes the rendered scene; each interaction needs its particular activities.
+  await waitFor(() => {
+    for (const activity of activities) expect(nodeOf(map, activity)).not.toBeNull();
+  });
+  return map;
 }
 
 const nodeOf = (map: HTMLElement, label: keyof typeof nodeIds) => map.querySelector<HTMLElement>(`[data-id="${nodeIds[label]}"]`)!;
@@ -88,7 +93,7 @@ function chipTexts() {
 describe("the map of the kept incidents", () => {
   it("takes a step from an activity, shows it as a chip with its supplied counts, and keeps the activities in place", async () => {
     const app = await renderInvestigation();
-    const map = await openMap(app);
+    const map = await openMap(app, [opened]);
     expect(screen.getByRole("button", { name: "Map" }).getAttribute("aria-pressed")).toBe("true");
     const placed = nodeOf(map, opened).style.transform;
     expect(placed).toMatch(/translate/);
@@ -103,8 +108,10 @@ describe("the map of the kept incidents", () => {
     expect(chipTexts()).toEqual([["Keep incidents that contain “Eröffnet”", "Kept1 incident · 2 records", "Removed1 incident · 1 record", "Not evaluable0 incidents · 0 records"]]);
     expect(screen.getByLabelText("Population").textContent).toContain("Parent2 incidents · 3 recordsKept1 incident · 2 records");
     const after = screen.getByLabelText("Process map of the kept incidents");
-    expect(nodeOf(after, opened).style.transform).toBe(placed);
-    expect(after.querySelector(`[data-id="${nodeIds["Prüfung"]}"]`)).toBeNull();
+    await waitFor(() => {
+      expect(nodeOf(after, opened).style.transform).toBe(placed);
+      expect(after.querySelector(`[data-id="${nodeIds["Prüfung"]}"]`)).toBeNull();
+    });
     // One arrangement of the whole parent serves every selection.
     expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
 
@@ -117,7 +124,7 @@ describe("the map of the kept incidents", () => {
     const app = await renderInvestigation();
     app.coordinator.addStep(contains(opened));
     await answer(app, 1, containingOpened);
-    const map = await openMap(app);
+    const map = await openMap(app, [opened, closed]);
 
     await app.user.click(within(map).getByRole("button", { name: "Table view" }));
     const pathRow = within(map)
@@ -158,7 +165,7 @@ describe("the map of the kept incidents", () => {
 
   it("offers the steps of an activity in the map's actions menu", async () => {
     const app = await renderInvestigation();
-    const map = await openMap(app);
+    const map = await openMap(app, [closed]);
     fireEvent.contextMenu(nodeOf(map, closed));
     const items = screen.getAllByRole("menuitem");
     expect(items.map((item) => item.textContent)).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it"]);

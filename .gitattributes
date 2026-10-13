@@ -3,3 +3,6 @@ tests/fixtures/comparisons/*.csv -text
 tests/fixtures/expectations/*.csv -text
 vendor/*.tgz binary
 vendor/*.whl binary
+LICENSE -text
+NOTICE -text
+tools/notices/*.txt -text
