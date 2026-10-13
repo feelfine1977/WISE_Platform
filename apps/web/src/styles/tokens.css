@@ -219,6 +219,20 @@
   --size-map-stages: 360px;
   /* A header row of one line, and the bar of the kept share in the data row. */
   --size-kept-share: 48px;
+
+  /*
+   * The process map. Its library draws from a theme, which takes a value and never a custom
+   * property: the theme of the map reads these values from the text of this stylesheet (map/look.ts).
+   */
+  /* Start is a ring in its green on the paper, End a disc in its purple: ring against disc tells them apart without the colours. */
+  --color-map-start: #205840;
+  --color-map-end: #803068;
+  /* The circle of Start and End, the size of their names in units of the map, and where a name begins beside its circle. */
+  --size-map-event: 40px;
+  --size-map-event-name: 15;
+  --offset-map-event-name: calc(100% + var(--space-2));
+  /* The smallest text of the screen in units of the map. The map library sets it on a map that is zoomed out; anywhere else there is none. */
+  --wf-text-floor: 0;
 }
 
 /*
@@ -227,4 +241,10 @@
  */
 .map-detail {
   --wf-line: var(--color-tint);
+}
+
+/* The map library reads the size of an event's circle from its own tokens: on the frame of the map they are the application's. */
+.map-frame {
+  --wf-event-width: var(--size-map-event);
+  --wf-event-height: var(--size-map-event);
 }

@@ -19,6 +19,8 @@ import { elementOf, selectedElement, stepChoices } from "./elements";
 import { elementTitle } from "./elementTitle";
 import { fitToFrame } from "./FitToFrame";
 import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
+import { MAP_THEME, nodeSize } from "./look";
+import "./look.css";
 import { MapToolbar } from "./MapToolbar";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { PathsTable } from "./PathsTable";
@@ -72,7 +74,7 @@ const arrangements = new WeakMap<SuppliedGraph, { stages: StageDefinitions; dire
 function arrangementOf(parentGraph: SuppliedGraph, parent: FlowGraph, stages: StageDefinitions, direction: MapDirection): Promise<Positions> {
   const held = arrangements.get(parentGraph);
   if (held?.stages === stages && held.direction === direction) return held.arranged;
-  const arranged = layoutUnion([parent], parentArrangement(parent, direction));
+  const arranged = layoutUnion([parent], { ...parentArrangement(parent, direction), nodeSize });
   arrangements.set(parentGraph, { stages, direction, arranged });
   arranged.catch(() => arrangements.get(parentGraph)?.arranged === arranged && arrangements.delete(parentGraph));
   return arranged;
@@ -176,8 +178,8 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
   const detailShown = useMemo(() => mapDetail(graph, ranked), [graph, ranked]);
   // The way the map runs is held here, so that the map and the arrangement of the whole parent run the same way.
   const [direction] = useState<MapDirection>(OPENING_DIRECTION);
-  // Start stands first and End last on what the map draws, as they do in the arrangement of the whole parent.
-  const mapLayout = useMemo(() => mapArrangement(detailShown.drawn, direction), [detailShown.drawn, direction]);
+  // Start stands first and End last on what the map draws, as they do in the arrangement of the whole parent, and every node has the size it has there.
+  const mapLayout = useMemo(() => ({ ...mapArrangement(detailShown.drawn, direction), nodeSize }), [detailShown.drawn, direction]);
   const listed = showing === "paths";
   // Over the list the controls are always above: no map is drawn there that would know more.
   const controlsAbove = listed || !detailShown.onCanvas;
@@ -297,7 +299,8 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
         {listed ? (
           <PathsTable graph={shown.graph} drawn={detailShown.drawn} selection={selection} onSelect={setSelection} />
         ) : (
-          <div className="map-frame">
+          // The stylesheet of the map's look reads from the frame which way the map runs.
+          <div className="map-frame" data-direction={direction}>
             {inPlace && arrangement.phase === "arranging" ? (
               <p className="working-text map-arranging">Arranging the map of every incident of the parent…</p>
             ) : (
@@ -314,6 +317,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
                 // Drawn as elements, the map draws every path its detail selects, which is what the controls above it say.
                 edgeBudget={controlsAbove ? "all" : "adaptive"}
                 activityLabels={activityLabels}
+                theme={MAP_THEME}
                 // The chosen measure, with what is laid over the library's style of it.
                 {...asked}
                 // Listening for the choice is what makes the map's whole legend offer the measures.
