@@ -19,10 +19,20 @@ const workers = { elkWorkerUrl, dagreWorkerUrl };
 /** Above this many activities the map opens on the most frequent ones; its detail panel shows the rest. */
 export const MANY_ACTIVITIES = 20;
 const OPENING_PATHS = 0.5;
+/** Above this many paths the map opens on its most frequent ones, so that the main flow can be read; its detail panel shows the rest. */
+export const MANY_PATHS = 30;
+/** How many paths for each activity such a map opens on. */
+const OPENING_PATHS_PER_ACTIVITY = 1.5;
 
-/** Where the detail of a map of this many activities opens: everything, or the most frequent activities. */
-export function openingDetail(activities: number): AbstractOptions | undefined {
-  return activities > MANY_ACTIVITIES ? { activityDetail: MANY_ACTIVITIES / activities, pathDetail: OPENING_PATHS } : undefined;
+/**
+ * Where the detail of a map of this many activities and paths opens: everything, the most frequent
+ * activities, or every activity with its most frequent paths. Nothing is left out of the counts:
+ * the detail panel says how much is shown and shows the rest.
+ */
+export function openingDetail(activities: number, paths = 0): AbstractOptions | undefined {
+  if (activities > MANY_ACTIVITIES) return { activityDetail: MANY_ACTIVITIES / activities, pathDetail: OPENING_PATHS };
+  if (paths > MANY_PATHS) return { activityDetail: 1, pathDetail: Math.ceil(activities * OPENING_PATHS_PER_ACTIVITY) / paths };
+  return undefined;
 }
 
 type Arrangement = { phase: "arranging" } | { phase: "ready"; positions: Positions } | { phase: "unavailable" };
@@ -74,7 +84,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps
   const arrangement = useParentArrangement(parentGraph, parent);
   const positions = useMemo(() => (arrangement.phase === "ready" ? filterPositions(arrangement.positions, graph) : undefined), [arrangement, graph]);
   const [selection, setSelection] = useState<Selection>(emptySelection);
-  const opening = useMemo(() => openingDetail(parentGraph.nodes.length), [parentGraph]);
+  const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
 
   // A new map is of other incidents: what was selected on the previous one is not carried over.
   useEffect(() => setSelection(emptySelection), [shown.graph]);

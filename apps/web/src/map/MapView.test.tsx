@@ -22,7 +22,7 @@ import {
   support,
   suppliedGraph,
 } from "../test/selections";
-import { MANY_ACTIVITIES, openingDetail } from "./MapView";
+import { MANY_ACTIVITIES, MANY_PATHS, openingDetail } from "./MapView";
 
 vi.mock("wise-flow", async (original) => {
   const library = await original<typeof import("wise-flow")>();
@@ -208,6 +208,10 @@ describe("the map of the kept incidents", () => {
     };
     expect(openingDetail(MANY_ACTIVITIES)).toBeUndefined();
     expect(openingDetail(40)).toEqual({ activityDetail: 0.5, pathDetail: 0.5 });
+    // Few activities with many paths between them: every activity, and the most frequent paths first.
+    expect(openingDetail(3, 3)).toBeUndefined();
+    expect(openingDetail(8, MANY_PATHS)).toBeUndefined();
+    expect(openingDetail(13, 81)).toEqual({ activityDetail: 1, pathDetail: 20 / 81 });
     const app = await renderInvestigation(many);
     const map = await openMap(app);
     await waitFor(() => expect(map.querySelectorAll(".react-flow__node").length).toBe(20));
