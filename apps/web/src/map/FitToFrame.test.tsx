@@ -1,8 +1,14 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fittedView, follow, type Seen, sameView } from "./FitToFrame";
 import { MapView } from "./MapView";
 import { BUSY_ACTIVITIES, busyGraph, busyIds, shownWhole } from "./testGraphs";
+
+// The map of these tests runs from left to right: it is wider than its frame, and what is said below about its fit is said of such a map.
+vi.mock("./arrange", async (original) => {
+  const arrange = await original<typeof import("./arrange")>();
+  return { ...arrange, OPENING_DIRECTION: arrange.LEFT_TO_RIGHT };
+});
 
 /*
  * The test page has no layout, so the frame's size is said here: the map reads it as the size of

@@ -12,7 +12,7 @@ import type { StageDefinitions } from "../stages/definitions";
 import { StagesEditor } from "../stages/StagesEditor";
 import { type StagedReading, useStages } from "../stages/store";
 import { AboutMap } from "./AboutMap";
-import { mapArrangement, parentArrangement } from "./arrange";
+import { mapArrangement, type MapDirection, OPENING_DIRECTION, parentArrangement } from "./arrange";
 import { CANVAS_FROM, mapDetail, WHOLE_DETAIL } from "./detail";
 import { DetailStrip } from "./DetailStrip";
 import { elementOf, selectedElement, stepChoices } from "./elements";
@@ -64,34 +64,35 @@ type Arrangement = { phase: "arranging" } | { phase: "ready"; positions: Positio
 /**
  * One arrangement for each map of a whole parent, computed once: every selection's map reads its
  * activities' positions from it, so nothing moves when incidents are removed or kept again. The
- * stages of the log shape the arrangement, so it is computed anew once they are changed.
+ * stages of the log and the way the map runs shape the arrangement, so it is computed anew once
+ * either is changed.
  */
-const arrangements = new WeakMap<SuppliedGraph, { stages: StageDefinitions; arranged: Promise<Positions> }>();
+const arrangements = new WeakMap<SuppliedGraph, { stages: StageDefinitions; direction: MapDirection; arranged: Promise<Positions> }>();
 
-function arrangementOf(parentGraph: SuppliedGraph, parent: FlowGraph, stages: StageDefinitions): Promise<Positions> {
+function arrangementOf(parentGraph: SuppliedGraph, parent: FlowGraph, stages: StageDefinitions, direction: MapDirection): Promise<Positions> {
   const held = arrangements.get(parentGraph);
-  if (held?.stages === stages) return held.arranged;
-  const arranged = layoutUnion([parent], parentArrangement(parent));
-  arrangements.set(parentGraph, { stages, arranged });
+  if (held?.stages === stages && held.direction === direction) return held.arranged;
+  const arranged = layoutUnion([parent], parentArrangement(parent, direction));
+  arrangements.set(parentGraph, { stages, direction, arranged });
   arranged.catch(() => arrangements.get(parentGraph)?.arranged === arranged && arrangements.delete(parentGraph));
   return arranged;
 }
 
-/** The arrangement of the whole parent in its stages, asked for only while the activities are to keep their places. */
-function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph, stages: StageDefinitions, wanted: boolean): Arrangement {
-  const [arranged, setArranged] = useState<{ parent: FlowGraph; arrangement: Arrangement } | null>(null);
+/** The arrangement of the whole parent in its stages and the way the map runs, asked for only while the activities are to keep their places. */
+function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph, stages: StageDefinitions, direction: MapDirection, wanted: boolean): Arrangement {
+  const [arranged, setArranged] = useState<{ parent: FlowGraph; direction: MapDirection; arrangement: Arrangement } | null>(null);
   useEffect(() => {
     if (!wanted) return;
     let current = true;
-    arrangementOf(parentGraph, parent, stages).then(
-      (positions) => current && setArranged({ parent, arrangement: { phase: "ready", positions } }),
-      () => current && setArranged({ parent, arrangement: { phase: "unavailable" } }),
+    arrangementOf(parentGraph, parent, stages, direction).then(
+      (positions) => current && setArranged({ parent, direction, arrangement: { phase: "ready", positions } }),
+      () => current && setArranged({ parent, direction, arrangement: { phase: "unavailable" } }),
     );
     return () => {
       current = false;
     };
-  }, [parentGraph, parent, stages, wanted]);
-  return arranged?.parent === parent ? arranged.arrangement : { phase: "arranging" };
+  }, [parentGraph, parent, stages, direction, wanted]);
+  return arranged?.parent === parent && arranged.direction === direction ? arranged.arrangement : { phase: "arranging" };
 }
 
 interface MapViewProps {
@@ -173,8 +174,10 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
    * the panel also says how many of the selected paths are drawn at the zoom, which only the map knows.
    */
   const detailShown = useMemo(() => mapDetail(graph, ranked), [graph, ranked]);
+  // The way the map runs is held here, so that the map and the arrangement of the whole parent run the same way.
+  const [direction] = useState<MapDirection>(OPENING_DIRECTION);
   // Start stands first and End last on what the map draws, as they do in the arrangement of the whole parent.
-  const mapLayout = useMemo(() => mapArrangement(detailShown.drawn), [detailShown.drawn]);
+  const mapLayout = useMemo(() => mapArrangement(detailShown.drawn, direction), [detailShown.drawn, direction]);
   const listed = showing === "paths";
   // Over the list the controls are always above: no map is drawn there that would know more.
   const controlsAbove = listed || !detailShown.onCanvas;
@@ -187,7 +190,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
    * by eye; hidden paths then still decide the places and the routes.
    */
   const [inPlace, setInPlace] = useState(initiallyInPlace);
-  const arrangement = useParentArrangement(parentGraph, parent, stages, inPlace);
+  const arrangement = useParentArrangement(parentGraph, parent, stages, direction, inPlace);
   const positions = useMemo(
     () => (inPlace && arrangement.phase === "ready" ? filterPositions(arrangement.positions, graph) : undefined),
     [inPlace, arrangement, graph],
@@ -318,8 +321,8 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
                 // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
                 // and a selection keeps that view, so nothing moves on screen.
                 fitView={inPlace ? shown.steps.length === 0 : true}
-                // An activity moved by hand goes back when the map is arranged anew for other content or for other stages.
-                layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}`}
+                // An activity moved by hand goes back when the map is arranged anew for other content, for other stages or to run the other way.
+                layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}:${direction}`}
                 // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
                 lod={LABELS_FROM}
                 // The library's own detail panel inside the map, only where the controls are not above it.

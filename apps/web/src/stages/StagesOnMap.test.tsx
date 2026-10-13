@@ -91,8 +91,8 @@ async function answer(app: { selecting: ReturnType<typeof scriptedSelectionClien
 const nodeOf = (map: HTMLElement, id: string) => map.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 /** The stage boxes the map draws, by the name written on each. */
 const stageBoxes = (map: HTMLElement) => Array.from(map.querySelectorAll('[data-wf-part="group"][data-wf-kind="stage"] [data-wf-part="group-label"]')).map((label) => label.textContent);
-/** How far from the left edge of the map the box of a stage begins. */
-const leftOf = (map: HTMLElement, stageId: string) => Number(/translate\((-?[\d.]+)px/.exec(nodeOf(map, `group:${stageId}`)?.style.transform ?? "")?.[1]);
+/** How far from the top edge of the map the box of a stage begins: the map runs from top to bottom. */
+const topOf = (map: HTMLElement, stageId: string) => Number(/translate\(-?[\d.]+px,\s*(-?[\d.]+)px/.exec(nodeOf(map, `group:${stageId}`)?.style.transform ?? "")?.[1]);
 /** The editor of the stages, opened beside the map with its switch in the row above the map. */
 async function openStages(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "Edit stages" }));
@@ -164,7 +164,7 @@ describe("the stages of a log on its map", () => {
     // Start and End are on the map as before, and the first stage lies before the second.
     expect(nodeOf(map, START_ID)).not.toBeNull();
     expect(nodeOf(map, END_ID)).not.toBeNull();
-    expect(leftOf(map, intake)).toBeLessThan(leftOf(map, closure));
+    expect(topOf(map, intake)).toBeLessThan(topOf(map, closure));
     expect(screen.getByRole("button", { name: "Show stages" })).toBeTruthy();
 
     // The legend of the map names the stages beside the colours the library gave them.
@@ -177,10 +177,10 @@ describe("the stages of a log on its map", () => {
   it("lays the stages out in the order the analyst gives them, whatever the flow of the log is", async () => {
     define(twoStages);
     const { map, user } = await openMap();
-    await waitFor(() => expect(leftOf(map, intake)).toBeLessThan(leftOf(map, closure)));
+    await waitFor(() => expect(topOf(map, intake)).toBeLessThan(topOf(map, closure)));
     await user.click(within(await openStages(user)).getByRole("button", { name: "Move “Closure” earlier" }));
     expect(browserStages.stateOf(reading).definitions).toEqual(moved(twoStages, closure, "earlier"));
-    await waitFor(() => expect(leftOf(map, closure)).toBeLessThan(leftOf(map, intake)));
+    await waitFor(() => expect(topOf(map, closure)).toBeLessThan(topOf(map, intake)));
   });
 
   it("shows each stage as one node when asked, takes no step from a stage, and shows the activities again", async () => {
@@ -248,7 +248,7 @@ describe("the stages of a log on its map", () => {
     await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(2));
     expect(vi.mocked(flow.layoutUnion).mock.calls[1][0][0].groups?.map((group) => group.label)).toEqual(["Closure", "Intake"]);
     const again = await screen.findByLabelText("Process map of the kept incidents");
-    await waitFor(() => expect(leftOf(again, closure)).toBeLessThan(leftOf(again, intake)));
+    await waitFor(() => expect(topOf(again, closure)).toBeLessThan(topOf(again, intake)));
   });
 
   it("draws every flow from Start and to End while stages are shown as nodes, so that the flow of a stage adds up those of its activities", async () => {

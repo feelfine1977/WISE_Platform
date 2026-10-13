@@ -5,12 +5,15 @@ import elkWorkerUrl from "wise-flow/elk-worker.min.js?url";
 import { END_ID, START_ID } from "./graph";
 
 /*
- * Start first, End last.
+ * How the map is arranged: which way it runs, and Start first, End last.
+ *
+ * A map is arranged in layers along the way it runs: the rows of a map that runs from top to
+ * bottom, the columns of one that runs from left to right.
  *
  * The layout engine of the map library (ELK) breaks the cycles of a map without knowing how many
  * incidents a path carries. Where paths lead back into the activity the incidents begin with, it
- * may turn the main way around, and Start then stands in the middle of the map, one column before
- * its only target. The engine takes the column of a node as a constraint, but the library has no
+ * may turn the main way around, and Start then stands in the middle of the map, one layer before
+ * its only target. The engine takes the layer of a node as a constraint, but the library has no
  * setting for one. What it has is `layout.elk`, an engine it is given. The engine given here writes
  * the constraints into the graph the library hands over and passes it on to a real ELK, in the
  * worker the application serves.
@@ -27,8 +30,27 @@ import { END_ID, START_ID } from "./graph";
  *   travels as an option: a map with another first activity is arranged anew.
  */
 
-/** The option by which ELK takes the column of a node. */
-const COLUMN = "elk.layered.layering.layerConstraint";
+/** A map runs from top to bottom. */
+export const TOP_TO_BOTTOM = "DOWN";
+/** A map runs from left to right. */
+export const LEFT_TO_RIGHT = "RIGHT";
+/** The two ways a map runs, as the map library names them. */
+export type MapDirection = typeof TOP_TO_BOTTOM | typeof LEFT_TO_RIGHT;
+
+/**
+ * The way a map runs when it opens. Its cards are wide and low, so from top to bottom a map is
+ * bound by its height and its widest row, and is drawn larger in a frame that is wider than high.
+ */
+export const OPENING_DIRECTION: MapDirection = TOP_TO_BOTTOM;
+
+/** The room between two neighbours of a layer and between two layers. */
+const SPACING = { node: 24, layer: 48 };
+
+/** Paths run in right angles: the map library draws a route as straight pieces from bend to bend. */
+const ROUTES = "ORTHOGONAL";
+
+/** The option by which ELK takes the layer of a node. */
+const LAYER = "elk.layered.layering.layerConstraint";
 
 /**
  * The option on the root of the graph that names the first activity. It is not one of ELK's: the
@@ -58,26 +80,26 @@ export function firstActivity(graph: FlowGraph): string | undefined {
 }
 
 /**
- * The graph the map library hands to the engine, with the columns of Start, End and the first
- * activity written into it: Start alone in the first column, End alone in the last, the first
- * activity in the column after Start. An activity inside a stage is the first of its stage; where
+ * The graph the map library hands to the engine, with the layers of Start, End and the first
+ * activity written into it: Start alone in the first layer, End alone in the last, the first
+ * activity in the layer after Start. An activity inside a stage is the first of its stage; where
  * the stage stands is left to the order of the stages. Paths into the first activity are then
- * drawn as returns. A node that is not on the map takes no column, and the graph given is not changed.
+ * drawn as returns. A node that is not on the map takes no layer, and the graph given is not changed.
  */
 export function pinned(graph: ElkNode): ElkNode {
   const { [FIRST_ACTIVITY]: first, ...options } = graph.layoutOptions ?? {};
-  const columns = new Map([
+  const layers = new Map([
     [START_ID, "FIRST_SEPARATE"],
     [END_ID, "LAST_SEPARATE"],
   ]);
-  if (first !== undefined && !columns.has(first)) columns.set(first, "FIRST");
-  const inColumn = (node: ElkNode): ElkNode => {
-    // A stage is a node with children and takes no column itself, also where it shares its id with a node.
-    if (node.children) return { ...node, children: node.children.map(inColumn) };
-    const column = columns.get(node.id);
-    return column === undefined ? node : { ...node, layoutOptions: { ...node.layoutOptions, [COLUMN]: column } };
+  if (first !== undefined && !layers.has(first)) layers.set(first, "FIRST");
+  const inLayer = (node: ElkNode): ElkNode => {
+    // A stage is a node with children and takes no layer itself, also where it shares its id with a node.
+    if (node.children) return { ...node, children: node.children.map(inLayer) };
+    const layer = layers.get(node.id);
+    return layer === undefined ? node : { ...node, layoutOptions: { ...node.layoutOptions, [LAYER]: layer } };
   };
-  return { ...graph, layoutOptions: options, children: graph.children?.map(inColumn) };
+  return { ...graph, layoutOptions: options, children: graph.children?.map(inLayer) };
 }
 
 /** What is used of a real ELK: it arranges a graph, and it is stopped with whatever it still computes. */
@@ -97,7 +119,7 @@ export interface EngineUse {
 }
 
 /**
- * The engine the map library is given: every graph is arranged by a real ELK with the columns of
+ * The engine the map library is given: every graph is arranged by a real ELK with the layers of
  * `pinned`. One engine is kept between two arrangements, so that the next one starts no worker.
  *
  * A run that is ended, because its time is over or another replaces it, has its engine stopped and
@@ -182,19 +204,27 @@ const ofMap = pinningElk(served, { replacing: true });
 const ofParent = pinningElk(served);
 
 /**
- * The layout of a graph of the map: arranged by the given engine with Start, End and the first
- * activity of this graph in their columns, within the time both the library and the engine keep.
- * When ELK fails or takes too long the library arranges by its fallback, in the worker the
- * application serves for it. That engine takes no columns: the map is arranged all the same, and
- * Start and End stand where it puts them.
+ * The layout of a graph of the map that runs this way: arranged by the given engine with Start,
+ * End and the first activity of this graph in their layers, within the time both the library and
+ * the engine keep. When ELK fails or takes too long the library arranges by its fallback, in the
+ * worker the application serves for it. That engine runs the same way but takes no layers and
+ * routes no right angles: the map is arranged all the same, and Start and End stand where it puts them.
  */
-function arrangedBy(elk: ELK, graph: FlowGraph): LayoutOptions {
+function arrangedBy(elk: ELK, graph: FlowGraph, direction: MapDirection): LayoutOptions {
   const first = firstActivity(graph);
-  return { elk, dagreWorkerUrl, timeoutMs: ARRANGED_WITHIN_MS, ...(first !== undefined && { elkOptions: { [FIRST_ACTIVITY]: first } }) };
+  return {
+    elk,
+    dagreWorkerUrl,
+    timeoutMs: ARRANGED_WITHIN_MS,
+    direction,
+    spacing: SPACING,
+    edgeRouting: ROUTES,
+    ...(first !== undefined && { elkOptions: { [FIRST_ACTIVITY]: first } }),
+  };
 }
 
-/** The layout of the map on the page, for the graph it draws at its detail. */
-export const mapArrangement = (drawn: FlowGraph): LayoutOptions => arrangedBy(ofMap, drawn);
+/** The layout of the map on the page, for the graph it draws at its detail and the way it runs. */
+export const mapArrangement = (drawn: FlowGraph, direction: MapDirection): LayoutOptions => arrangedBy(ofMap, drawn, direction);
 
 /** The layout of the map of a whole parent, from which every map of a selection reads the places of its activities. */
-export const parentArrangement = (parent: FlowGraph): LayoutOptions => arrangedBy(ofParent, parent);
+export const parentArrangement = (parent: FlowGraph, direction: MapDirection): LayoutOptions => arrangedBy(ofParent, parent, direction);

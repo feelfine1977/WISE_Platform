@@ -1,15 +1,15 @@
 import type { ElkNode } from "elkjs/lib/elk-api.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { abstract, createLayoutScope, type FlowGraph, layout, type LayoutDirection, type Positions } from "wise-flow";
+import { abstract, createLayoutScope, type FlowGraph, layout, type Positions } from "wise-flow";
 import type { SuppliedGraph } from "../generated/selection";
 import { noStages, withActivity, withStage } from "../stages/definitions";
 import { suppliedGraph } from "../test/selections";
-import { type Engine, FIRST_ACTIVITY, firstActivity, mapArrangement, parentArrangement, pinned, pinningElk } from "./arrange";
+import { type Engine, FIRST_ACTIVITY, firstActivity, LEFT_TO_RIGHT, mapArrangement, type MapDirection, OPENING_DIRECTION, parentArrangement, pinned, pinningElk, TOP_TO_BOTTOM } from "./arrange";
 import { END_ID, START_ID, toFlowGraph } from "./graph";
 
 const whole = suppliedGraph(["A-1", "B-2"]);
 const idOf = (index: number) => `activity.v1:sha256:${String(index).padStart(64, "0")}`;
-const COLUMN = "elk.layered.layering.layerConstraint";
+const LAYER = "elk.layered.layering.layerConstraint";
 
 /**
  * A map of six activities, written to be arranged and not counted from incidents. Every incident
@@ -61,10 +61,10 @@ const stages = [
 
 const first = idOf(5);
 const activitiesOf = (graph: FlowGraph) => graph.nodes.filter((node) => node.kind === "activity").map((node) => node.id);
-/** Along which axis a map runs, and across which its rows or columns lie. */
-const axes: [LayoutDirection, "x" | "y", "width" | "height"][] = [
-  ["RIGHT", "x", "width"],
-  ["DOWN", "y", "height"],
+/** The two ways a map runs: the axis its layers follow each other on, and what a node takes of it. */
+const ways: [MapDirection, "x" | "y", "width" | "height"][] = [
+  [TOP_TO_BOTTOM, "y", "height"],
+  [LEFT_TO_RIGHT, "x", "width"],
 ];
 
 describe("the first activity of a map", () => {
@@ -82,13 +82,13 @@ describe("the first activity of a map", () => {
     const flow = toFlowGraph(looping());
     expect(firstActivity({ ...flow, nodes: flow.nodes.filter((node) => node.id !== first) })).toBeUndefined();
     // Such a map is given no first activity, and the same options each time.
-    expect(mapArrangement(toFlowGraph(still))).not.toHaveProperty("elkOptions");
-    expect(mapArrangement(flow).elkOptions).toEqual({ [FIRST_ACTIVITY]: first });
-    expect(parentArrangement(flow).elkOptions).toEqual({ [FIRST_ACTIVITY]: first });
+    expect(mapArrangement(toFlowGraph(still), TOP_TO_BOTTOM)).not.toHaveProperty("elkOptions");
+    expect(mapArrangement(flow, TOP_TO_BOTTOM).elkOptions).toEqual({ [FIRST_ACTIVITY]: first });
+    expect(parentArrangement(flow, LEFT_TO_RIGHT).elkOptions).toEqual({ [FIRST_ACTIVITY]: first });
   });
 });
 
-describe("the columns written into the graph of the engine", () => {
+describe("the layers written into the graph of the engine", () => {
   const leaf = (id: string): ElkNode => ({ id, width: 10, height: 10 });
   const graph: ElkNode = {
     id: "root",
@@ -103,10 +103,10 @@ describe("the columns written into the graph of the engine", () => {
     // The option that carried the first activity is not ELK's and is taken out again.
     expect(written.layoutOptions).toEqual({ "elk.algorithm": "layered" });
     const [stage, c, end, start] = written.children!;
-    expect(start.layoutOptions).toEqual({ [COLUMN]: "FIRST_SEPARATE" });
-    expect(end.layoutOptions).toEqual({ [COLUMN]: "LAST_SEPARATE" });
-    expect(stage.children![1].layoutOptions).toEqual({ [COLUMN]: "FIRST" });
-    // Nothing else takes a column, the stage keeps its own options, and the graph given is as it was.
+    expect(start.layoutOptions).toEqual({ [LAYER]: "FIRST_SEPARATE" });
+    expect(end.layoutOptions).toEqual({ [LAYER]: "LAST_SEPARATE" });
+    expect(stage.children![1].layoutOptions).toEqual({ [LAYER]: "FIRST" });
+    // Nothing else takes a layer, the stage keeps its own options, and the graph given is as it was.
     expect(stage.children![0]).toBe(graph.children![0].children![0]);
     expect(c).toBe(graph.children![1]);
     expect(stage.layoutOptions).toEqual({ "elk.partitioning.partition": "0" });
@@ -118,44 +118,73 @@ describe("the columns written into the graph of the engine", () => {
     const bare: ElkNode = { id: "root", layoutOptions: { [FIRST_ACTIVITY]: "stage:1" }, children: [{ id: "stage:1", children: [leaf("a")] }, leaf("c")] };
     expect(pinned(bare).children).toEqual(bare.children);
     expect(pinned({ id: "root", children: [leaf("a")] })).toEqual({ id: "root", layoutOptions: {}, children: [leaf("a")] });
-    // Start and End keep their own columns, whatever is named as the first activity.
+    // Start and End keep their own layers, whatever is named as the first activity.
     const odd = pinned({ id: "root", layoutOptions: { [FIRST_ACTIVITY]: START_ID }, children: [leaf(START_ID)] });
-    expect(odd.children![0].layoutOptions).toEqual({ [COLUMN]: "FIRST_SEPARATE" });
+    expect(odd.children![0].layoutOptions).toEqual({ [LAYER]: "FIRST_SEPARATE" });
+  });
+});
+
+describe("the way a map runs", () => {
+  it("is from top to bottom when the map opens, with the room and the routes of the map", () => {
+    expect([TOP_TO_BOTTOM, LEFT_TO_RIGHT]).toEqual(["DOWN", "RIGHT"]);
+    expect(OPENING_DIRECTION).toBe(TOP_TO_BOTTOM);
+    const flow = toFlowGraph(looping());
+    for (const [direction] of ways) {
+      for (const arrangement of [mapArrangement(flow, direction), parentArrangement(flow, direction)]) {
+        expect(arrangement).toMatchObject({ direction, spacing: { node: 24, layer: 48 }, edgeRouting: "ORTHOGONAL" });
+      }
+    }
+  });
+
+  it.each(ways)("draws every path in right angles (%s)", async (direction) => {
+    const flow = toFlowGraph(looping(), 0, undefined, stages);
+    const positions = await layout(flow, mapArrangement(flow, direction));
+    expect(positions.direction).toBe(direction);
+    expect(Object.keys(positions.edges)).toHaveLength(flow.edges.length);
+    for (const [id, route] of Object.entries(positions.edges)) {
+      const slanted = route.points.filter((point, index) => index > 0 && point.x !== route.points[index - 1].x && point.y !== route.points[index - 1].y);
+      expect(slanted, id).toEqual([]);
+    }
   });
 });
 
 describe("a map arranged with Start first and End last", () => {
   const at = (positions: Positions, id: string, axis: "x" | "y") => positions.nodes[id][axis];
+  /** The same map as the map library arranges it by itself: the same way, room and routes, without the engine given to it here. */
+  const alone = (flow: FlowGraph, direction: MapDirection) => {
+    const { elk: _engine, elkOptions: _first, ...settings } = mapArrangement(flow, direction);
+    return layout(flow, settings);
+  };
 
-  it.each(axes)("puts Start before every activity and End after every one, where paths lead back into Start's only target (%s)", async (direction, axis, extent) => {
+  it.each(ways)("puts Start before every activity and End after every one, where paths lead back into Start's only target (%s)", async (direction, axis, extent) => {
     const flow = toFlowGraph(looping());
     const activities = activitiesOf(flow);
-    const positions = await layout(flow, { ...mapArrangement(flow), direction });
+    const positions = await layout(flow, mapArrangement(flow, direction));
     expect(positions.engine).toBe("elk");
     for (const id of activities) {
       expect(at(positions, START_ID, axis), id).toBeLessThan(at(positions, id, axis));
-      // End begins where the last activity has ended: it is alone in its column.
+      // End begins where the last activity has ended: it is alone in its layer.
       expect(at(positions, END_ID, axis), id).toBeGreaterThan(at(positions, id, axis) + positions.nodes[id][extent]);
     }
     // Start's target stands next: before every other activity.
     for (const id of activities.filter((item) => item !== first)) expect(at(positions, first, axis), id).toBeLessThan(at(positions, id, axis));
     // The arrangement of a whole parent is the same one.
-    expect((await layout(flow, { ...parentArrangement(flow), direction })).nodes).toEqual(positions.nodes);
+    expect((await layout(flow, parentArrangement(flow, direction))).nodes).toEqual(positions.nodes);
 
-    // Left to itself the map library turns the main way around: Start stands behind activities, and so does its target.
+    // Left to itself the map library turns the main way around: Start stands behind activities, and End before some.
     // When this fails, the library places Start itself and the engine given to it here can go.
-    const alone = await layout(flow, { direction });
-    expect(alone.engine).toBe("elk");
-    expect(activities.some((id) => at(alone, id, axis) < at(alone, START_ID, axis))).toBe(true);
-    expect(activities.some((id) => at(alone, id, axis) > at(alone, END_ID, axis))).toBe(true);
+    const byLibrary = await alone(flow, direction);
+    expect(byLibrary.engine).toBe("elk");
+    expect(activities.some((id) => at(byLibrary, id, axis) < at(byLibrary, START_ID, axis))).toBe(true);
+    expect(activities.some((id) => at(byLibrary, id, axis) > at(byLibrary, END_ID, axis))).toBe(true);
   });
 
-  it.each(axes)("keeps the stages in their order and puts Start's target first in its stage (%s)", async (direction, axis, extent) => {
+  it.each(ways)("keeps the stages in their order and puts Start's target first in its stage (%s)", async (direction, axis, extent) => {
     const flow = toFlowGraph(looping(), 0, undefined, stages);
     expect(flow.nodes.find((node) => node.id === first)?.group).toBe(early);
     const activities = activitiesOf(flow);
     const inEarly = flow.nodes.filter((node) => node.group === early && node.id !== first).map((node) => node.id);
-    const positions = await layout(flow, { ...mapArrangement(flow), direction });
+    const positions = await layout(flow, mapArrangement(flow, direction));
     expect(positions.engine).toBe("elk");
     for (const id of activities) {
       expect(at(positions, START_ID, axis), id).toBeLessThan(at(positions, id, axis));
@@ -170,15 +199,15 @@ describe("a map arranged with Start first and End last", () => {
     for (const id of inEarly) expect(at(positions, first, axis), id).toBeLessThan(at(positions, id, axis));
 
     // Left to itself the map library puts the activities that lead back into it before Start's target.
-    const alone = await layout(flow, { direction });
-    expect(alone.engine).toBe("elk");
-    expect(inEarly.every((id) => at(alone, id, axis) < at(alone, first, axis))).toBe(true);
+    const byLibrary = await alone(flow, direction);
+    expect(byLibrary.engine).toBe("elk");
+    expect(inEarly.every((id) => at(byLibrary, id, axis) < at(byLibrary, first, axis))).toBe(true);
   });
 
   it("arranges a map without Start and End, and one whose stages are shown as nodes", async () => {
     const still: SuppliedGraph = { ...looping(), nodes: looping().nodes.map((node) => ({ ...node, metrics: { ...node.metrics, starts: 0, ends: 0 } })) };
     const bare = toFlowGraph(still);
-    const arranged = await layout(bare, mapArrangement(bare));
+    const arranged = await layout(bare, mapArrangement(bare, TOP_TO_BOTTOM));
     expect(arranged.engine).toBe("elk");
     expect(Object.keys(arranged.nodes).sort()).toEqual(activitiesOf(bare).sort());
 
@@ -186,21 +215,22 @@ describe("a map arranged with Start first and End last", () => {
     const asNodes = abstract(toFlowGraph(looping(), 0, undefined, stages), { collapse: "all", keepConnected: false });
     expect(asNodes.nodes.map((node) => node.kind)).toEqual(["event", "stage", "stage", "activity", "event"]);
     expect(firstActivity(asNodes)).toBe(early);
-    const positions = await layout(asNodes, mapArrangement(asNodes));
+    const positions = await layout(asNodes, mapArrangement(asNodes, TOP_TO_BOTTOM));
     expect(positions.engine).toBe("elk");
     const others = asNodes.nodes.map((node) => node.id).filter((id) => id !== START_ID && id !== END_ID);
     for (const id of others) {
-      expect(at(positions, START_ID, "x"), id).toBeLessThan(at(positions, id, "x"));
-      expect(at(positions, END_ID, "x"), id).toBeGreaterThan(at(positions, id, "x"));
-      if (id !== early) expect(at(positions, early, "x"), id).toBeLessThan(at(positions, id, "x"));
+      expect(at(positions, START_ID, "y"), id).toBeLessThan(at(positions, id, "y"));
+      expect(at(positions, END_ID, "y"), id).toBeGreaterThan(at(positions, id, "y"));
+      if (id !== early) expect(at(positions, early, "y"), id).toBeLessThan(at(positions, id, "y"));
     }
   });
 
-  it("is arranged by the library's fallback when ELK fails: every node has its place, in no promised column", async () => {
+  it.each(ways)("is arranged by the library's fallback when ELK fails: every node has its place, in no promised layer (%s)", async (direction) => {
     const flow = toFlowGraph(looping(), 0, undefined, stages);
     const failing = pinningElk(() => Promise.reject(new Error("The worker did not start.")));
-    const positions = await layout(flow, { ...mapArrangement(flow), elk: failing });
+    const positions = await layout(flow, { ...mapArrangement(flow, direction), elk: failing });
     expect(positions.engine).toBe("dagre");
+    expect(positions.direction).toBe(direction);
     expect(Object.keys(positions.nodes).sort()).toEqual(flow.nodes.map((node) => node.id).sort());
     expect(Object.keys(positions.groups).sort()).toEqual([early, late]);
   });
@@ -212,14 +242,17 @@ describe("a map arranged with Start first and End last", () => {
     const other = toFlowGraph(looping([0, 70, 0, 0, 0, 30]));
     expect(other.edges.map((edge) => [edge.id, edge.source, edge.target])).toEqual(one.edges.map((edge) => [edge.id, edge.source, edge.target]));
     const scope = createLayoutScope();
-    await scope.layout(one, { ...mapArrangement(one), elk: counting });
-    await scope.layout(one, { ...mapArrangement(one), elk: counting });
+    await scope.layout(one, { ...mapArrangement(one, TOP_TO_BOTTOM), elk: counting });
+    await scope.layout(one, { ...mapArrangement(one, TOP_TO_BOTTOM), elk: counting });
     expect(seen).toHaveLength(1);
-    await scope.layout(other, { ...mapArrangement(other), elk: counting });
+    await scope.layout(other, { ...mapArrangement(other, TOP_TO_BOTTOM), elk: counting });
     expect(seen).toHaveLength(2);
-    const columnOf = (graph: ElkNode, id: string) => graph.children!.find((node) => node.id === id)?.layoutOptions?.[COLUMN];
-    expect([columnOf(seen[0], idOf(5)), columnOf(seen[0], idOf(1))]).toEqual(["FIRST", undefined]);
-    expect([columnOf(seen[1], idOf(5)), columnOf(seen[1], idOf(1))]).toEqual([undefined, "FIRST"]);
+    const layerOf = (graph: ElkNode, id: string) => graph.children!.find((node) => node.id === id)?.layoutOptions?.[LAYER];
+    expect([layerOf(seen[0], idOf(5)), layerOf(seen[0], idOf(1))]).toEqual(["FIRST", undefined]);
+    expect([layerOf(seen[1], idOf(5)), layerOf(seen[1], idOf(1))]).toEqual([undefined, "FIRST"]);
+    // The map that runs the other way is another arrangement too.
+    await scope.layout(other, { ...mapArrangement(other, LEFT_TO_RIGHT), elk: counting });
+    expect(seen.map((graph) => graph.layoutOptions?.["elk.direction"])).toEqual(["DOWN", "DOWN", "RIGHT"]);
     scope.dispose();
   });
 });
