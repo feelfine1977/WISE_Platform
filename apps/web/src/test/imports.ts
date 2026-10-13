@@ -303,7 +303,7 @@ export function proposalAnswer(request: ConfirmMappingRequest, last: string | nu
     timestamp_kind: request.policies.time.id === "incident.time.wall_clock_as_recorded.v1" ? "wall_clock" : "utc_instant",
     last_usable_time: last,
     proposed_cutoff: proposed,
-  };
+  } as CutoffProposal;
 }
 
 /** The inspection of a packaged example as the local service answers it: comma, UTF-8, ISO times with their UTC mark. */

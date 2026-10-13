@@ -1,6 +1,7 @@
 """The cutoff proposed from the data: the latest usable time under the analyst's choices, nothing kept."""
 
 import pytest
+from wise_platform_api import imports
 from import_requests import GERMAN, german_confirmation, policies, wall_policies
 from test_import_operations import (  # noqa: F401 (fixtures)
     GERMAN_ID,
@@ -115,3 +116,19 @@ def test_a_workspace_not_opened_is_unavailable(client):
 
     refused(client.post(ROUTE, json=request), "confirm_mapping", "workspace_unavailable", "workspace_id", request)
 
+
+@pytest.mark.parametrize("written", ["2026-10-10T05:15:00+00:00", "2026-10-10T05:15:00.1234567Z", "2026-10-10T05:15:00"])
+def test_a_proposal_not_written_as_a_utc_instant_is_not_sent(client, workspace_id, monkeypatch, written):
+    monkeypatch.setattr(imports, "_full_minute_at_or_after", lambda text: written)
+    stored(client, workspace_id, GERMAN)
+    request = proposal_request(workspace_id, GERMAN_ID, policies(cutoff=LATEST_UTC, tolerant=True))
+
+    body = refused(client.post(ROUTE, json=request), "confirm_mapping", "computation_failed")
+
+    assert body["request_id"] == "proposal-4"
+
+
+def test_the_cutoff_proposal_is_the_generated_message():
+    from wise_platform_api.generated import imports as generated
+
+    assert imports.CutoffProposalAnswer is generated.CutoffProposalAnswer
