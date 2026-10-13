@@ -13,6 +13,7 @@ export type ScoringMessage =
   | ExpectationValidationAnswer
   | ScoreExpectationRequest
   | ScoreRunAnswer
+  | ReadScoreRunRequest
   | ScoreCaseWitnessRequest
   | ScoreCaseWitnessAnswer
   | ScoringRefusal;
@@ -396,6 +397,14 @@ export interface RawMeasurement2 {
   response_known: boolean;
   censor_age: number | null;
 }
+export interface ReadScoreRunRequest {
+  schema_version: 1;
+  message_type: "read_score_run_request";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  run_id: ScoreRunId;
+}
 export interface ScoreCaseWitnessRequest {
   schema_version: 1;
   message_type: "score_case_witness_request";
@@ -491,7 +500,7 @@ export interface ScoringRefusal1 {
   request_id: RequestId | null;
   query_revision: QueryRevision | null;
   workspace_id: WorkspaceId | null;
-  operation: "validate_expectation" | "score_expectation" | "score_case_witness";
+  operation: "validate_expectation" | "score_expectation" | "score_case_witness" | "read_score_run";
   code:
     | "invalid_request"
     | "unsupported_schema"

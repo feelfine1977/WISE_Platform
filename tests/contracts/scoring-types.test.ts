@@ -1,4 +1,4 @@
-import type { ValidateExpectationRequest, ScoreExpectationRequest, ScoreRun, RunIdentity } from '../../apps/web/src/generated/scoring';
+import type { ValidateExpectationRequest, ScoreExpectationRequest, ScoreRun, RunIdentity, ReadScoreRunRequest, ScoringRefusal } from '../../apps/web/src/generated/scoring';
 
 declare const validate: ValidateExpectationRequest;
 declare const score: ScoreExpectationRequest;
@@ -14,3 +14,13 @@ void sameRun;
 void arbitraryDraftScore;
 void unboundPopulation;
 void lastResolution;
+
+declare const read: ReadScoreRunRequest;
+// @ts-expect-error Reading an existing run cannot request fresh evaluation.
+const readWithDefinition: ReadScoreRunRequest = { ...read, definition: validate.definition };
+// @ts-expect-error A read cannot silently be a scoring request.
+const readAsScore: ScoreExpectationRequest = read;
+const readOperation: ScoringRefusal['operation'] = 'read_score_run';
+void readWithDefinition;
+void readAsScore;
+void readOperation;

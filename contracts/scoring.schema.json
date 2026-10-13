@@ -17,6 +17,9 @@
       "$ref": "#/$defs/ScoreRunAnswer"
     },
     {
+      "$ref": "#/$defs/ReadScoreRunRequest"
+    },
+    {
       "$ref": "#/$defs/ScoreCaseWitnessRequest"
     },
     {
@@ -2148,7 +2151,8 @@
           "enum": [
             "validate_expectation",
             "score_expectation",
-            "score_case_witness"
+            "score_case_witness",
+            "read_score_run"
           ]
         },
         "code": {
@@ -2267,6 +2271,41 @@
             }
           }
         }
+      ]
+    },
+    "ReadScoreRunRequest": {
+      "title": "ReadScoreRunRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "read_score_run_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "run_id": {
+          "$ref": "#/$defs/ScoreRunId"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "run_id"
       ]
     }
   }
