@@ -1,0 +1,761 @@
+{
+  "basis": "Literal handcomputed nine-case facts/memberships/bin counts; no production grouping oracle.",
+  "parent_case_ids": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I"
+  ],
+  "parent_case_count": 9,
+  "parent_record_count": 18,
+  "distribution_edges_hours": [
+    0,
+    1,
+    3,
+    6
+  ],
+  "parent_span_bins": [
+    3,
+    2,
+    3,
+    0
+  ],
+  "parent_gap_bins": [
+    1,
+    2,
+    3,
+    0
+  ],
+  "parent_order_unknown": [
+    "E"
+  ],
+  "parent_fewer2_gap_unknown": [
+    "F",
+    "I"
+  ],
+  "omitted_activity_rows": 2,
+  "case_facts": {
+    "A": {
+      "records": 3,
+      "span": 5,
+      "gap": 4,
+      "omitted_activity_records": 0
+    },
+    "B": {
+      "records": 2,
+      "span": 2,
+      "gap": 2,
+      "omitted_activity_records": 0
+    },
+    "C": {
+      "records": 3,
+      "span": 5,
+      "gap": 4,
+      "omitted_activity_records": 0
+    },
+    "D": {
+      "records": 2,
+      "span": 4,
+      "gap": 4,
+      "omitted_activity_records": 1
+    },
+    "E": {
+      "records": 2,
+      "span": null,
+      "gap": null,
+      "omitted_activity_records": 0
+    },
+    "F": {
+      "records": 1,
+      "span": 0,
+      "gap": null,
+      "omitted_activity_records": 1
+    },
+    "G": {
+      "records": 2,
+      "span": 0,
+      "gap": 0,
+      "omitted_activity_records": 0
+    },
+    "H": {
+      "records": 2,
+      "span": 2,
+      "gap": 2,
+      "omitted_activity_records": 0
+    },
+    "I": {
+      "records": 1,
+      "span": 0,
+      "gap": null,
+      "omitted_activity_records": 0
+    }
+  },
+  "groups": {
+    "first_raw_activity": [
+      {
+        "key": {
+          "kind": "activity",
+          "activity": "Start"
+        },
+        "ids": [
+          "A",
+          "B",
+          "C",
+          "H",
+          "I"
+        ],
+        "span_bins": [
+          1,
+          2,
+          2,
+          0
+        ],
+        "gap_bins": [
+          0,
+          2,
+          2,
+          0
+        ],
+        "gap_U_fewer2": 1,
+        "shortest": "I",
+        "longest": "A"
+      },
+      {
+        "key": {
+          "kind": "missing_activity",
+          "activity": null
+        },
+        "ids": [
+          "D",
+          "F"
+        ],
+        "span_bins": [
+          1,
+          0,
+          1,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "gap_U_fewer2": 1,
+        "shortest": "F",
+        "longest": "D"
+      },
+      {
+        "key": {
+          "kind": "activity",
+          "activity": "End"
+        },
+        "ids": [
+          "G"
+        ],
+        "span_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "gap_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "shortest": "G",
+        "longest": "G"
+      }
+    ],
+    "last_raw_activity": [
+      {
+        "key": {
+          "kind": "activity",
+          "activity": "End"
+        },
+        "ids": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "H"
+        ],
+        "span_bins": [
+          0,
+          2,
+          3,
+          0
+        ],
+        "gap_bins": [
+          0,
+          2,
+          3,
+          0
+        ],
+        "shortest": "B",
+        "longest": "A"
+      },
+      {
+        "key": {
+          "kind": "activity",
+          "activity": "Start"
+        },
+        "ids": [
+          "G",
+          "I"
+        ],
+        "span_bins": [
+          2,
+          0,
+          0,
+          0
+        ],
+        "gap_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "gap_U_fewer2": 1,
+        "shortest": "G",
+        "longest": "G"
+      },
+      {
+        "key": {
+          "kind": "missing_activity",
+          "activity": null
+        },
+        "ids": [
+          "F"
+        ],
+        "span_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "gap_U_fewer2": 1,
+        "shortest": "F",
+        "longest": "F"
+      }
+    ],
+    "raw_record_count_bands": [
+      {
+        "key": {
+          "kind": "raw_record_count_band",
+          "start_inclusive": 0,
+          "end_exclusive": 2
+        },
+        "ids": [
+          "F",
+          "I"
+        ],
+        "span_bins": [
+          2,
+          0,
+          0,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "gap_U_fewer2": 2,
+        "shortest": "F",
+        "longest": "F"
+      },
+      {
+        "key": {
+          "kind": "raw_record_count_band",
+          "start_inclusive": 2,
+          "end_exclusive": 3
+        },
+        "ids": [
+          "B",
+          "D",
+          "E",
+          "G",
+          "H"
+        ],
+        "span_bins": [
+          1,
+          2,
+          1,
+          0
+        ],
+        "gap_bins": [
+          1,
+          2,
+          1,
+          0
+        ],
+        "order_U": 1,
+        "shortest": "G",
+        "longest": "D"
+      },
+      {
+        "key": {
+          "kind": "raw_record_count_band",
+          "start_inclusive": 3,
+          "end_exclusive": null
+        },
+        "ids": [
+          "A",
+          "C"
+        ],
+        "span_bins": [
+          0,
+          0,
+          2,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          2,
+          0
+        ],
+        "shortest": "A",
+        "longest": "A"
+      }
+    ],
+    "activity_presence": [
+      {
+        "key": {
+          "kind": "activity_presence",
+          "activity": "Review",
+          "present": false
+        },
+        "ids": [
+          "B",
+          "D",
+          "F",
+          "G",
+          "H",
+          "I"
+        ],
+        "span_bins": [
+          3,
+          2,
+          1,
+          0
+        ],
+        "gap_bins": [
+          1,
+          2,
+          1,
+          0
+        ],
+        "gap_U_fewer2": 2,
+        "shortest": "F",
+        "longest": "D"
+      },
+      {
+        "key": {
+          "kind": "activity_presence",
+          "activity": "Review",
+          "present": true
+        },
+        "ids": [
+          "A",
+          "C",
+          "E"
+        ],
+        "span_bins": [
+          0,
+          0,
+          2,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          2,
+          0
+        ],
+        "order_U": 1,
+        "shortest": "A",
+        "longest": "A"
+      }
+    ],
+    "shared_reference": [
+      {
+        "key": {
+          "kind": "reference_value",
+          "column_index": 4,
+          "value": "R1"
+        },
+        "ids": [
+          "A",
+          "B",
+          "E"
+        ],
+        "span_bins": [
+          0,
+          1,
+          1,
+          0
+        ],
+        "gap_bins": [
+          0,
+          1,
+          1,
+          0
+        ],
+        "order_U": 1,
+        "shortest": "B",
+        "longest": "A"
+      },
+      {
+        "key": {
+          "kind": "reference_value",
+          "column_index": 4,
+          "value": "R2"
+        },
+        "ids": [
+          "A",
+          "C",
+          "G"
+        ],
+        "span_bins": [
+          1,
+          0,
+          2,
+          0
+        ],
+        "gap_bins": [
+          1,
+          0,
+          2,
+          0
+        ],
+        "shortest": "G",
+        "longest": "A"
+      },
+      {
+        "key": {
+          "kind": "missing_reference",
+          "column_index": 4,
+          "value": null
+        },
+        "ids": [
+          "B",
+          "D",
+          "H"
+        ],
+        "span_bins": [
+          0,
+          2,
+          1,
+          0
+        ],
+        "gap_bins": [
+          0,
+          2,
+          1,
+          0
+        ],
+        "shortest": "B",
+        "longest": "D"
+      },
+      {
+        "key": {
+          "kind": "reference_value",
+          "column_index": 4,
+          "value": "R3"
+        },
+        "ids": [
+          "D",
+          "E"
+        ],
+        "span_bins": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "order_U": 1,
+        "shortest": "D",
+        "longest": "D"
+      },
+      {
+        "key": {
+          "kind": "reference_value",
+          "column_index": 4,
+          "value": "Unknown"
+        },
+        "ids": [
+          "F",
+          "G"
+        ],
+        "span_bins": [
+          2,
+          0,
+          0,
+          0
+        ],
+        "gap_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "gap_U_fewer2": 1,
+        "shortest": "F",
+        "longest": "F"
+      }
+    ],
+    "exact_mapped_sequence": [
+      {
+        "key": {
+          "kind": "exact_sequence",
+          "activities": [
+            "Start",
+            "End"
+          ],
+          "variant_id": "variant.v1:sha256:5311f6bce87fbad528c8867eb547a8819a6f2e63e3ee3eff8686461c6cfb272c"
+        },
+        "ids": [
+          "B",
+          "H"
+        ],
+        "span_bins": [
+          0,
+          2,
+          0,
+          0
+        ],
+        "gap_bins": [
+          0,
+          2,
+          0,
+          0
+        ],
+        "shortest": "B",
+        "longest": "B"
+      },
+      {
+        "key": {
+          "kind": "exact_sequence",
+          "activities": [
+            "Start",
+            "Review",
+            "End"
+          ],
+          "variant_id": "variant.v1:sha256:6c2424ace7f62b2982772e4a8d06863f67b2e1062be2b360da125ac92efaef9d"
+        },
+        "ids": [
+          "A",
+          "C"
+        ],
+        "span_bins": [
+          0,
+          0,
+          2,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          2,
+          0
+        ],
+        "shortest": "A",
+        "longest": "A"
+      },
+      {
+        "key": {
+          "kind": "exact_sequence",
+          "activities": [],
+          "variant_id": "variant.v1:sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "ids": [
+          "F"
+        ],
+        "span_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "gap_U_fewer2": 1,
+        "shortest": "F",
+        "longest": "F"
+      },
+      {
+        "key": {
+          "kind": "exact_sequence",
+          "activities": [
+            "End"
+          ],
+          "variant_id": "variant.v1:sha256:a9ef1bd382bdbeada12e4b22b816c7d27a13daf55e79950f4ca9bba125081ce1"
+        },
+        "ids": [
+          "D"
+        ],
+        "span_bins": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "shortest": "D",
+        "longest": "D"
+      },
+      {
+        "key": {
+          "kind": "exact_sequence",
+          "activities": [
+            "End",
+            "Start"
+          ],
+          "variant_id": "variant.v1:sha256:7993d0ab9d29b80ad3c40c1741e080d6bb63355741b348f627b890f096f5dac9"
+        },
+        "ids": [
+          "G"
+        ],
+        "span_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "gap_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "shortest": "G",
+        "longest": "G"
+      },
+      {
+        "key": {
+          "kind": "exact_sequence",
+          "activities": [
+            "Start"
+          ],
+          "variant_id": "variant.v1:sha256:d83a956bb783f3c9f236507af2b82b50d14c70c9718f49138f6e647e85709e72"
+        },
+        "ids": [
+          "I"
+        ],
+        "span_bins": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "gap_bins": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "gap_U_fewer2": 1,
+        "shortest": "I",
+        "longest": "I"
+      }
+    ]
+  },
+  "rules": {
+    "raw_record_count_bands": {
+      "kind": "raw_record_count_bands",
+      "edges": [
+        0,
+        2,
+        3
+      ]
+    },
+    "activity_presence": {
+      "kind": "activity_presence",
+      "activity": "Review"
+    },
+    "shared_reference": {
+      "kind": "shared_reference",
+      "column_index": 4,
+      "minimum_parent_case_count": 2
+    }
+  },
+  "shared_reference_facts": {
+    "distinct_nonmissing_values": 6,
+    "suppressed_nonmissing_values": [
+      "R4",
+      "R5"
+    ],
+    "missing_raw_records": 3,
+    "assigned_unique_case_ids": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+    ],
+    "unassigned_case_ids": [
+      "I"
+    ],
+    "membership_incidence_case_count": 13,
+    "membership_incidence_record_count": 28
+  },
+  "named_population_case_ids": [
+    "A",
+    "D",
+    "E",
+    "F"
+  ],
+  "named_population_record_count": 8,
+  "narrowed_parent_case_ids": [
+    "A",
+    "D",
+    "E",
+    "F"
+  ],
+  "narrowed_parent_span_bins": [
+    1,
+    0,
+    2,
+    0
+  ],
+  "narrowed_parent_gap_bins": [
+    0,
+    0,
+    2,
+    0
+  ]
+}

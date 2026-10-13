@@ -75,28 +75,44 @@ def _row(prepared, case_id: str, summary: dict) -> dict:
             "time_summary": summary, "maximum_gap_context": gap_context}
 
 
-def _distribution(summaries: Mapping[str, dict], parent: tuple[str, ...], kept: tuple[str, ...], chosen: Mapping[str, object], kind: str) -> dict:
+def _distribution_support(summaries: Mapping[str, dict], members: tuple[str, ...], measure: str, edges: list) -> tuple[list[int], dict]:
+    counts = [0] * len(edges)
+    unavailable = {suffix: 0 for suffix in ("case_count", "order_unknown_case_count", "fewer_than_two_records_case_count")}
+    for case_id in members:
+        summary = summaries[case_id]
+        value = summary[measure]
+        if value is None:
+            reason = summary["observed_span_unavailable_reason" if measure == "observed_span_hours" else "maximum_adjacent_raw_gap_unavailable_reason"]
+            unavailable["case_count"] += 1
+            unavailable[reason + "_case_count"] += 1
+        else:
+            counts[bisect_right(edges, value) - 1] += 1
+    return counts, unavailable
+
+
+def case_distribution_baseline(summaries: Mapping[str, dict], parent: tuple[str, ...], chosen: Mapping[str, object], kind: str) -> dict:
+    """Reduce the whole parent once for reuse with independently kept groups."""
     measure, edges = chosen["measure"], list(chosen["edges_hours"])
-    bins = [{"start_inclusive_hours": edge, "end_exclusive_hours": edges[index + 1] if index + 1 < len(edges) else None,
-             "parent_case_count": 0, "kept_case_count": 0} for index, edge in enumerate(edges)]
-    unavailable = {prefix + suffix: 0 for prefix in ("parent_", "kept_") for suffix in (
-        "case_count", "order_unknown_case_count", "fewer_than_two_records_case_count")}
-    available = {}
-    for prefix, members in (("parent", parent), ("kept", kept)):
-        qualified = 0
-        for case_id in members:
-            summary = summaries[case_id]
-            value = summary[measure]
-            if value is None:
-                reason = summary["observed_span_unavailable_reason" if measure == "observed_span_hours" else "maximum_adjacent_raw_gap_unavailable_reason"]
-                unavailable[prefix + "_case_count"] += 1
-                unavailable[prefix + "_" + reason + "_case_count"] += 1
-            else:
-                bins[bisect_right(edges, value) - 1][prefix + "_case_count"] += 1
-                qualified += 1
-        available[prefix + "_available_case_count"] = qualified
+    counts, unavailable = _distribution_support(summaries, parent, measure, edges)
     return {"policy_id": DISTRIBUTION_POLICY, "measure": measure, "timestamp_kind": kind, "edges_hours": edges,
-            "parent_case_count": len(parent), "kept_case_count": len(kept), **available, "bins": bins, "unavailable": unavailable}
+            "parent_case_count": len(parent), "parent_available_case_count": len(parent) - unavailable["case_count"],
+            "bins": [{"start_inclusive_hours": edge, "end_exclusive_hours": edges[index + 1] if index + 1 < len(edges) else None,
+                      "parent_case_count": counts[index]} for index, edge in enumerate(edges)],
+            "unavailable": {"parent_" + name: count for name, count in unavailable.items()}}
+
+
+def case_distribution_for_kept(summaries: Mapping[str, dict], kept: tuple[str, ...], baseline: Mapping[str, object]) -> dict:
+    """Add kept support without rescanning or modifying the parent baseline."""
+    edges = list(baseline["edges_hours"])
+    counts, unavailable = _distribution_support(summaries, kept, baseline["measure"], edges)
+    return {**baseline, "edges_hours": edges, "kept_case_count": len(kept),
+            "kept_available_case_count": len(kept) - unavailable["case_count"],
+            "bins": [{**item, "kept_case_count": counts[index]} for index, item in enumerate(baseline["bins"])],
+            "unavailable": {**baseline["unavailable"], **{"kept_" + name: count for name, count in unavailable.items()}}}
+
+
+def _distribution(summaries: Mapping[str, dict], parent: tuple[str, ...], kept: tuple[str, ...], chosen: Mapping[str, object], kind: str) -> dict:
+    return case_distribution_for_kept(summaries, kept, case_distribution_baseline(summaries, parent, chosen, kind))
 
 
 def _parent_time_range(prepared, parent: tuple[str, ...], kind: str) -> dict | None:

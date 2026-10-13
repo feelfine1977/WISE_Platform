@@ -1,0 +1,1659 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/rule-groups.v1.schema.json",
+  "title": "RuleGroupsMessage",
+  "description": "stated-rule catalogue over an immutable fixed parent; no fitted clusters, completion or causality.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/RuleGroupsRequest"
+    },
+    {
+      "$ref": "#/$defs/RuleGroupsAnswer"
+    },
+    {
+      "$ref": "#/$defs/RuleGroupsRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "CaseDistribution": {
+      "title": "CaseDistribution",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.case_distribution.explicit_hours_half_open.v1"
+        },
+        "measure": {
+          "type": "string",
+          "enum": [
+            "observed_span_hours",
+            "maximum_adjacent_raw_gap_hours"
+          ]
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "edges_hours": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "parent_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kept_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "parent_available_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kept_available_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "bins": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/DistributionBin"
+          }
+        },
+        "unavailable": {
+          "$ref": "#/$defs/UnavailableDistributionSupport"
+        }
+      },
+      "required": [
+        "policy_id",
+        "measure",
+        "timestamp_kind",
+        "edges_hours",
+        "parent_case_count",
+        "kept_case_count",
+        "parent_available_case_count",
+        "kept_available_case_count",
+        "bins",
+        "unavailable"
+      ]
+    },
+    "DistributionBin": {
+      "title": "DistributionBin",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "start_inclusive_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end_exclusive_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kept_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "start_inclusive_hours",
+        "end_exclusive_hours",
+        "parent_case_count",
+        "kept_case_count"
+      ]
+    },
+    "UnavailableDistributionSupport": {
+      "title": "UnavailableDistributionSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parent_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kept_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "parent_order_unknown_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kept_order_unknown_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "parent_fewer_than_two_records_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kept_fewer_than_two_records_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "parent_case_count",
+        "kept_case_count",
+        "parent_order_unknown_case_count",
+        "kept_order_unknown_case_count",
+        "parent_fewer_than_two_records_case_count",
+        "kept_fewer_than_two_records_case_count"
+      ]
+    },
+    "FirstRawActivityRule": {
+      "title": "FirstRawActivityRule",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "first_raw_activity"
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "LastRawActivityRule": {
+      "title": "LastRawActivityRule",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "last_raw_activity"
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "ExactMappedSequenceRule": {
+      "title": "ExactMappedSequenceRule",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "exact_mapped_sequence"
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "RawRecordCountBandsRule": {
+      "title": "RawRecordCountBandsRule",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "raw_record_count_bands"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "kind",
+        "edges"
+      ]
+    },
+    "ActivityPresenceRule": {
+      "title": "ActivityPresenceRule",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "activity_presence"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "kind",
+        "activity"
+      ]
+    },
+    "SharedReferenceRule": {
+      "title": "SharedReferenceRule",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "shared_reference"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "minimum_parent_case_count": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "minimum_parent_case_count"
+      ]
+    },
+    "GroupRule": {
+      "title": "GroupRule",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/FirstRawActivityRule"
+        },
+        {
+          "$ref": "#/$defs/LastRawActivityRule"
+        },
+        {
+          "$ref": "#/$defs/RawRecordCountBandsRule"
+        },
+        {
+          "$ref": "#/$defs/ActivityPresenceRule"
+        },
+        {
+          "$ref": "#/$defs/SharedReferenceRule"
+        },
+        {
+          "$ref": "#/$defs/ExactMappedSequenceRule"
+        }
+      ]
+    },
+    "RuleGroupsQuery": {
+      "title": "RuleGroupsQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rule": {
+          "$ref": "#/$defs/GroupRule"
+        },
+        "distribution_edges_hours": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": [
+        "rule",
+        "distribution_edges_hours",
+        "offset",
+        "limit"
+      ]
+    },
+    "CountSupport": {
+      "title": "CountSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "omitted_activity_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "case_count",
+        "record_count",
+        "omitted_activity_record_count"
+      ]
+    },
+    "FixedCaseSupport": {
+      "title": "FixedCaseSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "omitted_activity_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count",
+        "omitted_activity_record_count"
+      ]
+    },
+    "RuleGroupSupport": {
+      "title": "RuleGroupSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cases": {
+          "$ref": "#/$defs/FixedCaseSupport"
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "denominator": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "cases",
+        "share",
+        "denominator"
+      ]
+    },
+    "ParentRuleGroupSupport": {
+      "title": "ParentRuleGroupSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cases": {
+          "$ref": "#/$defs/CountSupport"
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "denominator": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "cases",
+        "share",
+        "denominator"
+      ]
+    },
+    "RuleEligibility": {
+      "title": "RuleEligibility",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total": {
+          "$ref": "#/$defs/CountSupport"
+        },
+        "eligible": {
+          "$ref": "#/$defs/CountSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/FixedCaseSupport"
+        },
+        "assigned": {
+          "$ref": "#/$defs/CountSupport"
+        },
+        "unassigned": {
+          "$ref": "#/$defs/FixedCaseSupport"
+        },
+        "membership_incidence": {
+          "$ref": "#/$defs/CountSupport"
+        }
+      },
+      "required": [
+        "total",
+        "eligible",
+        "unevaluable",
+        "assigned",
+        "unassigned",
+        "membership_incidence"
+      ]
+    },
+    "ActivityValueKey": {
+      "title": "ActivityValueKey",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "activity"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "kind",
+        "activity"
+      ]
+    },
+    "MissingActivityKey": {
+      "title": "MissingActivityKey",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "missing_activity"
+        },
+        "activity": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "kind",
+        "activity"
+      ]
+    },
+    "ActivityGroupKey": {
+      "title": "ActivityGroupKey",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ActivityValueKey"
+        },
+        {
+          "$ref": "#/$defs/MissingActivityKey"
+        }
+      ]
+    },
+    "RecordCountBandKey": {
+      "title": "RecordCountBandKey",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "raw_record_count_band"
+        },
+        "start_inclusive": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "end_exclusive": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "start_inclusive",
+        "end_exclusive"
+      ]
+    },
+    "ActivityPresenceKey": {
+      "title": "ActivityPresenceKey",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "activity_presence"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "present": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "activity",
+        "present"
+      ]
+    },
+    "ReferenceValueKey": {
+      "title": "ReferenceValueKey",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "reference_value"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "value"
+      ]
+    },
+    "MissingReferenceKey": {
+      "title": "MissingReferenceKey",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "missing_reference"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "value": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "value"
+      ]
+    },
+    "ReferenceGroupKey": {
+      "title": "ReferenceGroupKey",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ReferenceValueKey"
+        },
+        {
+          "$ref": "#/$defs/MissingReferenceKey"
+        }
+      ]
+    },
+    "ExactSequenceKey": {
+      "title": "ExactSequenceKey",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "exact_sequence"
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "variant_id": {
+          "type": "string",
+          "pattern": "^variant\\.v1:sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "kind",
+        "activities",
+        "variant_id"
+      ]
+    },
+    "RuleGroupKey": {
+      "title": "RuleGroupKey",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ActivityGroupKey"
+        },
+        {
+          "$ref": "#/$defs/RecordCountBandKey"
+        },
+        {
+          "$ref": "#/$defs/ActivityPresenceKey"
+        },
+        {
+          "$ref": "#/$defs/ReferenceGroupKey"
+        },
+        {
+          "$ref": "#/$defs/ExactSequenceKey"
+        }
+      ]
+    },
+    "RuleGroupId": {
+      "title": "RuleGroupId",
+      "type": "string",
+      "pattern": "^rule-group\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseExemplar": {
+      "title": "CaseExemplar",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "observed_span_hours": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "case_id",
+        "record_count",
+        "observed_span_hours"
+      ]
+    },
+    "AvailableGroupExemplars": {
+      "title": "AvailableGroupExemplars",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "available"
+        },
+        "shortest": {
+          "$ref": "#/$defs/CaseExemplar"
+        },
+        "longest": {
+          "$ref": "#/$defs/CaseExemplar"
+        }
+      },
+      "required": [
+        "status",
+        "shortest",
+        "longest"
+      ]
+    },
+    "UnavailableGroupExemplars": {
+      "title": "UnavailableGroupExemplars",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "empty_current_group",
+            "no_evaluable_case"
+          ]
+        },
+        "shortest": {
+          "type": "null"
+        },
+        "longest": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "shortest",
+        "longest"
+      ]
+    },
+    "GroupExemplars": {
+      "title": "GroupExemplars",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AvailableGroupExemplars"
+        },
+        {
+          "$ref": "#/$defs/UnavailableGroupExemplars"
+        }
+      ]
+    },
+    "RuleGroup": {
+      "title": "RuleGroup",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/RuleGroupId"
+        },
+        "key": {
+          "$ref": "#/$defs/RuleGroupKey"
+        },
+        "population": {
+          "$ref": "#/$defs/RuleGroupSupport"
+        },
+        "parent": {
+          "$ref": "#/$defs/ParentRuleGroupSupport"
+        },
+        "span_distribution": {
+          "$ref": "#/$defs/CaseDistribution"
+        },
+        "gap_distribution": {
+          "$ref": "#/$defs/CaseDistribution"
+        },
+        "exemplars": {
+          "$ref": "#/$defs/GroupExemplars"
+        }
+      },
+      "required": [
+        "id",
+        "key",
+        "population",
+        "parent",
+        "span_distribution",
+        "gap_distribution",
+        "exemplars"
+      ]
+    },
+    "SharedReferenceCoverage": {
+      "title": "SharedReferenceCoverage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "parent_distinct_nonmissing_value_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "parent_suppressed_nonmissing_value_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "parent_missing_reference_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "population_missing_reference_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "column_index",
+        "parent_distinct_nonmissing_value_count",
+        "parent_suppressed_nonmissing_value_count",
+        "parent_missing_reference_record_count",
+        "population_missing_reference_record_count"
+      ]
+    },
+    "RuleGroupsRequest": {
+      "title": "RuleGroupsRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "rule_groups_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/RuleGroupsQuery"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "query"
+      ]
+    },
+    "RuleGroupsAnswer": {
+      "title": "RuleGroupsAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "rule_groups_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/RuleGroupsQuery"
+        },
+        "rule_policy_id": {
+          "type": "string",
+          "const": "incident.rule_groups.stated_rules.v1"
+        },
+        "activity_projection_policy": {
+          "type": "string",
+          "const": "incident.activity.omit_missing_retain_raw_gaps.v1"
+        },
+        "catalogue_scope": {
+          "type": "string",
+          "const": "frozen_parent"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "group_membership_overlaps": {
+          "type": "boolean"
+        },
+        "population_coverage": {
+          "$ref": "#/$defs/RuleEligibility"
+        },
+        "parent_coverage": {
+          "$ref": "#/$defs/RuleEligibility"
+        },
+        "shared_reference_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SharedReferenceCoverage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "group_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RuleGroup"
+          },
+          "maxItems": 50
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "parent_identity",
+        "query",
+        "rule_policy_id",
+        "activity_projection_policy",
+        "catalogue_scope",
+        "timestamp_kind",
+        "group_membership_overlaps",
+        "population_coverage",
+        "parent_coverage",
+        "shared_reference_coverage",
+        "group_count",
+        "next_offset",
+        "groups"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "object",
+                "properties": {
+                  "rule": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "first_raw_activity",
+                          "last_raw_activity"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "$ref": "#/$defs/ActivityGroupKey"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "object",
+                "properties": {
+                  "rule": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "raw_record_count_bands"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "$ref": "#/$defs/RecordCountBandKey"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "object",
+                "properties": {
+                  "rule": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "activity_presence"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "$ref": "#/$defs/ActivityPresenceKey"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "object",
+                "properties": {
+                  "rule": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "shared_reference"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "$ref": "#/$defs/ReferenceGroupKey"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "object",
+                "properties": {
+                  "rule": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "exact_mapped_sequence"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "$ref": "#/$defs/ExactSequenceKey"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "object",
+                "properties": {
+                  "rule": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "shared_reference"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "group_membership_overlaps": {
+                "type": "boolean",
+                "const": true
+              },
+              "shared_reference_coverage": {
+                "$ref": "#/$defs/SharedReferenceCoverage"
+              }
+            }
+          },
+          "else": {
+            "type": "object",
+            "properties": {
+              "group_membership_overlaps": {
+                "type": "boolean",
+                "const": false
+              },
+              "shared_reference_coverage": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "groups": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "span_distribution": {
+                    "type": "object",
+                    "properties": {
+                      "measure": {
+                        "type": "string",
+                        "const": "observed_span_hours"
+                      }
+                    }
+                  },
+                  "gap_distribution": {
+                    "type": "object",
+                    "properties": {
+                      "measure": {
+                        "type": "string",
+                        "const": "maximum_adjacent_raw_gap_hours"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "timestamp_kind": {
+                "type": "string",
+                "const": "utc_instant"
+              }
+            },
+            "required": [
+              "timestamp_kind"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "span_distribution": {
+                      "type": "object",
+                      "properties": {
+                        "timestamp_kind": {
+                          "type": "string",
+                          "const": "utc_instant"
+                        }
+                      }
+                    },
+                    "gap_distribution": {
+                      "type": "object",
+                      "properties": {
+                        "timestamp_kind": {
+                          "type": "string",
+                          "const": "utc_instant"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "timestamp_kind": {
+                "type": "string",
+                "const": "wall_clock"
+              }
+            },
+            "required": [
+              "timestamp_kind"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "span_distribution": {
+                      "type": "object",
+                      "properties": {
+                        "timestamp_kind": {
+                          "type": "string",
+                          "const": "wall_clock"
+                        }
+                      }
+                    },
+                    "gap_distribution": {
+                      "type": "object",
+                      "properties": {
+                        "timestamp_kind": {
+                          "type": "string",
+                          "const": "wall_clock"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "RuleGroupsRefusal": {
+      "title": "RuleGroupsRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "rule_groups_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "rule_groups"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_parent",
+            "unknown_case",
+            "inconsistent_sequence",
+            "inconsistent_time_kind",
+            "computation_failed",
+            "unmapped_context_column"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}
