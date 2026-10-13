@@ -16,6 +16,7 @@ import { type StagedReading, useStages } from "../stages/store";
 import { CANVAS_FROM, mapDetail, WHOLE_DETAIL } from "./detail";
 import { DetailStrip } from "./DetailStrip";
 import { elementOf, selectedElement, stepChoices } from "./elements";
+import { fitToFrame } from "./FitToFrame";
 import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { activityTimeLines, boundaryLine, coverageRows, flowsLine, mapCaption } from "./wording";
@@ -250,7 +251,10 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
               onSelect={setSelection}
               onContextMenu={menu}
               ariaLabel="Process map of the kept incidents"
-            />
+            >
+              {/* Fitted after each arrangement by the library, and here again when the frame changes its size. */}
+              {fitToFrame}
+            </ProcessMap>
           )}
         </div>
       </div>
