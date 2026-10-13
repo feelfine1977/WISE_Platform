@@ -515,11 +515,6 @@
 /* In the row of the steps the heading names the row and is a label: it is not the title of a pane. */
 .workbench .selection-head .pane-title { color: var(--color-ink-muted); font-size: var(--font-size-label); font-weight: var(--font-weight-label); }
 .workbench .rail-toggle[aria-expanded="true"]:hover { background: var(--color-hover); }
-/* The view switch names the map, and while nothing is selected one line says what a selection offers: both headings stay for assistive technology. */
-.explorer .map-pane > .pane-title,
-.explorer .map-view[data-element="none"] .map-element > .pane-title {
-.workbench .rail-toggle[aria-expanded="true"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
-.explorer .map-pane { padding: var(--space-3) var(--space-4); }
 /* The view switch names the map: the heading stays for assistive technology. */
 .explorer .map-pane > .pane-title {
   position: absolute;

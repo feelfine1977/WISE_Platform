@@ -238,6 +238,8 @@ describe("contrast of the tokens", () => {
         expect(contrast(colourOf(line), painted(ground)), `${line} on ${ground}`).toBeGreaterThanOrEqual(3);
       }
     }
+  });
+
   it("keeps the mark on an icon button at least 3:1 against the button, at rest, under the pointer and while its panel is open", () => {
     const buttons: Record<string, string[]> = { "at rest": ["--color-surface"], "under the pointer": ["--color-hover"], "with its panel open": ["--color-accent-tint", "--color-surface"] };
     for (const [name, layers] of Object.entries(buttons)) {
