@@ -76,6 +76,11 @@ const initialState: SavingState = { list: { phase: "idle" }, reopen: { phase: "i
 
 const unreachable: SavingOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
 
+/** The revision of the population shown, or 0 while none is shown. */
+function populationRevision(state: ImportedInvestigationState): number {
+  return state.population.phase === "ready" ? state.population.revision : 0;
+}
+
 /** Whether two identities name the same source, reading, representation, dictionary, population and version. */
 function sameIdentity(one: object, other: object): boolean {
   const left = one as Record<string, unknown>;
@@ -242,14 +247,24 @@ export class SavingCoordinator {
    * question is still being opened, or if opening it fails, what the views show stays as it is.
    * A later reopening, or stopping, cancels the wait.
    */
-  private restoreWhenAccepted(workspaceId: WorkspaceId, revision: ReopenInvestigationAnswer["revision"]): void {
+  private restoreWhenAccepted(
+    workspaceId: WorkspaceId,
+    revision: ReopenInvestigationAnswer["revision"],
+    shownBefore: number,
+  ): void {
     this.forgetAwaited();
     const { content } = revision;
     const accepted = (): boolean => {
-      const { population, saved } = this.investigation.getState();
+      const state = this.investigation.getState();
+      const { population, saved } = state;
+      // The question shown before the reopening can already be this saved revision on this reading.
+      // It is not the reopened one: that is a population answered later, with no other question
+      // still opening or failed in its place.
       return (
+        state.replacement === null &&
         saved?.revisionId === revision.saved_revision_id &&
         population.phase === "ready" &&
+        population.revision > shownBefore &&
         population.answer.workspace_id === workspaceId &&
         sameIdentity(population.answer.identity, content.base_identity)
       );
@@ -333,6 +348,8 @@ export class SavingCoordinator {
     }
     const { revision, restored_selection, recovery } = checked.answer;
     const { content } = revision;
+    // The population shown before this reopening: only a later one can be the reopened question.
+    const shownBefore = populationRevision(this.investigation.getState());
     this.investigation.restore({
       target: { workspaceId: request.workspace_id, preparationId: content.base_identity.preparation_id },
       steps: content.selection_recipe.predicates,
@@ -341,7 +358,7 @@ export class SavingCoordinator {
       binding: { investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content },
       view: recovery.presentation_state?.active_view === "process_map" ? "map" : "incidents",
     });
-    this.restoreWhenAccepted(request.workspace_id, revision);
+    this.restoreWhenAccepted(request.workspace_id, revision, shownBefore);
     this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" } });
     return true;
   }
