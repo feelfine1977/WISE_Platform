@@ -10,7 +10,7 @@ import { scriptedSavingClient, savedSummary, reopenAnswer } from "../test/saving
 import { scriptedScoringClient, scoringPopulationAnswer, scoringSelectionAnswer, scoringGraphAnswer, readyAnswer, runAnswer } from "../test/scoring";
 import { definitionOf, emptyForm } from "../expectation/definition";
 
-it("retains an unsaved score when reopening the exact already-bound unscored revision fails", async()=>{
+it.each(["stay", "retry"] as const)("retains an unsaved score on same-bound failure, then handles %s", async(action)=>{
  const imports=scriptedImportClient(), selecting=scriptedSelectionClient(), scoring=scriptedScoringClient(), saved=scriptedSavingClient();
  const investigation=new ImportedInvestigationCoordinator(imports.client,selecting.client,scriptedViewClient().client);
  const expectations=new ExpectationCoordinator(scoring.client,investigation);expectations.start();
@@ -50,6 +50,21 @@ it("retains an unsaved score when reopening the exact already-bound unscored rev
  expect(shownRun(expectations.getState().run)).toEqual(original.run);
  expect(expectations.savedReference()).toEqual(before);
  expect(expectations.getState().form).toEqual(form);
+ if(action==="stay") {
+  investigation.stay();await tick();
+  expect(investigation.getState().replacement).toBeNull();
+  expect(shownRun(expectations.getState().run)).toEqual(original.run);
+  expect(expectations.savedReference()).toEqual(before);
+ } else {
+  investigation.retryPopulation();
+  expect(investigation.getState().replacement?.phase).toBe("running");
+  expect(shownRun(expectations.getState().run)).toEqual(original.run);
+  const retry=imports.populations[2];
+  retry.reply({ok:true,answer:scoringPopulationAnswer(retry.request)});await tick();
+  expect(investigation.getState().replacement).toBeNull();
+  expect(shownRun(expectations.getState().run)).toBeNull();
+  expect(expectations.savedReference()).toBeNull();
+ }
  expect([scoring.validations.length,scoring.scores.length]).toEqual([1,1]);
  expectations.stop();saving.stop();investigation.stop();
 });
