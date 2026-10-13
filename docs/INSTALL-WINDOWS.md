@@ -21,52 +21,52 @@ The bundle is a candidate build, not a release. `manifest.json` in the folder na
 1. Sign in to GitHub in the browser and open the repository.
 2. Open **Actions**, then the latest successful run of **Foundation checks** for the branch you were given.
 3. At the bottom of the run's page, under **Artifacts**, download `wise-platform-windows-x64-cp313-…`. It arrives as a ZIP file.
-4. Unpack it to a folder you may write to, for example `C:\wise\bundle`. Use a short path without special characters.
+4. Unpack it into a folder of your own user profile, so that no special rights are needed. This guide uses `%LOCALAPPDATA%\WISE\bundle`; `%LOCALAPPDATA%` is a folder inside your own user profile that you may always write to; typing it into the address bar of the file explorer opens it. After unpacking, `%LOCALAPPDATA%\WISE\bundle\install-runtime.lock` must exist.
 
-All commands below are typed in the **Command Prompt** (`cmd`), started in that folder:
+All commands below are typed in the **Command Prompt** (`cmd`), started in that folder. The quotation marks matter, because the path of a user profile can contain spaces:
 
 ```bat
-cd /d C:\wise\bundle
+cd /d "%LOCALAPPDATA%\WISE\bundle"
 ```
 
 ## 2. Python 3.13
 
-If Python 3.13 for 64 bit is already on the machine, check it and go to step 3:
+Install the Python that comes with the bundle, for your user only and without changing the system's settings. It needs no administrator rights:
 
 ```bat
-py -3.13 -c "import platform, struct; print(platform.python_version(), struct.calcsize('P') * 8)"
+start /wait "" "runtime\python-3.13.16-amd64.exe" /quiet /norestart /log installer.log InstallAllUsers=0 Include_launcher=0 PrependPath=0 AssociateFiles=0 Shortcuts=0 Include_test=0 Include_doc=0 Include_tcltk=0 TargetDir="%LOCALAPPDATA%\WISE\python313"
 ```
 
-The answer must begin with `3.13` and end with `64`. The bundle was checked with 3.13.16.
-
-Otherwise install the Python that comes with the bundle, for your user only and without changing the system's settings:
+The line returns when the installer has finished, after about a minute, and shows no window. Then this prints `3.13.16`:
 
 ```bat
-runtime\python-3.13.16-amd64.exe /quiet InstallAllUsers=0 Include_launcher=0 PrependPath=0 AssociateFiles=0 Shortcuts=0 Include_test=0 Include_doc=0 Include_tcltk=0 TargetDir=%LOCALAPPDATA%\WISE\python313
+"%LOCALAPPDATA%\WISE\python313\python.exe" --version
 ```
 
-This takes about a minute and shows no window. It needs no administrator rights. When it has finished, this prints `3.13.16`:
+**Using a Python that is already installed.** This is possible when it is Python 3.13 for 64 bit in its ordinary build. Check it:
 
 ```bat
-%LOCALAPPDATA%\WISE\python313\python.exe --version
+py -3.13 -c "import platform, struct, sysconfig; print(platform.python_version(), struct.calcsize('P') * 8, sysconfig.get_config_var('Py_GIL_DISABLED'))"
 ```
+
+The answer must begin with `3.13`, then `64`, and must not end with `1` (the free-threaded build cannot use these files). The bundle was checked with 3.13.16. If in doubt, use the installer above; it does not disturb another Python.
 
 ## 3. Install the application
 
-Create an environment of its own for the application and install from the folder. Use the first line if you installed Python in step 2, the second if Python 3.13 was already there:
+Create an environment of its own for the application. Use the first line if you installed Python in step 2, the second if you use a Python that was already there:
 
 ```bat
-%LOCALAPPDATA%\WISE\python313\python.exe -m venv C:\wise\env
+"%LOCALAPPDATA%\WISE\python313\python.exe" -m venv "%LOCALAPPDATA%\WISE\env"
 ```
 
 ```bat
-py -3.13 -m venv C:\wise\env
+py -3.13 -m venv "%LOCALAPPDATA%\WISE\env"
 ```
 
-Then:
+Then install from the folder:
 
 ```bat
-C:\wise\env\Scripts\python.exe -m pip install --no-index --find-links wheelhouse --only-binary=:all: --require-hashes -r install-runtime.lock
+"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -m pip install --no-index --find-links wheelhouse --only-binary=:all: --require-hashes -r install-runtime.lock
 ```
 
 `--no-index` means that nothing is fetched from the internet; `--require-hashes` means that every file must have the checksum the list names. The last line of the output begins with `Successfully installed`.
@@ -74,7 +74,7 @@ C:\wise\env\Scripts\python.exe -m pip install --no-index --find-links wheelhouse
 ## 4. Start
 
 ```bat
-C:\wise\env\Scripts\python.exe -m wise_platform_api --port 8765
+"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -m wise_platform_api --port 8765
 ```
 
 Leave this window open and open <http://127.0.0.1:8765> in the browser. Ctrl+C in the window stops the application.
@@ -83,8 +83,15 @@ The application listens on this computer only (`127.0.0.1`). It sends nothing an
 
 ## 5. First use
 
-1. Create an empty folder for your work, outside the bundle and outside `C:\wise\env`, for example `C:\wise\workspace`.
-2. In the application open **Data**, enter that folder's full path and choose **Open workspace**.
+1. Create an empty folder for your work, outside the bundle and outside the environment:
+
+   ```bat
+   mkdir "%LOCALAPPDATA%\WISE\workspace"
+   echo %LOCALAPPDATA%\WISE\workspace
+   ```
+
+   The second line prints the folder's full path.
+2. In the application open **Data**, enter that full path and choose **Open workspace**.
 3. Add a CSV file. To try it first, use `synthetic-inputs\B4-ties-out-of-order.csv` from the bundle, or load one of the built-in examples.
 4. Confirm how the file is read: separator and encoding, which column is the incident id, the activity and the time, the time format, and the cutoff. The report then says how many rows were read, which were left out and why.
 5. Open the incidents. From there: the process map, the selection of whole incidents, the comparison, the expectation, and saving.
@@ -94,14 +101,14 @@ Your CSV file is not changed. A copy of its bytes is kept in the workspace folde
 ## If something does not work
 
 - **`py` is not recognised.** Python is not installed for the launcher; use step 2.
-- **The installer line does nothing visible.** That is expected; check with the `--version` line. If it prints nothing, start `runtime\python-3.13.16-amd64.exe` by double click, choose **Customize installation**, clear "for all users", and set the folder to `%LOCALAPPDATA%\WISE\python313`.
+- **The installer line shows nothing.** That is expected; check with the `--version` line. If that prints nothing, read `installer.log` in the bundle folder, or start `runtime\python-3.13.16-amd64.exe` by double click, choose **Customize installation**, clear "for all users", and set the folder to `%LOCALAPPDATA%\WISE\python313`.
 - **`pip` reports a hash mismatch or a missing file.** The folder is incomplete or was changed. Download and unpack it again. `certutil -hashfile <file> SHA256` prints a file's checksum for comparison with `SHA256SUMS`.
 - **The port is in use.** Start with another one, for example `--port 8766`, and open that address.
 - **The browser shows "Local service: Unavailable".** The window from step 4 was closed or stopped; start it again.
 
 ## Removing it
 
-Close the window from step 4, then delete `C:\wise\env` and the bundle folder. If you installed Python in step 2, remove it under **Settings, Apps, Installed apps**. Your workspace folder is yours; delete it only if you no longer need the work in it.
+Close the window from step 4, then delete `%LOCALAPPDATA%\WISE\env` and `%LOCALAPPDATA%\WISE\bundle`. If you installed Python in step 2, remove it under **Settings, Apps, Installed apps**. Your workspace folder is yours; delete it only if you no longer need the work in it.
 
 ## The other way: from the source
 
