@@ -499,7 +499,7 @@ class Workspace:
             not isinstance(stored, dict)
             or stored.get("id") != record_id
             or not isinstance(record, dict)
-            or stored.get("sha256") != _record_checksum(record)
+            or stored.get("sha256") != _checksum_or_none(record)
         ):
             return Problem(
                 code,
@@ -591,6 +591,19 @@ def _record_checksum(record: Mapping[str, object]) -> str:
     """SHA-256 of a record's content, whatever the order of its names and the spacing of its file."""
     canonical = json.dumps(record, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _checksum_or_none(record: Mapping[str, object]) -> str | None:
+    """The checksum of a record read from a file, or nothing when its content cannot have one.
+
+    A file changed by hand can hold what no kept record holds: a number that is not a number, text
+    that is half a character, or nesting too deep to walk. Such content has no checksum, so the file
+    is treated as damaged like any other file that is not what was written.
+    """
+    try:
+        return _record_checksum(record)
+    except (ValueError, TypeError, RecursionError):
+        return None
 
 
 def _json_bytes(value: object) -> bytes:
