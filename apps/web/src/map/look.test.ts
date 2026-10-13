@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { type ActivityLabelOptions, activityReferences, buildScene, checkTheme, colorTokens, defaultTheme, layout, resolveTheme, stateStyle } from "wise-flow";
+import { type ActivityLabelOptions, activityReferences, buildScene, checkTheme, colorTokens, defaultTheme, layout, type Measure, resolveTheme, stateStyle } from "wise-flow";
 import libraryTokens from "wise-flow/tokens.css?raw";
+import { noStages, type StageDefinitions, withActivity, withStage } from "../stages/definitions";
 import sheet from "../styles/tokens.css?raw";
-import { nodeIds, opened, suppliedGraph } from "../test/selections";
+import { closed, nodeIds, opened, pathId, suppliedGraph } from "../test/selections";
 import { TOP_TO_BOTTOM } from "./arrange";
-import { END_ID, START_ID, toFlowGraph } from "./graph";
+import { END_ID, endFlowId, START_ID, startFlowId, toFlowGraph } from "./graph";
 import { MAP_THEME, nodeSize, tokenValue } from "./look";
+import { styleOver } from "./measures";
 
 const theme = resolveTheme(MAP_THEME);
 
@@ -14,12 +16,13 @@ const theme = resolveTheme(MAP_THEME);
  * every node in its size, the activities with their whole names and their incidents. `renamed`
  * gives the first activity, "Eröffnet", another name.
  */
-async function drawn(renamed?: string) {
+async function drawn(renamed?: string, stages?: StageDefinitions, measure: Measure = "frequency") {
   const supplied = suppliedGraph(["A-1", "B-2"]);
-  const graph = toFlowGraph(renamed === undefined ? supplied : { ...supplied, nodes: supplied.nodes.map((node) => (node.label === opened ? { ...node, label: renamed } : node)) });
+  const named = renamed === undefined ? supplied : { ...supplied, nodes: supplied.nodes.map((node) => (node.label === opened ? { ...node, label: renamed } : node)) };
+  const graph = toFlowGraph(named, 0, undefined, stages);
   const positions = await layout(graph, { engine: "dagre", direction: TOP_TO_BOTTOM, nodeSize });
   const activityLabels: ActivityLabelOptions = { mode: "names", references: activityReferences(graph), showCounts: true, caseLabel: "incidents" };
-  const scene = buildScene(graph, positions, { theme, locale: "en", activityLabels });
+  const scene = buildScene(graph, positions, { theme, locale: "en", activityLabels, measure, style: styleOver(measure) });
   const node = (id: string) => scene.nodeMarks.find((mark) => mark.id === id)!;
   return { graph, positions, scene, node };
 }
@@ -103,5 +106,31 @@ describe("the theme of the map", () => {
     expect(/--wf-paper:\s*([^;]+);/.exec(libraryTokens)?.[1]).toBe("#ffffff");
     const onPaper = [red, green, blue].map((channel) => Math.round(channel * share + 255 * (1 - share)).toString(16).padStart(2, "0")).join("");
     expect(tokenValue("--color-map-selected")).toBe(`#${onPaper}`);
+  });
+
+  it.each<Measure>(["frequency", "performance"])("draws the flows from Start and to End in one flat grey and writes the number of a path in the muted ink (%s)", async (measure) => {
+    const { scene } = await drawn(undefined, undefined, measure);
+    const edge = (id: string) => scene.edgeMarks.find((mark) => mark.id === id)!;
+    for (const id of [startFlowId(nodeIds[opened]), endFlowId(nodeIds[closed])]) {
+      expect(edge(id)).toMatchObject({ kind: "flow", color: colorTokens.neutral });
+      // Solid: the library's dash says that a path was not directly observed.
+      expect(edge(id).dash).toBeUndefined();
+    }
+    // A path of the log keeps the colour the library gives it in the measure.
+    expect(edge(pathId).kind).toBe("follows");
+    expect(edge(pathId).color).toBe(buildScene(scene.graph, scene.positions, { measure, style: styleOver(measure) }).edgeMarks.find((mark) => mark.id === pathId)!.color);
+    for (const mark of scene.edgeMarks) expect(mark.texts.map((text) => [text.size, text.paint]), mark.id).toEqual([[11, colorTokens.inkMuted]]);
+  });
+
+  it("tints the box of a stage lightly with the colour of the stage and writes its title in the ink", async () => {
+    const named = withStage(noStages, "Intake");
+    const { scene } = await drawn(undefined, withActivity(named, opened, named.stages[0].id));
+    expect(scene.groupMarks).toHaveLength(1);
+    const [box] = scene.groupMarks;
+    expect(box.fill).toEqual({ paint: "value", opacity: 0.12 });
+    expect(box.texts).toMatchObject([{ text: "Intake", paint: colorTokens.ink, weight: 600 }]);
+    // Without the theme of the map the library outlines a stage without a tint and titles it in the muted ink.
+    const plain = buildScene(scene.graph, scene.positions, {}).groupMarks[0];
+    expect([plain.fill.opacity, plain.texts[0].paint]).toEqual([0, "inkMuted"]);
   });
 });

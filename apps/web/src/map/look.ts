@@ -51,12 +51,24 @@ export function nodeSize(node: FlowNode): NodeSize {
  * library's outline of 1 px in the strong line colour, its share of all incidents as a bar along
  * the bottom edge and no longer as a grey stripe behind its texts. Its band follows the corners. A
  * selected card is filled with the tint of a selection and outlined in the colour of the focus.
+ *
+ * A path keeps the library's colour, which is darker the more incidents it carries, so that the
+ * main flow is the widest and darkest line; its number is written in the muted ink. The flows from
+ * Start and to End are added by the map and are no paths of the log: they are one flat grey in
+ * every measure, as wide as their incidents say. The library's dash keeps its own meaning, a path
+ * that was not directly observed.
+ *
+ * The box of a stage is tinted lightly with the colour of its stage, and its title is in the ink.
  */
 export const MAP_THEME: ThemeOverrides = {
   text: { eventLabel: { size: Number(tokenValue("--size-map-event-name")) } },
   radius: { node: 8, band: 7 },
+  opacity: { groupFill: 0.12 },
   frequencyCue: "bottom",
   rules: [
+    { match: { part: "edge" }, set: { text: { label: { color: "inkMuted" } } } },
+    { match: { part: "edge", kind: "flow" }, set: { stroke: "neutral" } },
+    { match: { part: "group", kind: "stage" }, set: { text: { label: { color: "ink" } } } },
     { match: { part: "node", kind: "activity", state: "selected" }, set: { fill: SELECTED, stroke: "focus" } },
     { match: { part: "node", kind: "event" }, set: { strokeWeight: "strong", text: { label: { weight: 600 } } } },
     { match: { part: "node", kind: "event", tag: "start" }, set: { fill: "paper", stroke: START } },
