@@ -61,9 +61,20 @@ describe("the place of the detail controls", () => {
     expect(asked().controls).toBe(false);
     expect(slider("Paths").getAttribute("aria-valuetext")).toBe("1,948 of 2,452 · 1 kept · strongest not shown: 32");
 
+    // The overview is off until it is asked for, on either renderer.
+    expect(asked().minimap).toBe(false);
+    const tools = () => within(screen.getByRole("group", { name: "Map tools" }));
+
     move("Paths", 1946);
     expect(asked().controls).toBe(true);
     expect(controls()).toBeNull();
+    // The row above the map is then the tools' alone, and they do what they do.
+    expect(screen.getByRole("group", { name: "Map tools" }).parentElement?.className).toBe("map-detail");
+    expect(screen.getByRole("group", { name: "Map tools" }).parentElement?.children).toHaveLength(1);
+    fireEvent.click(tools().getByRole("button", { name: "Overview of the whole map" }));
+    expect(asked().minimap).toBe(true);
+    fireEvent.click(tools().getByRole("button", { name: "Overview of the whole map" }));
+    expect(asked().minimap).toBe(false);
     // On its Canvas the library decides by the zoom how many paths it draws, and its own panel says how many.
     expect(asked().edgeBudget).toBe("adaptive");
 

@@ -28,11 +28,24 @@ function refusal(problem: "empty" | "taken", name: string): string {
   return problem === "empty" ? "A stage needs a name." : `Another stage is already called “${stageName(name)}”.`;
 }
 
+/** What a stage is and what the map does with it. */
+const STAGES_ARE =
+  "A stage holds activities that belong together in this log. The map draws a box around the activities of a stage, lays the stages out in the " +
+  "order given here, and offers “Show stages” in its Detail panel to draw each stage as one node. Start and End belong to no stage. Which stages " +
+  "there are and what belongs to them is yours to say for this log: nothing is built in, and nothing is derived from the records.";
+/** Where the stages are kept, in full. */
+const STAGES_KEPT =
+  "The stages are kept in this browser for this reading. They are not yet part of a saved investigation, so another browser or another computer " +
+  "does not show them.";
+/** That nothing can be kept. It limits what the editor is good for, so it is said in the editor itself. */
+const STAGES_NOT_KEPT = "This browser keeps nothing for this page, so the stages last only until the page is closed or loaded again.";
+
 /**
  * The stages of a log, defined by the analyst: the stages in their order with their names, and
  * the stage of every activity of the parent's map. Everything is done with buttons, text fields
  * and lists of choices, so the keyboard reaches all of it. The stages are kept in the browser for
- * the reading and belong to no saved investigation; the editor says so.
+ * the reading and belong to no saved investigation; the editor says so in one line, and in full
+ * in the tooltip of that line.
  */
 export function StagesEditor({ reading, parentGraph, store = browserStages }: StagesEditorProps) {
   const { definitions, kept } = useStages(reading, store);
@@ -109,20 +122,14 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
 
   return (
     <section className="stages-editor" aria-label="Stages of this log">
-      <p className="stages-note">
-        A stage holds activities that belong together in this log. The map draws a box around the activities of a stage, lays the stages out in the
-        order given here, and offers “Show stages” in its Detail panel to draw each stage as one node. Start and End belong to no stage. Which
-        stages there are and what belongs to them is yours to say for this log: nothing is built in, and nothing is derived from the records.
-      </p>
+      {/* One line says whose the stages are and where they stay; what a stage is and does on the map is its tooltip. */}
       {kept ? (
-        <p className="stages-note">
-          The stages are kept in this browser for this reading. They are not yet part of a saved investigation, so another browser or another
-          computer does not show them.
+        <p className="stages-note" title={`${STAGES_KEPT} ${STAGES_ARE}`}>
+          Stages are yours and stay in this browser
         </p>
       ) : (
-        <p className="stages-note stages-not-kept">
-          This browser keeps nothing for this page, so the stages last only until the page is closed or loaded again. They are not part of a saved
-          investigation.
+        <p className="stages-note stages-not-kept" title={`${STAGES_NOT_KEPT} They are not part of a saved investigation. ${STAGES_ARE}`}>
+          {STAGES_NOT_KEPT}
         </p>
       )}
       <div className="stages-parts">

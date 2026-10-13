@@ -212,6 +212,11 @@
   --stroke-icon: 1.5;
   --size-icon-button: 28px;
   --size-mark: 6px;
+  /* What floats under an info button: its width, and the window it is never wider than. */
+  --size-about: 420px;
+  --size-viewport-width: 100vw;
+  /* The editor of the stages in the column beside the map. */
+  --size-map-stages: 360px;
 }
 
 /*

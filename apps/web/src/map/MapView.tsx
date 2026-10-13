@@ -1,27 +1,29 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
 import dagreWorkerUrl from "wise-flow/dagre-worker.min.js?url";
 import elkWorkerUrl from "wise-flow/elk-worker.min.js?url";
-import flowPackage from "wise-flow/package.json";
 import { emptySelection, ProcessMap, type Selection } from "wise-flow/react";
 // The page has unlayered base rules, so the library's styles come unlayered too, after React Flow's.
 import "wise-flow/react-flow.css";
 import "wise-flow/style.unlayered.css";
+import { IconButton } from "../components/icons";
 import { countOf } from "../data/wording";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
 import type { StageDefinitions } from "../stages/definitions";
 import { StagesEditor } from "../stages/StagesEditor";
 import { type StagedReading, useStages } from "../stages/store";
+import { AboutMap } from "./AboutMap";
 import { CANVAS_FROM, mapDetail, WHOLE_DETAIL } from "./detail";
 import { DetailStrip } from "./DetailStrip";
 import { elementOf, selectedElement, stepChoices } from "./elements";
 import { elementTitle } from "./elementTitle";
 import { fitToFrame } from "./FitToFrame";
 import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
+import { MapToolbar } from "./MapToolbar";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { PathsTable } from "./PathsTable";
-import { activityTimeLines, boundaryLine, coverageRows, flowsLine, mapCaption } from "./wording";
+import { activityTimeLines, boundaryLine, flowsLine } from "./wording";
 
 /** The layout runs in the library's workers, so that the page stays responsive while it runs. */
 const workers = { elkWorkerUrl, dagreWorkerUrl };
@@ -112,9 +114,21 @@ interface MapViewProps {
   showing?: "map" | "paths";
 }
 
+/** What the mark on "About this map" says while some flows from Start or to End are not drawn; the panel says which. */
+const FLOWS_NOT_DRAWN = "Some flows from Start and to End are not drawn at this detail";
+
+/** That the arrangement of the whole parent is missing and what follows from it: short enough for one line above the map, and in full as its tooltip. */
+const NOT_ARRANGED = "The arrangement of every incident of the parent could not be computed, so activities can move from one selection to the next.";
+const NOT_ARRANGED_IN_FULL =
+  "The arrangement of every incident of the parent could not be computed. " +
+  "The map arranges the kept incidents by itself, so activities can move from one selection to the next.";
+
 /**
  * The process map of the kept incidents, with the steps an activity, a path or a flow from Start or
- * to End offers; or, in its place, the list of every path and flow with the same steps.
+ * to End offers; or, in its place, the list of every path and flow with the same steps. Nothing
+ * stands under the map: its tools are a row of icons beside its detail controls, what there is to
+ * know about it opens over it, and the steps of a selected element or the editor of the stages
+ * stand beside it.
  */
 export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false, showing = "map" }: MapViewProps) {
   // The stages the analyst defined for the reading shown; the map draws its activities in them.
@@ -179,6 +193,24 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
     () => (inPlace && arrangement.phase === "ready" ? filterPositions(arrangement.positions, graph) : undefined),
     [inPlace, arrangement, graph],
   );
+  /** Whether the map shows the small picture of the whole of it in its corner. It takes room from the map, so it is asked for. */
+  const [overview, setOverview] = useState(false);
+  /**
+   * Whether the editor of the stages stands beside the map. It takes the place of the steps of a
+   * selected element, which stays selected and has its steps back once the editor is closed.
+   */
+  const [editingStages, setEditingStages] = useState(false);
+  const stagesSwitch = useRef<HTMLButtonElement>(null);
+  const stagesTitle = useRef<HTMLHeadingElement>(null);
+  // The editor opens after the map in the page: its title takes the keyboard, so that the work goes on there.
+  useEffect(() => {
+    if (editingStages) stagesTitle.current?.focus();
+  }, [editingStages]);
+  /** Closed from inside the editor, the keyboard goes back to the switch that opened it. */
+  const closeStages = useCallback(() => {
+    setEditingStages(false);
+    stagesSwitch.current?.focus();
+  }, []);
   const [selection, setSelection] = useState<Selection>(emptySelection);
   /**
    * What the map writes on its paths and activities: the incidents on them, or the supplied median
@@ -221,12 +253,44 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
     [shown.graph, onStep, waitingFor],
   );
 
+  /**
+   * What stands in the row above the map after the detail controls: the limit of an arrangement
+   * that could not be computed, which is never left unsaid, and the tools of the map.
+   */
+  const tools = (
+    <>
+      {inPlace && arrangement.phase === "unavailable" && (
+        <p className="map-limit" title={NOT_ARRANGED_IN_FULL}>
+          {NOT_ARRANGED}
+        </p>
+      )}
+      <MapToolbar
+        picture={!listed}
+        inPlace={inPlace}
+        onInPlace={setInPlace}
+        overview={overview}
+        onOverview={setOverview}
+        editingStages={editingStages}
+        onEditStages={setEditingStages}
+        stagesSwitch={stagesSwitch}
+        notDrawn={flowsNotDrawn === null ? undefined : FLOWS_NOT_DRAWN}
+      >
+        <AboutMap graph={shown.graph} statement={detailShown.statement} flowsNotDrawn={flowsNotDrawn} />
+      </MapToolbar>
+    </>
+  );
+
   return (
-    <div className="map-view" data-element={element === null ? "none" : "selected"}>
+    <div className="map-view" data-element={element === null ? "none" : "selected"} data-beside={editingStages ? "stages" : element === null ? "none" : "element"}>
       <div className="map-main">
-        {controlsAbove && (
+        {controlsAbove ? (
           // The switch to the map library's table belongs to the map; over the list of every path it is left out.
-          <DetailStrip detail={ranked} shown={detailShown} onChange={changeDetail} view={listed ? undefined : view} onViewChange={listed ? undefined : setView} />
+          <DetailStrip detail={ranked} shown={detailShown} onChange={changeDetail} view={listed ? undefined : view} onViewChange={listed ? undefined : setView}>
+            {tools}
+          </DetailStrip>
+        ) : (
+          // The map holds its detail controls itself: the row is the tools' alone.
+          <div className="map-detail">{tools}</div>
         )}
         {listed ? (
           <PathsTable graph={shown.graph} drawn={detailShown.drawn} selection={selection} onSelect={setSelection} />
@@ -262,7 +326,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
                 // The library's own detail panel inside the map, only where the controls are not above it.
                 controls={!controlsAbove}
                 legend
-                minimap
+                minimap={overview}
                 pathList
                 nodesDraggable
                 locale="en"
@@ -278,12 +342,32 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           </div>
         )}
       </div>
-      <section className="map-element" aria-labelledby="map-element-title" aria-live="polite">
+      {editingStages && (
+        <div className="map-stages-panel">
+          <div className="map-stages-head">
+            <h4 className="pane-title" tabIndex={-1} ref={stagesTitle}>
+              Stages of this log
+            </h4>
+            <IconButton icon="close" label="Close the editor of the stages" onClick={closeStages} />
+          </div>
+          <StagesEditor reading={reading} parentGraph={parentGraph} />
+        </div>
+      )}
+      {/*
+        While nothing is selected the section says only what a selection offers. That is kept for assistive
+        technology and takes no room on the page; a selected element shows its steps here, beside the map.
+      */}
+      <section
+        className={element === null ? "map-element visually-hidden" : "map-element"}
+        aria-labelledby="map-element-title"
+        aria-live="polite"
+        hidden={editingStages}
+      >
         <h4 id="map-element-title" className="pane-title">
           {elementTitle(element)}
         </h4>
         {element === null && (
-          <p className="muted">
+          <p>
             {listed
               ? "Select a row of the list to keep or remove the incidents through it."
               : "Select an activity or a path on the map, or a row of its table view, to keep or remove the incidents through it."}
@@ -322,57 +406,6 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           </div>
         )}
       </section>
-      <div className="map-notes">
-        {flowsNotDrawn !== null && <p className="muted map-flows">{flowsNotDrawn}</p>}
-        <details className="map-stages">
-          <summary>Stages of this log</summary>
-          <StagesEditor reading={reading} parentGraph={parentGraph} />
-        </details>
-        <details className="map-options">
-          <summary>How the map is arranged and what it counts</summary>
-          <label className="map-arrange">
-            <input type="checkbox" checked={inPlace} onChange={(event) => setInPlace(event.target.checked)} />
-            <span>
-              Keep every activity in the place the map of all incidents gives it.{" "}
-              <span className="muted">
-                Off, the map is arranged anew and compactly for what is shown. On, places stay the same from one selection to the next, and
-                hidden paths still shape the picture.
-              </span>
-            </span>
-          </label>
-          {inPlace && arrangement.phase === "unavailable" && (
-            <p className="limitation">
-              The arrangement of every incident of the parent could not be computed. The map arranges the kept incidents by itself, so activities can
-              move from one selection to the next.
-            </p>
-          )}
-          <MapCaption graph={shown.graph} />
-        </details>
-      </div>
-    </div>
-  );
-}
-
-function MapCaption({ graph }: { graph: SuppliedGraph }) {
-  return (
-    <div className="map-caption">
-      {mapCaption(graph.meta).map((line) => (
-        <p key={line}>{line}</p>
-      ))}
-      <details className="map-coverage">
-        <summary>What the map counts</summary>
-        <dl className="pairs">
-          {coverageRows(graph.meta).map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </details>
-      <p className="muted">
-        The map is drawn with an unreleased state of the map library (wise-flow {flowPackage.version}, a local packaging candidate).
-      </p>
     </div>
   );
 }

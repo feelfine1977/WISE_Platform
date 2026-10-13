@@ -184,13 +184,49 @@ describe("the map of the kept incidents", () => {
     const map = await openMap(app, [closed]);
     // Arranged by the map itself for exactly what it shows: the whole parent's arrangement is not asked for.
     expect(flow.layoutUnion).not.toHaveBeenCalled();
-    const keep = screen.getByRole("checkbox", { name: /Keep every activity in the place the map of all incidents gives it/ }) as HTMLInputElement;
-    expect(keep.checked).toBe(false);
+    // The switch stands with the tools in the row above the map; what it does and what it costs is its tooltip and its description.
+    const keep = screen.getByRole("button", { name: "Keep activities in place" });
+    expect(keep.closest(".map-detail")).not.toBeNull();
+    expect(keep.getAttribute("aria-pressed")).toBe("false");
+    const explanation =
+      "Keep every activity in the place the map of all incidents gives it. Off, the map is arranged anew and compactly for what is shown. " +
+      "On, places stay the same from one selection to the next, and hidden paths still shape the picture.";
+    expect(keep.getAttribute("title")).toBe(`Keep activities in place\n${explanation}`);
+    expect(document.getElementById(keep.getAttribute("aria-describedby")!)?.textContent).toBe(explanation);
+    expect(screen.queryByRole("checkbox")).toBeNull();
     expect(nodeOf(map, closed)).not.toBeNull();
 
     await app.user.click(keep);
     await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
-    void map;
+    expect(screen.getByRole("button", { name: "Keep activities in place" }).getAttribute("aria-pressed")).toBe("true");
+    // Switched off again, the map is arranged for what is shown, and the arrangement of the parent is not asked for anew.
+    await app.user.click(screen.getByRole("button", { name: "Keep activities in place" }));
+    expect(screen.getByRole("button", { name: "Keep activities in place" }).getAttribute("aria-pressed")).toBe("false");
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
+    expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
+  });
+
+  it("says in one line above the map that the arrangement of the parent could not be computed, for as long as it is asked for", async () => {
+    const app = await renderInvestigation(undefined, false);
+    await openMap(app, [closed]);
+    expect(document.querySelector(".map-limit")).toBeNull();
+
+    vi.mocked(flow.layoutUnion).mockRejectedValueOnce(new Error("The arrangement failed."));
+    await app.user.click(screen.getByRole("button", { name: "Keep activities in place" }));
+    const limit = await screen.findByText("The arrangement of every incident of the parent could not be computed, so activities can move from one selection to the next.");
+    // Short enough for one line; what the map does instead is said in full in its tooltip.
+    expect(limit.getAttribute("title")).toBe(
+      "The arrangement of every incident of the parent could not be computed. " +
+        "The map arranges the kept incidents by itself, so activities can move from one selection to the next.",
+    );
+    // In the row above the map, before the frame the map is drawn in, which the map still has.
+    expect(limit.className).toBe("map-limit");
+    expect(limit.parentElement?.className).toBe("map-detail");
+    expect(limit.closest(".map-main")?.querySelector(".map-frame")).not.toBeNull();
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
+
+    await app.user.click(screen.getByRole("button", { name: "Keep activities in place" }));
+    expect(document.querySelector(".map-limit")).toBeNull();
   });
 
   it("offers the steps of an activity in the map's actions menu", async () => {
@@ -355,7 +391,7 @@ describe("the map of the kept incidents", () => {
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
 
     // The map is taken away while every incident of the parent is arranged, and drawn again after.
-    await app.user.click(screen.getByRole("checkbox", { name: /Keep every activity in the place the map of all incidents gives it/ }));
+    await app.user.click(screen.getByRole("button", { name: "Keep activities in place" }));
     await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
     await waitFor(() => {
       const again = screen.getByLabelText("Process map of the kept incidents");
@@ -364,10 +400,14 @@ describe("the map of the kept incidents", () => {
     });
   });
 
-  it("says what its numbers count and that the map library is unreleased", async () => {
+  it("says what its numbers count and that the map library is unreleased, behind the info button of the map", async () => {
     const app = await renderInvestigation();
     await openMap(app);
-    const caption = document.querySelector(".map-caption")!;
+    // Nothing of it stands under the map: it opens over the map from the row above it.
+    expect(document.querySelector(".map-caption")).toBeNull();
+    await app.user.click(screen.getByRole("button", { name: "About this map" }));
+    const about = screen.getByRole("group", { name: "About this map" });
+    const caption = about.querySelector(".map-caption")!;
     expect(caption.textContent).toContain("Activities count labelled records and distinct incidents of the 2 incidents on the map.");
     expect(caption.textContent).toContain("Paths count passages and distinct incidents of the 1 incident whose order of records can be evaluated.");
     expect(caption.textContent).toContain("1 incident with 1 record is not evaluable for paths; 0 records have no activity label.");
@@ -375,10 +415,11 @@ describe("the map of the kept incidents", () => {
     expect(caption.textContent).toContain("Lag: the median of elapsed hours between the two records of a path.");
     expect(caption.textContent).toContain("Measures: the legend on the map, shown whole, switches what the map writes.");
     expect(caption.textContent).toContain("Shortfall has no values here: no expectation results are supplied to the map.");
-    expect(caption.textContent).toContain("The map is drawn with an unreleased state of the map library (wise-flow 0.3.5, a local packaging candidate).");
-    await app.user.click(screen.getByText("What the map counts"));
-    expect(within(caption as HTMLElement).getByText("Paths are counted over").nextElementSibling?.textContent).toBe("1 incident");
-    void app;
+    expect(about.querySelector(".map-library")?.textContent).toBe("The map is drawn with an unreleased state of the map library (wise-flow 0.3.5, a local packaging candidate).");
+    // Every coverage figure is listed under its heading, without a further click.
+    const counts = within(about).getByRole("heading", { name: "What the map counts" }).parentElement!;
+    expect(within(counts).getByText("Paths are counted over").nextElementSibling?.textContent).toBe("1 incident");
+    expect(counts.querySelectorAll("dt")).toHaveLength(13);
   });
 
   it("opens a map of many activities on the most frequent ones and shows its detail controls above the canvas", async () => {

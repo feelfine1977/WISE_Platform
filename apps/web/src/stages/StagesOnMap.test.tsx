@@ -93,28 +93,44 @@ const nodeOf = (map: HTMLElement, id: string) => map.querySelector<HTMLElement>(
 const stageBoxes = (map: HTMLElement) => Array.from(map.querySelectorAll('[data-wf-part="group"][data-wf-kind="stage"] [data-wf-part="group-label"]')).map((label) => label.textContent);
 /** How far from the left edge of the map the box of a stage begins. */
 const leftOf = (map: HTMLElement, stageId: string) => Number(/translate\((-?[\d.]+)px/.exec(nodeOf(map, `group:${stageId}`)?.style.transform ?? "")?.[1]);
-const stagesDisclosure = () => document.querySelector<HTMLDetailsElement>("details.map-stages")!;
+/** The editor of the stages, opened beside the map with its switch in the row above the map. */
+async function openStages(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Edit stages" }));
+  return document.querySelector<HTMLElement>(".map-stages-panel")!;
+}
 const offered = () => Array.from(document.querySelectorAll(".map-choices button")).map((button) => button.textContent);
 
 describe("the stages of a log on its map", () => {
-  it("draws the map as before while no stage is defined, and holds the editor of the stages under it", async () => {
-    const { map } = await openMap();
+  it("draws the map as before while no stage is defined, and holds the editor of the stages beside it", async () => {
+    const { map, user } = await openMap();
     expect(map.querySelector('[data-wf-part="group"]')).toBeNull();
     expect(screen.queryByRole("button", { name: "Show stages" })).toBeNull();
     // Without a stage an activity carries the neutral band of the map library, without a pattern.
     expect(nodeOf(map, nodeIds[opened])?.querySelector('[data-wf-part="node-band"] svg')).toBeNull();
 
-    const disclosure = stagesDisclosure();
-    expect(disclosure.parentElement?.className).toBe("map-notes");
-    expect(disclosure.querySelector("summary")?.textContent).toBe("Stages of this log");
-    expect(disclosure.open).toBe(false);
-    expect(within(disclosure).getByRole("region", { name: "Stages of this log" }).textContent).toContain("The stages are kept in this browser for this reading.");
-    expect(within(disclosure).getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
+    // The editor is closed until it is asked for; its switch stands with the tools in the row above the map.
+    const stagesSwitch = screen.getByRole("button", { name: "Edit stages" });
+    expect(stagesSwitch.closest(".map-detail")).not.toBeNull();
+    expect(stagesSwitch.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByRole("region", { name: "Stages of this log" })).toBeNull();
+    // Nothing stands under the map: beside it in the page is only what a selection offers, kept for assistive technology.
+    expect(Array.from(map.closest(".map-view")!.children, (part) => part.className)).toEqual(["map-main", "map-element visually-hidden"]);
+
+    const panel = await openStages(user);
+    expect(stagesSwitch.getAttribute("aria-pressed")).toBe("true");
+    // Beside the map, where the steps of a selected element stand, and not under it: the map stays in view.
+    expect(panel.parentElement?.className).toBe("map-view");
+    expect(panel.parentElement?.getAttribute("data-beside")).toBe("stages");
+    expect(panel.previousElementSibling?.className).toBe("map-main");
+    expect(screen.getByLabelText("Process map of the kept incidents")).toBe(map);
+    expect(within(panel).getByRole("heading", { name: "Stages of this log" })).toBeTruthy();
+    expect(within(panel).getByRole("region", { name: "Stages of this log" }).textContent).toContain("Stages are yours and stay in this browser");
+    expect(within(panel).getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
   });
 
-  it("draws a stage once the analyst has defined it under the map and put an activity into it", async () => {
+  it("draws a stage once the analyst has defined it beside the map and put an activity into it", async () => {
     const { map, user } = await openMap();
-    const editor = within(stagesDisclosure());
+    const editor = within(await openStages(user));
     await user.click(editor.getByRole("textbox", { name: "New stage" }));
     await user.keyboard("Intake{Enter}");
     // A stage without an activity changes nothing on the map.
@@ -154,15 +170,15 @@ describe("the stages of a log on its map", () => {
     // The legend of the map names the stages beside the colours the library gave them.
     await user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
     expect(Array.from(map.querySelectorAll(".wf-legend__cat")).map((entry) => entry.textContent)).toEqual(["Intake", "Closure"]);
-    // The editor under the map shows the same stages.
-    expect(within(stagesDisclosure()).getByRole("combobox", { name: `Stage of “${closed}”` })).toHaveProperty("value", closure);
+    // The editor beside the map shows the same stages.
+    expect(within(await openStages(user)).getByRole("combobox", { name: `Stage of “${closed}”` })).toHaveProperty("value", closure);
   });
 
   it("lays the stages out in the order the analyst gives them, whatever the flow of the log is", async () => {
     define(twoStages);
     const { map, user } = await openMap();
     await waitFor(() => expect(leftOf(map, intake)).toBeLessThan(leftOf(map, closure)));
-    await user.click(within(stagesDisclosure()).getByRole("button", { name: "Move “Closure” earlier" }));
+    await user.click(within(await openStages(user)).getByRole("button", { name: "Move “Closure” earlier" }));
     expect(browserStages.stateOf(reading).definitions).toEqual(moved(twoStages, closure, "earlier"));
     await waitFor(() => expect(leftOf(map, closure)).toBeLessThan(leftOf(map, intake)));
   });
@@ -259,12 +275,24 @@ describe("the stages of a log on its map", () => {
     fireEvent.change(screen.getAllByRole("slider")[1], { target: { value: "2" } });
     await user.click(screen.getByRole("button", { name: "Table view" }));
     expect(flows()).toEqual(["Start Activity 0 900", "Activity 1 End 300"]);
-    expect(document.querySelector(".map-flows")?.textContent).toMatch(/^Not drawn at this detail: 5 of the 7 flows/);
+    // The info button of the map carries a mark while flows are left out, and its panel says which.
+    const about = screen.getByRole("button", { name: "About this map" });
+    expect(about.querySelector(".icon-button-mark")).not.toBeNull();
+    expect(document.getElementById(about.getAttribute("aria-describedby")!)?.textContent).toBe("Some flows from Start and to End are not drawn at this detail");
+    await user.click(about);
+    expect(document.querySelector(".map-not-drawn h4")?.textContent).toBe("Not drawn at this detail");
+    expect(document.querySelector(".map-not-drawn .map-flows")?.textContent).toMatch(/^5 of the 7 flows/);
+    await user.keyboard("{Escape}");
 
     // Shown as nodes, the stages carry every flow of their activities: 900 and 40 begin in "Intake", 5 and 300 end in it.
     await user.click(screen.getByRole("button", { name: "Show stages" }));
     expect(flows()).toEqual(["Start Intake 940", "Start Closure 7", "Intake End 305", "Closure End 60", "Activity 3 End 2"]);
+    expect(about.querySelector(".icon-button-mark")).toBeNull();
+    expect(about.hasAttribute("aria-describedby")).toBe(false);
+    await user.click(about);
+    expect(document.querySelector(".map-not-drawn")).not.toBeNull();
     expect(document.querySelector(".map-flows")).toBeNull();
+    await user.keyboard("{Escape}");
 
     // With the activities shown again, the flows follow the paths as before.
     await user.click(screen.getByRole("button", { name: "Show activities" }));

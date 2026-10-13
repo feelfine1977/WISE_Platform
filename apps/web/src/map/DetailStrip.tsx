@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { AbstractOptions } from "wise-flow";
 import { AbstractionControls } from "wise-flow/react";
 import "./canvas.css";
@@ -12,6 +13,8 @@ interface DetailStripProps {
   /** Whether the map is shown as the map library's table; without `onViewChange` the strip offers no switch. */
   view?: "map" | "table";
   onViewChange?: (view: "map" | "table") => void;
+  /** What else stands in the row of the strip, after the controls: the tools of the map. */
+  children?: ReactNode;
 }
 
 /**
@@ -19,9 +22,10 @@ interface DetailStripProps {
  * alone: the map library's own two sliders, each with the statement of what is shown, and its
  * switch to the table view. The sliders stand where the map's detail stands and the statements are
  * those of the graph the map draws (`mapDetail`). When moving one slider changes the statement of
- * the other, the controls say it in a live region of their own.
+ * the other, the controls say it in a live region of their own. The tools of the map stand in the
+ * same row, after the controls.
  */
-export function DetailStrip({ detail, shown, onChange, view, onViewChange }: DetailStripProps) {
+export function DetailStrip({ detail, shown, onChange, view, onViewChange, children }: DetailStripProps) {
   return (
     <div className="map-detail">
       <AbstractionControls
@@ -34,6 +38,7 @@ export function DetailStrip({ detail, shown, onChange, view, onViewChange }: Det
         positions={shown.positions}
         statement={statementAsText(shown.statement)}
       />
+      {children}
     </div>
   );
 }

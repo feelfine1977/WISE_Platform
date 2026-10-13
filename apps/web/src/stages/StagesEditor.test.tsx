@@ -42,9 +42,16 @@ async function addStages(user: ReturnType<typeof userEvent.setup>, ...stages: st
 }
 
 describe("the editor of the stages of a log", () => {
-  it("says where the stages are kept and that no investigation saves them yet", () => {
+  it("says in one line whose the stages are and where they stay, and in the tooltip of that line that no investigation saves them yet", () => {
     setup();
-    expect(editor().textContent).toContain("The stages are kept in this browser for this reading. They are not yet part of a saved investigation");
+    const line = screen.getByText("Stages are yours and stay in this browser");
+    expect(editor().querySelectorAll("p.stages-note")[0]).toBe(line);
+    expect(line.getAttribute("title")).toContain(
+      "The stages are kept in this browser for this reading. They are not yet part of a saved investigation, so another browser or another computer does not show them.",
+    );
+    // What a stage is and what the map does with it is said there too, and no longer as a paragraph of the editor.
+    expect(line.getAttribute("title")).toContain("nothing is built in, and nothing is derived from the records.");
+    expect(editor().textContent).not.toContain("A stage holds activities that belong together");
     expect(screen.getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
   });
 
@@ -236,8 +243,11 @@ describe("the editor of the stages of a log", () => {
   it("says so where the browser keeps nothing, and goes on with the stages for as long as the page is open", async () => {
     const nothing: StageMemory = { recall: () => null, remember: () => false };
     const { user, store } = setup(new StageStore(nothing));
-    expect(editor().textContent).toContain("This browser keeps nothing for this page, so the stages last only until the page is closed or loaded again.");
-    expect(editor().textContent).not.toContain("The stages are kept in this browser");
+    // That nothing is kept limits what the editor is good for: it stays in the editor itself, in the place of the line that says where the stages stay.
+    const line = screen.getByText("This browser keeps nothing for this page, so the stages last only until the page is closed or loaded again.");
+    expect(line.className).toContain("stages-not-kept");
+    expect(line.getAttribute("title")).toContain("They are not part of a saved investigation.");
+    expect(editor().textContent).not.toContain("stay in this browser");
     await addStages(user, "Intake");
     await user.selectOptions(stageOf(opened), "Intake");
     expect(stageNames()).toEqual(["Intake"]);

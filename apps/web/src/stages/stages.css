@@ -1,7 +1,6 @@
 /*
  * The stages an analyst defines for a log: the stages in their order, and the stage of each
- * activity. Every value is a token of tokens.css; every class begins with "stages-", but for the
- * disclosure under the map that holds the editor there.
+ * activity. Every value is a token of tokens.css; every class begins with "stages-".
  */
 
 /* Under the map the editor is closed until it is asked for; open, it takes a row of its own. */
@@ -9,6 +8,7 @@
 .explorer .map-stages[open] { flex: 1 1 100%; }
 
 .stages-editor { display: grid; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-4); color: var(--color-ink); font-size: var(--font-size-base); }
+.stages-editor { display: grid; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-3); color: var(--color-ink); font-size: var(--font-size-base); }
 .stages-editor p { margin: 0; }
 .stages-note { max-width: var(--size-page); color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .stages-not-kept { padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); }
