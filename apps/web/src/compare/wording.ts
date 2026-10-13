@@ -82,8 +82,8 @@ export function groupWording(definition: NamedGroupDefinition): string {
   return definition.predicates.map(stepWording).join("; and ");
 }
 
-/** The sentences of the overlap notice, from the supplied pair supports. */
-export function overlapSentences(pair: PairSupport, [a, b]: [string, string]): string[] {
+/** The sentences of the overlap notice, from the supplied pair supports of two groups or two periods. */
+export function overlapSentences(pair: PairSupport, [a, b]: [string, string], kind: "group" | "period"): string[] {
   const sentences: string[] = [];
   if (pair.overlap.case_count > 0) {
     sentences.push(
@@ -97,11 +97,11 @@ export function overlapSentences(pair: PairSupport, [a, b]: [string, string]): s
   if (pair.unevaluable.case_count > 0) {
     sentences.push(
       `${countOf(pair.unevaluable.case_count, "incident")} of the parent cannot be placed in or outside ${a} or ${b}, ` +
-        "as what decides their membership cannot be evaluated; they are counted in neither group.",
+        `as what decides their membership cannot be evaluated; they are counted in neither ${kind}.`,
     );
   }
   if (pair.neither.case_count > 0) {
-    sentences.push(`${countOf(pair.neither.case_count, "incident")} of the parent ${pair.neither.case_count === 1 ? "is" : "are"} in neither group.`);
+    sentences.push(`${countOf(pair.neither.case_count, "incident")} of the parent ${pair.neither.case_count === 1 ? "is" : "are"} in neither ${kind}.`);
   }
   return sentences;
 }

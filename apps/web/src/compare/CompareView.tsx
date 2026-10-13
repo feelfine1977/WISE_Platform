@@ -491,7 +491,7 @@ function ComparisonTable({ shown, columnName, onStep }: { shown: ShownComparison
         </table>
       </div>
       <div className="compare-notice" role="note" aria-label="Overlap">
-        {overlapSentences(answer.pair_support, names).map((sentence) => (
+        {overlapSentences(answer.pair_support, names, kind).map((sentence) => (
           <p key={sentence}>{sentence}</p>
         ))}
       </div>
@@ -518,7 +518,8 @@ function roleDefinitions(shown: ShownComparison): string {
 function cohortRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer): Row[] {
   const { parent, target, reference, context_profile: profile } = answer;
   const periods = "case_start_basis" in answer;
-  const member = periods ? "in the period" : "in the group";
+  const noun = periods ? "period" : "group";
+  const member = `in the ${noun}`;
   return [
     {
       key: "included",
@@ -531,7 +532,7 @@ function cohortRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer): Row
     {
       key: "unevaluable",
       measure: "Not evaluable for membership",
-      detail: "incidents of the parent in neither the group nor outside it",
+      detail: `incidents of the parent in neither the ${noun} nor outside it`,
       a: partOf(target.unevaluable, parent, "of the parent"),
       b: partOf(reference.unevaluable, parent, "of the parent"),
       difference: null,

@@ -234,6 +234,7 @@ describe("the Compare view", () => {
       "2 of 4 incidents of the parent · 5 records",
       "2 of 4 incidents of the parent · 4 records",
     ]);
+    expect(row(table, "Not evaluable for membership")[0]).toBe("Not evaluable for membershipincidents of the parent in neither the period nor outside it");
     expect(row(table, "Followed for at least 4 hours").slice(1, 4)).toEqual(["2 of 2 incidents in the period", "1 of 2 incidents in the period", "—"]);
     expect(row(table, "“Resolved” recorded")).toEqual([
       "“Resolved” recordedanywhere in the complete history; not a business outcome",
