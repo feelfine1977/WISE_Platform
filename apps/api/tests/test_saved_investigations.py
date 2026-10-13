@@ -646,12 +646,12 @@ def test_a_bookmark_not_bound_to_the_question_is_refused(client, question, mista
 # Saving refuses a question that is not what the workspace computes --------------------------------------
 
 
-def test_a_score_reference_is_refused_while_there_is_no_scoring(client, question, folder):
+def test_a_reference_to_a_score_run_the_workspace_does_not_keep_is_refused(client, question, folder):
     reference = {"score_run_id": "score-run.v1:sha256:" + "d" * 64,
                  "scored_population_id": question["selection"]["identity"]["population_id"],
                  "calibration_id": "calibration.v1:sha256:" + "e" * 64}
     refused(client.post(SAVE, json=save_request(question, score_run_ref=reference)), "save_investigation",
-            "unsupported_score_reference", "score_run_ref")
+            "score_reference_unavailable", "score_run_ref.score_run_id")
     assert not (folder / "investigations").exists()
 
 

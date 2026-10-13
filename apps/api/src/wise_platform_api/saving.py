@@ -118,15 +118,10 @@ class Saving:
         workspace = self._imports.opened_workspace(given["workspace_id"])
         if isinstance(workspace, Problem):
             return _problem(SAVE, workspace, given)
-        if given.get("score_run_ref") is not None:
-            return _refused(
-                SAVE,
-                "unsupported_score_reference",
-                "This application has no scoring yet, so a saved investigation cannot refer to a score run. "
-                "Save the investigation without a score run.",
-                given,
-                "score_run_ref",
-            )
+        reference = given.get("score_run_ref")
+        unreferable = _score_reference_problem(workspace, reference, given["base_identity"])
+        if unreferable is not None:
+            return _problem(SAVE, unreferable, given)
         content = {
             "format_version": 1,
             "name": given["name"],
@@ -137,7 +132,7 @@ class Saving:
             "comparison": _whole_numbers(given["comparison"]),
             "notes": given["notes"],
             "bookmarks": given["bookmarks"],
-            "score_run_ref": None,
+            "score_run_ref": reference,
         }
         question = self._question(workspace, content, None)
         if isinstance(question, Problem):
@@ -224,6 +219,11 @@ class Saving:
                 given,
                 "saved_revision_id",
             )
+        unreferable = _score_reference_problem(
+            workspace, revision.content.get("score_run_ref"), revision.content["base_identity"]
+        )
+        if unreferable is not None:
+            return _problem(REOPEN, Problem(unreferable.code, unreferable.message, "saved_revision_id"), given)
         question = self._question(workspace, revision.content, revision)
         if isinstance(question, Problem):
             return _problem(REOPEN, Problem(question.code, question.message, "saved_revision_id"), given)
@@ -656,6 +656,52 @@ def _answer(model: type[BaseModel], body: dict) -> SavingReply:
             f"{'.'.join(str(part) for part in first['loc'])}: {first['msg']}"
         ) from None
     return SavingReply(200, body)
+
+
+def _score_reference_problem(
+    workspace: Workspace, reference: object, base_identity: Mapping[str, object]
+) -> Problem | None:
+    """Why a saved investigation cannot refer to this score run, or nothing when it can or refers to none.
+
+    The reference names a run kept in the workspace, the population that run scored and its
+    calibration. All three are compared with the kept run, and the run must have been scored on the
+    preparation the investigation is about. Nothing is scored here: the run is only looked up.
+    """
+    if reference is None:
+        return None
+    assert isinstance(reference, Mapping)
+    run = workspace.run(str(reference["score_run_id"]))
+    identity = run.get("identity") if isinstance(run, Mapping) else None
+    if not isinstance(identity, Mapping) or identity.get("run_id") != reference["score_run_id"]:
+        return Problem(
+            "score_reference_unavailable",
+            "This score run is not kept in the workspace. Score the expectation again, or save without a score run.",
+            "score_run_ref.score_run_id",
+        )
+    scored = identity.get("scored_population_identity")
+    if not isinstance(scored, Mapping) or scored.get("population_id") != reference["scored_population_id"]:
+        return Problem(
+            "score_reference_unavailable",
+            "The kept score run scored another population than the reference names.",
+            "score_run_ref.scored_population_id",
+        )
+    if identity.get("calibration_id") != reference["calibration_id"]:
+        return Problem(
+            "score_reference_unavailable",
+            "The kept score run has another calibration than the reference names.",
+            "score_run_ref.calibration_id",
+        )
+    run_base = identity.get("base_identity")
+    same_preparation = isinstance(run_base, Mapping) and all(
+        run_base.get(name) == base_identity.get(name) for name in ("source_id", "preparation_id", "representation_id", "case_dictionary_id", "implementation_version")
+    )
+    if not same_preparation:
+        return Problem(
+            "score_reference_unavailable",
+            "The kept score run was scored on another reading than this investigation is about.",
+            "score_run_ref.score_run_id",
+        )
+    return None
 
 
 def _problem(operation: str, problem: Problem, given: Mapping[str, object]) -> SavingReply:
