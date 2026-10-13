@@ -21,7 +21,8 @@ export type ImportMessage =
   | ImportedPopulationAnswer
   | ImportedCaseEvidenceRequest
   | ImportedCaseEvidenceAnswer
-  | ImportRefusal;
+  | ImportRefusal
+  | CutoffProposalAnswer;
 export type RequestId = string;
 export type QueryRevision = number;
 export type WorkspaceId = string;
@@ -108,6 +109,8 @@ export type ImportedSourceRecord1 =
       [k: string]: unknown;
     };
 export type RowId = string;
+export type CutoffProposalAnswer =
+  UtcEmptyCutoffProposal | UtcKnownCutoffProposal | WallEmptyCutoffProposal | WallKnownCutoffProposal;
 
 export interface OpenWorkspaceRequest {
   schema_version: 1;
@@ -552,4 +555,48 @@ export interface ImportRefusal {
   message: string;
   field: string | null;
   retryable: boolean;
+}
+export interface UtcEmptyCutoffProposal {
+  schema_version: 1;
+  message_type: "cutoff_proposal_answer";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  source_id: SourceId;
+  timestamp_kind: "utc_instant";
+  last_usable_time: null;
+  proposed_cutoff: null;
+}
+export interface UtcKnownCutoffProposal {
+  schema_version: 1;
+  message_type: "cutoff_proposal_answer";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  source_id: SourceId;
+  timestamp_kind: "utc_instant";
+  last_usable_time: UtcInstant;
+  proposed_cutoff: UtcInstant | null;
+}
+export interface WallEmptyCutoffProposal {
+  schema_version: 1;
+  message_type: "cutoff_proposal_answer";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  source_id: SourceId;
+  timestamp_kind: "wall_clock";
+  last_usable_time: null;
+  proposed_cutoff: null;
+}
+export interface WallKnownCutoffProposal {
+  schema_version: 1;
+  message_type: "cutoff_proposal_answer";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  source_id: SourceId;
+  timestamp_kind: "wall_clock";
+  last_usable_time: LocalTimestamp;
+  proposed_cutoff: LocalTimestamp | null;
 }

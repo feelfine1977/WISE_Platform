@@ -1,0 +1,566 @@
+{
+  "utc.known": {
+    "request": {
+      "schema_version": 1,
+      "message_type": "confirm_mapping_request",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:a95b31937feb44b5d3a3e98322ee1bf504b805f4aa65188863306e9edf37e7b4",
+      "dialect": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "quotechar": "\"",
+        "header": "first_record"
+      },
+      "mapping": {
+        "case_column": 0,
+        "activity_column": 1,
+        "timestamp_column": 2,
+        "sequence_column": null,
+        "context_columns": [
+          3
+        ]
+      },
+      "policies": {
+        "time": {
+          "id": "incident.time.explicit_format_timezone_utc.v1",
+          "parameters": {
+            "format": "iso8601",
+            "timezone": {
+              "mode": "from_values"
+            },
+            "snapshot_cutoff_utc": "9999-12-31T23:59:59Z"
+          }
+        },
+        "order": {
+          "id": "incident.order.declared_time_optional_sequence_source_position.v1",
+          "parameters": {
+            "primary": "usable_declared_time_ascending",
+            "secondary": "mapped_sequence_or_source_position",
+            "tie_breaker": "source_position_ascending",
+            "unavailable_timestamp": "presentation_tail_source_position",
+            "unavailable_timestamp_case_sequence": "unevaluable"
+          }
+        },
+        "rows": {
+          "id": "incident.rows.missing_id_outside_invalid_time_retained.v1",
+          "parameters": {
+            "missing_case_id": "outside_population_preserve_source",
+            "unavailable_timestamp": "retain_case_raw_flag_order_unknown",
+            "invalid_mapped_sequence": "block_preparation",
+            "duplicate_candidates": "retain_all"
+          }
+        },
+        "missing_values": {
+          "id": "incident.missing.empty_mapped_activity_context.v1",
+          "parameters": {
+            "empty_activity_context": "missing",
+            "literal_values": "preserve"
+          }
+        },
+        "identifier": {
+          "id": "incident.identifier.trim_outer_whitespace.v1",
+          "parameters": {
+            "normalization": "trim_outer_whitespace_preserve_raw"
+          }
+        },
+        "activity_projection": {
+          "id": "incident.activity.omit_missing_retain_raw_gaps.v1",
+          "parameters": {
+            "missing_activity": "omit_from_mapped_sequence",
+            "raw_records": "retain_all",
+            "gap_evidence": "omitted_row_ids"
+          }
+        },
+        "parent": {
+          "id": "incident.parent.all_identified_cases.v1",
+          "parameters": {
+            "eligibility": "nonempty_normalized_case_identifier"
+          }
+        }
+      },
+      "accept_report_issues": true
+    },
+    "answer": {
+      "schema_version": 1,
+      "message_type": "cutoff_proposal_answer",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:a95b31937feb44b5d3a3e98322ee1bf504b805f4aa65188863306e9edf37e7b4",
+      "timestamp_kind": "utc_instant",
+      "last_usable_time": "2026-10-09T10:00:00Z",
+      "proposed_cutoff": "2026-10-09T10:00:00Z"
+    }
+  },
+  "utc.empty": {
+    "request": {
+      "schema_version": 1,
+      "message_type": "confirm_mapping_request",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:f10aba08b306108bc0badd8ba2039b96fc3c3e5f562a3d9150eb4ad4c338f904",
+      "dialect": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "quotechar": "\"",
+        "header": "first_record"
+      },
+      "mapping": {
+        "case_column": 0,
+        "activity_column": 1,
+        "timestamp_column": 2,
+        "sequence_column": null,
+        "context_columns": [
+          3
+        ]
+      },
+      "policies": {
+        "time": {
+          "id": "incident.time.explicit_format_timezone_utc.v1",
+          "parameters": {
+            "format": "iso8601",
+            "timezone": {
+              "mode": "from_values"
+            },
+            "snapshot_cutoff_utc": "2027-01-01T00:00:00Z"
+          }
+        },
+        "order": {
+          "id": "incident.order.declared_time_optional_sequence_source_position.v1",
+          "parameters": {
+            "primary": "usable_declared_time_ascending",
+            "secondary": "mapped_sequence_or_source_position",
+            "tie_breaker": "source_position_ascending",
+            "unavailable_timestamp": "presentation_tail_source_position",
+            "unavailable_timestamp_case_sequence": "unevaluable"
+          }
+        },
+        "rows": {
+          "id": "incident.rows.missing_id_outside_invalid_time_retained.v1",
+          "parameters": {
+            "missing_case_id": "outside_population_preserve_source",
+            "unavailable_timestamp": "retain_case_raw_flag_order_unknown",
+            "invalid_mapped_sequence": "block_preparation",
+            "duplicate_candidates": "retain_all"
+          }
+        },
+        "missing_values": {
+          "id": "incident.missing.empty_mapped_activity_context.v1",
+          "parameters": {
+            "empty_activity_context": "missing",
+            "literal_values": "preserve"
+          }
+        },
+        "identifier": {
+          "id": "incident.identifier.trim_outer_whitespace.v1",
+          "parameters": {
+            "normalization": "trim_outer_whitespace_preserve_raw"
+          }
+        },
+        "activity_projection": {
+          "id": "incident.activity.omit_missing_retain_raw_gaps.v1",
+          "parameters": {
+            "missing_activity": "omit_from_mapped_sequence",
+            "raw_records": "retain_all",
+            "gap_evidence": "omitted_row_ids"
+          }
+        },
+        "parent": {
+          "id": "incident.parent.all_identified_cases.v1",
+          "parameters": {
+            "eligibility": "nonempty_normalized_case_identifier"
+          }
+        }
+      },
+      "accept_report_issues": true
+    },
+    "answer": {
+      "schema_version": 1,
+      "message_type": "cutoff_proposal_answer",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:f10aba08b306108bc0badd8ba2039b96fc3c3e5f562a3d9150eb4ad4c338f904",
+      "timestamp_kind": "utc_instant",
+      "last_usable_time": null,
+      "proposed_cutoff": null
+    }
+  },
+  "utc.unroundable": {
+    "request": {
+      "schema_version": 1,
+      "message_type": "confirm_mapping_request",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:bf1337a6105485d760f77ba1c0a9f434748128dcc36412c17ce4dd65e9879a04",
+      "dialect": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "quotechar": "\"",
+        "header": "first_record"
+      },
+      "mapping": {
+        "case_column": 0,
+        "activity_column": 1,
+        "timestamp_column": 2,
+        "sequence_column": null,
+        "context_columns": [
+          3
+        ]
+      },
+      "policies": {
+        "time": {
+          "id": "incident.time.explicit_format_timezone_utc.v1",
+          "parameters": {
+            "format": "iso8601",
+            "timezone": {
+              "mode": "from_values"
+            },
+            "snapshot_cutoff_utc": "9999-12-31T23:59:59.999999Z"
+          }
+        },
+        "order": {
+          "id": "incident.order.declared_time_optional_sequence_source_position.v1",
+          "parameters": {
+            "primary": "usable_declared_time_ascending",
+            "secondary": "mapped_sequence_or_source_position",
+            "tie_breaker": "source_position_ascending",
+            "unavailable_timestamp": "presentation_tail_source_position",
+            "unavailable_timestamp_case_sequence": "unevaluable"
+          }
+        },
+        "rows": {
+          "id": "incident.rows.missing_id_outside_invalid_time_retained.v1",
+          "parameters": {
+            "missing_case_id": "outside_population_preserve_source",
+            "unavailable_timestamp": "retain_case_raw_flag_order_unknown",
+            "invalid_mapped_sequence": "block_preparation",
+            "duplicate_candidates": "retain_all"
+          }
+        },
+        "missing_values": {
+          "id": "incident.missing.empty_mapped_activity_context.v1",
+          "parameters": {
+            "empty_activity_context": "missing",
+            "literal_values": "preserve"
+          }
+        },
+        "identifier": {
+          "id": "incident.identifier.trim_outer_whitespace.v1",
+          "parameters": {
+            "normalization": "trim_outer_whitespace_preserve_raw"
+          }
+        },
+        "activity_projection": {
+          "id": "incident.activity.omit_missing_retain_raw_gaps.v1",
+          "parameters": {
+            "missing_activity": "omit_from_mapped_sequence",
+            "raw_records": "retain_all",
+            "gap_evidence": "omitted_row_ids"
+          }
+        },
+        "parent": {
+          "id": "incident.parent.all_identified_cases.v1",
+          "parameters": {
+            "eligibility": "nonempty_normalized_case_identifier"
+          }
+        }
+      },
+      "accept_report_issues": true
+    },
+    "answer": {
+      "schema_version": 1,
+      "message_type": "cutoff_proposal_answer",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:bf1337a6105485d760f77ba1c0a9f434748128dcc36412c17ce4dd65e9879a04",
+      "timestamp_kind": "utc_instant",
+      "last_usable_time": "9999-12-31T23:59:59.999999Z",
+      "proposed_cutoff": null
+    }
+  },
+  "wall.known": {
+    "request": {
+      "schema_version": 1,
+      "message_type": "confirm_mapping_request",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:2f05d35eb1b4343a1f95259dfb92775cd84a0d57546028a31d41967625b9d69f",
+      "dialect": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "quotechar": "\"",
+        "header": "first_record"
+      },
+      "mapping": {
+        "case_column": 0,
+        "activity_column": 1,
+        "timestamp_column": 2,
+        "sequence_column": null,
+        "context_columns": [
+          3
+        ]
+      },
+      "policies": {
+        "time": {
+          "id": "incident.time.wall_clock_as_recorded.v1",
+          "parameters": {
+            "format": "iso8601",
+            "timezone": "none_as_recorded",
+            "snapshot_cutoff_local": "9999-12-31T23:59:59"
+          }
+        },
+        "order": {
+          "id": "incident.order.declared_time_optional_sequence_source_position.v1",
+          "parameters": {
+            "primary": "usable_declared_time_ascending",
+            "secondary": "mapped_sequence_or_source_position",
+            "tie_breaker": "source_position_ascending",
+            "unavailable_timestamp": "presentation_tail_source_position",
+            "unavailable_timestamp_case_sequence": "unevaluable"
+          }
+        },
+        "rows": {
+          "id": "incident.rows.missing_id_outside_invalid_time_retained.v1",
+          "parameters": {
+            "missing_case_id": "outside_population_preserve_source",
+            "unavailable_timestamp": "retain_case_raw_flag_order_unknown",
+            "invalid_mapped_sequence": "block_preparation",
+            "duplicate_candidates": "retain_all"
+          }
+        },
+        "missing_values": {
+          "id": "incident.missing.empty_mapped_activity_context.v1",
+          "parameters": {
+            "empty_activity_context": "missing",
+            "literal_values": "preserve"
+          }
+        },
+        "identifier": {
+          "id": "incident.identifier.trim_outer_whitespace.v1",
+          "parameters": {
+            "normalization": "trim_outer_whitespace_preserve_raw"
+          }
+        },
+        "activity_projection": {
+          "id": "incident.activity.omit_missing_retain_raw_gaps.v1",
+          "parameters": {
+            "missing_activity": "omit_from_mapped_sequence",
+            "raw_records": "retain_all",
+            "gap_evidence": "omitted_row_ids"
+          }
+        },
+        "parent": {
+          "id": "incident.parent.all_identified_cases.v1",
+          "parameters": {
+            "eligibility": "nonempty_normalized_case_identifier"
+          }
+        }
+      },
+      "accept_report_issues": true
+    },
+    "answer": {
+      "schema_version": 1,
+      "message_type": "cutoff_proposal_answer",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:2f05d35eb1b4343a1f95259dfb92775cd84a0d57546028a31d41967625b9d69f",
+      "timestamp_kind": "wall_clock",
+      "last_usable_time": "2026-10-09T10:00:00",
+      "proposed_cutoff": "2026-10-09T10:00:00"
+    }
+  },
+  "wall.empty": {
+    "request": {
+      "schema_version": 1,
+      "message_type": "confirm_mapping_request",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:f10aba08b306108bc0badd8ba2039b96fc3c3e5f562a3d9150eb4ad4c338f904",
+      "dialect": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "quotechar": "\"",
+        "header": "first_record"
+      },
+      "mapping": {
+        "case_column": 0,
+        "activity_column": 1,
+        "timestamp_column": 2,
+        "sequence_column": null,
+        "context_columns": [
+          3
+        ]
+      },
+      "policies": {
+        "time": {
+          "id": "incident.time.wall_clock_as_recorded.v1",
+          "parameters": {
+            "format": "iso8601",
+            "timezone": "none_as_recorded",
+            "snapshot_cutoff_local": "2027-01-01T00:00:00"
+          }
+        },
+        "order": {
+          "id": "incident.order.declared_time_optional_sequence_source_position.v1",
+          "parameters": {
+            "primary": "usable_declared_time_ascending",
+            "secondary": "mapped_sequence_or_source_position",
+            "tie_breaker": "source_position_ascending",
+            "unavailable_timestamp": "presentation_tail_source_position",
+            "unavailable_timestamp_case_sequence": "unevaluable"
+          }
+        },
+        "rows": {
+          "id": "incident.rows.missing_id_outside_invalid_time_retained.v1",
+          "parameters": {
+            "missing_case_id": "outside_population_preserve_source",
+            "unavailable_timestamp": "retain_case_raw_flag_order_unknown",
+            "invalid_mapped_sequence": "block_preparation",
+            "duplicate_candidates": "retain_all"
+          }
+        },
+        "missing_values": {
+          "id": "incident.missing.empty_mapped_activity_context.v1",
+          "parameters": {
+            "empty_activity_context": "missing",
+            "literal_values": "preserve"
+          }
+        },
+        "identifier": {
+          "id": "incident.identifier.trim_outer_whitespace.v1",
+          "parameters": {
+            "normalization": "trim_outer_whitespace_preserve_raw"
+          }
+        },
+        "activity_projection": {
+          "id": "incident.activity.omit_missing_retain_raw_gaps.v1",
+          "parameters": {
+            "missing_activity": "omit_from_mapped_sequence",
+            "raw_records": "retain_all",
+            "gap_evidence": "omitted_row_ids"
+          }
+        },
+        "parent": {
+          "id": "incident.parent.all_identified_cases.v1",
+          "parameters": {
+            "eligibility": "nonempty_normalized_case_identifier"
+          }
+        }
+      },
+      "accept_report_issues": true
+    },
+    "answer": {
+      "schema_version": 1,
+      "message_type": "cutoff_proposal_answer",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:f10aba08b306108bc0badd8ba2039b96fc3c3e5f562a3d9150eb4ad4c338f904",
+      "timestamp_kind": "wall_clock",
+      "last_usable_time": null,
+      "proposed_cutoff": null
+    }
+  },
+  "wall.unroundable": {
+    "request": {
+      "schema_version": 1,
+      "message_type": "confirm_mapping_request",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:9364d5c96085f9dbe20fa78e3c9e436623f2a7566e1ff729f41170cc8134191c",
+      "dialect": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "quotechar": "\"",
+        "header": "first_record"
+      },
+      "mapping": {
+        "case_column": 0,
+        "activity_column": 1,
+        "timestamp_column": 2,
+        "sequence_column": null,
+        "context_columns": [
+          3
+        ]
+      },
+      "policies": {
+        "time": {
+          "id": "incident.time.wall_clock_as_recorded.v1",
+          "parameters": {
+            "format": "iso8601",
+            "timezone": "none_as_recorded",
+            "snapshot_cutoff_local": "9999-12-31T23:59:59.999999"
+          }
+        },
+        "order": {
+          "id": "incident.order.declared_time_optional_sequence_source_position.v1",
+          "parameters": {
+            "primary": "usable_declared_time_ascending",
+            "secondary": "mapped_sequence_or_source_position",
+            "tie_breaker": "source_position_ascending",
+            "unavailable_timestamp": "presentation_tail_source_position",
+            "unavailable_timestamp_case_sequence": "unevaluable"
+          }
+        },
+        "rows": {
+          "id": "incident.rows.missing_id_outside_invalid_time_retained.v1",
+          "parameters": {
+            "missing_case_id": "outside_population_preserve_source",
+            "unavailable_timestamp": "retain_case_raw_flag_order_unknown",
+            "invalid_mapped_sequence": "block_preparation",
+            "duplicate_candidates": "retain_all"
+          }
+        },
+        "missing_values": {
+          "id": "incident.missing.empty_mapped_activity_context.v1",
+          "parameters": {
+            "empty_activity_context": "missing",
+            "literal_values": "preserve"
+          }
+        },
+        "identifier": {
+          "id": "incident.identifier.trim_outer_whitespace.v1",
+          "parameters": {
+            "normalization": "trim_outer_whitespace_preserve_raw"
+          }
+        },
+        "activity_projection": {
+          "id": "incident.activity.omit_missing_retain_raw_gaps.v1",
+          "parameters": {
+            "missing_activity": "omit_from_mapped_sequence",
+            "raw_records": "retain_all",
+            "gap_evidence": "omitted_row_ids"
+          }
+        },
+        "parent": {
+          "id": "incident.parent.all_identified_cases.v1",
+          "parameters": {
+            "eligibility": "nonempty_normalized_case_identifier"
+          }
+        }
+      },
+      "accept_report_issues": true
+    },
+    "answer": {
+      "schema_version": 1,
+      "message_type": "cutoff_proposal_answer",
+      "request_id": "request-1",
+      "query_revision": 1,
+      "workspace_id": "workspace.v1:62be0d75884e4cfa92297e6b22385d58",
+      "source_id": "source.v1:sha256:9364d5c96085f9dbe20fa78e3c9e436623f2a7566e1ff729f41170cc8134191c",
+      "timestamp_kind": "wall_clock",
+      "last_usable_time": "9999-12-31T23:59:59.999999",
+      "proposed_cutoff": null
+    }
+  }
+}
