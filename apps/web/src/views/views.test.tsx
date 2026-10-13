@@ -147,7 +147,7 @@ describe("the views of the population of an imported preparation", () => {
       .filter((item) => item.parentElement === list);
     expect(items.map((item) => item.querySelector(".variant-rank")?.textContent)).toEqual(["Variant 1", "Variant 2", "Variant 3"]);
     const chain = within(items[0]).getByRole("list", { name: "Sequence of variant 1, 4 steps" });
-    expect(within(chain).getAllByRole("listitem").map((step) => step.querySelector(".step")?.textContent)).toEqual([
+    expect(within(chain).getAllByRole("listitem").map((step) => step.querySelector(".variant-step")?.textContent)).toEqual([
       "Eröffnet",
       "Weitergeleitet",
       "Weitergeleitet",

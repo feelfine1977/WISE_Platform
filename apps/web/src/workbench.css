@@ -21,7 +21,7 @@
 
 /* Controls: 32 px high with a 40 px hit area, one blue for action, focus and selection. */
 .data-area button,
-.workbench button:not(.map-frame *),
+.workbench button:where(:not(.map-frame *)),
 .data-area select,
 .data-area input[type="text"],
 .data-area input[type="datetime-local"] {
@@ -34,17 +34,17 @@
   border-radius: var(--radius);
 }
 .data-area button,
-.workbench button:not(.map-frame *) { position: relative; cursor: pointer; }
+.workbench button:where(:not(.map-frame *)) { position: relative; cursor: pointer; }
 .data-area button::after,
-.workbench button:not(.map-frame *)::after { content: ""; position: absolute; inset: var(--hit-overhang) 0; }
+.workbench button:where(:not(.map-frame *))::after { content: ""; position: absolute; inset: var(--hit-overhang) 0; }
 .data-area button:hover,
-.workbench button:not(.map-frame *):hover { background: var(--color-hover); }
+.workbench button:where(:not(.map-frame *)):hover { background: var(--color-hover); }
 .data-area button.primary,
 .workbench button.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-surface); font-weight: var(--font-weight-strong); }
 .data-area button.primary:hover,
 .workbench button.primary:hover { background: var(--color-accent-strong); }
 .data-area button:disabled,
-.workbench button:not(.map-frame *):disabled { opacity: 0.55; cursor: not-allowed; }
+.workbench button:where(:not(.map-frame *)):disabled { opacity: 0.55; cursor: not-allowed; }
 .data-area :focus-visible,
 .workbench :focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--line-width); }
 .data-area .link-button,
@@ -438,8 +438,8 @@
 .workbench .variant-head button[aria-pressed="true"]:hover { background: var(--color-accent-strong); }
 .variant-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) 0; margin: 0; padding: 0; list-style: none; font-size: var(--font-size-small); }
 .variant-steps li { display: flex; align-items: center; min-width: 0; }
-.step { padding: 0 var(--space-1); background: var(--color-surface); border: var(--line-width) solid var(--color-line-strong); border-radius: var(--radius); overflow-wrap: anywhere; }
-.step-arrow { padding: 0 var(--space-1); color: var(--color-ink-muted); }
+.variant-step { padding: 0 var(--space-1); background: var(--color-surface); border: var(--line-width) solid var(--color-line-strong); border-radius: var(--radius); overflow-wrap: anywhere; }
+.variant-arrow { padding: 0 var(--space-1); color: var(--color-ink-muted); }
 
 /* Area navigation in the header. */
 .areas { display: flex; gap: var(--space-1); }

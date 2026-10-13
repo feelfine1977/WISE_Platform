@@ -125,11 +125,11 @@ function VariantItem({ variant, rank, chosen, onToggle }: VariantItemProps) {
           {variant.activities.map((activity, index) => (
             <li key={index}>
               {index > 0 && (
-                <span className="step-arrow" aria-hidden="true">
+                <span className="variant-arrow" aria-hidden="true">
                   →
                 </span>
               )}
-              <span className="step">{activity}</span>
+              <span className="variant-step">{activity}</span>
             </li>
           ))}
         </ol>
