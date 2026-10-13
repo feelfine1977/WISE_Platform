@@ -21,7 +21,9 @@ from .selections import SelectionReply, Selections
 from .workspace import program_folders
 
 
-def create_app(static_dir: Path | None = None, examples_dir: Path | None = None) -> FastAPI:
+def create_app(
+    static_dir: Path | None = None, examples_dir: Path | None = None, *, workspace_path: Path | None = None
+) -> FastAPI:
     """Build the application; ``examples_dir`` replaces the packaged synthetic examples.
 
     Workspaces are refused inside the program's own folders, so that nothing is written there.
@@ -30,7 +32,7 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     application = FastAPI(title="WISE Platform", version=__version__)
     examples = examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
     investigations = Investigations(examples)
-    imports = Imports(forbidden=program_folders())
+    imports = Imports(forbidden=program_folders(), workspace_path=workspace_path)
     selections = Selections(imports)
     views = PopulationViews(imports)
     comparisons = Comparisons(imports)
@@ -69,6 +71,10 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     @application.post("/api/workspaces/open")
     async def open_workspace(request: Request) -> JSONResponse:
         return _sent_import(await run_in_threadpool(imports.open_workspace, await request.body()))
+
+    @application.post("/api/workspaces/open-default")
+    async def open_default_workspace(request: Request) -> JSONResponse:
+        return _sent_import(await run_in_threadpool(imports.open_default_workspace, await request.body()))
 
     @application.put("/api/sources")
     async def upload_source(request: Request) -> JSONResponse:

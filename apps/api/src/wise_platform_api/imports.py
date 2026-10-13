@@ -46,6 +46,7 @@ from wise_platform_analytics.prepared_operations import open_prepared_case, open
 from wise_platform_analytics.selection import open_selected_case
 
 from .boundary import SCHEMA_VERSION, first_difference
+from .default_workspace import open_default_workspace
 from .generated.imports import (
     ConfirmMappingRequest,
     CsvInspectionAnswer,
@@ -57,6 +58,7 @@ from .generated.imports import (
     InspectCsvRequest,
     InterpretationAnswer,
     OpenPopulationRequest,
+    OpenDefaultWorkspaceRequest,
     OpenWorkspaceRequest,
     SourceAnswer,
     UploadSourceMetadata,
@@ -77,6 +79,7 @@ from .workspace import Problem, StoredPreparation, Workspace
 logger = logging.getLogger(__name__)
 
 OPEN_WORKSPACE = "open_workspace"
+OPEN_DEFAULT_WORKSPACE = "open_default_workspace"
 UPLOAD_SOURCE = "upload_source"
 INSPECT_CSV = "inspect_csv"
 CONFIRM_MAPPING = "confirm_mapping"
@@ -85,6 +88,7 @@ CASE_EVIDENCE = "case_evidence"
 
 _PREPARED_KEPT = 2
 _INSPECTIONS_KEPT = 16
+_DEFAULT_INITIALIZING = Lock()
 
 
 @dataclass(frozen=True)
@@ -98,8 +102,11 @@ class ImportReply:
 class Imports:
     """The import operations over the workspaces opened in this run of the application."""
 
-    def __init__(self, forbidden: Iterable[Path] = (), selections: SelectionRegistry | None = None) -> None:
+    def __init__(
+        self, forbidden: Iterable[Path] = (), selections: SelectionRegistry | None = None, *, workspace_path: Path | None = None
+    ) -> None:
         self._forbidden = tuple(forbidden)
+        self._workspace_path = workspace_path
         self.selections = selections if selections is not None else SelectionRegistry()
         self._workspaces: dict[str, Workspace] = {}
         self._prepared: OrderedDict[str, PreparedData] = OrderedDict()
@@ -111,6 +118,12 @@ class Imports:
 
     def open_workspace(self, body: bytes) -> ImportReply:
         return _answering(OPEN_WORKSPACE, parse_import_body(body, OpenWorkspaceRequest, OPEN_WORKSPACE), self._open_workspace)
+
+    def open_default_workspace(self, body: bytes) -> ImportReply:
+        return _answering(
+            OPEN_DEFAULT_WORKSPACE, parse_import_body(body, OpenDefaultWorkspaceRequest, OPEN_DEFAULT_WORKSPACE),
+            self._open_default_workspace,
+        )
 
     def upload_source(self, query: Iterable[tuple[str, str]], content_type: str | None, raw: bytes) -> ImportReply:
         message = upload_message(query)
@@ -159,9 +172,17 @@ class Imports:
     # Use cases ----------------------------------------------------------------------------
 
     def _open_workspace(self, request: OpenWorkspaceRequest, given: dict) -> ImportReply:
-        workspace = Workspace.open(request.path, self._forbidden)
+        return self._workspace_answer(OPEN_WORKSPACE, Workspace.open(request.path, self._forbidden), given)
+
+    def _open_default_workspace(self, request: OpenDefaultWorkspaceRequest, given: dict) -> ImportReply:
+        # Separate app/Imports instances in this process must not race manifest creation.
+        with _DEFAULT_INITIALIZING:
+            workspace = open_default_workspace(self._workspace_path, self._forbidden)
+            return self._workspace_answer(OPEN_DEFAULT_WORKSPACE, workspace, given)
+
+    def _workspace_answer(self, operation: str, workspace: Workspace | Problem, given: dict) -> ImportReply:
         if isinstance(workspace, Problem):
-            return _problem(OPEN_WORKSPACE, workspace, given)
+            return _problem(operation, workspace, given)
         with self._lock:
             known = self._workspaces.get(workspace.workspace_id)
             if known is None or known.path != workspace.path:
