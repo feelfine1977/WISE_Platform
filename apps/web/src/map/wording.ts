@@ -100,6 +100,17 @@ export function overlapLine(parent: PopulationSupport): string {
   );
 }
 
+/**
+ * Where the measures of the map are chosen and what each of them writes. The names are the map
+ * library's, as its legend shows them. Every number is a supplied one.
+ */
+export const MEASURES_LINE =
+  "Measures: the legend on the map, shown whole, switches what the map writes. " +
+  "Frequency: the incidents on every path and activity. " +
+  "Performance: before the incidents of a path its median lag, and on an activity the median time until the next event, with “–” where none is available; " +
+  "the time since the event before is said under the map for a selected activity. " +
+  "Shortfall has no values here: no expectation results are supplied to the map.";
+
 /** The sentences under the map that say what its numbers count, from the map's own coverage. */
 export function mapCaption(meta: GraphCoverage): string[] {
   return [
@@ -111,6 +122,7 @@ export function mapCaption(meta: GraphCoverage): string[] {
     "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
     "Start and End are added by the map: a flow leaves Start for every activity incidents begin with and enters End from every activity they end with, each with that number of incidents. They are always shown.",
     lagLine(meta),
+    MEASURES_LINE,
   ];
 }
 

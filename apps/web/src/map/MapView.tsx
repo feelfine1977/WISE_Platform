@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { type AbstractOptions, filterPositions, type FlowGraph, layoutUnion, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
+import { type AbstractOptions, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
 import dagreWorkerUrl from "wise-flow/dagre-worker.min.js?url";
 import elkWorkerUrl from "wise-flow/elk-worker.min.js?url";
 import flowPackage from "wise-flow/package.json";
@@ -12,6 +12,7 @@ import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
 import { elementOf, selectedElement, stepChoices } from "./elements";
 import { toFlowGraph } from "./graph";
+import { askedFor, OPENING_MEASURE } from "./measures";
 import { activityTimeLines, boundaryLine, coverageRows, mapCaption } from "./wording";
 
 /** The layout runs in the library's workers, so that the page stays responsive while it runs. */
@@ -113,6 +114,12 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
     [inPlace, arrangement, graph],
   );
   const [selection, setSelection] = useState<Selection>(emptySelection);
+  /**
+   * What the map writes on its paths and activities: the incidents on them, or the supplied median
+   * times. The analyst chooses in the map's own legend. The choice is held here, so that it outlasts
+   * a map that is drawn again for other incidents or arranged another way.
+   */
+  const [measure, setMeasure] = useState<Measure>(OPENING_MEASURE);
   const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
   const least = useMemo(() => leastPaths(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
   // The detail is held here, so that the paths share cannot go below the main flow.
@@ -162,6 +169,10 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
             layout={workers}
             abstraction={detail}
             onAbstractionChange={changeDetail}
+            // The chosen measure, with what is laid over the library's style of it.
+            {...askedFor(measure)}
+            // Listening for the choice is what makes the map's whole legend offer the measures.
+            onMeasureChange={setMeasure}
             // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
             // and a selection keeps that view, so nothing moves on screen.
             fitView={inPlace ? shown.steps.length === 0 : true}
