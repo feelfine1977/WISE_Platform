@@ -21,8 +21,12 @@ export const noStages: StageDefinitions = { stages: [], assigned: new Map() };
 
 const STAGE_ID = "stage:";
 
-/** Whether an id is one this module gives a stage: no other id is taken from what was kept. */
-export const isStageId = (id: string) => /^stage:[1-9]\d*$/.test(id);
+/**
+ * Whether an id is one this module gives a stage: no other id is taken from what was kept. Its
+ * number has at most fifteen digits, so that the number after it is still told apart from it; a
+ * longer one, which only a damaged store can hold, is not a stage id.
+ */
+export const isStageId = (id: string) => /^stage:[1-9]\d{0,14}$/.test(id);
 
 /** A name as it is given to a stage: without space around it or runs of space inside it. */
 export const stageName = (name: string) => name.trim().replace(/\s+/g, " ");
@@ -38,7 +42,11 @@ export function nameProblem(definitions: StageDefinitions, name: string, stageId
 export function withStage(definitions: StageDefinitions, name: string): StageDefinitions {
   if (nameProblem(definitions, name) !== null) return definitions;
   const latest = definitions.stages.reduce((most, stage) => Math.max(most, Number(stage.id.slice(STAGE_ID.length))), 0);
-  return { ...definitions, stages: [...definitions.stages, { id: `${STAGE_ID}${latest + 1}`, name: stageName(name) }] };
+  const taken = new Set(definitions.stages.map((stage) => stage.id));
+  let id = `${STAGE_ID}${latest + 1}`;
+  // After the largest id that can be a stage's, the next one is the smallest that is free: a new stage always gets an id that is one and that no other has.
+  for (let number = 1; !isStageId(id) || taken.has(id); number += 1) id = `${STAGE_ID}${number}`;
+  return { ...definitions, stages: [...definitions.stages, { id, name: stageName(name) }] };
 }
 
 /** Renames a stage; its place and its activities stay. A name that cannot be given changes nothing. */

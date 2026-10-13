@@ -151,4 +151,22 @@ describe("the stages as they are kept and read again", () => {
     expect(withStage(read(kept), "Review").stages[2].id).toBe("stage:6");
     expect(read({ stages: [{ id: "stage:1", name: "Intake" }], assigned: { Eröffnet: "stage:1" } }).assigned.size).toBe(0);
   });
+
+  it("takes no stage from a damaged store whose id is too large to count on from", () => {
+    // Beyond fifteen digits the number after an id is no longer told apart from it, and a far longer one is no number at all.
+    const tooLarge = read({ stages: [{ id: "stage:9007199254740992", name: "Existing" }, { id: "stage:7", name: "Kept" }], assigned: [] });
+    expect(tooLarge.stages.map((stage) => stage.id)).toEqual(["stage:7"]);
+    const overflowing = read({ stages: [{ id: `stage:${"9".repeat(400)}`, name: "Existing" }], assigned: [] });
+    expect(overflowing.stages).toEqual([]);
+    for (const loaded of [tooLarge, overflowing]) {
+      const after = withStage(loaded, "Added");
+      expect(new Set(after.stages.map((stage) => stage.id)).size).toBe(after.stages.length);
+      expect(after.stages.every((stage) => isStageId(stage.id))).toBe(true);
+    }
+    // After the largest id that is taken as one, a new stage gets the smallest free id, which is one too.
+    expect(isStageId("stage:999999999999999")).toBe(true);
+    expect(isStageId("stage:1000000000000000")).toBe(false);
+    const last = read({ stages: [{ id: "stage:999999999999999", name: "Last" }, { id: "stage:1", name: "First" }], assigned: [] });
+    expect(withStage(last, "Added").stages.map((stage) => stage.id)).toEqual(["stage:999999999999999", "stage:1", "stage:2"]);
+  });
 });
