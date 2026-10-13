@@ -16,7 +16,7 @@
     "generate": "npm run generate:python && npm run generate:ts",
     "check": "npm run check --workspace @wise-platform/web && tsc --noEmit -p tests/contracts/tsconfig.json && npm run test --workspace @wise-platform/web",
     "test": "python -m pytest",
-    "build": "npm run build --workspace @wise-platform/web",
+    "build": "npm run build --workspace @wise-platform/web && node tools/collect-browser-notices.mjs",
     "dev": "npm run dev --workspace @wise-platform/web"
   },
   "devDependencies": {
