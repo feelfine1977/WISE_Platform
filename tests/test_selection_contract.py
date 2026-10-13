@@ -6,7 +6,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 import pytest
 
-from wise_platform_api.generated.selection import SelectCasesRequest
+from wise_platform_api.generated.selection import NodeMetrics, SelectCasesRequest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,6 +77,50 @@ def test_every_contract_that_carries_selection_steps_defines_the_same_steps():
     for name, definitions in carrying.items():
         for definition in STEP_DEFINITIONS:
             assert definitions[definition] == SCHEMA["$defs"][definition], (name, definition)
+
+
+NODE_COUNTS = {"count": 3, "events": 3, "cases": 2, "starts": 1, "ends": 0}
+
+
+def test_an_activity_carries_its_counts_and_for_each_time_the_passages_it_rests_on():
+    definition = SCHEMA["$defs"]["NodeMetrics"]
+    assert list(definition["properties"]) == ["count", "events", "cases", "starts", "ends", "medianPreviousHours",
+                                              "usablePreviousCount", "medianNextHours", "usableNextCount"]
+    assert definition["required"] == ["count", "events", "cases", "starts", "ends",
+                                      "usablePreviousCount", "usableNextCount"]
+    assert definition["additionalProperties"] is False
+    # Hours and their supports are named as those of a path are.
+    assert list(SCHEMA["$defs"]["PathMetrics"]["properties"]) == ["count", "cases", "medianLagHours", "usableLagCount"]
+
+
+def test_an_activity_gives_a_time_exactly_where_it_names_passages_for_it():
+    validator = Draft202012Validator({"$ref": "#/$defs/NodeMetrics", "$defs": SCHEMA["$defs"]})
+    for metrics in [
+        {**NODE_COUNTS, "usablePreviousCount": 0, "usableNextCount": 0},
+        {**NODE_COUNTS, "medianPreviousHours": 0, "usablePreviousCount": 2, "usableNextCount": 0},
+        {**NODE_COUNTS, "usablePreviousCount": 0, "medianNextHours": 1.5, "usableNextCount": 1},
+        {**NODE_COUNTS, "medianPreviousHours": 2.25, "usablePreviousCount": 4, "medianNextHours": 0.5, "usableNextCount": 3},
+    ]:
+        validator.validate(metrics)
+        assert NodeMetrics.model_validate(metrics).model_dump(mode="json", exclude_unset=True) == metrics
+    for metrics in [
+        # Without the passages its times rest on.
+        NODE_COUNTS,
+        {**NODE_COUNTS, "usablePreviousCount": 0},
+        # Passages without their time.
+        {**NODE_COUNTS, "usablePreviousCount": 2, "usableNextCount": 0},
+        {**NODE_COUNTS, "usablePreviousCount": 0, "usableNextCount": 1},
+        # A time without a passage.
+        {**NODE_COUNTS, "medianPreviousHours": 1, "usablePreviousCount": 0, "usableNextCount": 0},
+        {**NODE_COUNTS, "usablePreviousCount": 0, "medianNextHours": 0, "usableNextCount": 0},
+        # A time that is not there is left out; it is not null, and never negative.
+        {**NODE_COUNTS, "medianPreviousHours": None, "usablePreviousCount": 0, "usableNextCount": 0},
+        {**NODE_COUNTS, "usablePreviousCount": 0, "medianNextHours": None, "usableNextCount": 1},
+        {**NODE_COUNTS, "medianPreviousHours": -0.5, "usablePreviousCount": 1, "usableNextCount": 0},
+        {**NODE_COUNTS, "medianPreviousHours": 1, "usablePreviousCount": 1.5, "usableNextCount": 0},
+        {**NODE_COUNTS, "usablePreviousCount": 0, "usableNextCount": 0, "p90NextHours": 3},
+    ]:
+        assert list(validator.iter_errors(metrics)), metrics
 
 
 def test_graph_clock_domain_cannot_silently_change_physical_meaning():

@@ -339,6 +339,26 @@
         "ends": {
           "type": "integer",
           "minimum": 0
+        },
+        "medianPreviousHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Median hours from the labelled record before a record of the activity to that record, over the passages of the paths into the activity, on the clock of lag_clock. Absent exactly when usablePreviousCount is 0."
+        },
+        "usablePreviousCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Passages of the paths into the activity, in sequence-evaluable cases: the occurrences medianPreviousHours rests on."
+        },
+        "medianNextHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Median hours from a record of the activity to the labelled record after it, over the passages of the paths out of the activity, on the clock of lag_clock. Absent exactly when usableNextCount is 0."
+        },
+        "usableNextCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Passages of the paths out of the activity, in sequence-evaluable cases: the occurrences medianNextHours rests on."
         }
       },
       "required": [
@@ -346,7 +366,59 @@
         "events",
         "cases",
         "starts",
-        "ends"
+        "ends",
+        "usablePreviousCount",
+        "usableNextCount"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "usablePreviousCount": {
+                "const": 0
+              }
+            },
+            "required": [
+              "usablePreviousCount"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "medianPreviousHours"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "medianPreviousHours"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "usableNextCount": {
+                "const": 0
+              }
+            },
+            "required": [
+              "usableNextCount"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "medianNextHours"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "medianNextHours"
+            ]
+          }
+        }
       ]
     },
     "ActivityNode": {

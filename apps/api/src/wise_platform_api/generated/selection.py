@@ -178,6 +178,22 @@ class NodeMetrics(BaseModel):
     cases: conint(ge=0)
     starts: conint(ge=0)
     ends: conint(ge=0)
+    medianPreviousHours: confloat(ge=0.0) | None = Field(
+        None,
+        description='Median hours from the labelled record before a record of the activity to that record, over the passages of the paths into the activity, on the clock of lag_clock. Absent exactly when usablePreviousCount is 0.',
+    )
+    usablePreviousCount: conint(ge=0) = Field(
+        ...,
+        description='Passages of the paths into the activity, in sequence-evaluable cases: the occurrences medianPreviousHours rests on.',
+    )
+    medianNextHours: confloat(ge=0.0) | None = Field(
+        None,
+        description='Median hours from a record of the activity to the labelled record after it, over the passages of the paths out of the activity, on the clock of lag_clock. Absent exactly when usableNextCount is 0.',
+    )
+    usableNextCount: conint(ge=0) = Field(
+        ...,
+        description='Passages of the paths out of the activity, in sequence-evaluable cases: the occurrences medianNextHours rests on.',
+    )
 
 
 class ActivityNode(BaseModel):

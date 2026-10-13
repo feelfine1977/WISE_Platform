@@ -86,7 +86,7 @@ export function comparedGraph(request: ProcessGraphRequest, caseIds: string[]): 
     id: `activity.v1:sha256:${hex(digit)}`,
     kind: "activity" as const,
     label,
-    metrics: { count: 1, events: 1, cases: 1, starts: 0, ends: 0 },
+    metrics: { count: 1, events: 1, cases: 1, starts: 0, ends: 0, usablePreviousCount: 0, usableNextCount: 0 },
   });
   return {
     schema_version: 1,

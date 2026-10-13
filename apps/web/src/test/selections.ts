@@ -1,4 +1,5 @@
 import type {
+  NodeMetrics,
   PopulationSupport,
   PredicateResult,
   ProcessGraphAnswer,
@@ -16,6 +17,10 @@ import type { SelectionClient, SelectionOutcome } from "../map/client";
  * ./imports.ts: incident A-1 with two records, "Eröffnet" and then "Geschlossen" a day and a half
  * hour later, in a known order; incident B-2 with one record "Prüfung" whose time is not readable,
  * so its order is not known. The figures below are worked out from that description alone.
+ *
+ * The one passage is that of A-1 from "Eröffnet" to "Geschlossen", 25.5 hours long: it is the time
+ * until the next event of "Eröffnet" and the time since the event before of "Geschlossen". No
+ * passage leads into or out of "Prüfung".
  */
 
 const hex = (digit: string) => digit.repeat(64);
@@ -114,11 +119,14 @@ export const withoutOpened: Figures = {
   results: [{ kept: support(["B-2"], 1), removed: support(["A-1"], 2), unevaluable: support([], 0) }],
 };
 
-const activity = (label: keyof typeof nodeIds, events: number, starts: number, ends: number) => ({
+type Times = Pick<NodeMetrics, "medianPreviousHours" | "usablePreviousCount" | "medianNextHours" | "usableNextCount">;
+const noPassage: Times = { usablePreviousCount: 0, usableNextCount: 0 };
+
+const activity = (label: keyof typeof nodeIds, events: number, starts: number, ends: number, times: Times = noPassage) => ({
   id: nodeIds[label],
   kind: "activity" as const,
   label,
-  metrics: { count: events, events, cases: events, starts, ends },
+  metrics: { count: events, events, cases: events, starts, ends, ...times },
 });
 
 /** The map of the given incidents of the population: A-1, B-2 or both. */
@@ -126,7 +134,15 @@ export function suppliedGraph(caseIds: string[]): SuppliedGraph {
   const withA = caseIds.includes("A-1");
   const withB = caseIds.includes("B-2");
   return {
-    nodes: [...(withA ? [activity(opened, 1, 1, 0), activity(closed, 1, 0, 1)] : []), ...(withB ? [activity(checked, 1, 0, 0)] : [])],
+    nodes: [
+      ...(withA
+        ? [
+            activity(opened, 1, 1, 0, { usablePreviousCount: 0, medianNextHours: 25.5, usableNextCount: 1 }),
+            activity(closed, 1, 0, 1, { medianPreviousHours: 25.5, usablePreviousCount: 1, usableNextCount: 0 }),
+          ]
+        : []),
+      ...(withB ? [activity(checked, 1, 0, 0)] : []),
+    ],
     edges: withA
       ? [
           {

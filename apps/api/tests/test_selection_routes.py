@@ -401,9 +401,15 @@ def test_the_map_of_the_opened_population_is_the_map_of_every_incident(client, w
     graph = graph_of(client, workspace_id, base["identity"])
 
     nodes = {node["label"]: node["metrics"] for node in graph["nodes"]}
-    assert nodes == {"Opened": {"count": 4, "events": 4, "cases": 4, "starts": 3, "ends": 0},
-                     "Assigned": {"count": 4, "events": 4, "cases": 3, "starts": 0, "ends": 1},
-                     "Resolved": {"count": 2, "events": 2, "cases": 2, "starts": 0, "ends": 2}}
+    # Out of Opened lead passages of 1, 0.5 and 2 hours; into Assigned of 1, 2 and 2 hours and out of it
+    # of 2 and 2 hours; into Resolved of 2 and 0.5 hours. D's order is not known and adds no passage.
+    assert nodes == {"Opened": {"count": 4, "events": 4, "cases": 4, "starts": 3, "ends": 0,
+                                "usablePreviousCount": 0, "medianNextHours": 1, "usableNextCount": 3},
+                     "Assigned": {"count": 4, "events": 4, "cases": 3, "starts": 0, "ends": 1,
+                                  "medianPreviousHours": 2, "usablePreviousCount": 3,
+                                  "medianNextHours": 2, "usableNextCount": 2},
+                     "Resolved": {"count": 2, "events": 2, "cases": 2, "starts": 0, "ends": 2,
+                                  "medianPreviousHours": 1.25, "usablePreviousCount": 2, "usableNextCount": 0}}
     paths = {(edge["payload"]["source_activity"], edge["payload"]["target_activity"]): edge["metrics"]
              for edge in graph["edges"]}
     assert paths == {("Opened", "Assigned"): {"count": 2, "cases": 2, "medianLagHours": 1.5, "usableLagCount": 2},
@@ -428,6 +434,44 @@ def test_the_map_of_a_selection_is_the_map_of_its_kept_incidents(client, workspa
     full = graph_of(client, workspace_id, base["identity"])
     ids = {node["label"]: node["id"] for node in full["nodes"]}
     assert all(node["id"] == ids[node["label"]] for node in graph["nodes"])
+
+
+def times_of(graph):
+    """For every activity: (hours before, passages into it, hours after, passages out of it); None where absent."""
+    return {node["label"]: tuple(node["metrics"].get(key) for key in (
+        "medianPreviousHours", "usablePreviousCount", "medianNextHours", "usableNextCount")) for node in graph["nodes"]}
+
+
+def test_the_map_of_a_selection_gives_every_activity_its_times_over_the_kept_incidents(client, workspace_id, base):
+    answer = selected(client, workspace_id, base, [contains("Assigned")])
+    graph = graph_of(client, workspace_id, answer["identity"])
+
+    # A and C are kept with a known order: Opened is 1 and 2 hours before Assigned, Assigned twice 2 hours
+    # before the next record, Resolved 2 hours after Assigned. D is kept too and adds no passage.
+    assert graph["meta"]["selected_case_ids"] == ["A", "C", "D"]
+    assert times_of(graph) == {"Opened": (None, 0, 1.5, 2), "Assigned": (2, 3, 2, 2), "Resolved": (2, 1, None, 0)}
+    assert graph["meta"]["lag_clock"] == "elapsed_utc_hours"
+    # The times of an activity rest on the passages its paths count.
+    for node in graph["nodes"]:
+        into = [edge["metrics"]["count"] for edge in graph["edges"] if edge["target"] == node["id"]]
+        out_of = [edge["metrics"]["count"] for edge in graph["edges"] if edge["source"] == node["id"]]
+        assert (node["metrics"]["usablePreviousCount"], node["metrics"]["usableNextCount"]) == (sum(into), sum(out_of))
+
+
+def test_an_activity_without_a_record_before_or_after_it_has_no_time_and_says_so_by_its_count(
+        client, workspace_id, base):
+    one = selected(client, workspace_id, base, parent=["B"])
+    unknown = selected(client, workspace_id, base, parent=["D"], revision=3)
+
+    # B is Opened and, half an hour later, Resolved.
+    assert times_of(graph_of(client, workspace_id, one["identity"])) == {
+        "Opened": (None, 0, 0.5, 1), "Resolved": (0.5, 1, None, 0)}
+    # D's order is not known: its two activities are counted, and no time is given for either.
+    graph = graph_of(client, workspace_id, unknown["identity"])
+    assert graph["edges"] == []
+    assert {node["label"]: node["metrics"] for node in graph["nodes"]} == {
+        label: {"count": 1, "events": 1, "cases": 1, "starts": 0, "ends": 0,
+                "usablePreviousCount": 0, "usableNextCount": 0} for label in ("Opened", "Assigned")}
 
 
 def test_the_map_of_a_population_never_selected_is_unavailable(client, workspace_id, base):

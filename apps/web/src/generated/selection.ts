@@ -22,6 +22,7 @@ export type ImplementationVersion = string;
 export type CaseId = string;
 export type SelectionPredicate =
   ContainsActivity | DirectlyFollows | OpeningAttributeEquals | StartsWithActivity | EndsWithActivity;
+export type NodeMetrics = NodeMetrics1;
 export type ActivityNodeId = string;
 export type RowId = string;
 export type GraphCoverage = GraphCoverage1 & GraphCoverage2;
@@ -138,12 +139,28 @@ export interface ActivityNode {
   label: string;
   metrics: NodeMetrics;
 }
-export interface NodeMetrics {
+export interface NodeMetrics1 {
   count: number;
   events: number;
   cases: number;
   starts: number;
   ends: number;
+  /**
+   * Median hours from the labelled record before a record of the activity to that record, over the passages of the paths into the activity, on the clock of lag_clock. Absent exactly when usablePreviousCount is 0.
+   */
+  medianPreviousHours?: number;
+  /**
+   * Passages of the paths into the activity, in sequence-evaluable cases: the occurrences medianPreviousHours rests on.
+   */
+  usablePreviousCount: number;
+  /**
+   * Median hours from a record of the activity to the labelled record after it, over the passages of the paths out of the activity, on the clock of lag_clock. Absent exactly when usableNextCount is 0.
+   */
+  medianNextHours?: number;
+  /**
+   * Passages of the paths out of the activity, in sequence-evaluable cases: the occurrences medianNextHours rests on.
+   */
+  usableNextCount: number;
 }
 export interface FollowsEdge {
   id: string;

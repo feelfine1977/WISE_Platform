@@ -27,6 +27,12 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
     Starts and ends are those of ``boundary_activities``, which the boundary
     predicates of a selection read too, so both always count the same incidents.
     Missing-label projection bridges carry their omitted raw-row witnesses.
+
+    The hours of a passage are taken once, for its path. The same hours are the
+    time since the event before for the activity the passage leads into, and the
+    time until the next event for the activity it leaves. An activity's two
+    medians are therefore medians over the lags of the paths into it and out of
+    it, on the clock of ``lag_clock``; one without such a passage has no median.
     """
     selected = case_ids(prepared, selected_ids)
     eligible = tuple(case_id for case_id in selected if prepared.sequence_evaluable(case_id))
@@ -39,6 +45,8 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
     passages: Counter[tuple[str, str]] = Counter()
     path_cases: dict[tuple[str, str], set[str]] = defaultdict(set)
     lags: dict[tuple[str, str], list[float]] = defaultdict(list)
+    hours_before: dict[str, list[float]] = defaultdict(list)
+    hours_after: dict[str, list[float]] = defaultdict(list)
     gap_cases: dict[tuple[str, str], set[str]] = defaultdict(set)
     gap_rows: dict[tuple[str, str], set[str]] = defaultdict(set)
     gap_passages: Counter[tuple[str, str]] = Counter()
@@ -74,6 +82,8 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
             passages[key] += 1
             path_cases[key].add(case_id)
             lags[key].append(hours)
+            hours_after[left.activity].append(hours)
+            hours_before[right.activity].append(hours)
             omitted = records[left_index + 1:right_index]
             if omitted:
                 gap_passages[key] += 1
@@ -85,10 +95,19 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
     time_kind = "wall_clock" if time_policy == "incident.time.wall_clock_as_recorded.v1" else "utc_instant"
     if kinds and kinds != {time_kind}:
         raise SelectionError("inconsistent_time_kind", "Record times do not match the prepared interpretation.")
-    nodes = [{"id": activity_node_id(activity), "kind": "activity", "label": activity,
-              "metrics": {"count": occurrences[activity], "events": occurrences[activity],
-                          "cases": len(activity_cases[activity]), "starts": starts[activity], "ends": ends[activity]}}
-             for activity in sorted(occurrences)]
+    nodes = []
+    for activity in sorted(occurrences):
+        before, after = hours_before.get(activity, []), hours_after.get(activity, [])
+        metrics: dict[str, object] = {
+            "count": occurrences[activity], "events": occurrences[activity],
+            "cases": len(activity_cases[activity]), "starts": starts[activity], "ends": ends[activity]}
+        if before:
+            metrics["medianPreviousHours"] = median(before)
+        metrics["usablePreviousCount"] = len(before)
+        if after:
+            metrics["medianNextHours"] = median(after)
+        metrics["usableNextCount"] = len(after)
+        nodes.append({"id": activity_node_id(activity), "kind": "activity", "label": activity, "metrics": metrics})
     edges = []
     for source, target in sorted(passages):
         key = (source, target)

@@ -262,7 +262,23 @@ describe("the map of the kept incidents", () => {
       const id = (index: number) => `activity.v1:sha256:${String(index).padStart(64, "0")}`;
       return {
         ...graph,
-        nodes: labels.map((label, index) => ({ id: id(index), kind: "activity", label, metrics: { count: 40 - index, events: 40 - index, cases: 40 - index, starts: 0, ends: 0 } })),
+        // Every path below is an hour long: into each activity but the first leads the path before it, out of each but the last the path after it.
+        nodes: labels.map((label, index) => ({
+          id: id(index),
+          kind: "activity",
+          label,
+          metrics: {
+            count: 40 - index,
+            events: 40 - index,
+            cases: 40 - index,
+            starts: 0,
+            ends: 0,
+            ...(index > 0 ? { medianPreviousHours: 1 } : {}),
+            usablePreviousCount: index > 0 ? 40 - index : 0,
+            ...(index < 39 ? { medianNextHours: 1 } : {}),
+            usableNextCount: 39 - index,
+          },
+        })),
         edges: labels.slice(1).map((_, index) => ({
           ...graph.edges[0],
           id: `path.v1:sha256:${String(index).padStart(64, "0")}`,

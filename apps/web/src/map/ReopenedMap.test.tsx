@@ -25,7 +25,9 @@ class StillObserver { observe() {} unobserve() {} disconnect() {} }
  * A literal nine-incident fixture, separate from analytics qualification: A-1 through A-7 each
  * have Eröffnet, Geschlossen. A-8 has Eröffnet, Geschlossen, Eröffnet, Geschlossen. B-2 has one
  * Prüfung record with unknown order. Every mapped label is retained: parent 9/19, contains
- * Eröffnet 8/18; a smaller saved parent {A-1,B-2} is 2/3 and its kept side is 1/2.
+ * Eröffnet 8/18; a smaller saved parent {A-1,B-2} is 2/3 and its kept side is 1/2. Geschlossen
+ * follows Eröffnet after 25.5 hours in every passage; in A-8 the second Eröffnet follows
+ * Geschlossen after 12 hours.
  */
 const allIds = ["A-1", "A-2", "A-3", "A-4", "A-5", "A-6", "A-7", "A-8", "B-2"];
 const cases = allIds.map((case_id) => ({
@@ -63,11 +65,22 @@ function fixtureGraph(ids: string[]): SuppliedGraph {
   const repeats = ids.includes("A-8") ? 1 : 0;
   const passages = a.length + repeats;
   const template = suppliedGraph([...(a.length ? ["A-1"] : []), ...(hasB ? ["B-2"] : [])]);
+  const forth = { hours: 25.5, passages };
+  const back = repeats ? { hours: 12, passages: 1 } : null;
+  const times = (into: typeof back, outOf: typeof back) => ({
+    ...(into ? { medianPreviousHours: into.hours } : {}),
+    usablePreviousCount: into?.passages ?? 0,
+    ...(outOf ? { medianNextHours: outOf.hours } : {}),
+    usableNextCount: outOf?.passages ?? 0,
+  });
   const graph: SuppliedGraph = {
     ...template,
     nodes: template.nodes.map((node) => node.label === checked ? node : {
       ...node,
-      metrics: { count: passages, events: passages, cases: a.length, starts: node.label === opened ? a.length : 0, ends: node.label === closed ? a.length : 0 },
+      metrics: {
+        count: passages, events: passages, cases: a.length, starts: node.label === opened ? a.length : 0, ends: node.label === closed ? a.length : 0,
+        ...(node.label === opened ? times(back, forth) : times(forth, back)),
+      },
     }),
     edges: template.edges.map((edge) => ({
       ...edge,

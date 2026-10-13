@@ -137,8 +137,13 @@ def test_repeated_passages_distinct_incidents_and_zero_lag_have_exact_support():
     })
     graph = build_process_graph(prepared)
     nodes = {node["label"]: node for node in graph["nodes"]}
-    assert nodes["A"]["metrics"] == {"count": 3, "events": 3, "cases": 2, "starts": 2, "ends": 0}
-    assert nodes["B"]["metrics"] == {"count": 3, "events": 3, "cases": 2, "starts": 0, "ends": 2}
+    # Into A leads the one passage from B (1 h); out of it the three to B (1, 2 and 0 h). For B it is the other way round.
+    assert nodes["A"]["metrics"] == {"count": 3, "events": 3, "cases": 2, "starts": 2, "ends": 0,
+                                     "medianPreviousHours": 1.0, "usablePreviousCount": 1,
+                                     "medianNextHours": 1.0, "usableNextCount": 3}
+    assert nodes["B"]["metrics"] == {"count": 3, "events": 3, "cases": 2, "starts": 0, "ends": 2,
+                                     "medianPreviousHours": 1.0, "usablePreviousCount": 3,
+                                     "medianNextHours": 1.0, "usableNextCount": 1}
     edges = {(edge["payload"]["source_activity"], edge["payload"]["target_activity"]): edge for edge in graph["edges"]}
     assert edges["A", "B"]["metrics"] == {"count": 3, "cases": 2, "medianLagHours": 1.0, "usableLagCount": 3}
     assert edges["B", "A"]["metrics"]["count"] == 1
