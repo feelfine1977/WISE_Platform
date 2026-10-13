@@ -273,6 +273,7 @@ def _catalogue(
 
 
 def _exemplars(
+    prepared: PreparedData,
     members: tuple[str, ...],
     summaries: Mapping[str, dict],
     counts: Mapping[str, tuple[int, int]],
@@ -293,8 +294,13 @@ def _exemplars(
             "observed_span_hours": summaries[c]["observed_span_hours"],
         }
 
-    shortest = min(known, key=lambda c: (summaries[c]["observed_span_hours"], c))
-    longest = min(known, key=lambda c: (-summaries[c]["observed_span_hours"], c))
+    # Rank exact endpoint durations before rounding them to descriptive hours.
+    spans = {
+        c: prepared.histories[c][-1].time_value - prepared.histories[c][0].time_value
+        for c in known
+    }
+    shortest = min(known, key=lambda c: (spans[c], c))
+    longest = min(known, key=lambda c: (-spans[c], c))
     return {
         "status": "available",
         "shortest": exemplar(shortest),
@@ -453,7 +459,7 @@ def rule_groups(
                     "gap_distribution": case_distribution_for_kept(
                         summaries, kept, baselines[1]
                     ),
-                    "exemplars": _exemplars(kept, summaries, counts),
+                    "exemplars": _exemplars(prepared, kept, summaries, counts),
                 }
             )
         return {

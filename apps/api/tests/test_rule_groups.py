@@ -720,6 +720,34 @@ def test_only_current_unknown_order_and_empty_current_group_exemplars(reading):
     assert boundaries["population_coverage"]["unevaluable"]["case_ids"] == ["E"]
 
 
+@pytest.mark.parametrize(
+    "later_cases,shortest,longest",
+    [(("A", "C"), "B", "A"), (("B", "C"), "A", "B")],
+)
+def test_exemplars_rank_exact_recorded_spans_before_rounding_hours(
+    reading, later_cases, shortest, longest
+):
+    c, wid, _, _, _ = reading
+    rows = ["case,activity,time,sequence,reference"]
+    for cid in ("A", "B", "C"):
+        end = "2026-01-01T00:00:00" + (".000001" if cid in later_cases else "") + "Z"
+        rows.extend([
+            f"{cid},Step,1000-01-01T00:00:00Z,1,R",
+            f"{cid},Step,{end},2,R",
+        ])
+    base = another_preparation(c, wid, ("\n".join(rows) + "\n").encode("utf-8"))
+    r = request(wid, base, "activity_presence")
+    r["query"]["rule"]["activity"] = "Step"
+    group = answered(c, r)["groups"][0]
+    assert group["population"]["cases"]["case_ids"] == ["A", "B", "C"]
+    # A microsecond distinguishes the histories even when descriptive hours coincide.
+    assert group["exemplars"] == {
+        "status": "available",
+        "shortest": {"case_id": shortest, "record_count": 2, "observed_span_hours": 8993736.0},
+        "longest": {"case_id": longest, "record_count": 2, "observed_span_hours": 8993736.0},
+    }
+
+
 def another_preparation(c, wid, raw, chosen=None):
     r = envelope(
         "upload_source_metadata",
