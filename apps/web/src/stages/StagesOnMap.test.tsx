@@ -100,7 +100,7 @@ describe("the stages of a log on its map", () => {
   it("draws the map as before while no stage is defined, and holds the editor of the stages under it", async () => {
     const { map } = await openMap();
     expect(map.querySelector('[data-wf-part="group"]')).toBeNull();
-    expect(within(map).queryByRole("button", { name: "Show stages" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show stages" })).toBeNull();
     // Without a stage an activity carries the neutral band of the map library, without a pattern.
     expect(nodeOf(map, nodeIds[opened])?.querySelector('[data-wf-part="node-band"] svg')).toBeNull();
 
@@ -120,17 +120,17 @@ describe("the stages of a log on its map", () => {
     // A stage without an activity changes nothing on the map.
     expect(browserStages.stateOf(reading).definitions.stages.map((stage) => stage.name)).toEqual(["Intake"]);
     expect(map.querySelector('[data-wf-part="group"]')).toBeNull();
-    expect(within(map).queryByRole("button", { name: "Show stages" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show stages" })).toBeNull();
 
     await user.selectOptions(editor.getByRole("combobox", { name: `Stage of “${opened}”` }), "Intake");
     await waitFor(() => expect(stageBoxes(map)).toEqual(["Intake"]));
     expect(nodeOf(map, nodeIds[opened])?.getAttribute("aria-label")).toContain("(Intake)");
-    expect(within(map).getByRole("button", { name: "Show stages" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Show stages" })).toBeTruthy();
 
     // Out of its stage again, the activity is drawn as before.
     await user.selectOptions(editor.getByRole("combobox", { name: `Stage of “${opened}”` }), "No stage");
     await waitFor(() => expect(stageBoxes(map)).toEqual([]));
-    expect(within(map).queryByRole("button", { name: "Show stages" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show stages" })).toBeNull();
   });
 
   it("draws the stages as boxes in their order with their activities in them, Start and End outside, and names them in the legend", async () => {
@@ -149,7 +149,7 @@ describe("the stages of a log on its map", () => {
     expect(nodeOf(map, START_ID)).not.toBeNull();
     expect(nodeOf(map, END_ID)).not.toBeNull();
     expect(leftOf(map, intake)).toBeLessThan(leftOf(map, closure));
-    expect(within(map).getByRole("button", { name: "Show stages" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Show stages" })).toBeTruthy();
 
     // The legend of the map names the stages beside the colours the library gave them.
     await user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
@@ -172,7 +172,7 @@ describe("the stages of a log on its map", () => {
     const { map, user, selecting } = await openMap();
     await waitFor(() => expect(stageBoxes(map)).toEqual(["Intake", "Closure"]));
 
-    await user.click(within(map).getByRole("button", { name: "Show stages" }));
+    await user.click(screen.getByRole("button", { name: "Show stages" }));
     await waitFor(() => expect(nodeOf(map, intake)).not.toBeNull());
     expect(nodeOf(map, intake)?.getAttribute("aria-label")).toContain("Intake, stage.");
     expect(nodeOf(map, closure)).not.toBeNull();
@@ -191,7 +191,7 @@ describe("the stages of a log on its map", () => {
     fireEvent.click(nodeOf(map, nodeIds[checked])!);
     expect(offered()).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it"]);
 
-    await user.click(within(map).getByRole("button", { name: "Show activities" }));
+    await user.click(screen.getByRole("button", { name: "Show activities" }));
     await waitFor(() => expect(nodeOf(map, nodeIds[opened])).not.toBeNull());
     expect(nodeOf(map, intake)).toBeNull();
     expect(stageBoxes(map)).toEqual(["Intake", "Closure"]);
@@ -256,18 +256,18 @@ describe("the stages of a log on its map", () => {
         .map((cells) => cells.slice(0, 2).concat(cells[3]).join(" "));
 
     // At half of the paths the flows that carry fewer incidents than the weakest path drawn are left out, and the map says so.
-    fireEvent.change(within(map).getAllByRole("slider")[1], { target: { value: "2" } });
-    await user.click(within(map).getByRole("button", { name: "Table view" }));
+    fireEvent.change(screen.getAllByRole("slider")[1], { target: { value: "2" } });
+    await user.click(screen.getByRole("button", { name: "Table view" }));
     expect(flows()).toEqual(["Start Activity 0 900", "Activity 1 End 300"]);
     expect(document.querySelector(".map-flows")?.textContent).toMatch(/^Not drawn at this detail: 5 of the 7 flows/);
 
     // Shown as nodes, the stages carry every flow of their activities: 900 and 40 begin in "Intake", 5 and 300 end in it.
-    await user.click(within(map).getByRole("button", { name: "Show stages" }));
+    await user.click(screen.getByRole("button", { name: "Show stages" }));
     expect(flows()).toEqual(["Start Intake 940", "Start Closure 7", "Intake End 305", "Closure End 60", "Activity 3 End 2"]);
     expect(document.querySelector(".map-flows")).toBeNull();
 
     // With the activities shown again, the flows follow the paths as before.
-    await user.click(within(map).getByRole("button", { name: "Show activities" }));
+    await user.click(screen.getByRole("button", { name: "Show activities" }));
     expect(flows()).toEqual(["Start Activity 0 900", "Activity 1 End 300"]);
   });
 });
