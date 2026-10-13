@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { InfoPopover } from "../components/InfoPopover";
 import type { InspectorLayout } from "../components/Inspector";
 import type { CaseId, ImportedCaseSummary, ImportedPopulationAnswer, PreparationId } from "../generated/imports";
 import type { SelectionPredicate } from "../generated/selection";
@@ -9,6 +10,7 @@ import { MapView } from "../map/MapView";
 import { SelectionSteps } from "../map/SelectionSteps";
 import { supportText } from "../map/wording";
 import { ReplacementNotice } from "../replacement/ReplacementNotice";
+import "./data-row.css";
 import { type AskedQuestion, type ImportedInvestigationCoordinator, type InvestigationView, type ShownSelection, shownSelection } from "./coordinator";
 import { ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
@@ -306,7 +308,6 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   describedBy="imported-incidents-hint"
                   waitingFor={waitingFor}
                 />
-                <PreparationDetails answer={answer} />
               </>
             )}
           </section>
@@ -354,28 +355,83 @@ function keptCases(answer: ImportedPopulationAnswer | null, shown: ShownSelectio
   return shown.answer.kept.case_ids.flatMap((caseId) => summaries.get(caseId) ?? []);
 }
 
+const whole = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
+
+/**
+ * The data row in one line: how much of the parent the selection keeps, in incidents and in
+ * records; what these numbers leave out, quiet at zero and in the amber of a limit above it; and
+ * behind an info button the revision shown and where the data comes from. Each figure has its
+ * full name for assistive technology, and a limit has it as its tooltip too.
+ */
 function Facts({ answer, shown, revision }: { answer: ImportedPopulationAnswer; shown: ShownSelection | null; revision: number }) {
   const parent = shown ? shown.answer.parent : answer.population;
-  const facts: [string, string][] = [
-    ["Parent", supportText(parent)],
-    ["Kept", shown ? supportText(shown.answer.kept) : "being selected"],
-    ["Rows outside every incident", countOf(answer.unassigned_record_count, "row")],
-    ["Records without activity label", countOf(answer.coverage.omitted_activity_record_count, "record")],
-    ["Revision", String(revision)],
-  ];
+  const kept = shown ? shown.answer.kept : null;
   return (
-    <dl className="facts" aria-label="Population">
-      {facts.map(([label, value]) => (
-        <div key={label} className="fact">
-          <dt>{label}</dt>
-          <dd>{value}</dd>
+    <div className="data-facts">
+      <dl className="population" aria-label="Population">
+        <div className="population-kept">
+          <dt className="visually-hidden">Kept of the parent</dt>
+          {kept === null ? (
+            // Until the selection is answered nothing is known of what it keeps; the parent is said as it is supplied.
+            <dd>
+              being selected <span className="muted">of {supportText(parent)}</span>
+            </dd>
+          ) : (
+            <>
+              <dd>
+                <KeptOf kept={kept.case_count} parent={countOf(parent.case_count, "incident")} />
+                <KeptShare kept={kept.case_count} parent={parent.case_count} />
+              </dd>
+              <dd>
+                <KeptOf kept={kept.record_count} parent={countOf(parent.record_count, "record")} />
+              </dd>
+            </>
+          )}
         </div>
-      ))}
-    </dl>
+        <Limit name="Rows outside every incident" count={answer.unassigned_record_count} word="outside" />
+        <Limit name="Records without activity label" count={answer.coverage.omitted_activity_record_count} word="unlabelled" />
+      </dl>
+      <InfoPopover label="About this data">
+        <DataDetails answer={answer} revision={revision} />
+      </InfoPopover>
+    </div>
   );
 }
 
-function PreparationDetails({ answer }: { answer: ImportedPopulationAnswer }) {
+/** A kept number of the parent's, as "803 of 12,063 incidents": the kept number stands out, the rest is quiet. */
+function KeptOf({ kept, parent }: { kept: number; parent: string }) {
+  return (
+    <>
+      <strong>{whole.format(kept)}</strong>
+      <span className="muted"> of {parent}</span>
+    </>
+  );
+}
+
+/** The kept share of the parent's incidents as a small bar beside its two numbers, which say it; a picture only. */
+function KeptShare({ kept, parent }: { kept: number; parent: number }) {
+  return (
+    <svg className="kept-share" viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <rect className="kept-share-track" width="100" height="4" />
+      <rect className="kept-share-bar" width={parent > 0 ? (100 * kept) / parent : 0} height="4" />
+    </svg>
+  );
+}
+
+/** What the numbers of the data row leave out, as a count with one word: quiet at zero, marked as a limit above it. */
+function Limit({ name, count, word }: { name: string; count: number; word: string }) {
+  return (
+    <div className="population-limit" data-some={count > 0 || undefined}>
+      <dt className="visually-hidden">{name}</dt>
+      <dd title={name}>
+        {whole.format(count)} {word}
+      </dd>
+    </div>
+  );
+}
+
+/** What "About this data" says: the revision shown, then how the source was read and the identities of what was made of it. */
+function DataDetails({ answer, revision }: { answer: ImportedPopulationAnswer; revision: number }) {
   const { identity, preparation } = answer;
   const mapping = preparation.mapping;
   const rows: [string, string][] = [
@@ -398,9 +454,13 @@ function PreparationDetails({ answer }: { answer: ImportedPopulationAnswer }) {
     ["Request", answer.request_id],
   ];
   return (
-    <details className="preparation-details">
-      <summary>Data details</summary>
+    <section className="popover-section data-details">
+      <h4>Data details</h4>
       <dl className="pairs">
+        <div>
+          <dt>Revision</dt>
+          <dd>{revision}</dd>
+        </div>
         {rows.map(([label, value]) => (
           <div key={label}>
             <dt>{label}</dt>
@@ -410,6 +470,6 @@ function PreparationDetails({ answer }: { answer: ImportedPopulationAnswer }) {
           </div>
         ))}
       </dl>
-    </details>
+    </section>
   );
 }

@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { ImportedPopulationAnswer, OpenPopulationRequest } from "../generated/imports";
@@ -69,13 +69,22 @@ function history() {
   return screen.queryByRole("list", { name: "Records of incident A-1 in the declared order" });
 }
 
+/** What "About this data" says, read with its panel opened for the moment; it stays in reach while another question opens. */
+function aboutData(): string {
+  const button = screen.getByRole("button", { name: "About this data" });
+  fireEvent.click(button);
+  const said = screen.getByRole("group", { name: "About this data" }).textContent ?? "";
+  fireEvent.click(button);
+  return said;
+}
+
 /** Everything that says the question shown is the first preparation's. */
 function expectFirstShown() {
   expect(screen.getByRole("heading", { name: "Vorgänge.csv" })).toBeTruthy();
   expect(shownIncidents()).toEqual(["A-1", "B-2"]);
-  expect(screen.getByLabelText("Population").textContent).toContain("Parent2 incidents · 3 records");
-  expect(screen.getByLabelText("Population").textContent).toContain("Revision2");
-  const details = screen.getByText("Data details").closest("details")?.textContent ?? "";
+  expect(screen.getByLabelText("Population").textContent).toContain("2 of 2 incidents3 of 3 records");
+  const details = aboutData();
+  expect(details).toMatch(/^Data detailsRevision2Source file/);
   expect(details).toContain(preparationId);
   expect(details).not.toContain(earlierPreparationId);
 }

@@ -49,10 +49,13 @@ describe("the investigation of an imported preparation", () => {
     expect(first[0]).toBe("INC-00000");
     // A 480 px view with 32 px rows shows 15 rows; 8 more are kept ready below them.
     expect(first.length).toBe(23);
-    expect(screen.getByLabelText("Population").textContent).toContain("Parent40,000 incidents · 240,000 records");
+    expect(screen.getByLabelText("Population").textContent).toContain("being selected of 40,000 incidents · 240,000 records");
 
     await app.user.tab();
     expect(focusedText()).toBe("Data");
+    // The data row ends with the button of what there is to know about the data.
+    await app.user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "About this data" }));
     await app.user.tab();
     expect(focusedText()).toBe("Map");
     await app.user.tab();
@@ -103,8 +106,8 @@ describe("the investigation of an imported preparation", () => {
     const app = renderInvestigation();
     await deliver(() => app.populations[0].reply({ ok: true, answer: populationAnswer(app.populations[0].request, caseSummaries(40000)) }));
     const scroller = screen.getByRole("table", { name: "Kept incidents" }).parentElement!;
-    // Data, then the three views, then the switch of the side panel, then the table.
-    for (let stop = 0; stop < 6; stop += 1) await app.user.tab();
+    // Data and the button about the data, then the three views, then the switch of the side panel, then the table.
+    for (let stop = 0; stop < 7; stop += 1) await app.user.tab();
     await app.user.keyboard("{End}");
     expect(focusedText()).toBe("INC-39999");
 

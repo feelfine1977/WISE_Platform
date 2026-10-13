@@ -121,7 +121,7 @@ describe("the map of the kept incidents", () => {
 
     await answer(app, 1, containingOpened);
     expect(chipTexts()).toEqual([["Keep incidents that contain “Eröffnet”", "Kept1 incident · 2 records", "Removed1 incident · 1 record", "Not evaluable0 incidents · 0 records"]]);
-    expect(screen.getByLabelText("Population").textContent).toContain("Parent2 incidents · 3 recordsKept1 incident · 2 records");
+    expect(screen.getByLabelText("Population").textContent).toContain("Kept of the parent1 of 2 incidents2 of 3 records");
     const after = screen.getByLabelText("Process map of the kept incidents");
     await waitFor(() => {
       expect(nodeOf(after, opened).style.transform).toBe(placed);

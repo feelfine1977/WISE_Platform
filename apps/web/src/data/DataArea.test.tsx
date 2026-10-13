@@ -313,15 +313,18 @@ describe("the Data area", () => {
     expect(screen.getByRole("heading", { name: "Map of the kept incidents" })).toBeTruthy();
     await app.user.click(screen.getByRole("button", { name: "Incidents" }));
     const facts = screen.getByLabelText("Population");
-    expect(facts.textContent).toBe("Parent2 incidents · 3 recordsKeptbeing selectedRows outside every incident1 rowRecords without activity label0 recordsRevision1");
+    expect(facts.textContent).toBe("Kept of the parentbeing selected of 2 incidents · 3 recordsRows outside every incident1 outsideRecords without activity label0 unlabelled");
+    // The revision shown is said with the details of the data, behind the info button of the data row.
+    await app.user.click(screen.getByRole("button", { name: "About this data" }));
+    const revision = () => within(screen.getByRole("group", { name: "About this data" })).getByText("Revision").nextElementSibling?.textContent;
+    expect(revision()).toBe("1");
     const selection = app.selecting.selections[0];
     expect(selection.request.predicates).toEqual([]);
     await deliver(() => selection.reply({ ok: true, answer: selectionAnswer(selection.request, everyIncident) }));
     const graph = app.selecting.graphs[0];
     await deliver(() => graph.reply({ ok: true, answer: graphAnswer(graph.request, ["A-1", "B-2"]) }));
-    expect(facts.textContent).toBe(
-      "Parent2 incidents · 3 recordsKept2 incidents · 3 recordsRows outside every incident1 rowRecords without activity label0 recordsRevision2",
-    );
+    expect(facts.textContent).toBe("Kept of the parent2 of 2 incidents3 of 3 recordsRows outside every incident1 outsideRecords without activity label0 unlabelled");
+    expect(revision()).toBe("2");
     const table = screen.getByRole("table", { name: "Kept incidents" });
     expect(within(table).getAllByRole("row").slice(1).map((row) => Array.from(row.children).map((cell) => cell.textContent))).toEqual([
       ["A-1", "2", "2", "0", "By time"],

@@ -217,6 +217,9 @@
   --size-viewport-width: 100vw;
   /* The editor of the stages in the column beside the map. */
   --size-map-stages: 360px;
+  /* A header row of one line, and the bar of the kept share in the data row. */
+  --size-header-row: 40px;
+  --size-kept-share: 48px;
 }
 
 /*

@@ -278,9 +278,6 @@
 .workbench .row-open:hover { background: transparent; text-decoration: underline; }
 .workbench tr.selected .row-open { color: var(--color-accent-strong); font-weight: var(--font-weight-strong); }
 
-.preparation-details { margin-top: var(--space-2); }
-.preparation-details > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; color: var(--color-ink-muted); }
-.preparation-details .pairs { margin-top: var(--space-2); }
 .data-area .pairs,
 .workbench .pairs { display: grid; gap: var(--space-1); margin: 0; }
 .data-area .pairs > div,
@@ -499,6 +496,7 @@
 .explorer .fact dd { font-size: var(--font-size-base); line-height: var(--line-height-base); font-weight: var(--font-weight-plain); }
 /* Of the facts of an investigation only the kept count is semibold: it is the second fact, after the parent. */
 .explorer .fact:nth-child(2) dd { font-weight: var(--font-weight-strong); }
+.explorer > .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); }
 .explorer .workbench-body { flex: 1 1 auto; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; }
 .explorer .workbench-body[data-inspector="side"] { grid-template-columns: auto minmax(0, 1fr) var(--size-inspector); }
 .explorer-rail { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; width: var(--size-rail); min-width: 0; background: var(--color-surface); border-right: var(--line-width) solid var(--color-line); }
