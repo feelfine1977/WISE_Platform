@@ -129,7 +129,7 @@ describe("the flows from Start and to End of a map in stages", () => {
     // The number of incidents a flow has to carry is taken from the supplied paths, which the stages do not change.
     const half = { activityDetail: 1, pathDetail: 0.5 };
     expect(leastFlowIncidents(log, half)).toBe(80);
-    expect(flowCoverage(log, 80)).toEqual({ flows: 7, drawn: 2 });
+    expect(flowCoverage(log, 80)).toEqual({ flows: 7, drawn: 2, unshown: 0 });
     // Start and End say every start and end, in stages as without.
     const thinned = toFlowGraph(log, 80, undefined, staged);
     expect(thinned.nodes[0].metrics).toStrictEqual({ cases: 947, count: 947 });
