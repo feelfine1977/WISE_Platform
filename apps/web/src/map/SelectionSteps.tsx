@@ -1,5 +1,8 @@
+import { useId } from "react";
 import type { SelectionPredicate } from "../generated/selection";
 import { type ImportedSelectionState, shownSelection } from "../imported/coordinator";
+import { ReplacementNotice } from "../replacement/ReplacementNotice";
+import type { SelectionProblem } from "./client";
 import { canRedo, canUndo } from "./steps";
 import { describeSelectionProblem, overlapLine, stepCounts, stepWording } from "./wording";
 
@@ -10,6 +13,10 @@ interface SelectionStepsProps {
   onUndo: () => void;
   onRedo: () => void;
   onRetry: () => void;
+  /** Gives up steps that could not be selected and stays with the selection shown. */
+  onStay: () => void;
+  /** The id of the text saying why the steps cannot be changed now; while it is given, they wait. */
+  waitingFor?: string;
 }
 
 /**
@@ -17,7 +24,9 @@ interface SelectionStepsProps {
  * removed and unevaluable incidents over the whole parent, as the local service answered them for
  * the selection shown.
  */
-export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, onRetry }: SelectionStepsProps) {
+export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, onRetry, onStay, waitingFor }: SelectionStepsProps) {
+  const waiting = waitingFor !== undefined;
+  const reasonId = useId();
   if (selection.phase === "idle") return null;
   const shown = shownSelection(selection);
   const { history } = selection;
@@ -29,13 +38,13 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
           Selection of whole incidents
         </h3>
         <div className="selection-actions" role="group" aria-label="Steps">
-          <button type="button" onClick={onUndo} disabled={!canUndo(history)}>
+          <button type="button" onClick={onUndo} disabled={waiting || !canUndo(history)} aria-describedby={waitingFor}>
             Undo
           </button>
-          <button type="button" onClick={onRedo} disabled={!canRedo(history)}>
+          <button type="button" onClick={onRedo} disabled={waiting || !canRedo(history)} aria-describedby={waitingFor}>
             Redo
           </button>
-          <button type="button" onClick={onClear} disabled={history.present.length === 0}>
+          <button type="button" onClick={onClear} disabled={waiting || history.present.length === 0} aria-describedby={waitingFor}>
             Clear all
           </button>
         </div>
@@ -61,7 +70,14 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
                     </div>
                   ))}
                 </dl>
-                <button type="button" className="chip-remove" aria-label={`Remove the step: ${wording}`} onClick={() => onRemove(result.predicate)}>
+                <button
+                  type="button"
+                  className="chip-remove"
+                  aria-label={`Remove the step: ${wording}`}
+                  disabled={waiting}
+                  aria-describedby={waitingFor}
+                  onClick={() => onRemove(result.predicate)}
+                >
                   Remove
                 </button>
               </li>
@@ -70,18 +86,29 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
         </ul>
       )}
       {shown && results.length > 1 && <p className="muted overlap-line">{overlapLine(shown.answer.parent)}</p>}
-      {selection.phase === "failed" && (
-        <SelectionProblemNotice
-          title={shown ? "This selection could not be made; the previous one is still shown" : "The incidents could not be selected"}
-          problem={selection.problem}
+      {selection.phase === "failed" && shown && (
+        <ReplacementNotice
+          replacement={{ phase: "failed", revision: selection.revision, asked: selection.history, problem: selection.problem }}
+          shown="the earlier selection"
+          asked="the new selection"
+          reasonId={reasonId}
+          describe={describeStepsProblem}
           onRetry={onRetry}
+          onStay={onStay}
         />
+      )}
+      {selection.phase === "failed" && !shown && (
+        <SelectionProblemNotice title="The incidents could not be selected" problem={selection.problem} onRetry={waiting ? undefined : onRetry} />
       )}
     </section>
   );
 }
 
-function SelectionProblemNotice({ title, problem, onRetry }: { title: string; problem: Parameters<typeof describeSelectionProblem>[0]; onRetry: () => void }) {
+function describeStepsProblem(problem: SelectionProblem) {
+  return { ...describeSelectionProblem(problem), retryable: problem.kind !== "refusal" || problem.refusal.retryable };
+}
+
+function SelectionProblemNotice({ title, problem, onRetry }: { title: string; problem: Parameters<typeof describeSelectionProblem>[0]; onRetry?: () => void }) {
   const text = describeSelectionProblem(problem);
   const retryable = problem.kind !== "refusal" || problem.refusal.retryable;
   return (
@@ -91,7 +118,7 @@ function SelectionProblemNotice({ title, problem, onRetry }: { title: string; pr
       <p>
         <span className="label-text">What to do</span> {text.remedy}
       </p>
-      {retryable && (
+      {retryable && onRetry && (
         <button type="button" onClick={onRetry}>
           Try again
         </button>

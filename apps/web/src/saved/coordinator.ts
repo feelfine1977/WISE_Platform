@@ -93,6 +93,7 @@ export class SavingCoordinator {
   draft(investigation: ImportedInvestigationState): SaveDraft {
     const { population, selection, saved } = investigation;
     if (population.phase !== "ready") return { ready: false, reason: "The incidents are not open yet." };
+    if (investigation.replacement?.phase === "running") return { ready: false, reason: "Saving is possible once the other incidents asked for are open." };
     const shown = shownSelection(selection);
     if (selection.phase !== "ready" || shown === null) {
       return { ready: false, reason: "Saving is possible once the incidents of the current steps are selected." };
@@ -112,7 +113,7 @@ export class SavingCoordinator {
     const investigation = this.investigation.getState();
     const { population, selection, saved, parentCaseIds } = investigation;
     const shown = shownSelection(selection);
-    if (population.phase !== "ready" || selection.phase !== "ready" || shown === null || name.trim() === "") return;
+    if (investigation.replacement?.phase === "running" || population.phase !== "ready" || selection.phase !== "ready" || shown === null || name.trim() === "") return;
     const { requestId, revision, signal } = this.issue("save", "save");
     const presentation: PresentationRecovery = {
       active_view: view === "map" ? "process_map" : "incidents",

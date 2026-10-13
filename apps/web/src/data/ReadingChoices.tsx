@@ -391,7 +391,13 @@ function Choices({
             answer={interpretation.answer}
             names={names}
             onAccept={() => coordinator.confirm(true)}
-            onOpenIncidents={(preparationId) => onOpenIncidents({ workspaceId: interpretation.answer.workspace_id, preparationId })}
+            onOpenIncidents={(preparationId) =>
+              onOpenIncidents({
+                workspaceId: interpretation.answer.workspace_id,
+                preparationId,
+                sourceName: state.source.phase === "stored" ? state.source.source.filename : undefined,
+              })
+            }
           />
         )}
       </section>

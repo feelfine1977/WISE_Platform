@@ -10,16 +10,20 @@ interface SaveButtonProps {
   saving: SavingCoordinator;
   open: boolean;
   onOpen: () => void;
+  /** The id of the text saying why the question shown cannot be saved now; while it is given, saving waits. */
+  waitingFor?: string;
 }
 
 /** "Save" in the toolbar of an investigation; it opens the save form below the toolbar. */
-export function SaveButton({ saving, open, onOpen }: SaveButtonProps) {
+export function SaveButton({ saving, open, onOpen, waitingFor }: SaveButtonProps) {
   return (
     <button
       type="button"
       className="saved-toolbar-button"
       aria-expanded={open}
       aria-controls="saved-form"
+      disabled={waitingFor !== undefined}
+      aria-describedby={waitingFor}
       onClick={() => {
         saving.clearSave();
         onOpen();
