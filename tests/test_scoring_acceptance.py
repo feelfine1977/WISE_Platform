@@ -803,3 +803,218 @@ def test_draft_definition_may_validate_but_cannot_create_a_score_run(client, wor
         a["code"] == "definition_not_reviewed"
         and "review_definition" in a["recovery_actions"]
     )
+
+
+UTC_RAW = b"Case,Activity,Recorded at,Desk\nDST,Opened,2026-10-25T01:30:00+02:00,Known\nDST,Resolved,2026-10-25T03:30:00+01:00,Known\n"
+WALL_RAW = b"Case,Activity,Recorded at,Desk\nDST,Opened,2026-10-25T01:30:00,Known\nDST,Resolved,2026-10-25T03:30:00,Known\n"
+UTC_CUTOFF = "2026-10-26T00:00:00Z"
+WALL_CUTOFF = "2026-10-26T00:00:00"
+
+
+def recorded_wall_population(client, workspace):
+    source = upload(client, workspace, WALL_RAW, "synthetic-recorded-wall.csv")
+    p = policies(wall=True)
+    p["time"]["parameters"]["snapshot_cutoff_local"] = WALL_CUTOFF
+    req = envelope(
+        "confirm_mapping_request",
+        "prepare-wall",
+        workspace_id=workspace["workspace_id"],
+        source_id=source["source_id"],
+        dialect={
+            "encoding": "utf-8",
+            "delimiter": ",",
+            "quotechar": '"',
+            "header": "first_record",
+        },
+        mapping={
+            "case_column": 0,
+            "activity_column": 1,
+            "timestamp_column": 2,
+            "sequence_column": None,
+            "context_columns": [3],
+        },
+        policies=p,
+        accept_report_issues=True,
+    )
+    interpretation = prepare(client, req)
+    return interpretation, population(client, workspace, interpretation)
+
+
+def assert_clock_witness(client, workspace, base, run, original_times, *, wall):
+    raw = evidence(client, workspace, base, "DST")
+    w = witness(client, workspace, run, "DST")
+    for field in (
+        "columns",
+        "records",
+        "coverage",
+        "mapped_row_ids",
+        "omitted_activity_row_ids",
+    ):
+        assert w["trace"][field] == raw[field]
+    rows = w["trace"]["records"]
+    assert len(rows) == 2 and [r["source_position"] for r in rows] == [0, 1]
+    assert [r["original_cells"] for r in rows] == [
+        ["DST", "Opened", original_times[0], "Known"],
+        ["DST", "Resolved", original_times[1], "Known"],
+    ]
+    assert w["activation_candidate_row_ids"] == [rows[0]["row_id"]]
+    assert w["response_candidate_row_ids"] == [rows[1]["row_id"]]
+    assert w["method_trace_row_ids"] == [rows[0]["row_id"], rows[1]["row_id"]]
+    assert all(r["timestamp_status"] == "usable" for r in rows)
+    if wall:
+        assert all(
+            r["timestamp_kind"] == "wall_clock" and r["utc_instant"] is None
+            for r in rows
+        )
+        assert [r["local_timestamp"] for r in rows] == list(original_times)
+    else:
+        assert all(
+            r["timestamp_kind"] == "utc_instant" and r["local_timestamp"] is None
+            for r in rows
+        )
+        assert [r["utc_instant"] for r in rows] == [
+            "2026-10-24T23:30:00Z",
+            "2026-10-25T02:30:00Z",
+        ]
+    return w
+
+
+def test_recorded_offset_change_measures_three_elapsed_utc_hours(client, workspace):
+    base = source_population(client, workspace, UTC_RAW, cutoff=UTC_CUTOFF)
+    dv = ready(
+        client,
+        workspace,
+        base,
+        base,
+        definition(target=2, width=2, unit="hours", clock_kind="utc_instant"),
+    )
+    run = score(client, workspace, base, base, dv)
+    assert dv["norm"]["document"]["constraints"][0]["params"]["unit"] == "h"
+    assert run["identity"]["clock"] == {
+        "timestamp_kind": "utc_instant",
+        "duration_meaning": "elapsed_utc",
+        "observation_start_utc": "2026-10-24T23:30:00Z",
+        "snapshot_cutoff_utc": UTC_CUTOFF,
+        "observation_start_local": None,
+        "snapshot_cutoff_local": None,
+    }
+    assert run["population"] == {
+        "case_ids": ["DST"],
+        "case_count": 1,
+        "record_count": 2,
+    }
+    case = run["cases"][0]
+    assert (
+        case["case_id"] == "DST"
+        and case["value"] == 0.5
+        and case["in_scope"] is True
+        and case["reason"] == "evaluated"
+    )
+    assert case["measurement"] == {
+        "status": "observed",
+        "value": 3,
+        "unit": "hours",
+        "activation_known": True,
+        "response_known": True,
+        "censor_age": None,
+    }
+    assert (
+        run["support"]["affected_case_count"] == 1
+        and run["support"]["zero_value_case_count"] == 0
+    )
+    assert_clock_witness(
+        client,
+        workspace,
+        base,
+        run,
+        ("2026-10-25T01:30:00+02:00", "2026-10-25T03:30:00+01:00"),
+        wall=False,
+    )
+
+
+def test_naive_recorded_wall_clock_is_two_hours_without_utc_substitution(
+    client, workspace
+):
+    # Establish the same threshold's UTC calibration for an explicit clock-kind contrast.
+    utc = source_population(client, workspace, UTC_RAW, cutoff=UTC_CUTOFF)
+    utc_dv = ready(
+        client,
+        workspace,
+        utc,
+        utc,
+        definition(target=2, width=2, unit="hours", clock_kind="utc_instant"),
+    )
+    utc_run = score(client, workspace, utc, utc, utc_dv)
+    interpretation, base = recorded_wall_population(client, workspace)
+    report = interpretation["report"]
+    assert (
+        report["timestamp_kind"] == "wall_clock"
+        and report["snapshot_cutoff_utc"] is None
+    )
+    assert report["snapshot_cutoff_local"] == WALL_CUTOFF
+    # The interpretation report declares the recorded-clock limitation.
+    assert any(
+        "daylight-saving" in assumption and "physical elapsed time" in assumption
+        for assumption in report["assumptions"]
+    )
+    dv = ready(
+        client,
+        workspace,
+        base,
+        base,
+        definition(target=2, width=2, unit="hours", clock_kind="wall_clock"),
+    )
+    run = score(client, workspace, base, base, dv)
+    assert dv["norm"]["document"]["constraints"][0]["params"]["unit"] == "h"
+    assert run["identity"]["clock"] == {
+        "timestamp_kind": "wall_clock",
+        "duration_meaning": "recorded_wall_clock",
+        "observation_start_utc": None,
+        "snapshot_cutoff_utc": None,
+        "observation_start_local": "2026-10-25T01:30:00",
+        "snapshot_cutoff_local": WALL_CUTOFF,
+    }
+    assert run["population"] == {
+        "case_ids": ["DST"],
+        "case_count": 1,
+        "record_count": 2,
+    }
+    case = run["cases"][0]
+    assert (
+        case["case_id"] == "DST"
+        and case["value"] == 0
+        and case["in_scope"] is True
+        and case["reason"] == "evaluated"
+    )
+    assert case["measurement"] == {
+        "status": "observed",
+        "value": 2,
+        "unit": "hours",
+        "activation_known": True,
+        "response_known": True,
+        "censor_age": None,
+    }
+    assert (
+        run["support"]["affected_case_count"] == 0
+        and run["support"]["zero_value_case_count"] == 1
+    )
+    assert (
+        run["calibration"]["calibration_id"] != utc_run["calibration"]["calibration_id"]
+    )
+    assert run["identity"]["calibration_id"] == run["calibration"]["calibration_id"]
+    for field in (
+        "target",
+        "width",
+        "unit",
+        "population_fitted",
+        "method_calibrations",
+    ):
+        assert run["calibration"][field] == utc_run["calibration"][field]
+    assert_clock_witness(
+        client,
+        workspace,
+        base,
+        run,
+        ("2026-10-25T01:30:00", "2026-10-25T03:30:00"),
+        wall=True,
+    )
