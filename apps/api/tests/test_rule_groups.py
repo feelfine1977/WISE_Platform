@@ -501,6 +501,23 @@ def test_exact_parent_and_rule_identity_change_groups_even_for_equal_memberships
 
 
 @pytest.mark.parametrize(
+    "edge", [9007199254740993, 10**308 + 1], ids=["above-safe-integer", "near-float-limit"]
+)
+def test_finite_integer_hour_edges_are_echoed_without_float_rounding(reading, edge):
+    c, wid, _, selected, _ = reading
+    b = answered(c, request(wid, selected, "first_raw_activity", edges=[0, edge]))
+    for group in b["groups"]:
+        for name, available in (("span", 8), ("gap", 6)):
+            distribution = group[name + "_distribution"]
+            assert distribution["edges_hours"] == [0, edge]
+            assert distribution["bins"][0]["end_exclusive_hours"] == edge
+            assert distribution["bins"][1]["start_inclusive_hours"] == edge
+            assert [item["parent_case_count"] for item in distribution["bins"]] == [
+                available, 0
+            ]
+
+
+@pytest.mark.parametrize(
     "field",
     [
         "source_id",

@@ -133,6 +133,29 @@ def test_source_and_generated_messages_preserve_the_full_closed_wire_shape():
     assert checked_answer(answer()).body == answer()
 
 
+def test_generated_number_fields_preserve_finite_integer_hour_edges():
+    edge = 9007199254740993
+    request = deepcopy(REQUEST)
+    response = answer()
+    for value in (request, response):
+        value["query"]["distribution_edges_hours"] = [0, edge]
+    for name in ("span_distribution", "gap_distribution"):
+        distribution = response["groups"][0][name]
+        distribution["edges_hours"] = [0, edge]
+        distribution["bins"][0]["end_exclusive_hours"] = edge
+        distribution["bins"].append({
+            "start_inclusive_hours": edge,
+            "end_exclusive_hours": None,
+            "parent_case_count": 0,
+            "kept_case_count": 0,
+        })
+    for value in (request, response):
+        VALIDATOR.validate(value)
+        parsed = RuleGroupsMessage.model_validate_json(json.dumps(value), strict=True)
+        assert parsed.model_dump(mode="json") == value
+    assert checked_answer(response).body == response
+
+
 @pytest.mark.parametrize(
     "change",
     [

@@ -68,16 +68,16 @@ class CaseId(RootModel[constr(min_length=1, max_length=256)]):
     root: constr(min_length=1, max_length=256) = Field(..., title='CaseId')
 
 
-class EdgesHour(RootModel[confloat(ge=0.0)]):
-    root: confloat(ge=0.0)
+class EdgesHour(RootModel[conint(ge=0) | confloat(ge=0.0)]):
+    root: conint(ge=0) | confloat(ge=0.0)
 
 
 class DistributionBin(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    start_inclusive_hours: confloat(ge=0.0)
-    end_exclusive_hours: confloat(ge=0.0) | None
+    start_inclusive_hours: conint(ge=0) | confloat(ge=0.0)
+    end_exclusive_hours: conint(ge=0) | confloat(ge=0.0) | None
     parent_case_count: conint(ge=0, le=9007199254740991)
     kept_case_count: conint(ge=0, le=9007199254740991)
 
@@ -164,8 +164,8 @@ class GroupRule(
     ) = Field(..., title='GroupRule')
 
 
-class DistributionEdgesHour(RootModel[confloat(ge=0.0)]):
-    root: confloat(ge=0.0)
+class DistributionEdgesHour(RootModel[conint(ge=0) | confloat(ge=0.0)]):
+    root: conint(ge=0) | confloat(ge=0.0)
 
 
 class RuleGroupsQuery(BaseModel):
