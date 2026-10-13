@@ -206,6 +206,8 @@ export class CompareCoordinator {
   private request: AbortController | null = null;
   /** The comparison asked for last, which a retry asks for again. */
   private last: Asked | null = null;
+  /** A saved comparison to show again: waiting for its reading to be the one compared in, or asked for. */
+  private restoring: { workspaceId: WorkspaceId; identity: AnswerIdentity; saved: SavedComparison; asked: boolean } | null = null;
   private readonly listeners = new Set<() => void>();
 
   constructor(private readonly client: ComparisonClient) {}
@@ -223,6 +225,20 @@ export class CompareCoordinator {
     this.abandon();
     this.last = null;
     this.publish({ basis, draft: emptyDraft(basis, this.state.draft.mode), comparison: { phase: "idle" } });
+    // Another reading is compared in now: a comparison saved on a different one is not carried over to it.
+    if (basis && this.restoring && !this.isRestoredReading(basis)) this.restoring = null;
+    this.askForRestored();
+  }
+
+  /**
+   * Shows a saved comparison again by asking for it exactly as it was saved: its parent, context
+   * column, policy and definition unchanged, so that a window keeps the bounds it was saved with.
+   * It is asked for once the reading it was made on is the one compared in, and forgotten when
+   * another reading is. Its answer is shown only when it is the saved comparison itself.
+   */
+  restore(workspaceId: WorkspaceId, identity: AnswerIdentity, saved: SavedComparison | null): void {
+    this.restoring = saved ? { workspaceId, identity, saved, asked: false } : null;
+    this.askForRestored();
   }
 
   setMode(mode: CompareDraft["mode"]): void {
@@ -295,7 +311,9 @@ export class CompareCoordinator {
 
   retry(): void {
     const comparison = this.state.comparison;
-    if (comparison.phase === "failed" && this.last) this.send(this.last);
+    if (comparison.phase !== "failed") return;
+    if (this.last) this.send(this.last);
+    else if (this.restoring?.asked) this.replay(this.restoring.saved);
   }
 
   /**
@@ -324,9 +342,67 @@ export class CompareCoordinator {
     this.abandon();
   }
 
+  private isRestoredReading(basis: CompareBasis): boolean {
+    const restoring = this.restoring;
+    return restoring !== null && basis.workspaceId === restoring.workspaceId && sameJson(basis.identity, restoring.identity);
+  }
+
+  /** Asks for the saved comparison once, as soon as its own reading is the one compared in; until then it waits. */
+  private askForRestored(): void {
+    const { basis } = this.state;
+    const restoring = this.restoring;
+    if (!restoring || restoring.asked || !basis || !this.isRestoredReading(basis)) return;
+    restoring.asked = true;
+    this.replay(restoring.saved);
+  }
+
+  private replay(saved: SavedComparison): void {
+    const { basis } = this.state;
+    if (!basis) return;
+    this.request?.abort();
+    this.revision += 1;
+    const revision = this.revision;
+    const envelope = {
+      schema_version: 1 as const,
+      request_id: `compare-${revision}`,
+      query_revision: revision,
+      workspace_id: basis.workspaceId,
+      identity: basis.identity,
+      parent_case_ids: [...saved.parent_case_ids],
+      context_column_index: saved.context_column_index,
+      context_policy: saved.context_policy,
+    };
+    const controller = new AbortController();
+    this.request = controller;
+    this.last = null;
+    this.publish({
+      ...this.state,
+      draft: { ...this.state.draft, mode: saved.kind === "group" ? "groups" : "periods", column: saved.context_column_index },
+      comparison: { phase: "loading", revision, shown: null },
+    });
+    const theSaved = <Answer extends GroupComparisonAnswer | PeriodComparisonAnswer>(outcome: ComparisonOutcome<Answer>): ComparisonOutcome<Answer> =>
+      outcome.ok && outcome.answer.comparison_id !== saved.comparison_id
+        ? mismatch("The comparison computed again is not the saved one.")
+        : outcome;
+    if (saved.kind === "group") {
+      const request: GroupComparisonRequest = { ...envelope, message_type: "compare_groups_request", definition: saved.definition };
+      this.client.compareGroups(request, controller.signal).then(
+        (outcome) => this.receive(request, theSaved(outcome), (answer) => ({ kind: "groups", request, answer })),
+        () => this.receive(request, unreachable, (answer: GroupComparisonAnswer) => ({ kind: "groups", request, answer })),
+      );
+    } else {
+      const request: PeriodComparisonRequest = { ...envelope, message_type: "compare_periods_request", definition: saved.definition };
+      this.client.comparePeriods(request, controller.signal).then(
+        (outcome) => this.receive(request, theSaved(outcome), (answer) => ({ kind: "periods", request, answer })),
+        () => this.receive(request, unreachable, (answer: PeriodComparisonAnswer) => ({ kind: "periods", request, answer })),
+      );
+    }
+  }
+
   private send(asked: Asked): void {
     const { basis, draft } = this.state;
     if (!basis || draft.column === null) return;
+    this.restoring = null;
     this.request?.abort();
     this.revision += 1;
     const revision = this.revision;

@@ -47,6 +47,8 @@ export interface SavingState {
 /** The part of the comparison view that saving needs: the comparison shown on a reading, in its saved form. */
 export interface ComparisonSource {
   savedComparisonFor(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedComparison | null;
+  /** Shows the comparison of a reopened investigation again, or forgets one that was waiting when there is none. */
+  restore(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"], saved: SavedComparison | null): void;
 }
 
 /** What a save of the question shown would hold, or why it cannot be saved now. */
@@ -284,6 +286,7 @@ export class SavingCoordinator {
       binding: { investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content },
       view: recovery.presentation_state?.active_view === "process_map" ? "map" : "incidents",
     });
+    this.comparisons?.restore(request.workspace_id, content.base_identity, content.comparison);
     this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" } });
     return true;
   }
