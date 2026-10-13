@@ -24,6 +24,10 @@ import {
 import { moved, noStages, type StageDefinitions, withActivity, withStage } from "./definitions";
 import { browserStages, type StagedReading } from "./store";
 
+// These tests draw the whole investigation with the real arrangement of the map; on a slow or busy machine one of them
+// takes longer than the default five seconds, which says nothing about what it asserts.
+vi.setConfig({ testTimeout: 20_000 });
+
 vi.mock("wise-flow", async (original) => {
   const library = await original<typeof import("wise-flow")>();
   return { ...library, layoutUnion: vi.fn(library.layoutUnion) };

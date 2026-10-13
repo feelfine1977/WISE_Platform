@@ -1,12 +1,16 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ImportedInvestigationCoordinator } from "../imported/coordinator";
 import { ImportedInvestigation } from "../imported/ImportedInvestigation";
 import { populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import { begins, closed, containingOpened, everyIncident, type Figures, follows, graphAnswer, opened, scriptedSelectionClient, selectionAnswer } from "../test/selections";
 import { MapView } from "./MapView";
 import { BUSY_ACTIVITIES, busyGraph, shownWhole, stepName } from "./testGraphs";
+
+// These tests draw the whole investigation with the real arrangement of the map; on a slow or busy machine one of them
+// takes longer than the default five seconds, which says nothing about what it asserts.
+vi.setConfig({ testTimeout: 20_000 });
 
 // The map measures its container; the test page has no layout, so nothing is ever resized.
 class StillObserver {
