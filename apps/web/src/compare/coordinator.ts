@@ -12,6 +12,7 @@ import type {
   SelectionPredicate,
   WorkspaceId,
 } from "../generated/comparison";
+import type { SavedComparison } from "../generated/saving";
 import type { ComparisonClient, ComparisonOutcome, ComparisonProblem } from "./client";
 
 export const contextPolicy = "incident.context.first_record_in_declared_order.v1" as const;
@@ -295,6 +296,27 @@ export class CompareCoordinator {
   retry(): void {
     const comparison = this.state.comparison;
     if (comparison.phase === "failed" && this.last) this.send(this.last);
+  }
+
+  /**
+   * The comparison shown, as a saved investigation holds it, when it was made on this reading of
+   * this workspace; nothing while no answered comparison is shown or it belongs to another reading.
+   * Its parent is the one the answer names, so saving it never widens or narrows what was compared.
+   */
+  savedComparisonFor(workspaceId: WorkspaceId, identity: AnswerIdentity): SavedComparison | null {
+    const { basis, comparison } = this.state;
+    if (!basis || comparison.phase !== "ready") return null;
+    if (basis.workspaceId !== workspaceId || !sameJson(basis.identity, identity)) return null;
+    const { shown } = comparison;
+    const common = {
+      comparison_id: shown.answer.comparison_id,
+      parent_case_ids: [...shown.answer.parent.case_ids],
+      context_column_index: shown.request.context_column_index,
+      context_policy: shown.request.context_policy,
+    };
+    return shown.kind === "groups"
+      ? { kind: "group", ...common, definition: shown.request.definition }
+      : { kind: "period", ...common, definition: shown.request.definition };
   }
 
   /** Abandons the outstanding request; its reply is dropped when it arrives. */

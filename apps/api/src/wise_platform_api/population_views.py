@@ -5,7 +5,9 @@ preparation, or a selection made from it and held in the selection registry. The
 compares the population with the parent it was made from; for the parent itself both sides are the
 parent. Every count, share, order and refusal reason comes from the analytics package; this module
 finds the prepared snapshot and the population, adds the envelope, and checks each answer against
-its model before sending it with the package's own values.
+the generated model of the population-views contract before sending it with the package's own
+values: read strictly as JSON, written back to the very same values, without an incident id twice
+in a list the contract keeps unique, and with implementation versions in ASCII digits.
 """
 
 from __future__ import annotations
@@ -29,7 +31,9 @@ from .population_view_messages import (
     OPENING_CONTEXT,
     RETRYABLE,
     STATUS,
+    UNIQUE,
     VARIANTS,
+    VERSIONS,
     OpeningContextAnswer,
     OpeningContextRequest,
     PopulationViewRefusal,
@@ -37,6 +41,7 @@ from .population_view_messages import (
     VariantsRequest,
 )
 from .registry import SelectionRegistry
+from .strict_reading import repeated_failures, version_failures
 from .workspace import Problem
 
 logger = logging.getLogger(__name__)
@@ -170,9 +175,12 @@ def _parse(body: bytes, model: type[BaseModel], operation: str) -> dict | ViewRe
         path, reason = tuple(first["loc"]), first["msg"]
     else:
         path = first_difference(message, parsed.model_dump(mode="json", exclude_unset=True))
-        if path is None:
-            return message
         reason = "the value has another JSON type than the request requires"
+        if path is None:
+            versions = version_failures(message, VERSIONS[message["message_type"]])
+            if not versions:
+                return message
+            path, reason = versions[0].path, versions[0].reason
     where = ".".join(str(part) for part in path)
     reason = reason[0].lower() + reason[1:] if reason else "it is not valid"
     return _refused(
@@ -206,15 +214,21 @@ def _envelope(message_type: str, given: Mapping[str, object]) -> dict[str, objec
 
 
 def _answer(model: type[BaseModel], body: dict) -> ViewReply:
-    """Check an answer against its model and send it with its own values."""
+    """Check an answer as strictly as a request and send it with its own values."""
+    kind = body.get("message_type")
     try:
-        model.model_validate(body)
+        parsed = model.model_validate_json(json.dumps(body, ensure_ascii=False, allow_nan=False), strict=True)
     except ValidationError as error:
         first = error.errors(include_url=False)[0]
         raise ValueError(
-            f"A {body.get('message_type')} answer is outside its model at "
-            f"{'.'.join(str(part) for part in first['loc'])}: {first['msg']}"
+            f"A {kind} answer is outside its model at {'.'.join(str(part) for part in first['loc'])}: {first['msg']}"
         ) from None
+    different = first_difference(body, parsed.model_dump(mode="json"), integers_as_numbers=True)
+    if different is not None:
+        raise ValueError(f"A {kind} answer has another JSON type at {'.'.join(str(part) for part in different)}")
+    failures = repeated_failures(body, UNIQUE[kind]) + version_failures(body, VERSIONS[kind])
+    if failures:
+        raise ValueError(f"A {kind} answer is outside its contract at {failures[0].field}: {failures[0].reason}")
     return ViewReply(200, body)
 
 

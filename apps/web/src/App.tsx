@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { fetchHealth } from "./api";
 import { httpComparisonClient, type ComparisonClient } from "./compare/client";
 import { CompareCoordinator } from "./compare/coordinator";
 import { CompareView } from "./compare/CompareView";
+import { AreaTabs, type AreaTab } from "./components/AreaTabs";
 import { IncidentTable } from "./components/IncidentTable";
 import { Inspector, type InspectorLayout } from "./components/Inspector";
 import { PopulationStrip } from "./components/PopulationStrip";
@@ -16,7 +17,7 @@ import { ImportedInvestigation } from "./imported/ImportedInvestigation";
 import type { HealthResponse } from "./generated/health";
 import type { CaseId } from "./generated/investigation";
 import { httpInvestigationClient, type InvestigationClient } from "./investigation/client";
-import { InvestigationCoordinator, type PopulationState } from "./investigation/coordinator";
+import { InvestigationCoordinator, type InvestigationState, type PopulationState } from "./investigation/coordinator";
 import { defaultExampleId } from "./investigation/policies";
 import { httpSelectionClient, type SelectionClient } from "./map/client";
 import { httpSavingClient, type SavingClient } from "./saved/client";
@@ -25,7 +26,9 @@ import { SavedInvestigations } from "./saved/SavedInvestigations";
 import { httpPopulationViewClient, type PopulationViewClient } from "./views/client";
 import { httpScoringClient, type ScoringClient } from "./expectation/client";
 import { ExpectationView } from "./expectation/ExpectationView";
-import { countOf, utcInstant } from "./investigation/wording";
+import { countOf, describeProblem, utcInstant } from "./investigation/wording";
+import type { Problem } from "./investigation/client";
+import { ReplacementNotice } from "./replacement/ReplacementNotice";
 
 interface AppProps {
   client?: InvestigationClient;
@@ -40,6 +43,28 @@ interface AppProps {
 
 /** The area shown: the Data area, the investigation of the example or of an imported preparation, Compare, the Expectation view, or the saved investigations. */
 type Area = "data" | "example" | "imported" | "compare" | "expectation" | "saved";
+
+/** The tabs of the app bar: the investigation of the example and of an imported preparation share one. */
+type TabId = "data" | "investigations" | "compare" | "expectation" | "saved";
+
+/** Why an area that works on the incidents of a preparation cannot be opened before one is open. */
+const noPreparationReason = "Open the incidents of a preparation in the Data area first.";
+
+/** The areas in the order of the work; Compare and Expectation need the incidents of a preparation. */
+function areaTabs(preparationOpen: boolean): AreaTab<TabId>[] {
+  const needsPreparation = preparationOpen ? null : noPreparationReason;
+  return [
+    { id: "data", label: "Data", unavailable: null },
+    { id: "investigations", label: "Investigations", unavailable: null },
+    { id: "compare", label: "Compare", unavailable: needsPreparation },
+    { id: "expectation", label: "Expectation", unavailable: needsPreparation },
+    { id: "saved", label: "Saved", unavailable: null },
+  ];
+}
+
+function tabOf(area: Area): TabId {
+  return area === "example" || area === "imported" ? "investigations" : area;
+}
 
 type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
 
@@ -57,15 +82,17 @@ export default function App({
   const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
   const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient, selectionClient, viewClient));
   const [compareCoordinator] = useState(() => new CompareCoordinator(comparisonClient));
-  const [savingCoordinator] = useState(() => new SavingCoordinator(savingClient, importedCoordinator));
+  const [savingCoordinator] = useState(() => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator));
   const [area, setArea] = useState<Area>("example");
   const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
+  const preparationOpen = useSyncExternalStore(importedCoordinator.subscribe, () => importedCoordinator.getState().population.phase !== "idle");
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const rowControls = useRef(new Map<CaseId, HTMLButtonElement>()).current;
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
   const incidentsHeading = useRef<HTMLHeadingElement>(null);
+  const waitingReason = useId();
 
   useEffect(() => {
     coordinator.start();
@@ -91,6 +118,11 @@ export default function App({
     [importedCoordinator],
   );
 
+  const chooseTab = useCallback(
+    (tab: TabId) => setArea(tab === "investigations" ? (importedOpen ? "imported" : "example") : tab),
+    [importedOpen],
+  );
+
   useEffect(() => {
     if (focusTarget === null) return;
     if (focusTarget.to === "inspector") inspectorHeading.current?.focus();
@@ -98,7 +130,7 @@ export default function App({
     setFocusTarget(null);
   }, [focusTarget, rowControls]);
 
-  const { population, inspected } = state;
+  const { population, inspected, replacement } = state;
   const inspectorOpen = inspected.phase !== "closed";
   const openCaseId = inspected.phase === "closed" ? null : inspected.caseId;
 
@@ -135,28 +167,8 @@ export default function App({
     <div className="app">
       <header className="app-bar">
         <span className="app-name">WISE Platform</span>
+        <AreaTabs tabs={areaTabs(preparationOpen)} current={tabOf(area)} onChoose={chooseTab} />
         {area === "example" ? <SourceLine population={population} /> : <span className="app-source" />}
-        <nav className="areas" aria-label="Areas">
-          <button type="button" aria-current={area === "data" ? "page" : undefined} onClick={() => setArea("data")}>
-            Data
-          </button>
-          <button
-            type="button"
-            aria-current={area === "example" || area === "imported" ? "page" : undefined}
-            onClick={() => setArea(importedOpen ? "imported" : "example")}
-          >
-            Investigations
-          </button>
-          <button type="button" aria-current={area === "compare" ? "page" : undefined} onClick={() => setArea("compare")}>
-            Compare
-          </button>
-          <button type="button" aria-current={area === "expectation" ? "page" : undefined} onClick={() => setArea("expectation")}>
-            Expectation
-          </button>
-          <button type="button" aria-current={area === "saved" ? "page" : undefined} onClick={() => setArea("saved")}>
-            Saved
-          </button>
-        </nav>
         <ServiceStatus checkHealth={checkHealth} />
       </header>
       {area === "data" && (
@@ -189,7 +201,8 @@ export default function App({
       <main className="investigation" hidden={area !== "example"}>
         <PopulationStrip
           population={population}
-          pending={population.phase === "loading" || inspected.phase === "loading"}
+          replacement={replacement}
+          pending={population.phase === "loading" || inspected.phase === "loading" || replacement?.phase === "running"}
           onChooseExample={(exampleId) => coordinator.openExample(exampleId)}
         />
         <div className="work" data-inspector={inspectorOpen ? layout : "none"}>
@@ -199,6 +212,9 @@ export default function App({
             </h2>
             <IncidentArea
               population={population}
+              replacement={replacement}
+              waitingReason={waitingReason}
+              onStay={() => coordinator.stay()}
               openCaseId={openCaseId}
               onOpen={openCase}
               onRetry={() => coordinator.retryPopulation()}
@@ -214,6 +230,7 @@ export default function App({
               onLayout={setLayout}
               onReturn={returnToIncidents}
               onRetry={() => coordinator.retryCase()}
+              waitingFor={replacement?.phase === "running" ? waitingReason : undefined}
               headingRef={inspectorHeading}
             />
           )}
@@ -240,14 +257,43 @@ function SourceLine({ population }: { population: PopulationState }) {
 
 interface IncidentAreaProps {
   population: PopulationState;
+  replacement: InvestigationState["replacement"];
+  /** The id given to the text saying why incidents cannot be opened while another example is opening. */
+  waitingReason: string;
+  onStay: () => void;
   openCaseId: CaseId | null;
   onOpen: (caseId: CaseId) => void;
   onRetry: () => void;
   rowControls: Map<CaseId, HTMLButtonElement>;
 }
 
-/** The incident table of the current answer, or what stands in its place while there is none. */
-function IncidentArea({ population, openCaseId, onOpen, onRetry, rowControls }: IncidentAreaProps) {
+/**
+ * The incident table of the answer shown, or what stands in its place while there is none. While
+ * another example is asked for, the table stays with the request beside it.
+ */
+function IncidentArea({ population, replacement, waitingReason, onStay, openCaseId, onOpen, onRetry, rowControls }: IncidentAreaProps) {
+  if (replacement && population.phase === "ready") {
+    return (
+      <>
+        <ReplacementNotice
+          replacement={replacement}
+          shown={`synthetic example ${population.answer.source.example_id}`}
+          asked={`synthetic example ${replacement.asked}`}
+          reasonId={waitingReason}
+          describe={describeExampleProblem}
+          onRetry={onRetry}
+          onStay={onStay}
+        />
+        <IncidentTables
+          population={population}
+          openCaseId={openCaseId}
+          onOpen={onOpen}
+          waitingFor={replacement.phase === "running" ? waitingReason : undefined}
+          rowControls={rowControls}
+        />
+      </>
+    );
+  }
   switch (population.phase) {
     case "idle":
     case "loading":
@@ -255,14 +301,31 @@ function IncidentArea({ population, openCaseId, onOpen, onRetry, rowControls }: 
     case "failed":
       return <ProblemNotice title="The population could not be opened" problem={population.problem} onRetry={onRetry} />;
     case "ready":
-      if (population.answer.cases.length === 0) {
-        return (
-          <p className="pane-note">
-            The local service answered with {countOf(population.answer.populations.parent.case_count, "incident")} in the parent
-            population, so there is no incident to open.
-          </p>
-        );
-      }
-      return <IncidentTable answer={population.answer} openCaseId={openCaseId} onOpen={onOpen} rowControls={rowControls} />;
+      return <IncidentTables population={population} openCaseId={openCaseId} onOpen={onOpen} rowControls={rowControls} />;
   }
+}
+
+interface IncidentTablesProps {
+  population: Extract<PopulationState, { phase: "ready" }>;
+  openCaseId: CaseId | null;
+  onOpen: (caseId: CaseId) => void;
+  waitingFor?: string;
+  rowControls: Map<CaseId, HTMLButtonElement>;
+}
+
+function IncidentTables({ population, openCaseId, onOpen, waitingFor, rowControls }: IncidentTablesProps) {
+  if (population.answer.cases.length === 0) {
+    return (
+      <p className="pane-note">
+        The local service answered with {countOf(population.answer.populations.parent.case_count, "incident")} in the parent population,
+        so there is no incident to open.
+      </p>
+    );
+  }
+  return <IncidentTable answer={population.answer} openCaseId={openCaseId} onOpen={onOpen} waitingFor={waitingFor} rowControls={rowControls} />;
+}
+
+function describeExampleProblem(problem: Problem) {
+  const text = describeProblem(problem);
+  return { message: text.message, remedy: text.reason, retryable: problem.kind !== "refusal" || problem.refusal.retryable };
 }

@@ -5,10 +5,12 @@ interface ViewProblemNoticeProps {
   title: string;
   problem: ViewProblem;
   onRetry: () => void;
+  /** The id of the text saying why trying again has to wait; while it is given, it waits. */
+  waitingFor?: string;
 }
 
 /** A refused or failed view of the population: what happened, what to do, and a retry where it helps. */
-export function ViewProblemNotice({ title, problem, onRetry }: ViewProblemNoticeProps) {
+export function ViewProblemNotice({ title, problem, onRetry, waitingFor }: ViewProblemNoticeProps) {
   const text = describeViewProblem(problem);
   const retryable = problem.kind !== "refusal" || problem.refusal.retryable;
   return (
@@ -19,7 +21,7 @@ export function ViewProblemNotice({ title, problem, onRetry }: ViewProblemNotice
         <span className="label-text">What to do</span> {text.remedy}
       </p>
       {retryable && (
-        <button type="button" onClick={onRetry}>
+        <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={onRetry}>
           Try again
         </button>
       )}

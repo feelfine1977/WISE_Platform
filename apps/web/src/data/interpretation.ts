@@ -187,7 +187,9 @@ export function formatEvidence(suggestion: RoleSuggestion | undefined): {
   proposed: TimestampFormat | null;
   question: boolean;
 } {
-  if (!suggestion) return { readings: [], filled: 0, complete: [], proposed: null, question: false };
+  if (!suggestion) {
+    return { readings: timeFormats.map((format) => ({ format, parsed: null })), filled: 0, complete: [], proposed: null, question: false };
+  }
   const filled = suggestion.nonempty_count;
   const readings = timeFormats.map((format) => ({
     format,
@@ -197,6 +199,70 @@ export function formatEvidence(suggestion: RoleSuggestion | undefined): {
   const proposed = complete.length === 1 ? complete[0] : null;
   const reading = readings.filter((item) => item.parsed !== null && item.parsed > 0).length;
   return { readings, filled, complete, proposed, question: proposed === null && reading > 1 };
+}
+
+/**
+ * What the chosen columns and time format mean for the reading when they read nothing or only a
+ * part, said before the source is read. The inspection's counts decide; nothing is counted here.
+ * A column the inspection reported nothing about is not judged.
+ */
+export function readingConsequences(draft: Draft, answer: CsvInspectionAnswer): string[] {
+  const suggestionOf = (column: ColumnIndex | null) =>
+    column === null ? undefined : answer.role_suggestions.find((item) => item.column_index === column);
+  // The inspection counts filled cells over the records that have as many cells as the header.
+  const records = answer.record_count === null ? null : answer.record_count - (answer.ragged_record_count ?? 0);
+  const someEmpty = (suggestion: RoleSuggestion) => records !== null && suggestion.nonempty_count < records;
+  const consequences: string[] = [];
+
+  const incident = suggestionOf(draft.caseColumn);
+  if (incident !== undefined && incident.nonempty_count === 0) {
+    consequences.push("The incident id column has no filled cell: every row stays outside every incident, and there is no incident.");
+  } else if (incident !== undefined && someEmpty(incident)) {
+    consequences.push("The incident id column has empty cells: rows without an incident id stay outside every incident.");
+  }
+
+  const activity = suggestionOf(draft.activityColumn);
+  if (activity !== undefined && activity.nonempty_count === 0) {
+    consequences.push("The activity column has no filled cell: no activity is mapped; every record stays as raw evidence.");
+  } else if (activity !== undefined && someEmpty(activity)) {
+    consequences.push(
+      "The activity column has empty cells: records without an activity are left out of the activity sequence and stay as raw evidence.",
+    );
+  }
+
+  const time = suggestionOf(draft.timestampColumn);
+  if (time !== undefined) {
+    const parsed = time.timestamp_matches.find((match) => match.format === draft.timeFormat)?.parsed_count;
+    if (time.nonempty_count === 0) {
+      consequences.push("The time column has no filled cell: no record has a usable time, so no incident's order can be evaluated.");
+    } else if (draft.timeFormat !== null && parsed === 0) {
+      consequences.push(
+        "The chosen time format reads no filled cell of the time column: no record has a usable time, so no incident's order can be evaluated.",
+      );
+    } else if (draft.timeFormat !== null && parsed !== undefined && parsed < time.nonempty_count) {
+      consequences.push(
+        "The chosen time format does not read every filled cell of the time column: a record whose time it does not read stays in its incident without a usable time, and that incident's order cannot be evaluated.",
+      );
+    }
+    if (time.nonempty_count > 0 && someEmpty(time)) {
+      consequences.push(
+        "The time column has empty cells: a record without a time stays in its incident without a usable time, and that incident's order cannot be evaluated.",
+      );
+    }
+  }
+
+  const sequence = suggestionOf(draft.sequenceColumn);
+  if (sequence !== undefined && sequence.nonempty_count === 0) {
+    consequences.push("The sequence column has no filled cell: no record has a sequence number, which stops the reading.");
+  } else if (sequence !== undefined) {
+    if (!sequence.roles.includes("source_sequence")) {
+      consequences.push("Not every value of the sequence column is a whole number: a value that is not stops the reading.");
+    }
+    if (someEmpty(sequence)) {
+      consequences.push("The sequence column has empty cells: a record without a sequence number stops the reading.");
+    }
+  }
+  return consequences;
 }
 
 /**

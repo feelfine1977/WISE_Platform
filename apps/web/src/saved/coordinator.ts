@@ -8,6 +8,7 @@ import type {
   ReopenInvestigationRequest,
   SaveInvestigationAnswer,
   SaveInvestigationRequest,
+  SavedComparison,
   SavedInvestigationSummary,
 } from "../generated/saving";
 import {
@@ -43,6 +44,11 @@ export interface SavingState {
   save: SaveState;
 }
 
+/** The part of the comparison view that saving needs: the comparison shown on a reading, in its saved form. */
+export interface ComparisonSource {
+  savedComparisonFor(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedComparison | null;
+}
+
 /** What a save of the question shown would hold, or why it cannot be saved now. */
 export type SaveDraft =
   | { ready: false; reason: string }
@@ -59,6 +65,14 @@ export type SaveDraft =
 const initialState: SavingState = { list: { phase: "idle" }, reopen: { phase: "idle" }, save: { phase: "idle" } };
 
 const unreachable: SavingOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
+
+/** Whether two identities name the same source, reading, representation, dictionary, population and version. */
+function sameIdentity(one: object, other: object): boolean {
+  const left = one as Record<string, unknown>;
+  const right = other as Record<string, unknown>;
+  const names = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return [...names].every((name) => left[name] === right[name]);
+}
 
 function mismatch(detail: string): SavingOutcome<never> {
   return { ok: false, problem: { kind: "unsupported_reply", detail } };
@@ -80,6 +94,8 @@ export class SavingCoordinator {
   constructor(
     private readonly client: SavingClient,
     private readonly investigation: ImportedInvestigationCoordinator,
+    /** Where a comparison made on screen is found, so that saving the investigation keeps it. */
+    private readonly comparisons?: ComparisonSource,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -93,6 +109,7 @@ export class SavingCoordinator {
   draft(investigation: ImportedInvestigationState): SaveDraft {
     const { population, selection, saved } = investigation;
     if (population.phase !== "ready") return { ready: false, reason: "The incidents are not open yet." };
+    if (investigation.replacement?.phase === "running") return { ready: false, reason: "Saving is possible once the other incidents asked for are open." };
     const shown = shownSelection(selection);
     if (selection.phase !== "ready" || shown === null) {
       return { ready: false, reason: "Saving is possible once the incidents of the current steps are selected." };
@@ -112,7 +129,7 @@ export class SavingCoordinator {
     const investigation = this.investigation.getState();
     const { population, selection, saved, parentCaseIds } = investigation;
     const shown = shownSelection(selection);
-    if (population.phase !== "ready" || selection.phase !== "ready" || shown === null || name.trim() === "") return;
+    if (investigation.replacement?.phase === "running" || population.phase !== "ready" || selection.phase !== "ready" || shown === null || name.trim() === "") return;
     const { requestId, revision, signal } = this.issue("save", "save");
     const presentation: PresentationRecovery = {
       active_view: view === "map" ? "process_map" : "incidents",
@@ -131,10 +148,16 @@ export class SavingCoordinator {
       selection_identity: shown.answer.identity,
       selection_recipe: { parent_case_ids: parentCaseIds ?? population.answer.population.case_ids, predicates: [...shown.steps] },
       context_policy: contextPolicy,
-      comparison: saved?.content.comparison ?? null,
+      // The comparison shown on this reading is saved; without one, the saved investigation keeps its own.
+      comparison:
+        this.comparisons?.savedComparisonFor(population.answer.workspace_id, population.answer.identity) ??
+        saved?.content.comparison ??
+        null,
       notes,
       bookmarks: carriedBookmarks(investigation),
       presentation_state: presentation,
+      // A score run the saved investigation refers to stays referred to until it is taken away on purpose.
+      ...(saved?.content.score_run_ref ? { score_run_ref: saved.content.score_run_ref } : {}),
     };
     // A new investigation names neither an investigation nor the revision it replaces; a new revision names both.
     const request: SaveInvestigationRequest = saved
@@ -204,8 +227,28 @@ export class SavingCoordinator {
       return;
     }
     const { revision } = checked.answer;
+    if (!this.stillShows(request)) {
+      // The answer is for a question that is no longer the one shown. It was saved and is in the list
+      // of saved investigations; the question shown now is another one and is not marked as saved.
+      this.publish({ ...this.state, save: { phase: "idle" } });
+      return;
+    }
     this.investigation.markSaved({ investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content: revision.content });
     this.publish({ ...this.state, save: { phase: "saved", answer: checked.answer } });
+  }
+
+  /** Whether the investigation still shows the question a save request was made for. */
+  private stillShows(request: SaveInvestigationRequest): boolean {
+    const { population, selection } = this.investigation.getState();
+    const shown = shownSelection(selection);
+    return (
+      population.phase === "ready" &&
+      selection.phase === "ready" &&
+      shown !== null &&
+      population.answer.workspace_id === request.workspace_id &&
+      sameIdentity(population.answer.identity, request.base_identity) &&
+      sameIdentity(shown.answer.identity, request.selection_identity)
+    );
   }
 
   private receiveList(request: ListSavedRequest, outcome: SavingOutcome<ListSavedAnswer>): void {

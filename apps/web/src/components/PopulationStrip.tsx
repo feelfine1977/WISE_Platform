@@ -1,18 +1,20 @@
 import type { ExampleId, InputPolicies, PopulationAnswer, PopulationPartition, PopulationSupport } from "../generated/investigation";
-import type { PopulationState } from "../investigation/coordinator";
+import type { InvestigationState, PopulationState } from "../investigation/coordinator";
 import { defaultExampleId, exampleIds } from "../investigation/policies";
 import { countOf, countParts, partitionLabel } from "../investigation/wording";
 
 interface PopulationStripProps {
   population: PopulationState;
+  replacement: InvestigationState["replacement"];
   /** Whether a request of the current question is still unanswered. */
   pending: boolean;
   onChooseExample: (exampleId: ExampleId) => void;
 }
 
 /** The toolbar of the current question: where it is, its source, its status and the supplied facts. */
-export function PopulationStrip({ population, pending, onChooseExample }: PopulationStripProps) {
-  const exampleId = population.phase === "idle" ? defaultExampleId : population.exampleId;
+export function PopulationStrip({ population, replacement, pending, onChooseExample }: PopulationStripProps) {
+  // The choice is what was asked for; the answer below can still be the one kept from an earlier choice.
+  const exampleId = replacement ? replacement.asked : population.phase === "idle" ? defaultExampleId : population.exampleId;
   const answer = population.phase === "ready" ? population.answer : null;
   return (
     <section className="toolbar" aria-label="Source and population">
@@ -33,7 +35,7 @@ export function PopulationStrip({ population, pending, onChooseExample }: Popula
         <div className="status-group">
           <span className="label" id="status-label">Status</span>
           <p role="status" aria-labelledby="status-label" className={`status status-${population.phase}`}>
-            <StatusText population={population} />
+            <StatusText population={population} replacement={replacement} />
           </p>
         </div>
       </div>
@@ -50,7 +52,14 @@ export function PopulationStrip({ population, pending, onChooseExample }: Popula
   );
 }
 
-function StatusText({ population }: { population: PopulationState }) {
+function StatusText({ population, replacement }: { population: PopulationState; replacement: InvestigationState["replacement"] }) {
+  if (replacement && population.phase === "ready") {
+    return replacement.phase === "running" ? (
+      <>Showing revision {population.revision} · opening example {replacement.asked} · revision {replacement.revision}</>
+    ) : (
+      <>Showing revision {population.revision} · example {replacement.asked} not available · revision {replacement.revision}</>
+    );
+  }
   switch (population.phase) {
     case "idle":
       return <>Starting</>;

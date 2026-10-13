@@ -252,3 +252,121 @@ def test_an_unexpected_failure_is_a_typed_refusal(client, workspace_id, identity
     body = refused(ask(client, "variants", workspace_id, identity)[0], "variants", "computation_failed")
     assert body["retryable"] is True
     assert body["request_id"] == "view-1"
+
+
+class Altered:
+    """An answer of the analytics package with one change made to its dictionary."""
+
+    def __init__(self, answer, change):
+        self._answer, self._change = answer, change
+
+    def to_dict(self):
+        written = self._answer.to_dict()
+        self._change(written)
+        return written
+
+
+def altering(monkeypatch, name, change):
+    original = getattr(population_views, name)
+    monkeypatch.setattr(population_views, name, lambda *args: Altered(original(*args), change))
+
+
+def first_category(written, kind):
+    return next(item for item in written["columns"][0]["categories"] if item["kind"] == kind)
+
+
+@pytest.mark.parametrize("change", [
+    pytest.param(lambda written: first_category(written, "value").update(value=None), id="value-without-text"),
+    pytest.param(lambda written: first_category(written, "missing").update(value="Unknown"), id="missing-with-text"),
+    pytest.param(lambda written: written["parent"].update(unevaluable_case_ids=["D", "D"]), id="repeated-id"),
+    pytest.param(lambda written: written["parent"].update(case_count=True), id="truth-value-as-count"),
+])
+def test_an_opening_context_outside_the_contract_is_not_sent(client, workspace_id, identity, monkeypatch, change):
+    altering(monkeypatch, "opening_context", change)
+    body = refused(ask(client, "opening-context", workspace_id, identity)[0], "opening_context", "computation_failed")
+    assert body["request_id"] == "view-1"
+
+
+@pytest.mark.parametrize("change", [
+    pytest.param(lambda written: written["variants"][0].update(case_ids=["A", "B", "A"]), id="repeated-member"),
+    pytest.param(lambda written: written["unevaluable"].update(case_ids=["D", "D"]), id="repeated-unevaluable"),
+    pytest.param(lambda written: written["variants"][0].update(share=float("nan")), id="share-not-a-number"),
+])
+def test_variants_outside_the_contract_are_not_sent(client, workspace_id, identity, monkeypatch, change):
+    altering(monkeypatch, "variants", change)
+    refused(ask(client, "variants", workspace_id, identity)[0], "variants", "computation_failed")
+
+
+def test_the_messages_of_these_operations_are_the_generated_models():
+    from wise_platform_api import population_view_messages
+    from wise_platform_api.generated import population_views as generated
+
+    for name in ("OpeningContextRequest", "VariantsRequest", "OpeningContextAnswer", "VariantsAnswer",
+                 "PopulationViewRefusal", "PopulationViewMessage", "AnswerIdentity", "CategoryShare",
+                 "ContextCategory", "ContextRemainder", "ContextColumn", "GroupCoverage", "OpeningContext", "Variant",
+                 "UnevaluableSupport", "VariantSummary"):
+        assert getattr(population_view_messages, name) is getattr(generated, name), name
+
+
+def places(schema, node, found, place=()):
+    """The places of a message whose part of the contract is ``found``."""
+    if found(node):
+        yield place
+    if "$ref" in node:
+        yield from places(schema, schema["$defs"][node["$ref"].rsplit("/", 1)[1]], found, place)
+    for branch in [*node.get("oneOf", []), *node.get("anyOf", [])]:
+        yield from places(schema, branch, found, place)
+    if isinstance(node.get("items"), dict):
+        yield from places(schema, node["items"], found, (*place, "*"))
+    for name, value in node.get("properties", {}).items():
+        yield from places(schema, value, found, (*place, name))
+
+
+def unique_places(schema, node):
+    """The places of a message where the contract keeps a list free of repeated items."""
+    return places(schema, node, lambda part: part.get("uniqueItems") is True)
+
+
+def version_places(schema, node):
+    """The places of a message that hold an implementation version."""
+    return places(schema, node, lambda part: part.get("$ref") == "#/$defs/ImplementationVersion")
+
+
+def population_views_schema():
+    import json
+    from pathlib import Path
+
+    return json.loads((Path(__file__).resolve().parents[3] / "contracts/population-views.schema.json")
+                      .read_text(encoding="utf-8"))
+
+
+def test_the_unique_lists_checked_are_those_of_the_contract():
+    from wise_platform_api.population_view_messages import UNIQUE
+
+    schema = population_views_schema()
+    for definition, message_type in (("OpeningContextAnswer", "opening_context_answer"),
+                                     ("VariantsAnswer", "variants_answer")):
+        assert set(unique_places(schema, schema["$defs"][definition])) == set(UNIQUE[message_type])
+    for request in ("OpeningContextRequest", "VariantsRequest", "PopulationViewRefusal"):
+        assert list(unique_places(schema, schema["$defs"][request])) == []
+
+
+def test_the_versions_checked_are_those_of_the_contract():
+    from wise_platform_api.population_view_messages import VERSIONS
+
+    schema = population_views_schema()
+    assert schema["$defs"]["ImplementationVersion"]["pattern"] == r"^\d+\.\d+\.\d+$"
+    for definition, message_type in (("OpeningContextRequest", "opening_context_request"),
+                                     ("VariantsRequest", "variants_request"),
+                                     ("OpeningContextAnswer", "opening_context_answer"),
+                                     ("VariantsAnswer", "variants_answer")):
+        assert set(version_places(schema, schema["$defs"][definition])) == set(VERSIONS[message_type])
+
+
+@pytest.mark.parametrize(("route", "operation"), [("opening-context", "opening_context"), ("variants", "variants")])
+@pytest.mark.parametrize("version", ["\u0661.\u0660.\u0660", "1.0.\uff10"])
+def test_a_version_in_other_digits_is_not_a_valid_request(client, workspace_id, identity, route, operation, version):
+    # The contract's pattern is read as JSON Schema reads it: \d is one of the ASCII digits 0 to 9.
+    response, _ = ask(client, route, workspace_id, {**identity, "implementation_version": version})
+    body = refused(response, operation, "invalid_request", "identity.implementation_version")
+    assert body["request_id"] == "view-1"

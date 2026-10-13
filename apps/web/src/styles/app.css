@@ -66,11 +66,19 @@ h2[tabindex="-1"]:focus { outline: none; }
 .disclosure::after { content: "▸"; margin-left: var(--space-1); }
 details[open] > .disclosure::after { content: "▾"; }
 
-/* App bar */
+/*
+ * App bar: the name, the area tabs, the source and the service status share one row while they fit.
+ * As the window narrows they give way in this order: the source moves to a row of its own below
+ * (1000 px), the status shortens to its dot and keeps its text for assistive technology (800 px),
+ * then the name takes the first row and the tabs the next, wrapping when they must (640 px).
+ * The bar wraps rather than overflows at any width between these steps.
+ */
 .app-bar {
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-6);
+  gap: 0 var(--space-6);
   min-height: var(--size-app-bar);
   padding: 0 var(--space-4);
   color: var(--color-bar-ink);
@@ -78,17 +86,40 @@ details[open] > .disclosure::after { content: "▾"; }
 }
 .app-name { flex: none; font-weight: var(--font-weight-strong); letter-spacing: var(--letter-spacing-name); }
 .app-source {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
   color: var(--color-bar-ink-muted);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.service { position: relative; flex: none; }
+
+/* Area tabs: text in the bar's ink, the current one marked by the bar's accent line along its lower edge. */
+.areas { display: flex; flex-wrap: wrap; align-self: stretch; min-width: 0; }
+.areas .area-tab {
+  min-height: var(--size-app-bar);
+  padding: 0 var(--space-3);
+  color: var(--color-tab-ink);
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+/* The tabs touch each other; a larger hit area would cover the neighbour. */
+.areas .area-tab::before { content: none; }
+.areas .area-tab:hover { background: var(--color-bar-hover); }
+.areas .area-tab:focus-visible { outline-color: var(--color-focus-on-bar); outline-offset: var(--focus-offset-inside); }
+.areas .area-tab[aria-current="page"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-tab-mark); }
+/* Muted ink rather than opacity: an unavailable tab stays focusable, and opacity would dim its focus ring too. */
+.areas .area-tab[aria-disabled="true"] { color: var(--color-tab-ink-unavailable); cursor: not-allowed; }
+.areas .area-tab[aria-disabled="true"]:hover { background: transparent; }
+
+/* The status details float below the bar at its right edge and never reach past the window. */
+.service { flex: none; margin-left: auto; }
 .service > summary {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
   min-height: var(--size-control);
   padding: 0 var(--space-2);
@@ -96,7 +127,7 @@ details[open] > .disclosure::after { content: "▾"; }
   border-radius: var(--radius);
 }
 .service > summary:hover { color: var(--color-bar-ink); background: var(--color-bar-hover); }
-.service > summary:focus-visible { outline-color: var(--color-accent-on-bar); }
+.service > summary:focus-visible { outline-color: var(--color-focus-on-bar); }
 .service-dot {
   flex: none;
   width: var(--size-dot);
@@ -108,12 +139,13 @@ details[open] > .disclosure::after { content: "▾"; }
 .service-unavailable { background: var(--color-status-unavailable); }
 .service-body {
   position: absolute;
-  right: 0;
+  top: var(--offset-below);
+  right: var(--space-4);
   z-index: var(--z-float);
   display: grid;
   gap: var(--space-2);
   width: var(--size-popover);
-  max-width: calc(var(--size-viewport-width) - var(--space-6));
+  max-width: calc(100% - var(--space-6));
   margin-top: var(--space-1);
   padding: var(--space-3) var(--space-4);
   color: var(--color-ink);
@@ -234,7 +266,8 @@ details[open] > .disclosure::after { content: "▾"; }
 .pane-title { padding: var(--space-3) var(--space-4) 0; font-weight: var(--font-weight-strong); }
 .pane-hint { padding: 0 var(--space-4) var(--space-2); color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .pane-note { padding: var(--space-3) var(--space-4); color: var(--color-ink-muted); }
-.incidents > .problem { margin: var(--space-3) var(--space-4); }
+.incidents > .problem,
+.incidents > .replacement { margin: var(--space-3) var(--space-4); }
 
 /* Incident table: sticky labels, hairline rows, one blue for the open incident. */
 table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
@@ -265,6 +298,8 @@ thead th {
   border-bottom-color: var(--color-line-strong);
 }
 tbody th { padding: 0; font-weight: var(--font-weight-plain); }
+/* The incident column keeps a readable width beside the three figures and the partition. */
+.incident-table { min-width: calc(var(--size-column-number) * 3 + var(--size-column-label) + var(--size-column-id-least)); }
 .column-number { width: var(--size-column-number); }
 .column-label { width: var(--size-column-label); }
 .number { text-align: right; font-variant-numeric: tabular-nums; }
@@ -394,8 +429,32 @@ tr.selected .row-open { font-weight: var(--font-weight-strong); }
   .wide-only { display: none; }
 }
 @media (max-width: 640px) {
-  .app-bar { gap: var(--space-3); }
   .status-group { margin-left: 0; }
+  /* A window narrower than the incident table scrolls the table in its pane, not the page. */
+  .incidents { overflow-x: auto; }
+}
+
+/* The app bar on narrower windows, in the order its parts give way. */
+@media (max-width: 1000px) {
+  .app-source { order: 1; flex-basis: 100%; padding-bottom: var(--space-2); }
+  .app-source:empty { display: none; }
+}
+@media (max-width: 800px) {
+  .service > summary { min-width: var(--size-hit); }
+  .service-text {
+    position: absolute;
+    width: var(--line-width);
+    height: var(--line-width);
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@media (max-width: 640px) {
+  .app-bar { gap: 0 var(--space-3); }
+  .app-name { display: flex; flex-basis: 100%; align-items: center; min-height: var(--size-hit); }
+  .areas { flex: 1 1 0; }
+  .areas .area-tab { min-height: var(--size-hit); padding: 0 var(--space-2); }
 }
 
 /* Motion only when something opens, and none when reduced motion is asked. */
