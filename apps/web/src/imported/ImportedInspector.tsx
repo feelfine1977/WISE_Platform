@@ -1,8 +1,10 @@
-import type { RefObject } from "react";
+import { useMemo, useRef, type RefObject } from "react";
 import type { Column, ImportedCaseEvidenceAnswer, ImportedCaseSummary, ImportedSourceRecord } from "../generated/imports";
 import type { InspectorLayout } from "../components/Inspector";
 import { ImportProblemNotice } from "../data/ImportProblemNotice";
 import { countOf, utcText, wallText } from "../data/wording";
+import { GapSince, IncidentTimeline } from "../timeline/IncidentTimeline";
+import { timelineOf, type Gap } from "../timeline/timeline";
 import type { ImportedCaseState } from "./coordinator";
 
 interface ImportedInspectorProps {
@@ -61,10 +63,18 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
   );
 }
 
+/** The records in the declared order, and above them their elapsed time: the strip of the recorded times and the longest gap. */
 function History({ answer }: { answer: ImportedCaseEvidenceAnswer }) {
   const { coverage } = answer;
   const omitted = new Set(answer.omitted_activity_row_ids);
   const names = new Map(answer.columns.map((column) => [column.index, column.name]));
+  const timeline = useMemo(() => timelineOf(answer.records, answer.sequence_evaluable), [answer]);
+  const list = useRef<HTMLOListElement>(null);
+  /** A mark of the strip and the longest gap lead to a record of the list: the focus moves to it, which brings it into view. */
+  const showRecord = (place: number) => {
+    const entry = list.current?.children[place];
+    if (entry instanceof HTMLElement) entry.focus();
+  };
   return (
     <>
       <p className="coverage">
@@ -77,9 +87,18 @@ function History({ answer }: { answer: ImportedCaseEvidenceAnswer }) {
           not their recorded order.
         </p>
       )}
-      <ol className="history" aria-label={`Records of incident ${answer.case_id} in the declared order`}>
-        {answer.records.map((record) => (
-          <HistoryEntry key={record.row_id} record={record} omitted={omitted.has(record.row_id)} columns={answer.columns} names={names} />
+      <IncidentTimeline caseId={answer.case_id} records={answer.records} timeline={timeline} onShowRecord={showRecord} />
+      <ol className="history" ref={list} aria-label={`Records of incident ${answer.case_id} in the declared order`}>
+        {answer.records.map((record, place) => (
+          <HistoryEntry
+            key={record.row_id}
+            record={record}
+            omitted={omitted.has(record.row_id)}
+            columns={answer.columns}
+            names={names}
+            gap={timeline.gaps[place]}
+            longest={timeline.longest?.to === place}
+          />
         ))}
       </ol>
     </>
@@ -91,11 +110,15 @@ interface HistoryEntryProps {
   omitted: boolean;
   columns: Column[];
   names: Map<number, string>;
+  /** The gap since the record before; none while the gaps of the incident are not computed. */
+  gap: Gap | undefined;
+  /** Whether that gap is the longest of the incident. */
+  longest: boolean;
 }
 
-function HistoryEntry({ record, omitted, columns, names }: HistoryEntryProps) {
+function HistoryEntry({ record, omitted, columns, names, gap, longest }: HistoryEntryProps) {
   return (
-    <li className={omitted ? "history-entry no-label" : "history-entry"}>
+    <li className={omitted ? "history-entry no-label" : "history-entry"} tabIndex={-1}>
       <span className="history-marker" aria-hidden="true" />
       <div className="history-body">
         <p className="history-activity">{record.activity === null ? <span className="missing-text">no activity label</span> : record.activity}</p>
@@ -103,6 +126,7 @@ function HistoryEntry({ record, omitted, columns, names }: HistoryEntryProps) {
           <TimeText record={record} /> · source position {record.source_position}
           {record.source_sequence !== null && <> · sequence {record.source_sequence}</>}
         </p>
+        <GapSince gap={gap} longest={longest} />
         {record.context.length > 0 && (
           <dl className="history-context">
             {record.context.map((value) => (
