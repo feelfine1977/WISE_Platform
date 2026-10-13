@@ -71,7 +71,7 @@ def test_a_body_that_is_not_a_json_object_is_an_invalid_request(raw):
     assert result.query_revision is None
 
 
-@pytest.mark.parametrize("raw", [b"[" * 100_000 + b"]" * 100_000, b'{"a":' + b"[" * 100_000 + b"]" * 100_000 + b"}"])
+@pytest.mark.parametrize("raw", [b"[" * 100_000 + b"]" * 100_000, b'{"a":' + b"[" * 100_000 + b"]" * 100_000 + b"}"], ids=["deep-array", "deep-object"])
 def test_a_body_nested_deeper_than_can_be_read_is_an_invalid_request(raw):
     result = parse_request(raw, OpenExampleRequest, "open_example")
 

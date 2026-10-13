@@ -30,7 +30,7 @@ def test_the_packaged_example_is_opened_and_one_of_its_cases_read(client):
 
 
 @pytest.mark.parametrize("route", [OPEN_ROUTE, EVIDENCE_ROUTE])
-@pytest.mark.parametrize("content", [b"", b"not json", b"[1]", b"[" * 100_000 + b"]" * 100_000])
+@pytest.mark.parametrize("content", [b"", b"not json", b"[1]", b"[" * 100_000 + b"]" * 100_000], ids=["empty", "not-json", "array", "deep-array"])
 def test_a_body_that_is_not_a_json_object_is_a_typed_refusal(client, route, content):
     response = client.post(route, content=content, headers={"content-type": "application/json"})
 

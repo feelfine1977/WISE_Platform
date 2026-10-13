@@ -115,7 +115,7 @@
 .compare-status:empty { display: none; }
 .compare-status { color: var(--color-ink-muted); }
 .compare-roles { overflow-wrap: anywhere; }
-.compare-scroll { overflow-x: auto; }
+.compare-scroll { position: relative; overflow-x: auto; }
 /* The figures wrap rather than being cut: every cell says what it is a share of. */
 .compare-table { width: 100%; border-collapse: collapse; table-layout: auto; }
 .compare-caption { caption-side: top; text-align: left; padding-bottom: var(--space-1); color: var(--color-ink-muted); }
