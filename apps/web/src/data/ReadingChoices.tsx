@@ -22,6 +22,7 @@ import {
   missingChoices,
   offsetLabel,
   offsets,
+  readingConsequences,
 } from "./interpretation";
 import { Report } from "./Report";
 import { countOf, delimiterName, encodingName, utcText, wallText } from "./wording";
@@ -296,8 +297,34 @@ const roleLabels: Record<Role, string> = {
   source_sequence: "Sequence number (optional)",
 };
 
-function evidenceOf(suggestion: RoleSuggestion): string {
+function evidenceOf(suggestion: RoleSuggestion | undefined): string {
+  if (suggestion === undefined) return "not inspected";
   return `${countOf(suggestion.nonempty_count, "filled cell")}, ${countOf(suggestion.distinct_nonempty_count, "distinct value")}`;
+}
+
+/** A column of the source with what the inspection found in it; nothing when it reported nothing about it. */
+interface ColumnEvidence {
+  index: number;
+  suggestion: RoleSuggestion | undefined;
+}
+
+/**
+ * Every column of the source for one role: first those the inspection suggests for it, then the
+ * others. Each keeps the source order and what the inspection found in it.
+ */
+function columnsFor(role: Role | "context", answer: CsvInspectionAnswer): { suggested: ColumnEvidence[]; others: ColumnEvidence[] } {
+  const all: ColumnEvidence[] = answer.columns.map((column) => ({
+    index: column.index,
+    suggestion: answer.role_suggestions.find((item) => item.column_index === column.index),
+  }));
+  return {
+    suggested: all.filter((item) => item.suggestion?.roles.includes(role) === true),
+    others: all.filter((item) => item.suggestion?.roles.includes(role) !== true),
+  };
+}
+
+function columnName(names: Map<number, string>, index: number): string {
+  return names.get(index) || `Column ${index}`;
 }
 
 function Choices({
@@ -316,6 +343,9 @@ function Choices({
   const missingId = useId();
   const names = new Map(answer.columns.map((column) => [column.index, column.name]));
   const timestamp = answer.role_suggestions.find((item) => item.column_index === draft.timestampColumn);
+  const consequences = readingConsequences(draft, answer);
+  const consequencesId = useId();
+  const describedBy = [missing.length > 0 ? missingId : null, consequences.length > 0 ? consequencesId : null].filter((id) => id !== null);
   const working = interpretation.phase === "preparing";
   return (
     <>
@@ -324,8 +354,8 @@ function Choices({
           Column roles
         </h3>
         <p className="muted">
-          Each list offers the columns that can play the role, with what the inspection found in them. Columns without a role stay in every
-          record as written.
+          Each list offers every column of the source: first those the inspection suggests for the role, then the other columns, each with
+          what the inspection found in it. Columns without a role stay in every record as written.
         </p>
         <div className="choice-row">
           {(Object.keys(roleFields) as Role[]).map((role) => (
@@ -349,6 +379,16 @@ function Choices({
         <h3 id="report-title" className="step-title">
           Interpretation report
         </h3>
+        {consequences.length > 0 && (
+          <div id={consequencesId} className="state-line state-confirm">
+            <span className="label-text-strong">What these choices mean for the reading</span>
+            <ul className="notes" aria-label="What these choices mean for the reading">
+              {consequences.map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         {missing.length > 0 && (
           <p id={missingId} className="muted">
             Still to choose: {missing.join(", ")}.
@@ -358,7 +398,7 @@ function Choices({
           type="button"
           className="primary"
           disabled={missing.length > 0 || working}
-          aria-describedby={missing.length > 0 ? missingId : undefined}
+          aria-describedby={describedBy.length > 0 ? describedBy.join(" ") : undefined}
           onClick={() => coordinator.confirm(false)}
         >
           Read the source with these choices
@@ -420,8 +460,13 @@ function RoleChoice({
 }) {
   const id = useId();
   const field = roleFields[role];
-  const candidates = answer.role_suggestions.filter((item) => item.roles.includes(role));
+  const { suggested, others } = columnsFor(role, answer);
   const value = draft[field];
+  const option = (item: ColumnEvidence) => (
+    <option key={item.index} value={item.index}>
+      {columnName(names, item.index)} — {evidenceOf(item.suggestion)}
+    </option>
+  );
   return (
     <div className="choice">
       <label htmlFor={id} className="label-text">
@@ -433,13 +478,10 @@ function RoleChoice({
         onChange={(event) => coordinator.choose({ [field]: event.target.value === "" ? null : Number(event.target.value) })}
       >
         <option value="">{role === "source_sequence" ? "No sequence column" : "Choose a column"}</option>
-        {candidates.map((item) => (
-          <option key={item.column_index} value={item.column_index}>
-            {names.get(item.column_index) || `Column ${item.column_index}`} — {evidenceOf(item)}
-          </option>
-        ))}
+        {suggested.length > 0 && <optgroup label="Suggested for this role">{suggested.map(option)}</optgroup>}
+        {others.length > 0 && <optgroup label="Other columns">{others.map(option)}</optgroup>}
       </select>
-      {candidates.length === 0 && <span className="muted">No column can play this role.</span>}
+      {suggested.length === 0 && <span className="muted">The inspection suggests no column for this role.</span>}
     </div>
   );
 }
@@ -456,28 +498,34 @@ function ContextChoice({
   coordinator: DataCoordinator;
 }) {
   const roles = new Set([draft.caseColumn, draft.activityColumn, draft.timestampColumn, draft.sequenceColumn]);
-  const candidates = answer.role_suggestions.filter((item) => item.roles.includes("context") && !roles.has(item.column_index));
-  if (candidates.length === 0) return null;
+  const free = (item: ColumnEvidence) => !roles.has(item.index);
+  const columns = columnsFor("context", answer);
+  const suggested = columns.suggested.filter(free);
+  const others = columns.others.filter(free);
+  if (suggested.length === 0 && others.length === 0) return null;
   const chosen = new Set(draft.contextColumns);
+  const check = (item: ColumnEvidence) => (
+    <label key={item.index} className="check">
+      <input
+        type="checkbox"
+        checked={chosen.has(item.index)}
+        onChange={(event) =>
+          coordinator.choose({
+            contextColumns: event.target.checked
+              ? [...draft.contextColumns, item.index]
+              : draft.contextColumns.filter((index) => index !== item.index),
+          })
+        }
+      />
+      {columnName(names, item.index)} <span className="muted">— {evidenceOf(item.suggestion)}</span>
+    </label>
+  );
   return (
     <fieldset className="checks">
       <legend className="label-text">Context attributes (optional)</legend>
-      {candidates.map((item) => (
-        <label key={item.column_index} className="check">
-          <input
-            type="checkbox"
-            checked={chosen.has(item.column_index)}
-            onChange={(event) =>
-              coordinator.choose({
-                contextColumns: event.target.checked
-                  ? [...draft.contextColumns, item.column_index]
-                  : draft.contextColumns.filter((index) => index !== item.column_index),
-              })
-            }
-          />
-          {names.get(item.column_index) || `Column ${item.column_index}`} <span className="muted">— {evidenceOf(item)}</span>
-        </label>
-      ))}
+      {suggested.map(check)}
+      {others.length > 0 && <span className="label-text">Other columns</span>}
+      {others.map(check)}
     </fieldset>
   );
 }
@@ -495,10 +543,11 @@ function FormatChoice({
 }) {
   const evidence = formatEvidence(suggestion);
   const statusId = useId();
-  if (!suggestion) return null;
+  const column = draft.timestampColumn;
   const examples = [
-    ...new Set(answer.sample_rows.map((row) => row.cells[suggestion.column_index]).filter((cell) => cell !== undefined && cell !== "")),
+    ...new Set(answer.sample_rows.map((row) => (column === null ? undefined : row.cells[column])).filter((cell) => cell !== undefined && cell !== "")),
   ].slice(0, 3);
+  const readsNone = evidence.readings.every((item) => item.parsed === 0);
   const legend = evidence.question
     ? "These times can be read in more than one way. Which comes first: the day or the month?"
     : "Time format";
@@ -507,9 +556,13 @@ function FormatChoice({
     ? `${evidence.complete.length} formats read every filled cell, so none is proposed. Compare the values above with the examples in the labels.`
     : evidence.proposed !== null
       ? `Proposed: ${formatLabels[evidence.proposed]}, the only format that reads every filled cell.`
-      : evidence.filled === 0
-        ? "This column has no filled cell. Choose another time column."
-        : "No format reads every filled cell, so none is proposed. A value the chosen format does not read stays in its incident without a usable time.";
+      : suggestion === undefined
+        ? "The inspection reported nothing about this column, so no format is proposed."
+        : evidence.filled === 0
+          ? "This column has no filled cell, so no format is proposed. With any format, no record has a usable time and no incident's order can be evaluated."
+          : readsNone
+            ? "No format reads any filled cell of this column, so none is proposed. With any format, no record has a usable time and no incident's order can be evaluated."
+            : "No format reads every filled cell, so none is proposed. A value the chosen format does not read stays in its incident without a usable time.";
   return (
     <fieldset className="checks" aria-describedby={statusId}>
       <legend className="label-text-strong">{legend}</legend>
@@ -536,7 +589,9 @@ function FormatChoice({
               —{" "}
               {item.parsed === null
                 ? "not inspected"
-                : `reads ${countOf(item.parsed, "filled cell")} of ${countOf(evidence.filled, "filled cell")}`}
+                : evidence.filled === 0
+                  ? "no filled cell to read"
+                  : `reads ${countOf(item.parsed, "filled cell")} of ${countOf(evidence.filled, "filled cell")}`}
             </span>
           </span>
         </label>
