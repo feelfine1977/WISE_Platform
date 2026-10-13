@@ -1,0 +1,273 @@
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as flow from "wise-flow";
+import type { SuppliedGraph } from "../generated/selection";
+import { ImportedInvestigationCoordinator } from "../imported/coordinator";
+import { ImportedInvestigation } from "../imported/ImportedInvestigation";
+import { END_ID, START_ID } from "../map/graph";
+import { populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
+import {
+  checked,
+  closed,
+  contains,
+  containingOpened,
+  everyIncident,
+  type Figures,
+  graphAnswer,
+  nodeIds,
+  opened,
+  scriptedSelectionClient,
+  selectionAnswer,
+  suppliedGraph,
+} from "../test/selections";
+import { moved, noStages, type StageDefinitions, withActivity, withStage } from "./definitions";
+import { browserStages, type StagedReading } from "./store";
+
+vi.mock("wise-flow", async (original) => {
+  const library = await original<typeof import("wise-flow")>();
+  return { ...library, layoutUnion: vi.fn(library.layoutUnion) };
+});
+
+// The map measures its container; the test page has no layout, so nothing is ever resized.
+class StillObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+(globalThis as { ResizeObserver?: unknown }).ResizeObserver = StillObserver;
+
+/*
+ * The population of ../test/selections.ts: "Eröffnet" and then "Geschlossen" in incident A-1,
+ * "Prüfung" alone in B-2. Where a test starts with stages, they are "Intake" with "Eröffnet" and
+ * "Closure" with "Geschlossen"; "Prüfung" is in no stage.
+ */
+const reading: StagedReading = { workspaceId, preparationId };
+const named = ["Intake", "Closure"].reduce(withStage, noStages);
+const [intake, closure] = named.stages.map((stage) => stage.id);
+const twoStages = withActivity(withActivity(named, opened, intake), closed, closure);
+
+/** The stages of the reading as the browser holds them before the investigation is opened. */
+function define(definitions: StageDefinitions) {
+  browserStages.change(reading, () => definitions);
+}
+
+beforeEach(() => {
+  vi.mocked(flow.layoutUnion).mockClear();
+  window.localStorage.clear();
+  define(noStages);
+});
+
+async function deliver(action: () => void) {
+  await act(async () => {
+    action();
+  });
+}
+
+/** The investigation with every incident selected and its map shown: the map of ../test/selections.ts, or the one given. */
+async function openMap(inPlace = false, supplied?: SuppliedGraph) {
+  const imports = scriptedImportClient();
+  const selecting = scriptedSelectionClient();
+  const coordinator = new ImportedInvestigationCoordinator(imports.client, selecting.client);
+  const user = userEvent.setup();
+  render(<ImportedInvestigation coordinator={coordinator} mapInPlace={inPlace} onShowData={() => undefined} />);
+  act(() => coordinator.open({ workspaceId, preparationId }));
+  await deliver(() => imports.populations[0].reply({ ok: true, answer: populationAnswer(imports.populations[0].request) }));
+  const app = { selecting, coordinator, user };
+  await answer(app, 0, everyIncident, supplied);
+  const map = await screen.findByLabelText("Process map of the kept incidents");
+  await waitFor(() => expect(nodeOf(map, (supplied ?? suppliedGraph(["A-1"])).nodes[0].id)).not.toBeNull());
+  return { ...app, map };
+}
+
+async function answer(app: { selecting: ReturnType<typeof scriptedSelectionClient> }, place: number, figures: Figures, supplied?: SuppliedGraph) {
+  const selection = app.selecting.selections[place];
+  await deliver(() => selection.reply({ ok: true, answer: selectionAnswer(selection.request, figures) }));
+  const graph = app.selecting.graphs.find((call) => call.request.query_revision === selection.request.query_revision)!;
+  const answered = graphAnswer(graph.request, figures.kept.case_ids);
+  await deliver(() => graph.reply({ ok: true, answer: supplied ? { ...answered, graph: supplied } : answered }));
+}
+
+const nodeOf = (map: HTMLElement, id: string) => map.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
+/** The stage boxes the map draws, by the name written on each. */
+const stageBoxes = (map: HTMLElement) => Array.from(map.querySelectorAll('[data-wf-part="group"][data-wf-kind="stage"] [data-wf-part="group-label"]')).map((label) => label.textContent);
+/** How far from the left edge of the map the box of a stage begins. */
+const leftOf = (map: HTMLElement, stageId: string) => Number(/translate\((-?[\d.]+)px/.exec(nodeOf(map, `group:${stageId}`)?.style.transform ?? "")?.[1]);
+const stagesDisclosure = () => document.querySelector<HTMLDetailsElement>("details.map-stages")!;
+const offered = () => Array.from(document.querySelectorAll(".map-choices button")).map((button) => button.textContent);
+
+describe("the stages of a log on its map", () => {
+  it("draws the map as before while no stage is defined, and holds the editor of the stages under it", async () => {
+    const { map } = await openMap();
+    expect(map.querySelector('[data-wf-part="group"]')).toBeNull();
+    expect(within(map).queryByRole("button", { name: "Show stages" })).toBeNull();
+    // Without a stage an activity carries the neutral band of the map library, without a pattern.
+    expect(nodeOf(map, nodeIds[opened])?.querySelector('[data-wf-part="node-band"] svg')).toBeNull();
+
+    const disclosure = stagesDisclosure();
+    expect(disclosure.parentElement?.className).toBe("map-notes");
+    expect(disclosure.querySelector("summary")?.textContent).toBe("Stages of this log");
+    expect(disclosure.open).toBe(false);
+    expect(within(disclosure).getByRole("region", { name: "Stages of this log" }).textContent).toContain("The stages are kept in this browser for this reading.");
+    expect(within(disclosure).getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
+  });
+
+  it("draws a stage once the analyst has defined it under the map and put an activity into it", async () => {
+    const { map, user } = await openMap();
+    const editor = within(stagesDisclosure());
+    await user.click(editor.getByRole("textbox", { name: "New stage" }));
+    await user.keyboard("Intake{Enter}");
+    // A stage without an activity changes nothing on the map.
+    expect(browserStages.stateOf(reading).definitions.stages.map((stage) => stage.name)).toEqual(["Intake"]);
+    expect(map.querySelector('[data-wf-part="group"]')).toBeNull();
+    expect(within(map).queryByRole("button", { name: "Show stages" })).toBeNull();
+
+    await user.selectOptions(editor.getByRole("combobox", { name: `Stage of “${opened}”` }), "Intake");
+    await waitFor(() => expect(stageBoxes(map)).toEqual(["Intake"]));
+    expect(nodeOf(map, nodeIds[opened])?.getAttribute("aria-label")).toContain("(Intake)");
+    expect(within(map).getByRole("button", { name: "Show stages" })).toBeTruthy();
+
+    // Out of its stage again, the activity is drawn as before.
+    await user.selectOptions(editor.getByRole("combobox", { name: `Stage of “${opened}”` }), "No stage");
+    await waitFor(() => expect(stageBoxes(map)).toEqual([]));
+    expect(within(map).queryByRole("button", { name: "Show stages" })).toBeNull();
+  });
+
+  it("draws the stages as boxes in their order with their activities in them, Start and End outside, and names them in the legend", async () => {
+    define(twoStages);
+    const { map, user } = await openMap();
+    await waitFor(() => expect(stageBoxes(map)).toEqual(["Intake", "Closure"]));
+    await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"));
+
+    // The map library says the stage of an activity with it and marks the activity with the pattern of its stage.
+    expect(nodeOf(map, nodeIds[opened])?.getAttribute("aria-label")).toContain("(Intake)");
+    expect(nodeOf(map, nodeIds[closed])?.getAttribute("aria-label")).toContain("(Closure)");
+    expect(nodeOf(map, nodeIds[opened])?.querySelector('[data-wf-part="node-band"] svg')).not.toBeNull();
+    expect(nodeOf(map, nodeIds[checked])?.getAttribute("aria-label")).not.toMatch(/\((Intake|Closure)\)/);
+    expect(nodeOf(map, nodeIds[checked])?.querySelector('[data-wf-part="node-band"] svg')).toBeNull();
+    // Start and End are on the map as before, and the first stage lies before the second.
+    expect(nodeOf(map, START_ID)).not.toBeNull();
+    expect(nodeOf(map, END_ID)).not.toBeNull();
+    expect(leftOf(map, intake)).toBeLessThan(leftOf(map, closure));
+    expect(within(map).getByRole("button", { name: "Show stages" })).toBeTruthy();
+
+    // The legend of the map names the stages beside the colours the library gave them.
+    await user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
+    expect(Array.from(map.querySelectorAll(".wf-legend__cat")).map((entry) => entry.textContent)).toEqual(["Intake", "Closure"]);
+    // The editor under the map shows the same stages.
+    expect(within(stagesDisclosure()).getByRole("combobox", { name: `Stage of “${closed}”` })).toHaveProperty("value", closure);
+  });
+
+  it("lays the stages out in the order the analyst gives them, whatever the flow of the log is", async () => {
+    define(twoStages);
+    const { map, user } = await openMap();
+    await waitFor(() => expect(leftOf(map, intake)).toBeLessThan(leftOf(map, closure)));
+    await user.click(within(stagesDisclosure()).getByRole("button", { name: "Move “Closure” earlier" }));
+    expect(browserStages.stateOf(reading).definitions).toEqual(moved(twoStages, closure, "earlier"));
+    await waitFor(() => expect(leftOf(map, closure)).toBeLessThan(leftOf(map, intake)));
+  });
+
+  it("shows each stage as one node when asked, takes no step from a stage, and shows the activities again", async () => {
+    define(twoStages);
+    const { map, user, selecting } = await openMap();
+    await waitFor(() => expect(stageBoxes(map)).toEqual(["Intake", "Closure"]));
+
+    await user.click(within(map).getByRole("button", { name: "Show stages" }));
+    await waitFor(() => expect(nodeOf(map, intake)).not.toBeNull());
+    expect(nodeOf(map, intake)?.getAttribute("aria-label")).toContain("Intake, stage.");
+    expect(nodeOf(map, closure)).not.toBeNull();
+    // The activities of the stages are in their stages; what has no stage stays as it is.
+    expect(nodeOf(map, nodeIds[opened])).toBeNull();
+    expect(nodeOf(map, nodeIds[closed])).toBeNull();
+    expect(nodeOf(map, nodeIds[checked])).not.toBeNull();
+    expect(nodeOf(map, START_ID)).not.toBeNull();
+    expect(nodeOf(map, END_ID)).not.toBeNull();
+
+    fireEvent.click(nodeOf(map, intake)!);
+    expect(screen.getByText(/^The stage “Intake” stands for its activities\. No step is taken from a stage/)).toBeTruthy();
+    expect(screen.queryByText(/This line stands for activities the map does not show/)).toBeNull();
+    expect(offered()).toEqual([]);
+    // An activity outside the stages offers its steps as ever.
+    fireEvent.click(nodeOf(map, nodeIds[checked])!);
+    expect(offered()).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it"]);
+
+    await user.click(within(map).getByRole("button", { name: "Show activities" }));
+    await waitFor(() => expect(nodeOf(map, nodeIds[opened])).not.toBeNull());
+    expect(nodeOf(map, intake)).toBeNull();
+    expect(stageBoxes(map)).toEqual(["Intake", "Closure"]);
+
+    // A step from an activity in a stage is the step it always was.
+    fireEvent.click(nodeOf(map, nodeIds[opened])!);
+    expect(screen.getByRole("heading", { name: "Activity “Eröffnet”" })).toBeTruthy();
+    expect(offered()).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it", "Keep incidents that begin with it"]);
+    await user.click(screen.getByRole("button", { name: "Keep incidents that contain it" }));
+    expect(selecting.selections[1].request.predicates).toEqual([contains(opened)]);
+
+    // The selection keeps A-1 alone: its map has both stages still and no activity outside them.
+    await answer({ selecting }, 1, containingOpened);
+    const after = screen.getByLabelText("Process map of the kept incidents");
+    await waitFor(() => expect(nodeOf(after, nodeIds[checked])).toBeNull());
+    expect(stageBoxes(after)).toEqual(["Intake", "Closure"]);
+  });
+
+  it("keeps the activities and the stage boxes of a selection where the map of the whole parent has them, and arranges the parent anew for other stages", async () => {
+    define(twoStages);
+    const app = await openMap(true);
+    await waitFor(() => expect(stageBoxes(app.map)).toEqual(["Intake", "Closure"]));
+    expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
+    // The arrangement is that of the parent in its stages.
+    expect(vi.mocked(flow.layoutUnion).mock.calls[0][0][0].groups?.map((group) => group.label)).toEqual(["Intake", "Closure"]);
+    const placed = [nodeOf(app.map, nodeIds[opened])!.style.transform, nodeOf(app.map, `group:${intake}`)!.style.transform];
+    expect(placed[0]).toMatch(/translate/);
+
+    app.coordinator.addStep(contains(opened));
+    await answer(app, 1, containingOpened);
+    const after = screen.getByLabelText("Process map of the kept incidents");
+    await waitFor(() => expect(nodeOf(after, nodeIds[checked])).toBeNull());
+    expect([nodeOf(after, nodeIds[opened])!.style.transform, nodeOf(after, `group:${intake}`)!.style.transform]).toEqual(placed);
+    expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
+
+    // Other stages are another arrangement of the parent, computed once more.
+    await deliver(() => browserStages.change(reading, (definitions) => moved(definitions, closure, "earlier")));
+    await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(flow.layoutUnion).mock.calls[1][0][0].groups?.map((group) => group.label)).toEqual(["Closure", "Intake"]);
+    const again = await screen.findByLabelText("Process map of the kept incidents");
+    await waitFor(() => expect(leftOf(again, closure)).toBeLessThan(leftOf(again, intake)));
+  });
+
+  it("draws every flow from Start and to End while stages are shown as nodes, so that the flow of a stage adds up those of its activities", async () => {
+    // Four activities that all begin or end incidents; the first two in "Intake", the third in "Closure", the fourth in no stage.
+    const base = suppliedGraph(["A-1", "B-2"]);
+    const id = (index: number) => `activity.v1:sha256:${String(index).padStart(64, "0")}`;
+    const [starts, ends, pathIncidents] = [[900, 40, 7, 0], [5, 300, 60, 2], [500, 80, 50, 6]];
+    const log: SuppliedGraph = {
+      ...base,
+      nodes: starts.map((count, index) => ({ ...base.nodes[0], id: id(index), label: `Activity ${index}`, metrics: { ...base.nodes[0].metrics, cases: 1000 - index, starts: count, ends: ends[index] } })),
+      edges: pathIncidents.map((cases, index) => ({ ...base.edges[0], id: `path.v1:sha256:${String(index).padStart(64, "0")}`, source: id(index), target: id((index + 1) % 4), metrics: { ...base.edges[0].metrics, cases } })),
+    };
+    define(["Activity 0", "Activity 1"].reduce((definitions, activity) => withActivity(definitions, activity, intake), withActivity(named, "Activity 2", closure)));
+    const { map, user } = await openMap(false, log);
+    /** The flows from Start and to End as the table view of the map lists them: from, to and the passages. */
+    const flows = () =>
+      within(map)
+        .getAllByRole("row")
+        .map((row) => Array.from(row.querySelectorAll("th, td")).map((cell) => cell.textContent))
+        .filter((cells) => cells[2] === "sequence flow")
+        .map((cells) => cells.slice(0, 2).concat(cells[3]).join(" "));
+
+    // At half of the paths the flows that carry fewer incidents than the weakest path drawn are left out, and the map says so.
+    fireEvent.change(within(map).getAllByRole("slider")[1], { target: { value: "2" } });
+    await user.click(within(map).getByRole("button", { name: "Table view" }));
+    expect(flows()).toEqual(["Start Activity 0 900", "Activity 1 End 300"]);
+    expect(document.querySelector(".map-flows")?.textContent).toMatch(/^Not drawn at this detail: 5 of the 7 flows/);
+
+    // Shown as nodes, the stages carry every flow of their activities: 900 and 40 begin in "Intake", 5 and 300 end in it.
+    await user.click(within(map).getByRole("button", { name: "Show stages" }));
+    expect(flows()).toEqual(["Start Intake 940", "Start Closure 7", "Intake End 305", "Closure End 60", "Activity 3 End 2"]);
+    expect(document.querySelector(".map-flows")).toBeNull();
+
+    // With the activities shown again, the flows follow the paths as before.
+    await user.click(within(map).getByRole("button", { name: "Show activities" }));
+    expect(flows()).toEqual(["Start Activity 0 900", "Activity 1 End 300"]);
+  });
+});

@@ -10,8 +10,11 @@ import "wise-flow/style.unlayered.css";
 import { countOf } from "../data/wording";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
+import type { StageDefinitions } from "../stages/definitions";
+import { StagesEditor } from "../stages/StagesEditor";
+import { type StagedReading, useStages } from "../stages/store";
 import { elementOf, selectedElement, stepChoices } from "./elements";
-import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, toFlowGraph } from "./graph";
+import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { activityTimeLines, boundaryLine, coverageRows, flowsLine, mapCaption } from "./wording";
 
@@ -56,35 +59,35 @@ type Arrangement = { phase: "arranging" } | { phase: "ready"; positions: Positio
 
 /**
  * One arrangement for each map of a whole parent, computed once: every selection's map reads its
- * activities' positions from it, so nothing moves when incidents are removed or kept again.
+ * activities' positions from it, so nothing moves when incidents are removed or kept again. The
+ * stages of the log shape the arrangement, so it is computed anew once they are changed.
  */
-const arrangements = new WeakMap<SuppliedGraph, Promise<Positions>>();
+const arrangements = new WeakMap<SuppliedGraph, { stages: StageDefinitions; arranged: Promise<Positions> }>();
 
-function arrangementOf(parentGraph: SuppliedGraph, parent: FlowGraph): Promise<Positions> {
-  let arranged = arrangements.get(parentGraph);
-  if (!arranged) {
-    arranged = layoutUnion([parent], workers);
-    arrangements.set(parentGraph, arranged);
-    arranged.catch(() => arrangements.delete(parentGraph));
-  }
+function arrangementOf(parentGraph: SuppliedGraph, parent: FlowGraph, stages: StageDefinitions): Promise<Positions> {
+  const held = arrangements.get(parentGraph);
+  if (held?.stages === stages) return held.arranged;
+  const arranged = layoutUnion([parent], workers);
+  arrangements.set(parentGraph, { stages, arranged });
+  arranged.catch(() => arrangements.get(parentGraph)?.arranged === arranged && arrangements.delete(parentGraph));
   return arranged;
 }
 
-/** The arrangement of the whole parent, asked for only while the activities are to keep their places. */
-function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph, wanted: boolean): Arrangement {
-  const [arranged, setArranged] = useState<{ graph: SuppliedGraph; arrangement: Arrangement } | null>(null);
+/** The arrangement of the whole parent in its stages, asked for only while the activities are to keep their places. */
+function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph, stages: StageDefinitions, wanted: boolean): Arrangement {
+  const [arranged, setArranged] = useState<{ parent: FlowGraph; arrangement: Arrangement } | null>(null);
   useEffect(() => {
     if (!wanted) return;
     let current = true;
-    arrangementOf(parentGraph, parent).then(
-      (positions) => current && setArranged({ graph: parentGraph, arrangement: { phase: "ready", positions } }),
-      () => current && setArranged({ graph: parentGraph, arrangement: { phase: "unavailable" } }),
+    arrangementOf(parentGraph, parent, stages).then(
+      (positions) => current && setArranged({ parent, arrangement: { phase: "ready", positions } }),
+      () => current && setArranged({ parent, arrangement: { phase: "unavailable" } }),
     );
     return () => {
       current = false;
     };
-  }, [parentGraph, parent, wanted]);
-  return arranged?.graph === parentGraph ? arranged.arrangement : { phase: "arranging" };
+  }, [parentGraph, parent, stages, wanted]);
+  return arranged?.parent === parent ? arranged.arrangement : { phase: "arranging" };
 }
 
 interface MapViewProps {
@@ -100,7 +103,12 @@ interface MapViewProps {
 
 /** The process map of the kept incidents, with the steps an activity, a path or a flow from Start or to End offers. */
 export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false }: MapViewProps) {
-  const parent = useMemo(() => toFlowGraph(parentGraph), [parentGraph]);
+  // The stages the analyst defined for the reading shown; the map draws its activities in them.
+  const workspaceId = shown.answer.workspace_id;
+  const preparationId = shown.answer.identity.preparation_id;
+  const reading = useMemo<StagedReading>(() => ({ workspaceId, preparationId }), [workspaceId, preparationId]);
+  const { definitions: stages, revision: stagesRevision } = useStages(reading);
+  const parent = useMemo(() => toFlowGraph(parentGraph, 0, undefined, stages), [parentGraph, stages]);
   /**
    * Every activity is written with its whole name, on up to two lines, and its incidents: the cards
    * take the width that needs. The references are those of the whole parent, so that an activity
@@ -122,11 +130,17 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
   // The paths are ranked by their incidents, the number the map writes on them.
   const ranked = useMemo(() => rankedDetail(detail), [detail]);
   // The flows from Start and to End follow the paths: a flow weaker than the weakest path drawn by frequency is not drawn.
-  const leastFlow = useMemo(() => leastFlowIncidents(shown.graph, detail), [shown.graph, detail]);
+  // While a stage is shown as one node every flow is handed over: the flow of a stage adds up those of its activities, and none may be missing from it.
+  const stageNodes = showsStageNodes(detail);
+  const leastFlow = useMemo(() => (stageNodes ? 0 : leastFlowIncidents(shown.graph, detail)), [shown.graph, detail, stageNodes]);
   // A flow of an activity the detail does not show is not on the map; the strongest flow of each side is kept among those shown.
-  const shownIds = useMemo(() => shownActivities(shown.graph, detail), [shown.graph, detail]);
-  const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow, shownIds), [shown.graph, leastFlow, shownIds]);
-  const flowsNotDrawn = useMemo(() => flowsLine(flowCoverage(shown.graph, leastFlow, shownIds), leastFlow), [shown.graph, leastFlow, shownIds]);
+  const shownIds = useMemo(() => (stageNodes ? undefined : shownActivities(shown.graph, detail)), [shown.graph, detail, stageNodes]);
+  const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow, shownIds, stages), [shown.graph, leastFlow, shownIds, stages]);
+  // With stages as nodes the flows are merged for each stage, so the count of single flows drawn is not said there.
+  const flowsNotDrawn = useMemo(
+    () => (stageNodes ? null : flowsLine(flowCoverage(shown.graph, leastFlow, shownIds), leastFlow)),
+    [shown.graph, leastFlow, shownIds, stageNodes],
+  );
   /**
    * How the map is arranged. By default it is arranged anew, compactly, for exactly what is shown:
    * the activities and paths the detail leaves out do not shape the picture. On request every
@@ -134,7 +148,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
    * by eye; hidden paths then still decide the places and the routes.
    */
   const [inPlace, setInPlace] = useState(initiallyInPlace);
-  const arrangement = useParentArrangement(parentGraph, parent, inPlace);
+  const arrangement = useParentArrangement(parentGraph, parent, stages, inPlace);
   const positions = useMemo(
     () => (inPlace && arrangement.phase === "ready" ? filterPositions(arrangement.positions, graph) : undefined),
     [inPlace, arrangement, graph],
@@ -146,12 +160,19 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
    * a map that is drawn again for other incidents or arranged another way.
    */
   const [measure, setMeasure] = useState<Measure>(OPENING_MEASURE);
+  // The map library colours the stages by the whole list of them, so a stage keeps its colour on a map that has no activity of another.
+  const asked = useMemo(() => {
+    const { measure: named, style } = askedFor(measure);
+    return { measure: named, style: stages.stages.length === 0 ? style : { ...style, stages: stageOrder(stages) } };
+  }, [measure, stages]);
 
   // A new map is of other incidents: what was selected on the previous one is not carried over.
   useEffect(() => setSelection(emptySelection), [shown.graph]);
 
   const element = selectedElement(shown.graph, selection);
   const choices = stepChoices(element);
+  // A stage shown as one node is no supplied activity: it is named, and no step is taken from it.
+  const stageNode = element?.kind === "unrecorded" ? stages.stages.find((stage) => stage.id === selection.nodes[0]) : undefined;
 
   /**
    * The actions menu of an element: the steps that keep or remove whole incidents, which are the
@@ -188,14 +209,14 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
             onAbstractionChange={changeDetail}
             activityLabels={activityLabels}
             // The chosen measure, with what is laid over the library's style of it.
-            {...askedFor(measure)}
+            {...asked}
             // Listening for the choice is what makes the map's whole legend offer the measures.
             onMeasureChange={setMeasure}
             // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
             // and a selection keeps that view, so nothing moves on screen.
             fitView={inPlace ? shown.steps.length === 0 : true}
-            // An activity moved by hand goes back when the map is arranged anew for other content.
-            layoutResetKey={inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}
+            // An activity moved by hand goes back when the map is arranged anew for other content or for other stages.
+            layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}`}
             // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
             lod={LABELS_FROM}
             controls
@@ -240,8 +261,14 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           </p>
         )}
         {element?.kind === "boundary" && <p className="muted">{boundaryLine(element.side, element.activity, element.incidents)}</p>}
-        {element?.kind === "unrecorded" && (
+        {element?.kind === "unrecorded" && stageNode === undefined && (
           <p className="muted">This line stands for activities the map does not show. It is not a recorded path, so no step is taken from it.</p>
+        )}
+        {stageNode !== undefined && (
+          <p className="muted">
+            The stage “{stageNode.name}” stands for its activities. No step is taken from a stage: “Show activities” in the Detail panel of the map,
+            or “Expand the stage” in the menu of the stage, draws its activities again.
+          </p>
         )}
         {choices.length > 0 && (
           <div className="map-choices">
@@ -255,6 +282,10 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
       </section>
       <div className="map-notes">
         {flowsNotDrawn !== null && <p className="muted map-flows">{flowsNotDrawn}</p>}
+        <details className="map-stages">
+          <summary>Stages of this log</summary>
+          <StagesEditor reading={reading} parentGraph={parentGraph} />
+        </details>
         <details className="map-options">
           <summary>How the map is arranged and what it counts</summary>
           <label className="map-arrange">
