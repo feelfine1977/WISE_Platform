@@ -234,7 +234,8 @@ details[open] > .disclosure::after { content: "▾"; }
 .pane-title { padding: var(--space-3) var(--space-4) 0; font-weight: var(--font-weight-strong); }
 .pane-hint { padding: 0 var(--space-4) var(--space-2); color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .pane-note { padding: var(--space-3) var(--space-4); color: var(--color-ink-muted); }
-.incidents > .problem { margin: var(--space-3) var(--space-4); }
+.incidents > .problem,
+.incidents > .replacement { margin: var(--space-3) var(--space-4); }
 
 /* Incident table: sticky labels, hairline rows, one blue for the open incident. */
 table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }

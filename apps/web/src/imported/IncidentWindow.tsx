@@ -24,6 +24,8 @@ interface IncidentWindowProps {
   focusRequest: FocusRequest | null;
   labelledBy: string;
   describedBy?: string;
+  /** The id of the text saying why incidents cannot be opened now; while it is given, the rows only move the focus. */
+  waitingFor?: string;
 }
 
 /**
@@ -31,7 +33,7 @@ interface IncidentWindowProps {
  * single tab stop: Tab enters the table at the current row, the arrow keys, Page Up, Page Down,
  * Home and End move between rows, and Enter opens the incident.
  */
-export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy }: IncidentWindowProps) {
+export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy, waitingFor }: IncidentWindowProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const controls = useRef(new Map<number, HTMLButtonElement>()).current;
   const [scrollTop, setScrollTop] = useState(0);
@@ -113,7 +115,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
   function openFromRow(event: MouseEvent<HTMLTableRowElement>, caseId: CaseId, index: number) {
     if ((event.target as Element).closest("button")) return;
     setActive(index);
-    onOpen(caseId);
+    if (!waitingFor) onOpen(caseId);
   }
 
   /** The rows to render: those in view, and the current row wherever it is, so that it keeps the focus. */
@@ -138,6 +140,8 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
             className="row-open"
             tabIndex={index === active ? 0 : -1}
             aria-current={open ? "true" : undefined}
+            aria-disabled={waitingFor ? "true" : undefined}
+            aria-describedby={waitingFor}
             title={summary.case_id}
             ref={(element) => {
               if (element) controls.set(index, element);
@@ -147,7 +151,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
             onKeyDown={(event) => onKeyDown(event, index)}
             onClick={() => {
               setActive(index);
-              onOpen(summary.case_id);
+              if (!waitingFor) onOpen(summary.case_id);
             }}
           >
             {summary.case_id}

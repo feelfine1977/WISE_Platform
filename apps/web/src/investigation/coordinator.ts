@@ -7,6 +7,7 @@ import type {
   OpenExampleRequest,
   PopulationAnswer,
 } from "../generated/investigation";
+import { AwaitedRequest, type Replacement } from "../replacement/replacement";
 import type { InvestigationClient, Outcome, Problem } from "./client";
 import { defaultExampleId, examplePolicies } from "./policies";
 
@@ -23,9 +24,14 @@ export type InspectedCaseState =
   | { phase: "failed"; caseId: CaseId; problem: Problem };
 
 export interface InvestigationState {
+  /** The answer shown; while another example is asked for, the last answer under its own example and revision. */
   population: PopulationState;
   inspected: InspectedCaseState;
+  /** The request for another example that is to replace the answer shown; null when none is running or failed. */
+  replacement: Replacement<ExampleId, Problem> | null;
 }
+
+const initialState: InvestigationState = { population: { phase: "idle" }, inspected: { phase: "closed" }, replacement: null };
 
 const unreachable: Outcome<never> = { ok: false, problem: { kind: "unreachable" } };
 
@@ -33,13 +39,17 @@ const unreachable: Outcome<never> = { ok: false, problem: { kind: "unreachable" 
  * Holds the current query revision and is the only place where replies are published.
  * Every request carries the revision it was issued under; a reply whose revision or request is no
  * longer current is dropped, whether it is an answer, a refusal or a failure.
+ *
+ * Once an answer is shown, asking for another example keeps it, and the incident history open on
+ * it, until the new answer arrives; a failure is shown beside it.
  */
 export class InvestigationCoordinator {
-  private state: InvestigationState = { population: { phase: "idle" }, inspected: { phase: "closed" } };
+  private state: InvestigationState = initialState;
+  /** The last revision issued. */
   private revision = 0;
   private caseRequestSequence = 0;
   private currentCaseRequestId: string | null = null;
-  private populationRequest: AbortController | null = null;
+  private readonly populationRequest = new AwaitedRequest();
   private caseRequest: AbortController | null = null;
   private readonly listeners = new Set<() => void>();
 
@@ -63,17 +73,14 @@ export class InvestigationCoordinator {
    */
   stop(): void {
     this.revision += 1;
-    this.populationRequest?.abort();
-    this.populationRequest = null;
+    this.populationRequest.abandon();
     this.cancelCaseRequest();
-    this.state = { population: { phase: "idle" }, inspected: { phase: "closed" } };
+    this.state = initialState;
   }
 
   openExample(exampleId: ExampleId): void {
     this.revision += 1;
     const revision = this.revision;
-    this.populationRequest?.abort();
-    this.cancelCaseRequest();
     const request: OpenExampleRequest = {
       schema_version: 1,
       message_type: "open_example_request",
@@ -82,23 +89,34 @@ export class InvestigationCoordinator {
       example_id: exampleId,
       policies: examplePolicies,
     };
-    this.publish({ population: { phase: "loading", revision, exampleId }, inspected: { phase: "closed" } });
-    const controller = new AbortController();
-    this.populationRequest = controller;
-    this.client.openExample(request, controller.signal).then(
+    const signal = this.populationRequest.start(revision);
+    if (this.state.population.phase === "ready") {
+      this.publish({ ...this.state, replacement: { phase: "running", revision, asked: exampleId } });
+    } else {
+      this.cancelCaseRequest();
+      this.publish({ population: { phase: "loading", revision, exampleId }, inspected: { phase: "closed" }, replacement: null });
+    }
+    this.client.openExample(request, signal).then(
       (outcome) => this.receivePopulation(request, outcome),
       () => this.receivePopulation(request, unreachable),
     );
   }
 
   retryPopulation(): void {
-    const population = this.state.population;
-    if (population.phase === "failed") this.openExample(population.exampleId);
+    const { population, replacement } = this.state;
+    if (replacement?.phase === "failed") this.openExample(replacement.asked);
+    else if (population.phase === "failed") this.openExample(population.exampleId);
   }
 
+  /** Gives up a failed replacement: the answer shown stays, and is again what is chosen. */
+  stay(): void {
+    if (this.state.replacement?.phase === "failed") this.publish({ ...this.state, replacement: null });
+  }
+
+  /** Opens the complete history of an incident of the answer shown; not while another example is opening. */
   openCase(caseId: CaseId): void {
     const population = this.state.population;
-    if (population.phase !== "ready") return;
+    if (population.phase !== "ready" || this.state.replacement?.phase === "running") return;
     this.cancelCaseRequest();
     this.caseRequestSequence += 1;
     const request: CaseEvidenceRequest = {
@@ -129,21 +147,25 @@ export class InvestigationCoordinator {
   }
 
   private receivePopulation(request: OpenExampleRequest, outcome: Outcome<PopulationAnswer>): void {
-    if (request.query_revision !== this.revision) return;
-    this.populationRequest = null;
+    if (!this.populationRequest.take(request.query_revision)) return;
     const revision = request.query_revision;
     const exampleId = request.example_id;
     const checked = outcome.ok ? checkPopulationAnswer(request, outcome.answer) : checkProblem(request, outcome.problem);
-    this.publish({
-      population: checked.ok
-        ? { phase: "ready", revision, exampleId, answer: checked.answer }
-        : { phase: "failed", revision, exampleId, problem: checked.problem },
-      inspected: { phase: "closed" },
-    });
+    if (checked.ok) {
+      // The new answer replaces the one shown and closes its incident history in one step.
+      this.cancelCaseRequest();
+      this.publish({ population: { phase: "ready", revision, exampleId, answer: checked.answer }, inspected: { phase: "closed" }, replacement: null });
+    } else if (this.state.population.phase === "ready") {
+      this.publish({ ...this.state, replacement: { phase: "failed", revision, asked: exampleId, problem: checked.problem } });
+    } else {
+      this.publish({ population: { phase: "failed", revision, exampleId, problem: checked.problem }, inspected: { phase: "closed" }, replacement: null });
+    }
   }
 
   private receiveCase(request: CaseEvidenceRequest, outcome: Outcome<CaseEvidenceAnswer>): void {
-    if (request.query_revision !== this.revision || request.request_id !== this.currentCaseRequestId) return;
+    // A history belongs to the answer shown, which a replacement in progress leaves in place.
+    const population = this.state.population;
+    if (population.phase !== "ready" || request.query_revision !== population.revision || request.request_id !== this.currentCaseRequestId) return;
     this.caseRequest = null;
     this.currentCaseRequestId = null;
     const caseId = request.case_id;

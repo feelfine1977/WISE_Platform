@@ -280,6 +280,32 @@ describe("the Compare view", () => {
     expect(app.comparisons.periods).toHaveLength(1);
   });
 
+  it("lets the steps of a comparison wait, with the reason, while other incidents open in Investigations", async () => {
+    const app = await openCompare();
+    await app.user.click(screen.getByRole("button", { name: "Two periods" }));
+    for (const [label, date] of [["First day of A", "2026-10-01"], ["Last day of A", "2026-10-02"], ["First day of B", "2026-10-09"], ["Last day of B", "2026-10-10"]]) {
+      await app.user.type(screen.getByLabelText(label), date);
+    }
+    await app.user.selectOptions(screen.getByLabelText("Recorded activity to look for"), "Resolved");
+    await app.user.click(screen.getByRole("button", { name: "Compare" }));
+    await deliver(() => app.comparisons.periods[0].reply({ ok: true, answer: periodAnswer(app.comparisons.periods[0].request) }));
+    act(() => app.investigation.open({ workspaceId, preparationId }));
+
+    const step = screen.getByRole("button", { name: "Keep incidents that contain “Resolved”" }) as HTMLButtonElement;
+    expect(step.disabled).toBe(true);
+    expect(document.getElementById(step.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      "No step can be added while other incidents are opening in Investigations.",
+    );
+    await app.user.click(step);
+    expect(app.selections.selections).toHaveLength(1);
+    expect(screen.queryByText(/^Added to the selection/)).toBeNull();
+
+    await deliver(() => app.imports.populations[1].reply({ ok: false, problem: { kind: "unreachable" } }));
+    const again = screen.getByRole("button", { name: "Keep incidents that contain “Resolved”" }) as HTMLButtonElement;
+    expect(again.disabled).toBe(false);
+    expect(again.getAttribute("aria-describedby")).toBeNull();
+  });
+
   it("drops a late reply of an earlier comparison and keeps the shown one when a comparison is refused", async () => {
     const app = await openCompare();
     await selectAssigned(app);

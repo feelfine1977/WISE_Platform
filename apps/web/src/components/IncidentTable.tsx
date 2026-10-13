@@ -6,6 +6,8 @@ interface IncidentTableProps {
   answer: PopulationAnswer;
   openCaseId: CaseId | null;
   onOpen: (caseId: CaseId) => void;
+  /** The id of the text saying why incidents cannot be opened now; while it is given, the rows only move the focus. */
+  waitingFor?: string;
   /** Keeps each row's control so focus can move between rows and return to one. */
   rowControls: Map<CaseId, HTMLButtonElement>;
 }
@@ -18,7 +20,7 @@ const movement: Record<string, (index: number, last: number) => number> = {
 };
 
 /** Every incident of the parent population in the supplied order, with the supplied counts. */
-export function IncidentTable({ answer, openCaseId, onOpen, rowControls }: IncidentTableProps) {
+export function IncidentTable({ answer, openCaseId, onOpen, waitingFor, rowControls }: IncidentTableProps) {
   const caseIds = answer.cases.map((summary) => summary.case_id);
 
   function moveFocus(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -29,7 +31,7 @@ export function IncidentTable({ answer, openCaseId, onOpen, rowControls }: Incid
   }
 
   function openFromRow(event: MouseEvent<HTMLTableRowElement>, caseId: CaseId) {
-    if ((event.target as Element).closest("button")) return;
+    if ((event.target as Element).closest("button") || waitingFor) return;
     onOpen(caseId);
   }
 
@@ -67,12 +69,16 @@ export function IncidentTable({ answer, openCaseId, onOpen, rowControls }: Incid
                     className="row-open identifier"
                     title={summary.case_id}
                     aria-current={open ? "true" : undefined}
+                    aria-disabled={waitingFor ? "true" : undefined}
+                    aria-describedby={waitingFor}
                     ref={(element) => {
                       if (element) rowControls.set(summary.case_id, element);
                       else rowControls.delete(summary.case_id);
                     }}
                     onKeyDown={(event) => moveFocus(event, index)}
-                    onClick={() => onOpen(summary.case_id)}
+                    onClick={() => {
+                      if (!waitingFor) onOpen(summary.case_id);
+                    }}
                   >
                     {summary.case_id}
                   </button>

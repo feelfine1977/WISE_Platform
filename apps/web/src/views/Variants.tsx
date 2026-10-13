@@ -14,17 +14,19 @@ interface VariantsProps {
   onChoose: (variantId: VariantId) => void;
   onClear: () => void;
   onRetry: () => void;
+  /** The id of the text saying why trying again has to wait, while it has to. */
+  waitingFor?: string;
 }
 
 /** The actual sequences of labelled activities, most incidents first; one can be listed in the table. */
-export function Variants({ state, chosen, onChoose, onClear, onRetry }: VariantsProps) {
+export function Variants({ state, chosen, onChoose, onClear, onRetry, waitingFor }: VariantsProps) {
   return (
     <section className="view-panel" aria-labelledby="variants-title" aria-busy={state.phase === "loading"}>
       <h3 id="variants-title" className="view-title">
         Variants
       </h3>
       {state.phase === "loading" && <p className="working-text">Reading the sequence of every incident…</p>}
-      {state.phase === "failed" && <ViewProblemNotice title="The variants cannot be shown" problem={state.problem} onRetry={onRetry} />}
+      {state.phase === "failed" && <ViewProblemNotice title="The variants cannot be shown" problem={state.problem} onRetry={onRetry} waitingFor={waitingFor} />}
       {state.phase === "ready" && <VariantList key={state.answer.request_id} answer={state.answer} chosen={chosen} onChoose={onChoose} onClear={onClear} />}
     </section>
   );

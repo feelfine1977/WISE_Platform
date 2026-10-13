@@ -197,6 +197,30 @@ describe("the selection of whole incidents of an imported preparation", () => {
     expect(chips(app)).toEqual([contains(opened)]);
   });
 
+  it("stays with the selection shown when a new one is refused, with the steps and undo of that selection", async () => {
+    const app = await opening();
+    await answer(app, 0, everyIncident);
+    app.coordinator.addStep(contains(opened));
+    await answer(app, 1, containingOpened);
+    app.coordinator.addStep(follows(opened, closed));
+    const refused = app.selecting.selections[2];
+    refused.reply(selectionRefusal(refused.request, "select_cases", "computation_failed", "The answer could not be computed."));
+    await settle();
+    expect(app.coordinator.getState().selection.phase).toBe("failed");
+
+    app.coordinator.staySelection();
+    const state = app.coordinator.getState().selection;
+    expect(state.phase).toBe("ready");
+    expect(state.phase !== "idle" && state.history).toEqual({ past: [[]], present: [contains(opened)], future: [] });
+    expect(chips(app)).toEqual([contains(opened)]);
+    expect(shownSelection(state)?.answer.kept.case_ids).toEqual(["A-1"]);
+    expect(app.selecting.selections).toHaveLength(3);
+
+    // Undo goes back from the selection shown, not from the steps that were refused.
+    app.coordinator.undo();
+    expect(asked(app).at(-1)).toEqual([]);
+  });
+
   it("refuses a reply that answers other steps or another population", async () => {
     const app = await opening();
     await answer(app, 0, everyIncident);
