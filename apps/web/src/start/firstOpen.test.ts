@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { importContract } from "../data/client";
 import { DataCoordinator } from "../data/coordinator";
 import type { WorkspaceAnswer } from "../generated/imports";
+import type { SelectionPredicate } from "../generated/selection";
 import type { PreparationTarget } from "../imported/coordinator";
 import {
   earlierPreparationId,
@@ -19,13 +20,24 @@ import { FirstOpen, type ReadingMemory, startExample } from "./firstOpen";
 /** Lets the replies delivered so far reach the coordinators. */
 const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-function setup(remembered: string | null = null) {
+function setup(remembered: string | null = null, steps: SelectionPredicate[] = []) {
   const imports = scriptedImportClient();
   const data = new DataCoordinator(imports.client);
   const opened: PreparationTarget[] = [];
-  const memory: ReadingMemory = { remember: () => undefined, recall: (id) => (id === workspaceId ? remembered : null) };
-  const start = new FirstOpen(data, (target) => opened.push(target), memory);
-  return { imports, data, opened, start };
+  const openedWith: (readonly SelectionPredicate[])[] = [];
+  const memory: ReadingMemory = {
+    remember: () => undefined,
+    recall: (id) => (id === workspaceId && remembered !== null ? { preparationId: remembered, steps } : null),
+  };
+  const start = new FirstOpen(
+    data,
+    (target, left) => {
+      opened.push(target);
+      openedWith.push(left);
+    },
+    memory,
+  );
+  return { imports, data, opened, openedWith, start };
 }
 
 type Setup = ReturnType<typeof setup>;
@@ -94,6 +106,22 @@ describe("the start of the application", () => {
     expect(app.opened).toEqual([{ workspaceId, preparationId: earlierPreparationId, sourceName: "Ältere Vorgänge.csv" }]);
     expect(app.start.getState()).toEqual({ phase: "done" });
     expect(app.imports.examples).toHaveLength(0);
+  });
+
+  it("opens the remembered reading with the steps it was left with, and another reading without them", async () => {
+    const left = [{ kind: "contains_activity", activity: "Eröffnet", negated: false }] as unknown as SelectionPredicate[];
+    const same = setup(earlierPreparationId, left);
+    same.start.start();
+    await openOwnWorkspace(same, withTwoReadings, true);
+    expect(same.opened.map((target) => target.preparationId)).toEqual([earlierPreparationId]);
+    expect(same.openedWith).toEqual([left]);
+
+    // The reading the steps were made on is no longer in the workspace: the latest opens, without them.
+    const other = setup(`preparation.v1:sha256:${"0".repeat(64)}`, left);
+    other.start.start();
+    await openOwnWorkspace(other, withTwoReadings, true);
+    expect(other.opened.map((target) => target.preparationId)).toEqual([preparationId]);
+    expect(other.openedWith).toEqual([[]]);
   });
 
   it("opens the reading listed last when nothing is remembered, or when what is remembered is not in the workspace", async () => {

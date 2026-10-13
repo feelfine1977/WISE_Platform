@@ -25,7 +25,10 @@ import { scriptedViewClient } from "./test/views";
 function renderApp(remembered: string | null = null, strict = false) {
   const imports = scriptedImportClient();
   const kept: PreparationTarget[] = [];
-  const memory: ReadingMemory = { remember: (target) => void kept.push(target), recall: () => remembered };
+  const memory: ReadingMemory = {
+    remember: (target) => void kept.push(target),
+    recall: () => (remembered === null ? null : { preparationId: remembered, steps: [] }),
+  };
   const user = userEvent.setup();
   const app = (
     <App

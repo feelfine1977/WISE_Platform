@@ -58,6 +58,8 @@ export interface Restoration {
 export interface AskedQuestion {
   target: PreparationTarget;
   restoration: Restoration | null;
+  /** The steps a reading is opened with when it is taken up where it was left; a saved investigation brings its own. */
+  steps?: Steps;
 }
 
 export type ImportedPopulationState =
@@ -208,8 +210,9 @@ export class ImportedInvestigationCoordinator {
 
   getState = (): ImportedInvestigationState => this.state;
 
-  open(target: PreparationTarget): void {
-    this.openWith(target, null);
+  /** Opens the incidents of a reading, with the steps it was left with when it is taken up again. */
+  open(target: PreparationTarget, steps: Steps = []): void {
+    this.openWith(target, null, steps);
   }
 
   /**
@@ -231,9 +234,9 @@ export class ImportedInvestigationCoordinator {
     return this.issued;
   }
 
-  private openWith(target: PreparationTarget, restoration: Restoration | null): void {
+  private openWith(target: PreparationTarget, restoration: Restoration | null, steps: Steps = []): void {
     const revision = this.nextRevision();
-    const asked: AskedQuestion = { target, restoration };
+    const asked: AskedQuestion = { target, restoration, steps };
     const request: OpenPopulationRequest = {
       schema_version: 1,
       message_type: "open_population_request",
@@ -262,14 +265,14 @@ export class ImportedInvestigationCoordinator {
     this.cancelCaseRequest();
     this.cancelViewRequests();
     this.asked = asked;
-    this.openingSteps = asked.restoration ? asked.restoration.steps : [];
+    this.openingSteps = asked.restoration ? asked.restoration.steps : (asked.steps ?? []);
     this.restoredIdentity = asked.restoration ? asked.restoration.selectionIdentity : null;
   }
 
   retryPopulation(): void {
     const { population, replacement } = this.state;
     const asked = replacement?.phase === "failed" ? replacement.asked : population.phase === "failed" ? this.asked : null;
-    if (asked) this.openWith(asked.target, asked.restoration);
+    if (asked) this.openWith(asked.target, asked.restoration, asked.steps);
   }
 
   /** Gives up a failed replacement: the question shown stays as it is. */

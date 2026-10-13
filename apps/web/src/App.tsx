@@ -8,7 +8,7 @@ import { ServiceStatus } from "./components/ServiceStatus";
 import { httpImportClient, type ImportClient } from "./data/client";
 import { DataCoordinator } from "./data/coordinator";
 import { DataArea } from "./data/DataArea";
-import { ImportedInvestigationCoordinator, type PreparationTarget } from "./imported/coordinator";
+import { ImportedInvestigationCoordinator, type PreparationTarget, shownSelection } from "./imported/coordinator";
 import { ImportedInvestigation } from "./imported/ImportedInvestigation";
 import type { HealthResponse } from "./generated/health";
 import { httpSelectionClient, type SelectionClient } from "./map/client";
@@ -69,9 +69,9 @@ export default function App({
     () =>
       new FirstOpen(
         dataCoordinator,
-        (target) => {
-          readingMemory.remember(target);
-          importedCoordinator.open(target);
+        (target, steps) => {
+          readingMemory.remember(target, steps);
+          importedCoordinator.open(target, steps);
         },
         readingMemory,
       ),
@@ -83,6 +83,21 @@ export default function App({
     firstOpen.start();
     return () => firstOpen.stop();
   }, [firstOpen]);
+
+  // The steps the incidents shown were selected by are kept with the reading, so that a refresh and a
+  // restart show the same selection. A saved investigation on a parent of its own is not kept this way.
+  useEffect(() => {
+    let kept = "";
+    return importedCoordinator.subscribe(() => {
+      const { population, selection, parentCaseIds } = importedCoordinator.getState();
+      const shown = shownSelection(selection);
+      if (population.phase !== "ready" || shown === null || parentCaseIds !== null) return;
+      const key = JSON.stringify([population.target.workspaceId, population.target.preparationId, shown.steps]);
+      if (key === kept) return;
+      kept = key;
+      readingMemory.remember(population.target, shown.steps);
+    });
+  }, [importedCoordinator, readingMemory]);
 
   useEffect(() => {
     return () => {

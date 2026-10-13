@@ -2,6 +2,7 @@ import type { ImportProblem } from "../data/client";
 import type { DataCoordinator, DataState } from "../data/coordinator";
 import { type WorkspaceExample, workspaceExamples } from "../data/examples";
 import type { PreparationId, WorkspaceId } from "../generated/imports";
+import type { SelectionPredicate } from "../generated/selection";
 import type { PreparationTarget } from "../imported/coordinator";
 
 /** The packaged example an empty workspace of the application is started with. */
@@ -19,19 +20,30 @@ export type StartState =
   | { phase: "done" }
   | { phase: "failed"; step: "workspace" | "example"; problem: ImportProblem | null };
 
-/** Which reading of a workspace was opened last on this computer; a convenience, never an identity. */
+/** A reading as it was left: which one, and the steps its incidents were selected by. */
+export interface LeftReading {
+  preparationId: PreparationId;
+  steps: readonly SelectionPredicate[];
+}
+
+/**
+ * Which reading of a workspace was shown last on this computer and with which steps, so that a
+ * refresh and a restart take the work up where it was left. A convenience, never an identity: what
+ * is recalled is used only when the workspace lists the reading, and the local service selects the
+ * incidents of the steps anew.
+ */
 export interface ReadingMemory {
-  remember(target: PreparationTarget): void;
-  recall(workspaceId: WorkspaceId): PreparationId | null;
+  remember(target: PreparationTarget, steps?: readonly SelectionPredicate[]): void;
+  recall(workspaceId: WorkspaceId): LeftReading | null;
 }
 
 const memoryKey = "wise-platform.last-reading";
 
 /** Kept in the browser's local storage; where that is not available, nothing is remembered. */
 export const browserReadingMemory: ReadingMemory = {
-  remember(target) {
+  remember(target, steps = []) {
     try {
-      window.localStorage.setItem(memoryKey, JSON.stringify({ workspaceId: target.workspaceId, preparationId: target.preparationId }));
+      window.localStorage.setItem(memoryKey, JSON.stringify({ workspaceId: target.workspaceId, preparationId: target.preparationId, steps }));
     } catch {
       // Remembering is a convenience; the start then opens the latest reading of the workspace.
     }
@@ -40,8 +52,9 @@ export const browserReadingMemory: ReadingMemory = {
     try {
       const kept: unknown = JSON.parse(window.localStorage.getItem(memoryKey) ?? "null");
       if (typeof kept !== "object" || kept === null) return null;
-      const { workspaceId: keptWorkspace, preparationId } = kept as Record<string, unknown>;
-      return keptWorkspace === workspaceId && typeof preparationId === "string" ? preparationId : null;
+      const { workspaceId: keptWorkspace, preparationId, steps } = kept as Record<string, unknown>;
+      if (keptWorkspace !== workspaceId || typeof preparationId !== "string") return null;
+      return { preparationId, steps: Array.isArray(steps) ? (steps as SelectionPredicate[]) : [] };
     } catch {
       return null;
     }
@@ -72,7 +85,7 @@ export class FirstOpen {
 
   constructor(
     private readonly data: DataCoordinator,
-    private readonly open: (target: PreparationTarget) => void,
+    private readonly open: (target: PreparationTarget, steps: readonly SelectionPredicate[]) => void,
     private readonly memory: ReadingMemory = browserReadingMemory,
   ) {}
 
@@ -164,14 +177,19 @@ export class FirstOpen {
       this.workspaceId = workspace.answer.workspace_id;
       this.loadExample();
     } else {
-      const remembered = this.memory.recall(workspace.answer.workspace_id);
-      const reading = preparations.find((item) => item.preparation_id === remembered) ?? preparations[preparations.length - 1];
+      const left = this.memory.recall(workspace.answer.workspace_id);
+      const remembered = preparations.find((item) => item.preparation_id === left?.preparationId);
+      const reading = remembered ?? preparations[preparations.length - 1];
       this.publish({ phase: "done" });
-      this.open({
-        workspaceId: workspace.answer.workspace_id,
-        preparationId: reading.preparation_id,
-        sourceName: sources.find((item) => item.source_id === reading.source_id)?.filename,
-      });
+      this.open(
+        {
+          workspaceId: workspace.answer.workspace_id,
+          preparationId: reading.preparation_id,
+          sourceName: sources.find((item) => item.source_id === reading.source_id)?.filename,
+        },
+        // The steps belong to the reading they were made on; another reading opens without them.
+        remembered && left ? left.steps : [],
+      );
     }
   }
 
@@ -192,7 +210,7 @@ export class FirstOpen {
         this.publish({ phase: "failed", step: "example", problem: null });
       } else {
         this.publish({ phase: "done" });
-        this.open({ workspaceId: workspace.answer.workspace_id, preparationId: preparation.preparation_id, sourceName: startExample.filename });
+        this.open({ workspaceId: workspace.answer.workspace_id, preparationId: preparation.preparation_id, sourceName: startExample.filename }, []);
       }
     }
   }
