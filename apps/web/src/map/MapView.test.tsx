@@ -22,7 +22,7 @@ import {
   support,
   suppliedGraph,
 } from "../test/selections";
-import { MANY_ACTIVITIES, MANY_PATHS, openingDetail } from "./MapView";
+import { leastPaths, MANY_ACTIVITIES, MANY_PATHS, openingDetail } from "./MapView";
 
 vi.mock("wise-flow", async (original) => {
   const library = await original<typeof import("wise-flow")>();
@@ -216,6 +216,10 @@ describe("the map of the kept incidents", () => {
     expect(openingDetail(3, 3)).toBeUndefined();
     expect(openingDetail(8, MANY_PATHS)).toBeUndefined();
     expect(openingDetail(13, 81)).toEqual({ activityDetail: 1, pathDetail: 20 / 81 });
+    // The lowest position of the paths detail keeps as many paths as there are activities.
+    expect(leastPaths(13, 81)).toBe(13 / 81);
+    expect(leastPaths(3, 3)).toBeNull();
+    expect(leastPaths(0, 5)).toBeNull();
     const app = await renderInvestigation(many);
     const map = await openMap(app);
     await waitFor(() => expect(map.querySelectorAll(".react-flow__node").length).toBe(20));

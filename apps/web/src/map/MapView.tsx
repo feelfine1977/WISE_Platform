@@ -38,6 +38,15 @@ export function openingDetail(activities: number, paths = 0): AbstractOptions | 
 /** The actions of the map library's own menu that change only the picture and that the map carries out by itself. */
 const LIBRARY_ACTIONS = new Set(["paths", "clear-focus", "collapse", "expand"]);
 
+/**
+ * The smallest share of paths a map of this many activities and paths shows: as many of its most
+ * frequent paths as it has activities, so that the lowest position of the detail still shows a main
+ * flow and never activities standing alone. Null when the map has no more paths than that.
+ */
+export function leastPaths(activities: number, paths: number): number | null {
+  return paths > activities && activities > 0 ? activities / paths : null;
+}
+
 type Arrangement = { phase: "arranging" } | { phase: "ready"; positions: Positions } | { phase: "unavailable" };
 
 /**
@@ -88,6 +97,14 @@ export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps
   const positions = useMemo(() => (arrangement.phase === "ready" ? filterPositions(arrangement.positions, graph) : undefined), [arrangement, graph]);
   const [selection, setSelection] = useState<Selection>(emptySelection);
   const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
+  const least = useMemo(() => leastPaths(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
+  // The detail is held here, so that the paths share cannot go below the main flow.
+  const [detail, setDetail] = useState<AbstractOptions | undefined>(opening);
+  useEffect(() => setDetail(opening), [opening]);
+  const changeDetail = useCallback(
+    (next: AbstractOptions) => setDetail(least !== null && (next.pathDetail ?? 1) < least ? { ...next, pathDetail: least } : next),
+    [least],
+  );
 
   // A new map is of other incidents: what was selected on the previous one is not carried over.
   useEffect(() => setSelection(emptySelection), [shown.graph]);
@@ -126,7 +143,8 @@ export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps
             graph={graph}
             positions={positions}
             layout={workers}
-            defaultAbstraction={opening}
+            abstraction={detail}
+            onAbstractionChange={changeDetail}
             // The map of the whole parent is fitted; a selection keeps that view, so nothing moves on screen.
             fitView={shown.steps.length === 0}
             controls
