@@ -29,7 +29,13 @@ from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from .boundary import SCHEMA_VERSION, echo_of, first_difference, read_object
+from .boundary import (
+    SCHEMA_VERSION,
+    echo_of,
+    first_difference,
+    holds_half_a_character,
+    read_object,
+)
 from .generated.imports import ImportPolicies, ImportRefusal
 from .workspace import is_workspace_id
 
@@ -147,6 +153,8 @@ def upload_message(items: Iterable[tuple[str, str]]) -> dict[str, object] | str:
     """
     message: dict[str, object] = {}
     for name, value in items:
+        if holds_half_a_character([name, value]):
+            return "A query parameter holds text that is not valid Unicode."
         if name in message:
             return f"The query parameter {name!r} is given more than once."
         if name in ("schema_version", "query_revision") and _DECIMAL.fullmatch(value):

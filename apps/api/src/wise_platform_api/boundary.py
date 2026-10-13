@@ -165,12 +165,12 @@ def read_object(body: bytes) -> dict | str:
         return "The request body is nested too deeply to be read."
     if not isinstance(message, dict):
         return "The request body is not a JSON object."
-    if _holds_half_a_character(message):
+    if holds_half_a_character(message):
         return "The request body holds text that is not valid Unicode."
     return message
 
 
-def _holds_half_a_character(value: object) -> bool:
+def holds_half_a_character(value: object) -> bool:
     """Whether any text or name in a JSON value holds one half of a surrogate pair.
 
     JSON may escape such a half by itself. It is no character, cannot be written as UTF-8, and
