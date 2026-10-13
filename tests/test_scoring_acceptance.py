@@ -1,10 +1,16 @@
 """Actual scoring HTTP acceptance; synthetic literal goldens, no receipt replay."""
 
+from collections import Counter
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from copy import deepcopy
 import json
 
 from jsonschema import Draft202012Validator, FormatChecker
 import pytest
+
+from wise.family import family
+from wise.families import lag
 
 from test_import_acceptance import (
     ROOT,
@@ -30,6 +36,56 @@ VALIDATE = "/api/expectations/validate"
 SCORE = "/api/expectations/score"
 WITNESS = "/api/expectations/case-witness"
 CUTOFF = "2026-10-09T00:00:00Z"
+
+
+@dataclass(frozen=True)
+class MethodEvaluationCall:
+    case_ids: tuple[str, ...]
+    record_count: int
+
+
+@dataclass
+class MethodEvaluationProbe:
+    calls: list[MethodEvaluationCall] = field(default_factory=list)
+
+    def assert_single_evaluation_since(self, before, case_ids, record_count):
+        observed = self.calls[before:]
+        assert len(observed) == 1, observed
+        assert Counter(observed[0].case_ids) == Counter(case_ids), observed
+        assert observed[0].record_count == record_count, observed
+
+
+@contextmanager
+def observe_real_lag_evaluations():
+    """Record the real registered lag family, preserving its actual Evaluation result.
+
+    Public evaluate and score aliases resolve this same Family at call time. The
+    installed library's descriptor is frozen; the test temporarily swaps only
+    its callback, restores it in finally, and never re-registers or reorders it.
+    """
+    registered = family("lag")
+    original = registered.evaluate
+    module_original = lag.evaluate
+    assert (
+        original is module_original
+    ), "Recheck the instrumentation seam for this Method artifact."
+    probe = MethodEvaluationProbe()
+
+    def delegated(constraint, log):
+        probe.calls.append(
+            MethodEvaluationCall(
+                tuple(str(case) for case in log.case_ids), len(log.events)
+            )
+        )
+        return original(constraint, log)
+
+    object.__setattr__(registered, "evaluate", delegated)
+    lag.evaluate = delegated
+    try:
+        yield probe
+    finally:
+        lag.evaluate = module_original
+        object.__setattr__(registered, "evaluate", original)
 
 
 def definition(**changes):
@@ -571,50 +627,107 @@ def test_unevaluable_population_refuses_before_method_then_explicit_qualified_po
 def test_selection_reads_original_run_values_and_explicit_subset_run_keeps_fixed_calibration(
     client, workspace
 ):
-    # Fixed thresholds prove value/identity persistence here. Exact absence of
-    # reevaluation requires adapter-bound instrumentation at implementation review.
-    base = source_population(client, workspace)
-    dv = ready(client, workspace, base, base, definition())
-    full = score(client, workspace, base, base, dv)
-    subset = select(client, workspace, base, [], parent=["D5", "GAP"])
-    for case_id in ("D5", "GAP"):
-        old = witness(
+    with observe_real_lag_evaluations() as method:
+        base = source_population(client, workspace)
+        dv = ready(client, workspace, base, base, definition())
+        # Readiness may perform supported checks; count scoring separately.
+        before_full = len(method.calls)
+        full = score(client, workspace, base, base, dv)
+        method.assert_single_evaluation_since(
+            before_full,
+            ["D3", "D4", "D5", "D6", "GAP", "MISSING", "NOOPEN", "REOPEN", "TIED"],
+            19,
+        )
+        reads_start = list(method.calls)
+        subset = select(client, workspace, base, [], parent=["D5", "GAP"])
+        assert (
+            method.calls == reads_start
+        ), "Descriptive selection must not evaluate an expectation again."
+        for case_id in ("D5", "GAP"):
+            old = witness(
+                client,
+                workspace,
+                full,
+                case_id,
+                request_id="original-after-selection",
+                revision=2,
+            )
+            assert old["case"]["value"] == 0.5
+            assert old["run_identity"] == full["identity"]
+            assert (
+                old["run_identity"]["calibration_id"]
+                == full["calibration"]["calibration_id"]
+            )
+            assert (
+                method.calls == reads_start
+            ), "Reading a named score run must reuse its actual evaluated result."
+
+        before_new = len(method.calls)
+        new = score(
             client,
             workspace,
-            full,
-            case_id,
-            request_id="original-after-selection",
-            revision=2,
+            base,
+            subset,
+            dv,
+            request_id="explicit-new-population",
+            revision=3,
         )
+        method.assert_single_evaluation_since(before_new, ["D5", "GAP"], 5)
+        assert new["population"] == {
+            "case_ids": ["D5", "GAP"],
+            "case_count": 2,
+            "record_count": 5,
+        }
+        assert new["identity"]["run_id"] != full["identity"]["run_id"]
+        assert new["identity"]["scored_population_identity"] == subset["identity"]
         assert (
-            old["case"]["value"] == 0.5
-            and old["run_identity"]["calibration_id"]
+            new["identity"]["scored_population_identity"]
+            != full["identity"]["scored_population_identity"]
+        )
+        assert new["identity"]["base_identity"] == full["identity"]["base_identity"]
+        assert (
+            new["calibration"]["calibration_id"]
             == full["calibration"]["calibration_id"]
         )
-    new = score(
-        client,
-        workspace,
-        base,
-        subset,
-        dv,
-        request_id="explicit-new-population",
-        revision=3,
-    )
-    assert new["population"] == {
-        "case_ids": ["D5", "GAP"],
-        "case_count": 2,
-        "record_count": 5,
-    }
-    assert new["identity"]["run_id"] != full["identity"]["run_id"]
-    assert new["calibration"]["calibration_id"] == full["calibration"]["calibration_id"]
-    assert [c["value"] for c in new["cases"]] == [0.5, 0.5]
-    assert witness(client, workspace, full, "D5")["run_identity"] == full["identity"]
-    assert (
-        score(
-            client, workspace, base, subset, dv, request_id="subset-repeat", revision=4
+        assert new["calibration"]["population_fitted"] is False
+        assert new["calibration"]["method_calibrations"] == {}
+        assert [c["value"] for c in new["cases"]] == [0.5, 0.5]
+
+        reads_after_new = list(method.calls)
+        for case_id, value in (("D5", 0.5), ("D3", 0)):
+            original = witness(client, workspace, full, case_id)
+            assert (
+                original["run_identity"] == full["identity"]
+                and original["case"]["value"] == value
+            )
+            assert (
+                method.calls == reads_after_new
+            ), "The original run remains available, including outside the new subset."
+        # Repeating an explicit SCORE is intentional scoring; the existing identity
+        # assertion remains. Any evaluation it performs must use only this subset.
+        before_repeat = len(method.calls)
+        assert (
+            score(
+                client,
+                workspace,
+                base,
+                subset,
+                dv,
+                request_id="subset-repeat",
+                revision=4,
+            )
+            == new
         )
-        == new
-    )
+        for call in method.calls[before_repeat:]:
+            assert (
+                Counter(call.case_ids) == Counter(["D5", "GAP"])
+                and call.record_count == 5
+            )
+        before_last_read = list(method.calls)
+        assert (
+            witness(client, workspace, full, "D3")["run_identity"] == full["identity"]
+        )
+        assert method.calls == before_last_read
 
 
 @pytest.mark.parametrize(
