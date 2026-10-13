@@ -13,18 +13,20 @@ const without = (status: "missing" | "invalid"): RecordTime => ({ timestamp_kind
 
 describe("the time of a record", () => {
   it("is read to the microsecond, and a missing or unreadable time is no time", () => {
-    expect(microsecondsOf(at("1970-01-01T00:00:01Z"))).toBe(1_000_000);
-    expect(microsecondsOf(at("1970-01-01T00:00:00.000001Z"))).toBe(1);
-    expect(microsecondsOf(at("1970-01-01T00:00:00.5Z"))).toBe(500_000);
-    expect(microsecondsOf(at("2026-04-04T07:30:00Z"))! - microsecondsOf(at("2026-04-03T06:00:00Z"))!).toBe(25.5 * HOUR);
+    expect(microsecondsOf(at("1970-01-01T00:00:01Z"))).toBe(BigInt(1_000_000));
+    expect(microsecondsOf(at("1970-01-01T00:00:00.000001Z"))).toBe(BigInt(1));
+    expect(microsecondsOf(at("1970-01-01T00:00:00.5Z"))).toBe(BigInt(500_000));
+    expect(Number(microsecondsOf(at("2026-04-04T07:30:00Z"))! - microsecondsOf(at("2026-04-03T06:00:00Z"))!)).toBe(25.5 * HOUR);
+    // Far from 1970 a floating-point number of microseconds no longer tells two neighbouring microseconds apart; the exact one does.
+    expect(microsecondsOf(at("2500-01-01T00:00:00.000001Z"))! - microsecondsOf(at("2500-01-01T00:00:00.000000Z"))!).toBe(BigInt(1));
     expect(microsecondsOf(without("missing"))).toBeNull();
     expect(microsecondsOf(without("invalid"))).toBeNull();
   });
 
   it("reads a wall-clock time as it is written, whatever the zone of the browser", () => {
-    expect(microsecondsOf(wall("1970-01-01T01:00:00"))).toBe(HOUR);
+    expect(microsecondsOf(wall("1970-01-01T01:00:00"))).toBe(BigInt(HOUR));
     // In a zone with daylight saving this hour of the night does not exist; as recorded it is one hour after 01:30.
-    expect(microsecondsOf(wall("2026-03-29T02:30:00"))! - microsecondsOf(wall("2026-03-29T01:30:00"))!).toBe(HOUR);
+    expect(Number(microsecondsOf(wall("2026-03-29T02:30:00"))! - microsecondsOf(wall("2026-03-29T01:30:00"))!)).toBe(HOUR);
   });
 
   it("does not read a text that is no day of the calendar or no time of the day", () => {
@@ -118,10 +120,26 @@ describe("the gaps of an incident", () => {
     expect(longest).toEqual({ from: 1, to: 2, microseconds: 3 * HOUR, equalCount: 2 });
   });
 
-  it("names no longest gap when every record carries the same time", () => {
-    const { gaps, longest } = timelineOf([at("2026-04-03T06:00:00Z"), at("2026-04-03T06:00:00Z")], true);
-    expect(gaps).toEqual([{ kind: "first" }, { kind: "elapsed", microseconds: 0 }]);
-    expect(longest).toBeNull();
+  it("names the first gap of zero as the longest when every record carries the same time", () => {
+    const { gaps, longest } = timelineOf([at("2026-04-03T06:00:00Z"), at("2026-04-03T06:00:00Z"), at("2026-04-03T06:00:00Z")], true);
+    expect(gaps).toEqual([{ kind: "first" }, { kind: "elapsed", microseconds: 0 }, { kind: "elapsed", microseconds: 0 }]);
+    // A gap of zero is a computed gap and is not the same as no gap: one record, or an order that cannot be evaluated, has none.
+    expect(longest).toEqual({ from: 0, to: 1, microseconds: 0, equalCount: 2 });
+    expect(timelineOf([at("2026-04-03T06:00:00Z")], true).longest).toBeNull();
+  });
+
+  it("keeps two times a microsecond apart as two times in a far year", () => {
+    const { strip, gaps, longest } = timelineOf([at("2500-01-01T00:00:00.000000Z"), at("2500-01-01T00:00:00.000001Z")], true);
+    expect(strip.kind).toBe("axis");
+    expect(strip.kind === "axis" && [strip.microseconds, strip.marks.map((mark) => mark.position)]).toEqual([1, [0, 1]]);
+    expect(gaps).toEqual([{ kind: "first" }, { kind: "elapsed", microseconds: 1 }]);
+    expect(longest).toEqual({ from: 0, to: 1, microseconds: 1, equalCount: 1 });
+  });
+
+  it("names the places of the records without a readable time", () => {
+    const { untimed, untimedCount } = timelineOf([at("2026-04-03T06:00:00Z"), without("invalid"), at("2026-04-03T07:00:00Z"), without("missing")], true);
+    expect(untimed).toEqual([1, 3]);
+    expect(untimedCount).toBe(2);
   });
 
   it("computes no gap at all when the local service says the order cannot be evaluated", () => {
@@ -174,6 +192,7 @@ describe("the gaps of an incident", () => {
       clock: null,
       strip: { kind: "two_clocks" },
       untimedCount: 0,
+      untimed: [],
       withheld: "clocks",
       gaps: [],
       longest: null,

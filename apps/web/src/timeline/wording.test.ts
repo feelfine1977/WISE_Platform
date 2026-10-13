@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { timelineOf } from "./timeline";
-import { basisLine, elapsedText, gapLine, longestGapWords, markLabel, noAxisLine, recordName, STRIP_HINT, timeText, untimedLine, withheldLine } from "./wording";
+import {
+  basisLine,
+  elapsedText,
+  gapLine,
+  longestGapWords,
+  markLabel,
+  noAxisLine,
+  recordName,
+  STRIP_HINT,
+  timeText,
+  UNTIMED_SHOWN,
+  untimedLine,
+  untimedRest,
+  withheldLine,
+} from "./wording";
 
 const SECOND = 1_000_000;
 const HOUR = 3600 * SECOND;
@@ -49,6 +63,10 @@ describe("the words of the strip", () => {
   it("counts the records that are on no mark", () => {
     expect(untimedLine(1)).toBe("1 record without a readable time is not on the strip.");
     expect(untimedLine(2)).toBe("2 records without a readable time are not on the strip.");
+    // Only so many of them are offered by name under the strip; the others are said to be in the list.
+    expect(untimedRest(UNTIMED_SHOWN)).toBeNull();
+    expect(untimedRest(UNTIMED_SHOWN + 1)).toBe("and 1 more record in the list below");
+    expect(untimedRest(UNTIMED_SHOWN + 3)).toBe("and 3 more records in the list below");
   });
 
   it("says in place of the axis why there is none", () => {

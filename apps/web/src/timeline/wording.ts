@@ -78,6 +78,14 @@ export function untimedLine(count: number): string {
   return `${countOf(count, "record")} without a readable time ${count === 1 ? "is" : "are"} not on the strip.`;
 }
 
+/** How many records without a readable time are offered by name under the strip; the others are in the list. */
+export const UNTIMED_SHOWN = 24;
+
+/** What follows the records without a readable time that are offered by name, when there are more of them. */
+export function untimedRest(count: number): string | null {
+  return count > UNTIMED_SHOWN ? `and ${countOf(count - UNTIMED_SHOWN, "more record")} in the list below` : null;
+}
+
 /** The gap before a record as its line in the list, or null for the first record, before which no record lies. */
 export function gapLine(gap: Gap): string | null {
   const said = "Gap since the record before:";
@@ -96,7 +104,9 @@ export function gapLine(gap: Gap): string | null {
 /** The longest gap in two parts: its length, and the two records it lies between. */
 export function longestGapWords(longest: LongestGap, from: ListedRecord, to: ListedRecord): [string, string] {
   const first = longest.equalCount > 1 ? ` It is the first of ${longest.equalCount} gaps of this length in the declared order.` : "";
-  return [`Longest gap: ${elapsedText(longest.microseconds)}`, `between ${recordName(from)} and ${recordName(to)}.${first}`];
+  // No gap above zero: consecutive records carry the same recorded time, which is said as it is and not left out.
+  const length = longest.microseconds === 0 ? "Longest gap: none above zero" : `Longest gap: ${elapsedText(longest.microseconds)}`;
+  return [length, `between ${recordName(from)} and ${recordName(to)}.${first}`];
 }
 
 /** Why no gap is computed for any record of the incident. */

@@ -2,7 +2,20 @@ import { useRef, useState, type KeyboardEvent } from "react";
 import type { CaseId, ImportedSourceRecord } from "../generated/imports";
 import { countOf } from "../data/wording";
 import type { Gap, LongestGap, Strip, Timeline } from "./timeline";
-import { basisLine, elapsedText, gapLine, longestGapWords, markLabel, noAxisLine, STRIP_HINT, timeText, untimedLine, withheldLine } from "./wording";
+import {
+  basisLine,
+  elapsedText,
+  gapLine,
+  longestGapWords,
+  markLabel,
+  noAxisLine,
+  STRIP_HINT,
+  timeText,
+  UNTIMED_SHOWN,
+  untimedLine,
+  untimedRest,
+  withheldLine,
+} from "./wording";
 import "./timeline.css";
 
 interface IncidentTimelineProps {
@@ -25,7 +38,18 @@ export function IncidentTimeline({ caseId, records, timeline, onShowRecord }: In
       ) : (
         <p>{noAxisLine(strip, records.length, strip.kind === "one_time" ? timeText(records[strip.mark.records[0]]) : "")}</p>
       )}
-      {strip.kind === "axis" && timeline.untimedCount > 0 && <p>{untimedLine(timeline.untimedCount)}</p>}
+      {/* The records without a readable time stand in a row of their own under the strip, each leading to its place in the list. */}
+      {timeline.untimedCount > 0 && strip.kind !== "no_time" && (
+        <p className="timeline-untimed">
+          <span>{untimedLine(timeline.untimedCount)}</span>
+          {timeline.untimed.slice(0, UNTIMED_SHOWN).map((place) => (
+            <button key={place} type="button" className="link-button" onClick={() => onShowRecord(place)}>
+              source position {records[place].source_position}
+            </button>
+          ))}
+          {untimedRest(timeline.untimedCount) && <span>{untimedRest(timeline.untimedCount)}</span>}
+        </p>
+      )}
       {longest && <Longest longest={longest} records={records} onShowRecord={onShowRecord} />}
       {/* One record has no record before it, so there is no gap to withhold. */}
       {withheld && records.length > 1 && <p className="timeline-note">{withheldLine(withheld)}</p>}
@@ -60,7 +84,7 @@ function TimeStrip({ caseId, records, strip, longest, onShowRecord }: TimeStripP
   const last = marks.length - 1;
   const [stop, setStop] = useState(0);
   const controls = useRef(new Map<number, SVGGElement>()).current;
-  const labels = marks.map((mark) => markLabel(timeText(records[mark.records[0]]), mark.records.length, mark.time - marks[0].time));
+  const labels = marks.map((mark) => markLabel(timeText(records[mark.records[0]]), mark.records.length, Number(mark.time - marks[0].time)));
   const positionOf = (place: number) => marks.find((mark) => mark.records.includes(place))?.position ?? 0;
 
   const moves: Record<string, (place: number) => number> = {
@@ -98,11 +122,11 @@ function TimeStrip({ caseId, records, strip, longest, onShowRecord }: TimeStripP
           {longest && <line className="timeline-longest-span" x1={across(positionOf(longest.from))} x2={across(positionOf(longest.to))} y1={AXIS} y2={AXIS} />}
           {/* The hit areas lie under every mark, so a mark that is seen is the one the pointer reaches. */}
           {marks.map((mark) => (
-            <circle key={mark.time} className="timeline-hit" cx={across(mark.position)} cy={AXIS} onClick={() => onShowRecord(mark.records[0])} />
+            <circle key={String(mark.time)} className="timeline-hit" cx={across(mark.position)} cy={AXIS} onClick={() => onShowRecord(mark.records[0])} />
           ))}
           {marks.map((mark, place) => (
             <g
-              key={mark.time}
+              key={String(mark.time)}
               className={mark.records.length > 1 ? "timeline-mark several" : "timeline-mark"}
               role="button"
               aria-label={labels[place]}

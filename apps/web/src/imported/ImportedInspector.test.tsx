@@ -142,6 +142,9 @@ describe("the timeline of one incident", () => {
 
     // Only one mark is a tab stop; the arrow keys, Home and End move between the marks.
     expect(marks.map((mark) => mark.getAttribute("tabindex"))).toEqual(["-1", "0"]);
+    // Between the strip and the list stands the way to the record without a readable time.
+    await user.tab({ shift: true });
+    expect(document.activeElement?.textContent).toMatch(/^source position \d+$/);
     await user.tab({ shift: true });
     expect(document.activeElement).toBe(marks[1]);
     await user.keyboard("{ArrowLeft}");
@@ -242,7 +245,9 @@ describe("the timeline of one incident", () => {
     const { timeline, entries } = renderIncident(same);
     expect(within(timeline).getByText("All 3 records of this incident carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.")).toBeTruthy();
     expect(timeline.querySelector("svg")).toBeNull();
-    expect(timeline.textContent).not.toContain("Longest gap");
+    // Every gap is zero, and zero is said: it is a computed gap, not a missing one.
+    expect(timeline.textContent).toContain("Longest gap: none above zero");
+    expect(timeline.textContent).toContain("It is the first of 2 gaps of this length in the declared order.");
     expect(gapsOf(entries)).toEqual([null, "Gap since the record before: none, the same recorded time", "Gap since the record before: none, the same recorded time"]);
   });
 
