@@ -1,14 +1,16 @@
 /*
- * What stands around the canvas of the map: the detail strip above it.
+ * What stands around the canvas of the map: the detail strip above it, and the list of every path
+ * that takes the place of the canvas.
  * Every value refers to the token stylesheet.
  *
  * This stylesheet is loaded before the application's own, so each rule here that sets what one of
  * those sets is written with more classes than theirs.
  */
 
-/* The strip and, under it, the frame the map library draws in: the frame takes the height that is left. */
+/* The strip and, under it, the frame the map library draws in or the list of every path: either takes the height that is left. */
 .map-main { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; }
-.map-main > .map-frame { grid-row: 2; }
+.map-main > .map-frame,
+.map-main > .path-list { grid-row: 2; }
 
 /*
  * The detail strip: the map library's panel laid out as one row, joined to the top of the frame so
@@ -27,7 +29,8 @@
   border-radius: var(--radius) var(--radius) 0 0;
   box-shadow: none;
 }
-.map-main > .map-detail + .map-frame { border-top-left-radius: 0; border-top-right-radius: 0; }
+.map-main > .map-detail + .map-frame,
+.map-main > .map-detail + .path-list { border-top-left-radius: 0; border-top-right-radius: 0; }
 .map-detail .wf-controls h3 { margin: 0; }
 /* A slider: its name, the range with the names of its ends under it, and beside both the statement of what is shown. */
 .map-detail .wf-controls .wf-controls__slider {
@@ -51,3 +54,65 @@
   box-shadow: inset 0 var(--bar-rise) var(--color-accent);
 }
 .workbench .map-detail .wf-button[aria-pressed="true"]:hover { background: var(--color-hover); }
+
+/*
+ * The list of every path scrolls by itself under its sticky headings. Positioned, so that anything
+ * kept only for assistive technology inside it is clipped with it and does not lengthen the page.
+ */
+.path-list {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  max-height: max(var(--size-table-least), calc(var(--size-viewport-height) - var(--size-table-surround)));
+  overflow: auto;
+  /* A row the keyboard moves to comes into view below the headings. */
+  scroll-padding-top: var(--size-path-headings);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+}
+.path-list-hint { padding: var(--space-2) var(--space-4); font-size: var(--font-size-small); }
+.path-list > .working-text { padding: var(--space-2) var(--space-4); }
+.path-table { min-width: calc(var(--size-column-number) * 3 + var(--size-column-label) + var(--size-column-id-least) * 2); }
+.path-table tbody tr { cursor: pointer; }
+.path-table tbody tr:hover > * { background: var(--color-hover); }
+.path-table tbody tr.selected > * { background: var(--color-accent-tint); }
+.path-table tbody tr.selected > th { box-shadow: inset var(--bar-width) 0 var(--color-accent); }
+/* A heading sorts by its column: it reads as the heading it is, and the sorted one carries a mark of the direction. */
+.workbench .path-sort {
+  min-height: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+.workbench .path-sort:hover { background: none; text-decoration: underline; }
+.workbench th[aria-sort] .path-sort { color: var(--color-ink); }
+.path-sort-mark { margin-left: var(--space-1); }
+/* The whole row selects its path; its button fills the first cell and needs no larger hit area, which would cover its neighbours. */
+.workbench .path-row {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  height: calc(var(--size-row) - var(--size-row-inset));
+  padding: 0 var(--space-4);
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  border-color: transparent;
+}
+.workbench .path-row::after { inset: var(--row-overhang) 0; }
+.workbench .path-row:hover { background: transparent; text-decoration: underline; }
+.workbench tr.selected .path-row { font-weight: var(--font-weight-strong); }
+
+@media (width > 1100px) and (min-height: 560px) {
+  /* In the one-screen investigation the list fills the place the canvas has. */
+  .explorer .map-main > .path-list { max-height: none; }
+}

@@ -16,9 +16,11 @@ import { type StagedReading, useStages } from "../stages/store";
 import { CANVAS_FROM, mapDetail, WHOLE_DETAIL } from "./detail";
 import { DetailStrip } from "./DetailStrip";
 import { elementOf, selectedElement, stepChoices } from "./elements";
+import { elementTitle } from "./elementTitle";
 import { fitToFrame } from "./FitToFrame";
 import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
 import { askedFor, OPENING_MEASURE } from "./measures";
+import { PathsTable } from "./PathsTable";
 import { activityTimeLines, boundaryLine, coverageRows, flowsLine, mapCaption } from "./wording";
 
 /** The layout runs in the library's workers, so that the page stays responsive while it runs. */
@@ -102,10 +104,19 @@ interface MapViewProps {
   waitingFor?: string;
   /** Whether the map starts with every activity kept in the place the whole parent's map gives it. */
   initiallyInPlace?: boolean;
+  /**
+   * What stands in the frame: the map, or the list of every path of the kept incidents. The list
+   * shares the map's detail, its selection and its steps, so that it says what the map draws and
+   * offers what the map offers; all of them stay when the one is shown in place of the other.
+   */
+  showing?: "map" | "paths";
 }
 
-/** The process map of the kept incidents, with the steps an activity, a path or a flow from Start or to End offers. */
-export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false }: MapViewProps) {
+/**
+ * The process map of the kept incidents, with the steps an activity, a path or a flow from Start or
+ * to End offers; or, in its place, the list of every path and flow with the same steps.
+ */
+export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false, showing = "map" }: MapViewProps) {
   // The stages the analyst defined for the reading shown; the map draws its activities in them.
   const workspaceId = shown.answer.workspace_id;
   const preparationId = shown.answer.identity.preparation_id;
@@ -151,7 +162,9 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
    * the panel also says how many of the selected paths are drawn at the zoom, which only the map knows.
    */
   const detailShown = useMemo(() => mapDetail(graph, ranked), [graph, ranked]);
-  const controlsAbove = !detailShown.onCanvas;
+  const listed = showing === "paths";
+  // Over the list the controls are always above: no map is drawn there that would know more.
+  const controlsAbove = listed || !detailShown.onCanvas;
   /** Whether the map is shown as the map library's table of its activities and paths; the detail controls switch it. */
   const [view, setView] = useState<"map" | "table">("map");
   /**
@@ -211,67 +224,70 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
   return (
     <div className="map-view" data-element={element === null ? "none" : "selected"}>
       <div className="map-main">
-        {controlsAbove && <DetailStrip detail={ranked} shown={detailShown} onChange={changeDetail} view={view} onViewChange={setView} />}
-        <div className="map-frame">
-          {inPlace && arrangement.phase === "arranging" ? (
-            <p className="working-text map-arranging">Arranging the map of every incident of the parent…</p>
-          ) : (
-            <ProcessMap
-              graph={graph}
-              positions={positions}
-              layout={workers}
-              abstraction={ranked}
-              onAbstractionChange={changeDetail}
-              view={view}
-              onViewChange={setView}
-              // Drawn on the Canvas from the same number of elements as the detail controls reckon with.
-              canvasThreshold={CANVAS_FROM}
-              // Drawn as elements, the map draws every path its detail selects, which is what the controls above it say.
-              edgeBudget={controlsAbove ? "all" : "adaptive"}
-              activityLabels={activityLabels}
-              // The chosen measure, with what is laid over the library's style of it.
-              {...asked}
-              // Listening for the choice is what makes the map's whole legend offer the measures.
-              onMeasureChange={setMeasure}
-              // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
-              // and a selection keeps that view, so nothing moves on screen.
-              fitView={inPlace ? shown.steps.length === 0 : true}
-              // An activity moved by hand goes back when the map is arranged anew for other content or for other stages.
-              layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}`}
-              // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
-              lod={LABELS_FROM}
-              // The library's own detail panel inside the map, only where the controls are not above it.
-              controls={!controlsAbove}
-              legend
-              minimap
-              pathList
-              nodesDraggable
-              locale="en"
-              selection={selection}
-              onSelect={setSelection}
-              onContextMenu={menu}
-              ariaLabel="Process map of the kept incidents"
-            >
-              {/* Fitted after each arrangement by the library, and here again when the frame changes its size. */}
-              {fitToFrame}
-            </ProcessMap>
-          )}
-        </div>
+        {controlsAbove && (
+          // The switch to the map library's table belongs to the map; over the list of every path it is left out.
+          <DetailStrip detail={ranked} shown={detailShown} onChange={changeDetail} view={listed ? undefined : view} onViewChange={listed ? undefined : setView} />
+        )}
+        {listed ? (
+          <PathsTable graph={shown.graph} drawn={detailShown.drawn} selection={selection} onSelect={setSelection} />
+        ) : (
+          <div className="map-frame">
+            {inPlace && arrangement.phase === "arranging" ? (
+              <p className="working-text map-arranging">Arranging the map of every incident of the parent…</p>
+            ) : (
+              <ProcessMap
+                graph={graph}
+                positions={positions}
+                layout={workers}
+                abstraction={ranked}
+                onAbstractionChange={changeDetail}
+                view={view}
+                onViewChange={setView}
+                // Drawn on the Canvas from the same number of elements as the detail controls reckon with.
+                canvasThreshold={CANVAS_FROM}
+                // Drawn as elements, the map draws every path its detail selects, which is what the controls above it say.
+                edgeBudget={controlsAbove ? "all" : "adaptive"}
+                activityLabels={activityLabels}
+                // The chosen measure, with what is laid over the library's style of it.
+                {...asked}
+                // Listening for the choice is what makes the map's whole legend offer the measures.
+                onMeasureChange={setMeasure}
+                // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
+                // and a selection keeps that view, so nothing moves on screen.
+                fitView={inPlace ? shown.steps.length === 0 : true}
+                // An activity moved by hand goes back when the map is arranged anew for other content or for other stages.
+                layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}`}
+                // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
+                lod={LABELS_FROM}
+                // The library's own detail panel inside the map, only where the controls are not above it.
+                controls={!controlsAbove}
+                legend
+                minimap
+                pathList
+                nodesDraggable
+                locale="en"
+                selection={selection}
+                onSelect={setSelection}
+                onContextMenu={menu}
+                ariaLabel="Process map of the kept incidents"
+              >
+                {/* Fitted after each arrangement by the library, and here again when the frame changes its size. */}
+                {fitToFrame}
+              </ProcessMap>
+            )}
+          </div>
+        )}
       </div>
       <section className="map-element" aria-labelledby="map-element-title" aria-live="polite">
         <h4 id="map-element-title" className="pane-title">
-          {element?.kind === "activity"
-            ? `Activity “${element.label}”`
-            : element?.kind === "path"
-              ? `Path from “${element.source}” to “${element.target}”`
-              : element?.kind === "boundary"
-                ? element.side === "start"
-                  ? `Flow from Start to “${element.activity}”`
-                  : `Flow from “${element.activity}” to End`
-                : "Keep or remove incidents"}
+          {elementTitle(element)}
         </h4>
         {element === null && (
-          <p className="muted">Select an activity or a path on the map, or a row of its table view, to keep or remove the incidents through it.</p>
+          <p className="muted">
+            {listed
+              ? "Select a row of the list to keep or remove the incidents through it."
+              : "Select an activity or a path on the map, or a row of its table view, to keep or remove the incidents through it."}
+          </p>
         )}
         {element?.kind === "several" && <p className="muted">Select one activity or one path; a step is taken from one of them.</p>}
         {element?.kind === "activity" &&

@@ -175,4 +175,6 @@
   /* Around the canvas of the map. The detail strip: the least width of one slider with its statement, and of its range alone. */
   --size-detail-slider: 320px;
   --size-detail-range: 120px;
+  /* The list of every path: the height its sticky headings take, kept clear above a row the keyboard moves to. */
+  --size-path-headings: 48px;
 }
