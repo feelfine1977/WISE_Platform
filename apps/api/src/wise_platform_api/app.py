@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from . import __version__
 from .boundary import read_object
 from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
+from .expectations import Expectations, ScoringReply
 from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
@@ -30,6 +31,7 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     imports = Imports(forbidden=program_folders())
     selections = Selections(imports)
     views = PopulationViews(imports)
+    expectations = Expectations(imports)
     application.state.selections = imports.selections
 
     @application.get("/api/health", response_model=HealthResponse)
@@ -108,6 +110,18 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     async def variants(request: Request) -> JSONResponse:
         return _sent_view(await run_in_threadpool(views.variants, await request.body()))
 
+    @application.post("/api/expectations/validate")
+    async def validate_expectation(request: Request) -> JSONResponse:
+        return _sent_scoring(await run_in_threadpool(expectations.validate, await request.body()))
+
+    @application.post("/api/expectations/score")
+    async def score_expectation(request: Request) -> JSONResponse:
+        return _sent_scoring(await run_in_threadpool(expectations.score, await request.body()))
+
+    @application.post("/api/expectations/case-witness")
+    async def score_case_witness(request: Request) -> JSONResponse:
+        return _sent_scoring(await run_in_threadpool(expectations.case_witness, await request.body()))
+
     @application.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:
         raise HTTPException(status_code=404, detail="API route not found")
@@ -140,6 +154,10 @@ def _sent_selection(reply: SelectionReply) -> JSONResponse:
 
 
 def _sent_view(reply: ViewReply) -> JSONResponse:
+    return JSONResponse(reply.body, status_code=reply.status)
+
+
+def _sent_scoring(reply: ScoringReply) -> JSONResponse:
     return JSONResponse(reply.body, status_code=reply.status)
 
 

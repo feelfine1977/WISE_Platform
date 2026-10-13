@@ -208,12 +208,21 @@ def echo_of(message: dict) -> dict[str, str | int | None]:
 
 
 def first_difference(
-    given: object, validated: object, path: Location = (), *, compare_text: bool = True
+    given: object,
+    validated: object,
+    path: Location = (),
+    *,
+    compare_text: bool = True,
+    numbers_by_value: bool = False,
 ) -> Location | None:
     """Return the location of the first value whose type or content differs, if any.
 
     With ``compare_text=False`` two texts count as equal: a model may write a valid text value,
     such as an instant, in another spelling, and only the type of the given value matters.
+
+    With ``numbers_by_value=True`` a whole number given where the model holds a decimal number is
+    the same value when the decimal number is exactly that whole number: ``4`` read as ``4.0``.
+    A whole number that a decimal number cannot hold exactly, such as 9007199254740993, differs.
     """
     if isinstance(given, dict) and isinstance(validated, dict):
         for name in [*given, *validated]:
@@ -221,7 +230,11 @@ def first_difference(
                 return (*path, name)
         for name in given:
             found = first_difference(
-                given[name], validated[name], (*path, name), compare_text=compare_text
+                given[name],
+                validated[name],
+                (*path, name),
+                compare_text=compare_text,
+                numbers_by_value=numbers_by_value,
             )
             if found is not None:
                 return found
@@ -230,10 +243,14 @@ def first_difference(
         if len(given) != len(validated):
             return path
         for index, (item, checked) in enumerate(zip(given, validated)):
-            found = first_difference(item, checked, (*path, index), compare_text=compare_text)
+            found = first_difference(
+                item, checked, (*path, index), compare_text=compare_text, numbers_by_value=numbers_by_value
+            )
             if found is not None:
                 return found
         return None
+    if numbers_by_value and type(given) is int and type(validated) is float:
+        return None if validated.is_integer() and int(validated) == given else path
     if type(given) is not type(validated):
         return path
     if given != validated and (compare_text or not isinstance(given, str)):

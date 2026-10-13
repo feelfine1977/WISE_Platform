@@ -13,10 +13,14 @@ Layout inside the folder::
     sources/<sha256>.csv                the bytes of a source, unchanged
     sources/<sha256>.json               its file name, size and when it was stored
     preparations/<sha256>.json          a confirmed interpretation, its identities and report
+    definitions/<sha256>.json           a version of an expectation's definition, as validated
+    score-runs/<sha256>.json            a score run with every value it answered
 
 A source is stored under the SHA-256 of its bytes, so the same bytes are kept
 once. Every file is written beside its final name and then renamed onto it,
-so a reader sees either the previous file or the complete new one.
+so a reader sees either the previous file or the complete new one. A
+definition version and a score run are immutable: once one is stored under
+its id, it is kept as it is.
 
 This module knows nothing of what a CSV means; it keeps bytes and records.
 """
@@ -43,10 +47,14 @@ FORMAT = "wise-platform-workspace"
 FORMAT_VERSION = 1
 SOURCES = "sources"
 PREPARATIONS = "preparations"
+DEFINITIONS = "definitions"
+SCORE_RUNS = "score-runs"
 
 _WORKSPACE_ID = re.compile(r"workspace\.v1:[A-Za-z0-9-]{8,64}")
 _SOURCE_ID = re.compile(r"source\.v1:sha256:([a-f0-9]{64})")
 _PREPARATION_ID = re.compile(r"preparation\.v1:sha256:([a-f0-9]{64})")
+_DEFINITION_ID = re.compile(r"definition-version\.v1:sha256:([a-f0-9]{64})")
+_RUN_ID = re.compile(r"score-run\.v1:sha256:([a-f0-9]{64})")
 # Files an operating system places in an otherwise empty folder.
 _SYSTEM_FILES = frozenset({"desktop.ini", "thumbs.db", ".ds_store"})
 
@@ -404,6 +412,55 @@ class Workspace:
         ):
             return None
         return StoredPreparation(preparation_id, source_id, descriptor, identity, report, stored_utc)
+
+    # Definitions and score runs ---------------------------------------------------------
+
+    def store_definition(self, version: Mapping[str, object]) -> Mapping[str, object] | Problem:
+        """Keep a definition version under its id; the one already stored under that id is kept and returned."""
+        return self._keep_immutable(DEFINITIONS, _DEFINITION_ID, str(version["definition_version_id"]), version)
+
+    def definition(self, definition_version_id: str) -> Mapping[str, object] | None:
+        """The definition version stored under this id, if there is one."""
+        return self._immutable(DEFINITIONS, _DEFINITION_ID, definition_version_id)
+
+    def store_run(self, run: Mapping[str, object]) -> Mapping[str, object] | Problem:
+        """Keep a score run under its id; the run already stored under that id is kept and returned."""
+        identity = run["identity"]
+        assert isinstance(identity, Mapping)
+        return self._keep_immutable(SCORE_RUNS, _RUN_ID, str(identity["run_id"]), run)
+
+    def run(self, run_id: str) -> Mapping[str, object] | None:
+        """The score run stored under this id, if there is one."""
+        return self._immutable(SCORE_RUNS, _RUN_ID, run_id)
+
+    def _keep_immutable(
+        self, folder: str, pattern: re.Pattern[str], record_id: str, record: Mapping[str, object]
+    ) -> Mapping[str, object] | Problem:
+        problem = self.check()
+        if problem is not None:
+            return problem
+        match = pattern.fullmatch(record_id)
+        if match is None:
+            raise ValueError("A stored record's id has the contract's form.")
+        with self._lock:
+            existing = self._immutable(folder, pattern, record_id)
+            if existing is not None:
+                return existing
+            try:
+                (self.path / folder).mkdir(exist_ok=True)
+                write_atomically(self.path / folder / f"{match.group(1)}.json", _json_bytes({"id": record_id, "record": dict(record)}))
+            except OSError as error:
+                return _write_problem(error, "The answer cannot be kept in the workspace", "workspace_id")
+        return record
+
+    def _immutable(self, folder: str, pattern: re.Pattern[str], record_id: str) -> Mapping[str, object] | None:
+        match = pattern.fullmatch(record_id) if isinstance(record_id, str) else None
+        if match is None:
+            return None
+        stored = _read_json(self.path / folder / f"{match.group(1)}.json")
+        if not isinstance(stored, dict) or stored.get("id") != record_id or not isinstance(stored.get("record"), dict):
+            return None
+        return stored["record"]
 
 
 def write_atomically(target: Path, data: bytes, *, keep: bool = True) -> None:
