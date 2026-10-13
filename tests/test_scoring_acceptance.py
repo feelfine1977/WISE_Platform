@@ -1,10 +1,16 @@
 """Actual scoring HTTP acceptance; synthetic literal goldens, no receipt replay."""
 
+from collections import Counter
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from copy import deepcopy
 import json
 
 from jsonschema import Draft202012Validator, FormatChecker
 import pytest
+
+from wise.family import family
+from wise.families import lag
 
 from test_import_acceptance import (
     ROOT,
@@ -30,6 +36,56 @@ VALIDATE = "/api/expectations/validate"
 SCORE = "/api/expectations/score"
 WITNESS = "/api/expectations/case-witness"
 CUTOFF = "2026-10-09T00:00:00Z"
+
+
+@dataclass(frozen=True)
+class MethodEvaluationCall:
+    case_ids: tuple[str, ...]
+    record_count: int
+
+
+@dataclass
+class MethodEvaluationProbe:
+    calls: list[MethodEvaluationCall] = field(default_factory=list)
+
+    def assert_single_evaluation_since(self, before, case_ids, record_count):
+        observed = self.calls[before:]
+        assert len(observed) == 1, observed
+        assert Counter(observed[0].case_ids) == Counter(case_ids), observed
+        assert observed[0].record_count == record_count, observed
+
+
+@contextmanager
+def observe_real_lag_evaluations():
+    """Record the real registered lag family, preserving its actual Evaluation result.
+
+    Public evaluate and score aliases resolve this same Family at call time. The
+    installed library's descriptor is frozen; the test temporarily swaps only
+    its callback, restores it in finally, and never re-registers or reorders it.
+    """
+    registered = family("lag")
+    original = registered.evaluate
+    module_original = lag.evaluate
+    assert (
+        original is module_original
+    ), "Recheck the instrumentation seam for this Method artifact."
+    probe = MethodEvaluationProbe()
+
+    def delegated(constraint, log):
+        probe.calls.append(
+            MethodEvaluationCall(
+                tuple(str(case) for case in log.case_ids), len(log.events)
+            )
+        )
+        return original(constraint, log)
+
+    object.__setattr__(registered, "evaluate", delegated)
+    lag.evaluate = delegated
+    try:
+        yield probe
+    finally:
+        lag.evaluate = module_original
+        object.__setattr__(registered, "evaluate", original)
 
 
 def definition(**changes):
@@ -571,50 +627,107 @@ def test_unevaluable_population_refuses_before_method_then_explicit_qualified_po
 def test_selection_reads_original_run_values_and_explicit_subset_run_keeps_fixed_calibration(
     client, workspace
 ):
-    # Fixed thresholds prove value/identity persistence here. Exact absence of
-    # reevaluation requires adapter-bound instrumentation at implementation review.
-    base = source_population(client, workspace)
-    dv = ready(client, workspace, base, base, definition())
-    full = score(client, workspace, base, base, dv)
-    subset = select(client, workspace, base, [], parent=["D5", "GAP"])
-    for case_id in ("D5", "GAP"):
-        old = witness(
+    with observe_real_lag_evaluations() as method:
+        base = source_population(client, workspace)
+        dv = ready(client, workspace, base, base, definition())
+        # Readiness may perform supported checks; count scoring separately.
+        before_full = len(method.calls)
+        full = score(client, workspace, base, base, dv)
+        method.assert_single_evaluation_since(
+            before_full,
+            ["D3", "D4", "D5", "D6", "GAP", "MISSING", "NOOPEN", "REOPEN", "TIED"],
+            19,
+        )
+        reads_start = list(method.calls)
+        subset = select(client, workspace, base, [], parent=["D5", "GAP"])
+        assert (
+            method.calls == reads_start
+        ), "Descriptive selection must not evaluate an expectation again."
+        for case_id in ("D5", "GAP"):
+            old = witness(
+                client,
+                workspace,
+                full,
+                case_id,
+                request_id="original-after-selection",
+                revision=2,
+            )
+            assert old["case"]["value"] == 0.5
+            assert old["run_identity"] == full["identity"]
+            assert (
+                old["run_identity"]["calibration_id"]
+                == full["calibration"]["calibration_id"]
+            )
+            assert (
+                method.calls == reads_start
+            ), "Reading a named score run must reuse its actual evaluated result."
+
+        before_new = len(method.calls)
+        new = score(
             client,
             workspace,
-            full,
-            case_id,
-            request_id="original-after-selection",
-            revision=2,
+            base,
+            subset,
+            dv,
+            request_id="explicit-new-population",
+            revision=3,
         )
+        method.assert_single_evaluation_since(before_new, ["D5", "GAP"], 5)
+        assert new["population"] == {
+            "case_ids": ["D5", "GAP"],
+            "case_count": 2,
+            "record_count": 5,
+        }
+        assert new["identity"]["run_id"] != full["identity"]["run_id"]
+        assert new["identity"]["scored_population_identity"] == subset["identity"]
         assert (
-            old["case"]["value"] == 0.5
-            and old["run_identity"]["calibration_id"]
+            new["identity"]["scored_population_identity"]
+            != full["identity"]["scored_population_identity"]
+        )
+        assert new["identity"]["base_identity"] == full["identity"]["base_identity"]
+        assert (
+            new["calibration"]["calibration_id"]
             == full["calibration"]["calibration_id"]
         )
-    new = score(
-        client,
-        workspace,
-        base,
-        subset,
-        dv,
-        request_id="explicit-new-population",
-        revision=3,
-    )
-    assert new["population"] == {
-        "case_ids": ["D5", "GAP"],
-        "case_count": 2,
-        "record_count": 5,
-    }
-    assert new["identity"]["run_id"] != full["identity"]["run_id"]
-    assert new["calibration"]["calibration_id"] == full["calibration"]["calibration_id"]
-    assert [c["value"] for c in new["cases"]] == [0.5, 0.5]
-    assert witness(client, workspace, full, "D5")["run_identity"] == full["identity"]
-    assert (
-        score(
-            client, workspace, base, subset, dv, request_id="subset-repeat", revision=4
+        assert new["calibration"]["population_fitted"] is False
+        assert new["calibration"]["method_calibrations"] == {}
+        assert [c["value"] for c in new["cases"]] == [0.5, 0.5]
+
+        reads_after_new = list(method.calls)
+        for case_id, value in (("D5", 0.5), ("D3", 0)):
+            original = witness(client, workspace, full, case_id)
+            assert (
+                original["run_identity"] == full["identity"]
+                and original["case"]["value"] == value
+            )
+            assert (
+                method.calls == reads_after_new
+            ), "The original run remains available, including outside the new subset."
+        # Repeating an explicit SCORE is intentional scoring; the existing identity
+        # assertion remains. Any evaluation it performs must use only this subset.
+        before_repeat = len(method.calls)
+        assert (
+            score(
+                client,
+                workspace,
+                base,
+                subset,
+                dv,
+                request_id="subset-repeat",
+                revision=4,
+            )
+            == new
         )
-        == new
-    )
+        for call in method.calls[before_repeat:]:
+            assert (
+                Counter(call.case_ids) == Counter(["D5", "GAP"])
+                and call.record_count == 5
+            )
+        before_last_read = list(method.calls)
+        assert (
+            witness(client, workspace, full, "D3")["run_identity"] == full["identity"]
+        )
+        assert method.calls == before_last_read
 
 
 @pytest.mark.parametrize(
@@ -689,4 +802,219 @@ def test_draft_definition_may_validate_but_cannot_create_a_score_run(client, wor
     assert (
         a["code"] == "definition_not_reviewed"
         and "review_definition" in a["recovery_actions"]
+    )
+
+
+UTC_RAW = b"Case,Activity,Recorded at,Desk\nDST,Opened,2026-10-25T01:30:00+02:00,Known\nDST,Resolved,2026-10-25T03:30:00+01:00,Known\n"
+WALL_RAW = b"Case,Activity,Recorded at,Desk\nDST,Opened,2026-10-25T01:30:00,Known\nDST,Resolved,2026-10-25T03:30:00,Known\n"
+UTC_CUTOFF = "2026-10-26T00:00:00Z"
+WALL_CUTOFF = "2026-10-26T00:00:00"
+
+
+def recorded_wall_population(client, workspace):
+    source = upload(client, workspace, WALL_RAW, "synthetic-recorded-wall.csv")
+    p = policies(wall=True)
+    p["time"]["parameters"]["snapshot_cutoff_local"] = WALL_CUTOFF
+    req = envelope(
+        "confirm_mapping_request",
+        "prepare-wall",
+        workspace_id=workspace["workspace_id"],
+        source_id=source["source_id"],
+        dialect={
+            "encoding": "utf-8",
+            "delimiter": ",",
+            "quotechar": '"',
+            "header": "first_record",
+        },
+        mapping={
+            "case_column": 0,
+            "activity_column": 1,
+            "timestamp_column": 2,
+            "sequence_column": None,
+            "context_columns": [3],
+        },
+        policies=p,
+        accept_report_issues=True,
+    )
+    interpretation = prepare(client, req)
+    return interpretation, population(client, workspace, interpretation)
+
+
+def assert_clock_witness(client, workspace, base, run, original_times, *, wall):
+    raw = evidence(client, workspace, base, "DST")
+    w = witness(client, workspace, run, "DST")
+    for field in (
+        "columns",
+        "records",
+        "coverage",
+        "mapped_row_ids",
+        "omitted_activity_row_ids",
+    ):
+        assert w["trace"][field] == raw[field]
+    rows = w["trace"]["records"]
+    assert len(rows) == 2 and [r["source_position"] for r in rows] == [0, 1]
+    assert [r["original_cells"] for r in rows] == [
+        ["DST", "Opened", original_times[0], "Known"],
+        ["DST", "Resolved", original_times[1], "Known"],
+    ]
+    assert w["activation_candidate_row_ids"] == [rows[0]["row_id"]]
+    assert w["response_candidate_row_ids"] == [rows[1]["row_id"]]
+    assert w["method_trace_row_ids"] == [rows[0]["row_id"], rows[1]["row_id"]]
+    assert all(r["timestamp_status"] == "usable" for r in rows)
+    if wall:
+        assert all(
+            r["timestamp_kind"] == "wall_clock" and r["utc_instant"] is None
+            for r in rows
+        )
+        assert [r["local_timestamp"] for r in rows] == list(original_times)
+    else:
+        assert all(
+            r["timestamp_kind"] == "utc_instant" and r["local_timestamp"] is None
+            for r in rows
+        )
+        assert [r["utc_instant"] for r in rows] == [
+            "2026-10-24T23:30:00Z",
+            "2026-10-25T02:30:00Z",
+        ]
+    return w
+
+
+def test_recorded_offset_change_measures_three_elapsed_utc_hours(client, workspace):
+    base = source_population(client, workspace, UTC_RAW, cutoff=UTC_CUTOFF)
+    dv = ready(
+        client,
+        workspace,
+        base,
+        base,
+        definition(target=2, width=2, unit="hours", clock_kind="utc_instant"),
+    )
+    run = score(client, workspace, base, base, dv)
+    assert dv["norm"]["document"]["constraints"][0]["params"]["unit"] == "h"
+    assert run["identity"]["clock"] == {
+        "timestamp_kind": "utc_instant",
+        "duration_meaning": "elapsed_utc",
+        "observation_start_utc": "2026-10-24T23:30:00Z",
+        "snapshot_cutoff_utc": UTC_CUTOFF,
+        "observation_start_local": None,
+        "snapshot_cutoff_local": None,
+    }
+    assert run["population"] == {
+        "case_ids": ["DST"],
+        "case_count": 1,
+        "record_count": 2,
+    }
+    case = run["cases"][0]
+    assert (
+        case["case_id"] == "DST"
+        and case["value"] == 0.5
+        and case["in_scope"] is True
+        and case["reason"] == "evaluated"
+    )
+    assert case["measurement"] == {
+        "status": "observed",
+        "value": 3,
+        "unit": "hours",
+        "activation_known": True,
+        "response_known": True,
+        "censor_age": None,
+    }
+    assert (
+        run["support"]["affected_case_count"] == 1
+        and run["support"]["zero_value_case_count"] == 0
+    )
+    assert_clock_witness(
+        client,
+        workspace,
+        base,
+        run,
+        ("2026-10-25T01:30:00+02:00", "2026-10-25T03:30:00+01:00"),
+        wall=False,
+    )
+
+
+def test_naive_recorded_wall_clock_is_two_hours_without_utc_substitution(
+    client, workspace
+):
+    # Establish the same threshold's UTC calibration for an explicit clock-kind contrast.
+    utc = source_population(client, workspace, UTC_RAW, cutoff=UTC_CUTOFF)
+    utc_dv = ready(
+        client,
+        workspace,
+        utc,
+        utc,
+        definition(target=2, width=2, unit="hours", clock_kind="utc_instant"),
+    )
+    utc_run = score(client, workspace, utc, utc, utc_dv)
+    interpretation, base = recorded_wall_population(client, workspace)
+    report = interpretation["report"]
+    assert (
+        report["timestamp_kind"] == "wall_clock"
+        and report["snapshot_cutoff_utc"] is None
+    )
+    assert report["snapshot_cutoff_local"] == WALL_CUTOFF
+    # The interpretation report declares the recorded-clock limitation.
+    assert any(
+        "daylight-saving" in assumption and "physical elapsed time" in assumption
+        for assumption in report["assumptions"]
+    )
+    dv = ready(
+        client,
+        workspace,
+        base,
+        base,
+        definition(target=2, width=2, unit="hours", clock_kind="wall_clock"),
+    )
+    run = score(client, workspace, base, base, dv)
+    assert dv["norm"]["document"]["constraints"][0]["params"]["unit"] == "h"
+    assert run["identity"]["clock"] == {
+        "timestamp_kind": "wall_clock",
+        "duration_meaning": "recorded_wall_clock",
+        "observation_start_utc": None,
+        "snapshot_cutoff_utc": None,
+        "observation_start_local": "2026-10-25T01:30:00",
+        "snapshot_cutoff_local": WALL_CUTOFF,
+    }
+    assert run["population"] == {
+        "case_ids": ["DST"],
+        "case_count": 1,
+        "record_count": 2,
+    }
+    case = run["cases"][0]
+    assert (
+        case["case_id"] == "DST"
+        and case["value"] == 0
+        and case["in_scope"] is True
+        and case["reason"] == "evaluated"
+    )
+    assert case["measurement"] == {
+        "status": "observed",
+        "value": 2,
+        "unit": "hours",
+        "activation_known": True,
+        "response_known": True,
+        "censor_age": None,
+    }
+    assert (
+        run["support"]["affected_case_count"] == 0
+        and run["support"]["zero_value_case_count"] == 1
+    )
+    assert (
+        run["calibration"]["calibration_id"] != utc_run["calibration"]["calibration_id"]
+    )
+    assert run["identity"]["calibration_id"] == run["calibration"]["calibration_id"]
+    for field in (
+        "target",
+        "width",
+        "unit",
+        "population_fitted",
+        "method_calibrations",
+    ):
+        assert run["calibration"][field] == utc_run["calibration"][field]
+    assert_clock_witness(
+        client,
+        workspace,
+        base,
+        run,
+        ("2026-10-25T01:30:00", "2026-10-25T03:30:00"),
+        wall=True,
     )

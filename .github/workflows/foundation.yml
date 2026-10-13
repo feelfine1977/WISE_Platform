@@ -44,5 +44,71 @@ jobs:
         run: npm run check
       - name: Build the local browser assets
         run: npm run build
+      - name: Test preservation of dependency licence texts
+        run: node --test tools/collect-browser-notices.test.mjs
       - name: Test contracts, host startup and restart
         run: npm test
+
+  windows_bundle:
+    name: Qualify downloadable Windows x64 bundle
+    needs: foundation
+    runs-on: windows-2025
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7, same source SHA as foundation
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.16'
+          architecture: x64
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24.19.0'
+          package-manager-cache: false
+      - name: Select the exact npm build tool
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          npm install --global npm@11.17.0
+          if ((npm --version) -ne '11.17.0') { throw 'Unexpected npm version' }
+      - name: Install hash-pinned wheel build tools externally
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $wiseBuildEnv = Join-Path $env:RUNNER_TEMP 'wise-bundle-build-env'
+          python -m venv $wiseBuildEnv
+          $wiseBuildPython = Join-Path $wiseBuildEnv 'Scripts\python.exe'
+          & $wiseBuildPython -I -m pip --disable-pip-version-check install --only-binary=:all: --require-hashes -r tools/build-toolchain.lock
+      - name: Build, audit and qualify the actual offline artifact
+        env:
+          WISE_BUNDLE_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $wiseBuildPython = Join-Path $env:RUNNER_TEMP 'wise-bundle-build-env\Scripts\python.exe'
+          $wiseBundleWork = Join-Path $env:RUNNER_TEMP 'wise-bundle-work'
+          $wiseBundleArtifact = Join-Path $env:RUNNER_TEMP 'wise-windows-bundle'
+          $wiseNpmRoot = npm root --global
+          $wiseNpmCli = Join-Path $wiseNpmRoot 'npm\bin\npm-cli.js'
+          & $wiseBuildPython -I tools/build_windows_bundle.py --root $env:GITHUB_WORKSPACE --work $wiseBundleWork --out $wiseBundleArtifact --source-sha $env:WISE_BUNDLE_SOURCE_SHA --npm-cli $wiseNpmCli --features 'examples,import,selection,comparison,saving,scoring'
+      - name: Upload only the qualified allowlisted bundle
+        id: bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; upstream tag/commit verified
+        with:
+          name: wise-platform-windows-x64-cp313-${{ github.sha }}
+          path: ${{ runner.temp }}/wise-windows-bundle/
+          if-no-files-found: error
+          include-hidden-files: false
+          retention-days: 30
+          compression-level: 0
+      - name: Publish the artifact download link in the run summary
+        env:
+          WISE_BUNDLE_URL: ${{ steps.bundle.outputs.artifact-url }}
+          WISE_BUNDLE_DIGEST: ${{ steps.bundle.outputs.artifact-digest }}
+        run: |
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Windows x64 CPython 3.13.16 bundle: $env:WISE_BUNDLE_URL"
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Artifact SHA-256: $env:WISE_BUNDLE_DIGEST"
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value 'Python installer is included unchanged. CI qualifies installed wheels; Windows 11 human download and browser checks remain pending.'
