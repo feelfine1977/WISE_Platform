@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { ImportedPopulationAnswer, OpenPopulationRequest } from "../generated/imports";
 import { earlierPreparationId, evidenceAnswer, importRefusal, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import { contains, containingOpened, everyIncident, graphAnswer, opened, scriptedSelectionClient, selectionAnswer, selectionRefusal } from "../test/selections";
+import { containingOpenedIdentity, firstRevisionId, investigationId, savedContent } from "../test/saving";
 import { scriptedViewClient } from "../test/views";
 import { ImportedInvestigationCoordinator, shownSelection } from "./coordinator";
 import { ImportedInvestigation } from "./ImportedInvestigation";
@@ -192,5 +193,27 @@ describe("keeping the investigation shown while another preparation is opened", 
     expect(app.coordinator.getState().selection).toMatchObject({ phase: "ready", history: { present: [] } });
     expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(true);
     expect(shownIncidents()).toEqual(["A-1", "B-2"]);
+  });
+
+  it("opens a saved investigation in place of the question shown, in the view it was saved in", async () => {
+    const app = await showFirst();
+    act(() =>
+      app.coordinator.restore({
+        target: { workspaceId, preparationId },
+        steps: [contains(opened)],
+        parentCaseIds: ["A-1", "B-2"],
+        selectionIdentity: containingOpenedIdentity,
+        binding: { investigationId, revisionId: firstRevisionId, content: savedContent },
+        view: "map",
+      }),
+    );
+    expect(screen.getByText(`Showing ${shownName}; opening the saved investigation “Eröffnungen” …`)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Incidents" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByRole("region", { name: "Saved investigation" })).toBeNull();
+
+    const reopened = app.populations[app.populations.length - 1];
+    await deliver(() => reopened.reply({ ok: true, answer: populationAnswer(reopened.request) }));
+    expect(screen.getByRole("button", { name: "Map" }).getAttribute("aria-pressed")).toBe("true");
+    expect(app.selecting.selections.at(-1)?.request).toMatchObject({ predicates: [contains(opened)], parent_case_ids: ["A-1", "B-2"] });
   });
 });

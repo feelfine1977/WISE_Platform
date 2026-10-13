@@ -53,6 +53,13 @@ export function ImportedInvestigation({ coordinator, onShowData, saving }: Impor
     if (focusInspector > 0) inspectorHeading.current?.focus();
   }, [focusInspector]);
 
+  // A reopened investigation that replaces the question shown opens in its saved view once it arrives.
+  const populationRevision = population.phase === "ready" ? population.revision : null;
+  const restoredView = state.restoredView;
+  useEffect(() => {
+    if (populationRevision !== null && restoredView !== null) setView(restoredView);
+  }, [populationRevision, restoredView]);
+
   // Runs after the table of the new view has mounted, so the heading keeps the focus.
   useEffect(() => {
     if (focusIncidents > 0) incidentsHeading.current?.focus();
