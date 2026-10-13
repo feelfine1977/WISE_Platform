@@ -3,6 +3,7 @@ import { fetchHealth } from "./api";
 import { httpComparisonClient, type ComparisonClient } from "./compare/client";
 import { CompareCoordinator } from "./compare/coordinator";
 import { CompareView } from "./compare/CompareView";
+import { AreaTabs, type AreaTab } from "./components/AreaTabs";
 import { IncidentTable } from "./components/IncidentTable";
 import { Inspector, type InspectorLayout } from "./components/Inspector";
 import { PopulationStrip } from "./components/PopulationStrip";
@@ -41,6 +42,28 @@ interface AppProps {
 /** The area shown: the Data area, the investigation of the example or of an imported preparation, Compare, the Expectation view, or the saved investigations. */
 type Area = "data" | "example" | "imported" | "compare" | "expectation" | "saved";
 
+/** The tabs of the app bar: the investigation of the example and of an imported preparation share one. */
+type TabId = "data" | "investigations" | "compare" | "expectation" | "saved";
+
+/** Why an area that works on the incidents of a preparation cannot be opened before one is open. */
+const noPreparationReason = "Open the incidents of a preparation in the Data area first.";
+
+/** The areas in the order of the work; Compare and Expectation need the incidents of a preparation. */
+function areaTabs(preparationOpen: boolean): AreaTab<TabId>[] {
+  const needsPreparation = preparationOpen ? null : noPreparationReason;
+  return [
+    { id: "data", label: "Data", unavailable: null },
+    { id: "investigations", label: "Investigations", unavailable: null },
+    { id: "compare", label: "Compare", unavailable: needsPreparation },
+    { id: "expectation", label: "Expectation", unavailable: needsPreparation },
+    { id: "saved", label: "Saved", unavailable: null },
+  ];
+}
+
+function tabOf(area: Area): TabId {
+  return area === "example" || area === "imported" ? "investigations" : area;
+}
+
 type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
 
 export default function App({
@@ -61,6 +84,7 @@ export default function App({
   const [area, setArea] = useState<Area>("example");
   const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
+  const preparationOpen = useSyncExternalStore(importedCoordinator.subscribe, () => importedCoordinator.getState().population.phase !== "idle");
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const rowControls = useRef(new Map<CaseId, HTMLButtonElement>()).current;
@@ -89,6 +113,11 @@ export default function App({
       setArea("imported");
     },
     [importedCoordinator],
+  );
+
+  const chooseTab = useCallback(
+    (tab: TabId) => setArea(tab === "investigations" ? (importedOpen ? "imported" : "example") : tab),
+    [importedOpen],
   );
 
   useEffect(() => {
@@ -135,28 +164,8 @@ export default function App({
     <div className="app">
       <header className="app-bar">
         <span className="app-name">WISE Platform</span>
+        <AreaTabs tabs={areaTabs(preparationOpen)} current={tabOf(area)} onChoose={chooseTab} />
         {area === "example" ? <SourceLine population={population} /> : <span className="app-source" />}
-        <nav className="areas" aria-label="Areas">
-          <button type="button" aria-current={area === "data" ? "page" : undefined} onClick={() => setArea("data")}>
-            Data
-          </button>
-          <button
-            type="button"
-            aria-current={area === "example" || area === "imported" ? "page" : undefined}
-            onClick={() => setArea(importedOpen ? "imported" : "example")}
-          >
-            Investigations
-          </button>
-          <button type="button" aria-current={area === "compare" ? "page" : undefined} onClick={() => setArea("compare")}>
-            Compare
-          </button>
-          <button type="button" aria-current={area === "expectation" ? "page" : undefined} onClick={() => setArea("expectation")}>
-            Expectation
-          </button>
-          <button type="button" aria-current={area === "saved" ? "page" : undefined} onClick={() => setArea("saved")}>
-            Saved
-          </button>
-        </nav>
         <ServiceStatus checkHealth={checkHealth} />
       </header>
       {area === "data" && (

@@ -43,6 +43,10 @@
   --color-bar-hover: rgba(255, 255, 255, 0.07);
   /* The map's selection blue on its dark surface: focus ring and ready state on the bar. */
   --color-accent-on-bar: #56b4e9;
+  --color-focus-on-bar: var(--color-accent-on-bar);
+  /* The area tabs on the bar: text in the bar's ink, the current one marked by the accent line. */
+  --color-tab-ink: var(--color-bar-ink);
+  --color-tab-mark: var(--color-accent-on-bar);
   --color-status-ready: var(--color-accent-on-bar);
   --color-status-checking: var(--color-bar-ink-muted);
   --color-status-unavailable: var(--wf-fail);
@@ -105,7 +109,6 @@
   --size-details-column: 300px;
   --size-value-label: 136px;
   --size-floating-max-height: 60vh;
-  --size-viewport-width: 100vw;
   /* A floating panel starts just below the bar it belongs to. */
   --offset-below: 100%;
   /* Facts that begin a wrapped line lose their separator: the facts bar is pulled left by it and clipped. */
