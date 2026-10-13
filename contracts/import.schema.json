@@ -8,6 +8,9 @@
       "$ref": "#/$defs/OpenWorkspaceRequest"
     },
     {
+      "$ref": "#/$defs/OpenDefaultWorkspaceRequest"
+    },
+    {
       "$ref": "#/$defs/WorkspaceAnswer"
     },
     {
@@ -2090,6 +2093,7 @@
           "type": "string",
           "enum": [
             "open_workspace",
+            "open_default_workspace",
             "upload_source",
             "inspect_csv",
             "confirm_mapping",
@@ -2535,6 +2539,33 @@
         {
           "$ref": "#/$defs/WallKnownCutoffProposal"
         }
+      ]
+    },
+    "OpenDefaultWorkspaceRequest": {
+      "title": "OpenDefaultWorkspaceRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "open_default_workspace_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision"
       ]
     }
   }

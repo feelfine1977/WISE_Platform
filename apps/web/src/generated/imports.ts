@@ -10,6 +10,7 @@
  */
 export type ImportMessage =
   | OpenWorkspaceRequest
+  | OpenDefaultWorkspaceRequest
   | WorkspaceAnswer
   | UploadSourceMetadata
   | SourceAnswer
@@ -118,6 +119,12 @@ export interface OpenWorkspaceRequest {
   request_id: RequestId;
   query_revision: QueryRevision;
   path: string;
+}
+export interface OpenDefaultWorkspaceRequest {
+  schema_version: 1;
+  message_type: "open_default_workspace_request";
+  request_id: RequestId;
+  query_revision: QueryRevision;
 }
 export interface WorkspaceAnswer {
   schema_version: 1;
@@ -530,7 +537,13 @@ export interface ImportRefusal {
   query_revision: QueryRevision | null;
   workspace_id: WorkspaceId | null;
   operation:
-    "open_workspace" | "upload_source" | "inspect_csv" | "confirm_mapping" | "open_population" | "case_evidence";
+    | "open_workspace"
+    | "open_default_workspace"
+    | "upload_source"
+    | "inspect_csv"
+    | "confirm_mapping"
+    | "open_population"
+    | "case_evidence";
   code:
     | "invalid_request"
     | "unsupported_schema"

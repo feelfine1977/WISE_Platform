@@ -657,6 +657,7 @@ class ImportRefusal(BaseModel):
     workspace_id: WorkspaceId | None
     operation: Literal[
         'open_workspace',
+        'open_default_workspace',
         'upload_source',
         'inspect_csv',
         'confirm_mapping',
@@ -817,6 +818,16 @@ class CutoffProposalAnswer(
         | WallEmptyCutoffProposal
         | WallKnownCutoffProposal
     ) = Field(..., title='CutoffProposalAnswer')
+
+
+class OpenDefaultWorkspaceRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['open_default_workspace_request']
+    request_id: RequestId
+    query_revision: QueryRevision
 
 
 class ImportRowPolicy(RootModel[StrictImportRowPolicy | TolerantImportRowPolicy]):
@@ -1066,6 +1077,7 @@ class ImportedPopulationAnswer(BaseModel):
 class ImportMessage(
     RootModel[
         OpenWorkspaceRequest
+        | OpenDefaultWorkspaceRequest
         | WorkspaceAnswer
         | UploadSourceMetadata
         | SourceAnswer
@@ -1083,6 +1095,7 @@ class ImportMessage(
 ):
     root: (
         OpenWorkspaceRequest
+        | OpenDefaultWorkspaceRequest
         | WorkspaceAnswer
         | UploadSourceMetadata
         | SourceAnswer
