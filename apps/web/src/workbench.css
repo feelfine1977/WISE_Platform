@@ -19,7 +19,11 @@
 .data-area .muted,
 .workbench .muted { color: var(--color-ink-muted); }
 
-/* Controls: 32 px high with a 40 px hit area, one blue for action, focus and selection. */
+/*
+ * Controls: 32 px high with a 40 px hit area, one blue for action, focus and selection.
+ * A plain button has no outline and no ground: its ground shows under the pointer, and the tint
+ * while it is pressed. A primary action keeps its blue, an input its strong line.
+ */
 .data-area button,
 .workbench button:where(:not(.map-frame *)),
 .data-area select,
@@ -30,15 +34,17 @@
   font: inherit;
   color: var(--color-ink);
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
+  border: var(--line-width) solid var(--color-line-strong);
   border-radius: var(--radius);
 }
 .data-area button,
-.workbench button:where(:not(.map-frame *)) { position: relative; cursor: pointer; }
+.workbench button:where(:not(.map-frame *)) { position: relative; background: transparent; border-color: transparent; cursor: pointer; }
 .data-area button::after,
 .workbench button:where(:not(.map-frame *))::after { content: ""; position: absolute; inset: var(--hit-overhang) 0; }
-.data-area button:hover,
-.workbench button:where(:not(.map-frame *)):hover { background: var(--color-hover); }
+.data-area button[aria-pressed="true"],
+.workbench button:where(:not(.map-frame *))[aria-pressed="true"] { background: var(--color-tint); }
+.data-area button:where(:not(:disabled)):hover,
+.workbench button:where(:not(.map-frame *)):where(:not(:disabled)):hover { background: var(--color-hover); }
 .data-area button.primary,
 .workbench button.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-surface); font-weight: var(--font-weight-strong); }
 .data-area button.primary:hover,
@@ -87,8 +93,8 @@
 :is(.data-area, .workbench) .breadcrumb { display: flex; align-items: baseline; gap: var(--space-1); }
 :is(.data-area, .workbench) .breadcrumb-current { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
 :is(.data-area, .workbench) .facts { display: flex; flex-wrap: wrap; margin: 0; clip-path: none; }
-:is(.data-area, .workbench) .fact { padding: 0 var(--space-4); border-left: var(--line-width) solid var(--color-line); }
-:is(.data-area, .workbench) .fact:first-child { padding-left: 0; border-left: 0; }
+:is(.data-area, .workbench) .fact { padding: 0 var(--space-4); }
+:is(.data-area, .workbench) .fact:first-child { padding-left: 0; }
 :is(.data-area, .workbench) .fact dt { font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
 :is(.data-area, .workbench) .fact dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-weight: var(--font-weight-strong); font-variant-numeric: tabular-nums; }
 
@@ -107,9 +113,7 @@
   margin-top: var(--space-3);
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
   border-left: var(--bar-width) solid var(--color-error);
-  border-radius: var(--radius);
 }
 .inline-error-title { font-weight: var(--font-weight-strong); color: var(--color-error); }
 .inline-error button { margin-top: var(--space-1); }
@@ -125,23 +129,20 @@
 .replacement-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 /* Data area: the workspace in use as one line, another folder behind it. */
-.workspace-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-4); min-width: 0; padding: 0 var(--space-4); }
+.workspace-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-4); min-width: 0; }
 .workspace-line > details { flex-basis: 100%; }
 .workspace-line > details > summary { cursor: pointer; color: var(--color-ink-muted); }
 .workspace-line > details[open] { display: grid; gap: var(--space-3); }
 .other-folder { display: grid; gap: var(--space-3); }
 
-/* Data area: steps one under the other. */
+/* Data area: steps one under the other on the paper, each under its title and without a frame. */
 .data-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); padding: var(--space-4) var(--space-6) var(--space-6); max-width: var(--size-page); }
 .step {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   min-width: 0;
-  padding: var(--space-4);
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
-  border-radius: var(--radius);
 }
 .step-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
 .inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
@@ -171,8 +172,8 @@
 .table-scroll { overflow-x: auto; }
 .plain-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-base); }
 .plain-table th,
-.plain-table td { height: var(--size-row); padding: 0 var(--space-2); text-align: left; border-bottom: var(--line-width) solid var(--color-line); white-space: nowrap; }
-.plain-table thead th { font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+.plain-table td { height: var(--size-row); padding: 0 var(--space-2); text-align: left; border-bottom: var(--line-width) solid var(--color-line-row); white-space: nowrap; }
+.plain-table thead th { border-bottom-color: var(--color-line); font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
 .plain-table tbody th { font-weight: var(--font-weight-plain); }
 .plain-table tr.selected { background: var(--color-accent-tint); }
 .plain-table .number,
@@ -184,7 +185,7 @@
 /* Interpretation report */
 .report { display: grid; gap: var(--space-4); min-width: 0; }
 .report-more { overflow-x: auto; }
-.state-line { padding: var(--space-2) var(--space-3); border-left: var(--bar-width) solid var(--color-line-strong); background: var(--color-canvas); }
+.state-line { padding: var(--space-2) var(--space-3); border-left: var(--bar-width) solid var(--color-mark); background: var(--color-canvas); }
 .state-ready { border-left-color: var(--color-accent); }
 .state-confirm { border-left-color: var(--color-attention); }
 .state-blocked { border-left-color: var(--color-error); }
@@ -220,8 +221,6 @@
   max-height: max(var(--size-table-least), calc(var(--size-viewport-height) - var(--size-table-surround)));
   overflow: auto;
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
-  border-radius: var(--radius);
 }
 .window-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--font-size-base); }
 .window-table th,
@@ -231,7 +230,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-bottom: var(--line-width) solid var(--color-line);
+  border-bottom: var(--line-width) solid var(--color-line-row);
   text-align: left;
 }
 .window-table thead th {
@@ -239,6 +238,7 @@
   top: 0;
   z-index: 1;
   background: var(--color-surface);
+  border-bottom-color: var(--color-line);
   font-size: var(--font-size-label);
   font-weight: var(--font-weight-strong);
   text-transform: uppercase;
@@ -303,7 +303,7 @@
 
 /* The history as a vertical sequence: a node per record on a thin line. */
 .history { position: relative; margin: 0; padding: 0 0 0 var(--space-6); list-style: none; }
-.history::before { content: ""; position: absolute; top: var(--history-line-inset); bottom: var(--history-line-inset); left: var(--history-line-left); width: var(--line-width); background: var(--color-line-strong); }
+.history::before { content: ""; position: absolute; top: var(--history-line-inset); bottom: var(--history-line-inset); left: var(--history-line-left); width: var(--line-width); background: var(--color-mark); }
 .history-entry { position: relative; padding-bottom: var(--space-3); }
 .history-marker {
   position: absolute;
@@ -347,8 +347,7 @@
   min-width: 0;
   max-width: var(--size-chip);
   padding: var(--space-2) var(--space-3);
-  background: var(--color-canvas);
-  border: var(--line-width) solid var(--color-line-strong);
+  background: var(--color-tint);
   border-radius: var(--radius);
 }
 .chip-wording { font-weight: var(--font-weight-strong); overflow-wrap: anywhere; }
@@ -359,16 +358,21 @@
 .chip-remove { justify-self: start; }
 .overlap-line { font-size: var(--font-size-small); }
 
-/* The map of the kept incidents: the library draws inside the frame, which gives it its height. */
-.map-pane { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-4) var(--space-6); }
-.map-view { display: grid; gap: var(--space-3); min-width: 0; }
+/*
+ * The map of the kept incidents: the library draws inside the frame, which gives it its height.
+ * The pane has no padding and the frame no outline, so the map reaches the edges of its area;
+ * what is written under the map keeps the inset of the header rows.
+ */
+.map-pane { display: grid; gap: var(--space-2); min-width: 0; padding: 0; }
+.map-view { display: grid; gap: var(--space-3) 0; min-width: 0; }
+.map-view > .map-element { padding: 0 var(--space-4); }
+.map-view > .map-notes { padding: 0 var(--space-4) var(--space-2); }
+.map-pane > .working-text { padding: var(--space-2) var(--space-4); }
 .map-frame {
   height: max(var(--size-map-least), calc(var(--size-viewport-height) - var(--size-map-surround)));
   min-width: 0;
   overflow: hidden;
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
-  border-radius: var(--radius);
 }
 
 /* A view of the table that is not a selection: what it lists, and the way back to every incident. */
@@ -396,8 +400,6 @@
   min-width: 0;
   padding: var(--space-4);
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
-  border-radius: var(--radius);
 }
 .map-arranging { padding: var(--space-4); }
 .map-element { display: grid; gap: var(--space-2); }
@@ -415,7 +417,7 @@
 .share-legend li { display: flex; align-items: center; gap: var(--space-1); }
 .swatch { display: inline-block; width: var(--size-swatch); height: var(--size-swatch-height); }
 .swatch-population { background: var(--color-accent); }
-.swatch-parent { background: var(--color-line-strong); }
+.swatch-parent { background: var(--color-mark); }
 .opening-column { display: grid; gap: var(--space-1); min-width: 0; }
 .opening-column-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); overflow-wrap: anywhere; }
 .opening-column-title .muted { font-weight: var(--font-weight-plain); }
@@ -439,14 +441,14 @@
 .opening-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .opening-figures { font-size: var(--font-size-small); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 .share-bars { display: block; width: 100%; height: var(--size-share-bars); }
-.share-track { fill: var(--color-line-row); }
+.share-track { fill: var(--color-tint); }
 .share-bar-population { fill: var(--color-accent); }
-.share-bar-parent { fill: var(--color-line-strong); }
+.share-bar-parent { fill: var(--color-mark); }
 
-/* Variants: a ranked list, each a small chain of its steps. */
+/* Variants: a ranked list under row lines, each a small chain of its steps as chips. */
 .variant-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.variant { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-2) var(--space-3); border: var(--line-width) solid var(--color-line); border-radius: var(--radius); }
-.variant.chosen { background: var(--color-accent-tint); border-color: var(--color-accent); box-shadow: inset var(--bar-width) 0 var(--color-accent); }
+.variant { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-2) var(--space-3); border-bottom: var(--line-width) solid var(--color-line-row); }
+.variant.chosen { background: var(--color-accent-tint); box-shadow: inset var(--bar-width) 0 var(--color-accent); }
 .variant-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
 .variant-rank { font-weight: var(--font-weight-strong); }
 .variant-figures { color: var(--color-ink-muted); font-variant-numeric: tabular-nums; }
@@ -455,7 +457,8 @@
 .workbench .variant-head button[aria-pressed="true"]:hover { background: var(--color-accent-strong); }
 .variant-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) 0; margin: 0; padding: 0; list-style: none; font-size: var(--font-size-small); }
 .variant-steps li { display: flex; align-items: center; min-width: 0; }
-.variant-step { padding: 0 var(--space-1); background: var(--color-surface); border: var(--line-width) solid var(--color-line-strong); border-radius: var(--radius); overflow-wrap: anywhere; }
+.variant-step { padding: 0 var(--space-1); background: var(--color-tint); border-radius: var(--radius); overflow-wrap: anywhere; }
+.variant.chosen .variant-step { background: var(--color-surface); }
 .variant-arrow { padding: 0 var(--space-1); color: var(--color-ink-muted); }
 
 @media (max-width: 1100px) {
@@ -501,8 +504,8 @@
 .explorer .workbench-body[data-inspector="full"] .explorer-rail { display: none; }
 .explorer .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-4); }
 .explorer .selection-steps { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
-.workbench .rail-toggle[aria-expanded="true"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
-.explorer .map-pane { padding: var(--space-3) var(--space-4); }
+.workbench .rail-toggle[aria-expanded="true"] { font-weight: var(--font-weight-strong); background: var(--color-tint); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
+.workbench .rail-toggle[aria-expanded="true"]:hover { background: var(--color-hover); }
 /* The view switch names the map, and while nothing is selected one line says what a selection offers: both headings stay for assistive technology. */
 .explorer .map-pane > .pane-title,
 .explorer .map-view[data-element="none"] .map-element > .pane-title {
@@ -520,8 +523,6 @@
   align-content: start;
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
-  border-radius: var(--radius);
 }
 .map-notes { display: grid; gap: var(--space-1); min-width: 0; }
 .map-options > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; color: var(--color-ink-muted); font-size: var(--font-size-small); }
@@ -547,7 +548,8 @@
   .explorer .map-view { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; min-height: 0; }
   .explorer .map-frame { height: auto; min-height: 0; }
   .explorer .map-view[data-element="selected"] { grid-template-columns: minmax(0, 1fr) var(--size-map-drawer); grid-template-rows: minmax(0, 1fr) auto; }
-  .explorer .map-view[data-element="selected"] .map-element { grid-column: 2; grid-row: 1; overflow: auto; }
+  /* Beside the map the panel of a selected element is a pane of its own: one hairline between the two. */
+  .explorer .map-view[data-element="selected"] .map-element { grid-column: 2; grid-row: 1; overflow: auto; border-left: var(--line-width) solid var(--color-line); }
   .explorer .map-view[data-element="selected"] .map-notes { grid-column: 1 / -1; grid-row: 2; }
   .explorer .map-notes { max-height: var(--size-map-notes); overflow: auto; }
 }

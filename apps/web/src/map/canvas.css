@@ -14,8 +14,9 @@
 
 /*
  * The detail strip: the map library's panel laid out as one row, joined to the top of the frame so
- * that it takes as little of the map's height as it can. Positioned, so that the texts the library
- * keeps only for assistive technology stay inside it.
+ * that it takes as little of the map's height as it can. It stands on the paper as the map does,
+ * without an outline or a shadow, and keeps the inset of the header rows. Positioned, so that the
+ * texts the library keeps only for assistive technology stay inside it.
  */
 .map-detail { grid-row: 1; position: relative; min-width: 0; }
 .map-detail .wf-controls {
@@ -24,13 +25,11 @@
   align-items: center;
   gap: var(--space-1) var(--space-6);
   max-width: none;
-  padding: var(--space-1) var(--space-3);
-  border-bottom: 0;
-  border-radius: var(--radius) var(--radius) 0 0;
+  padding: var(--space-1) var(--space-4);
+  border: 0;
+  border-radius: 0;
   box-shadow: none;
 }
-.map-main > .map-detail + .map-frame,
-.map-main > .map-detail + .path-list { border-top-left-radius: 0; border-top-right-radius: 0; }
 .map-detail .wf-controls h3 { margin: 0; }
 /* A slider: its name, the range with the names of its ends under it, and beside both the statement of what is shown. */
 .map-detail .wf-controls .wf-controls__slider {
@@ -45,19 +44,27 @@
 .map-detail .wf-controls .wf-controls__note { margin: 0; }
 /* The switch to the table view stands at the end of the row. */
 .map-detail .wf-controls .wf-controls__row { margin: 0 0 0 auto; }
+/* The button that marks the kept paths stands inside a sentence: there it is a chip on the tint, so that it reads as something to press. */
+.workbench .map-detail .wf-controls .wf-controls__kept { background: var(--color-tint); }
+.workbench .map-detail .wf-controls .wf-controls__kept:hover { background: var(--color-hover); }
 /* Outside the canvas a switch is one of the application's buttons, and a pressed one is marked as the application marks its own. */
 .workbench .map-detail .wf-button[aria-pressed="true"] {
   color: var(--color-ink);
   font-weight: var(--font-weight-strong);
-  background: var(--color-surface);
-  border-color: var(--color-line);
+  background: var(--color-tint);
+  border-color: transparent;
   box-shadow: inset 0 var(--bar-rise) var(--color-accent);
 }
 .workbench .map-detail .wf-button[aria-pressed="true"]:hover { background: var(--color-hover); }
 
+/* The table view of the map library stands in the frame as the application's tables do: on the paper, its head over one hairline and its rows over the row line. */
+.map-frame .wf-table th { background: var(--color-surface); border-bottom-color: var(--color-line); }
+.map-frame .wf-table td { border-bottom-color: var(--color-line-row); }
+
 /*
- * The list of every path scrolls by itself under its sticky headings. Positioned, so that anything
- * kept only for assistive technology inside it is clipped with it and does not lengthen the page.
+ * The list of every path scrolls by itself under its sticky headings, on the paper and without a
+ * frame. Positioned, so that anything kept only for assistive technology inside it is clipped with
+ * it and does not lengthen the page.
  */
 .path-list {
   position: relative;
@@ -68,8 +75,6 @@
   /* A row the keyboard moves to comes into view below the headings. */
   scroll-padding-top: var(--size-path-headings);
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
-  border-radius: var(--radius);
 }
 .path-list-hint { padding: var(--space-2) var(--space-4); font-size: var(--font-size-small); }
 .path-list > .working-text { padding: var(--space-2) var(--space-4); }
@@ -108,6 +113,8 @@
   background: transparent;
   border-color: transparent;
 }
+/* The row says that it is selected, by its ground and its bar; its button has no ground of its own, pressed or not. */
+.workbench .path-row[aria-pressed="true"] { background: transparent; }
 .workbench .path-row::after { inset: var(--row-overhang) 0; }
 .workbench .path-row:hover { background: transparent; text-decoration: underline; }
 .workbench tr.selected .path-row { font-weight: var(--font-weight-strong); }

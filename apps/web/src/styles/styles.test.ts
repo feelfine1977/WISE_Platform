@@ -178,6 +178,8 @@ function contrast(one: Rgba, other: Rgba): number {
 const pageBackgrounds: Record<string, string[]> = {
   surface: ["--color-surface"],
   canvas: ["--color-canvas"],
+  // The ground of a chip and of a pressed button.
+  tint: ["--color-tint"],
   "row hover": ["--color-hover"],
   "selected row": ["--color-accent-tint", "--color-surface"],
 };
@@ -224,6 +226,15 @@ describe("contrast of the tokens", () => {
     expect(contrast(colourOf("--color-error"), painted("--color-surface")), "error bar").toBeGreaterThanOrEqual(3);
     for (const dot of ["--color-status-ready", "--color-status-checking", "--color-status-unavailable"]) {
       expect(contrast(colourOf(dot), painted("--color-bar")), dot).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("keeps the line around an input and the neutral marks of a view at least 3:1 against the paper", () => {
+    // An input stands on the paper in the paper's own white, so its line alone tells it from the page; an axis, the thread of a history and the bar of a parent population are read by themselves.
+    for (const line of ["--color-line-strong", "--color-mark"]) {
+      for (const ground of ["--color-surface", "--color-canvas"]) {
+        expect(contrast(colourOf(line), painted(ground)), `${line} on ${ground}`).toBeGreaterThanOrEqual(3);
+      }
     }
   });
 

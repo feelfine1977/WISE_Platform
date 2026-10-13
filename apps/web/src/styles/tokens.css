@@ -7,20 +7,35 @@
  * rather than repeated; the values below are the application's own additions. The page pins the
  * light scheme of the library (data-theme="light" on the document), because the contrast of every
  * pair below is checked against the light values.
+ *
+ * One token of the library is set here for the whole page: its line. The map reads it where it
+ * stands, so the outlines of its panels and of its stages are the hairline of the application.
  */
 @import "wise-flow/tokens.css";
 
 :root {
   color-scheme: light;
 
-  /* Colour: neutral chrome; the data carries the colour. */
-  --color-canvas: var(--wf-surface);
+  /* The hairline, for the map library as for the application. */
+  --wf-line: #e2e5ea;
+
+  /* Colour: one white paper for the page, the map, the tables and the inspector; the data carries the colour. */
+  --color-canvas: var(--wf-paper);
   --color-surface: var(--wf-paper);
+  /* The only grey ground: chips, pressed states and the tracks of sliders and bars. */
+  --color-tint: #f5f6f8;
   --color-ink: var(--wf-ink);
   --color-ink-muted: var(--wf-ink-muted);
+  /*
+   * Lines. The hairline stands under a header row, between the side panel, the centre and the
+   * inspector, and under a table head; the row line between the rows of a table or a list; the
+   * strong line only around an input.
+   */
   --color-line: var(--wf-line);
+  --color-line-row: #eef0f3;
   --color-line-strong: var(--wf-line-strong);
-  --color-line-row: #e6e9ed;
+  /* The neutral grey of what a view draws: an axis, the thread of a history, the bar of the parent population. */
+  --color-mark: var(--wf-line-strong);
   --color-hover: #f0f2f5;
 
   /* The one interaction colour: focus ring, selected row, primary action. */
@@ -68,7 +83,7 @@
   --font-weight-plain: var(--wf-weight-panel-plain);
   --font-weight-strong: var(--wf-weight-panel-heading);
 
-  /* Shape */
+  /* Shape: the small radius for controls and chips, the large one for what floats; a shadow only on what floats (menus, popovers). */
   --radius: var(--wf-radius);
   --radius-float: var(--wf-radius-lg);
   --radius-pill: var(--wf-radius-pill);
@@ -113,8 +128,8 @@
   --size-floating-max-height: 60vh;
   /* A floating panel starts just below the bar it belongs to. */
   --offset-below: 100%;
-  /* Facts that begin a wrapped line lose their separator: the facts bar is pulled left by it and clipped. */
-  --facts-separator: calc(var(--space-4) + var(--line-width));
+  /* Facts that begin a wrapped line stand at the left edge: the facts bar is pulled left by their inset and clipped. */
+  --facts-separator: var(--space-4);
   --facts-pull: calc(var(--facts-separator) * -1);
   --size-viewport-height: 100dvh;
 
@@ -177,4 +192,12 @@
   --size-detail-range: 120px;
   /* The list of every path: the height its sticky headings take, kept clear above a row the keyboard moves to. */
   --size-path-headings: 48px;
+}
+
+/*
+ * The detail strip above the map is the library's panel. The track of its sliders is drawn in the
+ * library's line; in the strip, which has no outline of its own, that is the tint.
+ */
+.map-detail {
+  --wf-line: var(--color-tint);
 }

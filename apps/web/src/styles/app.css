@@ -1,6 +1,10 @@
 /*
  * The investigation screen: a graphite app bar, a white toolbar with the facts of the current
  * answer, the incident table and the history inspector. Every value is a token of tokens.css.
+ *
+ * The page is one white paper. A hairline stands under a header row, between two panes and under
+ * a table head, and nowhere else; nothing but an input, a primary action and what floats has an
+ * outline.
  */
 
 /* Base */
@@ -39,20 +43,26 @@ code { overflow-wrap: anywhere; }
   text-transform: uppercase;
 }
 
-/* Controls: 32 px high with a 40 px hit area, one blue for action, always a visible focus. */
+/*
+ * Controls: 32 px high with a 40 px hit area, one blue for action, always a visible focus.
+ * A plain button has no outline and no ground: its ground shows under the pointer, and the tint
+ * while it is pressed. A primary action keeps its blue, an input its line.
+ */
 button, select, summary { font: inherit; color: inherit; }
 button, select {
   position: relative;
   min-height: var(--size-control);
   padding: 0 var(--space-3);
   color: var(--color-ink);
-  background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
+  background: transparent;
+  border: var(--line-width) solid transparent;
   border-radius: var(--radius);
   cursor: pointer;
 }
+select { background: var(--color-surface); border-color: var(--color-line-strong); }
 button::before { content: ""; position: absolute; inset: var(--hit-overhang); }
-button:hover, select:hover { background: var(--color-hover); }
+button[aria-pressed="true"] { background: var(--color-tint); }
+button:where(:not(:disabled)):hover, select:hover { background: var(--color-hover); }
 button.primary { color: var(--color-on-accent); background: var(--color-accent); border-color: var(--color-accent); }
 button.primary:hover { background: var(--color-accent-strong); border-color: var(--color-accent-strong); }
 button:disabled { opacity: var(--opacity-disabled); cursor: wait; }
@@ -181,7 +191,7 @@ details[open] > .disclosure::after { content: "▾"; }
   flex: none;
   width: var(--size-dot);
   height: var(--size-dot);
-  background: var(--color-line-strong);
+  background: var(--color-mark);
   border-radius: var(--radius-round);
 }
 .status-ready::before { background: var(--color-accent); }
@@ -199,7 +209,7 @@ details[open] > .disclosure::after { content: "▾"; }
   margin: 0 0 0 var(--facts-pull);
   clip-path: inset(0 0 0 var(--facts-separator));
 }
-.fact { display: grid; align-content: start; min-width: 0; padding: 0 var(--space-4); border-left: var(--line-width) solid var(--color-line); }
+.fact { display: grid; align-content: start; min-width: 0; padding: 0 var(--space-4); }
 .fact dd { display: grid; margin: 0; }
 .fact-main, .fact-sub { color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .figure {
@@ -269,7 +279,7 @@ details[open] > .disclosure::after { content: "▾"; }
 .incidents > .problem,
 .incidents > .replacement { margin: var(--space-3) var(--space-4); }
 
-/* Incident table: sticky labels, hairline rows, one blue for the open incident. */
+/* Incident table: sticky labels over one hairline, paler lines between the rows, one blue for the open incident. */
 table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
 th, td {
   height: var(--size-row);
@@ -295,7 +305,7 @@ thead th {
   white-space: normal;
   vertical-align: bottom;
   background: var(--color-surface);
-  border-bottom-color: var(--color-line-strong);
+  border-bottom-color: var(--color-line);
 }
 tbody th { padding: 0; font-weight: var(--font-weight-plain); }
 /* The incident column keeps a readable width beside the three figures and the partition. */
@@ -355,7 +365,7 @@ tr.selected .row-open { font-weight: var(--font-weight-strong); }
 .record { display: grid; grid-template-columns: var(--size-sequence-gutter) minmax(0, 1fr); grid-template-rows: auto auto; }
 .record > * { grid-column: 2; }
 /* The thin line through the markers; it starts at the first marker and ends at the last. */
-.record::after { content: ""; grid-column: 1; grid-row: 1 / -1; justify-self: center; width: var(--line-width); background: var(--color-line-strong); }
+.record::after { content: ""; grid-column: 1; grid-row: 1 / -1; justify-self: center; width: var(--line-width); background: var(--color-mark); }
 .record:first-child::after { margin-top: var(--sequence-line-inset); }
 .record:last-child::after { grid-row: 1; align-self: start; height: var(--sequence-line-inset); }
 .record:only-child::after { content: none; }
@@ -373,7 +383,7 @@ tr.selected .row-open { font-weight: var(--font-weight-strong); }
   box-shadow: 0 0 0 var(--bar-width) var(--color-surface);
 }
 /* A record without an activity label stays in the evidence but not on the map: a hollow marker. */
-.record.left-out::before { background: var(--color-surface); border: var(--bar-width) solid var(--color-line-strong); }
+.record.left-out::before { background: var(--color-surface); border: var(--bar-width) solid var(--color-mark); }
 .record-activity { overflow: hidden; font-weight: var(--font-weight-strong); text-overflow: ellipsis; white-space: nowrap; }
 .no-label { color: var(--color-ink-muted); font-style: italic; font-weight: var(--font-weight-plain); }
 .record-values { margin-bottom: var(--space-2); }
@@ -398,16 +408,14 @@ tr.selected .row-open { font-weight: var(--font-weight-strong); }
 .missing { color: var(--color-ink-muted); font-style: italic; }
 .written { color: var(--color-ink-muted); font-size: var(--font-size-small); font-style: normal; }
 
-/* A failed request: an inline box with a red bar, the message and a retry; nothing else is blocked. */
+/* A failed request: inline, a red bar on the left, the message and a retry; nothing else is blocked. */
 .problem {
   display: grid;
   gap: var(--space-1);
   justify-items: start;
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
   border-left: var(--bar-width) solid var(--color-error);
-  border-radius: var(--radius);
 }
 .problem-title { font-weight: var(--font-weight-strong); }
 .problem-reason { color: var(--color-ink-muted); font-size: var(--font-size-small); }

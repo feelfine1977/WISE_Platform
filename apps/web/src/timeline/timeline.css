@@ -3,7 +3,7 @@
  * its gaps. Every value refers to the token stylesheet. Where a mark lies on the strip is an
  * attribute of the drawing and never a rule here.
  */
-.timeline { display: grid; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-3); border-bottom: var(--line-width) solid var(--color-line); }
+.timeline { display: grid; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-3); }
 .timeline-elapsed { font-variant-numeric: tabular-nums; }
 .timeline-note { color: var(--color-ink-muted); font-size: var(--font-size-small); }
 
@@ -11,7 +11,7 @@
 .timeline-frame,
 .timeline-ends { padding: 0 var(--size-timeline-hit); }
 .timeline-strip { display: block; width: 100%; height: var(--size-timeline-strip); overflow: visible; }
-.timeline-axis { stroke: var(--color-line-strong); stroke-width: var(--line-width); }
+.timeline-axis { stroke: var(--color-mark); stroke-width: var(--line-width); }
 .timeline-longest-span { stroke: var(--color-accent); stroke-width: var(--size-swatch-height); }
 
 /* A mark: a node as in the history below, larger where several records carry its time, with their count above it. */
