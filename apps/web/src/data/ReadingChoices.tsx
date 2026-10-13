@@ -7,11 +7,14 @@ import type {
   TimestampFormat,
 } from "../generated/imports";
 import type { PreparationTarget } from "../imported/coordinator";
-import type { DataCoordinator, DataState } from "./coordinator";
+import type { DataCoordinator, DataState, ProposalState } from "./coordinator";
+import { exampleColumns, exampleReading } from "./examples";
 import { ImportProblemNotice } from "./ImportProblemNotice";
 import {
   type Draft,
+  type RowRule,
   type ZoneChoice,
+  cutoffFieldValue,
   delimiters,
   encodings,
   formatEvidence,
@@ -21,7 +24,7 @@ import {
   offsets,
 } from "./interpretation";
 import { Report } from "./Report";
-import { countOf } from "./wording";
+import { countOf, delimiterName, encodingName, utcText, wallText } from "./wording";
 import { Working } from "./Working";
 
 interface ReadingChoicesProps {
@@ -40,6 +43,7 @@ export function ReadingChoices({ state, coordinator, onOpenIncidents }: ReadingC
         <h3 id="inspection-title" className="step-title">
           How {source.source.filename} is written
         </h3>
+        {state.example !== null && <ExampleReading label={state.example.label} />}
         {inspection.phase !== "none" && (
           <Dialect
             detected={state.detected}
@@ -67,6 +71,9 @@ export function ReadingChoices({ state, coordinator, onOpenIncidents }: ReadingC
           </button>
         )}
         {inspection.phase === "ready" && <Findings answer={inspection.answer} />}
+        {inspection.phase === "ready" && inspection.answer.columns.length > 0 && (
+          <RowRuleChoice draft={state.draft} coordinator={coordinator} />
+        )}
       </section>
       {inspection.phase === "ready" && inspection.answer.columns.length > 0 && (
         <Choices answer={inspection.answer} state={state} coordinator={coordinator} onOpenIncidents={onOpenIncidents} />
@@ -147,6 +154,18 @@ function Findings({ answer }: { answer: CsvInspectionAnswer }) {
         <span className="label-text">Records after the header</span>{" "}
         <span className="figure-inline">{answer.record_count === null ? "not known" : countOf(answer.record_count, "record")}</span>
       </p>
+      {answer.blank_record_count !== undefined && (
+        <p>
+          <span className="label-text">Blank lines</span>{" "}
+          <span className="figure-inline">{countOf(answer.blank_record_count, "blank line")}</span>
+        </p>
+      )}
+      {answer.ragged_record_count !== undefined && (
+        <p>
+          <span className="label-text">Records with another number of cells than the header</span>{" "}
+          <span className="figure-inline">{countOf(answer.ragged_record_count, "record")}</span>
+        </p>
+      )}
       {answer.dialect_candidates.length > 1 && (
         <p className="muted">
           The source can be read in {answer.dialect_candidates.length} ways; the first is shown. Change the encoding or delimiter if the sample
@@ -162,6 +181,67 @@ function Findings({ answer }: { answer: CsvInspectionAnswer }) {
       )}
       {answer.columns.length > 0 && <Sample answer={answer} />}
     </>
+  );
+}
+
+const rowRuleLabels: Record<RowRule, { title: string; sentence: string }> = {
+  tolerant: {
+    title: "Tolerant",
+    sentence:
+      "Blank lines are skipped and counted, and records without an incident id or with another number of cells than the header are kept as written outside every incident, as long as those with another number of cells are at most 5 % of the records.",
+  },
+  strict: {
+    title: "Strict",
+    sentence: "Every line must be a record with as many cells as the header; a blank line or a record with another number of cells stops the reading.",
+  },
+};
+
+/** The row rule for this reading: the tolerant one unless the analyst chooses the strict one. */
+function RowRuleChoice({ draft, coordinator }: { draft: Draft; coordinator: DataCoordinator }) {
+  return (
+    <fieldset className="checks">
+      <legend className="label-text-strong">Rows that do not fit</legend>
+      {(["tolerant", "strict"] as const).map((rule) => (
+        <label key={rule} className="check check-long">
+          <input type="radio" name="row-rule" checked={draft.rowRule === rule} onChange={() => coordinator.choose({ rowRule: rule })} />
+          <span>
+            <span className="check-title">{rowRuleLabels[rule].title}:</span> {rowRuleLabels[rule].sentence}
+          </span>
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+/** The fixed reading of a packaged example, as the screen first applies it. */
+function ExampleReading({ label }: { label: string }) {
+  const name = (index: number | null) => (index === null ? "none" : exampleColumns[index]);
+  const rows: [string, string][] = [
+    ["Encoding", encodingName(exampleReading.encoding!)],
+    ["Delimiter", delimiterName(exampleReading.delimiter!)],
+    ["Incident id", name(exampleReading.caseColumn)],
+    ["Activity", name(exampleReading.activityColumn)],
+    ["Time", `${name(exampleReading.timestampColumn)}, ${formatLabels[exampleReading.timeFormat!]}`],
+    ["Zone of the times", "Offsets written in the values"],
+    ["Sequence number", name(exampleReading.sequenceColumn)],
+    ["Context attributes", exampleReading.contextColumns.map((index) => exampleColumns[index]).join(", ")],
+    ["Export taken at", utcText(`${exampleReading.cutoff}Z`)],
+    ["Rows that do not fit", rowRuleLabels[exampleReading.rowRule].title],
+  ];
+  return (
+    <div className="example-reading">
+      <p>
+        {label}. It is read with this fixed reading; the choices below show it and can be changed like for any CSV.
+      </p>
+      <dl className="pairs" aria-label="Fixed reading of the example">
+        {rows.map(([term, value]) => (
+          <div key={term}>
+            <dt>{term}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
@@ -263,7 +343,7 @@ function Choices({
         ) : (
           <FormatChoice suggestion={timestamp} answer={answer} draft={draft} coordinator={coordinator} />
         )}
-        <ZoneChoiceFields draft={draft} coordinator={coordinator} />
+        <ZoneChoiceFields draft={draft} proposal={state.proposal} coordinator={coordinator} />
       </section>
       <section className="step" aria-labelledby="report-title">
         <h3 id="report-title" className="step-title">
@@ -297,6 +377,15 @@ function Choices({
             onRetry={() => coordinator.confirm(interpretation.request.accept_report_issues)}
           />
         )}
+        {interpretation.phase === "failed" &&
+          interpretation.problem.kind === "refusal" &&
+          interpretation.problem.refusal.code === "cutoff_before_records" &&
+          state.proposal.phase === "ready" &&
+          state.proposal.answer.proposed_cutoff !== null && (
+            <button type="button" onClick={() => coordinator.useProposal()}>
+              Use the proposed cutoff {proposalText(state.proposal.answer.proposed_cutoff)}
+            </button>
+          )}
         {interpretation.phase === "answered" && (
           <Report
             answer={interpretation.answer}
@@ -399,25 +488,35 @@ function FormatChoice({
   coordinator: DataCoordinator;
 }) {
   const evidence = formatEvidence(suggestion);
-  if (!suggestion || evidence.readable.length === 0) {
-    return <p className="muted">No supported time format reads the values of this column. Choose another time column.</p>;
-  }
+  const statusId = useId();
+  if (!suggestion) return null;
   const examples = [
     ...new Set(answer.sample_rows.map((row) => row.cells[suggestion.column_index]).filter((cell) => cell !== undefined && cell !== "")),
   ].slice(0, 3);
   const legend = evidence.question
     ? "These times can be read in more than one way. Which comes first: the day or the month?"
     : "Time format";
+  const status =
+    evidence.complete.length > 1
+    ? `${evidence.complete.length} formats read every filled cell, so none is proposed. Compare the values above with the examples in the labels.`
+    : evidence.proposed !== null
+      ? `Proposed: ${formatLabels[evidence.proposed]}, the only format that reads every filled cell.`
+      : evidence.filled === 0
+        ? "This column has no filled cell. Choose another time column."
+        : "No format reads every filled cell, so none is proposed. A value the chosen format does not read stays in its incident without a usable time.";
   return (
-    <fieldset className="checks">
+    <fieldset className="checks" aria-describedby={statusId}>
       <legend className="label-text-strong">{legend}</legend>
       {examples.length > 0 && (
         <p className="muted">
           Values in this column, for example: <span className="identifier">{examples.join(" · ")}</span>
         </p>
       )}
-      {evidence.readable.map((item) => (
-        <label key={item.format} className="check">
+      <p id={statusId} className={evidence.question ? "question" : "muted"}>
+        {status}
+      </p>
+      {evidence.readings.map((item) => (
+        <label key={item.format} className="check check-long">
           <input
             type="radio"
             name="time-format"
@@ -425,17 +524,75 @@ function FormatChoice({
             checked={draft.timeFormat === item.format}
             onChange={() => coordinator.choose({ timeFormat: item.format as TimestampFormat })}
           />
-          {formatLabels[item.format]}{" "}
-          <span className="muted">
-            — reads {countOf(item.parsed, "filled cell")} of {countOf(suggestion.nonempty_count, "filled cell")}
+          <span>
+            {formatLabels[item.format]}{" "}
+            <span className="muted">
+              —{" "}
+              {item.parsed === null
+                ? "not inspected"
+                : `reads ${countOf(item.parsed, "filled cell")} of ${countOf(evidence.filled, "filled cell")}`}
+            </span>
           </span>
         </label>
       ))}
+      <p className="muted">The formats with seconds also read fractions of a second, for example 17:45:10.250.</p>
     </fieldset>
   );
 }
 
-function ZoneChoiceFields({ draft, coordinator }: { draft: Draft; coordinator: DataCoordinator }) {
+/** A proposed or supplied cutoff in words, on its own clock. */
+function proposalText(time: string): string {
+  return time.endsWith("Z") ? utcText(time) : wallText(time);
+}
+
+function Proposal({ proposal, draft, coordinator }: { proposal: ProposalState; draft: Draft; coordinator: DataCoordinator }) {
+  switch (proposal.phase) {
+    case "none":
+      return <p className="muted">Once the columns, the time format and the zone are chosen, a cutoff is proposed from the data.</p>;
+    case "proposing":
+      return (
+        <p className="muted" role="status">
+          Proposing a cutoff from the latest usable time of the time column…
+        </p>
+      );
+    case "failed":
+      return <ImportProblemNotice title="No cutoff can be proposed with these choices" problem={proposal.problem} />;
+    case "ready": {
+      const { last_usable_time: last, proposed_cutoff: proposed } = proposal.answer;
+      if (last === null) {
+        return (
+          <p className="muted" role="status">
+            No record has a usable time with these choices, so nothing is proposed. Enter when the export was taken.
+          </p>
+        );
+      }
+      if (proposed === null) {
+        return (
+          <p className="muted" role="status">
+            The latest usable time {proposalText(last)} cannot be rounded up to a full minute, so nothing is proposed. Enter when the export
+            was taken, at that time or later.
+          </p>
+        );
+      }
+      const shown = cutoffFieldValue(proposed);
+      return (
+        <p className="proposal" role="status">
+          Proposed from the data: {proposalText(proposed)}, the latest usable time {proposalText(last)} rounded up to a full minute.
+          {draft.cutoff !== shown && (
+            <>
+              {" "}
+              <button type="button" className="link-button" onClick={() => coordinator.useProposal()}>
+                Use the proposal
+              </button>
+            </>
+          )}
+        </p>
+      );
+    }
+  }
+}
+
+function ZoneChoiceFields({ draft, proposal, coordinator }: { draft: Draft; proposal: ProposalState; coordinator: DataCoordinator }) {
   const offsetId = useId();
   const cutoffId = useId();
   const choose = (zone: ZoneChoice) => coordinator.choose({ zone });
@@ -487,6 +644,7 @@ function ZoneChoiceFields({ draft, coordinator }: { draft: Draft; coordinator: D
           value={draft.cutoff}
           onChange={(event) => coordinator.choose({ cutoff: event.target.value })}
         />
+        <Proposal proposal={proposal} draft={draft} coordinator={coordinator} />
       </div>
     </>
   );

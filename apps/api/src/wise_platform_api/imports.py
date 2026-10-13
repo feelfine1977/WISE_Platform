@@ -6,6 +6,13 @@ Every detection, interpretation, count, order, identity and refusal of the
 answers comes from the package; this module adds the envelope, the workspace
 and the stored source, and keeps what the package prepared.
 
+A proposal for the snapshot cutoff prepares the stored bytes under the
+analyst's choices exactly like a confirmation but keeps nothing: it answers
+the package's last usable time and that time rounded up to a full minute, on
+the same clock. The import contract has no message for it yet, so its answer
+is described by ``CutoffProposalAnswer`` here; its refusals are those of a
+confirmation.
+
 A ready preparation is kept in the workspace with its identities and report.
 To answer for it later, also in another run of the application, the package
 prepares the stored bytes again under the stored confirmation and must arrive
@@ -27,10 +34,12 @@ import logging
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Lock
+from typing import Literal
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 from wise_platform_analytics.csv_inspection import inspect_csv
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
 from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare
@@ -75,6 +84,25 @@ CASE_EVIDENCE = "case_evidence"
 
 _PREPARED_KEPT = 2
 _INSPECTIONS_KEPT = 16
+
+
+class CutoffProposalAnswer(BaseModel):
+    """The latest usable time under a set of choices and the cutoff proposed from it, on one clock.
+
+    Both times are null when no record has a usable time under these choices.
+    """
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    schema_version: Literal[1]
+    message_type: Literal["cutoff_proposal_answer"]
+    request_id: str
+    query_revision: int
+    workspace_id: str
+    source_id: str
+    timestamp_kind: Literal["utc_instant", "wall_clock"]
+    last_usable_time: str | None
+    proposed_cutoff: str | None
 
 
 @dataclass(frozen=True)
@@ -128,6 +156,12 @@ class Imports:
     def confirm_mapping(self, body: bytes) -> ImportReply:
         return _answering(
             CONFIRM_MAPPING, parse_import_body(body, ConfirmMappingRequest, CONFIRM_MAPPING), self._confirm_mapping
+        )
+
+    def propose_cutoff(self, body: bytes) -> ImportReply:
+        """Prepare under the confirmation's choices without keeping anything, and propose its cutoff."""
+        return _answering(
+            CONFIRM_MAPPING, parse_import_body(body, ConfirmMappingRequest, CONFIRM_MAPPING), self._propose_cutoff
         )
 
     def open_population(self, body: bytes) -> ImportReply:
@@ -222,6 +256,30 @@ class Imports:
             with self._lock:
                 _keep(self._prepared, prepared.preparation_id, prepared, _PREPARED_KEPT)
         return _answer(InterpretationAnswer, _envelope("interpretation_answer", given) | interpretation)
+
+    def _propose_cutoff(self, request: ConfirmMappingRequest, given: dict) -> ImportReply:
+        workspace = self._workspace(CONFIRM_MAPPING, given)
+        if isinstance(workspace, ImportReply):
+            return workspace
+        raw = workspace.read_source(given["source_id"])
+        if isinstance(raw, Problem):
+            return _problem(CONFIRM_MAPPING, raw, given)
+        result = prepare(raw, given["dialect"], given["mapping"], given["policies"], given["accept_report_issues"])
+        if isinstance(result, PackageRefusal):
+            return _from_package(CONFIRM_MAPPING, result, given)
+        report = result.report
+        wall = report["timestamp_kind"] == "wall_clock"
+        last = report["last_usable_local_timestamp"] if wall else report["last_usable_utc_instant"]
+        return _answer(
+            CutoffProposalAnswer,
+            _envelope("cutoff_proposal_answer", given)
+            | {
+                "source_id": given["source_id"],
+                "timestamp_kind": report["timestamp_kind"],
+                "last_usable_time": last,
+                "proposed_cutoff": None if last is None else _full_minute_at_or_after(last),
+            },
+        )
 
     def _open_population(self, request: OpenPopulationRequest, given: dict) -> ImportReply:
         workspace = self._workspace(OPEN_POPULATION, given)
@@ -341,6 +399,18 @@ class Imports:
         if result.preparation.preparation_id != record.preparation_id:
             return _not_reproduced()
         return result.preparation
+
+
+def _full_minute_at_or_after(text: str) -> str | None:
+    """A supplied time rounded up to a full minute, written on its own clock; None past the year 9999."""
+    utc = text.endswith("Z")
+    moment = datetime.fromisoformat(text[:-1] if utc else text)
+    if moment.second or moment.microsecond:
+        try:
+            moment = moment.replace(second=0, microsecond=0) + timedelta(minutes=1)
+        except OverflowError:
+            return None
+    return moment.isoformat(timespec="seconds") + ("Z" if utc else "")
 
 
 def _not_reproduced() -> Problem:

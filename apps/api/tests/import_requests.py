@@ -42,6 +42,11 @@ _ROLES = {
     "parent": {"id": "incident.parent.all_identified_cases.v1", "parameters": {
         "eligibility": "nonempty_normalized_case_identifier"}},
 }
+# The tolerant row rule with the parameters the contract fixes for it.
+TOLERANT_ROWS = {"id": "incident.rows.missing_id_outside_invalid_time_retained.v2", "parameters": {
+    **_ROLES["rows"]["parameters"], "blank_records": "skip_count_preserve_source_ordinal",
+    "ragged_records": "outside_population_preserve_raw", "maximum_ragged_fraction": 0.05,
+    "field_character_limit": 10485760}}
 
 
 def envelope(message_type: str, request_id: str = "request-1", revision: int = 1, **fields) -> dict:
@@ -49,10 +54,21 @@ def envelope(message_type: str, request_id: str = "request-1", revision: int = 1
             "query_revision": revision, **fields}
 
 
-def policies(time_format: str = "dmy_dot_minute", offset: int | None = 120) -> dict:
+def policies(time_format: str = "dmy_dot_minute", offset: int | None = 120, tolerant: bool = False,
+             cutoff: str = "2027-01-01T00:00:00Z") -> dict:
     zone = {"mode": "from_values"} if offset is None else {"mode": "fixed_offset", "offset_minutes": offset}
-    return {"time": {"id": "incident.time.explicit_format_timezone_utc.v1", "parameters": {
-        "format": time_format, "timezone": zone, "snapshot_cutoff_utc": "2027-01-01T00:00:00Z"}}, **deepcopy(_ROLES)}
+    chosen = {"time": {"id": "incident.time.explicit_format_timezone_utc.v1", "parameters": {
+        "format": time_format, "timezone": zone, "snapshot_cutoff_utc": cutoff}}, **deepcopy(_ROLES)}
+    if tolerant:
+        chosen["rows"] = deepcopy(TOLERANT_ROWS)
+    return chosen
+
+
+def wall_policies(time_format: str, cutoff: str, tolerant: bool = True) -> dict:
+    chosen = policies(time_format, tolerant=tolerant)
+    chosen["time"] = {"id": "incident.time.wall_clock_as_recorded.v1", "parameters": {
+        "format": time_format, "timezone": "none_as_recorded", "snapshot_cutoff_local": cutoff}}
+    return chosen
 
 
 def german_confirmation(workspace_id: str, source_id: str, accept: bool = False) -> dict:

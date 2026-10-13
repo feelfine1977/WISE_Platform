@@ -15,8 +15,9 @@ import type {
   UploadSourceMetadata,
   WorkspaceAnswer,
 } from "../generated/imports";
-import type { ImportClient, ImportOutcome } from "../data/client";
-import { fixedPolicies } from "../data/interpretation";
+import type { CutoffProposal, ImportClient, ImportOutcome } from "../data/client";
+import { fixedPolicies, rowPolicies } from "../data/interpretation";
+import type { ExampleId } from "../generated/investigation";
 
 /*
  * Answers written by hand in the shape of the import contract. The numbers are chosen for these
@@ -74,13 +75,18 @@ export function sourceAnswer(metadata: UploadSourceMetadata, byteCount: number):
   };
 }
 
-const noMatches = [
-  { format: "iso8601", parsed_count: 0 },
-  { format: "dmy_dot_minute", parsed_count: 0 },
-  { format: "mdy_dot_minute", parsed_count: 0 },
-  { format: "dmy_slash_minute", parsed_count: 0 },
-  { format: "mdy_slash_minute", parsed_count: 0 },
-] as const;
+type Matches = CsvInspectionAnswer["role_suggestions"][number]["timestamp_matches"];
+
+/** The inspection's evidence for all eleven formats, in the order the inspection lists them; unnamed formats read nothing. */
+function matches(read: Partial<Record<Matches[number]["format"], number>> = {}): Matches {
+  const formats = [
+    "iso8601", "dmy_dot_minute", "mdy_dot_minute", "dmy_slash_minute", "mdy_slash_minute", "dmy_dot_second",
+    "mdy_dot_second", "dmy_slash_second", "mdy_slash_second", "mdy_slash_12h_minute", "mdy_slash_12h_second",
+  ] as const;
+  return formats.map((format) => ({ format, parsed_count: read[format] ?? 0 }));
+}
+
+const noMatches = matches();
 
 export function inspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswer {
   return {
@@ -112,13 +118,7 @@ export function inspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswe
         roles: ["context", "case_id", "activity", "timestamp"],
         nonempty_count: 4,
         distinct_nonempty_count: 4,
-        timestamp_matches: [
-          { format: "iso8601", parsed_count: 0 },
-          { format: "dmy_dot_minute", parsed_count: 3 },
-          { format: "mdy_dot_minute", parsed_count: 3 },
-          { format: "dmy_slash_minute", parsed_count: 0 },
-          { format: "mdy_slash_minute", parsed_count: 0 },
-        ],
+        timestamp_matches: matches({ dmy_dot_minute: 3, mdy_dot_minute: 3 }),
       },
       { column_index: 3, roles: ["context", "case_id", "activity"], nonempty_count: 3, distinct_nonempty_count: 3, timestamp_matches: [...noMatches] },
     ],
@@ -126,6 +126,156 @@ export function inspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswe
       "Confirm the proposed encoding, separator and column roles.",
       "Column 2 has multiple possible timestamp formats; choose day/month order explicitly.",
     ],
+    blank_record_count: 0,
+    ragged_record_count: 0,
+  };
+}
+
+/** The same source with a readable time in record 3, 06.04.2026 10:00: day first and month first both read all four. */
+export function bothWaysInspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswer {
+  const answer = inspectionAnswer(request);
+  return {
+    ...answer,
+    sample_rows: answer.sample_rows.map((row) => (row.source_position === 3 ? { ...row, cells: ["B-2", "Prüfung", "06.04.2026 10:00", "Größe & Maß"] } : row)),
+    role_suggestions: answer.role_suggestions.map((item) =>
+      item.column_index === 2 ? { ...item, timestamp_matches: matches({ dmy_dot_minute: 4, mdy_dot_minute: 4 }) } : item,
+    ),
+  };
+}
+
+/*
+ * Source "Störungen.csv" (hand-made), semicolons, Windows-1252, times with seconds, a blank last line:
+ *   physical line 1  Vorgang;Aktivität;Zeitpunkt;Gruppe
+ *   0  line 2  A-1;Eröffnet;03.04.2026 08:00:15;Büro
+ *   1  line 3  A-1;Geschlossen;14.04.2026 09:30:20;(empty)
+ *   2  line 4  B-2;Eröffnet;05.04.2026 07:15:40;Größe & Maß;extra   five cells: outside every incident
+ *   3  line 5  B-2;Prüfung;06.04.2026 10:00:05;Büro
+ *   4  line 6  (blank)
+ * The inspection counts four records, one blank line and one record of another length; its time
+ * evidence covers the three records of four cells. Only day first with seconds reads all three; month
+ * first with seconds reads two (14 is no month). Read at UTC+02:00, the latest usable time is
+ * 2026-04-14T07:30:20Z, so 2026-04-14T07:31:00Z is proposed.
+ */
+export const raggedText = "B-2;Eröffnet;05.04.2026 07:15:40;Größe & Maß;extra\r\n";
+
+export function secondsInspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswer {
+  return {
+    ...inspectionAnswer(request),
+    sample_rows: [
+      { source_position: 0, cells: ["A-1", "Eröffnet", "03.04.2026 08:00:15", "Büro"] },
+      { source_position: 1, cells: ["A-1", "Geschlossen", "14.04.2026 09:30:20", ""] },
+      { source_position: 2, cells: ["B-2", "Eröffnet", "05.04.2026 07:15:40", "Größe & Maß", "extra"] },
+      { source_position: 3, cells: ["B-2", "Prüfung", "06.04.2026 10:00:05", "Büro"] },
+    ],
+    role_suggestions: [
+      { column_index: 0, roles: ["context", "case_id", "activity"], nonempty_count: 3, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
+      { column_index: 1, roles: ["context", "case_id", "activity"], nonempty_count: 3, distinct_nonempty_count: 3, timestamp_matches: [...noMatches] },
+      {
+        column_index: 2,
+        roles: ["context", "case_id", "activity", "timestamp"],
+        nonempty_count: 3,
+        distinct_nonempty_count: 3,
+        timestamp_matches: matches({ dmy_dot_second: 3, mdy_dot_second: 2 }),
+      },
+      { column_index: 3, roles: ["context", "case_id", "activity"], nonempty_count: 2, distinct_nonempty_count: 1, timestamp_matches: [...noMatches] },
+    ],
+    unresolved: [
+      "Confirm the proposed encoding, separator and column roles.",
+      "1 zero-cell blank records are skipped; source ordinals retain their gaps.",
+      "1 ragged records must remain outside every population and require explicit row-issue confirmation.",
+    ],
+    blank_record_count: 1,
+    ragged_record_count: 1,
+  };
+}
+
+export function secondsInterpretationAnswer(request: ConfirmMappingRequest): InterpretationAnswer {
+  const ready = request.accept_report_issues;
+  return {
+    ...interpretationAnswer(request),
+    state: ready ? "ready" : "needs_confirmation",
+    report: {
+      ...report(),
+      raw_record_count: 4,
+      identified_record_count: 3,
+      unassigned_record_count: 1,
+      usable_timestamp_record_count: 3,
+      unavailable_timestamp_record_count: 1,
+      case_count: 2,
+      sequence_evaluable_case_count: 2,
+      sequence_unevaluable_case_count: 0,
+      first_usable_utc_instant: "2026-04-03T06:00:15Z",
+      last_usable_utc_instant: "2026-04-14T07:30:20Z",
+      snapshot_cutoff_utc: "2026-04-14T07:31:00Z",
+      missing_cells: [
+        { column_index: 0, record_count: 0 },
+        { column_index: 1, record_count: 0 },
+        { column_index: 2, record_count: 0 },
+        { column_index: 3, record_count: 1 },
+      ],
+      issues: [
+        {
+          source_position: 2,
+          column_index: null,
+          case_id: null,
+          code: "ragged_record",
+          severity: "confirmation",
+          message: "This source record has 5 cells; expected 4. Keep its exact raw text outside every case population; no fields were padded or associated.",
+        },
+      ],
+      blank_record_count: 1,
+      ragged_record_count: 1,
+      excluded_source_records: [
+        {
+          source_position: 2,
+          physical_line_start: 4,
+          physical_line_end: 4,
+          cell_count: 5,
+          reason: "ragged_record",
+          original_cells: ["B-2", "Eröffnet", "05.04.2026 07:15:40", "Größe & Maß", "extra"],
+          original_text: raggedText,
+        },
+      ],
+    } as InterpretationReport,
+  } as InterpretationAnswer;
+}
+
+export function proposalAnswer(request: ConfirmMappingRequest, last: string | null, proposed: string | null): CutoffProposal {
+  return {
+    schema_version: 1,
+    message_type: "cutoff_proposal_answer",
+    request_id: request.request_id,
+    query_revision: request.query_revision,
+    workspace_id: request.workspace_id,
+    source_id: request.source_id,
+    timestamp_kind: request.policies.time.id === "incident.time.wall_clock_as_recorded.v1" ? "wall_clock" : "utc_instant",
+    last_usable_time: last,
+    proposed_cutoff: proposed,
+  };
+}
+
+/** The inspection of a packaged example as the local service answers it: comma, UTF-8, ISO times with their UTC mark. */
+export function exampleInspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswer {
+  const names = ["incident_id", "source_event_id", "source_sequence", "activity", "timestamp_utc", "service", "assignment_group"];
+  return {
+    ...inspectionAnswer(request),
+    dialect_candidates: [{ encoding: "utf-8", delimiter: ",", quotechar: '"', header: "first_record" }],
+    columns: names.map((name, index) => ({ index, name })),
+    record_count: 2,
+    sample_rows: [
+      { source_position: 0, cells: ["S3A", "e-S3A-01", "1", "Opened", "2026-10-01T09:00:00Z", "S", "Unknown"] },
+      { source_position: 1, cells: ["S3B", "e-S3B-01", "1", "Opened", "2026-10-01T09:00:00Z", "S", ""] },
+    ],
+    role_suggestions: [
+      { column_index: 0, roles: ["context", "case_id", "activity"], nonempty_count: 2, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
+      { column_index: 1, roles: ["context", "case_id", "activity"], nonempty_count: 2, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
+      { column_index: 2, roles: ["context", "case_id", "activity", "source_sequence"], nonempty_count: 2, distinct_nonempty_count: 1, timestamp_matches: [...noMatches] },
+      { column_index: 3, roles: ["context", "case_id", "activity"], nonempty_count: 2, distinct_nonempty_count: 1, timestamp_matches: [...noMatches] },
+      { column_index: 4, roles: ["context", "case_id", "activity", "timestamp"], nonempty_count: 2, distinct_nonempty_count: 1, timestamp_matches: matches({ iso8601: 2 }) },
+      { column_index: 5, roles: ["context", "case_id", "activity"], nonempty_count: 2, distinct_nonempty_count: 1, timestamp_matches: [...noMatches] },
+      { column_index: 6, roles: ["context", "case_id", "activity"], nonempty_count: 1, distinct_nonempty_count: 1, timestamp_matches: [...noMatches] },
+    ],
+    unresolved: ["Confirm the proposed encoding, separator and column roles."],
   };
 }
 
@@ -248,6 +398,7 @@ export function populationAnswer(request: OpenPopulationRequest, cases?: Importe
           id: "incident.time.explicit_format_timezone_utc.v1",
           parameters: { format: "dmy_dot_minute", timezone: { mode: "fixed_offset", offset_minutes: 120 }, snapshot_cutoff_utc: "2027-01-01T00:00:00Z" },
         },
+        rows: rowPolicies.tolerant,
         ...fixedPolicies,
       },
     },
@@ -343,6 +494,8 @@ export function scriptedImportClient() {
   const uploads: (Call<UploadSourceMetadata, SourceAnswer> & { file: Blob })[] = [];
   const inspections: Call<InspectCsvRequest, CsvInspectionAnswer>[] = [];
   const confirmations: Call<ConfirmMappingRequest, InterpretationAnswer>[] = [];
+  const proposals: Call<ConfirmMappingRequest, CutoffProposal>[] = [];
+  const examples: Call<ExampleId, Blob>[] = [];
   const populations: Call<OpenPopulationRequest, ImportedPopulationAnswer>[] = [];
   const evidence: Call<ImportedCaseEvidenceRequest, ImportedCaseEvidenceAnswer>[] = [];
   const client: ImportClient = {
@@ -350,8 +503,10 @@ export function scriptedImportClient() {
     uploadSource: (request, file, signal) => new Promise((reply) => uploads.push({ request, file, signal, reply })),
     inspect: (request, signal) => new Promise((reply) => inspections.push({ request, signal, reply })),
     confirmMapping: (request, signal) => new Promise((reply) => confirmations.push({ request, signal, reply })),
+    proposeCutoff: (request, signal) => new Promise((reply) => proposals.push({ request, signal, reply })),
+    exampleSource: (request, signal) => new Promise((reply) => examples.push({ request, signal, reply })),
     openPopulation: (request, signal) => new Promise((reply) => populations.push({ request, signal, reply })),
     caseEvidence: (request, signal) => new Promise((reply) => evidence.push({ request, signal, reply })),
   };
-  return { client, workspaces, uploads, inspections, confirmations, populations, evidence };
+  return { client, workspaces, uploads, inspections, confirmations, proposals, examples, populations, evidence };
 }

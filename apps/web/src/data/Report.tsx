@@ -1,9 +1,11 @@
 import { useId, useState } from "react";
-import type { InterpretationAnswer, PreparationId, RowIssue } from "../generated/imports";
-import { countOf, issueLabels, severityLabels, utcText, wallText } from "./wording";
+import type { ExcludedSourceRecord, InterpretationAnswer, PreparationId, RowIssue } from "../generated/imports";
+import { countOf, excludedReasonLabels, issueLabels, severityLabels, utcText, wallText } from "./wording";
 
 /** How many source positions are listed for one reason; the counts above say how many rows there are. */
 const POSITIONS_SHOWN = 20;
+/** How many excluded records are listed before the analyst asks for all of them. */
+const EXCLUDED_SHOWN = 50;
 
 interface ReportProps {
   answer: InterpretationAnswer;
@@ -21,10 +23,15 @@ export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps
   const wall = report.timestamp_kind === "wall_clock";
   const period = (value: string | null) => (value === null ? "none" : wall ? wallText(value) : utcText(value));
   const cutoff = wall ? report.snapshot_cutoff_local : report.snapshot_cutoff_utc;
+  // The contract makes the blank and ragged counts optional; a report without them leaves those lines out.
+  const supplied = (label: string, count: number | undefined, unit: string): [string, string][] =>
+    count === undefined ? [] : [[label, countOf(count, unit)]];
   const figures: [string, string][] = [
     ["Records read", countOf(report.raw_record_count, "record")],
+    ...supplied("Blank lines skipped", report.blank_record_count, "blank line"),
     ["With an incident id", countOf(report.identified_record_count, "record")],
-    ["Without incident id: outside every incident", countOf(report.unassigned_record_count, "record")],
+    ["Outside every incident", countOf(report.unassigned_record_count, "record")],
+    ...supplied("Of these, with another number of cells than the header", report.ragged_record_count, "record"),
     ["With a usable time", countOf(report.usable_timestamp_record_count, "record")],
     ["Without a usable time: kept, order not known", countOf(report.unavailable_timestamp_record_count, "record")],
     ["Incidents", countOf(report.case_count, "incident")],
@@ -72,6 +79,7 @@ export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps
         </table>
       )}
       <Issues issues={report.issues} />
+      {report.excluded_source_records !== undefined && <Excluded records={report.excluded_source_records} />}
       {report.activities.length > 0 && (
         <details className="report-more">
           <summary>Activities</summary>
@@ -146,6 +154,55 @@ function StateLine({ answer }: { answer: InterpretationAnswer }) {
         </p>
       );
   }
+}
+
+/** The records outside every incident, each with where it stands in the file and its original text. */
+function Excluded({ records }: { records: ExcludedSourceRecord[] }) {
+  const [all, setAll] = useState(false);
+  if (records.length === 0) return <p className="muted">No record stays outside every incident.</p>;
+  const shown = all ? records : records.slice(0, EXCLUDED_SHOWN);
+  return (
+    <div className="excluded">
+      <div className="table-scroll" role="region" aria-labelledby="excluded-title" tabIndex={0}>
+        <table className="plain-table compact-table excluded-table">
+          <caption id="excluded-title" className="caption">
+            Records outside every incident, as written in the file
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" className="number">Position</th>
+              <th scope="col">Lines in the file</th>
+              <th scope="col" className="number">Cells</th>
+              <th scope="col">Reason</th>
+              <th scope="col">Original text</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((record) => (
+              <tr key={record.source_position}>
+                <td className="number">{record.source_position}</td>
+                <td>
+                  {record.physical_line_start === record.physical_line_end
+                    ? `line ${record.physical_line_start}`
+                    : `lines ${record.physical_line_start}–${record.physical_line_end}`}
+                </td>
+                <td className="number">{record.cell_count}</td>
+                <td>{excludedReasonLabels[record.reason]}</td>
+                <td>
+                  <pre className="original-text">{record.original_text}</pre>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {records.length > shown.length && (
+        <button type="button" onClick={() => setAll(true)}>
+          Show all {countOf(records.length, "record")} outside every incident
+        </button>
+      )}
+    </div>
+  );
 }
 
 /** The supplied row issues, by reason, with the source positions of the first rows of each. */

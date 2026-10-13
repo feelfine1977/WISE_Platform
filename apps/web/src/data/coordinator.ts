@@ -12,8 +12,17 @@ import type {
   UploadSourceMetadata,
   WorkspaceAnswer,
 } from "../generated/imports";
-import type { ImportClient, ImportOutcome, ImportProblem } from "./client";
-import { type Draft, confirmationOf, cutoffNow, draftAfterInspection, emptyDraft, settledFormat } from "./interpretation";
+import type { CutoffProposal, ImportClient, ImportOutcome, ImportProblem } from "./client";
+import { type WorkspaceExample, exampleColumns, exampleReading } from "./examples";
+import {
+  type Draft,
+  confirmationOf,
+  cutoffFieldValue,
+  draftAfterInspection,
+  emptyDraft,
+  formatEvidence,
+  proposalRequestOf,
+} from "./interpretation";
 
 export type WorkspaceState =
   | { phase: "none" }
@@ -23,6 +32,7 @@ export type WorkspaceState =
 
 export type SourceState =
   | { phase: "none" }
+  | { phase: "fetching"; filename: string; startedAt: number }
   | { phase: "uploading"; filename: string; byteCount: number; startedAt: number }
   | { phase: "stored"; source: StoredSource }
   | { phase: "failed"; filename: string; problem: ImportProblem };
@@ -39,6 +49,13 @@ export type InterpretationState =
   | { phase: "answered"; request: ConfirmMappingRequest; answer: InterpretationAnswer }
   | { phase: "failed"; request: ConfirmMappingRequest; problem: ImportProblem };
 
+/** The cutoff proposed from the data for the current reading, while every choice but the cutoff is made. */
+export type ProposalState =
+  | { phase: "none" }
+  | { phase: "proposing"; request: ConfirmMappingRequest }
+  | { phase: "ready"; request: ConfirmMappingRequest; answer: CutoffProposal }
+  | { phase: "failed"; request: ConfirmMappingRequest; problem: ImportProblem };
+
 export interface DataState {
   revision: number;
   workspace: WorkspaceState;
@@ -50,10 +67,13 @@ export interface DataState {
   /** How the inspection without hints read the current source; a reading asked for is not a detection. */
   detected: Dialect | null;
   draft: Draft;
+  proposal: ProposalState;
   interpretation: InterpretationState;
+  /** The packaged example the current source was loaded from; it is first read with the example's fixed reading. */
+  example: WorkspaceExample | null;
 }
 
-type Stage = "workspace" | "source" | "inspection" | "interpretation";
+type Stage = "workspace" | "source" | "inspection" | "proposal" | "interpretation";
 
 const initialState: DataState = {
   revision: 0,
@@ -64,7 +84,9 @@ const initialState: DataState = {
   inspection: { phase: "none" },
   detected: null,
   draft: emptyDraft,
+  proposal: { phase: "none" },
   interpretation: { phase: "none" },
+  example: null,
 };
 
 const unreachable: ImportOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
@@ -79,12 +101,17 @@ function mismatch(detail: string): ImportOutcome<never> {
  * current one of its stage, and a later step is cleared whenever an earlier one changes: a new
  * workspace clears the source, a new source or reading clears the inspection, and any changed
  * choice clears the interpretation report.
+ *
+ * Once every choice but the cutoff is made, the cutoff is proposed from the data and fills the
+ * cutoff field unless the analyst set it; a change of a choice the proposal depends on asks again.
  */
 export class DataCoordinator {
   private state: DataState = initialState;
   private revision = 0;
   /** The column names of the last inspection of the current source, to keep choices that still apply. */
   private columns: string[] | null = null;
+  /** The reading the current proposal was asked for, without its envelope; null when none was. */
+  private proposalKey: string | null = null;
   private readonly current = new Map<Stage, { requestId: string; controller: AbortController }>();
   private readonly listeners = new Set<() => void>();
 
@@ -101,7 +128,7 @@ export class DataCoordinator {
   getState = (): DataState => this.state;
 
   openWorkspace(path: string): void {
-    const { requestId, revision, signal } = this.issue("workspace", ["source", "inspection", "interpretation"]);
+    const { requestId, revision, signal } = this.issue("workspace", ["source", "inspection", "proposal", "interpretation"]);
     const request: OpenWorkspaceRequest = {
       schema_version: 1,
       message_type: "open_workspace_request",
@@ -110,6 +137,7 @@ export class DataCoordinator {
       path,
     };
     this.columns = null;
+    this.proposalKey = null;
     this.publish({
       ...initialState,
       revision,
@@ -123,39 +151,92 @@ export class DataCoordinator {
 
   /** Sends a file's bytes to the workspace and inspects them once they are stored. */
   addSource(file: File): void {
+    if (this.state.workspace.phase !== "open") return;
+    this.upload(file, file.name || "source.csv", null, this.issue("source", ["inspection", "proposal", "interpretation"]));
+  }
+
+  /**
+   * Stores the bytes of a packaged example in the workspace like any source, inspects them, and
+   * reads them with the example's fixed reading; rows with issues still wait for the analyst.
+   */
+  loadExample(example: WorkspaceExample): void {
+    if (this.state.workspace.phase !== "open") return;
+    const issued = this.issue("source", ["inspection", "proposal", "interpretation"]);
+    this.columns = null;
+    this.proposalKey = null;
+    this.publish({
+      ...this.state,
+      revision: issued.revision,
+      source: { phase: "fetching", filename: example.filename, startedAt: this.now().getTime() },
+      inspection: { phase: "none" },
+      detected: null,
+      proposal: { phase: "none" },
+      interpretation: { phase: "none" },
+      draft: emptyDraft,
+      example: null,
+    });
+    const receive = (outcome: ImportOutcome<Blob>) => {
+      if (this.current.get("source")?.requestId !== issued.requestId) return;
+      if (outcome.ok) {
+        this.upload(outcome.answer, example.filename, example, this.issue("source", ["inspection", "proposal", "interpretation"]));
+      } else {
+        this.current.delete("source");
+        this.publish({ ...this.state, source: { phase: "failed", filename: example.filename, problem: outcome.problem } });
+      }
+    };
+    this.client.exampleSource(example.id, issued.signal).then(receive, () => receive(unreachable));
+  }
+
+  private upload(
+    bytes: Blob,
+    filename: string,
+    example: WorkspaceExample | null,
+    { requestId, revision, signal }: { requestId: string; revision: number; signal: AbortSignal },
+  ): void {
     const workspace = this.state.workspace;
     if (workspace.phase !== "open") return;
-    const { requestId, revision, signal } = this.issue("source", ["inspection", "interpretation"]);
     const metadata: UploadSourceMetadata = {
       schema_version: 1,
       message_type: "upload_source_metadata",
       request_id: requestId,
       query_revision: revision,
       workspace_id: workspace.answer.workspace_id,
-      filename: file.name || "source.csv",
+      filename,
     };
     this.columns = null;
+    this.proposalKey = null;
     this.publish({
       ...this.state,
       revision,
-      source: { phase: "uploading", filename: metadata.filename, byteCount: file.size, startedAt: this.now().getTime() },
+      source: { phase: "uploading", filename, byteCount: bytes.size, startedAt: this.now().getTime() },
       inspection: { phase: "none" },
       detected: null,
+      proposal: { phase: "none" },
       interpretation: { phase: "none" },
       draft: emptyDraft,
+      example: null,
     });
-    this.client.uploadSource(metadata, file, signal).then(
-      (outcome) => this.receiveSource(metadata, outcome),
-      () => this.receiveSource(metadata, unreachable),
+    this.client.uploadSource(metadata, bytes, signal).then(
+      (outcome) => this.receiveSource(metadata, example, outcome),
+      () => this.receiveSource(metadata, example, unreachable),
     );
   }
 
   /** Continues with a source the workspace already holds. */
   useSource(source: StoredSource): void {
     if (this.state.workspace.phase !== "open") return;
-    this.abort(["source", "inspection", "interpretation"]);
+    this.abort(["source", "inspection", "proposal", "interpretation"]);
     this.columns = null;
-    this.publish({ ...this.state, source: { phase: "stored", source }, detected: null, draft: emptyDraft, interpretation: { phase: "none" } });
+    this.proposalKey = null;
+    this.publish({
+      ...this.state,
+      source: { phase: "stored", source },
+      detected: null,
+      draft: emptyDraft,
+      proposal: { phase: "none" },
+      interpretation: { phase: "none" },
+      example: null,
+    });
     this.inspect(null);
   }
 
@@ -163,7 +244,8 @@ export class DataCoordinator {
   inspect(hints: DialectHints | null): void {
     const { workspace, source } = this.state;
     if (workspace.phase !== "open" || source.phase !== "stored") return;
-    const { requestId, revision, signal } = this.issue("inspection", ["interpretation"]);
+    const { requestId, revision, signal } = this.issue("inspection", ["proposal", "interpretation"]);
+    this.proposalKey = null;
     const request: InspectCsvRequest = {
       schema_version: 1,
       message_type: "inspect_csv_request",
@@ -179,6 +261,7 @@ export class DataCoordinator {
       revision,
       draft,
       inspection: { phase: "inspecting", hints, startedAt: this.now().getTime() },
+      proposal: { phase: "none" },
       interpretation: { phase: "none" },
     });
     this.client.inspect(request, signal).then(
@@ -195,12 +278,25 @@ export class DataCoordinator {
       const inspection = this.state.inspection;
       const suggestion =
         inspection.phase === "ready" ? inspection.answer.role_suggestions.find((item) => item.column_index === change.timestampColumn) : undefined;
-      draft = { ...draft, timeFormat: change.timeFormat ?? settledFormat(suggestion) };
+      draft = { ...draft, timeFormat: change.timeFormat ?? formatEvidence(suggestion).proposed };
     }
     if ("cutoff" in change) draft = { ...draft, cutoffEdited: true };
-    else if ("zone" in change && !draft.cutoffEdited) draft = { ...draft, cutoff: cutoffNow(this.now(), draft.zone) };
     this.abort(["interpretation"]);
-    this.publish({ ...this.state, draft, interpretation: { phase: "none" } });
+    const settled = this.settleProposal(draft);
+    this.publish({ ...this.state, draft: settled.draft, proposal: settled.proposal, interpretation: { phase: "none" } });
+    settled.send?.();
+  }
+
+  /** Puts the proposed cutoff into the cutoff field; later proposals follow again. */
+  useProposal(): void {
+    const proposal = this.state.proposal;
+    if (proposal.phase !== "ready" || proposal.answer.proposed_cutoff === null) return;
+    this.abort(["interpretation"]);
+    this.publish({
+      ...this.state,
+      draft: { ...this.state.draft, cutoff: cutoffFieldValue(proposal.answer.proposed_cutoff), cutoffEdited: false },
+      interpretation: { phase: "none" },
+    });
   }
 
   /** Asks the local service to read the source with the current choices. */
@@ -228,7 +324,7 @@ export class DataCoordinator {
     } else if (inspection.phase === "inspecting") {
       this.abort(["inspection"]);
       this.publish({ ...this.state, inspection: { phase: "none" } });
-    } else if (source.phase === "uploading") {
+    } else if (source.phase === "uploading" || source.phase === "fetching") {
       this.abort(["source"]);
       this.publish({ ...this.state, source: { phase: "none" } });
     } else if (workspace.phase === "opening") {
@@ -239,7 +335,35 @@ export class DataCoordinator {
 
   /** Abandons every outstanding request without publishing. */
   stop(): void {
-    this.abort(["workspace", "source", "inspection", "interpretation"]);
+    this.abort(["workspace", "source", "inspection", "proposal", "interpretation"]);
+  }
+
+  /**
+   * The draft and proposal after a change of the draft. When the reading the proposal depends on
+   * changed, the earlier proposal no longer applies: a cutoff it filled is cleared, and a new
+   * proposal is asked for once every choice but the cutoff is made.
+   */
+  private settleProposal(draft: Draft): { draft: Draft; proposal: ProposalState; send: (() => void) | null } {
+    const { workspace, source } = this.state;
+    const ids =
+      workspace.phase === "open" && source.phase === "stored"
+        ? { workspaceId: workspace.answer.workspace_id, sourceId: source.source.source_id }
+        : null;
+    const unsent = ids === null ? null : proposalRequestOf(draft, ids, { requestId: "proposal", revision: 1 });
+    const key = unsent === null ? null : JSON.stringify(unsent);
+    if (key === this.proposalKey) return { draft, proposal: this.state.proposal, send: null };
+    this.abort(["proposal"]);
+    this.proposalKey = key;
+    const cleared = draft.cutoffEdited ? draft : { ...draft, cutoff: "" };
+    if (ids === null || unsent === null) return { draft: cleared, proposal: { phase: "none" }, send: null };
+    const { requestId, revision, signal } = this.issue("proposal", []);
+    const request = proposalRequestOf(draft, ids, { requestId, revision })!;
+    const send = () =>
+      this.client.proposeCutoff(request, signal).then(
+        (outcome) => this.receiveProposal(request, outcome),
+        () => this.receiveProposal(request, unreachable),
+      );
+    return { draft: cleared, proposal: { phase: "proposing", request }, send };
   }
 
   private issue(stage: Stage, later: Stage[]): { requestId: string; revision: number; signal: AbortSignal } {
@@ -280,7 +404,7 @@ export class DataCoordinator {
     );
   }
 
-  private receiveSource(metadata: UploadSourceMetadata, outcome: ImportOutcome<SourceAnswer>): void {
+  private receiveSource(metadata: UploadSourceMetadata, example: WorkspaceExample | null, outcome: ImportOutcome<SourceAnswer>): void {
     if (!this.isCurrent("source", metadata.request_id)) return;
     const checked = outcome.ok ? checkEcho(metadata, outcome.answer) : checkProblem(metadata, outcome.problem);
     if (!checked.ok) {
@@ -291,7 +415,7 @@ export class DataCoordinator {
     const sources = this.state.sources.some((item) => item.source_id === source.source_id)
       ? this.state.sources
       : [...this.state.sources, source];
-    this.publish({ ...this.state, sources, source: { phase: "stored", source } });
+    this.publish({ ...this.state, sources, source: { phase: "stored", source }, example });
     this.inspect(null);
   }
 
@@ -307,10 +431,46 @@ export class DataCoordinator {
       this.publish({ ...this.state, inspection: { phase: "failed", hints, problem: checked.problem } });
       return;
     }
-    const draft = draftAfterInspection(this.state.draft, this.columns, checked.answer, this.now());
-    this.columns = checked.answer.columns.map((column) => column.name);
+    const columns = checked.answer.columns.map((column) => column.name);
+    // The first inspection of an example's bytes takes the example's fixed reading, if the columns are the example's.
+    const fixed =
+      this.state.example !== null &&
+      hints === null &&
+      this.columns === null &&
+      columns.length === exampleColumns.length &&
+      columns.every((name, index) => name === exampleColumns[index]);
+    const draft = fixed ? exampleReading : draftAfterInspection(this.state.draft, this.columns, checked.answer);
+    this.columns = columns;
     const detected = hints === null ? (checked.answer.dialect_candidates[0] ?? null) : this.state.detected;
-    this.publish({ ...this.state, inspection: { phase: "ready", hints, answer: checked.answer }, detected, draft });
+    const settled = this.settleProposal(draft);
+    this.publish({
+      ...this.state,
+      inspection: { phase: "ready", hints, answer: checked.answer },
+      detected,
+      draft: settled.draft,
+      proposal: settled.proposal,
+    });
+    settled.send?.();
+    if (fixed) this.confirm(false);
+  }
+
+  private receiveProposal(request: ConfirmMappingRequest, outcome: ImportOutcome<CutoffProposal>): void {
+    if (!this.isCurrent("proposal", request.request_id)) return;
+    let checked = outcome.ok ? checkEcho(request, outcome.answer) : checkProblem(request, outcome.problem);
+    if (checked.ok && checked.answer.source_id !== request.source_id) checked = mismatch("The reply describes another source.");
+    const wall = request.policies.time.id === "incident.time.wall_clock_as_recorded.v1";
+    if (checked.ok && (checked.answer.timestamp_kind === "wall_clock") !== wall) checked = mismatch("The proposal is on another clock than the one chosen.");
+    if (!checked.ok) {
+      this.publish({ ...this.state, proposal: { phase: "failed", request, problem: checked.problem } });
+      return;
+    }
+    const proposed = checked.answer.proposed_cutoff;
+    const fill = proposed !== null && !this.state.draft.cutoffEdited;
+    this.publish({
+      ...this.state,
+      proposal: { phase: "ready", request, answer: checked.answer },
+      draft: fill ? { ...this.state.draft, cutoff: cutoffFieldValue(proposed) } : this.state.draft,
+    });
   }
 
   private receiveInterpretation(request: ConfirmMappingRequest, outcome: ImportOutcome<InterpretationAnswer>): void {
