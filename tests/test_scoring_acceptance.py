@@ -324,6 +324,64 @@ def test_real_method_four_day_goldens_numeric_forms_and_exact_support(
     )
 
 
+@pytest.mark.parametrize(("width", "five_hour_value"), [(0, 1), (2, 0.5)])
+def test_actual_method_hours_preserve_exact_four_hour_equality(
+    client, workspace, width, five_hour_value
+):
+    raw = (ROOT / "tests/fixtures/incidents/exact-four-hour.csv").read_bytes()
+    source = upload(client, workspace, raw, "exact-four-hour.csv")
+    p = policies()
+    p["time"]["parameters"]["snapshot_cutoff_utc"] = "2026-10-02T00:00:00Z"
+    request = envelope(
+        "confirm_mapping_request",
+        workspace_id=workspace["workspace_id"],
+        source_id=source["source_id"],
+        dialect={
+            "encoding": "utf-8",
+            "delimiter": ",",
+            "quotechar": '"',
+            "header": "first_record",
+        },
+        mapping={
+            "case_column": 0,
+            "activity_column": 3,
+            "timestamp_column": 4,
+            "sequence_column": 2,
+            "context_columns": [5, 6],
+        },
+        policies=p,
+        accept_report_issues=True,
+    )
+    base = population(client, workspace, prepare(client, request))
+    dv = ready(
+        client, workspace, base, base, definition(target=4, width=width, unit="hours")
+    )
+    run = score(client, workspace, base, base, dv)
+    assert run["population"] == {
+        "case_ids": ["BOUNDARY3", "BOUNDARY4", "BOUNDARY5", "BOUNDARYMISSING"],
+        "case_count": 4,
+        "record_count": 7,
+    }
+    cases = {case["case_id"]: case for case in run["cases"]}
+    assert {key: case["measurement"]["value"] for key, case in cases.items()} == {
+        "BOUNDARY3": 3,
+        "BOUNDARY4": 4,
+        "BOUNDARY5": 5,
+        "BOUNDARYMISSING": None,
+    }
+    assert {key: case["value"] for key, case in cases.items()} == {
+        "BOUNDARY3": 0,
+        "BOUNDARY4": 0,
+        "BOUNDARY5": five_hour_value,
+        "BOUNDARYMISSING": None,
+    }
+    assert all(case["measurement"]["unit"] == "hours" for case in cases.values())
+    assert run["support"]["numeric_value_case_count"] == 3
+    assert run["support"]["unavailable_value_case_count"] == 1
+    assert run["support"]["affected_case_count"] == 1
+    assert witness(client, workspace, run, "BOUNDARY4")["case"] == cases["BOUNDARY4"]
+
+
 def test_gap_reopen_and_same_instant_witnesses_keep_complete_raw_rows(
     client, workspace
 ):
