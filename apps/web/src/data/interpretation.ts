@@ -252,8 +252,15 @@ export function readingConsequences(draft: Draft, answer: CsvInspectionAnswer): 
   }
 
   const sequence = suggestionOf(draft.sequenceColumn);
-  if (sequence !== undefined && sequence.nonempty_count > 0 && !sequence.roles.includes("source_sequence")) {
-    consequences.push("Not every value of the sequence column is a whole number: a value that is not stops the reading.");
+  if (sequence !== undefined && sequence.nonempty_count === 0) {
+    consequences.push("The sequence column has no filled cell: no record has a sequence number, which stops the reading.");
+  } else if (sequence !== undefined) {
+    if (!sequence.roles.includes("source_sequence")) {
+      consequences.push("Not every value of the sequence column is a whole number: a value that is not stops the reading.");
+    }
+    if (someEmpty(sequence)) {
+      consequences.push("The sequence column has empty cells: a record without a sequence number stops the reading.");
+    }
   }
   return consequences;
 }

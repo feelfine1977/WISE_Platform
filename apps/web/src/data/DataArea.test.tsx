@@ -863,6 +863,30 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     });
   });
 
+  it("says before reading that a sequence column with empty cells stops the reading", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, unreadableInspectionAnswer);
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "3");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "2");
+    const sequence = screen.getByLabelText("Sequence number (optional)");
+
+    // Schritt is empty in all four records.
+    await app.user.selectOptions(sequence, "1");
+    expect(consequences()).toEqual(["The sequence column has no filled cell: no record has a sequence number, which stops the reading."]);
+
+    // Ticket holds T-1, T-1, T-2 and one empty cell: neither whole numbers nor filled throughout.
+    await app.user.selectOptions(sequence, "0");
+    expect(consequences()).toEqual([
+      "Not every value of the sequence column is a whole number: a value that is not stops the reading.",
+      "The sequence column has empty cells: a record without a sequence number stops the reading.",
+    ]);
+
+    // Nr holds 1 to 4 in every record.
+    await app.user.selectOptions(sequence, "4");
+    expect(consequences()).toEqual([]);
+  });
+
   it("shows such choices again when the source is inspected again with the same columns", async () => {
     const app = renderApp();
     await openWorkspace(app);
