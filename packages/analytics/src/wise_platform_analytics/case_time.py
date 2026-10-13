@@ -5,7 +5,7 @@ still part of every time measurement and every maximum-gap witness.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import math
 from typing import Protocol
 from collections.abc import Mapping, Sequence
@@ -36,9 +36,16 @@ class TimedPreparation(Protocol):
     def sequence_evaluable(self, case_id: str) -> bool: ...
 
 
+def _duration(later: datetime, earlier: datetime) -> timedelta:
+    value = later - earlier
+    if value < timedelta(0):
+        raise CaseTimeError("inconsistent_sequence", "The recorded history is not in its declared ascending time order.")
+    return value
+
+
 def _hours(later: datetime, earlier: datetime) -> float:
-    value = (later - earlier).total_seconds() / 3600
-    if not math.isfinite(value) or value < 0:
+    value = _duration(later, earlier).total_seconds() / 3600
+    if not math.isfinite(value):
         raise CaseTimeError("inconsistent_sequence", "The recorded history is not in its declared ascending time order.")
     return value
 
@@ -84,30 +91,33 @@ def case_time_summary(prepared: TimedPreparation, case_id: str) -> dict[str, obj
     assert first.time_value is not None and last.time_value is not None
     span = _hours(last.time_value, first.time_value)
     maximum = None
+    maximum_hours = None
     witness = None
     tied_groups = 0
     run_length = 1
     for left, right in zip(records, records[1:]):
         assert left.time_value is not None and right.time_value is not None
-        gap = _hours(right.time_value, left.time_value)
-        if gap == 0:
+        gap = _duration(right.time_value, left.time_value)
+        if gap == timedelta(0):
             run_length += 1
         else:
             tied_groups += run_length > 1
             run_length = 1
         if maximum is None or gap > maximum:
+            # Select the first exact maximum before rounding descriptive hours.
             maximum = gap
+            maximum_hours = _hours(right.time_value, left.time_value)
             witness = {"from_row_id": left.row_id, "to_row_id": right.row_id,
                        "from_activity": left.activity, "to_activity": right.activity,
                        "from_offset_hours": _hours(left.time_value, first.time_value),
-                       "share_of_observed_span": gap / span if span > 0 else None,
+                       "share_of_observed_span": maximum_hours / span if span > 0 else None,
                        "share_unavailable_reason": None if span > 0 else "zero_observed_span"}
     tied_groups += run_length > 1
     return {"status": "available", "timestamp_kind": kind,
             "first_recorded_timestamp": formatter(first.time_value), "last_recorded_timestamp": formatter(last.time_value),
             "first_recorded_activity": first.activity, "last_recorded_activity": last.activity,
             "observed_span_hours": span, "observed_span_unavailable_reason": None,
-            "maximum_adjacent_raw_gap_hours": maximum,
+            "maximum_adjacent_raw_gap_hours": maximum_hours,
             "maximum_adjacent_raw_gap_unavailable_reason": "fewer_than_two_records" if maximum is None else None,
             "maximum_gap_witness": witness, "usable_gap_count": len(records) - 1,
             "tied_timestamp_group_count": int(tied_groups)}
