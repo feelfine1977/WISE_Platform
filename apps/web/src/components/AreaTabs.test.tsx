@@ -1,18 +1,18 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import App from "../App";
-import { healthy, scriptedClient } from "../test/answers";
-import { scriptedImportClient, workspaceAnswer } from "../test/imports";
+import { healthy } from "../test/answers";
+import { scriptedImportClient } from "../test/imports";
 import { scriptedSelectionClient } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
+import { AreaTabs } from "./AreaTabs";
 
 function renderApp() {
   const imports = scriptedImportClient();
   const user = userEvent.setup();
   render(
     <App
-      client={scriptedClient().client}
       importClient={imports.client}
       selectionClient={scriptedSelectionClient().client}
       viewClient={scriptedViewClient().client}
@@ -43,38 +43,9 @@ function states() {
   });
 }
 
-const noPreparation = "Open the incidents of a preparation in the Data area first.";
-
 describe("the area tabs of the app bar", () => {
-  it("list the areas in the order of the work, mark the current one, and name why an area needs a preparation", async () => {
+  it("list the areas in the order of the work, start in Investigations, and can all be entered before incidents are open", async () => {
     const app = renderApp();
-    expect(states()).toEqual([
-      { name: "Data", current: null, disabled: null, reason: null },
-      { name: "Investigations", current: "page", disabled: null, reason: null },
-      { name: "Compare", current: null, disabled: "true", reason: noPreparation },
-      { name: "Expectation", current: null, disabled: "true", reason: noPreparation },
-      { name: "Saved", current: null, disabled: null, reason: null },
-    ]);
-    // A tab that cannot be opened stays in the keyboard path, so its reason can be reached.
-    expect(tabs().every((button) => !button.hasAttribute("disabled"))).toBe(true);
-
-    await app.user.click(tab("Compare"));
-    expect(tab("Compare").getAttribute("aria-current")).toBeNull();
-    expect(tab("Investigations").getAttribute("aria-current")).toBe("page");
-    expect(screen.queryByRole("heading", { name: "Compare" })).toBeNull();
-
-    await app.user.click(tab("Saved"));
-    expect(states().map((item) => item.current)).toEqual([null, null, null, null, "page"]);
-
-    await app.user.click(tab("Data"));
-    expect(states().map((item) => item.current)).toEqual(["page", null, null, null, null]);
-    await app.user.type(screen.getByLabelText("Folder path"), "C:\\Users\\Analyst\\Investigations");
-    await app.user.click(screen.getByRole("button", { name: "Open workspace" }));
-    const workspace = app.imports.workspaces[0];
-    await act(async () => workspace.reply({ ok: true, answer: workspaceAnswer(workspace.request, true) }));
-    const preparations = screen.getByRole("table", { name: "Prepared readings in this workspace" });
-    await app.user.click(within(preparations).getByRole("button", { name: /^Open incidents of/ }));
-
     expect(states()).toEqual([
       { name: "Data", current: null, disabled: null, reason: null },
       { name: "Investigations", current: "page", disabled: null, reason: null },
@@ -83,13 +54,22 @@ describe("the area tabs of the app bar", () => {
       { name: "Saved", current: null, disabled: null, reason: null },
     ]);
 
+    // Before incidents are open, an area that needs them says so instead of refusing to open.
     await app.user.click(tab("Compare"));
     expect(states().map((item) => item.current)).toEqual([null, null, "page", null, null]);
     expect(screen.getByRole("heading", { name: "Compare" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Go to the Data area" })).toBeTruthy();
 
     await app.user.click(tab("Expectation"));
     expect(states().map((item) => item.current)).toEqual([null, null, null, "page", null]);
     expect(screen.getByRole("heading", { name: "Expectation" })).toBeTruthy();
+    expect(screen.getByText(/An expectation is scored for the incidents an investigation shows\./)).toBeTruthy();
+
+    await app.user.click(tab("Saved"));
+    expect(states().map((item) => item.current)).toEqual([null, null, null, null, "page"]);
+
+    await app.user.click(tab("Data"));
+    expect(states().map((item) => item.current)).toEqual(["page", null, null, null, null]);
 
     await app.user.click(tab("Investigations"));
     expect(states().map((item) => item.current)).toEqual([null, "page", null, null, null]);
@@ -105,6 +85,30 @@ describe("the area tabs of the app bar", () => {
     await app.user.tab();
     expect(document.activeElement).toBe(tab("Compare"));
     await app.user.keyboard("{Enter}");
-    expect(tab("Data").getAttribute("aria-current")).toBe("page");
+    expect(tab("Compare").getAttribute("aria-current")).toBe("page");
+  });
+
+  it("keep an area that cannot be opened focusable, name the reason, and do nothing when it is chosen", async () => {
+    const user = userEvent.setup();
+    const choose = vi.fn();
+    render(
+      <AreaTabs
+        tabs={[
+          { id: "first", label: "First", unavailable: null },
+          { id: "second", label: "Second", unavailable: "Finish the first area before this one." },
+        ]}
+        current="first"
+        onChoose={choose}
+      />,
+    );
+    expect(states()).toEqual([
+      { name: "First", current: "page", disabled: null, reason: null },
+      { name: "Second", current: null, disabled: "true", reason: "Finish the first area before this one." },
+    ]);
+    expect(tabs().every((button) => !button.hasAttribute("disabled"))).toBe(true);
+    await user.click(tab("Second"));
+    expect(choose).not.toHaveBeenCalled();
+    await user.click(tab("First"));
+    expect(choose).toHaveBeenCalledWith("first");
   });
 });

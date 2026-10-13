@@ -36,7 +36,7 @@ async function renderView() {
   const coordinator = new ExpectationCoordinator(scoring.client, investigation);
   coordinator.start();
   const rendered = render(<ExpectationView investigation={investigation} coordinator={coordinator} />);
-  expect(screen.getByText(/Open the incidents of a preparation in the Data area first/)).toBeTruthy();
+  expect(screen.getByText(/None are open at the moment: open the incidents of a reading in the Data area\./)).toBeTruthy();
   act(() => investigation.open({ workspaceId, preparationId }));
   await deliver(() => imports.populations[0].reply({ ok: true, answer: scoringPopulationAnswer(imports.populations[0].request) }));
   await deliver(() => selecting.selections[0].reply({ ok: true, answer: scoringSelectionAnswer(selecting.selections[0].request) }));

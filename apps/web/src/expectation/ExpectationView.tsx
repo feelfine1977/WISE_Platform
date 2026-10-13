@@ -120,8 +120,9 @@ export function ExpectationView({ investigation, coordinator }: ExpectationViewP
       </div>
       {subject === null ? (
         <p className="expectation-note">
-          An expectation is scored for the incidents an investigation shows. Open the incidents of a preparation in the Data area first; to try it on
-          the synthetic example, add the example to a workspace there.
+          {investigated.population.phase === "idle"
+            ? "An expectation is scored for the incidents an investigation shows. None are open at the moment: open the incidents of a reading in the Data area."
+            : "An expectation is scored for the incidents an investigation shows. These are still being opened and selected; the form appears as soon as they are there. If it does not, the Investigations area says why."}
         </p>
       ) : (
         <div className="expectation-body" data-witness={witness.phase === "closed" ? "closed" : "open"}>

@@ -29,7 +29,7 @@ async function openInvestigation() {
   const views = scriptedViewClient();
   const coordinator = new ImportedInvestigationCoordinator(imports.client, scriptedSelectionClient().client, views.client);
   const user = userEvent.setup();
-  render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
+  render(<ImportedInvestigation coordinator={coordinator} initialView="incidents" onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId }));
   const population = viewPopulationAnswer(imports.populations[0].request);
   await deliver(() => imports.populations[0].reply({ ok: true, answer: population }));

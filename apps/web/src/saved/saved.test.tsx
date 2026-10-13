@@ -7,8 +7,8 @@ import type { OpenWorkspaceRequest, WorkspaceAnswer } from "../generated/imports
 import { ImportedInvestigationCoordinator } from "../imported/coordinator";
 import { ImportedInvestigation } from "../imported/ImportedInvestigation";
 import { selectionContract } from "../map/client";
-import { healthy, scriptedClient } from "../test/answers";
-import { populationAnswer, preparationId, scriptedImportClient, sourceId, workspaceId } from "../test/imports";
+import { healthy } from "../test/answers";
+import { leaveStartToAnalyst, populationAnswer, preparationId, scriptedImportClient, sourceId, workspaceId } from "../test/imports";
 import {
   firstRevisionId,
   investigationId,
@@ -50,7 +50,7 @@ async function renderInvestigation() {
   const investigation = new ImportedInvestigationCoordinator(imports.client, selecting.client, scriptedViewClient().client);
   const coordinator = new SavingCoordinator(saving.client, investigation);
   const user = userEvent.setup();
-  render(<ImportedInvestigation coordinator={investigation} saving={coordinator} onShowData={() => undefined} />);
+  render(<ImportedInvestigation coordinator={investigation} saving={coordinator} initialView="incidents" onShowData={() => undefined} />);
   act(() => investigation.open({ workspaceId, preparationId }));
   const population = imports.populations[0];
   await deliver(() => population.reply({ ok: true, answer: populationAnswer(population.request) }));
@@ -214,7 +214,6 @@ async function renderSavedArea() {
   const user = userEvent.setup();
   render(
     <App
-      client={scriptedClient().client}
       importClient={imports.client}
       selectionClient={selecting.client}
       viewClient={scriptedViewClient().client}
@@ -222,6 +221,7 @@ async function renderSavedArea() {
       checkHealth={healthy}
     />,
   );
+  await deliver(() => leaveStartToAnalyst(imports));
   await user.click(screen.getByRole("button", { name: "Saved" }));
   expect(screen.getByText("Open a workspace in the Data area to see the investigations saved in it.")).toBeTruthy();
   await user.click(within(screen.getByRole("main")).getByRole("button", { name: "Data" }));

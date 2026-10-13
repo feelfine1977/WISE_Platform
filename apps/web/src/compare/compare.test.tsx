@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import App from "../App";
 import { ImportedInvestigationCoordinator } from "../imported/coordinator";
-import { healthy, scriptedClient } from "../test/answers";
+import { healthy } from "../test/answers";
 import {
   comparedGraph,
   comparedPopulationAnswer,
@@ -361,17 +361,17 @@ describe("the Compare view", () => {
 });
 
 describe("the areas of the application", () => {
-  it("list Compare as one area beside Data and Investigations, unavailable until incidents are open", async () => {
-    const scripted = scriptedClient();
+  it("list Compare as one area beside Data and Investigations, and it says what it needs before incidents are open", async () => {
     const user = userEvent.setup();
-    render(<App client={scripted.client} checkHealth={healthy} comparisonClient={scriptedComparisonClient().client} />);
+    render(<App importClient={scriptedImportClient().client} checkHealth={healthy} comparisonClient={scriptedComparisonClient().client} />);
     const areas = screen.getByRole("navigation", { name: "Areas" });
     expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare", "Expectation", "Saved"]);
     const compare = within(areas).getByRole("button", { name: "Compare" });
-    expect(compare.getAttribute("aria-disabled")).toBe("true");
+    expect(compare.getAttribute("aria-disabled")).toBeNull();
     await user.click(compare);
-    expect(compare.getAttribute("aria-current")).toBeNull();
-    expect(within(areas).getByRole("button", { name: "Investigations" }).getAttribute("aria-current")).toBe("page");
-    expect(screen.queryByRole("heading", { name: "Compare" })).toBeNull();
+    expect(compare.getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("heading", { name: "Compare" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Go to the Data area" }));
+    expect(within(areas).getByRole("button", { name: "Data" }).getAttribute("aria-current")).toBe("page");
   });
 });

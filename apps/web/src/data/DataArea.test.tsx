@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import App from "../App";
-import { healthy, scriptedClient } from "../test/answers";
+import { healthy } from "../test/answers";
 import { everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer } from "../test/selections";
 import type { CsvInspectionAnswer, InspectCsvRequest } from "../generated/imports";
 import {
@@ -12,6 +12,7 @@ import {
   importRefusal,
   inspectionAnswer,
   interpretationAnswer,
+  leaveStartToAnalyst,
   narrowInspectionAnswer,
   populationAnswer,
   proposalAnswer,
@@ -31,13 +32,11 @@ const FOLDER = "C:\\Users\\Analyst\\Investigations";
 const BYTES = new Uint8Array([0x56, 0x6f, 0x72, 0x67, 0xe4, 0x6e, 0x67, 0x65, 0x3b, 0x0d, 0x0a]);
 
 function renderApp() {
-  const examples = scriptedClient();
   const imports = scriptedImportClient();
   const selecting = scriptedSelectionClient();
   const user = userEvent.setup();
   render(
     <App
-      client={examples.client}
       importClient={imports.client}
       selectionClient={selecting.client}
       viewClient={scriptedViewClient().client}
@@ -56,6 +55,7 @@ async function deliver(action: () => void) {
 }
 
 async function openWorkspace(app: Screen, earlier = false) {
+  await deliver(() => leaveStartToAnalyst(app.imports));
   await app.user.click(screen.getByRole("button", { name: "Data" }));
   await app.user.clear(screen.getByLabelText("Folder path"));
   await app.user.type(screen.getByLabelText("Folder path"), FOLDER);
@@ -101,6 +101,7 @@ function figure(label: string): string {
 describe("the Data area", () => {
   it("shows a refused folder with what to do, then offers what an earlier run stored", async () => {
     const app = renderApp();
+    await deliver(() => leaveStartToAnalyst(app.imports));
     await app.user.click(screen.getByRole("button", { name: "Data" }));
     await app.user.type(screen.getByLabelText("Folder path"), "C:\\Users\\Analyst\\Documents");
     await app.user.click(screen.getByRole("button", { name: "Open workspace" }));
@@ -304,6 +305,10 @@ describe("the Data area", () => {
     await deliver(() => population.reply({ ok: true, answer: populationAnswer(population.request) }));
 
     expect(screen.getByRole("heading", { name: "Vorgänge.csv" })).toBeTruthy();
+    // The incidents open on their process map; the table is the second view.
+    expect(screen.getByRole("button", { name: "Map" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("heading", { name: "Map of the kept incidents" })).toBeTruthy();
+    await app.user.click(screen.getByRole("button", { name: "Incidents" }));
     const facts = screen.getByLabelText("Population");
     expect(facts.textContent).toBe("Parent2 incidents · 3 recordsKeptbeing selectedRows outside every incident1 rowRecords without activity label0 recordsRevision1");
     const selection = app.selecting.selections[0];

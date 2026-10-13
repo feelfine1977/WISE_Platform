@@ -10,11 +10,10 @@ import { Working } from "./Working";
 interface DataAreaProps {
   coordinator: DataCoordinator;
   onOpenIncidents: (target: PreparationTarget) => void;
-  onOpenExample: () => void;
 }
 
-/** Choosing a workspace, adding a source and confirming how it is read. */
-export function DataArea({ coordinator, onOpenIncidents, onOpenExample }: DataAreaProps) {
+/** Adding a source and confirming how it is read, in the workspace in use. */
+export function DataArea({ coordinator, onOpenIncidents }: DataAreaProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   return (
     <main className="data-area" aria-labelledby="data-title">
@@ -22,12 +21,10 @@ export function DataArea({ coordinator, onOpenIncidents, onOpenExample }: DataAr
         <h2 id="data-title" className="breadcrumb-current">
           Data
         </h2>
-        <p className="muted">
-          Your files stay on this computer: they go only to the local application and into the workspace folder you choose.
-        </p>
+        <p className="muted">Your files stay on this computer: they go only to the local application and into its workspace folder.</p>
       </div>
       <div className="data-steps">
-        <WorkspaceStep state={state} coordinator={coordinator} onOpenExample={onOpenExample} />
+        <WorkspaceStep state={state} coordinator={coordinator} />
         {state.workspace.phase === "open" && (
           <SourceStep state={state} coordinator={coordinator} onOpenIncidents={onOpenIncidents} />
         )}
@@ -39,22 +36,23 @@ export function DataArea({ coordinator, onOpenIncidents, onOpenExample }: DataAr
   );
 }
 
-function WorkspaceStep({ state, coordinator, onOpenExample }: { state: DataState; coordinator: DataCoordinator; onOpenExample: () => void }) {
+/**
+ * The workspace in use. The application opens a folder of its own at its start, so an open
+ * workspace is one line; choosing another folder is offered behind it, and in full only while no
+ * workspace is open.
+ */
+function WorkspaceStep({ state, coordinator }: { state: DataState; coordinator: DataCoordinator }) {
   const { workspace } = state;
-  const [path, setPath] = useState(workspace.phase === "opening" || workspace.phase === "failed" ? workspace.path : workspace.phase === "open" ? workspace.answer.path : "");
+  const [path, setPath] = useState(workspace.phase === "opening" || workspace.phase === "failed" ? (workspace.path ?? "") : "");
   const inputId = useId();
   function submit(event: FormEvent) {
     event.preventDefault();
     if (path.trim() !== "") coordinator.openWorkspace(path.trim());
   }
-  return (
-    <section className="step" aria-labelledby="workspace-title">
-      <h3 id="workspace-title" className="step-title">
-        Workspace
-      </h3>
+  const otherFolder = (
+    <>
       <p className="muted">
-        A folder outside the program where the application keeps your sources and how they are read. Choose an empty folder for a new
-        workspace, or one you used before.
+        Give the full path of an empty folder for a new workspace, or of a folder you used before. It must lie outside the program.
       </p>
       <form className="inline-form" onSubmit={submit}>
         <label htmlFor={inputId} className="label-text">
@@ -67,32 +65,66 @@ function WorkspaceStep({ state, coordinator, onOpenExample }: { state: DataState
           value={path}
           spellCheck={false}
           autoComplete="off"
-          placeholder="D:\Investigations\Incidents"
+          placeholder="D:\\Investigations\\Incidents"
           onChange={(event) => setPath(event.target.value)}
         />
-        <button type="submit" className="primary" disabled={path.trim() === ""}>
+        <button type="submit" disabled={path.trim() === ""}>
           Open workspace
         </button>
       </form>
+    </>
+  );
+  const ownFolder = (
+    <div>
+      <button type="button" onClick={() => coordinator.openDefaultWorkspace()}>
+        Use the application's own folder
+      </button>
+    </div>
+  );
+  if (workspace.phase === "open") {
+    return (
+      <section className="workspace-line" aria-labelledby="workspace-title">
+        <h3 id="workspace-title" className="label-text">
+          Workspace
+        </h3>
+        <span className="identifier">{workspace.answer.path}</span>
+        <span className="muted">{workspace.own ? "The application's own folder; your sources and how they are read are kept here." : "A folder you chose."}</span>
+        <details>
+          <summary>Use another folder</summary>
+          {otherFolder}
+          {!workspace.own && ownFolder}
+        </details>
+      </section>
+    );
+  }
+  return (
+    <section className="step" aria-labelledby="workspace-title">
+      <h3 id="workspace-title" className="step-title">
+        Workspace
+      </h3>
+      <p className="muted">
+        The application keeps your sources and how they are read in a folder of its own, which it creates when it is not there yet.
+      </p>
       {workspace.phase === "opening" && (
-        <Working label={`Opening ${workspace.path}…`} startedAt={workspace.startedAt} onStop={() => coordinator.stopWaiting()} />
+        <Working
+          label={workspace.path === null ? "Opening the application's own folder…" : `Opening ${workspace.path}…`}
+          startedAt={workspace.startedAt}
+          onStop={() => coordinator.stopWaiting()}
+        />
       )}
       {workspace.phase === "failed" && (
-        <ImportProblemNotice title="This folder cannot be used as a workspace" problem={workspace.problem} onRetry={() => coordinator.openWorkspace(workspace.path)} />
+        <ImportProblemNotice
+          title={workspace.path === null ? "The application's own folder cannot be used as a workspace" : "This folder cannot be used as a workspace"}
+          problem={workspace.problem}
+          onRetry={() => (workspace.path === null ? coordinator.openDefaultWorkspace() : coordinator.openWorkspace(workspace.path))}
+        />
       )}
-      {workspace.phase === "open" && (
-        <p className="settled">
-          <span className="label-text">Open</span> <span className="identifier">{workspace.answer.path}</span>
-        </p>
-      )}
-      {workspace.phase !== "open" && (
-        <p className="muted">
-          Or{" "}
-          <button type="button" className="link-button" onClick={onOpenExample}>
-            explore a synthetic example
-          </button>{" "}
-          without a workspace.
-        </p>
+      {(workspace.phase === "none" || (workspace.phase === "failed" && workspace.path !== null)) && ownFolder}
+      {workspace.phase !== "opening" && (
+        <div className="other-folder">
+          <h4 className="label-text">Or use another folder</h4>
+          {otherFolder}
+        </div>
       )}
     </section>
   );

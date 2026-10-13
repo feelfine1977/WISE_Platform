@@ -19,7 +19,7 @@ function renderInvestigation() {
   const selecting = scriptedSelectionClient();
   const coordinator = new ImportedInvestigationCoordinator(scripted.client, selecting.client, scriptedViewClient().client);
   const user = userEvent.setup();
-  render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
+  render(<ImportedInvestigation coordinator={coordinator} initialView="incidents" onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId }));
   return { ...scripted, selecting, coordinator, user };
 }
@@ -54,9 +54,9 @@ describe("the investigation of an imported preparation", () => {
     await app.user.tab();
     expect(focusedText()).toBe("Data");
     await app.user.tab();
-    expect(focusedText()).toBe("Incidents");
-    await app.user.tab();
     expect(focusedText()).toBe("Map");
+    await app.user.tab();
+    expect(focusedText()).toBe("Incidents");
     await app.user.tab();
     expect(focusedText()).toBe("INC-00000");
     await app.user.keyboard("{ArrowDown}");

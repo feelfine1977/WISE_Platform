@@ -41,7 +41,7 @@ async function showFirst() {
   const viewing = scriptedViewClient();
   const coordinator = new ImportedInvestigationCoordinator(scripted.client, selecting.client, viewing.client);
   const user = userEvent.setup();
-  render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
+  render(<ImportedInvestigation coordinator={coordinator} initialView="incidents" onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId, sourceName: "Vorgänge.csv" }));
   await deliver(() => scripted.populations[0].reply({ ok: true, answer: populationAnswer(scripted.populations[0].request) }));
   const selection = selecting.selections[0];

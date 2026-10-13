@@ -10,6 +10,7 @@ import type {
   ImportRefusal,
   InspectCsvRequest,
   InterpretationAnswer,
+  OpenDefaultWorkspaceRequest,
   OpenPopulationRequest,
   OpenWorkspaceRequest,
   SourceAnswer,
@@ -21,6 +22,7 @@ import { uniqueItemsHold, withoutUniqueItems } from "./uniqueItems";
 
 export const routes = {
   openWorkspace: "/api/workspaces/open",
+  openDefaultWorkspace: "/api/workspaces/open-default",
   sources: "/api/sources",
   inspect: "/api/sources/inspect",
   preparations: "/api/preparations",
@@ -56,6 +58,8 @@ export type ImportOutcome<T> = { ok: true; answer: T } | { ok: false; problem: I
 
 export interface ImportClient {
   openWorkspace(request: OpenWorkspaceRequest, signal: AbortSignal): Promise<ImportOutcome<WorkspaceAnswer>>;
+  /** Opens the application's own workspace folder, which the local service creates when it is not there yet. */
+  openDefaultWorkspace(request: OpenDefaultWorkspaceRequest, signal: AbortSignal): Promise<ImportOutcome<WorkspaceAnswer>>;
   /** Sends the file's bytes unchanged; the file is never read into the page. */
   uploadSource(metadata: UploadSourceMetadata, file: Blob, signal: AbortSignal): Promise<ImportOutcome<SourceAnswer>>;
   inspect(request: InspectCsvRequest, signal: AbortSignal): Promise<ImportOutcome<CsvInspectionAnswer>>;
@@ -93,6 +97,7 @@ export const importContract = {
   caseEvidenceAnswer: validator<ImportedCaseEvidenceAnswer>("ImportedCaseEvidenceAnswer"),
   refusal: validator<ImportRefusal>("ImportRefusal"),
   openWorkspaceRequest: validator<OpenWorkspaceRequest>("OpenWorkspaceRequest"),
+  openDefaultWorkspaceRequest: validator<OpenDefaultWorkspaceRequest>("OpenDefaultWorkspaceRequest"),
   uploadSourceMetadata: validator<UploadSourceMetadata>("UploadSourceMetadata"),
   inspectRequest: validator<InspectCsvRequest>("InspectCsvRequest"),
   confirmMappingRequest: validator<ConfirmMappingRequest>("ConfirmMappingRequest"),
@@ -152,6 +157,8 @@ export function uploadQuery(metadata: UploadSourceMetadata): string {
 export const httpImportClient: ImportClient = {
   openWorkspace: (request, signal) =>
     postJson(routes.openWorkspace, request, "open_workspace", importContract.workspaceAnswer, signal),
+  openDefaultWorkspace: (request, signal) =>
+    postJson(routes.openDefaultWorkspace, request, "open_default_workspace", importContract.workspaceAnswer, signal),
   uploadSource: (metadata, file, signal) =>
     send(
       `${routes.sources}?${uploadQuery(metadata)}`,

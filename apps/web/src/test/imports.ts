@@ -9,6 +9,7 @@ import type {
   InspectCsvRequest,
   InterpretationAnswer,
   InterpretationReport,
+  OpenDefaultWorkspaceRequest,
   OpenPopulationRequest,
   OpenWorkspaceRequest,
   SourceAnswer,
@@ -50,14 +51,17 @@ export const identity = {
   implementation_version: "0.1.0",
 };
 
-export function workspaceAnswer(request: OpenWorkspaceRequest, earlier = false): WorkspaceAnswer {
+/** Where the application's own workspace lies in these tests. */
+export const ownFolder = "C:\\Users\\Analyst\\AppData\\Local\\WISE\\workspace";
+
+export function workspaceAnswer(request: OpenWorkspaceRequest | OpenDefaultWorkspaceRequest, earlier = false): WorkspaceAnswer {
   return {
     schema_version: 1,
     message_type: "workspace_answer",
     request_id: request.request_id,
     query_revision: request.query_revision,
     workspace_id: workspaceId,
-    path: request.path,
+    path: "path" in request ? request.path : ownFolder,
     writable: true,
     sources: earlier ? [{ source_id: otherSourceId, filename: "Ältere Vorgänge.csv", byte_count: 2048 }] : [],
     preparations: earlier ? [{ preparation_id: earlierPreparationId, source_id: otherSourceId }] : [],
@@ -534,6 +538,14 @@ export function importRefusal(
   };
 }
 
+/**
+ * Ends the start of the application without a workspace: its own folder cannot be reached, so the
+ * analyst chooses a folder in the Data area. Deliver it inside `act`.
+ */
+export function leaveStartToAnalyst(imports: { ownWorkspaces: Call<OpenDefaultWorkspaceRequest, WorkspaceAnswer>[] }): void {
+  imports.ownWorkspaces.at(-1)?.reply({ ok: false, problem: { kind: "unreachable" } });
+}
+
 interface Call<Request, Answer> {
   request: Request;
   signal: AbortSignal;
@@ -543,6 +555,7 @@ interface Call<Request, Answer> {
 /** An import client whose replies the test delivers, one pending call at a time. */
 export function scriptedImportClient() {
   const workspaces: Call<OpenWorkspaceRequest, WorkspaceAnswer>[] = [];
+  const ownWorkspaces: Call<OpenDefaultWorkspaceRequest, WorkspaceAnswer>[] = [];
   const uploads: (Call<UploadSourceMetadata, SourceAnswer> & { file: Blob })[] = [];
   const inspections: Call<InspectCsvRequest, CsvInspectionAnswer>[] = [];
   const confirmations: Call<ConfirmMappingRequest, InterpretationAnswer>[] = [];
@@ -552,6 +565,7 @@ export function scriptedImportClient() {
   const evidence: Call<ImportedCaseEvidenceRequest, ImportedCaseEvidenceAnswer>[] = [];
   const client: ImportClient = {
     openWorkspace: (request, signal) => new Promise((reply) => workspaces.push({ request, signal, reply })),
+    openDefaultWorkspace: (request, signal) => new Promise((reply) => ownWorkspaces.push({ request, signal, reply })),
     uploadSource: (request, file, signal) => new Promise((reply) => uploads.push({ request, file, signal, reply })),
     inspect: (request, signal) => new Promise((reply) => inspections.push({ request, signal, reply })),
     confirmMapping: (request, signal) => new Promise((reply) => confirmations.push({ request, signal, reply })),
@@ -560,5 +574,5 @@ export function scriptedImportClient() {
     openPopulation: (request, signal) => new Promise((reply) => populations.push({ request, signal, reply })),
     caseEvidence: (request, signal) => new Promise((reply) => evidence.push({ request, signal, reply })),
   };
-  return { client, workspaces, uploads, inspections, confirmations, proposals, examples, populations, evidence };
+  return { client, workspaces, ownWorkspaces, uploads, inspections, confirmations, proposals, examples, populations, evidence };
 }

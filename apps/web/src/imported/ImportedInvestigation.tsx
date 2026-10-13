@@ -23,18 +23,20 @@ interface ImportedInvestigationProps {
   onShowData: () => void;
   /** Saving the question shown; without it the toolbar offers no "Save". */
   saving?: SavingCoordinator;
+  /** The view a question opens in when no saved view is restored: the process map, unless the caller asks for the table. */
+  initialView?: InvestigationView;
 }
 
 type View = InvestigationView;
 
 /**
  * The investigation of an imported preparation: its facts, the selection of whole incidents, the
- * kept incidents as a table or as a process map, and the complete history of one kept incident.
+ * kept incidents as a process map or as a table, and the complete history of one kept incident.
  */
-export function ImportedInvestigation({ coordinator, onShowData, saving }: ImportedInvestigationProps) {
+export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map" }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
-  // A reopened investigation opens in the view it was saved in.
-  const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? "incidents");
+  // A reopened investigation opens in the view it was saved in; any other question opens on its map.
+  const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? initialView);
   const [saveOpen, setSaveOpen] = useState(false);
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
@@ -164,11 +166,11 @@ export function ImportedInvestigation({ coordinator, onShowData, saving }: Impor
       {answer && (
         <div className="selection-bar">
           <div className="view-switch" role="group" aria-label="View">
-            <button type="button" aria-pressed={view === "incidents"} onClick={() => setView("incidents")}>
-              Incidents
-            </button>
             <button type="button" aria-pressed={view === "map"} onClick={() => setView("map")}>
               Map
+            </button>
+            <button type="button" aria-pressed={view === "incidents"} onClick={() => setView("incidents")}>
+              Incidents
             </button>
           </div>
           <SelectionSteps

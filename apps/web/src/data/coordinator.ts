@@ -5,6 +5,7 @@ import type {
   DialectHints,
   InspectCsvRequest,
   InterpretationAnswer,
+  OpenDefaultWorkspaceRequest,
   OpenWorkspaceRequest,
   SourceAnswer,
   StoredPreparation,
@@ -24,11 +25,15 @@ import {
   proposalRequestOf,
 } from "./interpretation";
 
+/**
+ * The workspace in use. A path of null stands for the application's own folder, which the local
+ * service names and creates; `own` says that the open workspace is that folder.
+ */
 export type WorkspaceState =
   | { phase: "none" }
-  | { phase: "opening"; path: string; startedAt: number }
-  | { phase: "open"; answer: WorkspaceAnswer }
-  | { phase: "failed"; path: string; problem: ImportProblem };
+  | { phase: "opening"; path: string | null; startedAt: number }
+  | { phase: "open"; answer: WorkspaceAnswer; own: boolean }
+  | { phase: "failed"; path: string | null; problem: ImportProblem };
 
 export type SourceState =
   | { phase: "none" }
@@ -144,8 +149,30 @@ export class DataCoordinator {
       workspace: { phase: "opening", path, startedAt: this.now().getTime() },
     });
     this.client.openWorkspace(request, signal).then(
-      (outcome) => this.receiveWorkspace(request, outcome),
-      () => this.receiveWorkspace(request, unreachable),
+      (outcome) => this.receiveWorkspace(request, path, outcome),
+      () => this.receiveWorkspace(request, path, unreachable),
+    );
+  }
+
+  /** Opens the application's own workspace folder; the local service creates it when it is not there yet. */
+  openDefaultWorkspace(): void {
+    const { requestId, revision, signal } = this.issue("workspace", ["source", "inspection", "proposal", "interpretation"]);
+    const request: OpenDefaultWorkspaceRequest = {
+      schema_version: 1,
+      message_type: "open_default_workspace_request",
+      request_id: requestId,
+      query_revision: revision,
+    };
+    this.columns = null;
+    this.proposalKey = null;
+    this.publish({
+      ...initialState,
+      revision,
+      workspace: { phase: "opening", path: null, startedAt: this.now().getTime() },
+    });
+    this.client.openDefaultWorkspace(request, signal).then(
+      (outcome) => this.receiveWorkspace(request, null, outcome),
+      () => this.receiveWorkspace(request, null, unreachable),
     );
   }
 
@@ -389,18 +416,22 @@ export class DataCoordinator {
     return true;
   }
 
-  private receiveWorkspace(request: OpenWorkspaceRequest, outcome: ImportOutcome<WorkspaceAnswer>): void {
+  private receiveWorkspace(
+    request: OpenWorkspaceRequest | OpenDefaultWorkspaceRequest,
+    path: string | null,
+    outcome: ImportOutcome<WorkspaceAnswer>,
+  ): void {
     if (!this.isCurrent("workspace", request.request_id)) return;
     const checked = outcome.ok ? checkEcho(request, outcome.answer) : checkProblem(request, outcome.problem);
     this.publish(
       checked.ok
         ? {
             ...this.state,
-            workspace: { phase: "open", answer: checked.answer },
+            workspace: { phase: "open", answer: checked.answer, own: path === null },
             sources: checked.answer.sources,
             preparations: checked.answer.preparations,
           }
-        : { ...this.state, workspace: { phase: "failed", path: request.path, problem: checked.problem } },
+        : { ...this.state, workspace: { phase: "failed", path, problem: checked.problem } },
     );
   }
 
