@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
-import dagreWorkerUrl from "wise-flow/dagre-worker.min.js?url";
-import elkWorkerUrl from "wise-flow/elk-worker.min.js?url";
 import { emptySelection, ProcessMap, type Selection } from "wise-flow/react";
 // The page has unlayered base rules, so the library's styles come unlayered too, after React Flow's.
 import "wise-flow/react-flow.css";
@@ -14,6 +12,7 @@ import type { StageDefinitions } from "../stages/definitions";
 import { StagesEditor } from "../stages/StagesEditor";
 import { type StagedReading, useStages } from "../stages/store";
 import { AboutMap } from "./AboutMap";
+import { mapArrangement, parentArrangement } from "./arrange";
 import { CANVAS_FROM, mapDetail, WHOLE_DETAIL } from "./detail";
 import { DetailStrip } from "./DetailStrip";
 import { elementOf, selectedElement, stepChoices } from "./elements";
@@ -25,8 +24,6 @@ import { askedFor, OPENING_MEASURE } from "./measures";
 import { PathsTable } from "./PathsTable";
 import { activityTimeLines, boundaryLine, flowsLine } from "./wording";
 
-/** The layout runs in the library's workers, so that the page stays responsive while it runs. */
-const workers = { elkWorkerUrl, dagreWorkerUrl };
 /** Above this many activities the map opens on the most frequent ones; its detail controls show the rest. */
 export const MANY_ACTIVITIES = 20;
 /** Above this many paths the map opens on its most frequent ones, so that the main flow can be read; its detail controls show the rest. */
@@ -74,7 +71,7 @@ const arrangements = new WeakMap<SuppliedGraph, { stages: StageDefinitions; arra
 function arrangementOf(parentGraph: SuppliedGraph, parent: FlowGraph, stages: StageDefinitions): Promise<Positions> {
   const held = arrangements.get(parentGraph);
   if (held?.stages === stages) return held.arranged;
-  const arranged = layoutUnion([parent], workers);
+  const arranged = layoutUnion([parent], parentArrangement(parent));
   arrangements.set(parentGraph, { stages, arranged });
   arranged.catch(() => arrangements.get(parentGraph)?.arranged === arranged && arrangements.delete(parentGraph));
   return arranged;
@@ -176,6 +173,8 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
    * the panel also says how many of the selected paths are drawn at the zoom, which only the map knows.
    */
   const detailShown = useMemo(() => mapDetail(graph, ranked), [graph, ranked]);
+  // Start stands first and End last on what the map draws, as they do in the arrangement of the whole parent.
+  const mapLayout = useMemo(() => mapArrangement(detailShown.drawn), [detailShown.drawn]);
   const listed = showing === "paths";
   // Over the list the controls are always above: no map is drawn there that would know more.
   const controlsAbove = listed || !detailShown.onCanvas;
@@ -302,7 +301,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
               <ProcessMap
                 graph={graph}
                 positions={positions}
-                layout={workers}
+                layout={mapLayout}
                 abstraction={ranked}
                 onAbstractionChange={changeDetail}
                 view={view}
