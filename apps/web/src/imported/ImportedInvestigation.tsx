@@ -249,13 +249,14 @@ export function ImportedInvestigation({ coordinator, onShowData, saving }: Impor
           </section>
           {answer && (
             <div className="views">
-              <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} />
+              <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} />
               <Variants
                 state={variants}
                 chosen={chosenVariant}
                 onChoose={chooseVariant}
                 onClear={() => clearVariant(false)}
                 onRetry={() => coordinator.retryVariants()}
+                waitingFor={waitingFor}
               />
             </div>
           )}
@@ -268,6 +269,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving }: Impor
             onLayout={setLayout}
             onReturn={returnToIncidents}
             onRetry={() => coordinator.retryCase()}
+            waitingFor={waitingFor}
             headingRef={inspectorHeading}
           />
         )}

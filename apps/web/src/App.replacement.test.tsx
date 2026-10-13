@@ -170,6 +170,26 @@ describe("keeping the last answer while another example is asked for", () => {
     expect(source().value).toBe("S2");
   });
 
+  it("lets the retry of a failed history wait, with the reason, while another example opens", async () => {
+    const scripted = renderScreen();
+    await deliver(() => scripted.opens[0].reply({ ok: true, answer: populationZero(scripted.opens[0].request) }));
+    await scripted.user.click(screen.getByRole("button", { name: "INC01" }));
+    await deliver(() => scripted.cases[0].reply({ ok: false, problem: { kind: "unreachable" } }));
+    await scripted.user.selectOptions(source(), "S1");
+
+    const retry = screen.getByRole("button", { name: "Try again" }) as HTMLButtonElement;
+    expect(retry.disabled).toBe(true);
+    expect(document.getElementById(retry.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      "Not available while synthetic example S1 is opening: what is shown belongs to synthetic example S0.",
+    );
+
+    await deliver(() => scripted.opens[1].reply({ ok: false, problem: { kind: "unreachable" } }));
+    const history = screen.getByRole("heading", { name: "Incident INC01" }).closest("section")!;
+    await scripted.user.click(within(history).getByRole("button", { name: "Try again" }));
+    expect(scripted.cases).toHaveLength(2);
+    expect(scripted.cases[1].request).toMatchObject({ case_id: "INC01", query_revision: 1, identity: identityZero });
+  });
+
   it("keeps an open incident history through a failed replacement and closes it on a successful one", async () => {
     const scripted = renderScreen();
     const { user } = scripted;

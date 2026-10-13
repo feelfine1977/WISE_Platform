@@ -221,6 +221,7 @@ export default function App({
               onLayout={setLayout}
               onReturn={returnToIncidents}
               onRetry={() => coordinator.retryCase()}
+              waitingFor={replacement?.phase === "running" ? waitingReason : undefined}
               headingRef={inspectorHeading}
             />
           )}

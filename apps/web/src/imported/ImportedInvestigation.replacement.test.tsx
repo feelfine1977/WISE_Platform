@@ -38,7 +38,8 @@ async function deliver(action: () => void) {
 async function showFirst() {
   const scripted = scriptedImportClient();
   const selecting = scriptedSelectionClient();
-  const coordinator = new ImportedInvestigationCoordinator(scripted.client, selecting.client, scriptedViewClient().client);
+  const viewing = scriptedViewClient();
+  const coordinator = new ImportedInvestigationCoordinator(scripted.client, selecting.client, viewing.client);
   const user = userEvent.setup();
   render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId, sourceName: "Vorgänge.csv" }));
@@ -49,7 +50,7 @@ async function showFirst() {
   await user.click(screen.getByRole("button", { name: "A-1" }));
   await deliver(() => scripted.evidence[0].reply({ ok: true, answer: evidenceAnswer(scripted.evidence[0].request) }));
   expect(history()).not.toBeNull();
-  return { ...scripted, selecting, coordinator, user };
+  return { ...scripted, selecting, viewing, coordinator, user };
 }
 
 type Shown = Awaited<ReturnType<typeof showFirst>>;
@@ -227,6 +228,27 @@ describe("keeping the investigation shown while another preparation is opened", 
     expect(stay.disabled).toBe(false);
     await app.user.click(stay);
     expect(app.coordinator.getState().selection).toMatchObject({ phase: "ready", history: { present: [] } });
+  });
+
+  it("lets the retries of a history and of the views wait, with the reason, while another preparation opens", async () => {
+    const app = await showFirst();
+    await app.user.click(screen.getByRole("button", { name: "B-2" }));
+    await deliver(() => app.evidence[1].reply({ ok: false, problem: { kind: "unreachable" } }));
+    await deliver(() => app.viewing.openings.at(-1)!.reply({ ok: false, problem: { kind: "unreachable" } }));
+    await deliver(() => app.viewing.variants.at(-1)!.reply({ ok: false, problem: { kind: "unreachable" } }));
+    const retries = () => screen.getAllByRole("button", { name: "Try again" }) as HTMLButtonElement[];
+    expect(retries()).toHaveLength(3);
+    const request = askSecond(app);
+
+    const reason = `Not available while ${askedName} is opening: what is shown belongs to ${shownName}.`;
+    for (const button of retries()) {
+      expect(button.disabled).toBe(true);
+      expect(document.getElementById(button.getAttribute("aria-describedby") ?? "")?.textContent).toBe(reason);
+    }
+
+    await deliver(() => request.reply({ ok: false, problem: { kind: "unreachable" } }));
+    // Three retries of the question shown and the retry of the failed replacement.
+    expect(retries().map((button) => button.disabled)).toEqual([false, false, false, false]);
   });
 
   it("opens a saved investigation in place of the question shown, in the view it was saved in", async () => {

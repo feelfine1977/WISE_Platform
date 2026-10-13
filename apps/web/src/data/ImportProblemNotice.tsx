@@ -6,10 +6,12 @@ interface ImportProblemNoticeProps {
   problem: ImportProblem;
   /** Offered when sending the same request again can help. */
   onRetry?: () => void;
+  /** The id of the text saying why trying again has to wait; while it is given, it waits. */
+  waitingFor?: string;
 }
 
 /** A refused or failed request: what happened, what to do about it, and a retry where it helps. */
-export function ImportProblemNotice({ title, problem, onRetry }: ImportProblemNoticeProps) {
+export function ImportProblemNotice({ title, problem, onRetry, waitingFor }: ImportProblemNoticeProps) {
   const text = describeImportProblem(problem);
   const retryable = problem.kind !== "refusal" || problem.refusal.retryable;
   return (
@@ -20,7 +22,7 @@ export function ImportProblemNotice({ title, problem, onRetry }: ImportProblemNo
         <span className="label-text">What to do</span> {text.remedy}
       </p>
       {onRetry && retryable && (
-        <button type="button" onClick={onRetry}>
+        <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={onRetry}>
           Try again
         </button>
       )}
