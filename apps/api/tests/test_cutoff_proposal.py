@@ -117,7 +117,6 @@ def test_a_workspace_not_opened_is_unavailable(client):
     refused(client.post(ROUTE, json=request), "confirm_mapping", "workspace_unavailable", "workspace_id", request)
 
 
-
 @pytest.mark.parametrize("written", ["2026-10-10T05:15:00+00:00", "2026-10-10T05:15:00.1234567Z", "2026-10-10T05:15:00"])
 def test_a_proposal_not_written_as_a_utc_instant_is_not_sent(client, workspace_id, monkeypatch, written):
     monkeypatch.setattr(imports, "_full_minute_at_or_after", lambda text: written)

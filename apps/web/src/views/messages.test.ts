@@ -51,6 +51,10 @@ describe("the messages of the opening context and the variants", () => {
     expect(populationViewMessages.variantsRequest({ ...variantsRequest, note: "extra" })).toBe(false);
     expect(populationViewMessages.variantsRequest({ ...variantsRequest, query_revision: 1.5 })).toBe(false);
     expect(populationViewMessages.variantsRequest({ ...variantsRequest, message_type: "opening_context_request" })).toBe(false);
+    // A version is three numbers in the ASCII digits 0 to 9, as the local service also requires.
+    for (const version of ["\u0661.\u0660.\u0660", "1.0.\uff10"]) {
+      expect(populationViewMessages.variantsRequest({ ...variantsRequest, identity: { ...identity, implementation_version: version } })).toBe(false);
+    }
   });
 
   it("refuse a refusal of another operation or with a code the contract does not name", () => {
