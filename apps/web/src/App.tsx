@@ -82,7 +82,7 @@ export default function App({
   const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
   const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient, selectionClient, viewClient));
   const [compareCoordinator] = useState(() => new CompareCoordinator(comparisonClient));
-  const [savingCoordinator] = useState(() => new SavingCoordinator(savingClient, importedCoordinator));
+  const [savingCoordinator] = useState(() => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator));
   const [area, setArea] = useState<Area>("example");
   const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
