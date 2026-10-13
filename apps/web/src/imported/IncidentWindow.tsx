@@ -3,7 +3,7 @@ import type { CaseId, ImportedCaseSummary } from "../generated/imports";
 
 /** Height of one table row in CSS pixels; the stylesheet gives every row exactly this height. */
 export const ROW_HEIGHT = 32;
-/** The columns of the table; a spacer cell spans them all. */
+/** The columns of the table; a spacer cell spans them all and holds an empty drawing of the height it stands for. */
 const COLUMNS = 5;
 /** Rows rendered above and below the visible ones, so that scrolling does not show empty space. */
 const OVERSCAN = 8;
@@ -165,11 +165,11 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
   const body = [];
   let next = 0;
   for (const index of indexes) {
-    if (index > next) body.push(<tr key={`gap-${next}`} className="window-spacer" aria-hidden="true"><td colSpan={COLUMNS} height={(index - next) * ROW_HEIGHT} /></tr>);
+    if (index > next) body.push(<tr key={`gap-${next}`} className="window-spacer" aria-hidden="true"><td colSpan={COLUMNS}><svg width="1" height={(index - next) * ROW_HEIGHT} /></td></tr>);
     body.push(row(index));
     next = index + 1;
   }
-  if (next < cases.length) body.push(<tr key={`gap-${next}`} className="window-spacer" aria-hidden="true"><td colSpan={COLUMNS} height={(cases.length - next) * ROW_HEIGHT} /></tr>);
+  if (next < cases.length) body.push(<tr key={`gap-${next}`} className="window-spacer" aria-hidden="true"><td colSpan={COLUMNS}><svg width="1" height={(cases.length - next) * ROW_HEIGHT} /></td></tr>);
 
   return (
     <div
