@@ -8,6 +8,7 @@ import subprocess
 import sys
 
 from jsonschema import Draft7Validator, FormatChecker
+from jsonschema.validators import validator_for
 
 from test_incident_time_contracts import ROOT, read, validator
 
@@ -19,10 +20,11 @@ def view_of(source):
     return module.generation_view(source)
 
 
-def test_only_four_array_representations_change_in_an_independent_copy():
+def test_only_four_array_representations_and_dialect_change_in_an_independent_copy():
     source = json.loads((ROOT / "contracts/import.schema.json").read_text(encoding="utf-8"))
     before = deepcopy(source)
     view = view_of(source)
+    assert view["$schema"] == "http://json-schema.org/draft-07/schema#"
     for kind in ("Utc", "Wall"):
         for size in ("Singleton", "Multirow"):
             name = f"Known{kind}{size}IncidentTime"
@@ -34,13 +36,18 @@ def test_only_four_array_representations_change_in_an_independent_copy():
             assert translated == {key: value for key, value in original.items() if key not in ("prefixItems", "items")} | {
                 "items": positions, "additionalItems": original["items"]}
             view["$defs"][name]["properties"]["records"] = deepcopy(original)
+    view["$schema"] = source["$schema"]
     assert view == source == before
 
 
 def test_source_and_tuple_view_agree_on_every_complete_corpus_body():
     source = json.loads((ROOT / "contracts/import.schema.json").read_text(encoding="utf-8"))
     check_source = validator(source)
-    check_view = Draft7Validator(view_of(source), format_checker=FormatChecker())
+    view = view_of(source)
+    view_validator = validator_for(view)
+    assert view_validator is Draft7Validator
+    view_validator.check_schema(view)
+    check_view = view_validator(view, format_checker=FormatChecker())
     for case in read("validation-corpus.json"):
         assert check_view.is_valid(case["body"]) is check_source.is_valid(case["body"]), case["name"]
 

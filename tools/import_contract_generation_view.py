@@ -15,6 +15,7 @@ def generation_view(source: dict) -> dict:
     All other source constraints stay in the view.
     """
     view = deepcopy(source)
+    view["$schema"] = "http://json-schema.org/draft-07/schema#"
     for kind in ("Utc", "Wall"):
         for size in ("Singleton", "Multirow"):
             records = view["$defs"][f"Known{kind}{size}IncidentTime"]["properties"]["records"]
