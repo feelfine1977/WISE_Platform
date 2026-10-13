@@ -80,7 +80,7 @@ describe("the expectation form", () => {
     const { user, validations } = await renderView();
     const options = within(screen.getByLabelText("Start activity")).getAllByRole("option").map((option) => option.textContent);
     expect(options).toEqual(["Choose…", "Eröffnet", "Geschlossen", "Prüfung"]);
-    expect(screen.getByText(/For the 5 incidents of every incident of Vorgänge.csv/)).toBeTruthy();
+    expect(screen.getByText(/Scored for every incident of Vorgänge.csv: 5 incidents/)).toBeTruthy();
     const check = screen.getByRole("button", { name: "Check the definition" });
     expect(check).toHaveProperty("disabled", true);
 
@@ -228,6 +228,7 @@ describe("the records of a scored incident", () => {
     expect(within(witness).queryByText("Response")).toBeNull();
     expect(witness.textContent).toContain("No record is marked as the response: the library found no “Geschlossen” at or after the start.");
     expect(witness.textContent).toContain("Measured timeno response");
+    expect(witness.textContent).toContain("The method library read the one record of this incident.");
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("region", { name: /Incident D-4/ })).toBeNull();
   });

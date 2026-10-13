@@ -65,7 +65,7 @@ function Witness({ answer, definition }: { answer: ScoreCaseWitnessAnswer; defin
       </dl>
       <p className="expectation-muted">
         {sameOrder
-          ? `The method library read all ${countOf(traced.length, "record")} of this incident, in this order.`
+          ? `The method library read ${traced.length === 1 ? "the one record" : `all ${countOf(traced.length, "record")}`} of this incident${traced.length === 1 ? "" : ", in this order"}.`
           : `The method library read ${countOf(traced.length, "record")} of this incident.`}{" "}
         {candidateLine("start", start, answer.activation_candidate_row_ids.length, verdict.measurement.activation_known)}{" "}
         {candidateLine("response", response, answer.response_candidate_row_ids.length, verdict.measurement.response_known)}

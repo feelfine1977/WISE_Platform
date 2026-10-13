@@ -54,7 +54,7 @@ export function ExpectationForm(props: ExpectationFormProps) {
         Definition
       </h3>
       <p className="expectation-muted">
-        For the {countOf(caseCount, "incident")} of {populationName}. Times are hours on the clock of the preparation.
+        Scored for {populationName}: {countOf(caseCount, "incident")}. Times are hours on the clock of the preparation.
       </p>
       <div className="expectation-fields">
         <Field id="expectation-start" label="Start activity">
