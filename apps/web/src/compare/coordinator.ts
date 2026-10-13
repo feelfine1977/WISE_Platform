@@ -265,6 +265,15 @@ export class CompareCoordinator {
     this.change({ groups, split: null, names: this.state.draft.split ? { ...defaultNames } : this.state.draft.names });
   }
 
+  /**
+   * A group of the incidents a condition keeps, chosen from the values in the data. How many they are
+   * is first known from the comparison, so nothing is noted as taken.
+   */
+  takeCondition(role: Role, steps: readonly SelectionPredicate[]): void {
+    const groups = { ...this.state.draft.groups, [role]: { definition: { kind: "predicates", predicates: [...steps] }, taken: null } };
+    this.change({ groups, split: null, names: this.state.draft.split ? { ...defaultNames } : this.state.draft.names });
+  }
+
   /** A group of exactly the listed incidents; the list says nothing about why they belong together. */
   takeIds(role: Role, caseIds: string[]): void {
     const groups = { ...this.state.draft.groups, [role]: { definition: { kind: "explicit_case_ids", case_ids: [...caseIds] }, taken: null } };

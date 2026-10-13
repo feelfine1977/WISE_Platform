@@ -100,6 +100,30 @@ describe("the Compare view", () => {
     expect(onShowData).toHaveBeenCalledOnce();
   });
 
+  it("chooses both groups from the data, the second as the opposite of the first, without leaving Compare", async () => {
+    const app = await openCompare();
+    const groupA = screen.getByRole("group", { name: "Group A" });
+    const groupB = screen.getByRole("group", { name: "Group B" });
+    expect(within(groupB).queryByRole("button", { name: "The opposite of A as B" })).toBeNull();
+
+    await app.user.selectOptions(within(groupA).getByLabelText("Incidents that"), "with");
+    const activities = within(groupA).getByLabelText("Activity for group A") as HTMLSelectElement;
+    const chosen = Array.from(activities.options).map((option) => option.value).filter((name) => name !== "")[0];
+    expect(chosen).toBeTruthy();
+    expect((within(groupA).getByRole("button", { name: "Use as A" }) as HTMLButtonElement).disabled).toBe(true);
+    await app.user.selectOptions(activities, chosen);
+    await app.user.click(within(groupA).getByRole("button", { name: "Use as A" }));
+    await app.user.click(within(screen.getByRole("group", { name: "Group B" })).getByRole("button", { name: "The opposite of A as B" }));
+
+    await app.user.click(screen.getByRole("button", { name: "Compare" }));
+    const request = app.comparisons.groups[0].request;
+    expect(comparisonContract.groupRequest(request)).toBe(true);
+    expect(request.definition).toMatchObject({
+      target: { definition: { kind: "predicates", predicates: [{ kind: "contains_activity", activity: chosen, negate: false }] } },
+      reference: { definition: { kind: "predicates", predicates: [{ kind: "contains_activity", activity: chosen, negate: true }] } },
+    });
+  });
+
   it("compares two named groups and shows every figure with its denominator and the overlap", async () => {
     const app = await openCompare();
     await selectAssigned(app);

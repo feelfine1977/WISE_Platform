@@ -102,6 +102,8 @@
 .compare-group-letter { padding: 0 var(--space-1); font-weight: var(--font-weight-strong); }
 .compare-group-definition { overflow-wrap: anywhere; }
 .compare-group > button { margin-top: var(--space-1); }
+.compare-define { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
+.compare-define select { max-width: 100%; }
 .compare-ids { display: grid; gap: var(--space-1); }
 .compare-ids label,
 .compare-ids textarea { display: block; width: 100%; }

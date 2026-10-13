@@ -107,6 +107,15 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
   const shown = comparison.phase === "idle" ? null : comparison.shown;
   const selection = shownSelection(investigated.selection);
   const activities = investigated.parentGraph?.nodes.map((node) => node.label) ?? [];
+  // The values the investigation shows for each context column: its most frequent ones, and "not recorded" where it occurs.
+  const openings: OpeningChoice[] =
+    investigated.openingContext.phase === "ready"
+      ? investigated.openingContext.answer.opening_context.columns.map((item) => ({
+          index: item.column_index,
+          name: item.column_name.trim() === "" ? `Column ${item.column_index}` : item.column_name,
+          values: item.categories.map((category) => category.value),
+        }))
+      : [];
 
   function addStep(step: SelectionPredicate) {
     if (waitingFor) return;
@@ -138,7 +147,7 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
             </button>
           </div>
           {draft.mode === "groups" ? (
-            <GroupsSetup coordinator={coordinator} draft={draft} selection={selection} />
+            <GroupsSetup coordinator={coordinator} draft={draft} selection={selection} activities={activities} openings={openings} />
           ) : (
             <PeriodsSetup coordinator={coordinator} draft={draft} clock={state.basis.clock} activities={activities} />
           )}
@@ -195,12 +204,27 @@ interface GroupsSetupProps {
   coordinator: CompareCoordinator;
   draft: CompareDraft;
   selection: ReturnType<typeof shownSelection>;
+  /** The activities of the parent's map, to choose a group by. */
+  activities: string[];
+  /** The context columns with the opening values the investigation shows, to choose a group by. */
+  openings: OpeningChoice[];
 }
 
-function GroupsSetup({ coordinator, draft, selection }: GroupsSetupProps) {
+/** A context column with the opening values that can be chosen from; null stands for "not recorded". */
+interface OpeningChoice {
+  index: number;
+  name: string;
+  values: (string | null)[];
+}
+
+function GroupsSetup({ coordinator, draft, selection, activities, openings }: GroupsSetupProps) {
   const steps = selection?.steps ?? [];
   return (
     <>
+      <p className="compare-muted">
+        Choose each group from the data: the incidents with or without an activity, or opened with a value. A group can also be the current
+        selection of the investigation, and "Kept against removed" compares the two sides of that selection in one step.
+      </p>
       <div className="compare-selection">
         <p>
           <span className="compare-label">Current selection</span>{" "}
@@ -230,7 +254,7 @@ function GroupsSetup({ coordinator, draft, selection }: GroupsSetupProps) {
       </div>
       <div className="compare-groups">
         {(["target", "reference"] as const).map((role) => (
-          <GroupSlot key={role} role={role} coordinator={coordinator} draft={draft} selection={selection} />
+          <GroupSlot key={role} role={role} coordinator={coordinator} draft={draft} selection={selection} activities={activities} openings={openings} />
         ))}
       </div>
       <button type="button" onClick={() => coordinator.swap()}>
@@ -240,12 +264,37 @@ function GroupsSetup({ coordinator, draft, selection }: GroupsSetupProps) {
   );
 }
 
-function GroupSlot({ role, coordinator, draft, selection }: { role: Role } & GroupsSetupProps) {
+type ConditionKind = "with" | "without" | "opened" | "not-opened";
+
+/** The words of a missing opening value in a list of values. */
+const NOT_RECORDED = "(not recorded)";
+
+function GroupSlot({ role, coordinator, draft, selection, activities, openings }: { role: Role } & GroupsSetupProps) {
   const letter = letters[role];
   const nameId = useId();
   const idsId = useId();
+  const kindId = useId();
   const [ids, setIds] = useState("");
+  const [kind, setKind] = useState<ConditionKind>("with");
+  const [activity, setActivity] = useState("");
+  const [column, setColumn] = useState<number | null>(null);
+  const [value, setValue] = useState<number | null>(null);
   const group = draft.groups[role];
+  const other = draft.groups[role === "target" ? "reference" : "target"];
+  const otherLetter = letters[role === "target" ? "reference" : "target"];
+  const byActivity = kind === "with" || kind === "without";
+  const opening = openings.find((item) => item.index === column) ?? null;
+  const condition: SelectionPredicate | null = byActivity
+    ? activity === ""
+      ? null
+      : { kind: "contains_activity", activity, negate: kind === "without" }
+    : opening === null || value === null || value >= opening.values.length
+      ? null
+      : { kind: "opening_attribute_equals", column_index: opening.index, value: opening.values[value], negate: kind === "not-opened", anchor_policy: contextPolicy };
+  const opposite =
+    other && other.definition.kind === "predicates" && other.definition.predicates.length === 1
+      ? ({ ...other.definition.predicates[0], negate: !other.definition.predicates[0].negate } as SelectionPredicate)
+      : null;
   const listed = [...new Set(ids.split(/[\s,;]+/).filter((id) => id !== ""))];
   let description: ReactNode;
   if (draft.split) {
@@ -276,6 +325,66 @@ function GroupSlot({ role, coordinator, draft, selection }: { role: Role } & Gro
       </label>
       <input id={nameId} type="text" value={draft.names[role]} maxLength={128} onChange={(event) => coordinator.rename(role, event.target.value)} />
       <p className="compare-group-definition">{description}</p>
+      <div className="compare-define">
+        <label htmlFor={kindId} className="compare-label">
+          Incidents that
+        </label>
+        <select id={kindId} value={kind} onChange={(event) => setKind(event.target.value as ConditionKind)}>
+          <option value="with">contain the activity</option>
+          <option value="without">do not contain the activity</option>
+          {openings.length > 0 && <option value="opened">were opened with</option>}
+          {openings.length > 0 && <option value="not-opened">were not opened with</option>}
+        </select>
+        {byActivity ? (
+          <select aria-label={`Activity for group ${letter}`} value={activity} onChange={(event) => setActivity(event.target.value)}>
+            <option value="">Choose an activity</option>
+            {activities.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <>
+            <select
+              aria-label={`Column for group ${letter}`}
+              value={column ?? ""}
+              onChange={(event) => {
+                setColumn(event.target.value === "" ? null : Number(event.target.value));
+                setValue(null);
+              }}
+            >
+              <option value="">Choose a column</option>
+              {openings.map((item) => (
+                <option key={item.index} value={item.index}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label={`Value for group ${letter}`}
+              value={value ?? ""}
+              disabled={opening === null}
+              onChange={(event) => setValue(event.target.value === "" ? null : Number(event.target.value))}
+            >
+              <option value="">Choose a value</option>
+              {(opening?.values ?? []).map((item, index) => (
+                <option key={index} value={index}>
+                  {item === null ? NOT_RECORDED : item}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+        <button type="button" className="primary" disabled={condition === null} onClick={() => condition && coordinator.takeCondition(role, [condition])}>
+          Use as {letter}
+        </button>
+        {opposite && (
+          <button type="button" onClick={() => coordinator.takeCondition(role, [opposite])}>
+            The opposite of {otherLetter} as {letter}
+          </button>
+        )}
+      </div>
       <button
         type="button"
         disabled={selection === null}
