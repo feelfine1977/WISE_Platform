@@ -129,6 +129,47 @@ describe("saving the investigation shown", () => {
     expect(app.investigation.getState().saved?.revisionId).toBe(secondRevisionId);
   });
 
+  it("does not mark another question as saved when the answer of an earlier save arrives late", async () => {
+    const app = await renderInvestigation();
+    await app.user.click(screen.getByRole("button", { name: "Save" }));
+    const form = screen.getByRole("region", { name: "Save this investigation" });
+    await app.user.click(within(form).getByRole("button", { name: "Save" }));
+    const first = app.saving.saves[0];
+
+    // Before the answer arrives, the question shown becomes another one.
+    act(() => app.investigation.addStep(contains(opened)));
+    await answerSelection(app, 1, containingOpened, ["A-1"]);
+    await deliver(() => first.reply({ ok: true, answer: saveAnswer(first.request, firstRevisionId, true) }));
+
+    expect(app.investigation.getState().saved).toBeNull();
+    expect(screen.queryByRole("region", { name: "Saved investigation" })).toBeNull();
+    expect(keptIncidents()).toEqual(["A-1"]);
+  });
+
+  it("keeps the score run a saved investigation refers to when it is saved again", async () => {
+    const app = await renderInvestigation();
+    await app.user.click(screen.getByRole("button", { name: "Save" }));
+    const form = screen.getByRole("region", { name: "Save this investigation" });
+    await app.user.click(within(form).getByRole("button", { name: "Save" }));
+    const first = app.saving.saves[0];
+    await deliver(() => first.reply({ ok: true, answer: saveAnswer(first.request, firstRevisionId, true) }));
+    const reference = {
+      score_run_id: `score-run.v1:sha256:${"1".repeat(64)}`,
+      scored_population_id: first.request.selection_identity.population_id,
+      calibration_id: `calibration.v1:sha256:${"2".repeat(64)}`,
+    };
+    const binding = app.investigation.getState().saved!;
+    act(() => app.investigation.markSaved({ ...binding, content: { ...binding.content, score_run_ref: reference } }));
+
+    await app.user.click(within(form).getByRole("button", { name: "Close" }));
+    await app.user.click(screen.getByRole("button", { name: "Save" }));
+    await app.user.click(within(screen.getByRole("region", { name: "Save a new revision" })).getByRole("button", { name: "Save revision" }));
+
+    const second = app.saving.saves[1];
+    expect(savingContract.saveRequest(second.request)).toBe(true);
+    expect(second.request.score_run_ref).toEqual(reference);
+  });
+
   it("shows a save against a revision that is no longer the latest as a conflict with what to do", async () => {
     const app = await renderInvestigation();
     await app.user.click(screen.getByRole("button", { name: "Save" }));
