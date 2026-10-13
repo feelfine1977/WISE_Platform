@@ -48,12 +48,12 @@ async function deliver(action: () => void) {
 }
 
 /** The investigation with its population and every incident selected, its map not yet shown. */
-async function renderInvestigation(parentGraph: (caseIds: string[]) => SuppliedGraph = suppliedGraph) {
+async function renderInvestigation(parentGraph: (caseIds: string[]) => SuppliedGraph = suppliedGraph, inPlace = true) {
   const imports = scriptedImportClient();
   const selecting = scriptedSelectionClient();
   const coordinator = new ImportedInvestigationCoordinator(imports.client, selecting.client);
   const user = userEvent.setup();
-  render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
+  render(<ImportedInvestigation coordinator={coordinator} mapInPlace={inPlace} onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId }));
   await deliver(() => imports.populations[0].reply({ ok: true, answer: populationAnswer(imports.populations[0].request) }));
   const app = { imports, selecting, coordinator, user, parentGraph };
@@ -161,6 +161,20 @@ describe("the map of the kept incidents", () => {
     expect(app.selecting.selections[4].request.predicates).toEqual([contains(opened), follows(opened, closed, true)]);
     await app.user.click(screen.getByRole("button", { name: "Clear all" }));
     expect(app.selecting.selections[5].request.predicates).toEqual([]);
+  });
+
+  it("arranges the map anew for what is shown unless the activities are asked to keep their places", async () => {
+    const app = await renderInvestigation(undefined, false);
+    const map = await openMap(app, [closed]);
+    // Arranged by the map itself for exactly what it shows: the whole parent's arrangement is not asked for.
+    expect(flow.layoutUnion).not.toHaveBeenCalled();
+    const keep = screen.getByRole("checkbox", { name: /Keep every activity in the place the map of all incidents gives it/ }) as HTMLInputElement;
+    expect(keep.checked).toBe(false);
+    expect(nodeOf(map, closed)).not.toBeNull();
+
+    await app.user.click(keep);
+    await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
+    void map;
   });
 
   it("offers the steps of an activity in the map's actions menu", async () => {

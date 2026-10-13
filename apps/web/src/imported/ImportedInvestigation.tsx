@@ -25,6 +25,8 @@ interface ImportedInvestigationProps {
   saving?: SavingCoordinator;
   /** The view a question opens in when no saved view is restored: the process map, unless the caller asks for the table. */
   initialView?: InvestigationView;
+  /** Whether the map starts with every activity kept in the place the whole parent's map gives it. */
+  mapInPlace?: boolean;
 }
 
 type View = InvestigationView;
@@ -33,7 +35,7 @@ type View = InvestigationView;
  * The investigation of an imported preparation: its facts, the selection of whole incidents, the
  * kept incidents as a process map or as a table, and the complete history of one kept incident.
  */
-export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map" }: ImportedInvestigationProps) {
+export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = false }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   // A reopened investigation opens in the view it was saved in; any other question opens on its map.
   const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? initialView);
@@ -193,7 +195,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 Map of the kept incidents
               </h3>
               {shown && state.parentGraph ? (
-                <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} waitingFor={waitingFor} />
+                <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} waitingFor={waitingFor} initiallyInPlace={mapInPlace} />
               ) : state.selection.phase === "failed" ? (
                 <p className="working-text">The map is shown once the incidents are selected.</p>
               ) : (

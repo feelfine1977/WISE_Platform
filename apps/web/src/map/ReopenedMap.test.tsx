@@ -157,7 +157,7 @@ async function restored(parentIds: string[], hasStep: boolean) {
     },
     view: "map",
   };
-  render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
+  render(<ImportedInvestigation coordinator={coordinator} mapInPlace onShowData={() => undefined} />);
   act(() => coordinator.restore(restoration));
   await act(async () => imports.populations[0].reply({ ok: true, answer: nineIncidents(imports.populations[0].request) }));
   await waitFor(() => expect(coordinator.getState().selection.phase).toBe("ready"));

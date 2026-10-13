@@ -35,6 +35,9 @@ export function openingDetail(activities: number, paths = 0): AbstractOptions | 
   return undefined;
 }
 
+/** The zoom from which the names on the activities are drawn. */
+const LABELS_FROM = { labels: 0.12 };
+
 /** The actions of the map library's own menu that change only the picture and that the map carries out by itself. */
 const LIBRARY_ACTIONS = new Set(["paths", "clear-focus", "collapse", "expand"]);
 
@@ -65,9 +68,11 @@ function arrangementOf(parentGraph: SuppliedGraph, parent: FlowGraph): Promise<P
   return arranged;
 }
 
-function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph): Arrangement {
+/** The arrangement of the whole parent, asked for only while the activities are to keep their places. */
+function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph, wanted: boolean): Arrangement {
   const [arranged, setArranged] = useState<{ graph: SuppliedGraph; arrangement: Arrangement } | null>(null);
   useEffect(() => {
+    if (!wanted) return;
     let current = true;
     arrangementOf(parentGraph, parent).then(
       (positions) => current && setArranged({ graph: parentGraph, arrangement: { phase: "ready", positions } }),
@@ -76,7 +81,7 @@ function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph): Ar
     return () => {
       current = false;
     };
-  }, [parentGraph, parent]);
+  }, [parentGraph, parent, wanted]);
   return arranged?.graph === parentGraph ? arranged.arrangement : { phase: "arranging" };
 }
 
@@ -87,14 +92,26 @@ interface MapViewProps {
   onStep: (step: SelectionPredicate) => void;
   /** The id of the text saying why no step can be taken now; while it is given, the map offers none. */
   waitingFor?: string;
+  /** Whether the map starts with every activity kept in the place the whole parent's map gives it. */
+  initiallyInPlace?: boolean;
 }
 
 /** The process map of the kept incidents, with the steps an activity or a path offers. */
-export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps) {
+export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false }: MapViewProps) {
   const parent = useMemo(() => toFlowGraph(parentGraph), [parentGraph]);
   const graph = useMemo(() => toFlowGraph(shown.graph), [shown.graph]);
-  const arrangement = useParentArrangement(parentGraph, parent);
-  const positions = useMemo(() => (arrangement.phase === "ready" ? filterPositions(arrangement.positions, graph) : undefined), [arrangement, graph]);
+  /**
+   * How the map is arranged. By default it is arranged anew, compactly, for exactly what is shown:
+   * the activities and paths the detail leaves out do not shape the picture. On request every
+   * activity keeps the place the whole parent's map gives it, so that selections can be compared
+   * by eye; hidden paths then still decide the places and the routes.
+   */
+  const [inPlace, setInPlace] = useState(initiallyInPlace);
+  const arrangement = useParentArrangement(parentGraph, parent, inPlace);
+  const positions = useMemo(
+    () => (inPlace && arrangement.phase === "ready" ? filterPositions(arrangement.positions, graph) : undefined),
+    [inPlace, arrangement, graph],
+  );
   const [selection, setSelection] = useState<Selection>(emptySelection);
   const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
   const least = useMemo(() => leastPaths(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
@@ -136,7 +153,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps
   return (
     <div className="map-view">
       <div className="map-frame">
-        {arrangement.phase === "arranging" ? (
+        {inPlace && arrangement.phase === "arranging" ? (
           <p className="working-text map-arranging">Arranging the map of every incident of the parent…</p>
         ) : (
           <ProcessMap
@@ -145,8 +162,13 @@ export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps
             layout={workers}
             abstraction={detail}
             onAbstractionChange={changeDetail}
-            // The map of the whole parent is fitted; a selection keeps that view, so nothing moves on screen.
-            fitView={shown.steps.length === 0}
+            // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
+            // and a selection keeps that view, so nothing moves on screen.
+            fitView={inPlace ? shown.steps.length === 0 : true}
+            // An activity moved by hand goes back when the map is arranged anew for other content.
+            layoutResetKey={inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}
+            // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
+            lod={LABELS_FROM}
             controls
             legend
             minimap
@@ -160,7 +182,17 @@ export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps
           />
         )}
       </div>
-      {arrangement.phase === "unavailable" && (
+      <label className="map-arrange">
+        <input type="checkbox" checked={inPlace} onChange={(event) => setInPlace(event.target.checked)} />
+        <span>
+          Keep every activity in the place the map of all incidents gives it.{" "}
+          <span className="muted">
+            Off, the map is arranged anew and compactly for what is shown. On, places stay the same from one selection to the next, and
+            hidden paths still shape the picture.
+          </span>
+        </span>
+      </label>
+      {inPlace && arrangement.phase === "unavailable" && (
         <p className="limitation">
           The arrangement of every incident of the parent could not be computed. The map arranges the kept incidents by itself, so activities can
           move from one selection to the next.
