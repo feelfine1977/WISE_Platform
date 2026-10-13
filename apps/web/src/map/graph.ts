@@ -1,5 +1,6 @@
 import { abstract, type AbstractOptions, type FlowEdge, type FlowGraph, type FlowNode, type ShownMeta } from "wise-flow";
 import type { SuppliedGraph } from "../generated/selection";
+import type { StageDefinitions } from "../stages/definitions";
 
 /** The id of the event every incident's flow begins at on the map. */
 export const START_ID = "event:start";
@@ -120,18 +121,20 @@ export function flowCoverage(graph: SuppliedGraph, least: number, shown?: Readon
  * So which flows are drawn is decided here: those that carry at least `least` incidents, and on
  * each side always the strongest one, of all activities and of those the detail shows (`shown`;
  * left out, every activity is shown). With the defaults every flow is drawn.
+ *
+ * Given the stages of the log, the activities are put into them (see `inStages`).
  */
-export function toFlowGraph(graph: SuppliedGraph, least = 0, shown?: ReadonlySet<string>): FlowGraph {
+export function toFlowGraph(graph: SuppliedGraph, least = 0, shown?: ReadonlySet<string>, stages?: StageDefinitions): FlowGraph {
   const activities: FlowNode[] = graph.nodes.map((node) => ({ ...node, metrics: { ...node.metrics } }));
   const paths: FlowEdge[] = graph.edges.map((edge) => ({ ...edge, metrics: { ...edge.metrics } }));
   const everyBegun = graph.nodes.filter((node) => node.metrics.starts > 0);
   const everyEnded = graph.nodes.filter((node) => node.metrics.ends > 0);
-  if (everyBegun.length === 0 && everyEnded.length === 0) return { nodes: activities, edges: paths, meta: { ...graph.meta } };
+  if (everyBegun.length === 0 && everyEnded.length === 0) return inStages({ nodes: activities, edges: paths, meta: { ...graph.meta } }, stages);
   const starts = everyBegun.reduce((sum, node) => sum + node.metrics.starts, 0);
   const ends = everyEnded.reduce((sum, node) => sum + node.metrics.ends, 0);
   const begun = drawnFlows(everyBegun, "starts", least, shown);
   const ended = drawnFlows(everyEnded, "ends", least, shown);
-  return {
+  return inStages({
     nodes: [
       { id: START_ID, kind: "event", label: "Start", tags: ["start"], metrics: { cases: starts, count: starts } },
       ...activities,
@@ -147,5 +150,52 @@ export function toFlowGraph(graph: SuppliedGraph, least = 0, shown?: ReadonlySet
       ),
     ],
     meta: { ...graph.meta },
-  };
+  }, stages);
+}
+
+/**
+ * A graph of the map with its activities in the stages defined for the log, declared as the map
+ * library reads them: a group of the kind "stage" for every stage that has an activity here, in
+ * the order of the stages, and on each such activity the id of its group. The library then draws
+ * a box around the activities of a stage, lays the stages out one after the other in their order,
+ * marks every activity with the colour it gives its stage, and offers to show a stage as one node.
+ *
+ * Only activities are put into stages, by their names: Start and End stay outside every stage. A
+ * stage without an activity here is left out, since the library would draw it as an empty node
+ * once the stages are shown as nodes. Without a stage that has an activity here the graph is
+ * given back as it is.
+ *
+ * Where the stages come from is not asked here: they are the analyst's own for now, and stages
+ * supplied with a log would be put on the map the same way.
+ */
+export function inStages(flow: FlowGraph, stages: StageDefinitions | undefined): FlowGraph {
+  if (stages === undefined || stages.stages.length === 0) return flow;
+  const defined = new Set(stages.stages.map((stage) => stage.id));
+  const used = new Set<string>();
+  const nodes = flow.nodes.map((node) => {
+    const stage = node.kind === "activity" ? stages.assigned.get(node.label) : undefined;
+    if (stage === undefined || !defined.has(stage)) return node;
+    used.add(stage);
+    return { ...node, group: stage };
+  });
+  if (used.size === 0) return flow;
+  const groups = stages.stages.filter((stage) => used.has(stage.id)).map((stage) => ({ id: stage.id, kind: "stage" as const, label: stage.name }));
+  return { ...flow, nodes, groups };
+}
+
+/**
+ * Whether the detail has the map library show a stage as one node. Such a node takes over the
+ * flows of its activities and adds up their counts, so no flow of them may be left out then.
+ */
+export function showsStageNodes(detail: AbstractOptions | undefined): boolean {
+  const shown = detail?.collapse;
+  return shown === "all" || (Array.isArray(shown) && shown.length > 0);
+}
+
+/**
+ * The ids of every stage of the log in their order. The map library colours the stages by this
+ * list, so that a stage keeps its colour whichever stages have an activity on a map.
+ */
+export function stageOrder(stages: StageDefinitions): string[] {
+  return stages.stages.map((stage) => stage.id);
 }
