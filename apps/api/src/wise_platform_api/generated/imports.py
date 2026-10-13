@@ -11,6 +11,7 @@ from pydantic import (
     ConfigDict,
     Field,
     RootModel,
+    confloat,
     conint,
     constr,
 )
@@ -627,25 +628,6 @@ class ImportedCaseEvidenceRequest(BaseModel):
     case_id: CaseId
 
 
-class ImportedCaseEvidenceAnswer(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    message_type: Literal['imported_case_evidence_answer']
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    identity: AnswerIdentity
-    case_id: CaseId
-    coverage: Coverage
-    columns: list[Column]
-    sequence_evaluable: bool
-    records: list[ImportedSourceRecord] = Field(..., min_length=1)
-    mapped_row_ids: list[RowId]
-    omitted_activity_row_ids: list[RowId]
-
-
 class ImportRefusal(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -828,6 +810,203 @@ class OpenDefaultWorkspaceRequest(BaseModel):
     message_type: Literal['open_default_workspace_request']
     request_id: RequestId
     query_revision: QueryRevision
+
+
+class MaximumRawGapWitness(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    from_row_id: RowId
+    to_row_id: RowId
+    from_activity: constr(min_length=1) | None
+    to_activity: constr(min_length=1) | None
+    from_offset_hours: confloat(ge=0.0)
+    share_of_observed_span: confloat(ge=0.0, le=1.0) | None
+    share_unavailable_reason: Literal['zero_observed_span'] | None
+
+
+class AvailableWallCaseTimeSummary(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['available']
+    timestamp_kind: Literal['wall_clock']
+    first_recorded_timestamp: LocalTimestamp
+    last_recorded_timestamp: LocalTimestamp
+    first_recorded_activity: constr(min_length=1) | None
+    last_recorded_activity: constr(min_length=1) | None
+    observed_span_hours: confloat(ge=0.0)
+    observed_span_unavailable_reason: None
+    maximum_adjacent_raw_gap_hours: confloat(ge=0.0) | None
+    maximum_adjacent_raw_gap_unavailable_reason: (
+        Literal['fewer_than_two_records'] | None
+    )
+    maximum_gap_witness: MaximumRawGapWitness | None
+    usable_gap_count: conint(ge=0, le=9007199254740991)
+    tied_timestamp_group_count: conint(ge=0, le=9007199254740991)
+
+
+class UnavailableCaseTimeSummary(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['unavailable']
+    reason: Literal['order_unknown']
+    unavailable_timestamp_record_count: conint(ge=0, le=9007199254740991)
+    first_recorded_timestamp: None
+    last_recorded_timestamp: None
+    first_recorded_activity: None
+    last_recorded_activity: None
+    observed_span_hours: None
+    observed_span_unavailable_reason: Literal['order_unknown']
+    maximum_adjacent_raw_gap_hours: None
+    maximum_adjacent_raw_gap_unavailable_reason: Literal['order_unknown']
+    maximum_gap_witness: None
+    usable_gap_count: Literal[0]
+    tied_timestamp_group_count: None
+
+
+class ExactDurationMicroseconds(
+    RootModel[
+        constr(
+            pattern=r'^(?:0|(?:[1-9][0-9]{0,16}|[1-2][0-9]{17}|30[0-9]{16}|31[0-4][0-9]{15}|315[0-4][0-9]{14}|3155[0-2][0-9]{13}|31553[0-6][0-9]{12}|315537[0-7][0-9]{11}|3155378[0-8][0-9]{10}|31553789[0-6][0-9]{9}|315537897[0-4][0-9]{8}|3155378975[0-8][0-9]{7}|31553789759[0-8][0-9]{6}|315537897599[0-8][0-9]{5}|3155378975999[0-8][0-9]{4}|31553789759999[0-8][0-9]{3}|315537897599999[0-8][0-9]{2}|3155378975999999[0-8][0-9]{1}|31553789759999999[0-8]|315537897599999999))$'
+        )
+    ]
+):
+    root: constr(
+        pattern=r'^(?:0|(?:[1-9][0-9]{0,16}|[1-2][0-9]{17}|30[0-9]{16}|31[0-4][0-9]{15}|315[0-4][0-9]{14}|3155[0-2][0-9]{13}|31553[0-6][0-9]{12}|315537[0-7][0-9]{11}|3155378[0-8][0-9]{10}|31553789[0-6][0-9]{9}|315537897[0-4][0-9]{8}|3155378975[0-8][0-9]{7}|31553789759[0-8][0-9]{6}|315537897599[0-8][0-9]{5}|3155378975999[0-8][0-9]{4}|31553789759999[0-8][0-9]{3}|315537897599999[0-8][0-9]{2}|3155378975999999[0-8][0-9]{1}|31553789759999999[0-8]|315537897599999999))$'
+    ) = Field(
+        ...,
+        description='Canonical ASCII decimal whole string in the inclusive range 0..315537897599999999 microseconds. The alphabet rejection also closes end-anchor trailing-linefeed differences across regex engines.',
+        title='ExactDurationMicroseconds',
+    )
+
+
+class ExactClockMicroseconds(
+    RootModel[
+        constr(
+            pattern=r'^(?:0|(?:[1-9][0-9]{0,16}|1[0-9]{17}|2[0-4][0-9]{16}|25[0-2][0-9]{15}|253[0-3][0-9]{14}|25340[0-1][0-9]{12}|253402[0-2][0-9]{11}|253402300[0-6][0-9]{8}|2534023007[0-8][0-9]{7}|25340230079[0-8][0-9]{6}|253402300799[0-8][0-9]{5}|2534023007999[0-8][0-9]{4}|25340230079999[0-8][0-9]{3}|253402300799999[0-8][0-9]{2}|2534023007999999[0-8][0-9]{1}|25340230079999999[0-8]|253402300799999999)|-(?:[1-9][0-9]{0,15}|[1-5][0-9]{16}|6[0-1][0-9]{15}|620[0-9]{14}|621[0-2][0-9]{13}|6213[0-4][0-9]{12}|62135[0-4][0-9]{11}|621355[0-8][0-9]{10}|6213559[0-5][0-9]{9}|62135596[0-7][0-9]{8}|62135596800000000))$'
+        )
+    ]
+):
+    root: constr(
+        pattern=r'^(?:0|(?:[1-9][0-9]{0,16}|1[0-9]{17}|2[0-4][0-9]{16}|25[0-2][0-9]{15}|253[0-3][0-9]{14}|25340[0-1][0-9]{12}|253402[0-2][0-9]{11}|253402300[0-6][0-9]{8}|2534023007[0-8][0-9]{7}|25340230079[0-8][0-9]{6}|253402300799[0-8][0-9]{5}|2534023007999[0-8][0-9]{4}|25340230079999[0-8][0-9]{3}|253402300799999[0-8][0-9]{2}|2534023007999999[0-8][0-9]{1}|25340230079999999[0-8]|253402300799999999)|-(?:[1-9][0-9]{0,15}|[1-5][0-9]{16}|6[0-1][0-9]{15}|620[0-9]{14}|621[0-2][0-9]{13}|6213[0-4][0-9]{12}|62135[0-4][0-9]{11}|621355[0-8][0-9]{10}|6213559[0-5][0-9]{9}|62135596[0-7][0-9]{8}|62135596800000000))$'
+    ) = Field(
+        ...,
+        description='Canonical ASCII signed decimal whole string in the inclusive range -62135596800000000..253402300799999999; native microseconds since 1970-01-01 on the declared UTC or wall clock. Calendar validity and correspondence to the timestamp key remain semantic requirements.',
+        title='ExactClockMicroseconds',
+    )
+
+
+class AvailableRawRecordGap(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['available']
+    from_row_id: RowId
+    microseconds: ExactDurationMicroseconds
+    hours: confloat(ge=0.0)
+
+
+class FirstRawRecordGap(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['unavailable']
+    reason: Literal['first_record']
+    from_row_id: None
+    microseconds: None
+    hours: None
+
+
+class UnknownOrderRawRecordGap(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['unavailable']
+    reason: Literal['order_unknown']
+    from_row_id: None
+    microseconds: None
+    hours: None
+
+
+class KnownOrderRawGap(RootModel[AvailableRawRecordGap | FirstRawRecordGap]):
+    root: AvailableRawRecordGap | FirstRawRecordGap = Field(
+        ..., title='KnownOrderRawGap'
+    )
+
+
+class UnknownOrderUnusableRecordTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    row_id: RowId
+    timestamp_key: None
+    clock_microseconds: None
+    offset_from_first_record_microseconds: None
+    gap_before: UnknownOrderRawRecordGap
+
+
+class ExactPositiveDurationMicroseconds(BaseModel):
+    pass
+
+
+class IncidentUtcTimestampKey(RootModel[AwareDatetime]):
+    root: AwareDatetime = Field(
+        ...,
+        description='Canonical ASCII timestamp in normalized calendar years 0001..9999. A calendar-aware producer guard rejects invalid dates, invalid times, trailing data, and a clock inconsistent with this branch.',
+        title='UtcInstant',
+    )
+
+
+class MaximumAdjacentRawGapHours(RootModel[confloat(ge=0.0)]):
+    root: confloat(ge=0.0)
+
+
+class MaximumAdjacentRawGapHours1(RootModel[None]):
+    root: None
+
+
+class IncidentWallTimestampKey(
+    RootModel[constr(pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?$')]
+):
+    root: constr(pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?$') = (
+        Field(
+            ...,
+            description='Canonical ASCII timestamp in normalized calendar years 0001..9999. A calendar-aware producer guard rejects invalid dates, invalid times, trailing data, and a clock inconsistent with this branch.',
+            title='LocalTimestamp',
+        )
+    )
+
+
+class Summary2(AvailableWallCaseTimeSummary):
+    maximum_adjacent_raw_gap_hours: confloat(ge=0.0) | None
+    maximum_adjacent_raw_gap_unavailable_reason: (
+        Literal['fewer_than_two_records'] | None
+    )
+    maximum_gap_witness: MaximumRawGapWitness | None
+    usable_gap_count: Literal[0]
+    observed_span_hours: Literal[0]
+    tied_timestamp_group_count: Literal[0]
+
+
+class MaximumAdjacentRawGapHours2(RootModel[confloat(ge=0.0)]):
+    root: confloat(ge=0.0)
+
+
+class MaximumAdjacentRawGapHours3(RootModel[None]):
+    root: None
+
+
+class Summary3(AvailableWallCaseTimeSummary):
+    maximum_adjacent_raw_gap_hours: (
+        MaximumAdjacentRawGapHours2 | MaximumAdjacentRawGapHours3 | None
+    )
+    maximum_adjacent_raw_gap_unavailable_reason: (
+        Literal['fewer_than_two_records'] | None
+    )
+    maximum_gap_witness: MaximumRawGapWitness
+    usable_gap_count: conint(ge=1, le=9007199254740991)
 
 
 class ImportRowPolicy(RootModel[StrictImportRowPolicy | TolerantImportRowPolicy]):
@@ -1072,6 +1251,295 @@ class ImportedPopulationAnswer(BaseModel):
     coverage: Coverage
     unassigned_record_count: conint(ge=0)
     cases: list[ImportedCaseSummary]
+
+
+class AvailableUtcCaseTimeSummary(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['available']
+    timestamp_kind: Literal['utc_instant']
+    first_recorded_timestamp: UtcInstant
+    last_recorded_timestamp: UtcInstant
+    first_recorded_activity: constr(min_length=1) | None
+    last_recorded_activity: constr(min_length=1) | None
+    observed_span_hours: confloat(ge=0.0)
+    observed_span_unavailable_reason: None
+    maximum_adjacent_raw_gap_hours: confloat(ge=0.0) | None
+    maximum_adjacent_raw_gap_unavailable_reason: (
+        Literal['fewer_than_two_records'] | None
+    )
+    maximum_gap_witness: MaximumRawGapWitness | None
+    usable_gap_count: conint(ge=0, le=9007199254740991)
+    tied_timestamp_group_count: conint(ge=0, le=9007199254740991)
+
+
+class KnownUtcRecordTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    row_id: RowId
+    timestamp_key: IncidentUtcTimestampKey
+    clock_microseconds: ExactClockMicroseconds
+    offset_from_first_record_microseconds: ExactDurationMicroseconds
+    gap_before: KnownOrderRawGap
+
+
+class UnknownOrderUsableUtcRecordTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    row_id: RowId
+    timestamp_key: IncidentUtcTimestampKey
+    clock_microseconds: ExactClockMicroseconds
+    offset_from_first_record_microseconds: None
+    gap_before: UnknownOrderRawRecordGap
+
+
+class KnownWallRecordTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    row_id: RowId
+    timestamp_key: IncidentWallTimestampKey
+    clock_microseconds: ExactClockMicroseconds
+    offset_from_first_record_microseconds: ExactDurationMicroseconds
+    gap_before: KnownOrderRawGap
+
+
+class UnknownOrderUsableWallRecordTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    row_id: RowId
+    timestamp_key: IncidentWallTimestampKey
+    clock_microseconds: ExactClockMicroseconds
+    offset_from_first_record_microseconds: None
+    gap_before: UnknownOrderRawRecordGap
+
+
+class UnknownOrderUtcRecordTime(
+    RootModel[UnknownOrderUsableUtcRecordTime | UnknownOrderUnusableRecordTime]
+):
+    root: UnknownOrderUsableUtcRecordTime | UnknownOrderUnusableRecordTime = Field(
+        ..., title='UnknownOrderUtcRecordTime'
+    )
+
+
+class UnknownUtcIncidentTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.time_diagnostics.full_raw_declared_order.v1']
+    timestamp_kind: Literal['utc_instant']
+    duration_basis: Literal['elapsed_utc']
+    clock_limitation: None
+    summary: UnavailableCaseTimeSummary
+    observed_span_microseconds: None
+    maximum_adjacent_raw_gap_microseconds: None
+    maximum_gap_equal_count: None
+    records: list[UnknownOrderUtcRecordTime] = Field(..., min_length=1)
+
+
+class UnknownOrderWallRecordTime(
+    RootModel[UnknownOrderUsableWallRecordTime | UnknownOrderUnusableRecordTime]
+):
+    root: UnknownOrderUsableWallRecordTime | UnknownOrderUnusableRecordTime = Field(
+        ..., title='UnknownOrderWallRecordTime'
+    )
+
+
+class UnknownWallIncidentTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.time_diagnostics.full_raw_declared_order.v1']
+    timestamp_kind: Literal['wall_clock']
+    duration_basis: Literal['recorded_wall_clock']
+    clock_limitation: Literal['recorded_wall_duration_may_differ_from_physical_elapsed']
+    summary: UnavailableCaseTimeSummary
+    observed_span_microseconds: None
+    maximum_adjacent_raw_gap_microseconds: None
+    maximum_gap_equal_count: None
+    records: list[UnknownOrderWallRecordTime] = Field(..., min_length=1)
+
+
+class FirstUtcRecordTime(KnownUtcRecordTime):
+    gap_before: FirstRawRecordGap
+    offset_from_first_record_microseconds: Literal['0'] = Field(
+        ...,
+        description='Canonical ASCII decimal whole string in the inclusive range 0..315537897599999999 microseconds. The alphabet rejection also closes end-anchor trailing-linefeed differences across regex engines.',
+        title='ExactDurationMicroseconds',
+    )
+
+
+class FollowingUtcRecordTime(KnownUtcRecordTime):
+    gap_before: AvailableRawRecordGap
+
+
+class Summary(AvailableUtcCaseTimeSummary):
+    maximum_adjacent_raw_gap_hours: confloat(ge=0.0) | None
+    maximum_adjacent_raw_gap_unavailable_reason: (
+        Literal['fewer_than_two_records'] | None
+    )
+    maximum_gap_witness: MaximumRawGapWitness | None
+    usable_gap_count: Literal[0]
+    observed_span_hours: Literal[0]
+    tied_timestamp_group_count: Literal[0]
+
+
+class KnownUtcSingletonIncidentTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.time_diagnostics.full_raw_declared_order.v1']
+    timestamp_kind: Literal['utc_instant']
+    duration_basis: Literal['elapsed_utc']
+    clock_limitation: None
+    summary: Summary
+    observed_span_microseconds: Literal['0']
+    maximum_adjacent_raw_gap_microseconds: None
+    maximum_gap_equal_count: None
+    records: tuple[FirstUtcRecordTime]
+
+
+class Summary1(AvailableUtcCaseTimeSummary):
+    maximum_adjacent_raw_gap_hours: (
+        MaximumAdjacentRawGapHours | MaximumAdjacentRawGapHours1 | None
+    )
+    maximum_adjacent_raw_gap_unavailable_reason: (
+        Literal['fewer_than_two_records'] | None
+    )
+    maximum_gap_witness: MaximumRawGapWitness
+    usable_gap_count: conint(ge=1, le=9007199254740991)
+
+
+class KnownUtcMultirowIncidentTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.time_diagnostics.full_raw_declared_order.v1']
+    timestamp_kind: Literal['utc_instant']
+    duration_basis: Literal['elapsed_utc']
+    clock_limitation: None
+    summary: Summary1
+    observed_span_microseconds: ExactDurationMicroseconds
+    maximum_adjacent_raw_gap_microseconds: ExactDurationMicroseconds
+    maximum_gap_equal_count: conint(ge=1, le=9007199254740991)
+    records: list[FirstUtcRecordTime | FollowingUtcRecordTime] = Field(
+        ..., min_length=2
+    )
+
+
+class FirstWallRecordTime(KnownWallRecordTime):
+    gap_before: FirstRawRecordGap
+    offset_from_first_record_microseconds: Literal['0'] = Field(
+        ...,
+        description='Canonical ASCII decimal whole string in the inclusive range 0..315537897599999999 microseconds. The alphabet rejection also closes end-anchor trailing-linefeed differences across regex engines.',
+        title='ExactDurationMicroseconds',
+    )
+
+
+class FollowingWallRecordTime(KnownWallRecordTime):
+    gap_before: AvailableRawRecordGap
+
+
+class KnownWallSingletonIncidentTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.time_diagnostics.full_raw_declared_order.v1']
+    timestamp_kind: Literal['wall_clock']
+    duration_basis: Literal['recorded_wall_clock']
+    clock_limitation: Literal['recorded_wall_duration_may_differ_from_physical_elapsed']
+    summary: Summary2
+    observed_span_microseconds: Literal['0']
+    maximum_adjacent_raw_gap_microseconds: None
+    maximum_gap_equal_count: None
+    records: tuple[FirstWallRecordTime]
+
+
+class KnownWallMultirowIncidentTime(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.time_diagnostics.full_raw_declared_order.v1']
+    timestamp_kind: Literal['wall_clock']
+    duration_basis: Literal['recorded_wall_clock']
+    clock_limitation: Literal['recorded_wall_duration_may_differ_from_physical_elapsed']
+    summary: Summary3
+    observed_span_microseconds: ExactDurationMicroseconds
+    maximum_adjacent_raw_gap_microseconds: ExactDurationMicroseconds
+    maximum_gap_equal_count: conint(ge=1, le=9007199254740991)
+    records: list[FirstWallRecordTime | FollowingWallRecordTime] = Field(
+        ..., min_length=2
+    )
+
+
+class CaseTimeSummary(
+    RootModel[
+        AvailableUtcCaseTimeSummary
+        | AvailableWallCaseTimeSummary
+        | UnavailableCaseTimeSummary
+    ]
+):
+    root: (
+        AvailableUtcCaseTimeSummary
+        | AvailableWallCaseTimeSummary
+        | UnavailableCaseTimeSummary
+    ) = Field(..., title='CaseTimeSummary')
+
+
+class KnownUtcIncidentTime(
+    RootModel[KnownUtcSingletonIncidentTime | KnownUtcMultirowIncidentTime]
+):
+    root: KnownUtcSingletonIncidentTime | KnownUtcMultirowIncidentTime = Field(
+        ..., title='KnownUtcIncidentTime'
+    )
+
+
+class KnownWallIncidentTime(
+    RootModel[KnownWallSingletonIncidentTime | KnownWallMultirowIncidentTime]
+):
+    root: KnownWallSingletonIncidentTime | KnownWallMultirowIncidentTime = Field(
+        ..., title='KnownWallIncidentTime'
+    )
+
+
+class IncidentTimeDiagnostics(
+    RootModel[
+        KnownUtcIncidentTime
+        | KnownWallIncidentTime
+        | UnknownUtcIncidentTime
+        | UnknownWallIncidentTime
+    ]
+):
+    root: (
+        KnownUtcIncidentTime
+        | KnownWallIncidentTime
+        | UnknownUtcIncidentTime
+        | UnknownWallIncidentTime
+    ) = Field(..., title='IncidentTimeDiagnostics')
+
+
+class ImportedCaseEvidenceAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['imported_case_evidence_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    identity: AnswerIdentity
+    case_id: CaseId
+    coverage: Coverage
+    columns: list[Column]
+    sequence_evaluable: bool
+    records: list[ImportedSourceRecord] = Field(..., min_length=1)
+    mapped_row_ids: list[RowId]
+    omitted_activity_row_ids: list[RowId]
+    incident_time: IncidentTimeDiagnostics | None = None
 
 
 class ImportMessage(

@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "message_type": "imported_case_evidence_answer",
+  "request_id": "oracle-utc_instant-HugeUnequal",
+  "query_revision": 12,
+  "workspace_id": "workspace.v1:6d60281342b54420b905927932808865",
+  "identity": {
+    "source_id": "source.v1:sha256:c4a07e57d3ecb255a235ff227353e26522593e8c895008249e476e59267e46b9",
+    "preparation_id": "preparation.v1:sha256:8184b4530c4c8204346e36b998fc1c793bc1fb3ef063c75eb8e5585605892480",
+    "representation_id": "representation.v1:sha256:3cb75f65f597f9b2778ff1f1dcd3e940b1b711f40bf5d2233f81985c186436ac",
+    "case_dictionary_id": "case-dictionary.v1:sha256:7b281e1e1047e6617e0956c0e54da405112190a9fc434a1f0f6765f16afe0b01",
+    "population_id": "population.v1:sha256:1e5c95722497f05fe1f9134f540362e8709187e1c5512bafc4a9c5313d100ade",
+    "implementation_version": "0.1.0"
+  },
+  "case_id": "HugeUnequal",
+  "coverage": {
+    "raw_record_count": 3,
+    "mapped_record_count": 2,
+    "omitted_activity_record_count": 1
+  },
+  "columns": [
+    {
+      "index": 0,
+      "name": "case_id"
+    },
+    {
+      "index": 1,
+      "name": "activity"
+    },
+    {
+      "index": 2,
+      "name": "timestamp"
+    },
+    {
+      "index": 3,
+      "name": "source_sequence"
+    }
+  ],
+  "sequence_evaluable": true,
+  "records": [
+    {
+      "row_id": "row.v1:sha256:3dc92e02aceff4eea587a3e72e25dfa01b43d59f7be8ee7c0cb42e0e9b9162fe",
+      "source_position": 22,
+      "source_sequence": 1,
+      "activity": "First",
+      "timestamp_kind": "utc_instant",
+      "utc_instant": "0001-01-01T00:00:00Z",
+      "local_timestamp": null,
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "HugeUnequal",
+        "First",
+        "0001-01-01T00:00:00Z",
+        "1"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:6a8010d4fd6637911ff1a2d68110784a2f90fed3a737df452c6c57ea6da2292f",
+      "source_position": 23,
+      "source_sequence": 2,
+      "activity": null,
+      "timestamp_kind": "utc_instant",
+      "utc_instant": "4000-01-01T00:00:00Z",
+      "local_timestamp": null,
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "HugeUnequal",
+        "",
+        "4000-01-01T00:00:00Z",
+        "2"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:d1f68a9bb7da8e4d4737eefba5a0ecfef06c86af4ba372fbaec1d13e6cd45cf9",
+      "source_position": 24,
+      "source_sequence": 3,
+      "activity": "Last",
+      "timestamp_kind": "utc_instant",
+      "utc_instant": "7998-12-31T00:00:00.000001Z",
+      "local_timestamp": null,
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "HugeUnequal",
+        "Last",
+        "7998-12-31T00:00:00.000001Z",
+        "3"
+      ]
+    }
+  ],
+  "mapped_row_ids": [
+    "row.v1:sha256:3dc92e02aceff4eea587a3e72e25dfa01b43d59f7be8ee7c0cb42e0e9b9162fe",
+    "row.v1:sha256:d1f68a9bb7da8e4d4737eefba5a0ecfef06c86af4ba372fbaec1d13e6cd45cf9"
+  ],
+  "omitted_activity_row_ids": [
+    "row.v1:sha256:6a8010d4fd6637911ff1a2d68110784a2f90fed3a737df452c6c57ea6da2292f"
+  ],
+  "incident_time": {
+    "policy_id": "incident.time_diagnostics.full_raw_declared_order.v1",
+    "timestamp_kind": "utc_instant",
+    "duration_basis": "elapsed_utc",
+    "clock_limitation": null,
+    "summary": {
+      "status": "available",
+      "timestamp_kind": "utc_instant",
+      "first_recorded_timestamp": "0001-01-01T00:00:00Z",
+      "last_recorded_timestamp": "7998-12-31T00:00:00.000001Z",
+      "first_recorded_activity": "First",
+      "last_recorded_activity": "Last",
+      "observed_span_hours": 70108992.0,
+      "observed_span_unavailable_reason": null,
+      "maximum_adjacent_raw_gap_hours": 35054496.0,
+      "maximum_adjacent_raw_gap_unavailable_reason": null,
+      "maximum_gap_witness": {
+        "from_row_id": "row.v1:sha256:6a8010d4fd6637911ff1a2d68110784a2f90fed3a737df452c6c57ea6da2292f",
+        "to_row_id": "row.v1:sha256:d1f68a9bb7da8e4d4737eefba5a0ecfef06c86af4ba372fbaec1d13e6cd45cf9",
+        "from_activity": null,
+        "to_activity": "Last",
+        "from_offset_hours": 35054496.0,
+        "share_of_observed_span": 0.5,
+        "share_unavailable_reason": null
+      },
+      "usable_gap_count": 2,
+      "tied_timestamp_group_count": 0
+    },
+    "observed_span_microseconds": "252392371200000001",
+    "maximum_adjacent_raw_gap_microseconds": "126196185600000001",
+    "maximum_gap_equal_count": 1,
+    "records": [
+      {
+        "row_id": "row.v1:sha256:3dc92e02aceff4eea587a3e72e25dfa01b43d59f7be8ee7c0cb42e0e9b9162fe",
+        "timestamp_key": "0001-01-01T00:00:00Z",
+        "clock_microseconds": "-62135596800000000",
+        "offset_from_first_record_microseconds": "0",
+        "gap_before": {
+          "status": "unavailable",
+          "reason": "first_record",
+          "from_row_id": null,
+          "microseconds": null,
+          "hours": null
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:6a8010d4fd6637911ff1a2d68110784a2f90fed3a737df452c6c57ea6da2292f",
+        "timestamp_key": "4000-01-01T00:00:00Z",
+        "clock_microseconds": "64060588800000000",
+        "offset_from_first_record_microseconds": "126196185600000000",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:3dc92e02aceff4eea587a3e72e25dfa01b43d59f7be8ee7c0cb42e0e9b9162fe",
+          "microseconds": "126196185600000000",
+          "hours": 35054496.0
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:d1f68a9bb7da8e4d4737eefba5a0ecfef06c86af4ba372fbaec1d13e6cd45cf9",
+        "timestamp_key": "7998-12-31T00:00:00.000001Z",
+        "clock_microseconds": "190256774400000001",
+        "offset_from_first_record_microseconds": "252392371200000001",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:6a8010d4fd6637911ff1a2d68110784a2f90fed3a737df452c6c57ea6da2292f",
+          "microseconds": "126196185600000001",
+          "hours": 35054496.0
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "message_type": "imported_case_evidence_answer",
+  "request_id": "oracle-wall_clock-Micro2500",
+  "query_revision": 8,
+  "workspace_id": "workspace.v1:dffd73dbb782449c9a480ff9fc25d3d7",
+  "identity": {
+    "source_id": "source.v1:sha256:c62fa1316c3404b83a62b306344e52575efd4aea574ef54d16b54e9f6ffcd78d",
+    "preparation_id": "preparation.v1:sha256:44307ca8a7885b7c924650a4c930e3c0a0735c353c4c52ec1f7c6412e7cede02",
+    "representation_id": "representation.v1:sha256:d934eebd0204d05d9e7a9bdd8c2d2e370ab18171aab534ecad093b80263901c0",
+    "case_dictionary_id": "case-dictionary.v1:sha256:285a14f9744d2c40e50cb8703deb3f69a7d028cbde4ba0e719084ef4c65a1894",
+    "population_id": "population.v1:sha256:e312b25012169ea52476073e3f8ba7dceceb75f0cacfb54e8de2e2af025f7145",
+    "implementation_version": "0.1.0"
+  },
+  "case_id": "Micro2500",
+  "coverage": {
+    "raw_record_count": 2,
+    "mapped_record_count": 2,
+    "omitted_activity_record_count": 0
+  },
+  "columns": [
+    {
+      "index": 0,
+      "name": "case_id"
+    },
+    {
+      "index": 1,
+      "name": "activity"
+    },
+    {
+      "index": 2,
+      "name": "timestamp"
+    },
+    {
+      "index": 3,
+      "name": "source_sequence"
+    }
+  ],
+  "sequence_evaluable": true,
+  "records": [
+    {
+      "row_id": "row.v1:sha256:e51f531eb4693406f524700d47c69c04aba91bc89b2f3f94ab1b930a5138cb49",
+      "source_position": 16,
+      "source_sequence": 1,
+      "activity": "First",
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "2500-01-01T00:00:00",
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "Micro2500",
+        "First",
+        "2500-01-01T00:00:00",
+        "1"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:5d116a55aa778b672ead30446f84da48fb15eda8eb204810ebb3ad2f643c008d",
+      "source_position": 17,
+      "source_sequence": 2,
+      "activity": "Next",
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "2500-01-01T00:00:00.000001",
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "Micro2500",
+        "Next",
+        "2500-01-01T00:00:00.000001",
+        "2"
+      ]
+    }
+  ],
+  "mapped_row_ids": [
+    "row.v1:sha256:e51f531eb4693406f524700d47c69c04aba91bc89b2f3f94ab1b930a5138cb49",
+    "row.v1:sha256:5d116a55aa778b672ead30446f84da48fb15eda8eb204810ebb3ad2f643c008d"
+  ],
+  "omitted_activity_row_ids": [],
+  "incident_time": {
+    "policy_id": "incident.time_diagnostics.full_raw_declared_order.v1",
+    "timestamp_kind": "wall_clock",
+    "duration_basis": "recorded_wall_clock",
+    "clock_limitation": "recorded_wall_duration_may_differ_from_physical_elapsed",
+    "summary": {
+      "status": "available",
+      "timestamp_kind": "wall_clock",
+      "first_recorded_timestamp": "2500-01-01T00:00:00",
+      "last_recorded_timestamp": "2500-01-01T00:00:00.000001",
+      "first_recorded_activity": "First",
+      "last_recorded_activity": "Next",
+      "observed_span_hours": 2.7777777777777777e-10,
+      "observed_span_unavailable_reason": null,
+      "maximum_adjacent_raw_gap_hours": 2.7777777777777777e-10,
+      "maximum_adjacent_raw_gap_unavailable_reason": null,
+      "maximum_gap_witness": {
+        "from_row_id": "row.v1:sha256:e51f531eb4693406f524700d47c69c04aba91bc89b2f3f94ab1b930a5138cb49",
+        "to_row_id": "row.v1:sha256:5d116a55aa778b672ead30446f84da48fb15eda8eb204810ebb3ad2f643c008d",
+        "from_activity": "First",
+        "to_activity": "Next",
+        "from_offset_hours": 0.0,
+        "share_of_observed_span": 1.0,
+        "share_unavailable_reason": null
+      },
+      "usable_gap_count": 1,
+      "tied_timestamp_group_count": 0
+    },
+    "observed_span_microseconds": "1",
+    "maximum_adjacent_raw_gap_microseconds": "1",
+    "maximum_gap_equal_count": 1,
+    "records": [
+      {
+        "row_id": "row.v1:sha256:e51f531eb4693406f524700d47c69c04aba91bc89b2f3f94ab1b930a5138cb49",
+        "timestamp_key": "2500-01-01T00:00:00",
+        "clock_microseconds": "16725225600000000",
+        "offset_from_first_record_microseconds": "0",
+        "gap_before": {
+          "status": "unavailable",
+          "reason": "first_record",
+          "from_row_id": null,
+          "microseconds": null,
+          "hours": null
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:5d116a55aa778b672ead30446f84da48fb15eda8eb204810ebb3ad2f643c008d",
+        "timestamp_key": "2500-01-01T00:00:00.000001",
+        "clock_microseconds": "16725225600000001",
+        "offset_from_first_record_microseconds": "1",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:e51f531eb4693406f524700d47c69c04aba91bc89b2f3f94ab1b930a5138cb49",
+          "microseconds": "1",
+          "hours": 2.7777777777777777e-10
+        }
+      }
+    ]
+  }
+}

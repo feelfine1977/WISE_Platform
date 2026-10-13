@@ -1,0 +1,1392 @@
+[
+  {
+    "fixture": "utc_instant",
+    "case_id": "A",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "Start",
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 0
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T01:00:00Z",
+        "canonical_key": "2026-10-01T01:00:00Z",
+        "clock_microseconds": "1790816400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 1
+      },
+      {
+        "activity": "End",
+        "source_timestamp": "2026-10-01T05:00:00Z",
+        "canonical_key": "2026-10-01T05:00:00Z",
+        "clock_microseconds": "1790830800000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 2
+      }
+    ],
+    "span_microseconds": "18000000000",
+    "gap_microseconds": [
+      null,
+      "3600000000",
+      "14400000000"
+    ],
+    "maximum_gap_microseconds": "14400000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      1,
+      2
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "B",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "One",
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 3
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 4
+      },
+      {
+        "activity": "Three",
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 5
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null,
+      "0",
+      "0"
+    ],
+    "maximum_gap_microseconds": "0",
+    "equal_max_count": 2,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 1
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "C",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "Only",
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 6
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "D",
+    "native_reachable": true,
+    "sequence_evaluable": false,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "One",
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 7
+      },
+      {
+        "activity": "Two",
+        "source_timestamp": "2026-10-01T01:00:00Z",
+        "canonical_key": "2026-10-01T01:00:00Z",
+        "clock_microseconds": "1790816400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 8
+      },
+      {
+        "activity": "Untimed",
+        "source_timestamp": "invalid",
+        "canonical_key": null,
+        "clock_microseconds": null,
+        "source_sequence": 3,
+        "timestamp_status": "invalid",
+        "source_position": 9
+      }
+    ],
+    "span_microseconds": null,
+    "gap_microseconds": [
+      null,
+      null,
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": null
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "Missing",
+    "native_reachable": true,
+    "sequence_evaluable": false,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "One",
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 10
+      },
+      {
+        "activity": "Untimed",
+        "source_timestamp": "",
+        "canonical_key": null,
+        "clock_microseconds": null,
+        "source_sequence": 2,
+        "timestamp_status": "missing",
+        "source_position": 11
+      }
+    ],
+    "span_microseconds": null,
+    "gap_microseconds": [
+      null,
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": null
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "RawFirstUnlabelled",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 13
+      },
+      {
+        "activity": "Later",
+        "source_timestamp": "2026-10-01T05:00:00Z",
+        "canonical_key": "2026-10-01T05:00:00Z",
+        "clock_microseconds": "1790830800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 12
+      }
+    ],
+    "span_microseconds": "18000000000",
+    "gap_microseconds": [
+      null,
+      "18000000000"
+    ],
+    "maximum_gap_microseconds": "18000000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "AllUnlabelled",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 14
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T01:00:00Z",
+        "canonical_key": "2026-10-01T01:00:00Z",
+        "clock_microseconds": "1790816400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 15
+      }
+    ],
+    "span_microseconds": "3600000000",
+    "gap_microseconds": [
+      null,
+      "3600000000"
+    ],
+    "maximum_gap_microseconds": "3600000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "Micro2500",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "2500-01-01T00:00:00Z",
+        "canonical_key": "2500-01-01T00:00:00Z",
+        "clock_microseconds": "16725225600000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 16
+      },
+      {
+        "activity": "Next",
+        "source_timestamp": "2500-01-01T00:00:00.000001Z",
+        "canonical_key": "2500-01-01T00:00:00.000001Z",
+        "clock_microseconds": "16725225600000001",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 17
+      }
+    ],
+    "span_microseconds": "1",
+    "gap_microseconds": [
+      null,
+      "1"
+    ],
+    "maximum_gap_microseconds": "1",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "Bounds",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "0001-01-01T00:00:00Z",
+        "canonical_key": "0001-01-01T00:00:00Z",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 18
+      },
+      {
+        "activity": "Last",
+        "source_timestamp": "9999-12-31T23:59:59.999999Z",
+        "canonical_key": "9999-12-31T23:59:59.999999Z",
+        "clock_microseconds": "253402300799999999",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 19
+      }
+    ],
+    "span_microseconds": "315537897599999999",
+    "gap_microseconds": [
+      null,
+      "315537897599999999"
+    ],
+    "maximum_gap_microseconds": "315537897599999999",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "MinimumSingleton",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": null,
+        "source_timestamp": "0001-01-01T00:00:00Z",
+        "canonical_key": "0001-01-01T00:00:00Z",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 20
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "MaximumSingleton",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": null,
+        "source_timestamp": "9999-12-31T23:59:59.999999Z",
+        "canonical_key": "9999-12-31T23:59:59.999999Z",
+        "clock_microseconds": "253402300799999999",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 21
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "HugeUnequal",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "0001-01-01T00:00:00Z",
+        "canonical_key": "0001-01-01T00:00:00Z",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 22
+      },
+      {
+        "activity": null,
+        "source_timestamp": "4000-01-01T00:00:00Z",
+        "canonical_key": "4000-01-01T00:00:00Z",
+        "clock_microseconds": "64060588800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 23
+      },
+      {
+        "activity": "Last",
+        "source_timestamp": "7998-12-31T00:00:00.000001Z",
+        "canonical_key": "7998-12-31T00:00:00.000001Z",
+        "clock_microseconds": "190256774400000001",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 24
+      }
+    ],
+    "span_microseconds": "252392371200000001",
+    "gap_microseconds": [
+      null,
+      "126196185600000000",
+      "126196185600000001"
+    ],
+    "maximum_gap_microseconds": "126196185600000001",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      1,
+      2
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "HugeEqual",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "0001-01-01T00:00:00Z",
+        "canonical_key": "0001-01-01T00:00:00Z",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 25
+      },
+      {
+        "activity": null,
+        "source_timestamp": "4000-01-01T00:00:00Z",
+        "canonical_key": "4000-01-01T00:00:00Z",
+        "clock_microseconds": "64060588800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 26
+      },
+      {
+        "activity": "Last",
+        "source_timestamp": "7998-12-31T00:00:00Z",
+        "canonical_key": "7998-12-31T00:00:00Z",
+        "clock_microseconds": "190256774400000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 27
+      }
+    ],
+    "span_microseconds": "252392371200000000",
+    "gap_microseconds": [
+      null,
+      "126196185600000000",
+      "126196185600000000"
+    ],
+    "maximum_gap_microseconds": "126196185600000000",
+    "equal_max_count": 2,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "TwoTieGroups",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "One",
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 28
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 29
+      },
+      {
+        "activity": "Three",
+        "source_timestamp": "2026-10-01T00:00:01Z",
+        "canonical_key": "2026-10-01T00:00:01Z",
+        "clock_microseconds": "1790812801000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 30
+      },
+      {
+        "activity": "Four",
+        "source_timestamp": "2026-10-01T00:00:01Z",
+        "canonical_key": "2026-10-01T00:00:01Z",
+        "clock_microseconds": "1790812801000000",
+        "source_sequence": 4,
+        "timestamp_status": "usable",
+        "source_position": 31
+      }
+    ],
+    "span_microseconds": "1000000",
+    "gap_microseconds": [
+      null,
+      "0",
+      "1000000",
+      "0"
+    ],
+    "maximum_gap_microseconds": "1000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      1,
+      2
+    ],
+    "tied_timestamp_group_count": 2
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "DST",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "2026-10-25T01:30:00+02:00",
+        "canonical_key": "2026-10-24T23:30:00Z",
+        "clock_microseconds": "1792884600000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 32
+      },
+      {
+        "activity": "Next",
+        "source_timestamp": "2026-10-25T03:30:00+01:00",
+        "canonical_key": "2026-10-25T02:30:00Z",
+        "clock_microseconds": "1792895400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 33
+      }
+    ],
+    "span_microseconds": "10800000000",
+    "gap_microseconds": [
+      null,
+      "10800000000"
+    ],
+    "maximum_gap_microseconds": "10800000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "EquivalentOffsets",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "2026-10-25T02:30:00+02:00",
+        "canonical_key": "2026-10-25T00:30:00Z",
+        "clock_microseconds": "1792888200000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 34
+      },
+      {
+        "activity": "Next",
+        "source_timestamp": "2026-10-25T01:30:00+01:00",
+        "canonical_key": "2026-10-25T00:30:00Z",
+        "clock_microseconds": "1792888200000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 35
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null,
+      "0"
+    ],
+    "maximum_gap_microseconds": "0",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 1
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "BelowUtcRange",
+    "native_reachable": true,
+    "sequence_evaluable": false,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "0001-01-01T00:00:00Z",
+        "canonical_key": "0001-01-01T00:00:00Z",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 36
+      },
+      {
+        "activity": "Invalid",
+        "source_timestamp": "0001-01-01T00:00:00+00:01",
+        "canonical_key": null,
+        "clock_microseconds": null,
+        "source_sequence": 1,
+        "timestamp_status": "invalid",
+        "source_position": 37
+      }
+    ],
+    "span_microseconds": null,
+    "gap_microseconds": [
+      null,
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": null
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "AboveUtcRange",
+    "native_reachable": true,
+    "sequence_evaluable": false,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "9999-12-31T23:59:59.999999Z",
+        "canonical_key": "9999-12-31T23:59:59.999999Z",
+        "clock_microseconds": "253402300799999999",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 38
+      },
+      {
+        "activity": "Invalid",
+        "source_timestamp": "9999-12-31T23:59:59.999999-00:01",
+        "canonical_key": null,
+        "clock_microseconds": null,
+        "source_sequence": 2,
+        "timestamp_status": "invalid",
+        "source_position": 39
+      }
+    ],
+    "span_microseconds": null,
+    "gap_microseconds": [
+      null,
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": null
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "A",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "Start",
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 0
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T01:00:00",
+        "canonical_key": "2026-10-01T01:00:00",
+        "clock_microseconds": "1790816400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 1
+      },
+      {
+        "activity": "End",
+        "source_timestamp": "2026-10-01T05:00:00",
+        "canonical_key": "2026-10-01T05:00:00",
+        "clock_microseconds": "1790830800000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 2
+      }
+    ],
+    "span_microseconds": "18000000000",
+    "gap_microseconds": [
+      null,
+      "3600000000",
+      "14400000000"
+    ],
+    "maximum_gap_microseconds": "14400000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      1,
+      2
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "B",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "One",
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 3
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 4
+      },
+      {
+        "activity": "Three",
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 5
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null,
+      "0",
+      "0"
+    ],
+    "maximum_gap_microseconds": "0",
+    "equal_max_count": 2,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 1
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "C",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "Only",
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 6
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "D",
+    "native_reachable": true,
+    "sequence_evaluable": false,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "One",
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 7
+      },
+      {
+        "activity": "Two",
+        "source_timestamp": "2026-10-01T01:00:00",
+        "canonical_key": "2026-10-01T01:00:00",
+        "clock_microseconds": "1790816400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 8
+      },
+      {
+        "activity": "Untimed",
+        "source_timestamp": "invalid",
+        "canonical_key": null,
+        "clock_microseconds": null,
+        "source_sequence": 3,
+        "timestamp_status": "invalid",
+        "source_position": 9
+      }
+    ],
+    "span_microseconds": null,
+    "gap_microseconds": [
+      null,
+      null,
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": null
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "Missing",
+    "native_reachable": true,
+    "sequence_evaluable": false,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "One",
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 10
+      },
+      {
+        "activity": "Untimed",
+        "source_timestamp": "",
+        "canonical_key": null,
+        "clock_microseconds": null,
+        "source_sequence": 2,
+        "timestamp_status": "missing",
+        "source_position": 11
+      }
+    ],
+    "span_microseconds": null,
+    "gap_microseconds": [
+      null,
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": null
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "RawFirstUnlabelled",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 13
+      },
+      {
+        "activity": "Later",
+        "source_timestamp": "2026-10-01T05:00:00",
+        "canonical_key": "2026-10-01T05:00:00",
+        "clock_microseconds": "1790830800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 12
+      }
+    ],
+    "span_microseconds": "18000000000",
+    "gap_microseconds": [
+      null,
+      "18000000000"
+    ],
+    "maximum_gap_microseconds": "18000000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "AllUnlabelled",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 14
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T01:00:00",
+        "canonical_key": "2026-10-01T01:00:00",
+        "clock_microseconds": "1790816400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 15
+      }
+    ],
+    "span_microseconds": "3600000000",
+    "gap_microseconds": [
+      null,
+      "3600000000"
+    ],
+    "maximum_gap_microseconds": "3600000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "Micro2500",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "2500-01-01T00:00:00",
+        "canonical_key": "2500-01-01T00:00:00",
+        "clock_microseconds": "16725225600000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 16
+      },
+      {
+        "activity": "Next",
+        "source_timestamp": "2500-01-01T00:00:00.000001",
+        "canonical_key": "2500-01-01T00:00:00.000001",
+        "clock_microseconds": "16725225600000001",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 17
+      }
+    ],
+    "span_microseconds": "1",
+    "gap_microseconds": [
+      null,
+      "1"
+    ],
+    "maximum_gap_microseconds": "1",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "Bounds",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "0001-01-01T00:00:00",
+        "canonical_key": "0001-01-01T00:00:00",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 18
+      },
+      {
+        "activity": "Last",
+        "source_timestamp": "9999-12-31T23:59:59.999999",
+        "canonical_key": "9999-12-31T23:59:59.999999",
+        "clock_microseconds": "253402300799999999",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 19
+      }
+    ],
+    "span_microseconds": "315537897599999999",
+    "gap_microseconds": [
+      null,
+      "315537897599999999"
+    ],
+    "maximum_gap_microseconds": "315537897599999999",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "MinimumSingleton",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": null,
+        "source_timestamp": "0001-01-01T00:00:00",
+        "canonical_key": "0001-01-01T00:00:00",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 20
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "MaximumSingleton",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": null,
+        "source_timestamp": "9999-12-31T23:59:59.999999",
+        "canonical_key": "9999-12-31T23:59:59.999999",
+        "clock_microseconds": "253402300799999999",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 21
+      }
+    ],
+    "span_microseconds": "0",
+    "gap_microseconds": [
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "HugeUnequal",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "0001-01-01T00:00:00",
+        "canonical_key": "0001-01-01T00:00:00",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 22
+      },
+      {
+        "activity": null,
+        "source_timestamp": "4000-01-01T00:00:00",
+        "canonical_key": "4000-01-01T00:00:00",
+        "clock_microseconds": "64060588800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 23
+      },
+      {
+        "activity": "Last",
+        "source_timestamp": "7998-12-31T00:00:00.000001",
+        "canonical_key": "7998-12-31T00:00:00.000001",
+        "clock_microseconds": "190256774400000001",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 24
+      }
+    ],
+    "span_microseconds": "252392371200000001",
+    "gap_microseconds": [
+      null,
+      "126196185600000000",
+      "126196185600000001"
+    ],
+    "maximum_gap_microseconds": "126196185600000001",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      1,
+      2
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "HugeEqual",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "0001-01-01T00:00:00",
+        "canonical_key": "0001-01-01T00:00:00",
+        "clock_microseconds": "-62135596800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 25
+      },
+      {
+        "activity": null,
+        "source_timestamp": "4000-01-01T00:00:00",
+        "canonical_key": "4000-01-01T00:00:00",
+        "clock_microseconds": "64060588800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 26
+      },
+      {
+        "activity": "Last",
+        "source_timestamp": "7998-12-31T00:00:00",
+        "canonical_key": "7998-12-31T00:00:00",
+        "clock_microseconds": "190256774400000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 27
+      }
+    ],
+    "span_microseconds": "252392371200000000",
+    "gap_microseconds": [
+      null,
+      "126196185600000000",
+      "126196185600000000"
+    ],
+    "maximum_gap_microseconds": "126196185600000000",
+    "equal_max_count": 2,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "TwoTieGroups",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "One",
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 28
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 29
+      },
+      {
+        "activity": "Three",
+        "source_timestamp": "2026-10-01T00:00:01",
+        "canonical_key": "2026-10-01T00:00:01",
+        "clock_microseconds": "1790812801000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 30
+      },
+      {
+        "activity": "Four",
+        "source_timestamp": "2026-10-01T00:00:01",
+        "canonical_key": "2026-10-01T00:00:01",
+        "clock_microseconds": "1790812801000000",
+        "source_sequence": 4,
+        "timestamp_status": "usable",
+        "source_position": 31
+      }
+    ],
+    "span_microseconds": "1000000",
+    "gap_microseconds": [
+      null,
+      "0",
+      "1000000",
+      "0"
+    ],
+    "maximum_gap_microseconds": "1000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      1,
+      2
+    ],
+    "tied_timestamp_group_count": 2
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "DST",
+    "native_reachable": true,
+    "sequence_evaluable": true,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "First",
+        "source_timestamp": "2026-10-25T01:30:00",
+        "canonical_key": "2026-10-25T01:30:00",
+        "clock_microseconds": "1792891800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 32
+      },
+      {
+        "activity": "Next",
+        "source_timestamp": "2026-10-25T03:30:00",
+        "canonical_key": "2026-10-25T03:30:00",
+        "clock_microseconds": "1792899000000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 33
+      }
+    ],
+    "span_microseconds": "7200000000",
+    "gap_microseconds": [
+      null,
+      "7200000000"
+    ],
+    "maximum_gap_microseconds": "7200000000",
+    "equal_max_count": 1,
+    "witness_indexes": [
+      0,
+      1
+    ],
+    "tied_timestamp_group_count": 0
+  },
+  {
+    "fixture": "utc_instant",
+    "case_id": "A",
+    "native_reachable": false,
+    "sequence_evaluable": false,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "Start",
+        "source_timestamp": "2026-10-01T00:00:00Z",
+        "canonical_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 0
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T01:00:00Z",
+        "canonical_key": "2026-10-01T01:00:00Z",
+        "clock_microseconds": "1790816400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 1
+      },
+      {
+        "activity": "End",
+        "source_timestamp": "2026-10-01T05:00:00Z",
+        "canonical_key": "2026-10-01T05:00:00Z",
+        "clock_microseconds": "1790830800000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 2
+      }
+    ],
+    "span_microseconds": null,
+    "gap_microseconds": [
+      null,
+      null,
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": null,
+    "protocol_name": "AllValidOrderU"
+  },
+  {
+    "fixture": "wall_clock",
+    "case_id": "A",
+    "native_reachable": false,
+    "sequence_evaluable": false,
+    "rows_in_expected_declared_order": [
+      {
+        "activity": "Start",
+        "source_timestamp": "2026-10-01T00:00:00",
+        "canonical_key": "2026-10-01T00:00:00",
+        "clock_microseconds": "1790812800000000",
+        "source_sequence": 1,
+        "timestamp_status": "usable",
+        "source_position": 0
+      },
+      {
+        "activity": null,
+        "source_timestamp": "2026-10-01T01:00:00",
+        "canonical_key": "2026-10-01T01:00:00",
+        "clock_microseconds": "1790816400000000",
+        "source_sequence": 2,
+        "timestamp_status": "usable",
+        "source_position": 1
+      },
+      {
+        "activity": "End",
+        "source_timestamp": "2026-10-01T05:00:00",
+        "canonical_key": "2026-10-01T05:00:00",
+        "clock_microseconds": "1790830800000000",
+        "source_sequence": 3,
+        "timestamp_status": "usable",
+        "source_position": 2
+      }
+    ],
+    "span_microseconds": null,
+    "gap_microseconds": [
+      null,
+      null,
+      null
+    ],
+    "maximum_gap_microseconds": null,
+    "equal_max_count": null,
+    "witness_indexes": null,
+    "tied_timestamp_group_count": null,
+    "protocol_name": "AllValidOrderU"
+  }
+]

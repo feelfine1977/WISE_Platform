@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "message_type": "imported_case_evidence_answer",
+  "request_id": "oracle-utc_instant-A",
+  "query_revision": 1,
+  "workspace_id": "workspace.v1:6d60281342b54420b905927932808865",
+  "identity": {
+    "source_id": "source.v1:sha256:c4a07e57d3ecb255a235ff227353e26522593e8c895008249e476e59267e46b9",
+    "preparation_id": "preparation.v1:sha256:8184b4530c4c8204346e36b998fc1c793bc1fb3ef063c75eb8e5585605892480",
+    "representation_id": "representation.v1:sha256:3cb75f65f597f9b2778ff1f1dcd3e940b1b711f40bf5d2233f81985c186436ac",
+    "case_dictionary_id": "case-dictionary.v1:sha256:7b281e1e1047e6617e0956c0e54da405112190a9fc434a1f0f6765f16afe0b01",
+    "population_id": "population.v1:sha256:1e5c95722497f05fe1f9134f540362e8709187e1c5512bafc4a9c5313d100ade",
+    "implementation_version": "0.1.0"
+  },
+  "case_id": "A",
+  "coverage": {
+    "raw_record_count": 3,
+    "mapped_record_count": 2,
+    "omitted_activity_record_count": 1
+  },
+  "columns": [
+    {
+      "index": 0,
+      "name": "case_id"
+    },
+    {
+      "index": 1,
+      "name": "activity"
+    },
+    {
+      "index": 2,
+      "name": "timestamp"
+    },
+    {
+      "index": 3,
+      "name": "source_sequence"
+    }
+  ],
+  "sequence_evaluable": true,
+  "records": [
+    {
+      "row_id": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+      "source_position": 0,
+      "source_sequence": 1,
+      "activity": "Start",
+      "timestamp_kind": "utc_instant",
+      "utc_instant": "2026-10-01T00:00:00Z",
+      "local_timestamp": null,
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "A",
+        "Start",
+        "2026-10-01T00:00:00Z",
+        "1"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:0d37ace9ebde5ce42888925790311c4818ccb0a9ddaa4012928ed11ad7637a0f",
+      "source_position": 1,
+      "source_sequence": 2,
+      "activity": null,
+      "timestamp_kind": "utc_instant",
+      "utc_instant": "2026-10-01T01:00:00Z",
+      "local_timestamp": null,
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "A",
+        "",
+        "2026-10-01T01:00:00Z",
+        "2"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:f951309c2fe0d7a9d5511f2f883bc5fb09b36fd01a4da970a01f8c805b63249a",
+      "source_position": 2,
+      "source_sequence": 3,
+      "activity": "End",
+      "timestamp_kind": "utc_instant",
+      "utc_instant": "2026-10-01T05:00:00Z",
+      "local_timestamp": null,
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "A",
+        "End",
+        "2026-10-01T05:00:00Z",
+        "3"
+      ]
+    }
+  ],
+  "mapped_row_ids": [
+    "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+    "row.v1:sha256:f951309c2fe0d7a9d5511f2f883bc5fb09b36fd01a4da970a01f8c805b63249a"
+  ],
+  "omitted_activity_row_ids": [
+    "row.v1:sha256:0d37ace9ebde5ce42888925790311c4818ccb0a9ddaa4012928ed11ad7637a0f"
+  ],
+  "incident_time": {
+    "policy_id": "incident.time_diagnostics.full_raw_declared_order.v1",
+    "timestamp_kind": "utc_instant",
+    "duration_basis": "elapsed_utc",
+    "clock_limitation": null,
+    "summary": {
+      "status": "available",
+      "timestamp_kind": "utc_instant",
+      "first_recorded_timestamp": "2026-10-01T00:00:00Z",
+      "last_recorded_timestamp": "2026-10-01T05:00:00Z",
+      "first_recorded_activity": "Start",
+      "last_recorded_activity": "End",
+      "observed_span_hours": 5.0,
+      "observed_span_unavailable_reason": null,
+      "maximum_adjacent_raw_gap_hours": 4.0,
+      "maximum_adjacent_raw_gap_unavailable_reason": null,
+      "maximum_gap_witness": {
+        "from_row_id": "row.v1:sha256:0d37ace9ebde5ce42888925790311c4818ccb0a9ddaa4012928ed11ad7637a0f",
+        "to_row_id": "row.v1:sha256:f951309c2fe0d7a9d5511f2f883bc5fb09b36fd01a4da970a01f8c805b63249a",
+        "from_activity": null,
+        "to_activity": "End",
+        "from_offset_hours": 1.0,
+        "share_of_observed_span": 0.8,
+        "share_unavailable_reason": null
+      },
+      "usable_gap_count": 2,
+      "tied_timestamp_group_count": 0
+    },
+    "observed_span_microseconds": "18000000000",
+    "maximum_adjacent_raw_gap_microseconds": "14400000000",
+    "maximum_gap_equal_count": 1,
+    "records": [
+      {
+        "row_id": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+        "timestamp_key": "2026-10-01T00:00:00Z",
+        "clock_microseconds": "1790812800000000",
+        "offset_from_first_record_microseconds": "0",
+        "gap_before": {
+          "status": "unavailable",
+          "reason": "first_record",
+          "from_row_id": null,
+          "microseconds": null,
+          "hours": null
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:0d37ace9ebde5ce42888925790311c4818ccb0a9ddaa4012928ed11ad7637a0f",
+        "timestamp_key": "2026-10-01T01:00:00Z",
+        "clock_microseconds": "1790816400000000",
+        "offset_from_first_record_microseconds": "3600000000",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+          "microseconds": "3600000000",
+          "hours": 1.0,
+          "reason": "guessed"
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:f951309c2fe0d7a9d5511f2f883bc5fb09b36fd01a4da970a01f8c805b63249a",
+        "timestamp_key": "2026-10-01T05:00:00Z",
+        "clock_microseconds": "1790830800000000",
+        "offset_from_first_record_microseconds": "18000000000",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:0d37ace9ebde5ce42888925790311c4818ccb0a9ddaa4012928ed11ad7637a0f",
+          "microseconds": "14400000000",
+          "hours": 4.0
+        }
+      }
+    ]
+  }
+}
