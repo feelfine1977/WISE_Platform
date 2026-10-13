@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { begins, contains, ends, follows, followingOpened, parent, suppliedGraph, support } from "../test/selections";
-import { boundaryLine, coverageRows, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
+import { activityTimeLines, boundaryLine, coverageRows, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
 
 describe("the words of a step", () => {
   it("says what each kind of step keeps", () => {
@@ -61,6 +61,32 @@ describe("the words of the map", () => {
     expect(boundaryLine("start", "Eröffnet", 12345)).toBe("12,345 incidents on the map begin with “Eröffnet”.");
     expect(boundaryLine("end", "Geschlossen", 1)).toBe("1 incident on the map ends with “Geschlossen”.");
     expect(boundaryLine("end", "Geschlossen", 2)).toBe("2 incidents on the map end with “Geschlossen”.");
+  });
+
+  it("says the two times of an activity in hours below two days and in days from there on, with their passages", () => {
+    expect(activityTimeLines({ medianPreviousHours: 1.5, usablePreviousCount: 4, medianNextHours: 60, usableNextCount: 1 })).toEqual([
+      "Time since the event before: median 1.5 hours over 4 passages into this activity.",
+      "Time until the next event: median 2.5 days over 1 passage out of this activity.",
+    ]);
+    // Up to 48 hours a time is said in hours, 48 hours are two days; every time has one decimal.
+    const before = (hours: number) => activityTimeLines({ medianPreviousHours: hours, usablePreviousCount: 12345, usableNextCount: 0 })[0];
+    expect(before(0)).toBe("Time since the event before: median 0.0 hours over 12,345 passages into this activity.");
+    expect(before(1)).toBe("Time since the event before: median 1.0 hours over 12,345 passages into this activity.");
+    expect(before(25.5)).toBe("Time since the event before: median 25.5 hours over 12,345 passages into this activity.");
+    expect(before(47.94)).toBe("Time since the event before: median 47.9 hours over 12,345 passages into this activity.");
+    expect(before(48)).toBe("Time since the event before: median 2.0 days over 12,345 passages into this activity.");
+    expect(before(1000)).toBe("Time since the event before: median 41.7 days over 12,345 passages into this activity.");
+  });
+
+  it("says that a time of an activity is not available where no path leads into or out of it", () => {
+    expect(activityTimeLines({ usablePreviousCount: 0, medianNextHours: 25.5, usableNextCount: 1 })).toEqual([
+      "Time since the event before: not available; no path leads into this activity.",
+      "Time until the next event: median 25.5 hours over 1 passage out of this activity.",
+    ]);
+    expect(activityTimeLines({ usablePreviousCount: 0, usableNextCount: 0 })).toEqual([
+      "Time since the event before: not available; no path leads into this activity.",
+      "Time until the next event: not available; no path leads out of this activity.",
+    ]);
   });
 
   it("names a lag of the recorded wall clock with its limitation", () => {

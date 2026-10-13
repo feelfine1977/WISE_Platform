@@ -12,7 +12,7 @@ import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
 import { elementOf, selectedElement, stepChoices } from "./elements";
 import { toFlowGraph } from "./graph";
-import { boundaryLine, coverageRows, mapCaption } from "./wording";
+import { activityTimeLines, boundaryLine, coverageRows, mapCaption } from "./wording";
 
 /** The layout runs in the library's workers, so that the page stays responsive while it runs. */
 const workers = { elkWorkerUrl, dagreWorkerUrl };
@@ -214,6 +214,12 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           <p className="muted">Select an activity or a path on the map, or a row of its table view, to keep or remove the incidents through it.</p>
         )}
         {element?.kind === "several" && <p className="muted">Select one activity or one path; a step is taken from one of them.</p>}
+        {element?.kind === "activity" &&
+          activityTimeLines(element.times).map((line) => (
+            <p key={line} className="muted">
+              {line}
+            </p>
+          ))}
         {element?.kind === "path" && element.bridged > 0 && (
           <p className="limitation">
             In {countOf(element.bridged, "passage")} of {countOf(element.passages, "passage")}, records without activity label lie between the two

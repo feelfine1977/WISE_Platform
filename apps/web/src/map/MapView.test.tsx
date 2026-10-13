@@ -240,6 +240,30 @@ describe("the map of the kept incidents", () => {
     expect(app.selecting.selections[1].request.predicates).toEqual([ends(closed)]);
   });
 
+  it("says the supplied times of a selected activity under the map", async () => {
+    const app = await renderInvestigation();
+    const map = await openMap(app, [opened, closed]);
+    const lines = () => Array.from(document.querySelectorAll(".map-element p")).map((line) => line.textContent);
+
+    fireEvent.click(nodeOf(map, opened));
+    expect(lines()).toEqual([
+      "Time since the event before: not available; no path leads into this activity.",
+      "Time until the next event: median 25.5 hours over 1 passage out of this activity.",
+    ]);
+    fireEvent.click(nodeOf(map, closed));
+    expect(lines()).toEqual([
+      "Time since the event before: median 25.5 hours over 1 passage into this activity.",
+      "Time until the next event: not available; no path leads out of this activity.",
+    ]);
+    // The order of B-2 is not known, so no path leads into or out of its only activity.
+    fireEvent.click(nodeOf(map, "Prüfung"));
+    expect(lines()).toEqual([
+      "Time since the event before: not available; no path leads into this activity.",
+      "Time until the next event: not available; no path leads out of this activity.",
+    ]);
+    void app;
+  });
+
   it("says what its numbers count and that the map library is unreleased", async () => {
     const app = await renderInvestigation();
     await openMap(app);

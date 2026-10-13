@@ -1,6 +1,7 @@
 import { countOf } from "../data/wording";
 import type { GraphCoverage, PopulationSupport, PredicateResult, SelectionPredicate, SelectionRefusal } from "../generated/selection";
 import type { SelectionProblem } from "./client";
+import type { ActivityTimes } from "./elements";
 
 const quoted = (text: string) => `“${text}”`;
 
@@ -52,6 +53,29 @@ export function stepWording(step: SelectionPredicate): string {
 export function boundaryLine(side: "start" | "end", activity: string, incidents: number): string {
   const verb = side === "start" ? "begin" : "end";
   return `${countOf(incidents, "incident")} on the map ${incidents === 1 ? `${verb}s` : verb} with ${quoted(activity)}.`;
+}
+
+const oneDecimal = new Intl.NumberFormat("en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** Supplied hours in words: in hours below 48 hours, in days from there on, each with one decimal. */
+function hoursOrDays(hours: number): string {
+  return hours < 48 ? `${oneDecimal.format(hours)} hours` : `${oneDecimal.format(hours / 24)} days`;
+}
+
+/**
+ * The two supplied times of an activity in words: the median time since the event before and until
+ * the next event, each over the passages it rests on, or that it is not available. The hours are
+ * those of the paths' lags, so the caption's sentence on the lag says which clock they are of.
+ */
+export function activityTimeLines(times: ActivityTimes): [string, string] {
+  const line = (name: string, hours: number | undefined, passages: number, direction: "into" | "out of") =>
+    hours === undefined
+      ? `${name}: not available; no path leads ${direction} this activity.`
+      : `${name}: median ${hoursOrDays(hours)} over ${countOf(passages, "passage")} ${direction} this activity.`;
+  return [
+    line("Time since the event before", times.medianPreviousHours, times.usablePreviousCount, "into"),
+    line("Time until the next event", times.medianNextHours, times.usableNextCount, "out of"),
+  ];
 }
 
 /** A supplied support as incidents and their records. */

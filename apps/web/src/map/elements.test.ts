@@ -5,13 +5,35 @@ import { elementOf, selectedElement, stepChoices } from "./elements";
 import { END_ID, endFlowId, START_ID, startFlowId, toFlowGraph } from "./graph";
 
 const graph = suppliedGraph(["A-1", "B-2"]);
+/** The times of an activity no path leads into or out of. */
+const noPassage = { usablePreviousCount: 0, usableNextCount: 0 };
 
 describe("the element selected on the map", () => {
   it("is named by the supplied labels of an activity or a path", () => {
     expect(selectedElement(graph, emptySelection)).toBeNull();
-    expect(selectedElement(graph, { nodes: [nodeIds[opened]], edges: [], groups: [] })).toEqual({ kind: "activity", label: opened, starts: 1, ends: 0 });
-    expect(selectedElement(graph, { nodes: [nodeIds[closed]], edges: [], groups: [] })).toEqual({ kind: "activity", label: closed, starts: 0, ends: 1 });
+    expect(selectedElement(graph, { nodes: [nodeIds[opened]], edges: [], groups: [] })).toEqual({
+      kind: "activity",
+      label: opened,
+      starts: 1,
+      ends: 0,
+      times: { usablePreviousCount: 0, medianNextHours: 25.5, usableNextCount: 1 },
+    });
+    expect(selectedElement(graph, { nodes: [nodeIds[closed]], edges: [], groups: [] })).toEqual({
+      kind: "activity",
+      label: closed,
+      starts: 0,
+      ends: 1,
+      times: { medianPreviousHours: 25.5, usablePreviousCount: 1, usableNextCount: 0 },
+    });
     expect(selectedElement(graph, { nodes: [], edges: [pathId], groups: [] })).toEqual({ kind: "path", source: opened, target: closed, passages: 1, bridged: 0 });
+  });
+
+  it("carries the supplied times of an activity, and no time where none is supplied", () => {
+    const begun = elementOf(graph, "node", nodeIds[opened]);
+    const alone = elementOf(graph, "node", nodeIds[checked]);
+    // A time that is not supplied is left out: it is not a time of nothing.
+    expect(begun).toStrictEqual({ kind: "activity", label: opened, starts: 1, ends: 0, times: { usablePreviousCount: 0, medianNextHours: 25.5, usableNextCount: 1 } });
+    expect(alone).toStrictEqual({ kind: "activity", label: checked, starts: 0, ends: 0, times: noPassage });
   });
 
   it("offers no step for several elements or for a line that is no recorded path", () => {
@@ -23,7 +45,7 @@ describe("the element selected on the map", () => {
   });
 
   it("offers to keep the incidents through an activity or a path, or those not through it", () => {
-    expect(stepChoices({ kind: "activity", label: opened, starts: 0, ends: 0 })).toEqual([
+    expect(stepChoices({ kind: "activity", label: opened, starts: 0, ends: 0, times: noPassage })).toEqual([
       { label: "Keep incidents that contain it", step: contains(opened) },
       { label: "Keep incidents that do not contain it", step: contains(opened, true) },
     ]);
@@ -78,7 +100,7 @@ describe("the element selected on the map", () => {
     expect(stepChoices(elementOf(graph, "node", nodeIds[closed]))).toEqual([...own(closed), { label: "Keep incidents that end with it", step: ends(closed) }]);
     // No incident whose order is known begins or ends with "Prüfung".
     expect(stepChoices(elementOf(graph, "node", nodeIds[checked]))).toEqual(own(checked));
-    expect(stepChoices({ kind: "activity", label: checked, starts: 2, ends: 3 })).toEqual([
+    expect(stepChoices({ kind: "activity", label: checked, starts: 2, ends: 3, times: noPassage })).toEqual([
       ...own(checked),
       { label: "Keep incidents that begin with it", step: begins(checked) },
       { label: "Keep incidents that end with it", step: ends(checked) },

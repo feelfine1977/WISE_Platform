@@ -1,11 +1,18 @@
 import type { Selection } from "wise-flow/react";
-import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
+import type { NodeMetrics, SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import { flowOf } from "./graph";
+
+/**
+ * The supplied times of an activity: the median hours since the event before and until the next
+ * event, each with the number of passages it rests on. A median is left out where no passage leads
+ * into or out of the activity.
+ */
+export type ActivityTimes = Pick<NodeMetrics, "medianPreviousHours" | "usablePreviousCount" | "medianNextHours" | "usableNextCount">;
 
 /** The element of the map the analyst selected, named by the supplied labels. */
 export type SelectedElement =
   /** `starts` and `ends` are the supplied numbers of incidents that begin and that end with the activity. */
-  | { kind: "activity"; label: string; starts: number; ends: number }
+  | { kind: "activity"; label: string; starts: number; ends: number; times: ActivityTimes }
   /** `bridged` of the path's `passages` pass over records without activity label between the two activities. */
   | { kind: "path"; source: string; target: string; passages: number; bridged: number }
   /**
@@ -34,7 +41,9 @@ export function selectedElement(graph: SuppliedGraph, selection: Selection): Sel
 export function elementOf(graph: SuppliedGraph, kind: "node" | "edge", id: string): SelectedElement {
   if (kind === "node") {
     const node = graph.nodes.find((item) => item.id === id);
-    return node ? { kind: "activity", label: node.label, starts: node.metrics.starts, ends: node.metrics.ends } : { kind: "unrecorded" };
+    return node
+      ? { kind: "activity", label: node.label, starts: node.metrics.starts, ends: node.metrics.ends, times: timesOf(node.metrics) }
+      : { kind: "unrecorded" };
   }
   const edge = graph.edges.find((item) => item.id === id);
   if (edge) {
@@ -52,6 +61,15 @@ export function elementOf(graph: SuppliedGraph, kind: "node" | "edge", id: strin
   const incidents = flow.side === "start" ? joined.metrics.starts : joined.metrics.ends;
   // The map draws such a flow only where incidents begin or end; no step is taken from one it does not draw.
   return incidents > 0 ? { kind: "boundary", side: flow.side, activity: joined.label, incidents } : { kind: "unrecorded" };
+}
+
+function timesOf({ medianPreviousHours, usablePreviousCount, medianNextHours, usableNextCount }: NodeMetrics): ActivityTimes {
+  return {
+    ...(medianPreviousHours === undefined ? {} : { medianPreviousHours }),
+    usablePreviousCount,
+    ...(medianNextHours === undefined ? {} : { medianNextHours }),
+    usableNextCount,
+  };
 }
 
 export interface StepChoice {
