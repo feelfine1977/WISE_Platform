@@ -435,6 +435,20 @@ def test_reading_a_run_that_is_not_kept_or_was_changed_is_refused(client, worksp
     assert "changed or damaged outside" in body["message"]
 
 
+def test_a_kept_run_that_names_no_checksum_and_cannot_have_one_is_refused(client, workspace_id, base, tmp_path):
+    version = ready(client, workspace_id, base)
+    run = run_of(client, workspace_id, base, version)
+    file = _kept_file(tmp_path, "score-runs")
+    kept = json.loads(file.read_text(encoding="utf-8"))
+    del kept["sha256"]
+    kept["record"]["cases"][0]["value"] = float("nan")
+    file.write_text(json.dumps(kept), encoding="utf-8")
+
+    refused(client.post("/api/expectations/read-run", json=reading(workspace_id, run["identity"]["run_id"])),
+            "read_score_run", "run_unavailable", "run_id")
+    refused(witness(client, workspace_id, run, run["cases"][0]["case_id"]), "score_case_witness", "run_unavailable", "run_id")
+
+
 def test_reading_a_run_whose_source_was_changed_is_refused(client, workspace_id, base, tmp_path):
     version = ready(client, workspace_id, base)
     run = run_of(client, workspace_id, base, version)
