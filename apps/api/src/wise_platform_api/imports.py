@@ -192,6 +192,12 @@ class Imports:
             inspection = found
             with self._lock:
                 _keep(self._inspections, key, inspection, _INSPECTIONS_KEPT)
+        else:
+            changed = workspace.source_unchanged(source_id)
+            if changed is not None:
+                with self._lock:
+                    self._inspections.pop(key, None)
+                return _problem(INSPECT_CSV, changed, given)
         return _answer(CsvInspectionAnswer, _envelope("csv_inspection_answer", given) | inspection)
 
     def _confirm_mapping(self, request: ConfirmMappingRequest, given: dict) -> ImportReply:
@@ -284,6 +290,12 @@ class Imports:
             prepared = self._prepared.get(preparation_id)
             if prepared is not None:
                 self._prepared.move_to_end(preparation_id)
+        if prepared is not None:
+            changed = workspace.source_unchanged(record.source_id)
+            if changed is not None:
+                with self._lock:
+                    self._prepared.pop(preparation_id, None)
+                return changed
         if prepared is None:
             # One preparation at a time: a second request for the same snapshot then finds it held.
             with self._preparing:

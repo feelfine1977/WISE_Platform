@@ -414,6 +414,43 @@ def test_a_preparation_whose_source_was_removed_is_unavailable(client, folder, w
     refused(client.post("/api/investigations/open-population", json=request), "open_population", "source_unavailable")
 
 
+def test_a_source_changed_outside_the_application_is_refused_by_the_running_application_too(client, folder, workspace_id):
+    answer = ready_population(client, workspace_id)
+    source_id = answer["identity"]["source_id"]
+    inspect = envelope("inspect_csv_request", workspace_id=workspace_id, source_id=source_id, hints={})
+    answered(client.post("/api/sources/inspect", json=inspect))
+    stored_file = next(path for path in (folder / "sources").iterdir() if path.suffix == ".csv")
+    original = stored_file.read_bytes()
+    stored_file.write_bytes(original.replace(b"A-1", b"A-9"))
+    assert len(stored_file.read_bytes()) == len(original) and stored_file.read_bytes() != original
+
+    population = envelope("open_population_request", workspace_id=workspace_id,
+                          preparation_id=answer["identity"]["preparation_id"])
+    evidence = envelope("imported_case_evidence_request", "case-1", 3, workspace_id=workspace_id,
+                        identity=answer["identity"], case_id="A-1")
+
+    refused(client.post("/api/sources/inspect", json=inspect), "inspect_csv", "source_unavailable")
+    refused(client.post("/api/investigations/open-population", json=population), "open_population", "source_unavailable")
+    refused(client.post("/api/investigations/case-evidence", json=evidence), "case_evidence", "source_unavailable")
+
+    stored_file.write_bytes(original)
+    answered(client.post("/api/sources/inspect", json=inspect))
+    answered(client.post("/api/investigations/open-population", json=population))
+
+
+@pytest.mark.parametrize("revision", [b"9007199254740992", b"1e400"])
+def test_a_revision_no_reader_carries_is_a_typed_refusal_and_is_not_echoed(client, folder, revision):
+    raw = json.dumps(envelope("open_workspace_request", path=str(folder))).encode().replace(
+        b'"query_revision": 1', b'"query_revision": ' + revision
+    )
+    assert revision in raw
+
+    body = refused(client.post("/api/workspaces/open", content=raw, headers={"Content-Type": "application/json"}),
+                   "open_workspace", "invalid_request")
+
+    assert body["query_revision"] is None
+
+
 def test_imported_evidence_answers_on_the_shared_evidence_route(client, workspace_id):
     answer = ready_population(client, workspace_id)
     request = envelope("imported_case_evidence_request", "case-1", 3, workspace_id=workspace_id,

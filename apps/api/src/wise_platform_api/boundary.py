@@ -25,6 +25,7 @@ they are valid themselves.
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections.abc import Sequence
 from typing import TypeVar
@@ -38,6 +39,8 @@ Location = tuple[str | int, ...]
 
 SCHEMA_VERSION = 1
 _HALF_A_CHARACTER = re.compile("[\\ud800-\\udfff]")
+LARGEST_REVISION = 2**53 - 1
+"""The largest query revision every reader of an answer carries unchanged."""
 
 STATUS: dict[str, int] = {
     "unsupported_schema": 400,
@@ -158,7 +161,9 @@ def _weaker_than_the_contract(
 def read_object(body: bytes) -> dict | str:
     """The JSON object of a request body, or the sentence that says why it is not one."""
     try:
-        message = json.loads(body.decode("utf-8"), parse_constant=_no_constant)
+        message = json.loads(body.decode("utf-8"), parse_constant=_no_constant, parse_float=_finite)
+    except _UnreadableNumber:
+        return "The request body holds a number that is too large to be read."
     except (UnicodeDecodeError, ValueError):
         return "The request body is not JSON."
     except RecursionError:
@@ -198,7 +203,7 @@ def echo_of(message: dict) -> dict[str, str | int | None]:
         "request_id": request_id
         if isinstance(request_id, str) and _REQUEST_ID.fullmatch(request_id)
         else None,
-        "query_revision": revision if type(revision) is int and revision >= 1 else None,
+        "query_revision": revision if type(revision) is int and 1 <= revision <= LARGEST_REVISION else None,
     }
 
 
@@ -265,3 +270,15 @@ def _message(rank: int, path: Sequence[str | int], reason: str) -> str:
 
 def _no_constant(name: str) -> object:
     raise ValueError(f"{name} is not JSON")
+
+
+def _finite(text: str) -> float:
+    """The number written in ``text``, refused when it is too large to be a number here (1e400)."""
+    number = float(text)
+    if not math.isfinite(number):
+        raise _UnreadableNumber(text)
+    return number
+
+
+class _UnreadableNumber(ValueError):
+    """A number of the JSON text that no float can hold."""

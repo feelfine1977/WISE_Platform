@@ -3,7 +3,7 @@
 import pytest
 from api_requests import VALIDATOR, body, evidence_request, open_request
 
-from wise_platform_api.boundary import STATUS, parse_request, read_object, refusal
+from wise_platform_api.boundary import STATUS, echo_of, parse_request, read_object, refusal
 from wise_platform_api.generated.investigation import (
     CaseEvidenceRequest,
     OpenExampleRequest,
@@ -101,6 +101,25 @@ def test_text_that_holds_half_a_surrogate_pair_is_an_invalid_request_and_is_not_
     assert "\\ud8" not in written.lower() and "\\udf" not in written.lower()
     written.encode("utf-8")
     VALIDATOR.validate(result.model_dump(mode="json"))
+
+
+@pytest.mark.parametrize("number", [b"1e400", b"-1e400", b"1E+999"])
+def test_a_number_too_large_to_be_read_is_an_invalid_request(number):
+    raw = body(open_request(request_id="large", revision=2)).replace(b'"query_revision": 2', b'"query_revision": ' + number)
+    assert number in raw
+
+    result = parse_request(raw, OpenExampleRequest, "open_example")
+
+    assert isinstance(result, Refusal)
+    assert result.code == "invalid_request"
+    assert result.query_revision is None
+    assert "too large" in result.message
+    VALIDATOR.validate(result.model_dump(mode="json"))
+
+
+@pytest.mark.parametrize(("revision", "echoed"), [(2**53 - 1, 2**53 - 1), (2**53, None), (10**30, None)])
+def test_a_revision_is_echoed_only_while_every_reader_carries_it_unchanged(revision, echoed):
+    assert echo_of({"request_id": "r-1", "query_revision": revision}) == {"request_id": "r-1", "query_revision": echoed}
 
 
 def test_a_whole_surrogate_pair_is_ordinary_text():

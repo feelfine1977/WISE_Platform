@@ -92,9 +92,11 @@ def program_folders() -> tuple[Path, ...]:
 
     package = Path(__file__).resolve().parent
     folders = [package, Path(wise_platform_analytics.__file__).resolve().parent]
-    checkout = package.parents[2]
-    if (checkout / "pyproject.toml").is_file() and (checkout / "apps" / "api").is_dir():
-        folders.append(checkout)
+    for ancestor in package.parents:
+        # In a source checkout the package lies under apps/api/src of the project folder.
+        if (ancestor / "pyproject.toml").is_file() and (ancestor / "apps" / "api").is_dir():
+            folders.append(ancestor)
+            break
     return tuple(folders)
 
 
@@ -265,6 +267,24 @@ class Workspace:
                 "source_id",
             )
         return raw
+
+    def source_unchanged(self, source_id: str) -> Problem | None:
+        """Nothing while the stored bytes of a source are the stored ones, else the refusal for them.
+
+        An answer kept in memory is given only after this check, so that a file changed outside the
+        application is refused in a running application exactly as in a freshly started one.
+        """
+        record = self.source(source_id)
+        if isinstance(record, Problem):
+            return record
+        digest = source_id.rsplit(":", 1)[1]
+        if not _holds(self.path / SOURCES / f"{digest}.csv", digest, record.byte_count):
+            return Problem(
+                "source_unavailable",
+                "The stored bytes of this source were changed outside the application. Add the file again.",
+                "source_id",
+            )
+        return None
 
     def sources(self) -> list[StoredSource]:
         """Every complete stored source, oldest first."""

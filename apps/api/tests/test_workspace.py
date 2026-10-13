@@ -142,6 +142,15 @@ def test_the_program_folders_include_both_packages():
     assert Path(wise_platform_analytics.__file__).resolve().parent in folders
 
 
+def test_in_a_source_checkout_the_project_folder_is_a_program_folder():
+    project = Path(workspace_module.__file__).resolve().parents[4]
+    if not (project / "pyproject.toml").is_file():
+        pytest.skip("the package is installed outside a source checkout")
+
+    assert project in program_folders()
+    refused(str(project / "tests"), "workspace_incompatible", forbidden=program_folders())
+
+
 def test_a_folder_that_cannot_be_written_is_refused(tmp_path, monkeypatch):
     def no_writing(*args, **kwargs):
         raise PermissionError("denied")
