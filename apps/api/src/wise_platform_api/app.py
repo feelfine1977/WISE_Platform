@@ -21,6 +21,21 @@ from .selections import SelectionReply, Selections
 from .workspace import program_folders
 
 
+class _BrowserFiles(StaticFiles):
+    """The built browser files.
+
+    The page itself is asked for anew on every visit, so that a newer installation is shown and not
+    the page a browser kept from an earlier one. The files it names carry their content in their
+    names and may be kept.
+    """
+
+    async def get_response(self, path, scope):  # type: ignore[no-untyped-def]
+        response = await super().get_response(path, scope)
+        if response.headers.get("content-type", "").startswith("text/html"):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def create_app(
     static_dir: Path | None = None, examples_dir: Path | None = None, *, workspace_path: Path | None = None
 ) -> FastAPI:
@@ -162,7 +177,7 @@ def create_app(
 
     assets = static_dir if static_dir is not None else Path(__file__).parent / "static"
     if (assets / "index.html").is_file():
-        application.mount("/", StaticFiles(directory=assets, html=True), name="browser")
+        application.mount("/", _BrowserFiles(directory=assets, html=True), name="browser")
     else:
         @application.get("/", response_class=PlainTextResponse, status_code=503)
         def browser_unavailable() -> str:
