@@ -19,6 +19,7 @@ from .investigations import Investigations, Reply
 from .population_views import PopulationViews, ViewReply
 from .saving import Saving, SavingReply
 from .selections import SelectionReply, Selections
+from .start_trends import StartTrends
 from .workspace import program_folders
 
 
@@ -52,6 +53,7 @@ def create_app(
     selections = Selections(imports)
     views = PopulationViews(imports)
     case_lists = CaseLists(imports)
+    start_trends = StartTrends(imports)
     comparisons = Comparisons(imports)
     expectations = Expectations(imports)
     saving = Saving(imports)
@@ -132,6 +134,11 @@ def create_app(
     @application.post("/api/investigations/case-list")
     async def case_list(request: Request) -> JSONResponse:
         reply = await run_in_threadpool(case_lists.case_list, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/start-trend")
+    async def start_trend(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(start_trends.start_trend, await request.body())
         return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/opening-context")
