@@ -743,6 +743,82 @@ class ExcludedSourceRecord(BaseModel):
     original_text: str
 
 
+class UtcEmptyCutoffProposal(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['cutoff_proposal_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    source_id: SourceId
+    timestamp_kind: Literal['utc_instant']
+    last_usable_time: None
+    proposed_cutoff: None
+
+
+class UtcKnownCutoffProposal(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['cutoff_proposal_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    source_id: SourceId
+    timestamp_kind: Literal['utc_instant']
+    last_usable_time: UtcInstant
+    proposed_cutoff: UtcInstant | None
+
+
+class WallEmptyCutoffProposal(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['cutoff_proposal_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    source_id: SourceId
+    timestamp_kind: Literal['wall_clock']
+    last_usable_time: None
+    proposed_cutoff: None
+
+
+class WallKnownCutoffProposal(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['cutoff_proposal_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    source_id: SourceId
+    timestamp_kind: Literal['wall_clock']
+    last_usable_time: LocalTimestamp
+    proposed_cutoff: LocalTimestamp | None
+
+
+class CutoffProposalAnswer(
+    RootModel[
+        UtcEmptyCutoffProposal
+        | UtcKnownCutoffProposal
+        | WallEmptyCutoffProposal
+        | WallKnownCutoffProposal
+    ]
+):
+    root: (
+        UtcEmptyCutoffProposal
+        | UtcKnownCutoffProposal
+        | WallEmptyCutoffProposal
+        | WallKnownCutoffProposal
+    ) = Field(..., title='CutoffProposalAnswer')
+
+
 class ImportRowPolicy(RootModel[StrictImportRowPolicy | TolerantImportRowPolicy]):
     root: StrictImportRowPolicy | TolerantImportRowPolicy = Field(
         ..., title='ImportRowPolicy'
@@ -1002,6 +1078,7 @@ class ImportMessage(
         | ImportedCaseEvidenceRequest
         | ImportedCaseEvidenceAnswer
         | ImportRefusal
+        | CutoffProposalAnswer
     ]
 ):
     root: (
@@ -1018,6 +1095,7 @@ class ImportMessage(
         | ImportedCaseEvidenceRequest
         | ImportedCaseEvidenceAnswer
         | ImportRefusal
+        | CutoffProposalAnswer
     ) = Field(
         ...,
         description='Version 1 local workspace, CSV interpretation, population and complete evidence boundary; UTC and recorded-wall time are distinct.',

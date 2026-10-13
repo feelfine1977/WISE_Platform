@@ -42,6 +42,9 @@
     },
     {
       "$ref": "#/$defs/ImportRefusal"
+    },
+    {
+      "$ref": "#/$defs/CutoffProposalAnswer"
     }
   ],
   "$defs": {
@@ -2309,6 +2312,229 @@
         "reason",
         "original_cells",
         "original_text"
+      ]
+    },
+    "UtcEmptyCutoffProposal": {
+      "title": "UtcEmptyCutoffProposal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "cutoff_proposal_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "last_usable_time": {
+          "type": "null"
+        },
+        "proposed_cutoff": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "timestamp_kind",
+        "last_usable_time",
+        "proposed_cutoff"
+      ]
+    },
+    "UtcKnownCutoffProposal": {
+      "title": "UtcKnownCutoffProposal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "cutoff_proposal_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "last_usable_time": {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        "proposed_cutoff": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UtcInstant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "timestamp_kind",
+        "last_usable_time",
+        "proposed_cutoff"
+      ]
+    },
+    "WallEmptyCutoffProposal": {
+      "title": "WallEmptyCutoffProposal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "cutoff_proposal_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "last_usable_time": {
+          "type": "null"
+        },
+        "proposed_cutoff": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "timestamp_kind",
+        "last_usable_time",
+        "proposed_cutoff"
+      ]
+    },
+    "WallKnownCutoffProposal": {
+      "title": "WallKnownCutoffProposal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "cutoff_proposal_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "last_usable_time": {
+          "$ref": "#/$defs/LocalTimestamp"
+        },
+        "proposed_cutoff": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "timestamp_kind",
+        "last_usable_time",
+        "proposed_cutoff"
+      ]
+    },
+    "CutoffProposalAnswer": {
+      "title": "CutoffProposalAnswer",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcEmptyCutoffProposal"
+        },
+        {
+          "$ref": "#/$defs/UtcKnownCutoffProposal"
+        },
+        {
+          "$ref": "#/$defs/WallEmptyCutoffProposal"
+        },
+        {
+          "$ref": "#/$defs/WallKnownCutoffProposal"
+        }
       ]
     }
   }
