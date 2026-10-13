@@ -355,6 +355,66 @@ def test_asking_again_answers_the_stored_run_without_the_library(client, workspa
     assert run_of(client, workspace_id, base, version, request_id="score-2", revision=9) == run
 
 
+def _kept_file(tmp_path, folder_name):
+    files = [path for path in tmp_path.rglob("*.json") if path.parent.name == folder_name]
+    assert len(files) == 1, files
+    return files[0]
+
+
+def test_a_kept_run_changed_outside_the_application_is_refused_and_never_scored_again(
+    client, workspace_id, base, tmp_path, monkeypatch
+):
+    version = ready(client, workspace_id, base)
+    run = run_of(client, workspace_id, base, version)
+    scored = next(case for case in run["cases"] if case["value"] is not None)
+    file = _kept_file(tmp_path, "score-runs")
+    kept = json.loads(file.read_text(encoding="utf-8"))
+    changed = next(case for case in kept["record"]["cases"] if case["case_id"] == scored["case_id"])
+    changed["value"] = 0.75 if changed["value"] != 0.75 else 0.25
+    file.write_text(json.dumps(kept), encoding="utf-8")
+    damaged = file.read_bytes()
+
+    def not_again(*args):
+        raise AssertionError("The library was asked to score again.")
+
+    monkeypatch.setattr(method, "score", not_again)
+    monkeypatch.setattr(method, "event_log", not_again)
+
+    again = client.post(SCORE, json=scoring(workspace_id, base, version, request_id="score-2", revision=9))
+    assert "changed or damaged outside" in refused(again, "score_expectation", "run_unavailable")["message"]
+    refused(witness(client, workspace_id, run, scored["case_id"]), "score_case_witness", "run_unavailable", "run_id")
+    assert file.read_bytes() == damaged
+
+    with TestClient(create_app(static_dir=tmp_path / "unbuilt")) as restarted:
+        workspace = next(path for path in tmp_path.iterdir() if (path / "score-runs").is_dir())
+        reopened = restarted.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(workspace)))
+        assert reopened.status_code == 200, reopened.text
+        refused(witness(restarted, workspace_id, run, scored["case_id"]), "score_case_witness", "run_unavailable", "run_id")
+    assert file.read_bytes() == damaged
+
+
+def test_a_kept_definition_changed_outside_the_application_is_refused(client, workspace_id, base, tmp_path):
+    version = ready(client, workspace_id, base)
+    file = _kept_file(tmp_path, "definitions")
+    kept = json.loads(file.read_text(encoding="utf-8"))
+    kept["record"]["definition"]["target"] = kept["record"]["definition"]["target"] + 1
+    file.write_text(json.dumps(kept), encoding="utf-8")
+
+    response = client.post(SCORE, json=scoring(workspace_id, base, version))
+
+    refused(response, "score_expectation", "definition_unavailable", "definition_version_id")
+
+
+def test_a_kept_run_written_with_other_spacing_and_order_is_still_the_kept_run(client, workspace_id, base, tmp_path):
+    version = ready(client, workspace_id, base)
+    run = run_of(client, workspace_id, base, version)
+    file = _kept_file(tmp_path, "score-runs")
+    kept = json.loads(file.read_text(encoding="utf-8"))
+    file.write_text(json.dumps(dict(reversed(list(kept.items()))), indent=2, ensure_ascii=False), encoding="utf-8")
+
+    assert run_of(client, workspace_id, base, version, request_id="score-3", revision=11) == run
+
+
 def test_the_run_is_kept_in_the_workspace_for_another_run_of_the_application(client, workspace_id, base, tmp_path, monkeypatch):
     version = ready(client, workspace_id, base)
     run = run_of(client, workspace_id, base, version)

@@ -238,6 +238,8 @@ class Expectations:
         }
         run_id = content_identity("score-run", {"format_version": 1, **identity})
         stored = workspace.run(run_id)
+        if isinstance(stored, Problem):
+            raise Refused(_refused(SCORE, _code(stored.code), stored.message, given, "definition_version_id"))
         if stored is None:
             log = method.event_log(prepared, population.case_ids, clock)
             issues = _check_blockers(method.check(compiled, log), definition)
@@ -266,6 +268,8 @@ class Expectations:
         if isinstance(workspace, Problem):
             raise Refused(_problem(WITNESS, workspace, given))
         run = workspace.run(given["run_id"])
+        if isinstance(run, Problem):
+            raise Refused(_refused(WITNESS, _code(run.code), run.message, given, "run_id"))
         if run is None or not _valid(ScoreRun, run):
             raise Refused(
                 _refused(
@@ -536,6 +540,8 @@ def _definition_version(prepared: PreparedData, definition: dict[str, Any], comp
 
 def _stored_definition(workspace: Workspace, prepared: PreparedData, given: Mapping[str, Any]) -> Mapping[str, Any]:
     version = workspace.definition(given["definition_version_id"])
+    if isinstance(version, Problem):
+        raise Refused(_refused(SCORE, _code(version.code), version.message, given, "definition_version_id"))
     if version is None or not _valid(DefinitionVersion, version):
         raise Refused(
             _refused(
