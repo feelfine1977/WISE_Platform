@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "name": "wise-flow",
+      "version": "0.3.5",
+      "file": "wise-flow-0.3.5.tgz",
+      "sha256": "f2c9e835ee605268807f3130869fe93d79dc56e7ec01d7e9e907be68e3b36c60",
+      "source_repository": "https://github.com/feelfine1977/wise-flow",
+      "source_commit": "2072093",
+      "license": "PolyForm-Noncommercial-1.0.0",
+      "status": "unreleased state of the process map library, packed from the source commit; not a published release"
+    },
+    {
+      "name": "wise-pm",
+      "version": "0.2.0",
+      "file": "wise_pm-0.2.0-py3-none-any.whl",
+      "sha256": "7329b7929bb8a3e40c596b359f352aace23cc233d8f29322ee063612733aecc3",
+      "source_repository": "https://github.com/feelfine1977/wise-pm",
+      "source_commit": "6883db5269e622d9ce5274d207e831d12ab134fe",
+      "license": "MIT",
+      "status": "untagged state of the method library, built from the source commit; not a published release"
+    }
+  ]
+}

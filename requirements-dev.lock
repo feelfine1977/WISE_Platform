@@ -22,8 +22,10 @@ jsonschema-specifications==2025.9.1
 MarkupSafe==3.0.4
 more-itertools==11.1.0
 mypy_extensions==1.1.0
+numpy==2.4.6
 opentelemetry-api==1.45.1
 packaging==26.3
+pandas==3.0.6
 pathspec==1.1.1
 platformdirs==4.13.0
 pluggy==1.6.0
@@ -31,12 +33,16 @@ pydantic==2.14.1
 pydantic_core==2.50.1
 Pygments==2.21.0
 pytest==9.1.1
+python-dateutil==2.9.0.post0
 pytokens==0.4.1
 PyYAML==6.0.3
 referencing==0.37.0
+rfc3339-validator==0.1.4
 rpds-py==2026.9.1
+six==1.17.0
 starlette==1.7.0
 typeguard==4.6.0
-typing-inspection==0.4.4
 typing_extensions==4.16.0
+typing-inspection==0.4.4
+tzdata==2026.5; sys_platform == "win32"
 uvicorn==0.54.0

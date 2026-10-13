@@ -1,0 +1,3 @@
+incident_id,source_event_id,source_sequence,activity,timestamp_utc,service,assignment_group
+S3A,e-S3A-01,1,Opened,2026-10-01T09:00:00Z,S,Unknown
+S3B,e-S3B-01,1,Opened,2026-10-01T09:00:00Z,S,

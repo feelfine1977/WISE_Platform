@@ -1,0 +1,9 @@
+incident_id,source_event_id,source_sequence,activity,timestamp_utc,service,assignment_group
+S2A,e-S2A-01,1,Opened,2026-10-01T09:00:00Z,S,Desktop
+S2A,e-S2A-02,2,,2026-10-01T10:00:00Z,S,Desktop
+S2A,e-S2A-03,3,Assigned,2026-10-01T10:00:00Z,S,App
+S2A,e-S2A-04,4,Resolved,2026-10-01T11:00:00Z,S,App
+S2B,e-S2B-01,1,Opened,2026-10-01T09:00:00Z,S,Desktop
+S2B,e-S2B-02,2,,2026-10-01T10:00:00Z,S,Desktop
+S2B,e-S2B-04,4,Assigned,2026-10-01T10:00:00Z,S,App
+S2B,e-S2B-03,3,Resolved,2026-10-01T10:00:00Z,S,App
