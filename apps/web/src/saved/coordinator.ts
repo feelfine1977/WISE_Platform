@@ -8,6 +8,7 @@ import type {
   ReopenInvestigationRequest,
   SaveInvestigationAnswer,
   SaveInvestigationRequest,
+  SavedComparison,
   SavedInvestigationSummary,
 } from "../generated/saving";
 import {
@@ -41,6 +42,11 @@ export interface SavingState {
   list: SavedListState;
   reopen: ReopenState;
   save: SaveState;
+}
+
+/** The part of the comparison view that saving needs: the comparison shown on a reading, in its saved form. */
+export interface ComparisonSource {
+  savedComparisonFor(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedComparison | null;
 }
 
 /** What a save of the question shown would hold, or why it cannot be saved now. */
@@ -88,6 +94,8 @@ export class SavingCoordinator {
   constructor(
     private readonly client: SavingClient,
     private readonly investigation: ImportedInvestigationCoordinator,
+    /** Where a comparison made on screen is found, so that saving the investigation keeps it. */
+    private readonly comparisons?: ComparisonSource,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -139,7 +147,11 @@ export class SavingCoordinator {
       selection_identity: shown.answer.identity,
       selection_recipe: { parent_case_ids: parentCaseIds ?? population.answer.population.case_ids, predicates: [...shown.steps] },
       context_policy: contextPolicy,
-      comparison: saved?.content.comparison ?? null,
+      // The comparison shown on this reading is saved; without one, the saved investigation keeps its own.
+      comparison:
+        this.comparisons?.savedComparisonFor(population.answer.workspace_id, population.answer.identity) ??
+        saved?.content.comparison ??
+        null,
       notes,
       bookmarks: carriedBookmarks(investigation),
       presentation_state: presentation,
