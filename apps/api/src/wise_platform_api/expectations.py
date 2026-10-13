@@ -52,6 +52,7 @@ from .generated.scoring import (
     DefinitionVersion,
     ExpectationValidationAnswer,
     ScoreCaseWitnessAnswer,
+    ReadScoreRunRequest,
     ScoreCaseWitnessRequest,
     ScoreExpectationRequest,
     ScoreRun,
@@ -69,6 +70,7 @@ logger = logging.getLogger(__name__)
 VALIDATE = "validate_expectation"
 SCORE = "score_expectation"
 WITNESS = "score_case_witness"
+READ_RUN = "read_score_run"
 TIE_POLICY = "matching_timestamp_candidates_in_declared_order.v1"
 COMPILATION = {
     "requested_constraint_count": 1,
@@ -143,6 +145,9 @@ class Expectations:
 
     def case_witness(self, body: bytes) -> ScoringReply:
         return _answering(WITNESS, parse_scoring_body(body, ScoreCaseWitnessRequest, WITNESS), self._case_witness)
+
+    def read_run(self, body: bytes) -> ScoringReply:
+        return _answering(READ_RUN, parse_scoring_body(body, ReadScoreRunRequest, READ_RUN), self._read_run)
 
     # Use cases ----------------------------------------------------------------------------
 
@@ -333,6 +338,37 @@ class Expectations:
         )
 
     # Workspaces, preparations and populations -----------------------------------------------
+
+    def _read_run(self, given: dict) -> ScoringReply:
+        """A kept score run exactly as it was scored.
+
+        Nothing is validated, scored or fitted here and the method library is not needed: the run is
+        read from the workspace, and it is answered only while the reading it was scored on is still
+        kept there, still gives the identities the run names, and has its source bytes unchanged.
+        """
+        workspace = self._imports.opened_workspace(given["workspace_id"])
+        if isinstance(workspace, Problem):
+            raise Refused(_problem(READ_RUN, workspace, given))
+        run = workspace.run(given["run_id"])
+        if isinstance(run, Problem):
+            raise Refused(_refused(READ_RUN, _code(run.code), run.message, given, "run_id"))
+        if run is None or not _valid(ScoreRun, run):
+            raise Refused(
+                _refused(
+                    READ_RUN,
+                    "run_unavailable",
+                    "This score run is not kept in the workspace. Score the expectation again.",
+                    given,
+                    "run_id",
+                )
+            )
+        base = run["identity"]["base_identity"]
+        found = self._imports.prepared_snapshot(workspace, base["preparation_id"], "run_id")
+        if isinstance(found, Problem):
+            raise Refused(_problem(READ_RUN, found, given))
+        if isinstance(found, PackageRefusal) or found[0].identity_dict() != dict(base):
+            raise Refused(_unreproduced(READ_RUN, given, "run_id"))
+        return _answer(ScoreRunAnswer, _envelope("score_run_answer", given) | {"run": dict(run)})
 
     def _bound(self, operation: str, given: dict) -> tuple[Workspace, PreparedData]:
         """The workspace and the prepared snapshot the request's base identity names, exactly."""

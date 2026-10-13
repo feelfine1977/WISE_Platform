@@ -134,6 +134,10 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     async def score_case_witness(request: Request) -> JSONResponse:
         return _sent_scoring(await run_in_threadpool(expectations.case_witness, await request.body()))
 
+    @application.post("/api/expectations/read-run")
+    async def read_score_run(request: Request) -> JSONResponse:
+        return _sent_scoring(await run_in_threadpool(expectations.read_run, await request.body()))
+
     @application.post("/api/investigations/save")
     async def save_investigation(request: Request) -> JSONResponse:
         return _sent_saving(await run_in_threadpool(saving.save, await request.body()))
