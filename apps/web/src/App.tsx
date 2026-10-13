@@ -16,6 +16,9 @@ import { httpInvestigationClient, type InvestigationClient } from "./investigati
 import { InvestigationCoordinator, type PopulationState } from "./investigation/coordinator";
 import { defaultExampleId } from "./investigation/policies";
 import { httpSelectionClient, type SelectionClient } from "./map/client";
+import { httpSavingClient, type SavingClient } from "./saved/client";
+import { SavingCoordinator } from "./saved/coordinator";
+import { SavedInvestigations } from "./saved/SavedInvestigations";
 import { httpPopulationViewClient, type PopulationViewClient } from "./views/client";
 import { countOf, utcInstant } from "./investigation/wording";
 
@@ -24,11 +27,12 @@ interface AppProps {
   importClient?: ImportClient;
   selectionClient?: SelectionClient;
   viewClient?: PopulationViewClient;
+  savingClient?: SavingClient;
   checkHealth?: (signal: AbortSignal) => Promise<HealthResponse>;
 }
 
-/** The area shown: the Data area, or the investigation of the example or of an imported preparation. */
-type Area = "data" | "example" | "imported";
+/** The area shown: the Data area, the investigation of the example or of an imported preparation, or the saved investigations. */
+type Area = "data" | "example" | "imported" | "saved";
 
 type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
 
@@ -37,11 +41,13 @@ export default function App({
   importClient = httpImportClient,
   selectionClient = httpSelectionClient,
   viewClient = httpPopulationViewClient,
+  savingClient = httpSavingClient,
   checkHealth = fetchHealth,
 }: AppProps) {
   const [coordinator] = useState(() => new InvestigationCoordinator(client));
   const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
   const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient, selectionClient, viewClient));
+  const [savingCoordinator] = useState(() => new SavingCoordinator(savingClient, importedCoordinator));
   const [area, setArea] = useState<Area>("example");
   const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
@@ -60,8 +66,9 @@ export default function App({
     return () => {
       dataCoordinator.stop();
       importedCoordinator.stop();
+      savingCoordinator.stop();
     };
-  }, [dataCoordinator, importedCoordinator]);
+  }, [dataCoordinator, importedCoordinator, savingCoordinator]);
 
   const openIncidents = useCallback(
     (target: PreparationTarget) => {
@@ -123,10 +130,13 @@ export default function App({
           </button>
           <button
             type="button"
-            aria-current={area !== "data" ? "page" : undefined}
+            aria-current={area === "example" || area === "imported" ? "page" : undefined}
             onClick={() => setArea(importedOpen ? "imported" : "example")}
           >
             Investigations
+          </button>
+          <button type="button" aria-current={area === "saved" ? "page" : undefined} onClick={() => setArea("saved")}>
+            Saved
           </button>
         </nav>
         <ServiceStatus checkHealth={checkHealth} />
@@ -137,7 +147,18 @@ export default function App({
           setArea("example");
         }} />
       )}
-      {area === "imported" && <ImportedInvestigation coordinator={importedCoordinator} onShowData={() => setArea("data")} />}
+      {area === "imported" && <ImportedInvestigation coordinator={importedCoordinator} saving={savingCoordinator} onShowData={() => setArea("data")} />}
+      {area === "saved" && (
+        <SavedInvestigations
+          saving={savingCoordinator}
+          data={dataCoordinator}
+          onReopened={() => {
+            setImportedOpen(true);
+            setArea("imported");
+          }}
+          onShowData={() => setArea("data")}
+        />
+      )}
       <main className="investigation" hidden={area !== "example"}>
         <PopulationStrip
           population={population}

@@ -7,9 +7,11 @@ import { countOf, delimiterName, encodingName } from "../data/wording";
 import { MapView } from "../map/MapView";
 import { SelectionSteps } from "../map/SelectionSteps";
 import { supportText } from "../map/wording";
-import { type ImportedInvestigationCoordinator, type ShownSelection, shownSelection } from "./coordinator";
+import { type ImportedInvestigationCoordinator, type InvestigationView, type ShownSelection, shownSelection } from "./coordinator";
 import { ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
+import type { SavingCoordinator } from "../saved/coordinator";
+import { SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
 import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
@@ -17,17 +19,21 @@ import { Variants } from "../views/Variants";
 interface ImportedInvestigationProps {
   coordinator: ImportedInvestigationCoordinator;
   onShowData: () => void;
+  /** Saving the question shown; without it the toolbar offers no "Save". */
+  saving?: SavingCoordinator;
 }
 
-type View = "incidents" | "map";
+type View = InvestigationView;
 
 /**
  * The investigation of an imported preparation: its facts, the selection of whole incidents, the
  * kept incidents as a table or as a process map, and the complete history of one kept incident.
  */
-export function ImportedInvestigation({ coordinator, onShowData }: ImportedInvestigationProps) {
+export function ImportedInvestigation({ coordinator, onShowData, saving }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
-  const [view, setView] = useState<View>("incidents");
+  // A reopened investigation opens in the view it was saved in.
+  const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? "incidents");
+  const [saveOpen, setSaveOpen] = useState(false);
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
@@ -120,11 +126,14 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
           </h2>
         </nav>
         {answer && <Facts answer={answer} shown={shown} revision={revision} />}
+        {saving && answer && <SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} />}
         <p role="status" className="visually-hidden">
           {population.phase === "loading" ? "Opening the incidents of this preparation" : population.phase === "ready" ? "Incidents shown" : ""}
         </p>
       </div>
       {(population.phase === "loading" || state.selection.phase === "loading") && <div className="progress-line" aria-hidden="true" />}
+      {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view} onClose={() => setSaveOpen(false)} />}
+      {state.saved && <SavedLine binding={state.saved} />}
       {answer && (
         <div className="selection-bar">
           <div className="view-switch" role="group" aria-label="View">

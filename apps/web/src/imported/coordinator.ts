@@ -18,6 +18,7 @@ import type {
   SelectionPredicate,
   SuppliedGraph,
 } from "../generated/selection";
+import type { SavedInvestigationContent } from "../generated/saving";
 import type { SelectionClient, SelectionOutcome, SelectionProblem } from "../map/client";
 import { noSteps, redone, type StepHistory, type Steps, undone, withoutStep, withoutSteps, withStep } from "../map/steps";
 import { httpPopulationViewClient, type PopulationViewClient, type ViewOutcome, type ViewProblem } from "../views/client";
@@ -27,6 +28,27 @@ import type { OpeningContextAnswer, OpeningContextRequest, VariantId, VariantsAn
 export interface PreparationTarget {
   workspaceId: WorkspaceId;
   preparationId: PreparationId;
+}
+
+/** The view an investigation shows its kept incidents in. */
+export type InvestigationView = "incidents" | "map";
+
+/** The saved investigation the question shown belongs to: its latest revision known here and what it holds. */
+export interface SavedBinding {
+  investigationId: string;
+  revisionId: string;
+  content: SavedInvestigationContent;
+}
+
+/** A saved question to open again: its preparation, its steps on their parent, and what reopening it answered. */
+export interface Restoration {
+  target: PreparationTarget;
+  steps: Steps;
+  parentCaseIds: CaseId[];
+  /** The identity of the selection the local service restored; the steps asked for must give it again. */
+  selectionIdentity: AnswerIdentity;
+  binding: SavedBinding;
+  view: InvestigationView;
 }
 
 export type ImportedPopulationState =
@@ -87,6 +109,12 @@ export interface ImportedInvestigationState {
   chosenVariant: VariantId | null;
   /** The map of every incident of the parent, from which the map's arrangement is computed once. */
   parentGraph: SuppliedGraph | null;
+  /** The saved investigation this question was reopened from or saved as; null until it is saved. */
+  saved: SavedBinding | null;
+  /** The view a reopened investigation was saved in; null for a question opened from the Data area. */
+  restoredView: InvestigationView | null;
+  /** The incidents the selection is made of: every incident of the population (null), or the saved parent. */
+  parentCaseIds: CaseId[] | null;
 }
 
 /** The selection whose answer is shown, if one is. */
@@ -109,6 +137,9 @@ const initialState: ImportedInvestigationState = {
   variants: { phase: "idle" },
   chosenVariant: null,
   parentGraph: null,
+  saved: null,
+  restoredView: null,
+  parentCaseIds: null,
 };
 
 /**
@@ -132,6 +163,10 @@ export class ImportedInvestigationCoordinator {
   private viewRevision = 0;
   private openingRequest: Pending | null = null;
   private variantsRequest: Pending | null = null;
+  /** The steps the population is selected by once it is open; a reopened investigation's saved steps. */
+  private openingSteps: Steps = [];
+  /** The identity the first selection of a reopened investigation must have, until it is answered. */
+  private restoredIdentity: AnswerIdentity | null = null;
   private readonly listeners = new Set<() => void>();
 
   constructor(
@@ -148,6 +183,24 @@ export class ImportedInvestigationCoordinator {
   getState = (): ImportedInvestigationState => this.state;
 
   open(target: PreparationTarget): void {
+    this.openWith(target, null);
+  }
+
+  /**
+   * Opens a reopened investigation: its population, then its saved steps on its saved parent, with
+   * an undo history that starts with them. The selection answered must have the restored identity;
+   * otherwise it is shown as a failure, never as the saved state.
+   */
+  restore(restoration: Restoration): void {
+    this.openWith(restoration.target, restoration);
+  }
+
+  /** Records the revision the question was saved as. */
+  markSaved(binding: SavedBinding): void {
+    this.publish({ ...this.state, saved: binding });
+  }
+
+  private openWith(target: PreparationTarget, restoration: Restoration | null): void {
     this.revision += 1;
     const revision = this.revision;
     this.populationRequest?.abort();
@@ -162,7 +215,14 @@ export class ImportedInvestigationCoordinator {
       workspace_id: target.workspaceId,
       preparation_id: target.preparationId,
     };
-    this.publish({ ...initialState, population: { phase: "loading", revision, target } });
+    this.openingSteps = restoration ? restoration.steps : [];
+    this.restoredIdentity = restoration ? restoration.selectionIdentity : null;
+    const opening = {
+      saved: restoration ? restoration.binding : null,
+      restoredView: restoration ? restoration.view : null,
+      parentCaseIds: restoration ? restoration.parentCaseIds : null,
+    };
+    this.publish({ ...initialState, ...opening, population: { phase: "loading", revision, target } });
     const controller = new AbortController();
     this.populationRequest = controller;
     this.client.openPopulation(request, controller.signal).then(
@@ -172,8 +232,14 @@ export class ImportedInvestigationCoordinator {
   }
 
   retryPopulation(): void {
-    const population = this.state.population;
-    if (population.phase === "failed") this.open(population.target);
+    const { population, saved, restoredView, parentCaseIds } = this.state;
+    if (population.phase !== "failed") return;
+    if (saved === null || parentCaseIds === null || this.restoredIdentity === null) {
+      this.open(population.target);
+      return;
+    }
+    const steps = this.openingSteps;
+    this.restore({ target: population.target, steps, parentCaseIds, selectionIdentity: this.restoredIdentity, binding: saved, view: restoredView ?? "incidents" });
   }
 
   /** Opens the complete history of an incident of the selection shown, or of the population before one is. */
@@ -289,7 +355,7 @@ export class ImportedInvestigationCoordinator {
       query_revision: revision,
       workspace_id: population.answer.workspace_id,
       identity: population.answer.identity,
-      parent_case_ids: null,
+      parent_case_ids: this.state.parentCaseIds === null ? null : [...this.state.parentCaseIds],
       predicates: [...history.present],
     };
     this.publish({ ...this.state, selection: { phase: "loading", revision, history, shown: shownSelection(this.state.selection) } });
@@ -309,7 +375,12 @@ export class ImportedInvestigationCoordinator {
     controller: AbortController,
   ): void {
     if (request.query_revision !== this.revision) return;
-    const checked = outcome.ok ? checkSelection(request, population, outcome.answer) : checkSelectionProblem(request, outcome.problem);
+    const restored = this.restoredIdentity;
+    this.restoredIdentity = null;
+    let checked = outcome.ok ? checkSelection(request, population, outcome.answer) : checkSelectionProblem(request, outcome.problem);
+    if (checked.ok && restored !== null && !sameJson(checked.answer.identity, restored)) {
+      checked = mismatch("The incidents selected now are not those of the saved investigation.");
+    }
     if (!checked.ok) {
       this.failSelection(request.query_revision, history, checked.problem);
       return;
@@ -386,12 +457,12 @@ export class ImportedInvestigationCoordinator {
     const revision = request.query_revision;
     const checked = outcome.ok ? checkPopulation(request, outcome.answer) : checkProblem(request, outcome.problem);
     if (!checked.ok) {
-      this.publish({ ...initialState, population: { phase: "failed", revision, target, problem: checked.problem } });
+      this.publish({ ...this.state, population: { phase: "failed", revision, target, problem: checked.problem } });
       return;
     }
-    this.publish({ ...initialState, population: { phase: "ready", revision, target, answer: checked.answer } });
+    this.publish({ ...this.state, population: { phase: "ready", revision, target, answer: checked.answer } });
     this.requestViews(checked.answer);
-    this.select(noSteps);
+    this.select(this.openingSteps.length === 0 ? noSteps : { past: [], present: this.openingSteps, future: [] });
   }
 
   private viewRequest<Kind extends "opening_context_request" | "variants_request">(messageType: Kind, target: ViewTarget) {
@@ -576,10 +647,17 @@ function checkSelection(
   if (!sameJson(answer.predicate_results.map((result) => result.predicate), request.predicates)) {
     return mismatch("The reply answers different steps.");
   }
-  if (!sameJson(answer.parent.case_ids, population.population.case_ids)) {
+  if (!sameParent(answer.parent.case_ids, request.parent_case_ids, population.population.case_ids)) {
     return mismatch("The reply selects from a different population.");
   }
   return { ok: true, answer };
+}
+
+/** Whether a selection was made of the parent asked for: every incident of the population, or the saved parent. */
+function sameParent(answered: readonly CaseId[], asked: readonly CaseId[] | null, population: readonly CaseId[]): boolean {
+  if (asked === null) return sameJson(answered, population);
+  const expected = new Set(asked);
+  return answered.length === expected.size && answered.every((caseId) => expected.has(caseId));
 }
 
 function checkGraph(request: ProcessGraphRequest, selected: SelectionAnswer, answer: ProcessGraphAnswer): SelectionOutcome<ProcessGraphAnswer> {

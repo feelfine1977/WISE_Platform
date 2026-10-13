@@ -1,0 +1,128 @@
+/*
+ * The saved investigations: the list where the work starts, the save form under the toolbar of an
+ * investigation and the line naming the saved investigation shown. Every value is a token of
+ * tokens.css; every class begins with "saved-".
+ */
+
+.saved-area {
+  display: block;
+  min-height: calc(var(--size-viewport-height) - var(--size-app-bar));
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+.saved-head {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: var(--line-width) solid var(--color-line);
+}
+.saved-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+.saved-muted { color: var(--color-ink-muted); }
+.saved-body { display: grid; gap: var(--space-4); padding: var(--space-4) var(--space-6) var(--space-6); max-width: var(--size-page); }
+
+.saved-panel,
+.saved-form {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+}
+.saved-form { margin: var(--space-3) var(--space-6) 0; max-width: var(--size-page); }
+.saved-panel-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+.saved-panel-title:focus { outline: none; }
+.saved-path,
+.saved-identifier { font-family: var(--font-mono); font-size: var(--font-size-small); font-weight: var(--font-weight-plain); overflow-wrap: anywhere; }
+
+.saved-label {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-strong);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+  color: var(--color-ink-muted);
+}
+
+/* The list: one row per investigation, its latest revision. */
+.saved-table { width: 100%; border-collapse: collapse; }
+.saved-caption { padding-bottom: var(--space-2); color: var(--color-ink-muted); text-align: left; caption-side: top; }
+.saved-table th,
+.saved-table td {
+  padding: var(--space-1) var(--space-3) var(--space-1) 0;
+  border-bottom: var(--line-width) solid var(--color-line-row);
+  text-align: left;
+  vertical-align: middle;
+}
+.saved-table thead th {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-strong);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+  color: var(--color-ink-muted);
+}
+.saved-table tbody th { font-weight: var(--font-weight-strong); }
+.saved-figure { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.saved-hidden {
+  position: absolute;
+  width: var(--line-width);
+  height: var(--line-width);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.saved-button { white-space: nowrap; }
+.saved-primary { color: var(--color-on-accent); background: var(--color-accent); border-color: var(--color-accent); font-weight: var(--font-weight-strong); }
+.saved-primary:hover { background: var(--color-accent-strong); border-color: var(--color-accent-strong); }
+.saved-toolbar-button { margin-left: auto; }
+.saved-status:empty { display: none; }
+
+/* The save form: a name, a note and the two actions. */
+.saved-fields { display: grid; gap: var(--space-1); justify-items: start; width: 100%; }
+.saved-input,
+.saved-note-input {
+  width: 100%;
+  max-width: var(--size-path-input);
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+}
+.saved-input { min-height: var(--size-control); }
+.saved-note-input { max-width: var(--size-page); resize: vertical; }
+.saved-input:focus-visible,
+.saved-note-input:focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--line-width); }
+.saved-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* A refusal: a red bar on the left, the message and what to do. */
+.saved-problem {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-left: var(--bar-width) solid var(--color-error);
+  border-radius: var(--radius);
+}
+.saved-problem-title { font-weight: var(--font-weight-strong); color: var(--color-error); }
+
+/* The saved investigation an investigation shows: its name, note and comparison. */
+.saved-line {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: var(--line-width) solid var(--color-line);
+}
+.saved-name { font-weight: var(--font-weight-strong); }
+.saved-notes { white-space: pre-wrap; }
