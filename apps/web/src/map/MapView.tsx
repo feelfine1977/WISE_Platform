@@ -11,7 +11,7 @@ import { countOf } from "../data/wording";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
 import { elementOf, selectedElement, stepChoices } from "./elements";
-import { flowCoverage, leastFlowIncidents, rankedDetail, toFlowGraph } from "./graph";
+import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, toFlowGraph } from "./graph";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { activityTimeLines, boundaryLine, coverageRows, flowsLine, mapCaption } from "./wording";
 
@@ -123,8 +123,10 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
   const ranked = useMemo(() => rankedDetail(detail), [detail]);
   // The flows from Start and to End follow the paths: a flow weaker than the weakest path drawn by frequency is not drawn.
   const leastFlow = useMemo(() => leastFlowIncidents(shown.graph, detail), [shown.graph, detail]);
-  const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow), [shown.graph, leastFlow]);
-  const flowsNotDrawn = useMemo(() => flowsLine(flowCoverage(shown.graph, leastFlow), leastFlow), [shown.graph, leastFlow]);
+  // A flow of an activity the detail does not show is not on the map; the strongest flow of each side is kept among those shown.
+  const shownIds = useMemo(() => shownActivities(shown.graph, detail), [shown.graph, detail]);
+  const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow, shownIds), [shown.graph, leastFlow, shownIds]);
+  const flowsNotDrawn = useMemo(() => flowsLine(flowCoverage(shown.graph, leastFlow, shownIds), leastFlow), [shown.graph, leastFlow, shownIds]);
   /**
    * How the map is arranged. By default it is arranged anew, compactly, for exactly what is shown:
    * the activities and paths the detail leaves out do not shape the picture. On request every

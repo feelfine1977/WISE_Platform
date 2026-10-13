@@ -3,7 +3,7 @@ import type { FlowGraph } from "wise-flow";
 import { abstract, normalizeGraph, validateGraph } from "wise-flow";
 import type { SuppliedGraph } from "../generated/selection";
 import { checked, closed, opened, suppliedGraph } from "../test/selections";
-import { END_ID, endFlowId, flowCoverage, leastFlowIncidents, rankedDetail, START_ID, startFlowId, toFlowGraph } from "./graph";
+import { END_ID, endFlowId, flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, START_ID, startFlowId, toFlowGraph } from "./graph";
 
 describe("the supplied graph as the map library's graph", () => {
   it("passes every node, path and coverage field on unchanged, between a start and an end", () => {
@@ -85,7 +85,7 @@ describe("the supplied graph as the map library's graph", () => {
     expect(leastFlowIncidents(supplied, undefined)).toBe(0);
     expect(leastFlowIncidents(supplied, { activityDetail: 1, pathDetail: 1 })).toBe(0);
     expect(flowsOf(0)).toEqual([startFlowId(a), startFlowId(b), startFlowId(c), endFlowId(a), endFlowId(b), endFlowId(c), endFlowId(d)]);
-    expect(flowCoverage(supplied, 0)).toEqual({ flows: 7, drawn: 7 });
+    expect(flowCoverage(supplied, 0)).toEqual({ flows: 7, drawn: 7, unshown: 0 });
 
     // Half of the four paths: the map library draws the two with the most incidents, whatever their passages are,
     // and the weaker of them carries 80.
@@ -97,7 +97,7 @@ describe("the supplied graph as the map library's graph", () => {
     expect(byFrequency.map((edge) => edge.metrics?.cases).sort((a, b) => Number(b) - Number(a))).toEqual([500, 80]);
     expect(leastFlowIncidents(supplied, half)).toBe(80);
     expect(flowsOf(80)).toEqual([startFlowId(a), endFlowId(b)]);
-    expect(flowCoverage(supplied, 80)).toEqual({ flows: 7, drawn: 2 });
+    expect(flowCoverage(supplied, 80)).toEqual({ flows: 7, drawn: 2, unshown: 0 });
     // Three of four: 50 incidents.
     expect(leastFlowIncidents(supplied, { activityDetail: 1, pathDetail: 0.75 })).toBe(50);
     expect(flowsOf(50)).toEqual([startFlowId(a), endFlowId(b), endFlowId(c)]);
@@ -114,6 +114,33 @@ describe("the supplied graph as the map library's graph", () => {
     expect(thinned.nodes.filter((node) => node.kind === "activity")).toHaveLength(4);
     expect(thinned.edges.filter((edge) => edge.kind === "follows")).toHaveLength(4);
     expect(JSON.stringify(supplied)).toBe(before);
+  });
+
+  it("counts a flow of an activity the detail does not show as not drawn, and keeps the strongest flow among those shown", () => {
+    // Three activities by their incidents; the third, which most incidents end with, is the one a low activity detail leaves out.
+    const base = busy([200, 40, 30], [10, 30, 200], [300, 250, 5]);
+    const cases = [1000, 600, 500];
+    const supplied: SuppliedGraph = { ...base, nodes: base.nodes.map((node, index) => ({ ...node, metrics: { ...node.metrics, cases: cases[index], events: cases[index], count: cases[index] } })) };
+    const [a, b, c] = supplied.nodes.map((node) => node.id);
+    const detail = { activityDetail: 0.34, pathDetail: 1 };
+
+    expect(shownActivities(supplied, undefined)).toBeUndefined();
+    expect(shownActivities(supplied, { activityDetail: 1, pathDetail: 0.5 })).toBeUndefined();
+    const shown = shownActivities(supplied, detail)!;
+    expect([...shown].sort()).toEqual([a, b].sort());
+    expect(leastFlowIncidents(supplied, detail)).toBe(0);
+
+    // Six flows; the two of the activity not shown are not on the map, and the line under the map can say so.
+    expect(flowCoverage(supplied, 0, shown)).toEqual({ flows: 6, drawn: 4, unshown: 2 });
+    const scene = abstract(toFlowGraph(supplied, 0, shown), rankedDetail(detail));
+    expect(scene.edges.filter((edge) => edge.kind === "flow").map((edge) => edge.id).sort()).toEqual([startFlowId(a), startFlowId(b), endFlowId(a), endFlowId(b)].sort());
+
+    // With a high least number, End keeps the strongest flow among the activities shown, although the strongest of all is not shown.
+    const kept = toFlowGraph(supplied, 1000, shown).edges.filter((edge) => edge.kind === "flow").map((edge) => edge.id);
+    expect(kept).toEqual([startFlowId(a), endFlowId(b), endFlowId(c)]);
+    expect(flowCoverage(supplied, 1000, shown)).toEqual({ flows: 6, drawn: 2, unshown: 2 });
+    const thinned = abstract(toFlowGraph(supplied, 1000, shown), rankedDetail(detail));
+    expect(thinned.edges.filter((edge) => edge.kind === "flow").map((edge) => edge.id).sort()).toEqual([startFlowId(a), endFlowId(b)].sort());
   });
 
   it("is needed: the contract's closed metrics are not the library's open records as they are", () => {

@@ -121,7 +121,7 @@ export function mapCaption(meta: GraphCoverage): string[] {
       `${countOf(meta.omitted_activity_record_count, "record")} ${meta.omitted_activity_record_count === 1 ? "has" : "have"} no activity label.`,
     "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
     "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. " +
-      "Start and End are always shown, each with its strongest flow. The Paths detail ranks the paths by their incidents; another flow is drawn when it carries at least as many incidents as the weakest path drawn by frequency, " +
+      "Start and End are always shown, each with the strongest flow among the activities shown. The Paths detail ranks the paths by their incidents; another flow is drawn when it carries at least as many incidents as the weakest path drawn by frequency, " +
       "and all are drawn when every path is; the menu of an activity offers the incidents that begin or end with it also while its flow is not drawn.",
     lagLine(meta),
     MEASURES_LINE,
@@ -132,11 +132,16 @@ export function mapCaption(meta: GraphCoverage): string[] {
  * What is said under the map while some flows from Start or to End are not drawn; null when all are.
  * The numbers are the map's own: the flows it has, those it draws, and the incidents a flow needs.
  */
-export function flowsLine(coverage: { flows: number; drawn: number }, least: number): string | null {
+export function flowsLine(coverage: { flows: number; drawn: number; unshown?: number }, least: number): string | null {
   const left = coverage.flows - coverage.drawn;
   if (left <= 0) return null;
-  const needed = Number.isFinite(least) ? `, ${left === 1 ? "with" : "each with"} fewer than ${countOf(least, "incident")}` : "";
-  return `Not drawn at this detail: ${left} of the ${coverage.flows} flows from Start and to End${needed}. The Paths slider draws more.`;
+  const unshown = Math.min(left, coverage.unshown ?? 0);
+  const weak = left - unshown;
+  const fewer = Number.isFinite(least) ? `fewer than ${countOf(least, "incident")}` : null;
+  const start = `Not drawn at this detail: ${left} of the ${coverage.flows} flows from Start and to End`;
+  if (unshown === 0) return `${start}${fewer ? `, ${left === 1 ? "with" : "each with"} ${fewer}` : ""}. The Paths slider draws more.`;
+  if (weak === 0) return `${start}, of activities that are not shown. The Activities slider shows more.`;
+  return `${start}: ${unshown} of activities that are not shown, ${weak}${fewer ? ` with ${fewer}` : " more"}. The sliders draw more.`;
 }
 
 export function lagLine(meta: GraphCoverage): string {
