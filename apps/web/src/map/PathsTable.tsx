@@ -3,20 +3,31 @@ import type { FlowGraph } from "wise-flow";
 import { emptySelection, type Selection } from "wise-flow/react";
 import type { SuppliedGraph } from "../generated/selection";
 import "./canvas.css";
+import "./paths.css";
 import { OPENING_ORDER, orderBy, type PathColumn, type PathOrder, pathRows, type PathRow, sortedRows } from "./paths";
 
 const whole = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 const oneDecimal = new Intl.NumberFormat("en", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-/** The columns in their order; a number stands at the right of its column. */
-const COLUMNS: { column: PathColumn; label: string; number?: true }[] = [
+/** Why a row of a flow from Start or to End has a dash in a column. */
+const FLOW_NOTE = "A flow has incidents only";
+
+/** The columns in their order; a number stands at the right of its column. What a heading leaves unsaid is its tooltip. */
+const COLUMNS: { column: PathColumn; label: string; number?: true; note?: string }[] = [
   { column: "from", label: "From" },
   { column: "to", label: "To" },
   { column: "incidents", label: "Incidents", number: true },
-  { column: "passages", label: "Passages", number: true },
-  { column: "lag", label: "Median lag, hours", number: true },
-  { column: "drawn", label: "On the map" },
+  { column: "passages", label: "Passages", number: true, note: FLOW_NOTE },
+  { column: "lag", label: "Median lag (h)", number: true, note: FLOW_NOTE },
+  { column: "drawn", label: "On the map", note: "Drawn at the current detail" },
 ];
+
+/** A number a row does not have: a quiet dash for the eye, an empty cell for assistive technology. */
+const none = (
+  <span className="muted" aria-hidden="true">
+    –
+  </span>
+);
 
 /** How many rows Page Up and Page Down move. */
 const PAGE = 10;
@@ -35,10 +46,13 @@ interface PathsTableProps {
  * Every path of the kept incidents in one list: each pair of activities of the supplied graph with
  * its supplied incidents, passages and median lag, and each flow from Start and to End with its
  * incidents. A column's heading sorts by it. Each row says whether the map draws it at the map's
- * detail, and is selected as its path or flow is selected on the map, which offers its steps beside
- * the list. Nothing is counted here.
+ * detail, as a filled or a hollow dot with the words for assistive technology, and is selected as
+ * its path or flow is selected on the map, which offers its steps beside the list. Nothing is
+ * counted here.
  *
- * One row is a tab stop; the arrow keys, Page Up, Page Down, Home and End move between rows.
+ * One row is a tab stop; the arrow keys, Page Up, Page Down, Home and End move between rows. What
+ * the list is and how the keyboard moves in it is its description for assistive technology and is
+ * not printed.
  */
 export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProps) {
   const [order, setOrder] = useState<PathOrder>(OPENING_ORDER);
@@ -77,7 +91,7 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
 
   return (
     <div className="path-list">
-      <p className="muted path-list-hint" id={hint}>
+      <p className="visually-hidden" id={hint}>
         Every path between two activities of the kept incidents and every flow from Start and to End, with its supplied numbers; a flow has incidents
         only. “On the map” says whether the map draws it at the detail above. Select a row to keep or remove the incidents through it. Tab enters the
         list; the arrow keys, Page Up, Page Down, Home and End move.
@@ -88,13 +102,14 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
         <table className="path-table" aria-label="Paths of the kept incidents" aria-describedby={hint}>
           <thead>
             <tr>
-              {COLUMNS.map(({ column, label, number }) => (
+              {COLUMNS.map(({ column, label, number, note }) => (
                 // The column is named by its heading alone; the button in it says what it does, apart from the view of the same name.
                 <th
                   key={column}
                   scope="col"
                   className={number ? "number column-number" : column === "drawn" ? "column-label" : undefined}
                   aria-label={label}
+                  title={note}
                   aria-sort={order.column === column ? (order.descending ? "descending" : "ascending") : undefined}
                 >
                   <button type="button" className="path-sort" aria-label={`${label}: sort the list`} onClick={() => setOrder((current) => orderBy(current, column))}>
@@ -141,9 +156,12 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
                   </th>
                   <td title={row.to}>{row.kind === "end" ? <span className="muted">{row.to}</span> : row.to}</td>
                   <td className="number">{whole.format(row.incidents)}</td>
-                  <td className="number">{row.passages === undefined ? "" : whole.format(row.passages)}</td>
-                  <td className="number">{row.medianLagHours === undefined ? "" : oneDecimal.format(row.medianLagHours)}</td>
-                  <td className={row.drawn ? undefined : "muted"}>{row.drawn ? "Drawn" : "Not drawn"}</td>
+                  <td className="number">{row.passages === undefined ? none : whole.format(row.passages)}</td>
+                  <td className="number">{row.medianLagHours === undefined ? none : oneDecimal.format(row.medianLagHours)}</td>
+                  <td title={row.drawn ? "Drawn" : "Not drawn"}>
+                    <span className="path-drawn" data-drawn={row.drawn} aria-hidden="true" />
+                    <span className="visually-hidden">{row.drawn ? "Drawn" : "Not drawn"}</span>
+                  </td>
                 </tr>
               );
             })}

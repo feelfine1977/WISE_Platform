@@ -1,0 +1,15 @@
+/*
+ * The list of every path: whether the map draws a row, as a dot.
+ * Every value refers to the token stylesheet.
+ */
+
+/* Drawn is a filled dot and not drawn a hollow one; the words are the cell's tooltip and are kept for assistive technology. */
+.path-drawn {
+  display: inline-block;
+  width: var(--size-dot);
+  height: var(--size-dot);
+  vertical-align: middle;
+  border: var(--line-width) solid var(--color-ink-muted);
+  border-radius: var(--radius-round);
+}
+.path-drawn[data-drawn="true"] { background: var(--color-ink); border-color: var(--color-ink); }

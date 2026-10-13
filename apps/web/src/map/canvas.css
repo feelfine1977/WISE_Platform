@@ -76,7 +76,6 @@
   scroll-padding-top: var(--size-path-headings);
   background: var(--color-surface);
 }
-.path-list-hint { padding: var(--space-2) var(--space-4); font-size: var(--font-size-small); }
 .path-list > .working-text { padding: var(--space-2) var(--space-4); }
 .path-table { min-width: calc(var(--size-column-number) * 3 + var(--size-column-label) + var(--size-column-id-least) * 2); }
 .path-table tbody tr { cursor: pointer; }

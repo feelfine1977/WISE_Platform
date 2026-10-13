@@ -63,15 +63,16 @@ describe("the list of every path in the investigation", () => {
     expect([pressed("Map"), pressed("Incidents"), pressed("Paths")]).toEqual(["false", "false", "true"]);
     expect(screen.getByRole("heading", { name: "Paths of the kept incidents" })).toBeTruthy();
     expect(screen.queryByLabelText("Process map of the kept incidents")).toBeNull();
-    expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Incidents▼", "Passages", "Median lag, hours", "On the map"]);
+    expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Incidents▼", "Passages", "Median lag (h)", "On the map"]);
     // The heading that sorts by the incidents is not taken for the view of that name.
     expect(within(list()).getByRole("button", { name: "Incidents: sort the list" })).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Incidents" })).toHaveLength(1);
     // A-1 begins with "Eröffnet", goes on to "Geschlossen" 25.5 hours later and ends there; B-2 has no known order.
+    // A flow has incidents only: where a path has its passages and its lag, a flow has a dash.
     expect(listed()).toEqual([
-      ["Start", opened, "1", "", "", "Drawn"],
+      ["Start", opened, "1", "–", "–", "Drawn"],
       [opened, closed, "1", "1", "25.5", "Drawn"],
-      [closed, "End", "1", "", "", "Drawn"],
+      [closed, "End", "1", "–", "–", "Drawn"],
     ]);
 
     // A row is selected as its path is on the map, and offers the same steps in the same place.
@@ -194,7 +195,7 @@ describe("the list of every path beside the map", () => {
     expect(first()).toEqual([stepName(11), "End", "70"]);
     sort("Passages");
     expect(listed()[0].slice(0, 4)).toEqual([stepName(0), stepName(1), "105", "105"]);
-    sort("Median lag, hours");
+    sort("Median lag (h)");
     // The last path of the graph, the fourth activity to itself, takes the longest: 84 hours.
     expect(listed()[0]).toEqual([stepName(3), stepName(3), "15", "17", "84.0", "Drawn"]);
     sort("On the map");
@@ -202,6 +203,55 @@ describe("the list of every path beside the map", () => {
     sort("On the map");
     expect(listed()[0][5]).toBe("Not drawn");
     expect(heading("On the map").getAttribute("aria-sort")).toBe("ascending");
+  });
+
+  it("prints no help: what it is and how the keyboard moves in it describes it for assistive technology, and its headings say the rest as tooltips", () => {
+    render(view("paths"));
+    const description = document.getElementById(list().getAttribute("aria-describedby")!)!;
+    expect(description.className).toBe("visually-hidden");
+    expect(description.textContent).toBe(
+      "Every path between two activities of the kept incidents and every flow from Start and to End, with its supplied numbers; a flow has incidents only. " +
+        "“On the map” says whether the map draws it at the detail above. Select a row to keep or remove the incidents through it. " +
+        "Tab enters the list; the arrow keys, Page Up, Page Down, Home and End move.",
+    );
+    // Nothing else is printed above the rows.
+    expect(Array.from(list().parentElement!.children, (part) => part.tagName)).toEqual(["P", "TABLE"]);
+    expect(within(list()).getAllByRole("columnheader").map((heading) => [heading.getAttribute("aria-label"), heading.getAttribute("title")])).toEqual([
+      ["From", null],
+      ["To", null],
+      ["Incidents", null],
+      ["Passages", "A flow has incidents only"],
+      ["Median lag (h)", "A flow has incidents only"],
+      ["On the map", "Drawn at the current detail"],
+    ]);
+  });
+
+  it("says whether the map draws a row as a filled or a hollow dot, with the words as tooltip and for assistive technology, and a number a row does not have as a quiet dash", () => {
+    render(view("paths"));
+    const rows = within(list()).getAllByRole("row").slice(1);
+    /** The last cell of a row as it is drawn, as it is hovered and as it is read. */
+    const onTheMap = (row: HTMLElement) => {
+      const cell = row.lastElementChild!;
+      const dot = cell.querySelector(".path-drawn")!;
+      return [dot.getAttribute("data-drawn"), dot.getAttribute("aria-hidden"), dot.textContent, cell.getAttribute("title"), cell.querySelector(".visually-hidden")?.textContent];
+    };
+    expect(onTheMap(rows.find((row) => row.lastElementChild?.textContent === "Drawn")!)).toEqual(["true", "true", "", "Drawn", "Drawn"]);
+    expect(onTheMap(rows.find((row) => row.lastElementChild?.textContent === "Not drawn")!)).toEqual(["false", "true", "", "Not drawn", "Not drawn"]);
+    // Every row says one of the two, in the words alone.
+    expect(new Set(rows.map((row) => row.lastElementChild?.textContent))).toEqual(new Set(["Drawn", "Not drawn"]));
+
+    // The flow from Start to the first activity has incidents, and neither passages nor a lag.
+    const flow = within(list()).getByRole("button", { name: `Flow from Start to “${stepName(0)}”` }).closest("tr")!;
+    const [, , incidents, passages, lag] = Array.from(flow.children);
+    expect(incidents.textContent).toBe("100");
+    for (const cell of [passages, lag]) {
+      expect(cell.textContent).toBe("–");
+      expect(cell.firstElementChild?.className).toBe("muted");
+      expect(cell.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
+    }
+    // A path has both, and no dash.
+    const path = within(list()).getByRole("button", { name: `Path from “${stepName(0)}” to “${stepName(1)}”` }).closest("tr")!;
+    expect(Array.from(path.children, (cell) => cell.textContent).slice(2, 5)).toEqual(["105", "105", "2.0"]);
   });
 
   it("has one row as its tab stop and moves between rows with the keyboard", async () => {
