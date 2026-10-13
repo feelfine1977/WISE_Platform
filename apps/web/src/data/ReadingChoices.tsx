@@ -302,15 +302,18 @@ function evidenceOf(suggestion: RoleSuggestion | undefined): string {
   return `${countOf(suggestion.nonempty_count, "filled cell")}, ${countOf(suggestion.distinct_nonempty_count, "distinct value")}`;
 }
 
+/** A column of the source with what the inspection found in it; nothing when it reported nothing about it. */
+interface ColumnEvidence {
+  index: number;
+  suggestion: RoleSuggestion | undefined;
+}
+
 /**
  * Every column of the source for one role: first those the inspection suggests for it, then the
  * others. Each keeps the source order and what the inspection found in it.
  */
-function columnsFor(
-  role: Role | "context",
-  answer: CsvInspectionAnswer,
-): { suggested: { index: number; suggestion: RoleSuggestion | undefined }[]; others: { index: number; suggestion: RoleSuggestion | undefined }[] } {
-  const all = answer.columns.map((column) => ({
+function columnsFor(role: Role | "context", answer: CsvInspectionAnswer): { suggested: ColumnEvidence[]; others: ColumnEvidence[] } {
+  const all: ColumnEvidence[] = answer.columns.map((column) => ({
     index: column.index,
     suggestion: answer.role_suggestions.find((item) => item.column_index === column.index),
   }));
@@ -342,6 +345,7 @@ function Choices({
   const timestamp = answer.role_suggestions.find((item) => item.column_index === draft.timestampColumn);
   const consequences = readingConsequences(draft, answer);
   const consequencesId = useId();
+  const describedBy = [missing.length > 0 ? missingId : null, consequences.length > 0 ? consequencesId : null].filter((id) => id !== null);
   const working = interpretation.phase === "preparing";
   return (
     <>
@@ -394,7 +398,7 @@ function Choices({
           type="button"
           className="primary"
           disabled={missing.length > 0 || working}
-          aria-describedby={[missing.length > 0 ? missingId : "", consequences.length > 0 ? consequencesId : ""].join(" ").trim() || undefined}
+          aria-describedby={describedBy.length > 0 ? describedBy.join(" ") : undefined}
           onClick={() => coordinator.confirm(false)}
         >
           Read the source with these choices
@@ -452,7 +456,7 @@ function RoleChoice({
   const field = roleFields[role];
   const { suggested, others } = columnsFor(role, answer);
   const value = draft[field];
-  const option = (item: { index: number; suggestion: RoleSuggestion | undefined }) => (
+  const option = (item: ColumnEvidence) => (
     <option key={item.index} value={item.index}>
       {columnName(names, item.index)} — {evidenceOf(item.suggestion)}
     </option>
@@ -488,13 +492,13 @@ function ContextChoice({
   coordinator: DataCoordinator;
 }) {
   const roles = new Set([draft.caseColumn, draft.activityColumn, draft.timestampColumn, draft.sequenceColumn]);
-  const free = (item: { index: number }) => !roles.has(item.index);
+  const free = (item: ColumnEvidence) => !roles.has(item.index);
   const columns = columnsFor("context", answer);
   const suggested = columns.suggested.filter(free);
   const others = columns.others.filter(free);
   if (suggested.length === 0 && others.length === 0) return null;
   const chosen = new Set(draft.contextColumns);
-  const check = (item: { index: number; suggestion: RoleSuggestion | undefined }) => (
+  const check = (item: ColumnEvidence) => (
     <label key={item.index} className="check">
       <input
         type="checkbox"
