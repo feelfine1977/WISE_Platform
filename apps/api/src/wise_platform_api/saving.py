@@ -671,6 +671,8 @@ def _score_reference_problem(
         return None
     assert isinstance(reference, Mapping)
     run = workspace.run(str(reference["score_run_id"]))
+    if isinstance(run, Problem):
+        return Problem("score_reference_unavailable", run.message, "score_run_ref.score_run_id")
     identity = run.get("identity") if isinstance(run, Mapping) else None
     if not isinstance(identity, Mapping) or identity.get("run_id") != reference["score_run_id"]:
         return Problem(

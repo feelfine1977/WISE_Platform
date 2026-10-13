@@ -1,6 +1,6 @@
 # Design perspectives
 
-This is the target design for staged implementation. The current executable scope remains M0: local host, generated health boundary and foundation screen. The [requirements](requirements.md) and [roadmap](roadmap.md) define what must be qualified before the incident POV is complete.
+This is the target design for staged implementation. The executable scope today is the first investigation candidate that the [README](../README.md) describes: import of an event-history CSV, incidents with complete evidence, the process map with selection of whole incidents, opening context and variants, comparison of groups and periods, one scored expectation, and saved investigations. What this document describes beyond that is target design. The [requirements](requirements.md) and [roadmap](roadmap.md) define what must be qualified before the incident POV is complete.
 
 ## Business and customer perspective
 
@@ -90,7 +90,7 @@ Opening context is anchored to the named opening event and preserves an unavaila
 
 Map/matrix/variants use one ordered mapped representation. Timestamp ties use a declared authority and original source position. Missing activity labels stay in raw evidence while their mapped omission/gaps are disclosed. Repeated passages differ from unique incident support. Outgoing passage frequency differs from cohort case share. Lag mean, median and usable support remain separate from active working time. Hiding an activity does not invent a recorded adjacency between its neighbors.
 
-The input/output contract family grows with implemented slices: source/preparation manifests, population predicates, query receipts, typed graph/variant/profile answers, task status and investigation serialization. Each answer includes format/version, request identity, query revision, source/preparation/dictionary identity, policy/implementation versions, memberships/supports and availability. The health schema is the only currently implemented boundary. Future contracts are reviewed alongside exact acceptance examples before publication.
+The input/output contract family grows with implemented slices: source/preparation manifests, population predicates, query receipts, typed graph/variant/profile answers, task status and investigation serialization. Each answer includes format/version, request identity, query revision, source/preparation/dictionary identity, policy/implementation versions, memberships/supports and availability. Implemented boundaries today: health, the synthetic examples, import, selection and process graph, the population views, comparison, saving and scoring. Each has its source schema under `contracts/` with generated types for the API and the browser. Further contracts are reviewed alongside exact acceptance examples before publication.
 
 ## Runtime and state perspective
 

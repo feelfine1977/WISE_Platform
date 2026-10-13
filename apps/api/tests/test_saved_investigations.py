@@ -250,6 +250,21 @@ def test_saving_unchanged_content_again_adds_no_revision(client, question, folde
     assert len(revision_files(folder)) == 1
 
 
+def test_a_save_over_a_latest_revision_that_cannot_be_read_is_refused_and_changes_nothing(client, question, folder):
+    first = saved(client, save_request(question))["revision"]
+    latest = next(path for path in revision_files(folder) if first["saved_revision_id"].rsplit(":", 1)[1] in path.name)
+    stored = json.loads(latest.read_text(encoding="utf-8"))
+    stored["content"]["notes"] = "Changed outside the application."
+    latest.write_text(json.dumps(stored), encoding="utf-8")
+    before = {path: path.read_bytes() for path in (folder / "investigations").rglob("*") if path.is_file()}
+
+    update = save_request(question, "save-2", 4, investigation_id=first["investigation_id"],
+                          expected_revision_id=first["saved_revision_id"], notes="A newer note.")
+    refused(client.post(SAVE, json=update), "save_investigation", "malformed_saved_revision")
+
+    assert {path: path.read_bytes() for path in (folder / "investigations").rglob("*") if path.is_file()} == before
+
+
 def test_a_save_against_an_earlier_head_is_a_conflict_and_changes_nothing(client, question, folder):
     first = saved(client, save_request(question))["revision"]
     second = saved(client, save_request(question, "save-2", 4, investigation_id=first["investigation_id"],

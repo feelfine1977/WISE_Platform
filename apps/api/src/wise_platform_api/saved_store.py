@@ -179,6 +179,9 @@ class SavedInvestigations:
                 assert expected_revision_id is not None
                 return Conflict(investigation_id, expected_revision_id, head.latest_revision_id)
             latest = self.revision(head.latest_revision_id)
+            if isinstance(latest, Problem):
+                # The revision this save would replace cannot be read: nothing is published over it.
+                return latest
             if isinstance(latest, StoredRevision) and latest.content == content:
                 return Published(latest, created_investigation=False, semantic_change=False)
             replaces = head.latest_revision_id
