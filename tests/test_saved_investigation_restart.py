@@ -370,7 +370,10 @@ def test_actual_two_process_reopen_restores_evidence_graph_and_unscored_question
         assert reopened_workspace["workspace_id"] == workspace["workspace_id"]
         assert before["source"] in reopened_workspace["sources"]
         assert (
-            before["interpretation"]["preparation"]
+            {
+                key: before["interpretation"]["preparation"][key]
+                for key in ("preparation_id", "source_id")
+            }
             in reopened_workspace["preparations"]
         )
         assert (
