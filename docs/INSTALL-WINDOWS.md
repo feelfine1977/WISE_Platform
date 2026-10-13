@@ -37,16 +37,24 @@ Install the Python that comes with the bundle, for your user only and without ch
 start /wait "" "runtime\python-3.13.16-amd64.exe" /quiet /norestart /log installer.log InstallAllUsers=0 Include_launcher=0 PrependPath=0 AssociateFiles=0 Shortcuts=0 Include_test=0 Include_doc=0 Include_tcltk=0 TargetDir="%LOCALAPPDATA%\WISE\python313"
 ```
 
-The line returns when the installer has finished, after about a minute, and shows no window. Then this prints `3.13.16`:
+The line returns when the installer has finished, after about a minute, and shows no window. Check its result before going on:
 
 ```bat
-"%LOCALAPPDATA%\WISE\python313\python.exe" --version
+echo %ERRORLEVEL%
 ```
+
+`0` means installed. `3010` means installed, and Windows wants a restart at some time; you can go on without it. Any other number means that it failed: read `installer.log` in this folder. Then this prints `3.13.16`:
+
+```bat
+"%LOCALAPPDATA%\WISE\python313\python.exe" -I --version
+```
+
+The `-I` in this and the following commands makes Python ignore settings and packages of other Python installations on the machine.
 
 **Using a Python that is already installed.** This is possible when it is Python 3.13 for 64 bit in its ordinary build. Check it:
 
 ```bat
-py -3.13 -c "import platform, struct, sysconfig; print(platform.python_version(), struct.calcsize('P') * 8, sysconfig.get_config_var('Py_GIL_DISABLED'))"
+py -3.13 -I -c "import platform, struct, sysconfig; print(platform.python_version(), struct.calcsize('P') * 8, sysconfig.get_config_var('Py_GIL_DISABLED'))"
 ```
 
 The answer must begin with `3.13`, then `64`, and must not end with `1` (the free-threaded build cannot use these files). The bundle was checked with 3.13.16. If in doubt, use the installer above; it does not disturb another Python.
@@ -56,17 +64,17 @@ The answer must begin with `3.13`, then `64`, and must not end with `1` (the fre
 Create an environment of its own for the application. Use the first line if you installed Python in step 2, the second if you use a Python that was already there:
 
 ```bat
-"%LOCALAPPDATA%\WISE\python313\python.exe" -m venv "%LOCALAPPDATA%\WISE\env"
+"%LOCALAPPDATA%\WISE\python313\python.exe" -I -m venv "%LOCALAPPDATA%\WISE\env"
 ```
 
 ```bat
-py -3.13 -m venv "%LOCALAPPDATA%\WISE\env"
+py -3.13 -I -m venv "%LOCALAPPDATA%\WISE\env"
 ```
 
 Then install from the folder:
 
 ```bat
-"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -m pip install --no-index --find-links wheelhouse --only-binary=:all: --require-hashes -r install-runtime.lock
+"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -I -m pip install --no-index --find-links wheelhouse --only-binary=:all: --require-hashes -r install-runtime.lock
 ```
 
 `--no-index` means that nothing is fetched from the internet; `--require-hashes` means that every file must have the checksum the list names. The last line of the output begins with `Successfully installed`.
@@ -74,7 +82,7 @@ Then install from the folder:
 ## 4. Start
 
 ```bat
-"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -m wise_platform_api --port 8765
+"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -I -m wise_platform_api --port 8765
 ```
 
 Leave this window open and open <http://127.0.0.1:8765> in the browser. Ctrl+C in the window stops the application.
