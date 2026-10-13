@@ -34,3 +34,11 @@ def test_half_a_surrogate_pair_in_a_name_or_value_is_refused_and_not_repeated(it
 
 def test_a_parameter_given_twice_is_refused():
     assert isinstance(upload_message([("filename", "a.csv"), ("filename", "b.csv")]), str)
+
+
+@pytest.mark.parametrize("name", ["schema_version", "query_revision"])
+def test_a_number_of_thousands_of_digits_stays_text_and_is_never_converted(name):
+    digits = "9" * 5000
+
+    assert upload_message([(name, digits)]) == {name: digits}
+    assert upload_message([(name, "9" * 20)]) == {name: int("9" * 20)}

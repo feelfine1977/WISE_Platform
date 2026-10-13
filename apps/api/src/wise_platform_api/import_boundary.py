@@ -89,6 +89,8 @@ _TIME = ("policies", "time")
 _ROWS = ("policies", "rows")
 _ZONE = ("policies", "time", "parameters", "timezone")
 _DECIMAL = re.compile(r"0|[1-9][0-9]*")
+_DIGITS_READ = 20
+"""More digits than the largest admitted whole number has; longer digit strings stay text."""
 
 # Order in which failing places are named, first one first.
 _ENVELOPE, _DIALECT, _MAPPING, _POLICY_SHAPE, _POLICY_ID, _ZONE_MODE, _PARAMETER = range(7)
@@ -149,7 +151,8 @@ def upload_message(items: Iterable[tuple[str, str]]) -> dict[str, object] | str:
     """The metadata of a source upload from its query parameters, or why it cannot be read.
 
     The schema version and the query revision are read as decimal whole numbers written with
-    ASCII digits; any other spelling stays text, so that validation refuses it.
+    ASCII digits; any other spelling stays text, so that validation refuses it. So does a number
+    of more digits than any admitted value has: it is never converted.
     """
     message: dict[str, object] = {}
     for name, value in items:
@@ -157,7 +160,7 @@ def upload_message(items: Iterable[tuple[str, str]]) -> dict[str, object] | str:
             return "A query parameter holds text that is not valid Unicode."
         if name in message:
             return f"The query parameter {name!r} is given more than once."
-        if name in ("schema_version", "query_revision") and _DECIMAL.fullmatch(value):
+        if name in ("schema_version", "query_revision") and len(value) <= _DIGITS_READ and _DECIMAL.fullmatch(value):
             message[name] = int(value)
         else:
             message[name] = value
