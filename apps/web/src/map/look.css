@@ -28,3 +28,8 @@
   transform-origin: 0 50%;
   transform: scale(max(1, calc(var(--wf-text-floor) / var(--size-map-event-name))));
 }
+
+/* A card keeps what it draws inside its rounded corners: the bar of its share along the bottom edge ends with the corner. */
+.map-frame [data-wf-part="map"] [data-wf-part="node"]:is([data-wf-kind="activity"], [data-wf-kind="stage"]) { overflow: hidden; }
+/* The band of a card says its stage. While no activity of the map is in a stage it says nothing and is left out. */
+.map-frame[data-stages="none"] [data-wf-part="map"] [data-wf-part="node-band"] { display: none; }

@@ -299,8 +299,8 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
         {listed ? (
           <PathsTable graph={shown.graph} drawn={detailShown.drawn} selection={selection} onSelect={setSelection} />
         ) : (
-          // The stylesheet of the map's look reads from the frame which way the map runs.
-          <div className="map-frame" data-direction={direction}>
+          // The stylesheet of the map's look reads from the frame which way the map runs and whether any activity on it is in a stage.
+          <div className="map-frame" data-direction={direction} data-stages={graph.groups?.length ? "drawn" : "none"}>
             {inPlace && arrangement.phase === "arranging" ? (
               <p className="working-text map-arranging">Arranging the map of every incident of the parent…</p>
             ) : (

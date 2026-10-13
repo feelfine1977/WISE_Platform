@@ -227,6 +227,8 @@
   /* Start is a ring in its green on the paper, End a disc in its purple: ring against disc tells them apart without the colours. */
   --color-map-start: #205840;
   --color-map-end: #803068;
+  /* A selected card: the tint of a selection as it looks on the paper, opaque, so that no path shows through the card. */
+  --color-map-selected: #dbebf4;
   /* The circle of Start and End, the size of their names in units of the map, and where a name begins beside its circle. */
   --size-map-event: 40px;
   --size-map-event-name: 15;

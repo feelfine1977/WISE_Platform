@@ -1,18 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { buildScene, checkTheme, defaultTheme, layout, resolveTheme } from "wise-flow";
+import { type ActivityLabelOptions, activityReferences, buildScene, checkTheme, colorTokens, defaultTheme, layout, resolveTheme, stateStyle } from "wise-flow";
+import libraryTokens from "wise-flow/tokens.css?raw";
 import sheet from "../styles/tokens.css?raw";
-import { suppliedGraph } from "../test/selections";
+import { nodeIds, opened, suppliedGraph } from "../test/selections";
 import { TOP_TO_BOTTOM } from "./arrange";
 import { END_ID, START_ID, toFlowGraph } from "./graph";
 import { MAP_THEME, nodeSize, tokenValue } from "./look";
 
 const theme = resolveTheme(MAP_THEME);
 
-/** The map of both incidents of ../test/selections.ts as the map draws it: in the theme of the map, every node in its size. */
-async function drawn() {
-  const graph = toFlowGraph(suppliedGraph(["A-1", "B-2"]));
+/**
+ * The map of both incidents of ../test/selections.ts as the map draws it: in the theme of the map,
+ * every node in its size, the activities with their whole names and their incidents. `renamed`
+ * gives the first activity, "Eröffnet", another name.
+ */
+async function drawn(renamed?: string) {
+  const supplied = suppliedGraph(["A-1", "B-2"]);
+  const graph = toFlowGraph(renamed === undefined ? supplied : { ...supplied, nodes: supplied.nodes.map((node) => (node.label === opened ? { ...node, label: renamed } : node)) });
   const positions = await layout(graph, { engine: "dagre", direction: TOP_TO_BOTTOM, nodeSize });
-  const scene = buildScene(graph, positions, { theme, locale: "en" });
+  const activityLabels: ActivityLabelOptions = { mode: "names", references: activityReferences(graph), showCounts: true, caseLabel: "incidents" };
+  const scene = buildScene(graph, positions, { theme, locale: "en", activityLabels });
   const node = (id: string) => scene.nodeMarks.find((mark) => mark.id === id)!;
   return { graph, positions, scene, node };
 }
@@ -52,5 +59,49 @@ describe("the theme of the map", () => {
     // Their names are as large as a title and semibold.
     for (const mark of [start, end]) expect(mark.texts).toMatchObject([{ role: "label", size: 15, weight: 600, paint: "ink" }]);
     expect([start.texts[0].text, end.texts[0].text]).toEqual(["Start", "End"]);
+  });
+
+  it("draws an activity as a card of 200 by 64 with rounded corners, and its share as a bar along the bottom edge", async () => {
+    const { node, positions } = await drawn();
+    const card = node(nodeIds[opened]);
+    expect(positions.nodes[nodeIds[opened]]).toMatchObject({ width: 200, height: 64 });
+    expect(card).toMatchObject({ shape: "box", radius: 8, fill: "paper", stroke: { paint: "lineStrong", width: 1 }, band: 8 });
+    // One of the two incidents passes the activity: the bar is half as long as the card is wide inside its band and outline, and 3 high.
+    expect(card.cue?.share).toBe(0.5);
+    expect(card.cue?.stripe).toBeUndefined();
+    expect(card.cue?.foot).toMatchObject({ box: { width: (200 - 8 - 1) / 2, height: 3 }, paint: "cueFoot" });
+    // The name, then the incidents and their share of all.
+    expect(card.texts.map((text) => [text.role, text.text])).toEqual([
+      ["nameLine", opened],
+      ["countLine", "1"],
+      ["share", "· 50 %"],
+    ]);
+    expect(card.texts.map((text) => [text.size, text.weight, text.paint])).toEqual([
+      [13, 500, "ink"],
+      [11, 600, "ink"],
+      [11, undefined, "inkMuted"],
+    ]);
+  });
+
+  it("keeps a long name whole on two lines of the card", async () => {
+    const long = "Weiterleitung ans Service-Postfach";
+    const { node } = await drawn(long);
+    const lines = node(nodeIds[opened]).texts.filter((text) => text.role === "nameLine").map((text) => text.text);
+    expect(lines).toEqual(["Weiterleitung ans", "Service-Postfach"]);
+    expect(node(nodeIds[opened]).texts.map((text) => text.role)).toEqual(["nameLine", "nameLine", "countLine", "share"]);
+  });
+
+  it("fills a selected card with the tint of a selection as it looks on the paper, and outlines it in the colour of the focus", async () => {
+    const { scene, node } = await drawn();
+    expect(stateStyle(scene, "node", node(nodeIds[opened]), { selected: true })).toEqual({ fill: "#dbebf4", stroke: colorTokens.focus });
+    expect(stateStyle(scene, "node", node(nodeIds[opened]), { hovered: true })).toBeUndefined();
+    // Start and End are not filled: they keep their own colours when selected.
+    expect(stateStyle(scene, "node", node(START_ID), { selected: true })).toBeUndefined();
+
+    // The token is the library's translucent tint of a selection painted on its paper, opaque.
+    const [red, green, blue, share] = /--wf-selection:\s*rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/.exec(libraryTokens)!.slice(1).map(Number);
+    expect(/--wf-paper:\s*([^;]+);/.exec(libraryTokens)?.[1]).toBe("#ffffff");
+    const onPaper = [red, green, blue].map((channel) => Math.round(channel * share + 255 * (1 - share)).toString(16).padStart(2, "0")).join("");
+    expect(tokenValue("--color-map-selected")).toBe(`#${onPaper}`);
   });
 });
