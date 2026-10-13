@@ -308,30 +308,65 @@ def test_the_messages_of_these_operations_are_the_generated_models():
         assert getattr(population_view_messages, name) is getattr(generated, name), name
 
 
-def unique_places(schema, node, place=()):
-    """The places of a message where the contract keeps a list free of repeated items."""
-    if "$ref" in node:
-        yield from unique_places(schema, schema["$defs"][node["$ref"].rsplit("/", 1)[1]], place)
-    for branch in [*node.get("oneOf", []), *node.get("anyOf", [])]:
-        yield from unique_places(schema, branch, place)
-    if node.get("uniqueItems") is True:
+def places(schema, node, found, place=()):
+    """The places of a message whose part of the contract is ``found``."""
+    if found(node):
         yield place
+    if "$ref" in node:
+        yield from places(schema, schema["$defs"][node["$ref"].rsplit("/", 1)[1]], found, place)
+    for branch in [*node.get("oneOf", []), *node.get("anyOf", [])]:
+        yield from places(schema, branch, found, place)
     if isinstance(node.get("items"), dict):
-        yield from unique_places(schema, node["items"], (*place, "*"))
+        yield from places(schema, node["items"], found, (*place, "*"))
     for name, value in node.get("properties", {}).items():
-        yield from unique_places(schema, value, (*place, name))
+        yield from places(schema, value, found, (*place, name))
 
 
-def test_the_unique_lists_checked_are_those_of_the_contract():
+def unique_places(schema, node):
+    """The places of a message where the contract keeps a list free of repeated items."""
+    return places(schema, node, lambda part: part.get("uniqueItems") is True)
+
+
+def version_places(schema, node):
+    """The places of a message that hold an implementation version."""
+    return places(schema, node, lambda part: part.get("$ref") == "#/$defs/ImplementationVersion")
+
+
+def population_views_schema():
     import json
     from pathlib import Path
 
+    return json.loads((Path(__file__).resolve().parents[3] / "contracts/population-views.schema.json")
+                      .read_text(encoding="utf-8"))
+
+
+def test_the_unique_lists_checked_are_those_of_the_contract():
     from wise_platform_api.population_view_messages import UNIQUE
 
-    schema = json.loads((Path(__file__).resolve().parents[3] / "contracts/population-views.schema.json")
-                        .read_text(encoding="utf-8"))
+    schema = population_views_schema()
     for definition, message_type in (("OpeningContextAnswer", "opening_context_answer"),
                                      ("VariantsAnswer", "variants_answer")):
         assert set(unique_places(schema, schema["$defs"][definition])) == set(UNIQUE[message_type])
     for request in ("OpeningContextRequest", "VariantsRequest", "PopulationViewRefusal"):
         assert list(unique_places(schema, schema["$defs"][request])) == []
+
+
+def test_the_versions_checked_are_those_of_the_contract():
+    from wise_platform_api.population_view_messages import VERSIONS
+
+    schema = population_views_schema()
+    assert schema["$defs"]["ImplementationVersion"]["pattern"] == r"^\d+\.\d+\.\d+$"
+    for definition, message_type in (("OpeningContextRequest", "opening_context_request"),
+                                     ("VariantsRequest", "variants_request"),
+                                     ("OpeningContextAnswer", "opening_context_answer"),
+                                     ("VariantsAnswer", "variants_answer")):
+        assert set(version_places(schema, schema["$defs"][definition])) == set(VERSIONS[message_type])
+
+
+@pytest.mark.parametrize(("route", "operation"), [("opening-context", "opening_context"), ("variants", "variants")])
+@pytest.mark.parametrize("version", ["\u0661.\u0660.\u0660", "1.0.\uff10"])
+def test_a_version_in_other_digits_is_not_a_valid_request(client, workspace_id, identity, route, operation, version):
+    # The contract's pattern is read as JSON Schema reads it: \d is one of the ASCII digits 0 to 9.
+    response, _ = ask(client, route, workspace_id, {**identity, "implementation_version": version})
+    body = refused(response, operation, "invalid_request", "identity.implementation_version")
+    assert body["request_id"] == "view-1"

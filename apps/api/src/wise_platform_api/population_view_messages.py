@@ -3,7 +3,8 @@
 The messages are the generated models of the population-views contract, named here for the
 operations together with what the contract leaves to the application: the HTTP status of each
 refusal code and whether a retry of the same request can help. What the generated models do not
-carry is checked where the messages are read and written: incident ids of one list do not repeat.
+carry is checked where the messages are read and written: incident ids of one list do not repeat, and
+an implementation version is written in ASCII digits.
 """
 
 from __future__ import annotations
@@ -35,6 +36,7 @@ __all__ = [
     "STATUS",
     "UNIQUE",
     "VARIANTS",
+    "VERSIONS",
     "AnswerIdentity",
     "CategoryShare",
     "ContextCategory",
@@ -92,3 +94,11 @@ UNIQUE: dict[str, tuple[tuple[str, ...], ...]] = {
     "variants_answer": (("variants", "variants", "*", "case_ids"), ("variants", "unevaluable", "case_ids")),
 }
 """For each answer, the lists the contract marks as holding no item twice; ``*`` stands for every index."""
+
+VERSIONS: dict[str, tuple[tuple[str, ...], ...]] = {
+    "opening_context_request": (("identity", "implementation_version"),),
+    "variants_request": (("identity", "implementation_version"),),
+    "opening_context_answer": (("identity", "implementation_version"), ("parent_identity", "implementation_version")),
+    "variants_answer": (("identity", "implementation_version"),),
+}
+"""For each request and answer, the places of an implementation version, whose digits are ASCII."""
