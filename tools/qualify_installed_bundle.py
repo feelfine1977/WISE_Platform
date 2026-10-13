@@ -117,6 +117,44 @@ def graph(base, workspace, identity):
     return result['graph']
 
 
+
+def population_views(base, workspace, identity, parent_identity):
+    opening = answer(base, '/api/investigations/opening-context', envelope('opening_context_request',
+        workspace_id=workspace['workspace_id'], identity=identity), 'opening_context_answer')
+    variants = answer(base, '/api/investigations/variants', envelope('variants_request',
+        workspace_id=workspace['workspace_id'], identity=identity), 'variants_answer')
+    for result in (opening, variants):
+        assert result['schema_version'] == 1 and result['identity'] == identity
+    assert opening['parent_identity'] == parent_identity
+    profile = opening['opening_context']
+    assert profile['anchor_policy'] == CONTEXT
+    assert profile['population'] == {'case_count': 1, 'evaluable_case_count': 1,
+        'unevaluable_case_count': 0, 'unevaluable_case_ids': []}
+    assert profile['parent'] == {'case_count': 2, 'evaluable_case_count': 2,
+        'unevaluable_case_count': 0, 'unevaluable_case_ids': []}
+    assert len(profile['columns']) == 1
+    column = profile['columns'][0]
+    assert column['column_index'] == 4 and column['column_name'] == 'Desk'
+    assert column['distinct_value_count'] == 2 and column['remainder'] is None
+    assert len(column['categories']) == 2
+    categories = {category['value']: category for category in column['categories']}
+    assert categories == {
+        'East': {'kind': 'value', 'value': 'East', 'population': {'count': 1, 'share': 1, 'denominator': 1},
+                 'parent': {'count': 1, 'share': .5, 'denominator': 2}, 'difference_percentage_points': 50},
+        'West': {'kind': 'value', 'value': 'West', 'population': {'count': 0, 'share': 0, 'denominator': 1},
+                 'parent': {'count': 1, 'share': .5, 'denominator': 2}, 'difference_percentage_points': -50},
+    }
+    assert variants['variants'] == {
+        'activity_projection_policy': 'incident.activity.omit_missing_retain_raw_gaps.v1',
+        'case_count': 1, 'record_count': 4, 'omitted_activity_record_count': 1,
+        'sequence_evaluable_case_count': 1, 'variant_count': 1,
+        'variants': [{'id': 'variant.v1:sha256:44ce406f10bfd4b827626aa3b60041e4a8ddca143082a35b5b58fd3a0c6d5447',
+            'activities': ['Recorded', 'Routed', 'Reviewed'], 'case_count': 1, 'share': 1,
+            'denominator': 1, 'case_ids': ['T-01'], 'record_count': 4, 'omitted_activity_record_count': 1}],
+        'unevaluable': {'case_ids': [], 'case_count': 0, 'record_count': 0, 'omitted_activity_record_count': 0},
+    }
+    return opening, variants
+
 def imported(base, workspace, raw, filename, delimiter=';', sequence=3, context=4, cutoff='2027-01-01T00:00:00Z'):
     meta = envelope('upload_source_metadata', workspace_id=workspace['workspace_id'], filename=filename)
     status, body = http(base, '/api/sources', raw=raw, query=meta)
@@ -127,6 +165,20 @@ def imported(base, workspace, raw, filename, delimiter=';', sequence=3, context=
                        dialect={'encoding': 'utf-8', 'delimiter': delimiter, 'quotechar': '"', 'header': 'first_record'},
                        mapping={'case_column': 0, 'activity_column': 1, 'timestamp_column': 2, 'sequence_column': sequence, 'context_columns': [context]},
                        policies=b_policies(cutoff), accept_report_issues=True)
+    before_proposal = open_workspace(base, Path(workspace['path']))
+    proposed = answer(base, '/api/preparations/cutoff-proposal', request, 'cutoff_proposal_answer')
+    assert proposed['schema_version'] == 1 and proposed['source_id'] == source['source_id']
+    assert proposed['timestamp_kind'] == 'utc_instant'
+    for field in ('last_usable_time', 'proposed_cutoff'):
+        assert isinstance(proposed[field], str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z', proposed[field])
+    if filename == 'B4-ties-out-of-order.csv':
+        assert proposed['last_usable_time'] == proposed['proposed_cutoff'] == '2026-10-09T11:00:00Z'
+    after_proposal = open_workspace(base, Path(workspace['path']))
+    assert before_proposal['workspace_id'] == after_proposal['workspace_id'] == workspace['workspace_id']
+    for field in ('sources', 'preparations'):
+        assert after_proposal[field] == before_proposal[field]
+    # A suggestion never publishes an interpretation or replaces the chosen cutoff.
+    assert request['policies']['time']['parameters']['snapshot_cutoff_utc'] == cutoff
     prepared = answer(base, '/api/preparations', request, 'interpretation_answer')
     assert prepared['state'] == 'ready' and prepared['preparation']['source_id'] == source['source_id']
     for field in ('mapping', 'policies', 'dialect'):
@@ -224,6 +276,9 @@ def main():
             assert [r['source_position'] for r in trace['records']] == [1, 2, 3, 0]
             assert [r['original_cells'] for r in trace['records']] == [original[i] for i in [1, 2, 3, 0]]
             assert trace['records'][2]['activity'] is None and trace['records'][2]['context'] == [{'column_index': 4, 'value': 'Unknown'}]
+            for field in ('source_id', 'preparation_id', 'representation_id', 'case_dictionary_id', 'implementation_version'):
+                assert selection['parent_identity'][field] == population['identity'][field]
+            before_views = population_views(base, workspace, selection['identity'], selection['parent_identity'])
             before_graph = graph(base, workspace, selection['identity'])
             assert len(before_graph['edges']) == 2 and before_graph['meta']['raw_record_count'] == 4
             comparison, periods, saved = None, None, None
@@ -281,6 +336,8 @@ def main():
             for field in ('identity', 'case_id', 'columns', 'records', 'coverage', 'mapped_row_ids', 'omitted_activity_row_ids', 'sequence_evaluable'):
                 assert after_trace[field] == trace[field]
             assert graph(base, reopened_workspace, identity) == before_graph
+            # In the saved branch these calls precede any fresh base/select/compare query.
+            assert population_views(base, reopened_workspace, identity, selection['parent_identity']) == before_views
             if saved:
                 # BOTH comparison cohort identities must be restored, including
                 # the target's empty selection recipe, before any fresh queries.
@@ -299,6 +356,8 @@ def main():
                'isolated_python': True, 'checkout_paths_removed': True, 'real_owned_processes': 2, 'both_processes_stopped': True,
                'examples': examples, 'imported_source_sha256': hashlib.sha256(raw).hexdigest(), 'complete_selected_rows': 4,
                'preserved_missing_activity': True, 'preparation_equal_after_restart': True,
+               'cutoff_proposal_checked': True, 'cutoff_proposal_persisted_state_unchanged': True, 'b4_proposed_cutoff_utc': '2026-10-09T11:00:00Z',
+               'opening_context_checked': True, 'variants_checked': True, 'population_views_equal_after_restart': True,
                'saved_revision_reopened': bool(saved), 'saved_comparison_cohorts_restored': 2 if saved else 0,
                'period_comparison_checked': periods is not None, 'b4_cutoff_utc': B4_CUTOFF,
                'period_cohort_case_ids': None if periods is None else {r: periods[r]['included']['case_ids'] for r in ('target', 'reference')},
