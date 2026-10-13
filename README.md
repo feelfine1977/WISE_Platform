@@ -50,7 +50,22 @@ npm run build
 python -m wise_platform_api --port 8765
 ```
 
-The first line installs the packed method library that the scoring uses. `npm run check` checks the types and runs the browser's component tests; `npm test` runs the Python tests, including the contract tests through the real operations. If your environment restricts PowerShell activation, use the approved environment/setup route; do not change company policy for this project. See [development](docs/development.md) for the browser development loop and module rules.
+macOS or Linux, in bash or zsh. Only the first two lines differ:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -c requirements-dev.lock vendor/wise_pm-0.2.0-py3-none-any.whl
+python -m pip install -c requirements-dev.lock -e ".[dev]"
+npm ci
+npm run generate
+npm run check
+npm test
+npm run build
+python -m wise_platform_api --port 8765
+```
+
+The first `pip` line installs the packed method library that the scoring uses; without it the scoring tests cannot start and the application cannot score. If the last line reports that the address is already in use, another program holds that port: start with another one, for example `--port 8780`, and open that address. `npm run check` checks the types and runs the browser's component tests; `npm test` runs the Python tests, including the contract tests through the real operations. If your environment restricts PowerShell activation, use the approved environment/setup route; do not change company policy for this project. See [development](docs/development.md) for the browser development loop and module rules.
 
 Open `http://127.0.0.1:8765`. Health is exposed at `/api/health`. Stop the host with Ctrl+C. The host serves built browser files and the API from one local process; a browser-development server is a developer convenience, not the analyst deployment.
 
