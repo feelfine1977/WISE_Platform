@@ -3,9 +3,9 @@ import { sameJson } from "../data/coordinator";
 import { countOf } from "../data/wording";
 import type { CaseId, ResolutionDefinition } from "../generated/scoring";
 import { type ImportedInvestigationCoordinator, type ImportedInvestigationState, shownSelection } from "../imported/coordinator";
-import { contractMethodBuild, type ScoringClient } from "./client";
+import { contractMethodBuild } from "./client";
 import { ExpectationCoordinator, type ScoringTarget, shownRun, type ValidationState } from "./coordinator";
-import { type DefinitionForm, definitionOf, emptyForm, sameMeaning } from "./definition";
+import { type DefinitionForm, definitionOf, sameMeaning } from "./definition";
 import { ExpectationForm } from "./ExpectationForm";
 import { ExpectationResult } from "./ExpectationResult";
 import { ExpectationWitness } from "./ExpectationWitness";
@@ -15,7 +15,7 @@ import "./expectation.css";
 interface ExpectationViewProps {
   /** The investigation whose shown incidents are scored. */
   investigation: ImportedInvestigationCoordinator;
-  client: ScoringClient;
+  coordinator: ExpectationCoordinator;
 }
 
 /** The incidents the investigation shows now, with the activities and the clock of their map. */
@@ -37,16 +37,18 @@ export function scoringSubject(state: ImportedInvestigationState): ScoringSubjec
   if (population.phase !== "ready" || shown === null) return null;
   const { answer } = population;
   const steps = shown.steps.length;
+  const all = new Set(answer.population.case_ids);
+  const whole = steps === 0 && shown.answer.kept.case_ids.length === all.size && shown.answer.kept.case_ids.every((caseId) => all.has(caseId));
   return {
     target: {
       workspaceId: answer.workspace_id,
       baseIdentity: answer.identity,
       population:
-        steps === 0
+        whole
           ? { name: `every incident of ${answer.source.filename}`, identity: answer.identity }
-          : { name: `the incidents of ${answer.source.filename} kept by ${countOf(steps, "step")}`, identity: shown.answer.identity },
+          : { name: (steps ? `the incidents of ${answer.source.filename} kept by ${countOf(steps, "step")}` : `the incidents of ${answer.source.filename} in the frozen parent`), identity: shown.answer.identity },
     },
-    caseCount: steps === 0 ? answer.population.case_count : shown.answer.kept.case_count,
+    caseCount: shown.answer.kept.case_count,
     activities: shown.graph.nodes.map((node) => node.label).sort((one, other) => one.localeCompare(other)),
     clockKind: shown.graph.meta.timestamp_kind,
   };
@@ -65,17 +67,15 @@ function revisionFor(form: DefinitionForm, clockKind: ResolutionDefinition["cloc
  * investigation shows, scored by the method library, with the incidents of each state and the
  * records one score rests on.
  */
-export function ExpectationView({ investigation, client }: ExpectationViewProps) {
-  const [coordinator] = useState(() => new ExpectationCoordinator(client));
+export function ExpectationView({ investigation, coordinator }: ExpectationViewProps) {
   const investigated = useSyncExternalStore(investigation.subscribe, investigation.getState);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
-  const [form, setForm] = useState<DefinitionForm>(emptyForm);
+  const form = state.form;
   const [focusWitness, setFocusWitness] = useState(0);
   const witnessHeading = useRef<HTMLHeadingElement>(null);
   const subject = useMemo(() => scoringSubject(investigated), [investigated]);
   const { validation, run, chosen, witness } = state;
 
-  useEffect(() => () => coordinator.stop(), [coordinator]);
 
   useEffect(() => {
     if (focusWitness > 0) witnessHeading.current?.focus();
@@ -111,6 +111,7 @@ export function ExpectationView({ investigation, client }: ExpectationViewProps)
 
   return (
     <main className="expectation" aria-labelledby="expectation-title">
+      {investigated.replacement?.phase === "running" && <p role="status" className="expectation-note">Opening another investigation. This expectation and run belong to the investigation still shown.</p>}
       <div className="expectation-head">
         <h2 id="expectation-title" className="expectation-title">
           Expectation
@@ -127,7 +128,7 @@ export function ExpectationView({ investigation, client }: ExpectationViewProps)
           <div className="expectation-main">
             <ExpectationForm
               form={form}
-              onChange={setForm}
+              onChange={(next) => coordinator.setForm(next)}
               activities={subject.activities}
               populationName={subject.target.population.name}
               caseCount={subject.caseCount}
@@ -135,6 +136,7 @@ export function ExpectationView({ investigation, client }: ExpectationViewProps)
               validation={validation}
               checkedNow={checkedNow}
               scoring={run.phase === "loading"}
+              waiting={investigated.replacement?.phase === "running"}
               onCheck={() => definition && coordinator.check(subject.target, definition)}
               onScore={() => coordinator.score()}
               onRetryCheck={() => coordinator.retryCheck()}

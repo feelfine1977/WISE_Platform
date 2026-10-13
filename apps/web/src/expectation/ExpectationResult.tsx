@@ -37,10 +37,10 @@ export function ExpectationResult({ run: state, chosen, populationId, openCaseId
       {state.phase === "idle" && <p className="expectation-muted">Check a reviewed definition and score it to see the result.</p>}
       {state.phase === "loading" && (
         <p role="status" className="expectation-status">
-          {run ? "Scoring again; the result below is the previous run." : "The method library is scoring the incidents…"}
+          {state.request.message_type === "read_score_run_request" ? "Opening the saved score run…" : run ? "Scoring again; the result below is the previous run." : "The method library is scoring the incidents…"}
         </p>
       )}
-      {state.phase === "failed" && <ExpectationProblem title="The incidents could not be scored" problem={state.problem} onRetry={onRetry} />}
+      {state.phase === "failed" && <ExpectationProblem title={state.request.message_type === "read_score_run_request" ? "The saved score run could not be opened" : "The incidents could not be scored"} problem={state.problem} onRetry={onRetry} />}
       {run && (
         <RunView
           run={run}

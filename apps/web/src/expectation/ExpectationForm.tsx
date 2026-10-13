@@ -19,6 +19,7 @@ interface ExpectationFormProps {
   /** Whether the check shown is the check of the definition and the incidents of the form now. */
   checkedNow: boolean;
   scoring: boolean;
+  waiting: boolean;
   onCheck: () => void;
   onScore: () => void;
   onRetryCheck: () => void;
@@ -35,7 +36,7 @@ const meanings: { value: MissingMeaning; label: string }[] = [
  * service whether the method library can score it; only a checked, reviewed definition is scored.
  */
 export function ExpectationForm(props: ExpectationFormProps) {
-  const { form, onChange, activities, populationName, caseCount, definition, validation, checkedNow, scoring } = props;
+  const { form, onChange, activities, populationName, caseCount, definition, validation, checkedNow, scoring, waiting } = props;
   const problems = formProblems(form);
   const target = readHours(form.target);
   const width = readHours(form.width);
@@ -151,10 +152,10 @@ export function ExpectationForm(props: ExpectationFormProps) {
         </ul>
       )}
       <div className="expectation-actions">
-        <button type="submit" disabled={definition === null || validation.phase === "loading"}>
+        <button type="submit" disabled={waiting || definition === null || validation.phase === "loading"}>
           Check the definition
         </button>
-        <button type="button" className="expectation-primary" disabled={!ready || !reviewed || scoring} onClick={props.onScore}>
+        <button type="button" className="expectation-primary" disabled={waiting || !ready || !reviewed || scoring} onClick={props.onScore}>
           Score {countOf(caseCount, "incident")}
         </button>
       </div>

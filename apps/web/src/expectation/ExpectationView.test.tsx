@@ -17,7 +17,8 @@ import {
 import { scriptedSelectionClient } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
 import { scoringContract } from "./client";
-import { ExpectationView } from "./ExpectationView";
+import { ExpectationCoordinator } from "./coordinator";
+import { ExpectationView, scoringSubject } from "./ExpectationView";
 
 async function deliver(action: () => void) {
   await act(async () => {
@@ -32,13 +33,15 @@ async function renderView() {
   const scoring = scriptedScoringClient();
   const investigation = new ImportedInvestigationCoordinator(imports.client, selecting.client, scriptedViewClient().client);
   const user = userEvent.setup();
-  render(<ExpectationView investigation={investigation} client={scoring.client} />);
+  const coordinator = new ExpectationCoordinator(scoring.client, investigation);
+  coordinator.start();
+  const rendered = render(<ExpectationView investigation={investigation} coordinator={coordinator} />);
   expect(screen.getByText(/Open the incidents of a preparation in the Data area first/)).toBeTruthy();
   act(() => investigation.open({ workspaceId, preparationId }));
   await deliver(() => imports.populations[0].reply({ ok: true, answer: scoringPopulationAnswer(imports.populations[0].request) }));
   await deliver(() => selecting.selections[0].reply({ ok: true, answer: scoringSelectionAnswer(selecting.selections[0].request) }));
   await deliver(() => selecting.graphs[0].reply({ ok: true, answer: scoringGraphAnswer(selecting.graphs[0].request) }));
-  return { ...scoring, investigation, user };
+  return { ...scoring, investigation, coordinator, rendered, user };
 }
 
 async function fillForm(user: ReturnType<typeof userEvent.setup>, { reviewed = false } = {}) {
@@ -232,4 +235,49 @@ describe("the records of a scored incident", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("region", { name: /Incident D-4/ })).toBeNull();
   });
+});
+
+
+describe("expectation continuity across areas", () => {
+  it("preserves authored form and original run on unmount/remount, without another check or score", async () => {
+    const view = await scored();
+    const reference = view.coordinator.savedReference();
+    expect(reference?.score_run_id).toBe(view.run.identity.run_id);
+    view.rendered.unmount();
+    render(<ExpectationView investigation={view.investigation} coordinator={view.coordinator} />);
+    expect(screen.getByLabelText("Name")).toHaveProperty("value", "Closed within four hours");
+    expect(screen.getByLabelText("Target (hours)")).toHaveProperty("value", "4");
+    expect(tableIncidents()).toEqual(["C-3", "D-4", "B-2", "A-1", "E-5"]);
+    expect(view.coordinator.savedReference()).toEqual(reference);
+    await view.user.click(stateButton("Incidents by how they meet the expectation", "Partly meet it"));
+    expect(tableIncidents()).toEqual(["B-2"]);
+    expect([view.validations.length, view.scores.length, view.witnesses.length]).toEqual([1, 1, 0]);
+  });
+
+  it("scores the actual frozen subset with no steps, rather than every source incident", async () => {
+    const view = await renderView();
+    const state = view.investigation.getState();
+    if (state.selection.phase !== "ready") throw new Error("The displayed selection is ready.");
+    const subset = {
+      ...state, selection: { ...state.selection, shown: { ...state.selection.shown, steps: [],
+        answer: { ...state.selection.shown.answer, kept: { case_ids: ["A-1"], case_count: 1, record_count: 2 } } } },
+    };
+    const subject = scoringSubject(subset);
+    expect(subject?.caseCount).toBe(1);
+    expect(subject?.target.population.identity).toEqual(state.selection.shown.answer.identity);
+    expect(subject?.target.population.identity).not.toEqual(state.population.phase === "ready" && state.population.answer.identity);
+    expect(subject?.target.population.name).toContain("frozen parent");
+  });
+});
+
+
+it("keeps an explicit keep-all recipe's selected population identity for a new run", async () => {
+  const view = await renderView(); const state = view.investigation.getState();
+  if (state.selection.phase !== "ready") throw new Error("The displayed selection is ready.");
+  const explicit = { ...state, selection: { ...state.selection, shown: { ...state.selection.shown,
+    steps: [{ kind: "contains_activity" as const, activity: "Never recorded", negate: true }] } } };
+  const subject = scoringSubject(explicit);
+  expect(subject?.caseCount).toBe(5);
+  expect(subject?.target.population.identity).toEqual(state.selection.shown.answer.identity);
+  expect(subject?.target.population.name).toContain("kept by 1 step");
 });
