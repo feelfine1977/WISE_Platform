@@ -76,6 +76,11 @@ export interface DataState {
   interpretation: InterpretationState;
   /** The packaged example the current source was loaded from; it is first read with the example's fixed reading. */
   example: WorkspaceExample | null;
+  /**
+   * The number `loadExample` gave the call the current source comes from, from its first request on;
+   * null when the source was chosen in any other way. A file's name does not say where a source comes from.
+   */
+  exampleLoad: number | null;
 }
 
 type Stage = "workspace" | "source" | "inspection" | "proposal" | "interpretation";
@@ -92,6 +97,7 @@ const initialState: DataState = {
   proposal: { phase: "none" },
   interpretation: { phase: "none" },
   example: null,
+  exampleLoad: null,
 };
 
 const unreachable: ImportOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
@@ -117,6 +123,7 @@ export class DataCoordinator {
   private columns: string[] | null = null;
   /** The reading the current proposal was asked for, without its envelope; null when none was. */
   private proposalKey: string | null = null;
+  private exampleLoads = 0;
   private readonly current = new Map<Stage, { requestId: string; controller: AbortController }>();
   private readonly listeners = new Set<() => void>();
 
@@ -179,15 +186,18 @@ export class DataCoordinator {
   /** Sends a file's bytes to the workspace and inspects them once they are stored. */
   addSource(file: File): void {
     if (this.state.workspace.phase !== "open") return;
-    this.upload(file, file.name || "source.csv", null, this.issue("source", ["inspection", "proposal", "interpretation"]));
+    this.upload(file, file.name || "source.csv", null, null, this.issue("source", ["inspection", "proposal", "interpretation"]));
   }
 
   /**
    * Stores the bytes of a packaged example in the workspace like any source, inspects them, and
-   * reads them with the example's fixed reading; rows with issues still wait for the analyst.
+   * reads them with the example's fixed reading; rows with issues still wait for the analyst. Returns
+   * the number of this call, which the state carries as `exampleLoad` while its source is the current
+   * one; null when no workspace is open.
    */
-  loadExample(example: WorkspaceExample): void {
-    if (this.state.workspace.phase !== "open") return;
+  loadExample(example: WorkspaceExample): number | null {
+    if (this.state.workspace.phase !== "open") return null;
+    const load = (this.exampleLoads += 1);
     const issued = this.issue("source", ["inspection", "proposal", "interpretation"]);
     this.columns = null;
     this.proposalKey = null;
@@ -201,23 +211,26 @@ export class DataCoordinator {
       interpretation: { phase: "none" },
       draft: emptyDraft,
       example: null,
+      exampleLoad: load,
     });
     const receive = (outcome: ImportOutcome<Blob>) => {
       if (this.current.get("source")?.requestId !== issued.requestId) return;
       if (outcome.ok) {
-        this.upload(outcome.answer, example.filename, example, this.issue("source", ["inspection", "proposal", "interpretation"]));
+        this.upload(outcome.answer, example.filename, example, load, this.issue("source", ["inspection", "proposal", "interpretation"]));
       } else {
         this.current.delete("source");
         this.publish({ ...this.state, source: { phase: "failed", filename: example.filename, problem: outcome.problem } });
       }
     };
     this.client.exampleSource(example.id, issued.signal).then(receive, () => receive(unreachable));
+    return load;
   }
 
   private upload(
     bytes: Blob,
     filename: string,
     example: WorkspaceExample | null,
+    load: number | null,
     { requestId, revision, signal }: { requestId: string; revision: number; signal: AbortSignal },
   ): void {
     const workspace = this.state.workspace;
@@ -242,6 +255,7 @@ export class DataCoordinator {
       interpretation: { phase: "none" },
       draft: emptyDraft,
       example: null,
+      exampleLoad: load,
     });
     this.client.uploadSource(metadata, bytes, signal).then(
       (outcome) => this.receiveSource(metadata, example, outcome),
@@ -263,6 +277,7 @@ export class DataCoordinator {
       proposal: { phase: "none" },
       interpretation: { phase: "none" },
       example: null,
+      exampleLoad: null,
     });
     this.inspect(null);
   }
@@ -353,7 +368,7 @@ export class DataCoordinator {
       this.publish({ ...this.state, inspection: { phase: "none" } });
     } else if (source.phase === "uploading" || source.phase === "fetching") {
       this.abort(["source"]);
-      this.publish({ ...this.state, source: { phase: "none" } });
+      this.publish({ ...this.state, source: { phase: "none" }, exampleLoad: null });
     } else if (workspace.phase === "opening") {
       this.abort(["workspace"]);
       this.publish({ ...this.state, workspace: { phase: "none" } });

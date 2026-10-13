@@ -55,11 +55,18 @@ export const browserReadingMemory: ReadingMemory = {
  * remembered reading is used only when the workspace lists it.
  *
  * It follows the Data area's state and steps aside for good once the analyst chooses another
- * workspace or source there.
+ * workspace or any source there, whatever the source's file is called. Stopped before it was done,
+ * it decides again from what the workspace holds when it is started anew.
  */
 export class FirstOpen {
   private state: StartState = { phase: "idle" };
   private workspaceId: WorkspaceId | null = null;
+  /** The number of the example load this start asked for; a source of any other origin is the analyst's. */
+  private exampleLoad: number | null = null;
+  /** True while the example load is being asked for, before its number is known here. */
+  private asking = false;
+  /** The step this start was stopped in, until it is started anew. */
+  private stoppedIn: "workspace" | "example" | null = null;
   private unsubscribe: (() => void) | null = null;
   private readonly listeners = new Set<() => void>();
 
@@ -83,17 +90,38 @@ export class FirstOpen {
       this.follow();
       return;
     }
-    const { workspace } = this.data.getState();
+    const stoppedIn = this.stoppedIn;
+    this.stoppedIn = null;
+    const data = this.data.getState();
+    const { workspace } = data;
     // A request for the application's own workspace that was abandoned before its reply is sent again.
-    if (workspace.phase === "none" || (workspace.phase === "opening" && workspace.path === null)) this.openWorkspace();
-    else this.publish({ phase: "done" });
+    if (workspace.phase === "none" || (workspace.phase === "opening" && workspace.path === null)) {
+      this.openWorkspace();
+      return;
+    }
+    // Stopped while its own request was out: the request may have been abandoned or answered meanwhile,
+    // so the step is decided again from the workspace as it is now.
+    const stillItsExample =
+      stoppedIn === "example" &&
+      workspace.phase === "open" &&
+      workspace.answer.workspace_id === this.workspaceId &&
+      data.exampleLoad === this.exampleLoad;
+    if (stoppedIn === "workspace" || stillItsExample) {
+      this.state = { phase: "workspace" };
+      this.followWorkspace(data);
+    } else {
+      this.publish({ phase: "done" });
+    }
   }
 
-  /** Stops following; a start that had not opened its workspace yet begins again when started. */
+  /** Stops following; a start that was not done yet goes on from the workspace's state when started anew. */
   stop(): void {
     this.unsubscribe?.();
     this.unsubscribe = null;
-    if (this.state.phase === "workspace") this.state = { phase: "idle" };
+    if (this.state.phase === "workspace" || this.state.phase === "example") {
+      this.stoppedIn = this.state.phase;
+      this.state = { phase: "idle" };
+    }
   }
 
   /** Sends the failed step again. */
@@ -110,10 +138,14 @@ export class FirstOpen {
 
   private loadExample(): void {
     this.publish({ phase: "example" });
-    this.data.loadExample(startExample);
+    this.asking = true;
+    this.exampleLoad = this.data.loadExample(startExample);
+    this.asking = false;
+    this.follow();
   }
 
   private follow = (): void => {
+    if (this.asking) return;
     const data = this.data.getState();
     if (this.state.phase === "workspace") this.followWorkspace(data);
     else if (this.state.phase === "example") this.followExample(data);
@@ -143,14 +175,9 @@ export class FirstOpen {
     }
   }
 
-  private followExample({ workspace, source, inspection, interpretation }: DataState): void {
-    if (workspace.phase !== "open" || workspace.answer.workspace_id !== this.workspaceId) {
-      this.publish({ phase: "done" });
-      return;
-    }
-    const filename = source.phase === "stored" ? source.source.filename : source.phase === "none" ? null : source.filename;
-    // Another source, or none after the analyst stopped waiting: the analyst has taken over.
-    if (filename !== startExample.filename) {
+  private followExample({ workspace, source, inspection, interpretation, exampleLoad }: DataState): void {
+    // Another workspace, a source of another origin, or none after the analyst stopped waiting: the analyst has taken over.
+    if (workspace.phase !== "open" || workspace.answer.workspace_id !== this.workspaceId || exampleLoad === null || exampleLoad !== this.exampleLoad) {
       this.publish({ phase: "done" });
     } else if (source.phase === "failed") {
       this.publish({ phase: "failed", step: "example", problem: source.problem });

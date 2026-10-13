@@ -169,6 +169,57 @@ describe("the start of the application", () => {
     expect(app.opened).toEqual([]);
   });
 
+  it("steps aside for a file of the analyst that has the example's name, while the example is still being fetched", async () => {
+    const app = setup();
+    app.start.start();
+    await openOwnWorkspace(app);
+    expect(app.start.getState()).toEqual({ phase: "example" });
+    app.data.addSource(new File(["incident_id,activity\nUSER01,Recorded\n"], startExample.filename));
+    expect(app.imports.examples[0].signal.aborted).toBe(true);
+    expect(app.start.getState()).toEqual({ phase: "done" });
+    expect(app.opened).toEqual([]);
+  });
+
+  it("steps aside when the analyst reads a stored source again after the example was stored", async () => {
+    const app = setup();
+    app.start.start();
+    await openOwnWorkspace(app);
+    await readExample(app);
+    const stored = app.data.getState().sources[0];
+    app.data.useSource(stored);
+    expect(app.start.getState()).toEqual({ phase: "done" });
+    expect(app.opened).toEqual([]);
+  });
+
+  it("reads the example again when it was stopped while the example was being fetched and started anew", async () => {
+    const app = setup();
+    app.start.start();
+    await openOwnWorkspace(app);
+    expect(app.imports.examples).toHaveLength(1);
+    app.start.stop();
+    app.data.stop();
+    app.start.start();
+    expect(app.imports.examples[0].signal.aborted).toBe(true);
+    expect(app.imports.examples).toHaveLength(2);
+    expect(app.imports.examples[1].signal.aborted).toBe(false);
+    expect(app.start.getState()).toEqual({ phase: "example" });
+    const { confirmation } = await readExample(app);
+    confirmation.reply({ ok: true, answer: interpretationAnswer({ ...confirmation.request, accept_report_issues: true }) });
+    await settle();
+    expect(app.opened).toEqual([{ workspaceId, preparationId, sourceName: startExample.filename }]);
+  });
+
+  it("opens the reading that arrived while it was stopped, instead of waiting for it", async () => {
+    const app = setup();
+    app.start.start();
+    app.start.stop();
+    await openOwnWorkspace(app, (answer) => answer, true);
+    expect(app.opened).toEqual([]);
+    app.start.start();
+    expect(app.opened).toEqual([{ workspaceId, preparationId: earlierPreparationId, sourceName: "Ältere Vorgänge.csv" }]);
+    expect(app.start.getState()).toEqual({ phase: "done" });
+  });
+
   it("sends the request for its workspace again when it was stopped before the reply and started anew", async () => {
     const app = setup();
     app.start.start();
