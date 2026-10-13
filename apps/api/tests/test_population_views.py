@@ -252,3 +252,86 @@ def test_an_unexpected_failure_is_a_typed_refusal(client, workspace_id, identity
     body = refused(ask(client, "variants", workspace_id, identity)[0], "variants", "computation_failed")
     assert body["retryable"] is True
     assert body["request_id"] == "view-1"
+
+
+class Altered:
+    """An answer of the analytics package with one change made to its dictionary."""
+
+    def __init__(self, answer, change):
+        self._answer, self._change = answer, change
+
+    def to_dict(self):
+        written = self._answer.to_dict()
+        self._change(written)
+        return written
+
+
+def altering(monkeypatch, name, change):
+    original = getattr(population_views, name)
+    monkeypatch.setattr(population_views, name, lambda *args: Altered(original(*args), change))
+
+
+def first_category(written, kind):
+    return next(item for item in written["columns"][0]["categories"] if item["kind"] == kind)
+
+
+@pytest.mark.parametrize("change", [
+    pytest.param(lambda written: first_category(written, "value").update(value=None), id="value-without-text"),
+    pytest.param(lambda written: first_category(written, "missing").update(value="Unknown"), id="missing-with-text"),
+    pytest.param(lambda written: written["parent"].update(unevaluable_case_ids=["D", "D"]), id="repeated-id"),
+    pytest.param(lambda written: written["parent"].update(case_count=True), id="truth-value-as-count"),
+])
+def test_an_opening_context_outside_the_contract_is_not_sent(client, workspace_id, identity, monkeypatch, change):
+    altering(monkeypatch, "opening_context", change)
+    body = refused(ask(client, "opening-context", workspace_id, identity)[0], "opening_context", "computation_failed")
+    assert body["request_id"] == "view-1"
+
+
+@pytest.mark.parametrize("change", [
+    pytest.param(lambda written: written["variants"][0].update(case_ids=["A", "B", "A"]), id="repeated-member"),
+    pytest.param(lambda written: written["unevaluable"].update(case_ids=["D", "D"]), id="repeated-unevaluable"),
+    pytest.param(lambda written: written["variants"][0].update(share=float("nan")), id="share-not-a-number"),
+])
+def test_variants_outside_the_contract_are_not_sent(client, workspace_id, identity, monkeypatch, change):
+    altering(monkeypatch, "variants", change)
+    refused(ask(client, "variants", workspace_id, identity)[0], "variants", "computation_failed")
+
+
+def test_the_messages_of_these_operations_are_the_generated_models():
+    from wise_platform_api import population_view_messages
+    from wise_platform_api.generated import population_views as generated
+
+    for name in ("OpeningContextRequest", "VariantsRequest", "OpeningContextAnswer", "VariantsAnswer",
+                 "PopulationViewRefusal", "PopulationViewMessage", "AnswerIdentity", "CategoryShare",
+                 "ContextCategory", "ContextRemainder", "ContextColumn", "GroupCoverage", "OpeningContext", "Variant",
+                 "UnevaluableSupport", "VariantSummary"):
+        assert getattr(population_view_messages, name) is getattr(generated, name), name
+
+
+def unique_places(schema, node, place=()):
+    """The places of a message where the contract keeps a list free of repeated items."""
+    if "$ref" in node:
+        yield from unique_places(schema, schema["$defs"][node["$ref"].rsplit("/", 1)[1]], place)
+    for branch in [*node.get("oneOf", []), *node.get("anyOf", [])]:
+        yield from unique_places(schema, branch, place)
+    if node.get("uniqueItems") is True:
+        yield place
+    if isinstance(node.get("items"), dict):
+        yield from unique_places(schema, node["items"], (*place, "*"))
+    for name, value in node.get("properties", {}).items():
+        yield from unique_places(schema, value, (*place, name))
+
+
+def test_the_unique_lists_checked_are_those_of_the_contract():
+    import json
+    from pathlib import Path
+
+    from wise_platform_api.population_view_messages import UNIQUE
+
+    schema = json.loads((Path(__file__).resolve().parents[3] / "contracts/population-views.schema.json")
+                        .read_text(encoding="utf-8"))
+    for definition, message_type in (("OpeningContextAnswer", "opening_context_answer"),
+                                     ("VariantsAnswer", "variants_answer")):
+        assert set(unique_places(schema, schema["$defs"][definition])) == set(UNIQUE[message_type])
+    for request in ("OpeningContextRequest", "VariantsRequest", "PopulationViewRefusal"):
+        assert list(unique_places(schema, schema["$defs"][request])) == []
