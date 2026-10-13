@@ -6,6 +6,7 @@ import type {
   ScoreCaseWitnessAnswer,
   ScoreCaseWitnessRequest,
   ScoreExpectationRequest,
+  ReadScoreRunRequest,
   ScoreRunAnswer,
   ScoringRefusal,
   ValidateExpectationRequest,
@@ -14,6 +15,7 @@ import type {
 export const scoringRoutes = {
   validate: "/api/expectations/validate",
   score: "/api/expectations/score",
+  readRun: "/api/expectations/read-run",
   caseWitness: "/api/expectations/case-witness",
 } as const;
 
@@ -30,6 +32,8 @@ export type ScoringProblem =
 export type ScoringOutcome<T> = { ok: true; answer: T } | { ok: false; problem: ScoringProblem };
 
 export interface ScoringClient {
+  /** Reads an immutable stored run; never validates or scores a definition. */
+  readRun?(request: ReadScoreRunRequest, signal: AbortSignal): Promise<ScoringOutcome<ScoreRunAnswer>>;
   validate(request: ValidateExpectationRequest, signal: AbortSignal): Promise<ScoringOutcome<ExpectationValidationAnswer>>;
   score(request: ScoreExpectationRequest, signal: AbortSignal): Promise<ScoringOutcome<ScoreRunAnswer>>;
   caseWitness(request: ScoreCaseWitnessRequest, signal: AbortSignal): Promise<ScoringOutcome<ScoreCaseWitnessAnswer>>;
@@ -55,6 +59,7 @@ export const scoringContract = {
   validateRequest: validator<ValidateExpectationRequest>("ValidateExpectationRequest"),
   validationAnswer: validator<ExpectationValidationAnswer>("ExpectationValidationAnswer"),
   scoreRequest: validator<ScoreExpectationRequest>("ScoreExpectationRequest"),
+  readRunRequest: validator<ReadScoreRunRequest>("ReadScoreRunRequest"),
   scoreRunAnswer: validator<ScoreRunAnswer>("ScoreRunAnswer"),
   witnessRequest: validator<ScoreCaseWitnessRequest>("ScoreCaseWitnessRequest"),
   witnessAnswer: validator<ScoreCaseWitnessAnswer>("ScoreCaseWitnessAnswer"),
@@ -105,6 +110,7 @@ async function postJson<T>(
 }
 
 export const httpScoringClient: ScoringClient = {
+  readRun: (request, signal) => postJson(scoringRoutes.readRun, request, "read_score_run", scoringContract.scoreRunAnswer, signal),
   validate: (request, signal) => postJson(scoringRoutes.validate, request, "validate_expectation", scoringContract.validationAnswer, signal),
   score: (request, signal) => postJson(scoringRoutes.score, request, "score_expectation", scoringContract.scoreRunAnswer, signal),
   caseWitness: (request, signal) =>

@@ -1,3 +1,7 @@
+import { ImportedInvestigationCoordinator } from "../imported/coordinator";
+import { scriptedImportClient } from "../test/imports";
+import { scriptedSelectionClient } from "../test/selections";
+import { scriptedViewClient } from "../test/views";
 import { describe, expect, it } from "vitest";
 import type { NamedPopulation, ResolutionDefinition } from "../generated/scoring";
 import { identity, workspaceId } from "../test/imports";
@@ -14,7 +18,8 @@ const target: ScoringTarget = { workspaceId, baseIdentity: identity, population 
 
 function setUp() {
   const scripted = scriptedScoringClient();
-  const coordinator = new ExpectationCoordinator(scripted.client);
+  const coordinator = new ExpectationCoordinator(scripted.client, new ImportedInvestigationCoordinator(scriptedImportClient().client, scriptedSelectionClient().client, scriptedViewClient().client));
+  coordinator.start();
   return { ...scripted, coordinator };
 }
 
