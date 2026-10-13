@@ -51,7 +51,7 @@ describe("the words of the map", () => {
       "Paths count passages and distinct incidents of the 1 incident whose order of records can be evaluated.",
       "1 incident with 1 record is not evaluable for paths; 0 records have no activity label.",
       "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
-      "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. Start and End are always shown, each with its strongest flow. Another flow is drawn when it carries at least as many incidents as the weakest path the Paths detail asks for, and all are drawn when every path is; the menu of an activity offers the incidents that begin or end with it also while its flow is not drawn.",
+      "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. Start and End are always shown, each with the strongest flow among the activities shown. The Paths detail ranks the paths by their incidents; another flow is drawn when it carries at least as many incidents as the weakest path drawn by frequency, and all are drawn when every path is; the menu of an activity offers the incidents that begin or end with it also while its flow is not drawn.",
       "Lag: the median of elapsed hours between the two records of a path.",
       "Measures: the legend on the map, shown whole, switches what the map writes. " +
         "Frequency: the incidents on every path and activity. " +
@@ -73,6 +73,14 @@ describe("the words of the map", () => {
     );
     expect(flowsLine({ flows: 3, drawn: 2 }, 1)).toBe("Not drawn at this detail: 1 of the 3 flows from Start and to End, with fewer than 1 incident. The Paths slider draws more.");
     expect(flowsLine({ flows: 5, drawn: 2 }, Number.POSITIVE_INFINITY)).toBe("Not drawn at this detail: 3 of the 5 flows from Start and to End. The Paths slider draws more.");
+    // A flow of an activity the detail does not show is not drawn either, and is said apart from the weak ones.
+    expect(flowsLine({ flows: 44, drawn: 18, unshown: 4 }, 373)).toBe(
+      "Not drawn at this detail: 26 of the 44 flows from Start and to End: 4 of activities that are not shown, 22 with fewer than 373 incidents. The sliders draw more.",
+    );
+    expect(flowsLine({ flows: 6, drawn: 4, unshown: 2 }, 0)).toBe(
+      "Not drawn at this detail: 2 of the 6 flows from Start and to End, of activities that are not shown. The Activities slider shows more.",
+    );
+    expect(flowsLine({ flows: 6, drawn: 6, unshown: 0 }, 0)).toBeNull();
   });
 
   it("says the two times of an activity in hours below two days and in days from there on, with their passages", () => {

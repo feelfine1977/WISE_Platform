@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { type AbstractOptions, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
+import { type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
 import dagreWorkerUrl from "wise-flow/dagre-worker.min.js?url";
 import elkWorkerUrl from "wise-flow/elk-worker.min.js?url";
 import flowPackage from "wise-flow/package.json";
@@ -11,7 +11,7 @@ import { countOf } from "../data/wording";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
 import { elementOf, selectedElement, stepChoices } from "./elements";
-import { flowCoverage, leastFlowIncidents, toFlowGraph } from "./graph";
+import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, toFlowGraph } from "./graph";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { activityTimeLines, boundaryLine, coverageRows, flowsLine, mapCaption } from "./wording";
 
@@ -101,6 +101,15 @@ interface MapViewProps {
 /** The process map of the kept incidents, with the steps an activity, a path or a flow from Start or to End offers. */
 export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false }: MapViewProps) {
   const parent = useMemo(() => toFlowGraph(parentGraph), [parentGraph]);
+  /**
+   * Every activity is written with its whole name, on up to two lines, and its incidents: the cards
+   * take the width that needs. The references are those of the whole parent, so that an activity
+   * keeps its own from one selection to the next.
+   */
+  const activityLabels = useMemo<ActivityLabelOptions>(
+    () => ({ mode: "names", references: activityReferences(parent), showCounts: true, caseLabel: "incidents" }),
+    [parent],
+  );
   const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
   const least = useMemo(() => leastPaths(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
   // The detail is held here, so that the paths share cannot go below the main flow.
@@ -110,10 +119,14 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
     (next: AbstractOptions) => setDetail(least !== null && (next.pathDetail ?? 1) < least ? { ...next, pathDetail: least } : next),
     [least],
   );
-  // The flows from Start and to End follow the paths: a flow weaker than every path the detail asks for is not drawn.
-  const leastFlow = useMemo(() => leastFlowIncidents(shown.graph, detail?.pathDetail), [shown.graph, detail?.pathDetail]);
-  const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow), [shown.graph, leastFlow]);
-  const flowsNotDrawn = useMemo(() => flowsLine(flowCoverage(shown.graph, leastFlow), leastFlow), [shown.graph, leastFlow]);
+  // The paths are ranked by their incidents, the number the map writes on them.
+  const ranked = useMemo(() => rankedDetail(detail), [detail]);
+  // The flows from Start and to End follow the paths: a flow weaker than the weakest path drawn by frequency is not drawn.
+  const leastFlow = useMemo(() => leastFlowIncidents(shown.graph, detail), [shown.graph, detail]);
+  // A flow of an activity the detail does not show is not on the map; the strongest flow of each side is kept among those shown.
+  const shownIds = useMemo(() => shownActivities(shown.graph, detail), [shown.graph, detail]);
+  const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow, shownIds), [shown.graph, leastFlow, shownIds]);
+  const flowsNotDrawn = useMemo(() => flowsLine(flowCoverage(shown.graph, leastFlow, shownIds), leastFlow), [shown.graph, leastFlow, shownIds]);
   /**
    * How the map is arranged. By default it is arranged anew, compactly, for exactly what is shown:
    * the activities and paths the detail leaves out do not shape the picture. On request every
@@ -171,8 +184,9 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
             graph={graph}
             positions={positions}
             layout={workers}
-            abstraction={detail}
+            abstraction={ranked}
             onAbstractionChange={changeDetail}
+            activityLabels={activityLabels}
             // The chosen measure, with what is laid over the library's style of it.
             {...askedFor(measure)}
             // Listening for the choice is what makes the map's whole legend offer the measures.

@@ -163,4 +163,10 @@
   /* Motion: only on open and close, and none when reduced motion is asked. */
   --motion-open: 120ms ease-out;
   --opacity-disabled: var(--wf-opacity-disabled);
+
+  /* The timeline of one incident: the height of its strip, the radius of a mark, of a mark of several records and of the area that takes the pointer. */
+  --size-timeline-strip: 44px;
+  --size-timeline-mark: 5px;
+  --size-timeline-mark-several: 7px;
+  --size-timeline-hit: 12px;
 }
