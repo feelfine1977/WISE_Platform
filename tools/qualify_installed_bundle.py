@@ -243,7 +243,28 @@ def scoring(base, workspace, bundle, definition):
     assert witness['run_identity'] == run['identity']
     assert witness['case']['measurement']['value'] == 3 and len(witness['trace']['records']) == 4
     assert witness['trace']['records'] == evidence(base, workspace, population['identity'], 'REOPEN')['records']
-    return {'run_id': run['identity']['run_id'], 'calibration_id': run['identity']['calibration_id'], 'first_response_days': 3, 'complete_witness_rows': 4}
+    read = answer(base, '/api/expectations/read-run', envelope('read_score_run_request', workspace_id=workspace['workspace_id'], run_id=run['identity']['run_id']), 'score_run_answer')
+    assert read['run'] == run
+    return ({'run_id': run['identity']['run_id'], 'calibration_id': run['identity']['calibration_id'], 'first_response_days': 3, 'complete_witness_rows': 4},
+            {'population': population, 'run': run, 'witness': witness})
+
+
+def save_scored_question(base, workspace, proof):
+    population, run = proof['population'], proof['run']
+    predicates = [{'kind': 'contains_activity', 'activity': 'Opened', 'negate': False}]
+    selection = selected(base, workspace, population, predicates, population['population']['case_ids'])
+    assert selection['kept']['case_count'] == 8 and selection['removed']['case_ids'] == ['NOOPEN']
+    reference = {'score_run_id': run['identity']['run_id'],
+                 'scored_population_id': run['identity']['scored_population_identity']['population_id'],
+                 'calibration_id': run['identity']['calibration_id']}
+    request = envelope('save_investigation_request', workspace_id=workspace['workspace_id'], investigation_id=None, expected_revision_id=None,
+                       name='Original scores on eight incidents', base_identity=population['identity'], selection_identity=selection['identity'],
+                       selection_recipe={'parent_case_ids': population['population']['case_ids'], 'predicates': predicates},
+                       context_policy=CONTEXT, comparison=None, notes='Keep the original nine-incident run without fitting or scoring the eight-incident selection.',
+                       bookmarks=[], score_run_ref=reference)
+    saved = answer(base, '/api/investigations/save', request, 'save_investigation_answer')['revision']
+    assert saved['content']['score_run_ref'] == reference
+    return {'revision': saved, 'selection': selection}
 
 
 def main():
@@ -312,7 +333,8 @@ def main():
                 for key in ('notes', 'bookmarks', 'selection_recipe', 'base_identity', 'selection_identity', 'comparison'):
                     assert saved['content'][key] == save_request[key]
                 assert saved['content']['score_run_ref'] is None
-            scored = scoring(base, workspace, bundle, spec['scoring_definition']) if 'scoring' in features else None
+            scored, score_proof = scoring(base, workspace, bundle, spec['scoring_definition']) if 'scoring' in features else (None, None)
+            scored_saved = save_scored_question(base, workspace, score_proof) if scored and 'saving' in features else None
         assert first.poll() is not None
         with host(work, 2, port) as (base, second):
             assert first.pid != second.pid
@@ -351,6 +373,25 @@ def main():
                 restored_base = answer(base, '/api/investigations/open-population', envelope('open_population_request', workspace_id=workspace['workspace_id'], preparation_id=preparation['preparation']['preparation_id']), 'imported_population_answer')
             assert restored_base['identity'] == population['identity']
             assert restored_base['preparation'] == preparation['preparation']
+            if scored:
+                if scored_saved:
+                    restored_score_question = answer(base, '/api/investigations/reopen', envelope('reopen_investigation_request', workspace_id=workspace['workspace_id'], saved_revision_id=scored_saved['revision']['saved_revision_id']), 'reopen_investigation_answer')
+                    assert restored_score_question['revision'] == scored_saved['revision']
+                    assert restored_score_question['revision']['content']['score_run_ref'] == scored_saved['revision']['content']['score_run_ref']
+                    assert restored_score_question['restored_selection']['identity'] == scored_saved['selection']['identity']
+                    assert restored_score_question['restored_selection']['kept']['case_count'] == 8
+                # The second CLI has never validated or scored this reading.
+                # Read its original nine-case result before any fresh population query.
+                read = answer(base, '/api/expectations/read-run', envelope('read_score_run_request', workspace_id=workspace['workspace_id'], run_id=scored['run_id']), 'score_run_answer')
+                assert read['run'] == score_proof['run']
+                after_witness = answer(base, '/api/expectations/case-witness', envelope('score_case_witness_request', workspace_id=workspace['workspace_id'], run_id=scored['run_id'], case_id='REOPEN'), 'score_case_witness_answer')
+                assert after_witness == score_proof['witness']
+                outside_selection_witness = answer(base, '/api/expectations/case-witness', envelope('score_case_witness_request', workspace_id=workspace['workspace_id'], run_id=scored['run_id'], case_id='NOOPEN'), 'score_case_witness_answer')
+                assert outside_selection_witness['case']['case_id'] == 'NOOPEN' and outside_selection_witness['case']['value'] is None
+                scored['original_run_read_after_restart'] = True
+                scored['saved_selected_case_count'] = 8 if scored_saved else None
+                scored['original_scored_case_count'] = 9
+                scored['witness_outside_saved_selection_read'] = True
         assert second.poll() is not None
     receipt = {'all_passed': True, 'features': features, 'scope': 'Installed noneditable wheel on this runner; not Windows 11 human download/browser qualification',
                'isolated_python': True, 'checkout_paths_removed': True, 'real_owned_processes': 2, 'both_processes_stopped': True,
