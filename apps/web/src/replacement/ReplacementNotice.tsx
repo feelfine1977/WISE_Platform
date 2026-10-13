@@ -15,6 +15,8 @@ interface ReplacementNoticeProps<Asked, Problem> {
   asked: string;
   /** The id of the text that actions waiting for the replacement refer to. */
   reasonId: string;
+  /** The id of the text saying why the actions of a failure cannot be taken now; while it is given, they wait. */
+  waitingFor?: string;
   describe: (problem: Problem) => ReplacementProblemText;
   onRetry: () => void;
   onStay: () => void;
@@ -24,7 +26,7 @@ interface ReplacementNoticeProps<Asked, Problem> {
  * Beside the answer shown: the request that is to replace it, while it runs or after it failed.
  * A failure offers to try again or to stay with what is shown.
  */
-export function ReplacementNotice<Asked, Problem>({ replacement, shown, asked, reasonId, describe, onRetry, onStay }: ReplacementNoticeProps<Asked, Problem>) {
+export function ReplacementNotice<Asked, Problem>({ replacement, shown, asked, reasonId, waitingFor, describe, onRetry, onStay }: ReplacementNoticeProps<Asked, Problem>) {
   if (replacement.phase === "running") {
     return (
       <div className="replacement">
@@ -51,11 +53,11 @@ export function ReplacementNotice<Asked, Problem>({ replacement, shown, asked, r
       )}
       <div className="replacement-actions">
         {text.retryable && (
-          <button type="button" onClick={onRetry}>
+          <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={onRetry}>
             Try again
           </button>
         )}
-        <button type="button" onClick={onStay}>
+        <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={onStay}>
           Stay with {shown}
         </button>
       </div>

@@ -1,9 +1,10 @@
 import { useId } from "react";
 import type { SelectionPredicate } from "../generated/selection";
 import { type ImportedSelectionState, shownSelection } from "../imported/coordinator";
+import type { Replacement } from "../replacement/replacement";
 import { ReplacementNotice } from "../replacement/ReplacementNotice";
 import type { SelectionProblem } from "./client";
-import { canRedo, canUndo } from "./steps";
+import { canRedo, canUndo, type StepHistory } from "./steps";
 import { describeSelectionProblem, overlapLine, stepCounts, stepWording } from "./wording";
 
 interface SelectionStepsProps {
@@ -31,6 +32,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
   const shown = shownSelection(selection);
   const { history } = selection;
   const results = shown?.answer.predicate_results ?? [];
+  const replacement = selectionReplacement(selection);
   return (
     <section className="selection-steps" aria-labelledby="selection-steps-title">
       <div className="selection-head">
@@ -86,12 +88,13 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
         </ul>
       )}
       {shown && results.length > 1 && <p className="muted overlap-line">{overlapLine(shown.answer.parent)}</p>}
-      {selection.phase === "failed" && shown && (
+      {replacement && (
         <ReplacementNotice
-          replacement={{ phase: "failed", revision: selection.revision, asked: selection.history, problem: selection.problem }}
+          replacement={replacement}
           shown="the earlier selection"
           asked="the new selection"
           reasonId={reasonId}
+          waitingFor={waitingFor}
           describe={describeStepsProblem}
           onRetry={onRetry}
           onStay={onStay}
@@ -102,6 +105,14 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
       )}
     </section>
   );
+}
+
+/** New steps asked for while an earlier selection is shown: they replace it once they are answered. */
+function selectionReplacement(selection: ImportedSelectionState): Replacement<StepHistory, SelectionProblem> | null {
+  if (selection.phase === "idle" || selection.phase === "ready" || selection.shown === null) return null;
+  return selection.phase === "loading"
+    ? { phase: "running", revision: selection.revision, asked: selection.history }
+    : { phase: "failed", revision: selection.revision, asked: selection.history, problem: selection.problem };
 }
 
 function describeStepsProblem(problem: SelectionProblem) {

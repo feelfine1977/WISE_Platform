@@ -195,6 +195,40 @@ describe("keeping the investigation shown while another preparation is opened", 
     expect(shownIncidents()).toEqual(["A-1", "B-2"]);
   });
 
+  it("says which selection is shown while new steps are selected", async () => {
+    const app = await showFirst();
+    act(() => app.coordinator.addStep(contains(opened)));
+    expect(screen.getByText("Showing the earlier selection; opening the new selection …")).toBeTruthy();
+    expect(shownIncidents()).toEqual(["A-1", "B-2"]);
+
+    const selection = app.selecting.selections[1];
+    await deliver(() => selection.reply({ ok: true, answer: selectionAnswer(selection.request, containingOpened) }));
+    await deliver(() => app.selecting.graphs[1].reply({ ok: true, answer: graphAnswer(app.selecting.graphs[1].request, ["A-1"]) }));
+    expect(screen.queryByText(/^Showing the earlier selection/)).toBeNull();
+    expect(shownIncidents()).toEqual(["A-1"]);
+  });
+
+  it("lets a failed selection wait, with the reason, while another preparation opens", async () => {
+    const app = await showFirst();
+    act(() => app.coordinator.addStep(contains(opened)));
+    const refused = app.selecting.selections[1];
+    await deliver(() => refused.reply(selectionRefusal(refused.request, "select_cases", "computation_failed", "The answer could not be computed.")));
+    const request = askSecond(app);
+
+    const reason = `Not available while ${askedName} is opening: what is shown belongs to ${shownName}.`;
+    for (const name of ["Try again", "Stay with the earlier selection"]) {
+      const button = screen.getByRole("button", { name }) as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+      expect(document.getElementById(button.getAttribute("aria-describedby") ?? "")?.textContent).toBe(reason);
+    }
+
+    await deliver(() => request.reply({ ok: false, problem: { kind: "unreachable" } }));
+    const stay = screen.getByRole("button", { name: "Stay with the earlier selection" }) as HTMLButtonElement;
+    expect(stay.disabled).toBe(false);
+    await app.user.click(stay);
+    expect(app.coordinator.getState().selection).toMatchObject({ phase: "ready", history: { present: [] } });
+  });
+
   it("opens a saved investigation in place of the question shown, in the view it was saved in", async () => {
     const app = await showFirst();
     act(() =>
