@@ -361,15 +361,17 @@ describe("the Compare view", () => {
 });
 
 describe("the areas of the application", () => {
-  it("list Compare as one area beside Data and Investigations", async () => {
+  it("list Compare as one area beside Data and Investigations, unavailable until incidents are open", async () => {
     const scripted = scriptedClient();
     const user = userEvent.setup();
     render(<App client={scripted.client} checkHealth={healthy} comparisonClient={scriptedComparisonClient().client} />);
     const areas = screen.getByRole("navigation", { name: "Areas" });
     expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare", "Expectation", "Saved"]);
-    await user.click(within(areas).getByRole("button", { name: "Compare" }));
-    expect(within(areas).getByRole("button", { name: "Compare" }).getAttribute("aria-current")).toBe("page");
-    expect(within(areas).getByRole("button", { name: "Investigations" }).getAttribute("aria-current")).toBeNull();
-    expect(screen.getByRole("heading", { name: "Compare" })).toBeTruthy();
+    const compare = within(areas).getByRole("button", { name: "Compare" });
+    expect(compare.getAttribute("aria-disabled")).toBe("true");
+    await user.click(compare);
+    expect(compare.getAttribute("aria-current")).toBeNull();
+    expect(within(areas).getByRole("button", { name: "Investigations" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.queryByRole("heading", { name: "Compare" })).toBeNull();
   });
 });

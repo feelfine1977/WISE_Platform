@@ -341,17 +341,20 @@ describe("the investigation screen", () => {
     expect(unlabelled.querySelector(".record-activity")?.hasAttribute("title")).toBe(false);
   });
 
-  it("lists the Expectation view as one of the areas and opens it", async () => {
+  it("lists the Expectation view as one of the areas, unavailable while only the example is open", async () => {
     const scripted = renderScreen();
     await openPopulationZero(scripted);
     const areas = screen.getByRole("navigation", { name: "Areas" });
     expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare", "Expectation", "Saved"]);
-    await scripted.user.click(within(areas).getByRole("button", { name: "Expectation" }));
-    expect(within(areas).getByRole("button", { name: "Expectation" }).getAttribute("aria-current")).toBe("page");
-    expect(within(areas).getByRole("button", { name: "Investigations" }).getAttribute("aria-current")).toBeNull();
-    expect(screen.getByRole("heading", { name: "Expectation" })).toBeTruthy();
-    expect(screen.getByText(/Open the incidents of a preparation in the Data area first/)).toBeTruthy();
-    expect(screen.getByText(/wise-pm 0.2.0, built from source 6883db5: an untagged state/)).toBeTruthy();
+    const expectation = within(areas).getByRole("button", { name: "Expectation" });
+    expect(expectation.getAttribute("aria-disabled")).toBe("true");
+    expect(document.getElementById(expectation.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      "Open the incidents of a preparation in the Data area first.",
+    );
+    await scripted.user.click(expectation);
+    expect(expectation.getAttribute("aria-current")).toBeNull();
+    expect(within(areas).getByRole("button", { name: "Investigations" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.queryByRole("heading", { name: "Expectation" })).toBeNull();
   });
 
   it("says investigations are not available when the local service does not offer them, and retries", async () => {
