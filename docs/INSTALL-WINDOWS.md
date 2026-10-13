@@ -91,18 +91,19 @@ The application listens on this computer only (`127.0.0.1`). It sends nothing an
 
 ## 5. First use
 
-1. Create an empty folder for your work, outside the bundle and outside the environment:
-
-   ```bat
-   mkdir "%LOCALAPPDATA%\WISE\workspace"
-   echo %LOCALAPPDATA%\WISE\workspace
-   ```
-
-   The second line prints the folder's full path.
-2. In the application open **Data**, enter that full path and choose **Open workspace**.
-3. Add a CSV file. To try it first, use `synthetic-inputs\B4-ties-out-of-order.csv` from the bundle, or load one of the built-in examples.
+1. Open the browser address from step 4. The application creates its working folder at `%LOCALAPPDATA%\WISE\workspace` automatically. With a new workspace, it loads the fictional incident example and opens its process map. No folder path needs to be entered.
+2. Explore the map, switch to **Incidents** for complete histories, or open **Compare** and **Expectation**. The initial sample uses the same investigation as an imported CSV.
+3. To use your own file, open **Data** and add a CSV. The workspace in use is shown there; **Use another folder** is an optional advanced choice. To try import first, use `synthetic-inputs\B4-ties-out-of-order.csv` from the bundle.
 4. Confirm how the file is read: separator and encoding, which column is the incident id, the activity and the time, the time format, and the cutoff. The report then says how many rows were read, which were left out and why.
-5. Open the incidents. From there: the process map, the selection of whole incidents, the comparison, the expectation, and saving.
+5. Open the incidents to see their map. Keep or remove whole incidents, compare groups or periods, optionally score an expectation, and save the investigation. After a restart the last reading opens again; saved investigations are available in **Saved**.
+
+To create or reuse a different default working folder, start the service with an absolute path:
+
+```bat
+"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -I -m wise_platform_api --port 8765 --workspace "D:\Investigations\Incidents"
+```
+
+An incompatible folder is refused and its files are preserved. The app offers retry or choosing another folder.
 
 Your CSV file is not changed. A copy of its bytes is kept in the workspace folder together with how it was read, so that the work can be opened again later.
 

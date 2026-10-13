@@ -78,7 +78,8 @@ def host(work, attempt, port):
     env = {k: v for k, v in os.environ.items() if k not in {'PYTHONPATH', 'PYTHONHOME'}}
     log = work / ('host-' + str(attempt) + '.log')
     with log.open('wb') as stream:
-        process = subprocess.Popen([sys.executable, '-I', '-m', 'wise_platform_api', '--host', '127.0.0.1', '--port', str(port)],
+        process = subprocess.Popen([sys.executable, '-I', '-m', 'wise_platform_api', '--host', '127.0.0.1', '--port', str(port),
+                                    '--workspace', str(work / 'Überprüfung Workspace')],
                                    cwd=work, env=env, stdout=stream, stderr=subprocess.STDOUT)
         base = 'http://127.0.0.1:' + str(port)
         try:
@@ -100,6 +101,12 @@ def host(work, attempt, port):
 
 def open_workspace(base, path):
     result = answer(base, '/api/workspaces/open', envelope('open_workspace_request', path=str(path)), 'workspace_answer')
+    assert Path(result['path']).resolve() == path.resolve() and result['writable'] is True
+    return result
+
+
+def initialize_workspace(base, path):
+    result = answer(base, '/api/workspaces/open-default', envelope('open_default_workspace_request'), 'workspace_answer')
     assert Path(result['path']).resolve() == path.resolve() and result['writable'] is True
     return result
 
@@ -278,12 +285,14 @@ def main():
     assert not any(env.glob('**/*.egg-link')) and not any(env.glob('**/__editable__*'))
     wheel = next((bundle / 'wheelhouse').glob('wise_platform-*.whl'))
     with tempfile.TemporaryDirectory(prefix='wise-installed-proof-') as temporary:
-        work = Path(temporary); workspace_path = work / 'Überprüfung Workspace'; workspace_path.mkdir()
+        work = Path(temporary); workspace_path = work / 'Überprüfung Workspace'
+        assert not workspace_path.exists()
         with socket.socket() as reserved:
             reserved.bind(('127.0.0.1', 0)); port = reserved.getsockname()[1]
         with host(work, 1, port) as (base, first):
             examples = actual_examples(base, spec, wheel)
-            workspace = open_workspace(base, workspace_path)
+            assert not workspace_path.exists(), 'Health and sample reads must not create a workspace.'
+            workspace = initialize_workspace(base, workspace_path)
             raw = (bundle / 'synthetic-inputs/B4-ties-out-of-order.csv').read_bytes()
             assert hashlib.sha256(raw).hexdigest() == '46d7a88dd6544d8f5c8242b9a0cfc579e214c9c3f69130708f23769469adbc14'
             source, preparation, population = imported(base, workspace, raw, 'B4-ties-out-of-order.csv', cutoff=B4_CUTOFF)
@@ -338,7 +347,7 @@ def main():
         assert first.poll() is not None
         with host(work, 2, port) as (base, second):
             assert first.pid != second.pid
-            reopened_workspace = open_workspace(base, workspace_path)
+            reopened_workspace = initialize_workspace(base, workspace_path)
             assert reopened_workspace['workspace_id'] == workspace['workspace_id']
             assert source in reopened_workspace['sources']
             assert {key: preparation['preparation'][key] for key in ('preparation_id', 'source_id')} in reopened_workspace['preparations']
@@ -395,6 +404,7 @@ def main():
         assert second.poll() is not None
     receipt = {'all_passed': True, 'features': features, 'scope': 'Installed noneditable wheel on this runner; not Windows 11 human download/browser qualification',
                'isolated_python': True, 'checkout_paths_removed': True, 'real_owned_processes': 2, 'both_processes_stopped': True,
+               'workspace_created_by_initialization': True, 'default_workspace_reused_after_restart': True,
                'examples': examples, 'imported_source_sha256': hashlib.sha256(raw).hexdigest(), 'complete_selected_rows': 4,
                'preserved_missing_activity': True, 'preparation_equal_after_restart': True,
                'cutoff_proposal_checked': True, 'cutoff_proposal_persisted_state_unchanged': True, 'b4_proposed_cutoff_utc': '2026-10-09T11:00:00Z',
