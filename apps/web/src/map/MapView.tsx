@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { type AbstractOptions, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
+import { type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
 import dagreWorkerUrl from "wise-flow/dagre-worker.min.js?url";
 import elkWorkerUrl from "wise-flow/elk-worker.min.js?url";
 import flowPackage from "wise-flow/package.json";
@@ -101,6 +101,15 @@ interface MapViewProps {
 /** The process map of the kept incidents, with the steps an activity, a path or a flow from Start or to End offers. */
 export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false }: MapViewProps) {
   const parent = useMemo(() => toFlowGraph(parentGraph), [parentGraph]);
+  /**
+   * Every activity is written with its whole name, on up to two lines, and its incidents: the cards
+   * take the width that needs. The references are those of the whole parent, so that an activity
+   * keeps its own from one selection to the next.
+   */
+  const activityLabels = useMemo<ActivityLabelOptions>(
+    () => ({ mode: "names", references: activityReferences(parent), showCounts: true, caseLabel: "incidents" }),
+    [parent],
+  );
   const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
   const least = useMemo(() => leastPaths(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
   // The detail is held here, so that the paths share cannot go below the main flow.
@@ -173,6 +182,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
             layout={workers}
             abstraction={detail}
             onAbstractionChange={changeDetail}
+            activityLabels={activityLabels}
             // The chosen measure, with what is laid over the library's style of it.
             {...askedFor(measure)}
             // Listening for the choice is what makes the map's whole legend offer the measures.
