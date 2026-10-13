@@ -104,6 +104,7 @@
   --size-inspector: 440px;
   --size-column-number: 128px;
   --size-column-label: 120px;
+  --size-column-id-least: 120px;
   --size-source-select: 240px;
   --size-popover: 340px;
   --size-details-column: 300px;

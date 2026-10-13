@@ -296,6 +296,8 @@ thead th {
   border-bottom-color: var(--color-line-strong);
 }
 tbody th { padding: 0; font-weight: var(--font-weight-plain); }
+/* The incident column keeps a readable width beside the three figures and the partition. */
+.incident-table { min-width: calc(var(--size-column-number) * 3 + var(--size-column-label) + var(--size-column-id-least)); }
 .column-number { width: var(--size-column-number); }
 .column-label { width: var(--size-column-label); }
 .number { text-align: right; font-variant-numeric: tabular-nums; }
@@ -426,6 +428,8 @@ tr.selected .row-open { font-weight: var(--font-weight-strong); }
 }
 @media (max-width: 640px) {
   .status-group { margin-left: 0; }
+  /* A window narrower than the incident table scrolls the table in its pane, not the page. */
+  .incidents { overflow-x: auto; }
 }
 
 /* The app bar on narrower windows, in the order its parts give way. */
