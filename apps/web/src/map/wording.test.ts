@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { contains, follows, followingOpened, parent, suppliedGraph, support } from "../test/selections";
-import { coverageRows, lagLine, mapCaption, overlapLine, stepCounts, stepWording } from "./wording";
+import { coverageRows, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
 
 describe("the words of a step", () => {
   it("says what each kind of step keeps", () => {
@@ -63,5 +63,20 @@ describe("the words of the map", () => {
         "Recorded wall-clock differences may differ from physical elapsed time across clock changes.",
     );
     expect(coverageRows(meta)).toContainEqual(["Lag", "hours of the recorded wall clock"]);
+  });
+});
+
+describe("a step on a context column", () => {
+  const step = { kind: "opening_attribute_equals", column_index: 11, value: "Medium", negate: false, anchor_policy: "incident.context.first_record_in_declared_order.v1" } as const;
+
+  it("names the column by its name once the reading's names are known, and by its place before", () => {
+    expect(stepWording(step)).toBe("Keep incidents whose first record has the value “Medium” in column 11");
+    nameContextColumns(new Map([[11, "impact"]]));
+    try {
+      expect(stepWording(step)).toBe("Keep incidents whose first record has the value “Medium” in the column “impact”");
+      expect(stepWording({ ...step, column_index: 3, negate: true })).toBe("Keep incidents whose first record does not have the value “Medium” in column 3");
+    } finally {
+      nameContextColumns(new Map());
+    }
   });
 });

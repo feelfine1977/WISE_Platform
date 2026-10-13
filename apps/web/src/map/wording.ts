@@ -4,6 +4,22 @@ import type { SelectionProblem } from "./client";
 
 const quoted = (text: string) => `“${text}”`;
 
+/** The names of the context columns of the reading shown, by their place in the source. */
+let contextColumnNames: ReadonlyMap<number, string> = new Map();
+
+/**
+ * Tells the wording the names of the context columns of the reading shown, so that a step names
+ * its column by its name. Without a name for a column, the step names it by its place.
+ */
+export function nameContextColumns(names: ReadonlyMap<number, string>): void {
+  contextColumnNames = names;
+}
+
+function columnWording(index: number): string {
+  const name = contextColumnNames.get(index)?.trim();
+  return name ? `the column ${quoted(name)}` : `column ${index}`;
+}
+
 /** What a step keeps, in words. */
 export function stepWording(step: SelectionPredicate): string {
   switch (step.kind) {
@@ -18,8 +34,8 @@ export function stepWording(step: SelectionPredicate): string {
     case "opening_attribute_equals": {
       const value = step.value === null ? "no value" : `the value ${quoted(step.value)}`;
       return step.negate
-        ? `Keep incidents whose first record does not have ${value} in column ${step.column_index}`
-        : `Keep incidents whose first record has ${value} in column ${step.column_index}`;
+        ? `Keep incidents whose first record does not have ${value} in ${columnWording(step.column_index)}`
+        : `Keep incidents whose first record has ${value} in ${columnWording(step.column_index)}`;
     }
   }
 }

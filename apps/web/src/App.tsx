@@ -12,6 +12,7 @@ import { ImportedInvestigationCoordinator, type PreparationTarget, shownSelectio
 import { ImportedInvestigation } from "./imported/ImportedInvestigation";
 import type { HealthResponse } from "./generated/health";
 import { httpSelectionClient, type SelectionClient } from "./map/client";
+import { nameContextColumns } from "./map/wording";
 import { httpSavingClient, type SavingClient } from "./saved/client";
 import { SavingCoordinator } from "./saved/coordinator";
 import { SavedInvestigations } from "./saved/SavedInvestigations";
@@ -106,6 +107,18 @@ export default function App({
       savingCoordinator.stop();
     };
   }, [dataCoordinator, importedCoordinator, savingCoordinator]);
+
+  // A step that names a context column says its name; the names are those of the reading shown.
+  useEffect(() => {
+    let named: unknown = null;
+    return importedCoordinator.subscribe(() => {
+      const { openingContext } = importedCoordinator.getState();
+      const columns = openingContext.phase === "ready" ? openingContext.answer.opening_context.columns : null;
+      if (columns === named) return;
+      named = columns;
+      nameContextColumns(new Map((columns ?? []).map((column) => [column.column_index, column.column_name])));
+    });
+  }, [importedCoordinator]);
 
   useEffect(() => () => compareCoordinator.stop(), [compareCoordinator]);
   useEffect(() => {
