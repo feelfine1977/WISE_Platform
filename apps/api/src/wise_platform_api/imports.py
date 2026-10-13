@@ -263,6 +263,20 @@ class Imports:
 
     # Workspaces and prepared snapshots -----------------------------------------------------
 
+    def prepared(self, workspace_id: str, preparation_id: str) -> tuple[PreparedData, dict] | Problem | PackageRefusal:
+        """The prepared snapshot of a preparation kept in an open workspace, and its stored source.
+
+        A problem with the source or the preparation names its field inside ``identity``, as the
+        investigation operations that use it carry both inside their identity.
+        """
+        workspace = self.opened_workspace(workspace_id)
+        if isinstance(workspace, Problem):
+            return workspace
+        found = self.prepared_snapshot(workspace, preparation_id, "identity.preparation_id")
+        if isinstance(found, Problem) and found.field in ("source_id", "preparation_id"):
+            return Problem(found.code, found.message, f"identity.{found.field}")
+        return found
+
     def _workspace(self, operation: str, given: dict) -> Workspace | ImportReply:
         workspace = self.opened_workspace(given["workspace_id"])
         if isinstance(workspace, Problem):

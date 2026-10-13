@@ -10,6 +10,7 @@ import type {
 import type { ImportClient, ImportOutcome, ImportProblem } from "../data/client";
 import { sameJson } from "../data/coordinator";
 import type {
+  AnswerIdentity,
   ProcessGraphAnswer,
   ProcessGraphRequest,
   SelectCasesRequest,
@@ -19,6 +20,8 @@ import type {
 } from "../generated/selection";
 import type { SelectionClient, SelectionOutcome, SelectionProblem } from "../map/client";
 import { noSteps, redone, type StepHistory, type Steps, undone, withoutStep, withoutSteps, withStep } from "../map/steps";
+import { httpPopulationViewClient, type PopulationViewClient, type ViewOutcome, type ViewProblem } from "../views/client";
+import type { OpeningContextAnswer, OpeningContextRequest, VariantId, VariantsAnswer, VariantsRequest } from "../views/messages";
 
 /** The preparation an imported investigation is opened on. */
 export interface PreparationTarget {
@@ -37,6 +40,22 @@ export type ImportedCaseState =
   | { phase: "loading"; caseId: CaseId }
   | { phase: "ready"; caseId: CaseId; answer: ImportedCaseEvidenceAnswer }
   | { phase: "failed"; caseId: CaseId; problem: ImportProblem };
+
+/** An answer about the shown selection that is requested once the selection and its map are answered. */
+export type ViewState<Answer> =
+  | { phase: "idle" }
+  | { phase: "loading" }
+  | { phase: "ready"; answer: Answer }
+  | { phase: "failed"; problem: ViewProblem };
+
+/** The population whose views are asked for: the parent, or a selection of it. */
+type ViewTarget = Pick<ImportedPopulationAnswer, "workspace_id" | "identity">;
+
+/** One outstanding request for a view of the selection, and how to abandon it. */
+interface Pending {
+  requestId: string;
+  controller: AbortController;
+}
 
 /** A selection the local service answered together with the map of exactly its kept incidents. */
 export interface ShownSelection {
@@ -62,6 +81,10 @@ export interface ImportedInvestigationState {
   population: ImportedPopulationState;
   inspected: ImportedCaseState;
   selection: ImportedSelectionState;
+  openingContext: ViewState<OpeningContextAnswer>;
+  variants: ViewState<VariantsAnswer>;
+  /** The variant whose incidents the table lists until the choice is cleared; a view, not a selection step. */
+  chosenVariant: VariantId | null;
   /** The map of every incident of the parent, from which the map's arrangement is computed once. */
   parentGraph: SuppliedGraph | null;
 }
@@ -82,6 +105,9 @@ const initialState: ImportedInvestigationState = {
   population: { phase: "idle" },
   inspected: { phase: "closed" },
   selection: { phase: "idle" },
+  openingContext: { phase: "idle" },
+  variants: { phase: "idle" },
+  chosenVariant: null,
   parentGraph: null,
 };
 
@@ -96,15 +122,22 @@ export class ImportedInvestigationCoordinator {
   private state: ImportedInvestigationState = initialState;
   private revision = 0;
   private caseRequestSequence = 0;
+  private viewRequestSequence = 0;
   private currentCaseRequestId: string | null = null;
   private populationRequest: AbortController | null = null;
   private caseRequest: AbortController | null = null;
   private selectionRequest: AbortController | null = null;
+  private viewTarget: ViewTarget | null = null;
+  /** The query revision the views of the target were first asked under; a retry asks under it again. */
+  private viewRevision = 0;
+  private openingRequest: Pending | null = null;
+  private variantsRequest: Pending | null = null;
   private readonly listeners = new Set<() => void>();
 
   constructor(
     private readonly client: ImportClient,
     private readonly selectionClient: SelectionClient,
+    private readonly views: PopulationViewClient = httpPopulationViewClient,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -120,6 +153,7 @@ export class ImportedInvestigationCoordinator {
     this.populationRequest?.abort();
     this.cancelSelectionRequest();
     this.cancelCaseRequest();
+    this.cancelViewRequests();
     const request: OpenPopulationRequest = {
       schema_version: 1,
       message_type: "open_population_request",
@@ -203,6 +237,25 @@ export class ImportedInvestigationCoordinator {
     if (selection.phase === "failed") this.select(selection.history);
   }
 
+  retryOpeningContext(): void {
+    if (this.viewTarget && this.state.openingContext.phase === "failed") this.requestOpeningContext(this.viewTarget);
+  }
+
+  retryVariants(): void {
+    if (this.viewTarget && this.state.variants.phase === "failed") this.requestVariants(this.viewTarget);
+  }
+
+  /** Lists the incidents of one variant of the current answer in the table; the selection stays as it is. */
+  chooseVariant(variantId: VariantId): void {
+    const variants = this.state.variants;
+    if (variants.phase !== "ready" || !variants.answer.variants.variants.some((variant) => variant.id === variantId)) return;
+    if (this.state.chosenVariant !== variantId) this.publish({ ...this.state, chosenVariant: variantId });
+  }
+
+  clearVariant(): void {
+    if (this.state.chosenVariant !== null) this.publish({ ...this.state, chosenVariant: null });
+  }
+
   /** Abandons every outstanding request; replies to them are dropped when they arrive. */
   stop(): void {
     this.revision += 1;
@@ -210,6 +263,7 @@ export class ImportedInvestigationCoordinator {
     this.populationRequest = null;
     this.cancelSelectionRequest();
     this.cancelCaseRequest();
+    this.cancelViewRequests();
   }
 
   private changeSteps(change: (history: StepHistory) => StepHistory): void {
@@ -296,6 +350,8 @@ export class ImportedInvestigationCoordinator {
       parentGraph: this.state.parentGraph ?? (history.present.length === 0 ? graph : null),
     });
     this.followSelection(selected);
+    // The views follow the selection shown; the population's own views stand for a selection with the same identity.
+    if (!sameJson(selected.identity, this.viewTarget?.identity)) this.requestViews(selected);
   }
 
   private failSelection(revision: number, history: StepHistory, problem: SelectionProblem): void {
@@ -334,7 +390,74 @@ export class ImportedInvestigationCoordinator {
       return;
     }
     this.publish({ ...initialState, population: { phase: "ready", revision, target, answer: checked.answer } });
+    this.requestViews(checked.answer);
     this.select(noSteps);
+  }
+
+  private viewRequest<Kind extends "opening_context_request" | "variants_request">(messageType: Kind, target: ViewTarget) {
+    this.viewRequestSequence += 1;
+    const prefix = messageType === "opening_context_request" ? "opening" : "variants";
+    return {
+      schema_version: 1 as const,
+      message_type: messageType,
+      request_id: `${prefix}-${this.viewRevision}-${this.viewRequestSequence}`,
+      query_revision: this.viewRevision,
+      workspace_id: target.workspace_id,
+      identity: target.identity,
+    };
+  }
+
+  private requestViews(target: ViewTarget): void {
+    this.viewTarget = target;
+    this.viewRevision = this.revision;
+    this.requestOpeningContext(target);
+    this.requestVariants(target);
+  }
+
+  private requestOpeningContext(target: ViewTarget): void {
+    this.openingRequest?.controller.abort();
+    const request: OpeningContextRequest = this.viewRequest("opening_context_request", target);
+    const pending = { requestId: request.request_id, controller: new AbortController() };
+    this.openingRequest = pending;
+    this.publish({ ...this.state, openingContext: { phase: "loading" } });
+    this.views.openingContext(request, pending.controller.signal).then(
+      (outcome) => this.receiveOpeningContext(request, outcome),
+      () => this.receiveOpeningContext(request, viewUnreachable),
+    );
+  }
+
+  private requestVariants(target: ViewTarget): void {
+    this.variantsRequest?.controller.abort();
+    const request: VariantsRequest = this.viewRequest("variants_request", target);
+    const pending = { requestId: request.request_id, controller: new AbortController() };
+    this.variantsRequest = pending;
+    this.publish({ ...this.state, variants: { phase: "loading" }, chosenVariant: null });
+    this.views.variants(request, pending.controller.signal).then(
+      (outcome) => this.receiveVariants(request, outcome),
+      () => this.receiveVariants(request, viewUnreachable),
+    );
+  }
+
+  private receiveOpeningContext(request: OpeningContextRequest, outcome: ViewOutcome<OpeningContextAnswer>): void {
+    if (request.request_id !== this.openingRequest?.requestId) return;
+    this.openingRequest = null;
+    const checked = outcome.ok ? checkView(request, outcome.answer) : checkViewProblem(request, outcome.problem);
+    this.publish({ ...this.state, openingContext: checked.ok ? { phase: "ready", answer: checked.answer } : { phase: "failed", problem: checked.problem } });
+  }
+
+  private receiveVariants(request: VariantsRequest, outcome: ViewOutcome<VariantsAnswer>): void {
+    if (request.request_id !== this.variantsRequest?.requestId) return;
+    this.variantsRequest = null;
+    const checked = outcome.ok ? checkView(request, outcome.answer) : checkViewProblem(request, outcome.problem);
+    this.publish({ ...this.state, variants: checked.ok ? { phase: "ready", answer: checked.answer } : { phase: "failed", problem: checked.problem } });
+  }
+
+  private cancelViewRequests(): void {
+    this.openingRequest?.controller.abort();
+    this.variantsRequest?.controller.abort();
+    this.openingRequest = null;
+    this.variantsRequest = null;
+    this.viewTarget = null;
   }
 
   private receiveCase(request: ImportedCaseEvidenceRequest, outcome: ImportOutcome<ImportedCaseEvidenceAnswer>): void {
@@ -359,6 +482,39 @@ export class ImportedInvestigationCoordinator {
     this.state = state;
     for (const listener of this.listeners) listener();
   }
+}
+
+const viewUnreachable: ViewOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
+
+function viewMismatch(detail: string): ViewOutcome<never> {
+  return { ok: false, problem: { kind: "unsupported_reply", detail } };
+}
+
+interface ViewRequest {
+  request_id: string;
+  query_revision: number;
+  workspace_id: string;
+  identity: AnswerIdentity;
+}
+
+/** An answer about another request, workspace or population does not answer this one. */
+function checkView<Answer extends ViewRequest>(request: ViewRequest, answer: Answer): ViewOutcome<Answer> {
+  if (answer.request_id !== request.request_id || answer.query_revision !== request.query_revision) {
+    return viewMismatch("The reply names a different request or query revision.");
+  }
+  if (answer.workspace_id !== request.workspace_id) return viewMismatch("The reply belongs to a different workspace.");
+  if (!sameJson(answer.identity, request.identity)) return viewMismatch("The reply belongs to a different population identity.");
+  return { ok: true, answer };
+}
+
+function checkViewProblem(request: ViewRequest, problem: ViewProblem): ViewOutcome<never> {
+  if (problem.kind === "refusal") {
+    const { request_id, query_revision } = problem.refusal;
+    if ((request_id !== null && request_id !== request.request_id) || (query_revision !== null && query_revision !== request.query_revision)) {
+      return viewMismatch("The refusal names a different request or query revision.");
+    }
+  }
+  return { ok: false, problem };
 }
 
 /** A refusal that names another request or revision does not answer this one. */

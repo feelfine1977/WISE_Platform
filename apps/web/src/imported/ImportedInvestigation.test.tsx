@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { importContract } from "../data/client";
 import { caseSummaries, evidenceAnswer, importRefusal, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import { scriptedSelectionClient } from "../test/selections";
+import { scriptedViewClient } from "../test/views";
 import { ImportedInvestigationCoordinator } from "./coordinator";
 import { ImportedInvestigation } from "./ImportedInvestigation";
 
@@ -16,7 +17,7 @@ async function deliver(action: () => void) {
 function renderInvestigation() {
   const scripted = scriptedImportClient();
   const selecting = scriptedSelectionClient();
-  const coordinator = new ImportedInvestigationCoordinator(scripted.client, selecting.client);
+  const coordinator = new ImportedInvestigationCoordinator(scripted.client, selecting.client, scriptedViewClient().client);
   const user = userEvent.setup();
   render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId }));

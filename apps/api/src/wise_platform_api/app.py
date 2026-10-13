@@ -13,6 +13,7 @@ from .examples import PACKAGED_EXAMPLES
 from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
+from .population_views import PopulationViews, ViewReply
 from .selections import SelectionReply, Selections
 from .workspace import program_folders
 
@@ -21,6 +22,7 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     """Build the application; ``examples_dir`` replaces the packaged synthetic examples.
 
     Workspaces are refused inside the program's own folders, so that nothing is written there.
+    The selections made are held in ``application.state.selections``.
     """
     application = FastAPI(title="WISE Platform", version=__version__)
     investigations = Investigations(
@@ -28,6 +30,8 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     )
     imports = Imports(forbidden=program_folders())
     selections = Selections(imports)
+    views = PopulationViews(imports)
+    application.state.selections = imports.selections
 
     @application.get("/api/health", response_model=HealthResponse)
     def health() -> HealthResponse:
@@ -80,6 +84,14 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     async def process_graph(request: Request) -> JSONResponse:
         return _sent_selection(await run_in_threadpool(selections.process_graph, await request.body()))
 
+    @application.post("/api/investigations/opening-context")
+    async def opening_context(request: Request) -> JSONResponse:
+        return _sent_view(await run_in_threadpool(views.opening_context, await request.body()))
+
+    @application.post("/api/investigations/variants")
+    async def variants(request: Request) -> JSONResponse:
+        return _sent_view(await run_in_threadpool(views.variants, await request.body()))
+
     @application.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:
         raise HTTPException(status_code=404, detail="API route not found")
@@ -108,6 +120,10 @@ def _sent_import(reply: ImportReply) -> JSONResponse:
 
 
 def _sent_selection(reply: SelectionReply) -> JSONResponse:
+    return JSONResponse(reply.body, status_code=reply.status)
+
+
+def _sent_view(reply: ViewReply) -> JSONResponse:
     return JSONResponse(reply.body, status_code=reply.status)
 
 

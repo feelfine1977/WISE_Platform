@@ -10,6 +10,9 @@ import { supportText } from "../map/wording";
 import { type ImportedInvestigationCoordinator, type ShownSelection, shownSelection } from "./coordinator";
 import { ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
+import { OpenedAs } from "../views/OpenedAs";
+import type { VariantId } from "../views/messages";
+import { Variants } from "../views/Variants";
 
 interface ImportedInvestigationProps {
   coordinator: ImportedInvestigationCoordinator;
@@ -28,14 +31,39 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
+  const [focusIncidents, setFocusIncidents] = useState(0);
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
-  const { population, inspected } = state;
+  const incidentsHeading = useRef<HTMLHeadingElement>(null);
+  const { population, inspected, openingContext, variants, chosenVariant } = state;
   const inspectorOpen = inspected.phase !== "closed";
   const openCaseId = inspected.phase === "closed" ? null : inspected.caseId;
 
   useEffect(() => {
     if (focusInspector > 0) inspectorHeading.current?.focus();
   }, [focusInspector]);
+
+  // Runs after the table of the new view has mounted, so the heading keeps the focus.
+  useEffect(() => {
+    if (focusIncidents > 0) incidentsHeading.current?.focus();
+  }, [focusIncidents]);
+
+  /** The table is rendered anew for each view; a focus request for the earlier table is not repeated. */
+  const chooseVariant = useCallback(
+    (variantId: VariantId) => {
+      setFocusRequest(null);
+      coordinator.chooseVariant(variantId);
+    },
+    [coordinator],
+  );
+
+  const clearVariant = useCallback(
+    (focusTable: boolean) => {
+      setFocusRequest(null);
+      coordinator.clearVariant();
+      if (focusTable) setFocusIncidents((count) => count + 1);
+    },
+    [coordinator],
+  );
 
   const openCase = useCallback(
     (caseId: CaseId) => {
@@ -70,6 +98,15 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
   const kept = useMemo(() => keptCases(answer, shown), [answer, shown]);
   const summary = answer?.cases.find((item) => item.case_id === openCaseId);
   const revision = shown ? shown.revision : population.phase === "ready" ? population.revision : 0;
+  const variantView = useMemo(() => {
+    if (chosenVariant === null || variants.phase !== "ready" || !answer) return null;
+    const ranked = variants.answer.variants.variants;
+    const rank = ranked.findIndex((variant) => variant.id === chosenVariant);
+    if (rank < 0) return null;
+    const members = new Set(ranked[rank].case_ids);
+    return { rank: rank + 1, caseCount: ranked[rank].case_count, cases: kept.filter((item) => members.has(item.case_id)) };
+  }, [chosenVariant, variants, answer, kept]);
+  const shownCases = variantView ? variantView.cases : kept;
   return (
     <main className="workbench" aria-labelledby="imported-title">
       <div className="toolbar">
@@ -109,52 +146,81 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
         </div>
       )}
       <div className="workbench-body" data-inspector={inspectorOpen ? layout : "none"}>
-        {answer && view === "map" && (
-          <section className="map-pane" aria-labelledby="imported-map-title">
-            <h3 id="imported-map-title" className="pane-title">
-              Map of the kept incidents
+        <div className="main-column">
+          {answer && view === "map" && (
+            <section className="map-pane" aria-labelledby="imported-map-title">
+              <h3 id="imported-map-title" className="pane-title">
+                Map of the kept incidents
+              </h3>
+              {shown && state.parentGraph ? (
+                <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} />
+              ) : state.selection.phase === "failed" ? (
+                <p className="working-text">The map is shown once the incidents are selected.</p>
+              ) : (
+                <p className="working-text">Selecting the incidents and drawing their map…</p>
+              )}
+            </section>
+          )}
+          <section className="table-pane" aria-labelledby="imported-incidents-title" hidden={answer !== null && view !== "incidents"}>
+            <h3 id="imported-incidents-title" className="pane-title" tabIndex={-1} ref={incidentsHeading}>
+              {variantView ? `Kept incidents of variant ${variantView.rank}` : "Kept incidents"}
             </h3>
-            {shown && state.parentGraph ? (
-              <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} />
-            ) : state.selection.phase === "failed" ? (
-              <p className="working-text">The map is shown once the incidents are selected.</p>
-            ) : (
-              <p className="working-text">Selecting the incidents and drawing their map…</p>
+            <p role="status" className="visually-hidden">
+              {variantView ? `The table lists the ${countOf(variantView.caseCount, "incident")} of variant ${variantView.rank}.` : ""}
+            </p>
+            {variantView && (
+              <div className="view-note">
+                <p>
+                  The table lists the {countOf(variantView.caseCount, "incident")} of variant {variantView.rank}. This is a view: the selection and
+                  every count stay as they are.
+                </p>
+                <button type="button" onClick={() => clearVariant(true)}>
+                  Show every incident
+                </button>
+              </div>
+            )}
+            {population.phase === "loading" && <p className="working-text">Opening the incidents of this preparation…</p>}
+            {population.phase === "failed" && (
+              <ImportProblemNotice title="The incidents could not be opened" problem={population.problem} onRetry={() => coordinator.retryPopulation()} />
+            )}
+            {answer && answer.cases.length === 0 && (
+              <p className="working-text">This preparation has no incident with an incident id, so there is no incident to open.</p>
+            )}
+            {answer && answer.cases.length > 0 && kept.length === 0 && (
+              <p className="working-text">The selection keeps no incident. Remove a step or undo it to keep incidents again.</p>
+            )}
+            {answer && kept.length > 0 && (
+              <>
+                <p className="muted pane-hint" id="imported-incidents-hint">
+                  {variantView ? `The kept incidents that follow variant ${variantView.rank}.` : "The incidents the selection keeps; with no step, every incident with an incident id."}{" "}
+                  Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every record of an incident.
+                </p>
+                <IncidentWindow
+                  key={variantView ? `variant-${chosenVariant}` : "every-incident"}
+                  cases={shownCases}
+                  openCaseId={openCaseId}
+                  onOpen={openCase}
+                  focusRequest={focusRequest}
+                  labelledBy="imported-incidents-title"
+                  describedBy="imported-incidents-hint"
+                />
+                <PreparationDetails answer={answer} />
+              </>
             )}
           </section>
-        )}
-        <section className="table-pane" aria-labelledby="imported-incidents-title" hidden={answer !== null && view !== "incidents"}>
-          <h3 id="imported-incidents-title" className="pane-title">
-            Kept incidents
-          </h3>
-          {population.phase === "loading" && <p className="working-text">Opening the incidents of this preparation…</p>}
-          {population.phase === "failed" && (
-            <ImportProblemNotice title="The incidents could not be opened" problem={population.problem} onRetry={() => coordinator.retryPopulation()} />
-          )}
-          {answer && answer.cases.length === 0 && (
-            <p className="working-text">This preparation has no incident with an incident id, so there is no incident to open.</p>
-          )}
-          {answer && answer.cases.length > 0 && kept.length === 0 && (
-            <p className="working-text">The selection keeps no incident. Remove a step or undo it to keep incidents again.</p>
-          )}
-          {answer && kept.length > 0 && (
-            <>
-              <p className="muted pane-hint" id="imported-incidents-hint">
-                The incidents the selection keeps; with no step, every incident with an incident id. Tab enters the table; the arrow keys, Page Up,
-                Page Down, Home and End move; Enter opens every record of an incident.
-              </p>
-              <IncidentWindow
-                cases={kept}
-                openCaseId={openCaseId}
-                onOpen={openCase}
-                focusRequest={focusRequest}
-                labelledBy="imported-incidents-title"
-                describedBy="imported-incidents-hint"
+          {answer && (
+            <div className="views">
+              <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} />
+              <Variants
+                state={variants}
+                chosen={chosenVariant}
+                onChoose={chooseVariant}
+                onClear={() => clearVariant(false)}
+                onRetry={() => coordinator.retryVariants()}
               />
-              <PreparationDetails answer={answer} />
-            </>
+            </div>
           )}
-        </section>
+        </div>
         {inspected.phase !== "closed" && answer && (
           <ImportedInspector
             inspected={inspected}
