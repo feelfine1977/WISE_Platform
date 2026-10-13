@@ -237,7 +237,17 @@ export class CompareCoordinator {
    * another reading is. Its answer is shown only when it is the saved comparison itself.
    */
   restore(workspaceId: WorkspaceId, identity: AnswerIdentity, saved: SavedComparison | null): void {
-    this.restoring = saved ? { workspaceId, identity, saved, asked: false } : null;
+    if (saved === null) {
+      // The reopened investigation holds no comparison, so none is shown: an answer of an earlier
+      // question, shown or still on its way, does not become part of it.
+      this.restoring = null;
+      this.abandon();
+      this.last = null;
+      const { basis } = this.state;
+      this.publish({ basis, draft: emptyDraft(basis, this.state.draft.mode), comparison: { phase: "idle" } });
+      return;
+    }
+    this.restoring = { workspaceId, identity, saved, asked: false };
     this.askForRestored();
   }
 

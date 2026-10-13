@@ -89,6 +89,43 @@ describe("showing the comparison of a reopened investigation again", () => {
     expect(coordinator.getState().comparison.phase).toBe("idle");
   });
 
+  it("shows no comparison when the reopened investigation holds none, also when one was shown for the same reading", async () => {
+    const comparisons = scriptedComparisonClient();
+    const coordinator = new CompareCoordinator(comparisons.client);
+    coordinator.useBasis(basis);
+    coordinator.restore(workspaceId, identity, savedComparison("pending"));
+    const first = comparisons.groups[0];
+    const answer = groupAnswer(first.request);
+    coordinator.restore(workspaceId, identity, savedComparison(answer.comparison_id));
+    const second = comparisons.groups[1];
+    second.reply({ ok: true, answer: groupAnswer(second.request) });
+    await settled();
+    expect(coordinator.getState().comparison.phase).toBe("ready");
+
+    coordinator.restore(workspaceId, identity, null);
+
+    expect(coordinator.getState().comparison.phase).toBe("idle");
+    expect(coordinator.savedComparisonFor(workspaceId, identity)).toBeNull();
+    coordinator.retry();
+    expect(comparisons.groups).toHaveLength(2);
+  });
+
+  it("drops a comparison still on its way when the reopened investigation holds none", async () => {
+    const comparisons = scriptedComparisonClient();
+    const coordinator = new CompareCoordinator(comparisons.client);
+    coordinator.useBasis(basis);
+    coordinator.restore(workspaceId, identity, savedComparison("pending"));
+    const { request, reply, signal } = comparisons.groups[0];
+
+    coordinator.restore(workspaceId, identity, null);
+    expect(signal.aborted).toBe(true);
+    reply({ ok: true, answer: groupAnswer(request) });
+    await settled();
+
+    expect(coordinator.getState().comparison.phase).toBe("idle");
+    expect(coordinator.savedComparisonFor(workspaceId, identity)).toBeNull();
+  });
+
   it("drops the answer of a saved comparison when another reading is opened before it arrives", async () => {
     const comparisons = scriptedComparisonClient();
     const coordinator = new CompareCoordinator(comparisons.client);
