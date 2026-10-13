@@ -189,6 +189,14 @@ def test_a_preparation_the_workspace_does_not_keep_is_refused(client, workspace_
     assert body["retryable"] is True
 
 
+def test_a_source_the_workspace_no_longer_holds_is_refused_at_the_identity(client, workspace_id, identity, tmp_path):
+    digest = identity["source_id"].rsplit(":", 1)[1]
+    (tmp_path / "Ablage" / "sources" / f"{digest}.json").unlink()
+    body = refused(ask(client, "opening-context", workspace_id, identity)[0], "opening_context", "source_unavailable",
+                   "identity.source_id")
+    assert body["retryable"] is True
+
+
 def test_a_workspace_that_is_not_open_is_refused(client, identity):
     response, _ = ask(client, "opening-context", "workspace.v1:00000000-not-open", identity)
     refused(response, "opening_context", "workspace_unavailable", "workspace_id")
