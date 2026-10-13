@@ -226,7 +226,9 @@ function SourceStep({
                   <td>
                     <button
                       type="button"
-                      onClick={() => onOpenIncidents({ workspaceId: workspace.answer.workspace_id, preparationId: item.preparation_id })}
+                      onClick={() =>
+                        onOpenIncidents({ workspaceId: workspace.answer.workspace_id, preparationId: item.preparation_id, sourceName: names.get(item.source_id) })
+                      }
                     >
                       Open incidents{" "}
                       <span className="visually-hidden">
