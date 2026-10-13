@@ -47,11 +47,15 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
     if (focusIncidents > 0) incidentsHeading.current?.focus();
   }, [focusIncidents]);
 
-  /** The table is rendered anew for each view; a focus request for the earlier table is not repeated. */
+  /**
+   * The table is rendered anew for each view; a focus request for the earlier table is not repeated.
+   * Listing a variant shows its incidents, so the table comes forward also when the map was shown.
+   */
   const chooseVariant = useCallback(
     (variantId: VariantId) => {
       setFocusRequest(null);
       coordinator.chooseVariant(variantId);
+      setView("incidents");
     },
     [coordinator],
   );
