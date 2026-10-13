@@ -49,6 +49,7 @@ describe("what is proposed for a source read for the first time", () => {
       // "Activity" is the more telling name beside "concept:name".
       activityColumn: 1,
       timestampColumn: 3,
+      sequenceColumn: null,
       timeFormat: "iso8601",
       zone: "from_values",
       // Everything that repeats, also with hundreds of values; the note is different in nearly every record.
@@ -66,9 +67,40 @@ describe("what is proposed for a source read for the first time", () => {
       caseColumn: 0,
       activityColumn: 1,
       timestampColumn: 2,
+      sequenceColumn: null,
       timeFormat: "dmy_dot_second",
       zone: null,
       contextColumns: [3],
+    });
+  });
+
+  it("proposes every role of a log with an event id, a sequence number and many columns of context", () => {
+    const sequence: RoleSuggestion = { ...column(2, 900, 40), roles: ["context", "case_id", "activity", "source_sequence"] };
+    const answer = inspected(
+      ["incident_id", "source_event_id", "source_sequence", "activity", "timestamp_utc", "event_source", "detail", "sender_role", "direction", "mail_id"],
+      [
+        column(0, 900, 60),
+        column(1, 900, 900),
+        sequence,
+        column(3, 900, 12),
+        column(4, 900, 880, { iso8601: 900 }),
+        column(5, 900, 2),
+        column(6, 120, 100),
+        column(7, 900, 5),
+        column(8, 900, 2),
+        column(9, 900, 870),
+      ],
+      [["INC000001", "INC000001-0001", "1", "Widerspruch (pauschal)", "2024-05-15T12:27:36Z", "mail", "", "Vertretung", "eingehend", "M040312"]],
+    );
+    expect(proposedRoles(answer)).toEqual({
+      caseColumn: 0,
+      activityColumn: 3,
+      timestampColumn: 4,
+      sequenceColumn: 2,
+      timeFormat: "iso8601",
+      zone: "from_values",
+      // Not the ids that differ in nearly every record, and not the sequence number, which has its own role.
+      contextColumns: [5, 7, 8],
     });
   });
 

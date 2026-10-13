@@ -291,6 +291,8 @@ const ACTIVITY_NAMES: readonly (readonly string[])[] = [
   ["activity", "activityname", "aktivität", "aktivitaet"],
   ["conceptname", "event", "eventname", "ereignis", "status", "state", "zustand", "schritt", "step", "task", "action", "aktion"],
 ];
+/** Column names that usually hold the order of the records within an incident. */
+const SEQUENCE_NAMES: readonly (readonly string[])[] = [["sourcesequence", "sequence", "sequencenumber", "seq", "reihenfolge", "lfdnr"]];
 /** A time of day followed by Z or an offset, as the last thing in a value. */
 const WRITTEN_OFFSET = /\d{2}:\d{2}(?::\d{2}(?:[.,]\d+)?)?\s?(?:Z|[+-]\d{2}:?\d{2})$/;
 /** A column with at most this many different values is proposed as context whatever the size of the source. */
@@ -319,12 +321,13 @@ function columnNamed(answer: CsvInspectionAnswer, names: readonly (readonly stri
  *   format when it is the only such format, and the zone "written in the values" when every
  *   sampled time ends in Z or an offset;
  * - the incident id and the activity, when exactly one column has a name that usually holds them;
+ * - the sequence number, when a column is named so and the inspection found whole numbers in it;
  * - as context, every other column whose values repeat (few different values, or at most a fifth
  *   as many different values as filled cells) and that is not a column of times.
  */
 export function proposedRoles(
   answer: CsvInspectionAnswer,
-): Pick<Draft, "caseColumn" | "activityColumn" | "timestampColumn" | "timeFormat" | "zone" | "contextColumns"> {
+): Pick<Draft, "caseColumn" | "activityColumn" | "timestampColumn" | "sequenceColumn" | "timeFormat" | "zone" | "contextColumns"> {
   const timeLike = answer.role_suggestions.filter((suggestion) => formatEvidence(suggestion).complete.length > 0);
   const timestampColumn = timeLike.length === 1 ? timeLike[0].column_index : null;
   const timeFormat = timestampColumn === null ? null : formatEvidence(timeLike[0]).proposed;
@@ -333,7 +336,12 @@ export function proposedRoles(
   const zone: ZoneChoice | null = sampled.length > 0 && sampled.every((value) => WRITTEN_OFFSET.test(value)) ? "from_values" : null;
   const caseColumn = columnNamed(answer, CASE_NAMES, [timestampColumn]);
   const activityColumn = columnNamed(answer, ACTIVITY_NAMES, [timestampColumn, caseColumn]);
-  const taken = [timestampColumn, caseColumn, activityColumn];
+  const named = columnNamed(answer, SEQUENCE_NAMES, [timestampColumn, caseColumn, activityColumn]);
+  const sequenceColumn =
+    named !== null && answer.role_suggestions.some((suggestion) => suggestion.column_index === named && suggestion.roles.includes("source_sequence"))
+      ? named
+      : null;
+  const taken = [timestampColumn, caseColumn, activityColumn, sequenceColumn];
   // A column in which a time format reads at least half of the filled cells holds times, also when no format reads all of them.
   const timeColumns = new Set(
     answer.role_suggestions
@@ -350,7 +358,7 @@ export function proposedRoles(
     )
     .map((suggestion) => suggestion.column_index)
     .sort((left, right) => left - right);
-  return { caseColumn, activityColumn, timestampColumn, timeFormat, zone, contextColumns };
+  return { caseColumn, activityColumn, timestampColumn, sequenceColumn, timeFormat, zone, contextColumns };
 }
 
 /** What the analyst still has to choose before the source can be read; empty when nothing. */
