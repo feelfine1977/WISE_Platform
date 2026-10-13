@@ -47,6 +47,7 @@
   /* The area tabs on the bar: text in the bar's ink, the current one marked by the accent line. */
   --color-tab-ink: var(--color-bar-ink);
   --color-tab-mark: var(--color-accent-on-bar);
+  --color-tab-ink-unavailable: var(--color-bar-ink-muted);
   --color-status-ready: var(--color-accent-on-bar);
   --color-status-checking: var(--color-bar-ink-muted);
   --color-status-unavailable: var(--wf-fail);

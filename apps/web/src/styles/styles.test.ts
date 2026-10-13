@@ -198,7 +198,7 @@ describe("contrast of the tokens", () => {
       pairs.push(["--color-ink", name, layers], ["--color-ink-muted", name, layers]);
     }
     for (const [name, layers] of Object.entries(barBackgrounds)) {
-      pairs.push(["--color-bar-ink", name, layers], ["--color-bar-ink-muted", name, layers], ["--color-tab-ink", `area tab on ${name}`, layers]);
+      pairs.push(["--color-bar-ink", name, layers], ["--color-bar-ink-muted", name, layers], ["--color-tab-ink", `area tab on ${name}`, layers], ["--color-tab-ink-unavailable", `unavailable area tab on ${name}`, layers]);
     }
     pairs.push(
       ["--color-on-accent", "primary action", ["--color-accent"]],
@@ -224,6 +224,16 @@ describe("contrast of the tokens", () => {
     expect(contrast(colourOf("--color-error"), painted("--color-surface")), "error bar").toBeGreaterThanOrEqual(3);
     for (const dot of ["--color-status-ready", "--color-status-checking", "--color-status-unavailable"]) {
       expect(contrast(colourOf(dot), painted("--color-bar")), dot).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("does not fade an unavailable area tab, which stays focusable, so its focus ring keeps its contrast", () => {
+    const rules = otherSheets.flatMap(([, css]) => [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]*)\{([^{}]*)\}/g)]);
+    const unavailable = rules.filter(([, selector]) => selector.includes('.area-tab[aria-disabled="true"]'));
+    expect(unavailable.length).toBeGreaterThan(0);
+    for (const [, selector, body] of unavailable) {
+      expect(declarations(`{${body}}`).map((item) => item.property), selector.trim()).not.toContain("opacity");
+      expect(declarations(`{${body}}`).map((item) => item.property), selector.trim()).not.toContain("filter");
     }
   });
 });
