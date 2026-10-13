@@ -1,0 +1,57 @@
+/*
+ * The stages an analyst defines for a log: the stages in their order, and the stage of each
+ * activity. Every value is a token of tokens.css; every class begins with "stages-", but for the
+ * disclosure under the map that holds the editor there.
+ */
+
+/* Under the map the editor is closed until it is asked for; open, it takes a row of its own. */
+.map-stages > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.explorer .map-stages[open] { flex: 1 1 100%; }
+
+.stages-editor { display: grid; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-3); color: var(--color-ink); font-size: var(--font-size-base); }
+.stages-editor p { margin: 0; }
+.stages-note { max-width: var(--size-page); color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.stages-not-kept { padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); }
+
+/* The stages beside the activities where both fit, else above them. */
+.stages-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(var(--size-stages-part), 100%), 1fr)); align-items: start; gap: var(--space-4) var(--space-6); }
+.stages-part { display: grid; gap: var(--space-2); min-width: 0; }
+.stages-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+
+/* One row for each stage, numbered in its order: its name, how many activities it holds, and what can be done with it. */
+.stages-list { margin: 0; padding: 0 0 0 var(--space-6); }
+.stages-list > li + li { margin-top: var(--space-2); }
+.stages-list > li::marker { color: var(--color-ink-muted); font-variant-numeric: tabular-nums; }
+.stages-stage,
+.stages-add { flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.stages-add { display: flex; }
+/* The row of a stage stands on the line of its number, the name on the number's baseline. */
+.stages-stage { display: inline-flex; width: 100%; }
+.stages-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.stages-count { color: var(--color-ink-muted); font-size: var(--font-size-small); white-space: nowrap; }
+.stages-label { color: var(--color-ink-muted); }
+.stages-name,
+.stages-choice {
+  min-width: 0;
+  min-height: var(--size-control);
+  padding: 0 var(--space-2);
+  font: inherit;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line-strong);
+  border-radius: var(--radius);
+}
+.stages-name { flex: 1 1 var(--size-stage-name); }
+.stages-choice { max-width: 100%; }
+.stages-choice:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+/* A move that is not possible at an end keeps its button in reach of the keyboard and is not faded, so that its focus ring keeps its contrast. */
+.stages-editor button[aria-disabled="true"] { color: var(--color-ink-muted); cursor: not-allowed; }
+.stages-editor button[aria-disabled="true"]:hover { background: var(--color-surface); }
+.stages-said { min-height: calc(var(--font-size-small) * var(--line-height-base)); color: var(--color-ink-muted); font-size: var(--font-size-small); }
+
+.stages-table { width: 100%; border-collapse: collapse; }
+.stages-table th,
+.stages-table td { padding: var(--space-1) var(--space-3) var(--space-1) 0; border-bottom: var(--line-width) solid var(--color-line-row); text-align: left; font-weight: var(--font-weight-plain); vertical-align: middle; }
+.stages-table thead th { font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+.stages-table tbody th { overflow-wrap: anywhere; }
+.stages-table .stages-number { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }

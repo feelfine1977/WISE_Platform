@@ -169,4 +169,7 @@
   --size-timeline-mark: 5px;
   --size-timeline-mark-several: 7px;
   --size-timeline-hit: 12px;
+  /* The stages of a log: the least width of the list of stages and of the list of activities, which stand side by side where both fit, and of the field of a stage's name. */
+  --size-stages-part: 320px;
+  --size-stage-name: 160px;
 }
