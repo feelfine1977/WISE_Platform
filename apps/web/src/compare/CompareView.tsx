@@ -67,6 +67,9 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
   const population = investigated.population.phase === "ready" ? investigated.population.answer : null;
   const basis = useMemo(() => (population ? basisOf(population) : null), [population]);
   const [added, setAdded] = useState<SelectionPredicate | null>(null);
+  const waitingReason = useId();
+  // While other incidents open in Investigations, no step is added to the selection they replace.
+  const waitingFor = investigated.replacement?.phase === "running" ? waitingReason : undefined;
 
   useEffect(() => coordinator.useBasis(basis), [coordinator, basis]);
 
@@ -106,6 +109,7 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
   const activities = investigated.parentGraph?.nodes.map((node) => node.label) ?? [];
 
   function addStep(step: SelectionPredicate) {
+    if (waitingFor) return;
     investigation.addStep(step);
     setAdded(step);
   }
@@ -175,7 +179,12 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
               </button>
             </div>
           )}
-          {shown && <ComparisonTable shown={shown} columnName={columnName(shown.answer.context_column_index)} onStep={addStep} />}
+          {waitingFor && (
+            <p id={waitingFor} className="compare-hidden">
+              No step can be added while other incidents are opening in Investigations.
+            </p>
+          )}
+          {shown && <ComparisonTable shown={shown} columnName={columnName(shown.answer.context_column_index)} onStep={addStep} waitingFor={waitingFor} />}
         </section>
       </div>
     </main>
@@ -440,7 +449,15 @@ interface Row {
   step?: { predicate: SelectionPredicate; label: string };
 }
 
-function ComparisonTable({ shown, columnName, onStep }: { shown: ShownComparison; columnName: string; onStep: (step: SelectionPredicate) => void }) {
+interface ComparisonTableProps {
+  shown: ShownComparison;
+  columnName: string;
+  onStep: (step: SelectionPredicate) => void;
+  /** The id of the text saying why no step can be added now; while it is given, the steps wait. */
+  waitingFor?: string;
+}
+
+function ComparisonTable({ shown, columnName, onStep, waitingFor }: ComparisonTableProps) {
   const answer = shown.answer;
   const names: [string, string] = [answer.target.name, answer.reference.name];
   const rows: Row[] = [...cohortRows(answer)];
@@ -480,7 +497,13 @@ function ComparisonTable({ shown, columnName, onStep }: { shown: ShownComparison
                 <td>{row.difference ?? <span className="compare-muted" aria-label="Counts are not compared">—</span>}</td>
                 <td>
                   {row.step && (
-                    <button type="button" className="compare-step" onClick={() => row.step && onStep(row.step.predicate)}>
+                    <button
+                      type="button"
+                      className="compare-step"
+                      disabled={waitingFor !== undefined}
+                      aria-describedby={waitingFor}
+                      onClick={() => row.step && onStep(row.step.predicate)}
+                    >
                       {row.step.label}
                     </button>
                   )}
