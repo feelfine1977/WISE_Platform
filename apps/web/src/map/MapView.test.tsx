@@ -141,7 +141,8 @@ describe("the map of the kept incidents", () => {
     await answer(app, 1, containingOpened);
     const map = await openMap(app, [opened, closed]);
 
-    await app.user.click(within(map).getByRole("button", { name: "Table view" }));
+    // The switch to the map's table stands with the detail controls, above the canvas.
+    await app.user.click(screen.getByRole("button", { name: "Table view" }));
     const pathRow = within(map)
       .getAllByRole("row")
       .find((row) => row.textContent?.startsWith(`${opened}${closed}`))!;
@@ -209,7 +210,8 @@ describe("the map of the kept incidents", () => {
   it("takes a step from a flow the map adds from Start or to End, chosen in the map's table view", async () => {
     const app = await renderInvestigation();
     const map = await openMap(app, [opened, closed]);
-    await app.user.click(within(map).getByRole("button", { name: "Table view" }));
+    // The switch to the map's table stands with the detail controls, above the canvas.
+    await app.user.click(screen.getByRole("button", { name: "Table view" }));
     const rowOf = (from: string, to: string) =>
       within(map)
         .getAllByRole("row")
@@ -379,7 +381,7 @@ describe("the map of the kept incidents", () => {
     void app;
   });
 
-  it("opens a map of many activities on the most frequent ones and shows its detail control", async () => {
+  it("opens a map of many activities on the most frequent ones and shows its detail controls above the canvas", async () => {
     const many = (caseIds: string[]): SuppliedGraph => {
       const graph = suppliedGraph(caseIds);
       const labels = Array.from({ length: 40 }, (_, index) => `Schritt ${String(index).padStart(2, "0")}`);
@@ -430,6 +432,11 @@ describe("the map of the kept incidents", () => {
     const app = await renderInvestigation(many);
     const map = await openMap(app);
     await waitFor(() => expect(map.querySelectorAll(".react-flow__node").length).toBe(20));
-    expect(within(map).getByRole("form", { name: "Detail" })).toBeTruthy();
+    // The detail controls stand above the canvas and leave it to the map: the map holds no panel of its own for them.
+    const detail = screen.getByRole("form", { name: "Detail" });
+    expect(map.contains(detail)).toBe(false);
+    expect(detail.closest(".map-view")).toBe(map.closest(".map-view"));
+    expect(within(detail).getByRole("slider", { name: "Activities" }).getAttribute("aria-valuetext")).toBe("20 of 40 · 74.4 % of events");
+    expect(within(detail).getByRole("slider", { name: "Paths" }).getAttribute("aria-valuetext")).toBe("19 of 39");
   });
 });

@@ -1,0 +1,53 @@
+/*
+ * What stands around the canvas of the map: the detail strip above it.
+ * Every value refers to the token stylesheet.
+ *
+ * This stylesheet is loaded before the application's own, so each rule here that sets what one of
+ * those sets is written with more classes than theirs.
+ */
+
+/* The strip and, under it, the frame the map library draws in: the frame takes the height that is left. */
+.map-main { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; }
+.map-main > .map-frame { grid-row: 2; }
+
+/*
+ * The detail strip: the map library's panel laid out as one row, joined to the top of the frame so
+ * that it takes as little of the map's height as it can. Positioned, so that the texts the library
+ * keeps only for assistive technology stay inside it.
+ */
+.map-detail { grid-row: 1; position: relative; min-width: 0; }
+.map-detail .wf-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-6);
+  max-width: none;
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: none;
+}
+.map-main > .map-detail + .map-frame { border-top-left-radius: 0; border-top-right-radius: 0; }
+.map-detail .wf-controls h3 { margin: 0; }
+/* A slider: its name, the range with the names of its ends under it, and beside both the statement of what is shown. */
+.map-detail .wf-controls .wf-controls__slider {
+  flex: 1 1 var(--size-detail-slider);
+  grid-template-columns: auto minmax(calc(var(--size-detail-range) + var(--space-4)), 1fr) auto;
+  min-width: 0;
+  margin: 0;
+}
+/* The names of the ends stay on one line under the range, however narrow the strip is. */
+.map-detail .wf-controls .wf-controls__ends { white-space: nowrap; }
+.map-detail .wf-controls .wf-controls__statement { grid-column: 3; grid-row: 1 / span 2; margin: 0; }
+.map-detail .wf-controls .wf-controls__note { margin: 0; }
+/* The switch to the table view stands at the end of the row. */
+.map-detail .wf-controls .wf-controls__row { margin: 0 0 0 auto; }
+/* Outside the canvas a switch is one of the application's buttons, and a pressed one is marked as the application marks its own. */
+.workbench .map-detail .wf-button[aria-pressed="true"] {
+  color: var(--color-ink);
+  font-weight: var(--font-weight-strong);
+  background: var(--color-surface);
+  border-color: var(--color-line);
+  box-shadow: inset 0 var(--bar-rise) var(--color-accent);
+}
+.workbench .map-detail .wf-button[aria-pressed="true"]:hover { background: var(--color-hover); }

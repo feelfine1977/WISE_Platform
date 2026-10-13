@@ -172,4 +172,7 @@
   /* The stages of a log: the least width of the list of stages and of the list of activities, which stand side by side where both fit, and of the field of a stage's name. */
   --size-stages-part: 320px;
   --size-stage-name: 160px;
+  /* Around the canvas of the map. The detail strip: the least width of one slider with its statement, and of its range alone. */
+  --size-detail-slider: 320px;
+  --size-detail-range: 120px;
 }
