@@ -48,7 +48,7 @@
 
 /* In the list: the gap before a record under its time. */
 .history-gap { color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
-.history-gap.longest { color: var(--color-ink); font-weight: var(--font-weight-strong); }
+.history-gap.longest { color: var(--color-ink); }
 /*
  * The record the strip or the longest gap led to has the focus, by pointer as by keyboard. Its ring
  * is drawn around what is written of it, so that it does not reach into the record below.

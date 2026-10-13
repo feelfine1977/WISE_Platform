@@ -38,9 +38,8 @@ code { overflow-wrap: anywhere; }
 .label {
   color: var(--color-ink-muted);
   font-size: var(--font-size-label);
-  font-weight: var(--font-weight-plain);
+  font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-label);
-  text-transform: uppercase;
 }
 
 /*
@@ -195,7 +194,6 @@ details[open] > .disclosure::after { content: "▾"; }
   border-radius: var(--radius-round);
 }
 .status-ready::before { background: var(--color-accent); }
-.status-failed { font-weight: var(--font-weight-strong); }
 .status-failed::before { background: var(--color-error); }
 .toolbar-note { color: var(--color-ink-muted); }
 
@@ -256,9 +254,8 @@ details[open] > .disclosure::after { content: "▾"; }
   margin-bottom: var(--space-2);
   color: var(--color-ink-muted);
   font-size: var(--font-size-label);
-  font-weight: var(--font-weight-strong);
+  font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-label);
-  text-transform: uppercase;
 }
 .pairs { display: grid; gap: var(--space-2); margin: 0; }
 .pairs dt { color: var(--color-ink-muted); font-size: var(--font-size-small); }
@@ -273,7 +270,7 @@ details[open] > .disclosure::after { content: "▾"; }
 .work[data-inspector="collapsed"] .inspector { order: -1; border-bottom: var(--line-width) solid var(--color-line); }
 .incidents, .inspector { min-width: 0; background: var(--color-surface); }
 .work[data-inspector="side"] .inspector { border-left: var(--line-width) solid var(--color-line); }
-.pane-title { padding: var(--space-3) var(--space-4) 0; font-weight: var(--font-weight-strong); }
+.pane-title { padding: var(--space-3) var(--space-4) 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
 .pane-hint { padding: 0 var(--space-4) var(--space-2); color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .pane-note { padding: var(--space-3) var(--space-4); color: var(--color-ink-muted); }
 .incidents > .problem,
@@ -299,9 +296,8 @@ thead th {
   padding-bottom: var(--space-2);
   color: var(--color-ink-muted);
   font-size: var(--font-size-label);
-  font-weight: var(--font-weight-strong);
+  font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-label);
-  text-transform: uppercase;
   white-space: normal;
   vertical-align: bottom;
   background: var(--color-surface);

@@ -16,7 +16,7 @@
 /* The stages beside the activities where both fit, else above them. */
 .stages-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(var(--size-stages-part), 100%), 1fr)); align-items: start; gap: var(--space-4) var(--space-6); }
 .stages-part { display: grid; gap: var(--space-2); min-width: 0; }
-.stages-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+.stages-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
 
 /* One row for each stage, numbered in its order: its name, how many activities it holds, and what can be done with it. */
 .stages-list { margin: 0; padding: 0 0 0 var(--space-6); }
@@ -29,7 +29,7 @@
 .stages-stage { display: inline-flex; width: 100%; }
 .stages-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .stages-count { color: var(--color-ink-muted); font-size: var(--font-size-small); white-space: nowrap; }
-.stages-label { color: var(--color-ink-muted); }
+.stages-label { color: var(--color-ink-muted); font-size: var(--font-size-label); }
 .stages-name,
 .stages-choice {
   min-width: 0;
@@ -52,6 +52,6 @@
 .stages-table { width: 100%; border-collapse: collapse; }
 .stages-table th,
 .stages-table td { padding: var(--space-1) var(--space-3) var(--space-1) 0; border-bottom: var(--line-width) solid var(--color-line-row); text-align: left; font-weight: var(--font-weight-plain); vertical-align: middle; }
-.stages-table thead th { border-bottom-color: var(--color-line); font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+.stages-table thead th { border-bottom-color: var(--color-line); font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
 .stages-table tbody th { overflow-wrap: anywhere; }
 .stages-table .stages-number { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }

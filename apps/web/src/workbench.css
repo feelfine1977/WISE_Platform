@@ -46,7 +46,7 @@
 .data-area button:where(:not(:disabled)):hover,
 .workbench button:where(:not(.map-frame *)):where(:not(:disabled)):hover { background: var(--color-hover); }
 .data-area button.primary,
-.workbench button.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-surface); font-weight: var(--font-weight-strong); }
+.workbench button.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-surface); }
 .data-area button.primary:hover,
 .workbench button.primary:hover { background: var(--color-accent-strong); }
 .data-area button:disabled,
@@ -58,15 +58,16 @@
 .data-area .link-button:hover,
 .workbench .link-button:hover { background: none; }
 
+/* A label: the small size in the muted ink, regular, as written. The heading of a group of choices is text of the base size. */
 .label-text {
   font-size: var(--font-size-label);
-  font-weight: var(--font-weight-strong);
-  text-transform: uppercase;
+  font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-label);
   color: var(--color-ink-muted);
 }
-.label-text-strong { font-weight: var(--font-weight-strong); }
-:is(.data-area, .workbench) .identifier { font-family: var(--font-mono); font-size: var(--font-size-small); overflow-wrap: anywhere; }
+.label-text-strong { font-weight: var(--font-weight-label); }
+/* An identifier: the small size in the muted ink, in the fixed-width face. */
+:is(.data-area, .workbench) .identifier { font-family: var(--font-mono); font-size: var(--font-size-small); color: var(--color-ink-muted); overflow-wrap: anywhere; }
 .identifier-cut {
   display: inline-block;
   max-width: var(--size-fact-text);
@@ -76,9 +77,10 @@
   vertical-align: bottom;
   font-family: var(--font-mono);
   font-size: var(--font-size-small);
+  color: var(--color-ink-muted);
 }
 .missing-text { color: var(--color-ink-muted); font-style: italic; }
-.flag { color: var(--color-attention-ink); font-weight: var(--font-weight-strong); }
+.flag { color: var(--color-attention-ink); }
 
 /* Toolbar under the app bar: breadcrumb and facts. */
 :is(.data-area, .workbench) .toolbar {
@@ -95,7 +97,7 @@
 :is(.data-area, .workbench) .facts { display: flex; flex-wrap: wrap; margin: 0; clip-path: none; }
 :is(.data-area, .workbench) .fact { padding: 0 var(--space-4); }
 :is(.data-area, .workbench) .fact:first-child { padding-left: 0; }
-:is(.data-area, .workbench) .fact dt { font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+:is(.data-area, .workbench) .fact dt { font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
 :is(.data-area, .workbench) .fact dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-weight: var(--font-weight-strong); font-variant-numeric: tabular-nums; }
 
 /* Pending work: a thin blue line, what is being done, and a way to stop waiting. */
@@ -144,7 +146,7 @@
   min-width: 0;
   background: var(--color-surface);
 }
-.step-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+.step-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
 .inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
 .example-select { flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .path-input { flex: 1 1 var(--size-path-input); min-width: 0; font-family: var(--font-mono); }
@@ -154,13 +156,13 @@
 .choice select,
 .choice input { max-width: 100%; min-width: 0; }
 .choice.nested { margin-left: var(--space-6); }
-.figure-inline { font-variant-numeric: tabular-nums; font-weight: var(--font-weight-strong); }
+.figure-inline { font-variant-numeric: tabular-nums; }
 .checks { display: grid; gap: var(--space-1); margin: 0; padding: 0; border: 0; min-width: 0; }
 .checks legend { padding: 0; margin-bottom: var(--space-1); }
 .check { display: flex; align-items: center; gap: var(--space-2); min-height: var(--size-control); }
 .check-long { align-items: flex-start; }
-.check-title { font-weight: var(--font-weight-strong); }
-.question { font-weight: var(--font-weight-strong); }
+.check-title { font-weight: var(--font-weight-plain); }
+.question { font-weight: var(--font-weight-plain); }
 .proposal { margin: 0; }
 .example-reading { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-canvas); border-left: var(--bar-width) solid var(--color-accent); }
 .example-reading p { margin: 0; }
@@ -173,7 +175,7 @@
 .plain-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-base); }
 .plain-table th,
 .plain-table td { height: var(--size-row); padding: 0 var(--space-2); text-align: left; border-bottom: var(--line-width) solid var(--color-line-row); white-space: nowrap; }
-.plain-table thead th { border-bottom-color: var(--color-line); font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+.plain-table thead th { border-bottom-color: var(--color-line); font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
 .plain-table tbody th { font-weight: var(--font-weight-plain); }
 .plain-table tr.selected { background: var(--color-accent-tint); }
 .plain-table .number,
@@ -190,13 +192,13 @@
 .state-confirm { border-left-color: var(--color-attention); }
 .state-blocked { border-left-color: var(--color-error); }
 .report-figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--size-figure-column), 1fr)); gap: var(--space-3) var(--space-6); margin: 0; }
-.report-figures dt { font-size: var(--font-size-label); font-weight: var(--font-weight-strong); text-transform: uppercase; letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
-.report-figures dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: var(--font-weight-strong); }
+.report-figures dt { font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+.report-figures dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-variant-numeric: tabular-nums; font-weight: var(--font-weight-strong); }
 .issues ul { display: grid; gap: var(--space-2); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
 .issue { display: grid; gap: var(--space-half); padding-left: var(--space-3); border-left: var(--bar-width) solid var(--color-line); }
 .issue-confirmation { border-left-color: var(--color-attention); }
 .issue-blocking { border-left-color: var(--color-error); }
-.issue-reason { font-weight: var(--font-weight-strong); }
+.issue-reason { font-weight: var(--font-weight-plain); }
 .issue-severity,
 .issue-positions { color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .report-more > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; }
@@ -214,7 +216,7 @@
 .workbench-body[data-inspector="collapsed"] .imported-inspector { order: -1; }
 .main-column { display: grid; align-content: start; min-width: 0; }
 .table-pane { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-4) var(--space-6); }
-:is(.data-area, .workbench) .pane-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+:is(.data-area, .workbench) .pane-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
 :is(.data-area, .workbench) .pane-hint { font-size: var(--font-size-small); }
 
 .window-scroll {
@@ -240,8 +242,7 @@
   background: var(--color-surface);
   border-bottom-color: var(--color-line);
   font-size: var(--font-size-label);
-  font-weight: var(--font-weight-strong);
-  text-transform: uppercase;
+  font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-label);
   color: var(--color-ink-muted);
 }
@@ -270,6 +271,7 @@
   background: transparent;
   font-family: var(--font-mono);
   font-size: var(--font-size-small);
+  color: var(--color-ink-muted);
 }
 .workbench .row-open::after { inset: var(--row-overhang) 0; }
 .workbench .row-open:hover { background: transparent; text-decoration: underline; }
@@ -296,7 +298,9 @@
   border-left: var(--line-width) solid var(--color-line);
 }
 .imported-inspector .inspector-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2) var(--space-4); }
-.imported-inspector h2 { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+.imported-inspector h2 { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+/* In the title the identifier of the open incident is part of the title. */
+.imported-inspector h2 .identifier { font-size: inherit; color: inherit; }
 .imported-inspector .inspector-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .imported-inspector #imported-inspector-body { display: grid; gap: var(--space-3); margin-top: var(--space-3); }
 .order-note { padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); color: var(--color-ink-muted); }
@@ -350,7 +354,7 @@
   background: var(--color-tint);
   border-radius: var(--radius);
 }
-.chip-wording { font-weight: var(--font-weight-strong); overflow-wrap: anywhere; }
+.chip-wording { overflow-wrap: anywhere; }
 .chip-counts { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
 .chip-counts > div { display: flex; gap: var(--space-1); }
 .chip-counts dt { color: var(--color-ink-muted); }
@@ -409,7 +413,7 @@
 .map-coverage .pairs { margin-top: var(--space-1); }
 
 .view-panel > button { justify-self: start; }
-.view-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+.view-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
 .view-hint { font-size: var(--font-size-small); }
 
 /* Opened as: per value two thin bars, these incidents above the parent population. */
@@ -419,7 +423,7 @@
 .swatch-population { background: var(--color-accent); }
 .swatch-parent { background: var(--color-mark); }
 .opening-column { display: grid; gap: var(--space-1); min-width: 0; }
-.opening-column-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); overflow-wrap: anywhere; }
+.opening-column-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-plain); overflow-wrap: anywhere; }
 .opening-column-title .muted { font-weight: var(--font-weight-plain); }
 /* Every row of a list shares its columns, so that all bars of a column are drawn on one scale. */
 .opening-values {
@@ -450,10 +454,10 @@
 .variant { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-2) var(--space-3); border-bottom: var(--line-width) solid var(--color-line-row); }
 .variant.chosen { background: var(--color-accent-tint); box-shadow: inset var(--bar-width) 0 var(--color-accent); }
 .variant-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
-.variant-rank { font-weight: var(--font-weight-strong); }
+.variant-rank { font-weight: var(--font-weight-plain); }
 .variant-figures { color: var(--color-ink-muted); font-variant-numeric: tabular-nums; }
 .variant-head button { margin-left: auto; }
-.workbench .variant-head button[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); font-weight: var(--font-weight-strong); }
+.workbench .variant-head button[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
 .workbench .variant-head button[aria-pressed="true"]:hover { background: var(--color-accent-strong); }
 .variant-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) 0; margin: 0; padding: 0; list-style: none; font-size: var(--font-size-small); }
 .variant-steps li { display: flex; align-items: center; min-width: 0; }
@@ -490,7 +494,9 @@
 .explorer { display: flex; flex-direction: column; }
 .explorer > .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); }
 .explorer .facts { flex: 1 1 auto; row-gap: var(--space-1); }
-.explorer .fact dd { font-size: var(--font-size-base); line-height: var(--line-height-base); }
+.explorer .fact dd { font-size: var(--font-size-base); line-height: var(--line-height-base); font-weight: var(--font-weight-plain); }
+/* Of the facts of an investigation only the kept count is semibold: it is the second fact, after the parent. */
+.explorer .fact:nth-child(2) dd { font-weight: var(--font-weight-strong); }
 .explorer .workbench-body { flex: 1 1 auto; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; }
 .explorer .workbench-body[data-inspector="side"] { grid-template-columns: auto minmax(0, 1fr) var(--size-inspector); }
 .explorer-rail { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; width: var(--size-rail); min-width: 0; background: var(--color-surface); border-right: var(--line-width) solid var(--color-line); }
@@ -504,7 +510,9 @@
 .explorer .workbench-body[data-inspector="full"] .explorer-rail { display: none; }
 .explorer .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-4); }
 .explorer .selection-steps { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
-.workbench .rail-toggle[aria-expanded="true"] { font-weight: var(--font-weight-strong); background: var(--color-tint); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
+.workbench .rail-toggle[aria-expanded="true"] { background: var(--color-tint); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
+/* In the row of the steps the heading names the row and is a label: it is not the title of a pane. */
+.workbench .selection-head .pane-title { color: var(--color-ink-muted); font-size: var(--font-size-label); font-weight: var(--font-weight-label); }
 .workbench .rail-toggle[aria-expanded="true"]:hover { background: var(--color-hover); }
 /* The view switch names the map, and while nothing is selected one line says what a selection offers: both headings stay for assistive technology. */
 .explorer .map-pane > .pane-title,

@@ -67,21 +67,28 @@
   --color-status-checking: var(--color-bar-ink-muted);
   --color-status-unavailable: var(--wf-fail);
 
-  /* Type */
+  /*
+   * Type: three sizes. The base size, regular, for everything that is read or pressed; the small
+   * size in the muted ink for labels, table heads, units, times and identifiers; the title size,
+   * semibold, for the one title of a pane and for the large figures of the Data area. Semibold
+   * otherwise only marks the kept count, the current view of a switch, the open row and the
+   * activity of a record. Nothing is set in capitals and nothing is letter-spaced.
+   */
   --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: var(--wf-font-mono);
   --font-size-base: var(--wf-text-panel);
-  --font-size-label: var(--wf-text-panel-label);
   --font-size-small: 12px;
-  --font-size-mono: 12px;
+  --font-size-label: var(--font-size-small);
+  --font-size-mono: var(--font-size-small);
   --font-size-title: var(--wf-text-panel-symbol);
-  --font-size-figure: 20px;
+  --font-size-figure: var(--font-size-title);
   --line-height-base: 1.45;
   --line-height-figure: 1.2;
-  --letter-spacing-label: 0.04em;
-  --letter-spacing-name: 0.02em;
+  --letter-spacing-label: 0;
+  --letter-spacing-name: 0;
   --font-weight-plain: var(--wf-weight-panel-plain);
   --font-weight-strong: var(--wf-weight-panel-heading);
+  --font-weight-label: var(--font-weight-plain);
 
   /* Shape: the small radius for controls and chips, the large one for what floats; a shadow only on what floats (menus, popovers). */
   --radius: var(--wf-radius);
