@@ -206,6 +206,8 @@ describe("contrast of the tokens", () => {
       ["--color-on-accent", "primary action", ["--color-accent"]],
       ["--color-on-accent", "primary action under the pointer", ["--color-accent-strong"]],
       ["--color-accent", "surface", ["--color-surface"]],
+      // A count above zero of what the numbers leave out, and the line of a limit, stand on the white of the header rows.
+      ["--color-limit", "surface", ["--color-surface"]],
     );
     for (const [text, name, layers] of pairs) {
       expect(contrast(colourOf(text), painted(...layers)), `${text} on ${name}`).toBeGreaterThanOrEqual(4.5);
@@ -236,6 +238,14 @@ describe("contrast of the tokens", () => {
         expect(contrast(colourOf(line), painted(ground)), `${line} on ${ground}`).toBeGreaterThanOrEqual(3);
       }
     }
+  it("keeps the mark on an icon button at least 3:1 against the button, at rest, under the pointer and while its panel is open", () => {
+    const buttons: Record<string, string[]> = { "at rest": ["--color-surface"], "under the pointer": ["--color-hover"], "with its panel open": ["--color-accent-tint", "--color-surface"] };
+    for (const [name, layers] of Object.entries(buttons)) {
+      expect(contrast(colourOf("--color-limit"), painted(...layers)), `mark on a button ${name}`).toBeGreaterThanOrEqual(3);
+      // The icon itself, in the ink of a button and in the strong accent of one that is on.
+      expect(contrast(colourOf("--color-ink"), painted(...layers)), `icon on a button ${name}`).toBeGreaterThanOrEqual(3);
+    }
+    expect(contrast(colourOf("--color-accent-strong"), painted("--color-accent-tint", "--color-surface")), "icon of a switch that is on").toBeGreaterThanOrEqual(3);
   });
 
   it("does not fade an unavailable area tab, which stays focusable, so its focus ring keeps its contrast", () => {

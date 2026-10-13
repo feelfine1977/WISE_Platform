@@ -204,6 +204,14 @@
   --size-detail-range: 120px;
   /* The list of every path: the height its sticky headings take, kept clear above a row the keyboard moves to. */
   --size-path-headings: 48px;
+
+  /* Amber for a limit: a count above zero of what the numbers beside it leave out, and the mark that something is left to read. */
+  --color-limit: #8a5a00;
+  /* An icon: its box and the width of its line. The button that carries one is its whole hit area; the mark sits in its corner. */
+  --size-icon: 16px;
+  --stroke-icon: 1.5;
+  --size-icon-button: 28px;
+  --size-mark: 6px;
 }
 
 /*
