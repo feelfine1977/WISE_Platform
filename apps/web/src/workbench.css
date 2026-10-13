@@ -114,6 +114,16 @@
 .inline-error-title { font-weight: var(--font-weight-strong); color: var(--color-error); }
 .inline-error button { margin-top: var(--space-1); }
 
+/* A replacement beside the answer still shown: a quiet line while it runs, an inline error when it fails. */
+.replacement { margin: var(--space-2) 0; }
+.replacement-line {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent-tint);
+  border-left: var(--bar-width) solid var(--color-accent);
+  border-radius: var(--radius);
+}
+.replacement-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
 /* Data area: steps one under the other. */
 .data-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); padding: var(--space-4) var(--space-6) var(--space-6); max-width: var(--size-page); }
 .step {
