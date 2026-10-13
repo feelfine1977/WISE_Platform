@@ -13,6 +13,7 @@ from .examples import PACKAGED_EXAMPLES
 from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
+from .selections import SelectionReply, Selections
 from .workspace import program_folders
 
 
@@ -26,6 +27,7 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
         examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
     )
     imports = Imports(forbidden=program_folders())
+    selections = Selections(imports)
 
     @application.get("/api/health", response_model=HealthResponse)
     def health() -> HealthResponse:
@@ -70,6 +72,14 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     async def open_population(request: Request) -> JSONResponse:
         return _sent_import(await run_in_threadpool(imports.open_population, await request.body()))
 
+    @application.post("/api/investigations/select-cases")
+    async def select_cases(request: Request) -> JSONResponse:
+        return _sent_selection(await run_in_threadpool(selections.select_cases, await request.body()))
+
+    @application.post("/api/investigations/process-graph")
+    async def process_graph(request: Request) -> JSONResponse:
+        return _sent_selection(await run_in_threadpool(selections.process_graph, await request.body()))
+
     @application.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:
         raise HTTPException(status_code=404, detail="API route not found")
@@ -94,6 +104,10 @@ def _sent(reply: Reply) -> JSONResponse:
 
 
 def _sent_import(reply: ImportReply) -> JSONResponse:
+    return JSONResponse(reply.body, status_code=reply.status)
+
+
+def _sent_selection(reply: SelectionReply) -> JSONResponse:
     return JSONResponse(reply.body, status_code=reply.status)
 
 

@@ -120,6 +120,9 @@
   --size-figure-column: 220px;
   --size-table-least: 320px;
   --size-table-surround: 280px;
+  --size-map-least: 420px;
+  --size-map-surround: 360px;
+  --size-chip: 420px;
   --size-inspector-surround: 160px;
   --size-row-inset: 6px;
   --row-overhang: -3px;

@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { InspectorLayout } from "../components/Inspector";
-import type { CaseId, ImportedPopulationAnswer } from "../generated/imports";
+import type { CaseId, ImportedCaseSummary, ImportedPopulationAnswer } from "../generated/imports";
+import type { SelectionPredicate } from "../generated/selection";
 import { ImportProblemNotice } from "../data/ImportProblemNotice";
 import { countOf, delimiterName, encodingName } from "../data/wording";
-import type { ImportedInvestigationCoordinator } from "./coordinator";
+import { MapView } from "../map/MapView";
+import { SelectionSteps } from "../map/SelectionSteps";
+import { supportText } from "../map/wording";
+import { type ImportedInvestigationCoordinator, type ShownSelection, shownSelection } from "./coordinator";
 import { ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
 
@@ -12,9 +16,15 @@ interface ImportedInvestigationProps {
   onShowData: () => void;
 }
 
-/** The investigation of an imported preparation: its facts, every incident and one complete history. */
+type View = "incidents" | "map";
+
+/**
+ * The investigation of an imported preparation: its facts, the selection of whole incidents, the
+ * kept incidents as a table or as a process map, and the complete history of one kept incident.
+ */
 export function ImportedInvestigation({ coordinator, onShowData }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
+  const [view, setView] = useState<View>("incidents");
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
@@ -54,8 +64,12 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [inspectorOpen, returnToIncidents]);
 
+  const addStep = useCallback((step: SelectionPredicate) => coordinator.addStep(step), [coordinator]);
   const answer = population.phase === "ready" ? population.answer : null;
+  const shown = shownSelection(state.selection);
+  const kept = useMemo(() => keptCases(answer, shown), [answer, shown]);
   const summary = answer?.cases.find((item) => item.case_id === openCaseId);
+  const revision = shown ? shown.revision : population.phase === "ready" ? population.revision : 0;
   return (
     <main className="workbench" aria-labelledby="imported-title">
       <div className="toolbar">
@@ -68,16 +82,50 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
             {answer ? answer.source.filename : "Imported source"}
           </h2>
         </nav>
-        {answer && <Facts answer={answer} revision={population.phase === "ready" ? population.revision : 0} />}
+        {answer && <Facts answer={answer} shown={shown} revision={revision} />}
         <p role="status" className="visually-hidden">
           {population.phase === "loading" ? "Opening the incidents of this preparation" : population.phase === "ready" ? "Incidents shown" : ""}
         </p>
       </div>
-      {population.phase === "loading" && <div className="progress-line" aria-hidden="true" />}
+      {(population.phase === "loading" || state.selection.phase === "loading") && <div className="progress-line" aria-hidden="true" />}
+      {answer && (
+        <div className="selection-bar">
+          <div className="view-switch" role="group" aria-label="View">
+            <button type="button" aria-pressed={view === "incidents"} onClick={() => setView("incidents")}>
+              Incidents
+            </button>
+            <button type="button" aria-pressed={view === "map"} onClick={() => setView("map")}>
+              Map
+            </button>
+          </div>
+          <SelectionSteps
+            selection={state.selection}
+            onRemove={(step) => coordinator.removeStep(step)}
+            onClear={() => coordinator.clearSteps()}
+            onUndo={() => coordinator.undo()}
+            onRedo={() => coordinator.redo()}
+            onRetry={() => coordinator.retrySelection()}
+          />
+        </div>
+      )}
       <div className="workbench-body" data-inspector={inspectorOpen ? layout : "none"}>
-        <section className="table-pane" aria-labelledby="imported-incidents-title">
+        {answer && view === "map" && (
+          <section className="map-pane" aria-labelledby="imported-map-title">
+            <h3 id="imported-map-title" className="pane-title">
+              Map of the kept incidents
+            </h3>
+            {shown && state.parentGraph ? (
+              <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} />
+            ) : state.selection.phase === "failed" ? (
+              <p className="working-text">The map is shown once the incidents are selected.</p>
+            ) : (
+              <p className="working-text">Selecting the incidents and drawing their map…</p>
+            )}
+          </section>
+        )}
+        <section className="table-pane" aria-labelledby="imported-incidents-title" hidden={answer !== null && view !== "incidents"}>
           <h3 id="imported-incidents-title" className="pane-title">
-            Incidents of this preparation
+            Kept incidents
           </h3>
           {population.phase === "loading" && <p className="working-text">Opening the incidents of this preparation…</p>}
           {population.phase === "failed" && (
@@ -86,14 +134,17 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
           {answer && answer.cases.length === 0 && (
             <p className="working-text">This preparation has no incident with an incident id, so there is no incident to open.</p>
           )}
-          {answer && answer.cases.length > 0 && (
+          {answer && answer.cases.length > 0 && kept.length === 0 && (
+            <p className="working-text">The selection keeps no incident. Remove a step or undo it to keep incidents again.</p>
+          )}
+          {answer && kept.length > 0 && (
             <>
               <p className="muted pane-hint" id="imported-incidents-hint">
-                Every incident with an incident id. Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every
-                record of an incident.
+                The incidents the selection keeps; with no step, every incident with an incident id. Tab enters the table; the arrow keys, Page Up,
+                Page Down, Home and End move; Enter opens every record of an incident.
               </p>
               <IncidentWindow
-                cases={answer.cases}
+                cases={kept}
                 openCaseId={openCaseId}
                 onOpen={openCase}
                 focusRequest={focusRequest}
@@ -120,10 +171,22 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
   );
 }
 
-function Facts({ answer, revision }: { answer: ImportedPopulationAnswer; revision: number }) {
+/**
+ * The incidents of the population that the selection shown keeps, in the order the local service
+ * listed them; before a selection is answered, every incident of the population.
+ */
+function keptCases(answer: ImportedPopulationAnswer | null, shown: ShownSelection | null): readonly ImportedCaseSummary[] {
+  if (answer === null) return [];
+  if (shown === null) return answer.cases;
+  const summaries = new Map(answer.cases.map((summary) => [summary.case_id, summary]));
+  return shown.answer.kept.case_ids.flatMap((caseId) => summaries.get(caseId) ?? []);
+}
+
+function Facts({ answer, shown, revision }: { answer: ImportedPopulationAnswer; shown: ShownSelection | null; revision: number }) {
+  const parent = shown ? shown.answer.parent : answer.population;
   const facts: [string, string][] = [
-    ["Incidents", countOf(answer.population.case_count, "incident")],
-    ["Records of these incidents", countOf(answer.population.record_count, "record")],
+    ["Parent", supportText(parent)],
+    ["Kept", shown ? supportText(shown.answer.kept) : "being selected"],
     ["Rows without incident id", countOf(answer.unassigned_record_count, "row")],
     ["Records without activity label", countOf(answer.coverage.omitted_activity_record_count, "record")],
     ["Revision", String(revision)],

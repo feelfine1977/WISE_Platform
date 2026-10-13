@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import App from "../App";
 import { healthy, scriptedClient } from "../test/answers";
+import { everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer } from "../test/selections";
 import {
   commaInspectionAnswer,
   importRefusal,
@@ -22,9 +23,10 @@ const BYTES = new Uint8Array([0x56, 0x6f, 0x72, 0x67, 0xe4, 0x6e, 0x67, 0x65, 0x
 function renderApp() {
   const examples = scriptedClient();
   const imports = scriptedImportClient();
+  const selecting = scriptedSelectionClient();
   const user = userEvent.setup();
-  render(<App client={examples.client} importClient={imports.client} checkHealth={healthy} />);
-  return { imports, user };
+  render(<App client={examples.client} importClient={imports.client} selectionClient={selecting.client} checkHealth={healthy} />);
+  return { imports, selecting, user };
 }
 
 type Screen = ReturnType<typeof renderApp>;
@@ -269,8 +271,16 @@ describe("the Data area", () => {
 
     expect(screen.getByRole("heading", { name: "Vorgänge.csv" })).toBeTruthy();
     const facts = screen.getByLabelText("Population");
-    expect(facts.textContent).toBe("Incidents2 incidentsRecords of these incidents3 recordsRows without incident id1 rowRecords without activity label0 recordsRevision1");
-    const table = screen.getByRole("table", { name: "Incidents of this preparation" });
+    expect(facts.textContent).toBe("Parent2 incidents · 3 recordsKeptbeing selectedRows without incident id1 rowRecords without activity label0 recordsRevision1");
+    const selection = app.selecting.selections[0];
+    expect(selection.request.predicates).toEqual([]);
+    await deliver(() => selection.reply({ ok: true, answer: selectionAnswer(selection.request, everyIncident) }));
+    const graph = app.selecting.graphs[0];
+    await deliver(() => graph.reply({ ok: true, answer: graphAnswer(graph.request, ["A-1", "B-2"]) }));
+    expect(facts.textContent).toBe(
+      "Parent2 incidents · 3 recordsKept2 incidents · 3 recordsRows without incident id1 rowRecords without activity label0 recordsRevision2",
+    );
+    const table = screen.getByRole("table", { name: "Kept incidents" });
     expect(within(table).getAllByRole("row").slice(1).map((row) => Array.from(row.children).map((cell) => cell.textContent))).toEqual([
       ["A-1", "2", "2", "0", "By time"],
       ["B-2", "1", "1", "0", "Not fully known"],

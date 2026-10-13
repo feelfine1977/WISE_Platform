@@ -21,7 +21,7 @@
 
 /* Controls: 32 px high with a 40 px hit area, one blue for action, focus and selection. */
 .data-area button,
-.workbench button,
+.workbench button:not(.map-frame *),
 .data-area select,
 .data-area input[type="text"],
 .data-area input[type="datetime-local"] {
@@ -34,17 +34,17 @@
   border-radius: var(--radius);
 }
 .data-area button,
-.workbench button { position: relative; cursor: pointer; }
+.workbench button:not(.map-frame *) { position: relative; cursor: pointer; }
 .data-area button::after,
-.workbench button::after { content: ""; position: absolute; inset: var(--hit-overhang) 0; }
+.workbench button:not(.map-frame *)::after { content: ""; position: absolute; inset: var(--hit-overhang) 0; }
 .data-area button:hover,
-.workbench button:hover { background: var(--color-hover); }
+.workbench button:not(.map-frame *):hover { background: var(--color-hover); }
 .data-area button.primary,
 .workbench button.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-surface); font-weight: var(--font-weight-strong); }
 .data-area button.primary:hover,
 .workbench button.primary:hover { background: var(--color-accent-strong); }
 .data-area button:disabled,
-.workbench button:disabled { opacity: 0.55; cursor: not-allowed; }
+.workbench button:not(.map-frame *):disabled { opacity: 0.55; cursor: not-allowed; }
 .data-area :focus-visible,
 .workbench :focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--line-width); }
 .data-area .link-button,
@@ -180,7 +180,8 @@
 /* Imported investigation: table left, inspector right. */
 .workbench-body { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
 .workbench-body[data-inspector="side"] { grid-template-columns: minmax(0, 1fr) var(--size-inspector); }
-.workbench-body[data-inspector="full"] .table-pane { display: none; }
+.workbench-body[data-inspector="full"] .table-pane,
+.workbench-body[data-inspector="full"] .map-pane { display: none; }
 .workbench-body[data-inspector="collapsed"] .imported-inspector { order: -1; }
 .table-pane { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-4) var(--space-6); }
 :is(.data-area, .workbench) .pane-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
@@ -292,13 +293,65 @@
 .history-cells > summary { cursor: pointer; color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .history-cells .pairs { margin-top: var(--space-1); font-size: var(--font-size-small); }
 
+/* The selection of whole incidents and the switch between the table and the map, under the toolbar. */
+.selection-bar {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: var(--line-width) solid var(--color-line);
+}
+.view-switch { display: flex; gap: var(--space-1); }
+.workbench .view-switch button[aria-pressed="true"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
+.selection-steps { display: grid; gap: var(--space-2); min-width: 0; }
+.selection-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.selection-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.selection-status { color: var(--color-ink-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.chip {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  max-width: var(--size-chip);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-canvas);
+  border: var(--line-width) solid var(--color-line-strong);
+  border-radius: var(--radius);
+}
+.chip-wording { font-weight: var(--font-weight-strong); overflow-wrap: anywhere; }
+.chip-counts { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
+.chip-counts > div { display: flex; gap: var(--space-1); }
+.chip-counts dt { color: var(--color-ink-muted); }
+.chip-counts dd { margin: 0; }
+.chip-remove { justify-self: start; }
+.overlap-line { font-size: var(--font-size-small); }
+
+/* The map of the kept incidents: the library draws inside the frame, which gives it its height. */
+.map-pane { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-4) var(--space-6); }
+.map-view { display: grid; gap: var(--space-3); min-width: 0; }
+.map-frame {
+  height: max(var(--size-map-least), calc(var(--size-viewport-height) - var(--size-map-surround)));
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+}
+.map-arranging { padding: var(--space-4); }
+.map-element { display: grid; gap: var(--space-2); }
+.map-choices { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.map-caption { display: grid; gap: var(--space-1); font-size: var(--font-size-small); color: var(--color-ink-muted); }
+.map-coverage > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; }
+.map-coverage .pairs { margin-top: var(--space-1); }
+
 /* Area navigation in the header. */
 .areas { display: flex; gap: var(--space-1); }
 .areas button[aria-current="page"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
 
 @media (max-width: 1100px) {
   .workbench-body[data-inspector="side"] { grid-template-columns: minmax(0, 1fr); }
-  .workbench-body[data-inspector="side"] .table-pane { display: none; }
+  .workbench-body[data-inspector="side"] .table-pane,
+  .workbench-body[data-inspector="side"] .map-pane { display: none; }
   .imported-inspector { border-left: 0; }
 }
 @media (prefers-reduced-motion: no-preference) {
