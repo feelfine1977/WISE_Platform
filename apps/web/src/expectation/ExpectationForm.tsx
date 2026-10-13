@@ -57,6 +57,12 @@ export function ExpectationForm(props: ExpectationFormProps) {
       <p className="expectation-muted">
         Scored for {populationName}: {countOf(caseCount, "incident")}. Times are hours on the clock of the preparation.
       </p>
+      <ol className="expectation-guide" aria-label="How an expectation is scored">
+        <li>Say what is expected: the activity that starts the time, the activity expected after it, and the target in hours.</li>
+        <li>Say who stands behind it: a name, an owner, a source and the reason. They are kept with every result.</li>
+        <li>Tick that you have reviewed it, then choose "Check the definition".</li>
+        <li>Choose "Score" for the incidents named above. Nothing is scored before that.</li>
+      </ol>
       <div className="expectation-fields">
         <Field id="expectation-start" label="Start activity">
           <select id="expectation-start" className="expectation-select" value={form.start} onChange={(event) => set("start", event.target.value)}>
