@@ -23,10 +23,15 @@ export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps
   const wall = report.timestamp_kind === "wall_clock";
   const period = (value: string | null) => (value === null ? "none" : wall ? wallText(value) : utcText(value));
   const cutoff = wall ? report.snapshot_cutoff_local : report.snapshot_cutoff_utc;
+  // The contract makes the blank and ragged counts optional; a report without them leaves those lines out.
+  const supplied = (label: string, count: number | undefined, unit: string): [string, string][] =>
+    count === undefined ? [] : [[label, countOf(count, unit)]];
   const figures: [string, string][] = [
     ["Records read", countOf(report.raw_record_count, "record")],
+    ...supplied("Blank lines skipped", report.blank_record_count, "blank line"),
     ["With an incident id", countOf(report.identified_record_count, "record")],
     ["Outside every incident", countOf(report.unassigned_record_count, "record")],
+    ...supplied("Of these, with another number of cells than the header", report.ragged_record_count, "record"),
     ["With a usable time", countOf(report.usable_timestamp_record_count, "record")],
     ["Without a usable time: kept, order not known", countOf(report.unavailable_timestamp_record_count, "record")],
     ["Incidents", countOf(report.case_count, "incident")],
@@ -43,13 +48,6 @@ export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps
     ],
     ["Rows repeating an earlier row", countOf(report.duplicate_candidate_record_count, "record")],
   ];
-  if (report.blank_record_count !== undefined) figures.splice(1, 0, ["Blank lines skipped", countOf(report.blank_record_count, "blank line")]);
-  if (report.ragged_record_count !== undefined) {
-    figures.splice(report.blank_record_count !== undefined ? 4 : 3, 0, [
-      "Of these, with another number of cells than the header",
-      countOf(report.ragged_record_count, "record"),
-    ]);
-  }
   return (
     <div className="report">
       <StateLine answer={answer} />
