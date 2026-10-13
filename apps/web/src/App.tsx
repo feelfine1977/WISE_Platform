@@ -17,6 +17,8 @@ import { InvestigationCoordinator, type PopulationState } from "./investigation/
 import { defaultExampleId } from "./investigation/policies";
 import { httpSelectionClient, type SelectionClient } from "./map/client";
 import { httpPopulationViewClient, type PopulationViewClient } from "./views/client";
+import { httpScoringClient, type ScoringClient } from "./expectation/client";
+import { ExpectationView } from "./expectation/ExpectationView";
 import { countOf, utcInstant } from "./investigation/wording";
 
 interface AppProps {
@@ -24,11 +26,12 @@ interface AppProps {
   importClient?: ImportClient;
   selectionClient?: SelectionClient;
   viewClient?: PopulationViewClient;
+  scoringClient?: ScoringClient;
   checkHealth?: (signal: AbortSignal) => Promise<HealthResponse>;
 }
 
-/** The area shown: the Data area, or the investigation of the example or of an imported preparation. */
-type Area = "data" | "example" | "imported";
+/** The area shown: the Data area, the investigation of the example or of an imported preparation, or the Expectation view. */
+type Area = "data" | "example" | "imported" | "expectation";
 
 type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
 
@@ -37,6 +40,7 @@ export default function App({
   importClient = httpImportClient,
   selectionClient = httpSelectionClient,
   viewClient = httpPopulationViewClient,
+  scoringClient = httpScoringClient,
   checkHealth = fetchHealth,
 }: AppProps) {
   const [coordinator] = useState(() => new InvestigationCoordinator(client));
@@ -123,10 +127,13 @@ export default function App({
           </button>
           <button
             type="button"
-            aria-current={area !== "data" ? "page" : undefined}
+            aria-current={area === "example" || area === "imported" ? "page" : undefined}
             onClick={() => setArea(importedOpen ? "imported" : "example")}
           >
             Investigations
+          </button>
+          <button type="button" aria-current={area === "expectation" ? "page" : undefined} onClick={() => setArea("expectation")}>
+            Expectation
           </button>
         </nav>
         <ServiceStatus checkHealth={checkHealth} />
@@ -138,6 +145,7 @@ export default function App({
         }} />
       )}
       {area === "imported" && <ImportedInvestigation coordinator={importedCoordinator} onShowData={() => setArea("data")} />}
+      {area === "expectation" && <ExpectationView investigation={importedCoordinator} client={scoringClient} />}
       <main className="investigation" hidden={area !== "example"}>
         <PopulationStrip
           population={population}

@@ -139,6 +139,10 @@
   --size-share-figures: 22ch;
   --size-swatch: 12px;
   --size-swatch-height: 4px;
+  /* The Expectation view: fields of the definition, the rationale's text box and the state buttons. */
+  --size-expectation-field: 220px;
+  --size-expectation-text: 72px;
+  --size-expectation-state: 128px;
 
   /* Layers */
   --z-sticky: var(--wf-z-comparison-header);
