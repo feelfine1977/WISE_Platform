@@ -149,12 +149,14 @@ describe("the cutoff proposal and the example bytes", () => {
     proposed_cutoff: "2026-04-14T07:31:00Z",
   };
 
-  it("accept a proposal on one clock and refuse one that mixes clocks, adds a field or has only one time", () => {
+  it("accept a proposal on one clock and refuse one that mixes clocks, adds a field or proposes without a latest time", () => {
     expect(isCutoffProposal(proposal)).toBe(true);
     expect(isCutoffProposal({ ...proposal, last_usable_time: null, proposed_cutoff: null })).toBe(true);
     expect(isCutoffProposal({ ...proposal, timestamp_kind: "wall_clock", last_usable_time: "2026-04-14T07:30:20.500000", proposed_cutoff: "2026-04-14T07:31:00" })).toBe(true);
     expect(isCutoffProposal({ ...proposal, timestamp_kind: "wall_clock" })).toBe(false);
-    expect(isCutoffProposal({ ...proposal, proposed_cutoff: null })).toBe(false);
+    // A latest time in the last minute of the year 9999 cannot be rounded up; a proposal without one cannot be.
+    expect(isCutoffProposal({ ...proposal, last_usable_time: "9999-12-31T23:59:30Z", proposed_cutoff: null })).toBe(true);
+    expect(isCutoffProposal({ ...proposal, last_usable_time: null })).toBe(false);
     expect(isCutoffProposal({ ...proposal, note: "extra" })).toBe(false);
     expect(isCutoffProposal({ ...proposal, query_revision: "3" })).toBe(false);
   });

@@ -35,7 +35,8 @@ export function exampleSourceRoute(exampleId: ExampleId): string {
 
 /**
  * The latest usable time of a source under a reading, and the cutoff proposed from it: that time
- * rounded up to a full minute, on the same clock. Both are null when no record has a usable time.
+ * rounded up to a full minute, on the same clock. Both are null when no record has a usable time;
+ * only the proposal is null when the latest usable time lies in the last minute of the year 9999.
  * The local service answers it for a confirmation request without keeping anything; the import
  * contract has no message for it yet, so its shape is checked here.
  */
@@ -76,7 +77,7 @@ export function isCutoffProposal(value: unknown): value is CutoffProposal {
     typeof answer.source_id === "string" &&
     time(answer.last_usable_time) &&
     time(answer.proposed_cutoff) &&
-    (answer.last_usable_time === null) === (answer.proposed_cutoff === null)
+    (answer.last_usable_time !== null || answer.proposed_cutoff === null)
   );
 }
 

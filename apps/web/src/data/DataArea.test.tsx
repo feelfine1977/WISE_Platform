@@ -469,6 +469,27 @@ describe("the Data area", () => {
     expect(app.imports.confirmations[1].request.policies.time.parameters).toMatchObject({ snapshot_cutoff_utc: "2026-04-14T07:31:00Z" });
   });
 
+  it("names the latest usable time when it lies too late to be rounded up to a full minute", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, secondsInspectionAnswer);
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
+    await app.user.selectOptions(screen.getByLabelText("Time"), "2");
+    await app.user.click(screen.getByLabelText("Offsets written in the values, for example Z or +02:00"));
+
+    const current = app.imports.proposals.at(-1)!;
+    await deliver(() => current.reply({ ok: true, answer: proposalAnswer(current.request, "9999-12-31T23:59:30Z", null) }));
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(
+      screen.getByText(
+        "The latest usable time 9999-12-31 23:59:30 UTC cannot be rounded up to a full minute, so nothing is proposed. Enter when the export was taken, at that time or later.",
+      ),
+    ).toBeTruthy();
+    expect((screen.getByLabelText("Export taken at (UTC)") as HTMLInputElement).value).toBe("");
+  });
+
   it("shows blank lines and records of another length before confirming, and lists the records outside every incident", async () => {
     const tolerant = {
       id: "incident.rows.missing_id_outside_invalid_time_retained.v2",

@@ -559,10 +559,18 @@ function Proposal({ proposal, draft, coordinator }: { proposal: ProposalState; d
       return <ImportProblemNotice title="No cutoff can be proposed with these choices" problem={proposal.problem} />;
     case "ready": {
       const { last_usable_time: last, proposed_cutoff: proposed } = proposal.answer;
-      if (last === null || proposed === null) {
+      if (last === null) {
         return (
           <p className="muted" role="status">
             No record has a usable time with these choices, so nothing is proposed. Enter when the export was taken.
+          </p>
+        );
+      }
+      if (proposed === null) {
+        return (
+          <p className="muted" role="status">
+            The latest usable time {proposalText(last)} cannot be rounded up to a full minute, so nothing is proposed. Enter when the export
+            was taken, at that time or later.
           </p>
         );
       }
