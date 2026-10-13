@@ -268,7 +268,7 @@ describe("the Compare view", () => {
     expect(screen.getByText("Added to the selection in Investigations: Keep incidents that contain “Resolved”.")).toBeTruthy();
     await answerSelection(app, 1);
 
-    await app.user.click(screen.getByRole("button", { name: "Keep incidents opened with East" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep incidents opened with column 3 East" }));
     expect(app.selections.selections[2].request.predicates).toEqual([
       contains("Resolved"),
       { kind: "opening_attribute_equals", column_index: teamColumn, value: "East", negate: false, anchor_policy: "incident.context.first_record_in_declared_order.v1" },

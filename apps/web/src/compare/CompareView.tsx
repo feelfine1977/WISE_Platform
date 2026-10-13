@@ -26,12 +26,11 @@ import {
 import {
   cutoffText,
   describeComparisonProblem,
-  differenceText,
+  differenceCell,
   groupWording,
   hoursText,
   overlapSentences,
   partOf,
-  ratioText,
   shareText,
   valueText,
 } from "./wording";
@@ -246,7 +245,8 @@ function GroupSlot({ role, coordinator, draft, selection }: { role: Role } & Gro
     description = (
       <>
         The {side} incidents of the selection: {draft.split.predicates.map(stepWording).join("; and ")}. When it was taken it {side}{" "}
-        {supportText(support)}; {supportText(draft.split.taken.unevaluable)} not evaluable belong to neither side.
+        {supportText(support)}
+        {draft.split.taken.unevaluable.case_count > 0 && <>; {supportText(draft.split.taken.unevaluable)} not evaluable belong to neither side</>}.
       </>
     );
   } else if (group) {
@@ -593,7 +593,7 @@ function profileRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer, col
       detail: `parent: ${shareText(category.parent)}`,
       a: shareText(category.target),
       b: shareText(category.reference),
-      difference: `${differenceText(category.difference_percentage_points, names)} · ${ratioText(category.concentration_ratio, names)}`,
+      difference: differenceCell(category, names),
       step: {
         predicate: {
           kind: "opening_attribute_equals",
@@ -602,7 +602,7 @@ function profileRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer, col
           negate: false,
           anchor_policy: contextPolicy,
         },
-        label: category.value === null ? `Keep incidents opened with ${columnName} not recorded` : `Keep incidents opened with ${value}`,
+        label: category.value === null ? `Keep incidents opened with ${columnName} not recorded` : `Keep incidents opened with ${columnName} ${value}`,
       },
     };
   });

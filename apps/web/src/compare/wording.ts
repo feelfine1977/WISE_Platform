@@ -1,5 +1,6 @@
 import { countOf, describeImportProblem, type ImportProblemText } from "../data/wording";
 import type {
+  CategoryComparison,
   CategorySupport,
   ComparisonRefusal,
   ConcentrationRatio,
@@ -39,6 +40,19 @@ export function shareText(support: CategorySupport): string {
 export function differenceText(difference: ShareDifference, names: [string, string]): string {
   if (difference.status === "available") return points(difference.value);
   return `not available: ${emptyReason(difference.reason, names)}`;
+}
+
+/**
+ * The difference cell of an opening value: the difference in percentage points and the ratio,
+ * or, when a side has no denominator and neither exists, why, said once.
+ */
+export function differenceCell(category: CategoryComparison, names: [string, string]): string {
+  const difference = category.difference_percentage_points;
+  const ratio = category.concentration_ratio;
+  if (difference.status === "unavailable" && ratio.status === "unavailable" && difference.reason === ratio.reason) {
+    return differenceText(difference, names);
+  }
+  return `${differenceText(difference, names)} · ${ratioText(ratio, names)}`;
 }
 
 /** The share of A divided by the share of B, or why there is none. */
