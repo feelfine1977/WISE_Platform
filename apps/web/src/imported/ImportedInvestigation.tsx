@@ -90,7 +90,7 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
     const rank = ranked.findIndex((variant) => variant.id === chosenVariant);
     if (rank < 0) return null;
     const members = new Set(ranked[rank].case_ids);
-    return { rank: rank + 1, cases: answer.cases.filter((item) => members.has(item.case_id)) };
+    return { rank: rank + 1, caseCount: ranked[rank].case_count, cases: answer.cases.filter((item) => members.has(item.case_id)) };
   }, [chosenVariant, variants, answer]);
   const shownCases = variantView ? variantView.cases : answer?.cases ?? [];
   return (
@@ -118,12 +118,12 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
               {variantView ? `Incidents of variant ${variantView.rank}` : "Incidents of this preparation"}
             </h3>
             <p role="status" className="visually-hidden">
-              {variantView ? `The table lists the ${countOf(variantView.cases.length, "incident")} of variant ${variantView.rank}.` : ""}
+              {variantView ? `The table lists the ${countOf(variantView.caseCount, "incident")} of variant ${variantView.rank}.` : ""}
             </p>
             {variantView && (
               <div className="view-note">
                 <p>
-                  The table lists the {countOf(variantView.cases.length, "incident")} of variant {variantView.rank}. This is a view: the population and
+                  The table lists the {countOf(variantView.caseCount, "incident")} of variant {variantView.rank}. This is a view: the population and
                   every count stay as they are.
                 </p>
                 <button
