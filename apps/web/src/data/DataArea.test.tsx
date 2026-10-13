@@ -81,7 +81,9 @@ async function chooseReading(app: Screen) {
   await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
   await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
   await app.user.selectOptions(screen.getByLabelText("Time"), "2");
-  await app.user.click(screen.getByLabelText("Gruppe — 3 filled cells, 3 distinct values"));
+  // A column whose values repeat is proposed as context; it is ticked here only where it is not yet.
+  const group = screen.getByLabelText("Gruppe — 3 filled cells, 3 distinct values") as HTMLInputElement;
+  if (!group.checked) await app.user.click(group);
   await app.user.click(screen.getByLabelText(DAY_FIRST_DOTS));
   await app.user.click(screen.getByLabelText("One fixed offset for every time"));
   await app.user.selectOptions(screen.getByLabelText("Offset from UTC"), "120");
@@ -235,7 +237,8 @@ describe("the Data area", () => {
 
     const confirmation = app.imports.confirmations[0].request;
     expect(importContract.confirmMappingRequest(confirmation)).toBe(true);
-    expect(confirmation.mapping).toEqual({ case_column: 0, activity_column: 1, timestamp_column: 2, sequence_column: null, context_columns: [] });
+    // Gruppe has repeating values and no role, so it is proposed as context and goes with the reading.
+    expect(confirmation.mapping).toEqual({ case_column: 0, activity_column: 1, timestamp_column: 2, sequence_column: null, context_columns: [3] });
     expect(confirmation.policies.time).toEqual({
       id: "incident.time.wall_clock_as_recorded.v1",
       parameters: { format: "mdy_dot_minute", timezone: "none_as_recorded", snapshot_cutoff_local: "2027-01-01T00:00:00" },
@@ -723,7 +726,8 @@ describe("choosing columns and time formats the inspection did not suggest", () 
       ],
     ]);
     expect(within(sequence.parentElement!).getByText("The inspection suggests no column for this role.")).toBeTruthy();
-    expect(consequences()).toEqual([]);
+    // The incident id is proposed from the column name, so what it means for the reading is said at once.
+    expect(consequences()).toEqual(["The incident id column has empty cells: rows without an incident id stay outside every incident."]);
   });
 
   it("reads with a column the inspection did not suggest in each role", async () => {
@@ -816,7 +820,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     expect(read.getAttribute("aria-describedby")).toBe(screen.getByText("What these choices mean for the reading").parentElement!.id);
     await app.user.click(read);
     const first = app.imports.confirmations[0];
-    expect(first.request.mapping).toEqual({ case_column: 0, activity_column: 3, timestamp_column: 2, sequence_column: null, context_columns: [] });
+    expect(first.request.mapping).toEqual({ case_column: 0, activity_column: 3, timestamp_column: 2, sequence_column: null, context_columns: [4] });
     expect(first.request.policies.time).toEqual({
       id: "incident.time.wall_clock_as_recorded.v1",
       parameters: { format: "iso8601", timezone: "none_as_recorded", snapshot_cutoff_local: "2027-01-01T00:00:00" },
@@ -864,7 +868,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
       activity_column: 1,
       timestamp_column: 2,
       sequence_column: null,
-      context_columns: [],
+      context_columns: [4],
     });
   });
 

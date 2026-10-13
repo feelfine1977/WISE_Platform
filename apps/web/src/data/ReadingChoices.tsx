@@ -355,7 +355,7 @@ function Choices({
         </h3>
         <p className="muted">
           Each list offers every column of the source: first those the inspection suggests for the role, then the other columns, each with
-          what the inspection found in it. Columns without a role stay in every record as written.
+          what the inspection found in it. Columns without a role stay in every record as written. Where the names and the contents of the columns point to one column for a role, it is already chosen, and columns whose values repeat are ticked as context: these are proposals, so check each one.
         </p>
         <div className="choice-row">
           {(Object.keys(roleFields) as Role[]).map((role) => (

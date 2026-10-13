@@ -323,6 +323,13 @@ export class DataCoordinator {
       draft = { ...draft, timeFormat: change.timeFormat ?? formatEvidence(suggestion).proposed };
     }
     if ("cutoff" in change) draft = { ...draft, cutoffEdited: true };
+    // A column that takes a role is no longer a context column.
+    if (!("contextColumns" in change)) {
+      const roles = [draft.caseColumn, draft.activityColumn, draft.timestampColumn, draft.sequenceColumn];
+      if (draft.contextColumns.some((column) => roles.includes(column))) {
+        draft = { ...draft, contextColumns: draft.contextColumns.filter((column) => !roles.includes(column)) };
+      }
+    }
     this.abort(["interpretation"]);
     const settled = this.settleProposal(draft);
     this.publish({ ...this.state, draft: settled.draft, proposal: settled.proposal, interpretation: { phase: "none" } });

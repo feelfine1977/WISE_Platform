@@ -278,7 +278,79 @@ export function draftAfterInspection(previous: Draft, previousColumns: readonly 
     delimiter: candidate ? candidate.delimiter : previous.delimiter,
   };
   if (same) return { ...previous, ...dialect };
-  return { ...emptyDraft, ...dialect, rowRule: previous.rowRule };
+  return { ...emptyDraft, ...dialect, rowRule: previous.rowRule, ...proposedRoles(answer) };
+}
+
+/** Column names that usually hold the incident id, the most telling first; compared in lower case without separators. */
+const CASE_NAMES: readonly (readonly string[])[] = [
+  ["caseconceptname", "caseid", "incidentid", "incidentnumber", "incidentnr", "vorgangsnummer", "vorgangsnr", "vorgangsid", "ticketid", "ticketnumber", "ticketnummer", "ticketnr"],
+  ["case", "incident", "number", "nummer", "vorgang", "ticket", "id"],
+];
+/** Column names that usually hold the activity, the most telling first. */
+const ACTIVITY_NAMES: readonly (readonly string[])[] = [
+  ["activity", "activityname", "aktivität", "aktivitaet"],
+  ["conceptname", "event", "eventname", "ereignis", "status", "state", "zustand", "schritt", "step", "task", "action", "aktion"],
+];
+/** A time of day followed by Z or an offset, as the last thing in a value. */
+const WRITTEN_OFFSET = /\d{2}:\d{2}(?::\d{2}(?:[.,]\d+)?)?\s?(?:Z|[+-]\d{2}:?\d{2})$/;
+/** A column with at most this many different values is proposed as context whatever the size of the source. */
+const FEW_VALUES = 50;
+
+function plainName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9äöüß]/g, "");
+}
+
+/** The one column whose name is in the most telling list that names any column; none when two columns are equally telling. */
+function columnNamed(answer: CsvInspectionAnswer, names: readonly (readonly string[])[], taken: readonly (ColumnIndex | null)[]): ColumnIndex | null {
+  for (const list of names) {
+    const found = answer.columns.filter((column) => !taken.includes(column.index) && list.includes(plainName(column.name)));
+    if (found.length === 1) return found[0].index;
+    if (found.length > 1) return null;
+  }
+  return null;
+}
+
+/**
+ * The choices proposed for a source that is read for the first time, from what the inspection
+ * found. Each is a proposal the analyst sees and can change before anything is read, and nothing
+ * is proposed where the inspection points to more than one column:
+ *
+ * - the time column, when exactly one column has a format that reads every filled cell, with that
+ *   format when it is the only such format, and the zone "written in the values" when every
+ *   sampled time ends in Z or an offset;
+ * - the incident id and the activity, when exactly one column has a name that usually holds them;
+ * - as context, every other column whose values repeat (few different values, or at most a fifth
+ *   as many different values as filled cells) and that is not a column of times.
+ */
+export function proposedRoles(
+  answer: CsvInspectionAnswer,
+): Pick<Draft, "caseColumn" | "activityColumn" | "timestampColumn" | "timeFormat" | "zone" | "contextColumns"> {
+  const timeLike = answer.role_suggestions.filter((suggestion) => formatEvidence(suggestion).complete.length > 0);
+  const timestampColumn = timeLike.length === 1 ? timeLike[0].column_index : null;
+  const timeFormat = timestampColumn === null ? null : formatEvidence(timeLike[0]).proposed;
+  const sampled =
+    timestampColumn === null ? [] : answer.sample_rows.map((row) => row.cells[timestampColumn] ?? "").filter((value) => value !== "");
+  const zone: ZoneChoice | null = sampled.length > 0 && sampled.every((value) => WRITTEN_OFFSET.test(value)) ? "from_values" : null;
+  const caseColumn = columnNamed(answer, CASE_NAMES, [timestampColumn]);
+  const activityColumn = columnNamed(answer, ACTIVITY_NAMES, [timestampColumn, caseColumn]);
+  const taken = [timestampColumn, caseColumn, activityColumn];
+  // A column in which a time format reads at least half of the filled cells holds times, also when no format reads all of them.
+  const timeColumns = new Set(
+    answer.role_suggestions
+      .filter((suggestion) => suggestion.timestamp_matches.some((match) => match.parsed_count > 0 && match.parsed_count * 2 >= suggestion.nonempty_count))
+      .map((suggestion) => suggestion.column_index),
+  );
+  const contextColumns = answer.role_suggestions
+    .filter(
+      (suggestion) =>
+        !taken.includes(suggestion.column_index) &&
+        !timeColumns.has(suggestion.column_index) &&
+        suggestion.nonempty_count > 0 &&
+        (suggestion.distinct_nonempty_count <= FEW_VALUES || suggestion.distinct_nonempty_count * 5 <= suggestion.nonempty_count),
+    )
+    .map((suggestion) => suggestion.column_index)
+    .sort((left, right) => left - right);
+  return { caseColumn, activityColumn, timestampColumn, timeFormat, zone, contextColumns };
 }
 
 /** What the analyst still has to choose before the source can be read; empty when nothing. */
