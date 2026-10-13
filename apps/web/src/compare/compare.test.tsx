@@ -340,7 +340,7 @@ describe("the areas of the application", () => {
     const user = userEvent.setup();
     render(<App client={scripted.client} checkHealth={healthy} comparisonClient={scriptedComparisonClient().client} />);
     const areas = screen.getByRole("navigation", { name: "Areas" });
-    expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare"]);
+    expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare", "Expectation"]);
     await user.click(within(areas).getByRole("button", { name: "Compare" }));
     expect(within(areas).getByRole("button", { name: "Compare" }).getAttribute("aria-current")).toBe("page");
     expect(within(areas).getByRole("button", { name: "Investigations" }).getAttribute("aria-current")).toBeNull();

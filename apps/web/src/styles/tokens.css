@@ -142,6 +142,11 @@
   /* The Compare view: the column of what to compare beside the table of how it differs. */
   --size-compare-setup: 400px;
 
+  /* The Expectation view: fields of the definition, the rationale's text box and the state buttons. */
+  --size-expectation-field: 220px;
+  --size-expectation-text: 72px;
+  --size-expectation-state: 128px;
+
   /* Layers */
   --z-sticky: var(--wf-z-comparison-header);
   --z-float: var(--wf-z-menu);

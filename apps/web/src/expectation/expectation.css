@@ -1,0 +1,159 @@
+/*
+ * The Expectation view: the definition of one expectation, the result of its run with the
+ * incidents of each state, and the records of one scored incident. Every value is a token of
+ * tokens.css; every class of this view begins with "expectation".
+ */
+
+.expectation {
+  display: grid;
+  gap: var(--space-4);
+  max-width: var(--size-page);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+}
+.expectation-head { display: grid; gap: var(--space-1); }
+.expectation-title { font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+.expectation-method-line { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.expectation-muted { color: var(--color-ink-muted); }
+.expectation-status { color: var(--color-ink-muted); }
+.expectation-section-title { font-weight: var(--font-weight-strong); }
+.expectation-label {
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+.expectation-identifier { font-family: var(--font-mono); font-size: var(--font-size-mono); }
+.expectation-missing { color: var(--color-ink-muted); font-style: italic; }
+.expectation-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-accent-tint);
+  border-left: var(--bar-width) solid var(--color-accent);
+}
+
+/* The definition and the result side by side with the records of one incident when it is open. */
+.expectation-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.expectation-body[data-witness="open"] { grid-template-columns: minmax(0, 1fr) var(--size-inspector); }
+.expectation-main { display: grid; gap: var(--space-4); min-width: 0; }
+
+/* Definition */
+.expectation-form,
+.expectation-result,
+.expectation-witness {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+}
+.expectation-fields { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); }
+.expectation-field { display: grid; flex: 1 1 var(--size-expectation-field); gap: var(--space-half); min-width: 0; }
+.expectation-select,
+.expectation-input,
+.expectation-textarea {
+  min-width: 0;
+  min-height: var(--size-control);
+  padding: 0 var(--space-3);
+  font: inherit;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+}
+.expectation-textarea { min-height: var(--size-expectation-text); padding: var(--space-2) var(--space-3); resize: vertical; }
+.expectation-choice { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: 0; padding: 0; border: 0; }
+.expectation-choice legend { width: 100%; padding: 0; margin-bottom: var(--space-1); color: var(--color-ink-muted); }
+.expectation-option { display: flex; align-items: baseline; gap: var(--space-2); }
+.expectation-sentence {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-canvas);
+  border-left: var(--bar-width) solid var(--color-line-strong);
+}
+.expectation-form-problems { margin: 0; padding-left: var(--space-4); color: var(--color-ink-muted); }
+.expectation-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.expectation-primary { color: var(--color-on-accent); background: var(--color-accent); border-color: var(--color-accent); }
+.expectation-primary:hover { background: var(--color-accent-strong); border-color: var(--color-accent-strong); }
+.expectation-ready { display: grid; gap: var(--space-1); padding: var(--space-2) var(--space-3); border-left: var(--bar-width) solid var(--color-accent); }
+.expectation-blocked {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-left: var(--bar-width) solid var(--color-attention);
+}
+.expectation-blocked ul { margin: 0; padding-left: var(--space-4); }
+.expectation-problem {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  padding: var(--space-3) var(--space-4);
+  border: var(--line-width) solid var(--color-line);
+  border-left: var(--bar-width) solid var(--color-error);
+  border-radius: var(--radius);
+}
+.expectation-problem-title { color: var(--color-error); font-weight: var(--font-weight-strong); }
+
+/* Result: one button per state with its count; a pressed button lists its incidents. */
+.expectation-states { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.expectation-state {
+  display: grid;
+  justify-items: start;
+  min-width: var(--size-expectation-state);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+.expectation-state[aria-pressed="true"] { background: var(--color-accent-tint); border-color: var(--color-accent); }
+.expectation-state-count { font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-variant-numeric: tabular-nums; }
+.expectation-state-label { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.expectation-table th,
+.expectation-table td { padding: 0 var(--space-3); }
+.expectation-number { text-align: right; font-variant-numeric: tabular-nums; }
+.expectation-case {
+  display: block;
+  width: 100%;
+  min-height: var(--size-row);
+  padding: 0 var(--space-3);
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.expectation-case::before { content: none; }
+.expectation-case:hover { text-decoration: underline; background: transparent; }
+.expectation-case:focus-visible { outline-offset: var(--focus-offset-inside); }
+.expectation-row-open > * { background: var(--color-accent-tint); }
+.expectation-row-open > th { box-shadow: inset var(--bar-width) 0 var(--color-accent); }
+
+/* The records of one incident; the records of the start and the response carry a mark. */
+.expectation-witness-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+.expectation-witness-head h3 { font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+.expectation-witness-head h3:focus { outline: none; }
+.expectation-witness-facts { display: grid; gap: var(--space-1); margin: 0; }
+.expectation-witness-facts div { display: grid; grid-template-columns: var(--size-value-label) minmax(0, 1fr); gap: var(--space-2); }
+.expectation-witness-facts dt { color: var(--color-ink-muted); }
+.expectation-witness-facts dd { margin: 0; }
+.expectation-records { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.expectation-record { padding: var(--space-2) var(--space-3); border-left: var(--bar-width) solid var(--color-line); }
+.expectation-record-marked { background: var(--color-accent-tint); border-left-color: var(--color-accent); }
+.expectation-record-activity { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); font-weight: var(--font-weight-strong); }
+.expectation-mark {
+  padding: 0 var(--space-2);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-plain);
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+}
+
+/* Narrow windows: the records of an incident take the full width below the result. */
+@media (max-width: 1100px) {
+  .expectation { padding: var(--space-3); }
+  .expectation-body[data-witness="open"] { grid-template-columns: minmax(0, 1fr); }
+}
