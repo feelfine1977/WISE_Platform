@@ -10,7 +10,7 @@ The failing place decides the code. Another whole schema version is
 ``unsupported_schema``; the anchor policy of an opening predicate is
 ``unsupported_policy``; anything else inside a predicate is
 ``invalid_predicate``; everything else is ``invalid_request``. A predicate is
-one of three kinds told apart by its ``kind``; a failure is named within the
+one of five kinds told apart by its ``kind``; a failure is named within the
 kind the request chose, and a kind the contract does not know is named at the
 kind itself.
 """
@@ -64,6 +64,8 @@ _KINDS = {
     "ContainsActivity": "contains_activity",
     "DirectlyFollows": "directly_follows",
     "OpeningAttributeEquals": "opening_attribute_equals",
+    "StartsWithActivity": "starts_with_activity",
+    "EndsWithActivity": "ends_with_activity",
 }
 
 # Order in which failing places are named, first one first.

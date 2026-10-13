@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contains, follows, followingOpened, parent, suppliedGraph, support } from "../test/selections";
+import { begins, contains, ends, follows, followingOpened, parent, suppliedGraph, support } from "../test/selections";
 import { coverageRows, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
 
 describe("the words of a step", () => {
@@ -8,6 +8,10 @@ describe("the words of a step", () => {
     expect(stepWording(contains("Eröffnet", true))).toBe("Keep incidents that do not contain “Eröffnet”");
     expect(stepWording(follows("Eröffnet", "Geschlossen"))).toBe("Keep incidents where “Geschlossen” directly follows “Eröffnet”");
     expect(stepWording(follows("Eröffnet", "Geschlossen", true))).toBe("Keep incidents where “Geschlossen” never directly follows “Eröffnet”");
+    expect(stepWording(begins("Eröffnet"))).toBe("Keep incidents that begin with “Eröffnet”");
+    expect(stepWording(begins("Eröffnet", true))).toBe("Keep incidents that do not begin with “Eröffnet”");
+    expect(stepWording(ends("Geschlossen"))).toBe("Keep incidents that end with “Geschlossen”");
+    expect(stepWording(ends("Geschlossen", true))).toBe("Keep incidents that do not end with “Geschlossen”");
   });
 
   it("names a missing opening value as missing and the text Unknown as a value", () => {

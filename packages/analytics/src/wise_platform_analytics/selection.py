@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 
 OPENING_CONTEXT_POLICY = "incident.context.first_record_in_declared_order.v1"
+BOUNDARY_POLICY = "incident.boundary.raw_labeled_start_end.v1"
 
 
 class ContextRecord(Protocol):
@@ -61,7 +62,20 @@ class OpeningAttributeEquals:
     negate: bool = False
 
 
-Predicate: TypeAlias = ContainsActivity | DirectlyFollows | OpeningAttributeEquals
+@dataclass(frozen=True)
+class StartsWithActivity:
+    activity: str
+    negate: bool = False
+
+
+@dataclass(frozen=True)
+class EndsWithActivity:
+    activity: str
+    negate: bool = False
+
+
+Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
+                        | StartsWithActivity | EndsWithActivity)
 
 
 class SelectionError(ValueError):
@@ -140,7 +154,25 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
             raise SelectionError("invalid_predicate", "Opening context values are text or missing.")
         return {"kind": "opening_attribute_equals", "column_index": predicate.column_index,
                 "value": predicate.value, "negate": predicate.negate, "anchor_policy": OPENING_CONTEXT_POLICY}
+    if isinstance(predicate, (StartsWithActivity, EndsWithActivity)):
+        _label(predicate.activity)
+        kind = "starts_with_activity" if isinstance(predicate, StartsWithActivity) else "ends_with_activity"
+        return {"kind": kind, "activity": predicate.activity, "negate": predicate.negate}
     raise SelectionError("invalid_predicate", "Unsupported descriptive predicate.")
+
+
+def boundary_activities(records: Sequence[PreparedRecordLike]) -> tuple[str | None, str | None]:
+    """The activities a history starts and ends at under ``BOUNDARY_POLICY``.
+
+    Only the labels of the first and of the last raw record in the declared
+    order count. A boundary record without label is no start and no end: no
+    labelled record further inside takes its place. A history without records
+    has neither. The map and the boundary predicates both read starts and ends
+    here, and both only for incidents whose sequence is evaluable.
+    """
+    if not records:
+        return None, None
+    return records[0].activity, records[-1].activity
 
 
 def case_ids(prepared: PreparedDataLike, requested: Iterable[str] | None = None) -> tuple[str, ...]:
@@ -202,6 +234,9 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate) ->
         mapped = [record.activity for record in records if record.activity is not None]
         value = any(left == predicate.source_activity and right == predicate.target_activity
                     for left, right in zip(mapped, mapped[1:]))
+    elif isinstance(predicate, (StartsWithActivity, EndsWithActivity)):
+        start, end = boundary_activities(records)
+        value = (start if isinstance(predicate, StartsWithActivity) else end) == predicate.activity
     else:
         assert isinstance(predicate, OpeningAttributeEquals)
         if not records:

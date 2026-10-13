@@ -8,7 +8,8 @@ import json
 import pytest
 
 from wise_platform_analytics.selection import (
-    ContainsActivity, DirectlyFollows, OpeningAttributeEquals, SelectionError, select_cases,
+    ContainsActivity, DirectlyFollows, EndsWithActivity, OpeningAttributeEquals, SelectionError,
+    StartsWithActivity, select_cases,
 )
 from wise_platform_analytics.process_graph import activity_node_id, build_process_graph
 
@@ -157,6 +158,25 @@ def test_raw_missing_boundaries_never_manufacture_starts_ends_or_terminal_paths(
     unlabeled = build_process_graph(data({"X": (row("X", 0, None, 0),)}))
     assert unlabeled["nodes"] == unlabeled["edges"] == []
     assert unlabeled["meta"]["raw_record_count"] == unlabeled["meta"]["omitted_activity_record_count"] == 1
+
+
+def test_boundary_predicates_keep_exactly_the_incidents_the_graph_counts_as_starts_and_ends(cases):
+    # P4 has no record at all: it starts and ends nowhere, in the graph and for the predicates.
+    prepared = data({**cases.histories, "P4": ()})
+    nodes = {node["label"]: node["metrics"] for node in build_process_graph(prepared)["nodes"]}
+    assert {label: (metrics["starts"], metrics["ends"]) for label, metrics in nodes.items()} == {"A": (1, 0), "B": (1, 2)}
+    starts = select_cases(prepared, [StartsWithActivity("A")])
+    assert starts.kept.case_ids == ("P1",) and starts.removed.case_ids == ("P2", "P4")
+    assert starts.unevaluable.case_ids == ("P3",)
+    ends = select_cases(prepared, [EndsWithActivity("B")])
+    assert ends.kept.case_ids == ("P1", "P2") and ends.removed.case_ids == ("P4",)
+    assert ends.unevaluable.case_ids == ("P3",)
+    opposite = select_cases(prepared, [EndsWithActivity("B", negate=True)])
+    assert opposite.kept.case_ids == ("P4",) and opposite.removed.case_ids == ("P1", "P2")
+    assert opposite.unevaluable.case_ids == ("P3",)
+    for label, metrics in nodes.items():
+        assert select_cases(prepared, [StartsWithActivity(label)]).kept.case_count == metrics["starts"]
+        assert select_cases(prepared, [EndsWithActivity(label)]).kept.case_count == metrics["ends"]
 
 
 def test_missing_label_bridge_discloses_raw_gap_witness_and_keeps_whole_case(cases):

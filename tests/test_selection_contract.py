@@ -47,6 +47,38 @@ def test_selection_boundary_rejects_ambiguous_or_unbound_intents(mutation):
     assert list(Draft202012Validator(SCHEMA).iter_errors(value))
 
 
+STEP_DEFINITIONS = ["SelectionPredicate", "ContainsActivity", "DirectlyFollows", "OpeningAttributeEquals",
+                    "StartsWithActivity", "EndsWithActivity"]
+
+
+@pytest.mark.parametrize("kind", ["starts_with_activity", "ends_with_activity"])
+def test_a_step_by_how_incidents_begin_or_end_is_a_closed_intent_of_three_fields(kind):
+    value = deepcopy(VALID)
+    value["predicates"] = [{"kind": kind, "activity": "Recorded", "negate": False},
+                           {"kind": kind, "activity": "Recorded", "negate": True}]
+    Draft202012Validator(SCHEMA).validate(value)
+    assert SelectCasesRequest.model_validate(value).model_dump(mode="json") == value
+    for change in (lambda step: step.pop("activity"), lambda step: step.pop("negate"),
+                   lambda step: step.update(activity=""), lambda step: step.update(negate="false"),
+                   lambda step: step.update(target_activity="Closed"),
+                   lambda step: step.update(anchor_policy="incident.context.first_record_in_declared_order.v1")):
+        refused = deepcopy(value)
+        change(refused["predicates"][0])
+        assert list(Draft202012Validator(SCHEMA).iter_errors(refused))
+
+
+def test_every_contract_that_carries_selection_steps_defines_the_same_steps():
+    contracts = {path.name: json.loads(path.read_text(encoding="utf-8")).get("$defs", {})
+                 for path in sorted((ROOT / "contracts").glob("*.schema.json"))}
+    carrying = {name: definitions for name, definitions in contracts.items() if "SelectionPredicate" in definitions}
+    assert sorted(carrying) == ["comparison.schema.json", "saving.schema.json", "selection.schema.json"]
+    kinds = [member["$ref"].rsplit("/", 1)[1] for member in SCHEMA["$defs"]["SelectionPredicate"]["oneOf"]]
+    assert kinds == STEP_DEFINITIONS[1:]
+    for name, definitions in carrying.items():
+        for definition in STEP_DEFINITIONS:
+            assert definitions[definition] == SCHEMA["$defs"][definition], (name, definition)
+
+
 def test_graph_clock_domain_cannot_silently_change_physical_meaning():
     validator = Draft202012Validator({"oneOf": SCHEMA["$defs"]["GraphCoverage"]["oneOf"]})
     validator.validate({"timestamp_kind": "utc_instant", "lag_clock": "elapsed_utc_hours", "clock_limitation": None})

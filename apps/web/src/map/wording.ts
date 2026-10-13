@@ -37,6 +37,14 @@ export function stepWording(step: SelectionPredicate): string {
         ? `Keep incidents whose first record does not have ${value} in ${columnWording(step.column_index)}`
         : `Keep incidents whose first record has ${value} in ${columnWording(step.column_index)}`;
     }
+    case "starts_with_activity":
+      return step.negate
+        ? `Keep incidents that do not begin with ${quoted(step.activity)}`
+        : `Keep incidents that begin with ${quoted(step.activity)}`;
+    case "ends_with_activity":
+      return step.negate
+        ? `Keep incidents that do not end with ${quoted(step.activity)}`
+        : `Keep incidents that end with ${quoted(step.activity)}`;
   }
 }
 

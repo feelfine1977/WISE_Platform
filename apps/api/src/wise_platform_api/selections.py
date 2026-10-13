@@ -27,10 +27,12 @@ from wise_platform_analytics.process_graph import build_process_graph
 from wise_platform_analytics.selection import (
     ContainsActivity,
     DirectlyFollows,
+    EndsWithActivity,
     OpeningAttributeEquals,
     Predicate,
     SelectionError,
     SelectionResult,
+    StartsWithActivity,
     select_cases,
 )
 
@@ -188,6 +190,10 @@ def package_predicate(given: Mapping[str, object]) -> Predicate:
     kind, negate = given["kind"], bool(given["negate"])
     if kind == "contains_activity":
         return ContainsActivity(str(given["activity"]), negate)
+    if kind == "starts_with_activity":
+        return StartsWithActivity(str(given["activity"]), negate)
+    if kind == "ends_with_activity":
+        return EndsWithActivity(str(given["activity"]), negate)
     if kind == "directly_follows":
         return DirectlyFollows(str(given["source_activity"]), str(given["target_activity"]), negate)
     value = given["value"]

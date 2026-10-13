@@ -605,6 +605,51 @@ def test_a_comparison_and_bookmarks_are_saved_and_restored_with_their_groups(cli
             assert [row["activity"] for row in response.json()["records"]] == activities
 
 
+def test_steps_and_groups_by_how_incidents_begin_and_end_are_saved_and_restored(client, question, folder, tmp_path):
+    workspace_id = question["workspace_id"]
+    # All three incidents begin with Opened; A and B end with Resolved, C ends with Assigned.
+    steps = [{"kind": "starts_with_activity", "activity": "Opened", "negate": False},
+             {"kind": "ends_with_activity", "activity": "Resolved", "negate": False}]
+    selection = client.post("/api/investigations/select-cases", json=envelope(
+        "select_cases_request", "select-3", 3, workspace_id=workspace_id, identity=question["base"]["identity"],
+        parent_case_ids=["A", "B", "C"], predicates=steps)).json()
+    assert selection["kept"] == {"case_ids": ["A", "B"], "case_count": 2, "record_count": 5}
+    assert selection["removed"] == {"case_ids": ["C"], "case_count": 1, "record_count": 2}
+    definition = {"mode": "two_named_groups",
+                  "target": {"name": "Gelöst am Ende", "definition": {"kind": "predicates", "predicates": [steps[1]]}},
+                  "reference": {"name": "Anderes Ende", "definition": {
+                      "kind": "predicates", "predicates": [{**steps[1], "negate": True}]}}}
+    response = client.post("/api/investigations/compare-groups", json=envelope(
+        "compare_groups_request", "compare-1", 3, workspace_id=workspace_id, identity=question["base"]["identity"],
+        parent_case_ids=["A", "B", "C"], context_column_index=3, context_policy=CONTEXT_POLICY, definition=definition))
+    assert response.status_code == 200, response.text
+    comparison = response.json()
+    assert comparison["target"]["included"]["case_ids"] == ["A", "B"]
+    assert comparison["reference"]["included"]["case_ids"] == ["C"]
+    saved_comparison = {"kind": "group", "comparison_id": comparison["comparison_id"],
+                        "parent_case_ids": ["A", "B", "C"], "context_column_index": 3,
+                        "context_policy": CONTEXT_POLICY, "definition": definition}
+    recipe = {"parent_case_ids": ["A", "B", "C"], "predicates": steps}
+    revision = saved(client, save_request(question, selection_identity=selection["identity"],
+                                          selection_recipe=recipe, comparison=saved_comparison))["revision"]
+    assert revision["content"]["selection_recipe"] == recipe
+    assert revision["content"]["comparison"] == saved_comparison
+    with new_client(tmp_path) as second_run:
+        open_workspace(second_run, folder)
+        answer = reopened(second_run, workspace_id, revision["saved_revision_id"])
+        restored = answer["restored_selection"]
+        assert restored["identity"] == selection["identity"]
+        assert restored["kept"] == selection["kept"]
+        assert [result["predicate"] for result in restored["predicate_results"]] == steps
+        assert [result["kept"]["case_ids"] for result in restored["predicate_results"]] == [["A", "B", "C"], ["A", "B"]]
+        assert answer["restored_comparison_id"] == comparison["comparison_id"]
+    # The same steps the other way round keep other incidents and are not the saved selection.
+    other = {"parent_case_ids": ["A", "B", "C"], "predicates": [steps[0], {**steps[1], "negate": True}]}
+    refused(client.post(SAVE, json=save_request(question, selection_identity=selection["identity"],
+                                                selection_recipe=other)),
+            "save_investigation", "selection_mismatch", "selection_identity.population_id")
+
+
 def test_a_comparison_whose_id_is_not_its_definition_is_refused(client, question):
     _, saved_comparison = group_comparison(client, question)
     saved_comparison["definition"]["target"]["definition"]["case_ids"] = ["C"]

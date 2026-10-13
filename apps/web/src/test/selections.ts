@@ -42,6 +42,8 @@ export const follows = (source: string, target: string, negate = false): Selecti
   target_activity: target,
   negate,
 });
+export const begins = (activity: string, negate = false): SelectionPredicate => ({ kind: "starts_with_activity", activity, negate });
+export const ends = (activity: string, negate = false): SelectionPredicate => ({ kind: "ends_with_activity", activity, negate });
 
 export interface Figures {
   /** The digit of the selected population's identity, so that every selection is named apart. */

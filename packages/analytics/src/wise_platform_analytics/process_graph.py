@@ -7,7 +7,7 @@ import hashlib
 import json
 from statistics import median
 
-from .selection import PreparedDataLike, SelectionError, case_ids
+from .selection import BOUNDARY_POLICY, PreparedDataLike, SelectionError, boundary_activities, case_ids
 
 
 def activity_node_id(activity: str) -> str:
@@ -24,6 +24,8 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
 
     Activity occurrence/case supports concern all selected raw histories. Paths
     and boundaries concern only cases whose declared sequence is evaluable.
+    Starts and ends are those of ``boundary_activities``, which the boundary
+    predicates of a selection read too, so both always count the same incidents.
     Missing-label projection bridges carry their omitted raw-row witnesses.
     """
     selected = case_ids(prepared, selected_ids)
@@ -55,10 +57,11 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
                 activity_cases[record.activity].add(case_id)
         if case_id not in eligible_set or not records:
             continue
-        if records[0].activity is not None:
-            starts[records[0].activity] += 1
-        if records[-1].activity is not None:
-            ends[records[-1].activity] += 1
+        start, end = boundary_activities(records)
+        if start is not None:
+            starts[start] += 1
+        if end is not None:
+            ends[end] += 1
         mapped = [(index, record) for index, record in enumerate(records) if record.activity is not None]
         for (left_index, left), (right_index, right) in zip(mapped, mapped[1:]):
             assert left.activity is not None and right.activity is not None
@@ -113,7 +116,7 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
         "activity_projection_policy": "incident.activity.omit_missing_retain_raw_gaps.v1",
         "path_adjacency": "mapped_sequence_with_disclosed_raw_gaps",
         "boundary_support_basis": "sequence_evaluable_cases_with_labeled_raw_boundaries",
-        "boundary_policy": "incident.boundary.raw_labeled_start_end.v1",
+        "boundary_policy": BOUNDARY_POLICY,
         "timestamp_kind": time_kind, "lag_unit": "hours",
         "lag_clock": "recorded_wall_clock_hours" if time_kind == "wall_clock" else "elapsed_utc_hours",
         "clock_limitation": "Recorded wall-clock differences may differ from physical elapsed time across clock changes."

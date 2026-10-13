@@ -190,6 +190,28 @@ def test_a_request_the_contract_does_not_allow_is_refused_at_its_place(client, c
     refused(client, request, code, field, place)
 
 
+@pytest.mark.parametrize("kind", ["starts_with_activity", "ends_with_activity"])
+def test_a_step_by_how_incidents_begin_or_end_is_read_as_a_containing_step_is(client, kind):
+    request = save_request()
+    request["selection_recipe"]["predicates"] = [{"kind": kind, "activity": "Routed", "negate": True}]
+    accepted(client, request)
+
+    changes = [
+        (lambda step: step.update(activity=""), "activity"),
+        (lambda step: step.pop("activity"), "activity"),
+        (lambda step: step.update(negate=0), "negate"),
+        (lambda step: step.pop("negate"), "negate"),
+        (lambda step: step.update(target_activity="Closed"), "target_activity"),
+    ]
+    for change, field in changes:
+        for chosen in (kind, "contains_activity"):
+            step = {"kind": chosen, "activity": "Routed", "negate": True}
+            change(step)
+            request = save_request()
+            request["selection_recipe"]["predicates"] = [step]
+            refused(client, request, "invalid_request", f"selection_recipe.predicates.0.{field}")
+
+
 def test_another_schema_version_is_unsupported(client):
     request = save_request()
     request["schema_version"] = 2

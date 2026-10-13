@@ -215,6 +215,52 @@
         "anchor_policy"
       ]
     },
+    "StartsWithActivity": {
+      "title": "StartsWithActivity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "starts_with_activity"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "activity",
+        "negate"
+      ]
+    },
+    "EndsWithActivity": {
+      "title": "EndsWithActivity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "ends_with_activity"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "activity",
+        "negate"
+      ]
+    },
     "SelectionPredicate": {
       "title": "SelectionPredicate",
       "oneOf": [
@@ -226,6 +272,12 @@
         },
         {
           "$ref": "#/$defs/OpeningAttributeEquals"
+        },
+        {
+          "$ref": "#/$defs/StartsWithActivity"
+        },
+        {
+          "$ref": "#/$defs/EndsWithActivity"
         }
       ]
     },

@@ -40,7 +40,8 @@ export type CaseDictionaryId = string;
 export type PopulationId = string;
 export type ImplementationVersion = string;
 export type CaseId = string;
-export type SelectionPredicate = ContainsActivity | DirectlyFollows | OpeningAttributeEquals;
+export type SelectionPredicate =
+  ContainsActivity | DirectlyFollows | OpeningAttributeEquals | StartsWithActivity | EndsWithActivity;
 export type ContextPolicy = "incident.context.first_record_in_declared_order.v1";
 export type SavedComparison = SavedGroupComparison | SavedPeriodComparison;
 export type ComparisonId = string;
@@ -105,6 +106,16 @@ export interface OpeningAttributeEquals {
   value: string | null;
   negate: boolean;
   anchor_policy: "incident.context.first_record_in_declared_order.v1";
+}
+export interface StartsWithActivity {
+  kind: "starts_with_activity";
+  activity: string;
+  negate: boolean;
+}
+export interface EndsWithActivity {
+  kind: "ends_with_activity";
+  activity: string;
+  negate: boolean;
 }
 export interface SavedGroupComparison {
   kind: "group";

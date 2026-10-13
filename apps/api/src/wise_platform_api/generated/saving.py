@@ -107,6 +107,24 @@ class OpeningAttributeEquals(BaseModel):
     anchor_policy: Literal['incident.context.first_record_in_declared_order.v1']
 
 
+class StartsWithActivity(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['starts_with_activity']
+    activity: constr(min_length=1)
+    negate: bool
+
+
+class EndsWithActivity(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['ends_with_activity']
+    activity: constr(min_length=1)
+    negate: bool
+
+
 class RowId(RootModel[constr(pattern=r'^row\.v1:sha256:[a-f0-9]{64}$')]):
     root: constr(pattern=r'^row\.v1:sha256:[a-f0-9]{64}$') = Field(..., title='RowId')
 
@@ -412,11 +430,21 @@ class PopulationSupport(BaseModel):
 
 
 class SelectionPredicate(
-    RootModel[ContainsActivity | DirectlyFollows | OpeningAttributeEquals]
+    RootModel[
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+    ]
 ):
-    root: ContainsActivity | DirectlyFollows | OpeningAttributeEquals = Field(
-        ..., title='SelectionPredicate'
-    )
+    root: (
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+    ) = Field(..., title='SelectionPredicate')
 
 
 class FrozenSelectionRecipe(BaseModel):

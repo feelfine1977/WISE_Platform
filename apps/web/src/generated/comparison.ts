@@ -25,7 +25,8 @@ export type ContextPolicy = "incident.context.first_record_in_declared_order.v1"
 export type GroupComparisonDefinition = TwoNamedGroups | SelectionPartition;
 export type ComparisonName = string;
 export type NamedGroupDefinition = PredicateGroupDefinition | ExplicitCaseGroupDefinition;
-export type SelectionPredicate = ContainsActivity | DirectlyFollows | OpeningAttributeEquals;
+export type SelectionPredicate =
+  ContainsActivity | DirectlyFollows | OpeningAttributeEquals | StartsWithActivity | EndsWithActivity;
 export type ComparisonId = string;
 export type ParentFixedContext = FixedParentContext | VaryingParentContext | UnavailableParentContext;
 export type Share = AvailableShare | UnavailableShare;
@@ -87,6 +88,16 @@ export interface OpeningAttributeEquals {
   value: string | null;
   negate: boolean;
   anchor_policy: "incident.context.first_record_in_declared_order.v1";
+}
+export interface StartsWithActivity {
+  kind: "starts_with_activity";
+  activity: string;
+  negate: boolean;
+}
+export interface EndsWithActivity {
+  kind: "ends_with_activity";
+  activity: string;
+  negate: boolean;
 }
 export interface ExplicitCaseGroupDefinition {
   kind: "explicit_case_ids";

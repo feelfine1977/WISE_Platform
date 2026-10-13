@@ -124,12 +124,40 @@ class OpeningAttributeEquals(BaseModel):
     anchor_policy: Literal['incident.context.first_record_in_declared_order.v1']
 
 
-class SelectionPredicate(
-    RootModel[ContainsActivity | DirectlyFollows | OpeningAttributeEquals]
-):
-    root: ContainsActivity | DirectlyFollows | OpeningAttributeEquals = Field(
-        ..., title='SelectionPredicate'
+class StartsWithActivity(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
     )
+    kind: Literal['starts_with_activity']
+    activity: constr(min_length=1)
+    negate: bool
+
+
+class EndsWithActivity(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['ends_with_activity']
+    activity: constr(min_length=1)
+    negate: bool
+
+
+class SelectionPredicate(
+    RootModel[
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+    ]
+):
+    root: (
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+    ) = Field(..., title='SelectionPredicate')
 
 
 class UtcInstant(RootModel[AwareDatetime]):

@@ -76,6 +76,18 @@ def follows(source, target, negate=False):
     return {"kind": "directly_follows", "source_activity": source, "target_activity": target, "negate": negate}
 
 
+def contains(activity, negate=False):
+    return {"kind": "contains_activity", "activity": activity, "negate": negate}
+
+
+def begins(activity, negate=False):
+    return {"kind": "starts_with_activity", "activity": activity, "negate": negate}
+
+
+def ends(activity, negate=False):
+    return {"kind": "ends_with_activity", "activity": activity, "negate": negate}
+
+
 @pytest.fixture
 def client(tmp_path):
     with TestClient(create_app(static_dir=tmp_path / "unbuilt")) as active:
@@ -117,6 +129,12 @@ def explicit(target, reference, names=("Group A", "Group B")):
     return {"mode": "two_named_groups",
             "target": {"name": names[0], "definition": {"kind": "explicit_case_ids", "case_ids": list(target)}},
             "reference": {"name": names[1], "definition": {"kind": "explicit_case_ids", "case_ids": list(reference)}}}
+
+
+def by_steps(target, reference, names=("Group A", "Group B")):
+    return {"mode": "two_named_groups",
+            "target": {"name": names[0], "definition": {"kind": "predicates", "predicates": list(target)}},
+            "reference": {"name": names[1], "definition": {"kind": "predicates", "predicates": list(reference)}}}
 
 
 def partition(predicates, side="kept"):
@@ -251,6 +269,51 @@ def test_predicate_groups_overlap_within_a_listed_parent(client, workspace_id, b
     assert answer["pair_support"]["neither"] == support("C", records=2)
 
 
+def test_a_group_of_incidents_that_end_with_an_activity_against_those_that_do_not(client, workspace_id, base):
+    # A and C end with Resolved, B ends with Assigned and E with Opened; D's order is not known.
+    request = comparison(workspace_id, base, by_steps([ends("Resolved")], [ends("Resolved", True)]))
+    answer = answered(client.post(GROUPS, json=request), request, "group_comparison_answer")
+    assert answer["definition"] == request["definition"]
+    assert answer["target"]["included"] == support("A", "C", records=4)
+    assert answer["target"]["excluded"] == support("B", "E", records=3)
+    assert answer["reference"]["included"] == support("B", "E", records=3)
+    assert answer["reference"]["excluded"] == support("A", "C", records=4)
+    assert answer["target"]["unevaluable"] == answer["reference"]["unevaluable"] == support("D", records=2)
+    assert answer["pair_support"] == {"overlap": NONE, "target_only": support("A", "C", records=4),
+                                      "reference_only": support("B", "E", records=3), "neither": NONE,
+                                      "unevaluable": support("D", records=2)}
+    # The kept and the removed side of the same step are the same two groups.
+    sides = comparison(workspace_id, base, partition([ends("Resolved")]), revision=3)
+    split = answered(client.post(GROUPS, json=sides), sides, "group_comparison_answer")
+    assert split["target"]["included"] == answer["target"]["included"]
+    assert split["reference"]["included"] == answer["reference"]["included"]
+    assert split["pair_support"]["unevaluable"] == support("D", records=2)
+
+
+def test_a_group_of_incidents_that_begin_with_an_activity_against_those_that_end_with_it(client, workspace_id, base):
+    # A, B, C and E begin with Opened; only E, of one record, also ends with it. D's order is not known.
+    request = comparison(workspace_id, base, by_steps([begins("Opened")], [ends("Opened")]))
+    answer = answered(client.post(GROUPS, json=request), request, "group_comparison_answer")
+    assert answer["target"]["included"] == support("A", "B", "C", "E", records=7)
+    assert answer["target"]["excluded"] == NONE
+    assert answer["reference"]["included"] == support("E", records=1)
+    assert answer["pair_support"] == {"overlap": support("E", records=1),
+                                      "target_only": support("A", "B", "C", records=6), "reference_only": NONE,
+                                      "neither": NONE, "unevaluable": support("D", records=2)}
+    # The map of the first group counts the same incidents as starts and ends.
+    graph = client.post(GRAPH, json=envelope("process_graph_request", "graph-1", 2, workspace_id=workspace_id,
+                                             identity=answer["target"]["identity"]))
+    assert graph.status_code == 200, graph.text
+    boundaries = {node["label"]: (node["metrics"]["starts"], node["metrics"]["ends"])
+                  for node in graph.json()["graph"]["nodes"]}
+    assert boundaries == {"Opened": (4, 1), "Assigned": (0, 1), "Resolved": (0, 2)}
+    opposite = comparison(workspace_id, base, by_steps([begins("Opened", True)], [ends("Opened")]), revision=3)
+    none = answered(client.post(GROUPS, json=opposite), opposite, "group_comparison_answer")
+    assert none["target"]["included"] == NONE
+    assert none["target"]["unevaluable"] == support("D", records=2)
+    assert none["comparison_id"] != answer["comparison_id"]
+
+
 def test_an_empty_group_is_answered_as_empty_and_an_empty_parent_as_no_incident(client, workspace_id, base):
     request = comparison(workspace_id, base, explicit(["A"], []))
     answer = answered(client.post(GROUPS, json=request), request, "group_comparison_answer")
@@ -371,6 +434,27 @@ def test_group_comparisons_refuse_what_cannot_be_evaluated(client, workspace_id,
     body = refused(client.post(GROUPS, json=request), "compare_groups", code, field)
     if code != "invalid_request" or field != "query_revision":
         assert (body["request_id"], body["query_revision"]) == ("compare-2", 2)
+
+
+@pytest.mark.parametrize("step", [begins, ends])
+@pytest.mark.parametrize(("change", "field"), [
+    (lambda predicate: predicate.update(activity=""), "activity"),
+    (lambda predicate: predicate.update(activity=None), "activity"),
+    (lambda predicate: predicate.pop("negate"), "negate"),
+    (lambda predicate: predicate.update(negate=0), "negate"),
+    (lambda predicate: predicate.update(source_activity="Opened"), "source_activity"),
+])
+def test_a_group_by_a_beginning_or_ending_step_is_checked_as_one_by_a_containing_step_is(
+        client, workspace_id, base, step, change, field):
+    for kind in (step, contains):
+        predicate = kind("Opened")
+        change(predicate)
+        request = comparison(workspace_id, base, by_steps([predicate], [contains("Resolved")]))
+        refused(client.post(GROUPS, json=request), "compare_groups", "invalid_predicate",
+                "definition.target.definition.predicates.0." + field)
+        sides = comparison(workspace_id, base, partition([predicate]))
+        refused(client.post(GROUPS, json=sides), "compare_groups", "invalid_predicate",
+                "definition.predicates.0." + field)
 
 
 def test_a_selected_identity_is_not_a_base_for_a_comparison(client, workspace_id, base):

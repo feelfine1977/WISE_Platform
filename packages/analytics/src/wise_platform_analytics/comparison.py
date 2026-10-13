@@ -11,8 +11,9 @@ import re
 from .comparison_profiles import opening_context_profile, population_support
 from .mapping import ImportRefusal
 from .preparation import PreparedData, content_identity
-from .selection import (OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, OpeningAttributeEquals,
-                        SelectionError, case_ids, predicate_descriptor, select_cases)
+from .selection import (OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
+                        OpeningAttributeEquals, SelectionError, StartsWithActivity, case_ids,
+                        predicate_descriptor, select_cases)
 from .time_formats import TimeInterpretation, iso_local, iso_utc, parse_format, validate_time_policy
 
 _UTC = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z")
@@ -85,6 +86,9 @@ def _predicates(value: object, field: str) -> tuple[tuple, list[dict[str, object
         if kind == "contains_activity":
             d = _closed(raw, {"kind", "activity", "negate"}, at, "invalid_predicate")
             p = ContainsActivity(d["activity"], d["negate"])
+        elif kind in ("starts_with_activity", "ends_with_activity"):
+            d = _closed(raw, {"kind", "activity", "negate"}, at, "invalid_predicate")
+            p = (StartsWithActivity if kind == "starts_with_activity" else EndsWithActivity)(d["activity"], d["negate"])
         elif kind == "directly_follows":
             d = _closed(raw, {"kind", "source_activity", "target_activity", "negate"}, at, "invalid_predicate")
             p = DirectlyFollows(d["source_activity"], d["target_activity"], d["negate"])

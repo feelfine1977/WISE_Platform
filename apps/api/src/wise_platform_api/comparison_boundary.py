@@ -94,6 +94,8 @@ _PREDICATES = _by(
         "contains_activity": "ContainsActivity",
         "directly_follows": "DirectlyFollows",
         "opening_attribute_equals": "OpeningAttributeEquals",
+        "starts_with_activity": "StartsWithActivity",
+        "ends_with_activity": "EndsWithActivity",
     },
 )
 _PERIODS = ("target", _period_member)
@@ -101,7 +103,16 @@ _PERIODS = ("target", _period_member)
 _UNIONS: dict[str, tuple[str, Callable[[Mapping[str, object]], str | None]]] = {
     **{member: _GROUP_DEFINITIONS for member in ("TwoNamedGroups", "SelectionPartition")},
     **{member: _NAMED_GROUPS for member in ("PredicateGroupDefinition", "ExplicitCaseGroupDefinition")},
-    **{member: _PREDICATES for member in ("ContainsActivity", "DirectlyFollows", "OpeningAttributeEquals")},
+    **{
+        member: _PREDICATES
+        for member in (
+            "ContainsActivity",
+            "DirectlyFollows",
+            "OpeningAttributeEquals",
+            "StartsWithActivity",
+            "EndsWithActivity",
+        )
+    },
     **{member: _PERIODS for member in ("UtcPeriodComparisonDefinition", "WallPeriodComparisonDefinition")},
 }
 

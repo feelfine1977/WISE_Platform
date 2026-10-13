@@ -60,6 +60,14 @@ def opening(column, value, negate=False):
             "anchor_policy": "incident.context.first_record_in_declared_order.v1"}
 
 
+def begins(activity, negate=False):
+    return {"kind": "starts_with_activity", "activity": activity, "negate": negate}
+
+
+def ends(activity, negate=False):
+    return {"kind": "ends_with_activity", "activity": activity, "negate": negate}
+
+
 @pytest.fixture
 def client(tmp_path):
     with TestClient(create_app(static_dir=tmp_path / "unbuilt")) as active:
@@ -236,6 +244,89 @@ def test_opening_context_missing_and_literal_unknown_are_different_values(client
     assert (missing["kept"], missing["removed"], missing["unevaluable"]) == (
         support(["B"], 2), support(["A", "C"], 6), support(["D"], 2))
     assert (literal["kept"], literal["unevaluable"]) == (support([], 0), support(["D"], 2))
+
+
+# Beginning and ending ---------------------------------------------------------------------
+
+
+def test_incidents_that_begin_with_an_activity_are_those_whose_first_record_carries_it(client, workspace_id, base):
+    answer = selected(client, workspace_id, base, [begins("Opened")])
+
+    # D's order is not known, so its first record is not known either.
+    assert answer["kept"] == support(["A", "B", "C"], 8)
+    assert answer["removed"] == support([], 0)
+    assert answer["unevaluable"] == support(["D"], 2)
+    assert answer["predicate_results"] == [{"predicate": begins("Opened"), "kept": support(["A", "B", "C"], 8),
+                                            "removed": support([], 0), "unevaluable": support(["D"], 2)}]
+    opposite = selected(client, workspace_id, base, [begins("Opened", negate=True)], revision=3)
+    assert (opposite["kept"], opposite["removed"], opposite["unevaluable"]) == (
+        support([], 0), support(["A", "B", "C"], 8), support(["D"], 2))
+    assert opposite["identity"]["population_id"] != answer["identity"]["population_id"]
+    # Assigned is recorded in A, C and D, but no incident begins with it.
+    assigned = selected(client, workspace_id, base, [begins("Assigned")], revision=4)
+    assert (assigned["kept"], assigned["removed"]) == (support([], 0), support(["A", "B", "C"], 8))
+
+
+def test_incidents_that_end_with_an_activity_are_those_whose_last_record_carries_it(client, workspace_id, base):
+    answer = selected(client, workspace_id, base, [ends("Resolved")])
+
+    assert (answer["kept"], answer["removed"], answer["unevaluable"]) == (
+        support(["A", "B"], 5), support(["C"], 3), support(["D"], 2))
+    opposite = selected(client, workspace_id, base, [ends("Resolved", negate=True)], revision=3)
+    assert (opposite["kept"], opposite["removed"], opposite["unevaluable"]) == (
+        support(["C"], 3), support(["A", "B"], 5), support(["D"], 2))
+    # Assigned is recorded in A, C and D, but only C ends with it.
+    assigned = selected(client, workspace_id, base, [ends("Assigned")], revision=4)
+    assert (assigned["kept"], assigned["removed"]) == (support(["C"], 3), support(["A", "B"], 5))
+
+
+def test_a_beginning_and_an_ending_step_answer_their_conjunction_with_the_other_steps(client, workspace_id, base):
+    answer = selected(client, workspace_id, base, [begins("Opened"), ends("Resolved"), contains("Assigned")])
+
+    # A step that removes D decides over the two that cannot evaluate it.
+    assert (answer["kept"], answer["removed"], answer["unevaluable"]) == (
+        support(["A"], 3), support(["B", "C"], 5), support(["D"], 2))
+    decided = selected(client, workspace_id, base, [begins("Opened"), contains("Resolved")], revision=3)
+    assert (decided["kept"], decided["removed"], decided["unevaluable"]) == (
+        support(["A", "B"], 5), support(["C", "D"], 5), support([], 0))
+
+
+def test_beginning_and_ending_keep_as_many_incidents_as_the_map_counts_starts_and_ends(client, workspace_id, base):
+    populations = [(base["identity"], None)]
+    for index, predicates in enumerate(([contains("Assigned")], [ends("Resolved")], [contains("Assigned", True)])):
+        answer = selected(client, workspace_id, base, predicates, revision=3 + index)
+        populations.append((answer["identity"], answer["kept"]["case_ids"]))
+    assert [case_ids for _, case_ids in populations] == [None, ["A", "C", "D"], ["A", "B"], ["B"]]
+
+    counted = []
+    for identity, case_ids in populations:
+        graph = graph_of(client, workspace_id, identity)
+        assert graph["meta"]["boundary_policy"] == "incident.boundary.raw_labeled_start_end.v1"
+        for node in graph["nodes"]:
+            for step, metric in ((begins, "starts"), (ends, "ends")):
+                answer = selected(client, workspace_id, base, [step(node["label"])], parent=case_ids, revision=9)
+                assert answer["kept"]["case_count"] == node["metrics"][metric], (case_ids, node["label"], metric)
+                counted.append(answer["kept"]["case_count"])
+    # Every incident whose order is known begins once and ends once: 3 + 2 + 2 + 1 of them.
+    assert sum(counted) == 2 * (3 + 2 + 2 + 1)
+
+
+@pytest.mark.parametrize("step", [begins, ends])
+@pytest.mark.parametrize("change, field", [
+    (lambda predicate: predicate.update(activity=""), "predicates.0.activity"),
+    (lambda predicate: predicate.update(activity=7), "predicates.0.activity"),
+    (lambda predicate: predicate.pop("activity"), "predicates.0.activity"),
+    (lambda predicate: predicate.update(negate="false"), "predicates.0.negate"),
+    (lambda predicate: predicate.pop("negate"), "predicates.0.negate"),
+    (lambda predicate: predicate.update(target_activity="Resolved"), "predicates.0.target_activity"),
+])
+def test_a_beginning_or_ending_step_is_checked_as_a_containing_step_is(client, workspace_id, base, step, change, field):
+    for kind in (step, contains):
+        predicate = kind("Opened")
+        change(predicate)
+        request = selection_request(workspace_id, base["identity"], [predicate])
+
+        refused(client.post(SELECT, json=request), "select_cases", "invalid_predicate", field)
 
 
 # Refusals ---------------------------------------------------------------------------------
