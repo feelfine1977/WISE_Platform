@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-import math
 from typing import Protocol
 from collections.abc import Mapping, Sequence
 
@@ -40,13 +39,6 @@ class TimedPreparation(Protocol):
 def _duration(later: datetime, earlier: datetime) -> timedelta:
     value = later - earlier
     if value < timedelta(0):
-        raise CaseTimeError("inconsistent_sequence", "The recorded history is not in its declared ascending time order.")
-    return value
-
-
-def _hours(later: datetime, earlier: datetime) -> float:
-    value = _duration(later, earlier).total_seconds() / 3600
-    if not math.isfinite(value):
         raise CaseTimeError("inconsistent_sequence", "The recorded history is not in its declared ascending time order.")
     return value
 
