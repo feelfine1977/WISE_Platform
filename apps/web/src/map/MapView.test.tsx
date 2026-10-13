@@ -168,7 +168,11 @@ describe("the map of the kept incidents", () => {
     const map = await openMap(app, [closed]);
     fireEvent.contextMenu(nodeOf(map, closed));
     const items = screen.getAllByRole("menuitem");
-    expect(items.map((item) => item.textContent)).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it"]);
+    // The application's steps come first; after them what the map library does on the picture by itself.
+    expect(items.slice(0, 2).map((item) => item.textContent)).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it"]);
+    expect(items.length).toBeGreaterThan(2);
+    // The library's own filters would look like a second selection and are not offered.
+    expect(items.map((item) => item.textContent).filter((text) => /^(Filter|Exclude)/.test(text ?? ""))).toEqual([]);
     fireEvent.click(items[1]);
     expect(app.selecting.selections[1].request.predicates).toEqual([contains(closed, true)]);
   });

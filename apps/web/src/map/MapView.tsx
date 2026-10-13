@@ -35,6 +35,9 @@ export function openingDetail(activities: number, paths = 0): AbstractOptions | 
   return undefined;
 }
 
+/** The actions of the map library's own menu that change only the picture and that the map carries out by itself. */
+const LIBRARY_ACTIONS = new Set(["paths", "clear-focus", "collapse", "expand"]);
+
 type Arrangement = { phase: "arranging" } | { phase: "ready"; positions: Positions } | { phase: "unavailable" };
 
 /**
@@ -92,12 +95,23 @@ export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps
   const element = selectedElement(shown.graph, selection);
   const choices = stepChoices(element);
 
+  /**
+   * The actions menu of an element: the steps that keep or remove whole incidents, which are the
+   * application's own, and after them what the map library does by itself on the picture (the paths
+   * of an activity, groups, the focus). The library's own filters and the actions that need a host
+   * are left out: a filter of the picture would look like a second selection.
+   */
   const menu = useCallback(
-    (target: MenuTarget): MenuAction[] | false => {
-      if ((target.kind !== "node" && target.kind !== "edge") || waitingFor) return false;
-      const offered = stepChoices(elementOf(shown.graph, target.kind, target.id));
-      if (offered.length === 0) return false;
-      return offered.map((choice, index) => ({ id: `keep-${index}`, label: choice.label, group: "filter", run: () => onStep(choice.step) }));
+    (target: MenuTarget, library: MenuAction[]): MenuAction[] | false => {
+      const pictured = library.filter((action) => LIBRARY_ACTIONS.has(action.id));
+      const steps =
+        (target.kind === "node" || target.kind === "edge") && !waitingFor
+          ? stepChoices(elementOf(shown.graph, target.kind, target.id)).map(
+              (choice, index): MenuAction => ({ id: `keep-${index}`, label: choice.label, group: "filter", run: () => onStep(choice.step) }),
+            )
+          : [];
+      const actions = [...steps, ...pictured];
+      return actions.length === 0 ? false : actions;
     },
     [shown.graph, onStep, waitingFor],
   );
@@ -117,6 +131,9 @@ export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps
             fitView={shown.steps.length === 0}
             controls
             legend
+            minimap
+            pathList
+            nodesDraggable
             locale="en"
             selection={selection}
             onSelect={setSelection}
