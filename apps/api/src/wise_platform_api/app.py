@@ -17,6 +17,7 @@ from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
 from .population_views import PopulationViews, ViewReply
+from .rule_groups import RuleGroups
 from .saving import Saving, SavingReply
 from .selections import SelectionReply, Selections
 from .start_trends import StartTrends
@@ -54,6 +55,7 @@ def create_app(
     views = PopulationViews(imports)
     case_lists = CaseLists(imports)
     start_trends = StartTrends(imports)
+    rule_group_views = RuleGroups(imports)
     comparisons = Comparisons(imports)
     expectations = Expectations(imports)
     saving = Saving(imports)
@@ -144,6 +146,11 @@ def create_app(
     @application.post("/api/investigations/opening-context")
     async def opening_context(request: Request) -> JSONResponse:
         return _sent_view(await run_in_threadpool(views.opening_context, await request.body()))
+
+    @application.post("/api/investigations/rule-groups")
+    async def rule_groups(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(rule_group_views.rule_groups, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/variants")
     async def variants(request: Request) -> JSONResponse:
