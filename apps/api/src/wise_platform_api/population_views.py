@@ -143,7 +143,9 @@ class PopulationViews:
                 "identity.population_id",
             )
         parent_ids = selection.parent.case_ids
-        parent_identity = base if parent_ids == everything else select_cases(prepared, (), parent_ids).identity_dict()
+        # The parent of a held selection is the frozen parent the selection named, also when it holds
+        # every incident: its identity is that of the selection without steps, not of the preparation.
+        parent_identity = select_cases(prepared, (), parent_ids).identity_dict()
         return prepared, Population(selection.identity_dict(), selection.kept.case_ids, parent_identity, parent_ids)
 
 

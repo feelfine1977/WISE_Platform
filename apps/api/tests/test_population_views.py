@@ -148,7 +148,14 @@ def test_a_selection_is_compared_with_the_parent_it_was_made_from(client, worksp
     assert response.status_code == 200, response.text
     answer = response.json()
     assert answer["identity"] == selected
-    assert answer["parent_identity"] == identity
+    # The parent is the frozen parent the selection was made from: the selection without steps over
+    # the same incidents, which is another population than the preparation's own.
+    frozen_parent = select_cases(prepare(LOG, DIALECT, mapping(), policies("iso8601", None), True).preparation, []).identity_dict()
+    assert answer["parent_identity"] == frozen_parent
+    assert frozen_parent["population_id"] != identity["population_id"]
+    assert {name: value for name, value in frozen_parent.items() if name != "population_id"} == {
+        name: value for name, value in identity.items() if name != "population_id"
+    }
     assert answer["opening_context"]["population"]["case_count"] == 2
     shown = categories(answer)
     assert shown[("value", "Unknown")]["population"] == {"count": 1, "share": 0.5, "denominator": 2}
