@@ -181,6 +181,7 @@ export class ImportedInvestigationCoordinator {
   private asked: AskedQuestion | null = null;
   private caseRequest: AbortController | null = null;
   private selectionRequest: AbortController | null = null;
+  private parentGraphRequest: AbortController | null = null;
   private viewTarget: ViewTarget | null = null;
   /** The query revision the views of the target were first asked under; a retry asks under it again. */
   private viewRevision = 0;
@@ -470,6 +471,7 @@ export class ImportedInvestigationCoordinator {
       // Without steps every incident of the parent is kept: this is the map of the whole parent.
       parentGraph: this.state.parentGraph ?? (history.present.length === 0 ? graph : null),
     });
+    if (this.state.parentGraph === null) this.requestParentGraph(request, history, selected);
     this.followSelection(selected);
     // The views follow the selection shown; the population's own views stand for a selection with the same identity.
     if (!sameJson(selected.identity, this.viewTarget?.identity)) this.requestViews(selected);
@@ -495,6 +497,51 @@ export class ImportedInvestigationCoordinator {
   private cancelSelectionRequest(): void {
     this.selectionRequest?.abort();
     this.selectionRequest = null;
+    this.parentGraphRequest?.abort();
+    this.parentGraphRequest = null;
+  }
+
+  /**
+   * Asks for the map of the whole parent when a question starts with steps, as a reopened one does:
+   * the map of the kept incidents is arranged from the parent's map, so without it nothing is drawn.
+   * The parent is the frozen parent the selection names, never the whole source in its place.
+   */
+  private requestParentGraph(asked: ProcessGraphRequest, history: StepHistory, selected: SelectionAnswer): void {
+    const revision = asked.query_revision;
+    const request: ProcessGraphRequest = {
+      schema_version: 1,
+      message_type: "process_graph_request",
+      request_id: `parent-graph-${revision}`,
+      query_revision: revision,
+      workspace_id: asked.workspace_id,
+      identity: selected.parent_identity,
+    };
+    this.parentGraphRequest?.abort();
+    const controller = new AbortController();
+    this.parentGraphRequest = controller;
+    const receive = (outcome: SelectionOutcome<ProcessGraphAnswer>): void => {
+      if (revision !== this.revision || this.parentGraphRequest !== controller) return;
+      this.parentGraphRequest = null;
+      if (this.state.parentGraph !== null) return;
+      const answered =
+        outcome.ok &&
+        outcome.answer.request_id === request.request_id &&
+        outcome.answer.query_revision === revision &&
+        outcome.answer.workspace_id === request.workspace_id &&
+        sameJson(outcome.answer.graph.meta.selected_case_ids, selected.parent.case_ids) &&
+        sameJson(outcome.answer.identity, selected.parent_identity);
+      if (!outcome.ok) {
+        const checked = checkSelectionProblem(request, outcome.problem);
+        this.failSelection(revision, history, checked.ok ? outcome.problem : checked.problem);
+        return;
+      }
+      if (!answered) {
+        this.failSelection(revision, history, { kind: "unsupported_reply", detail: "The map of the parent names another request or population." });
+        return;
+      }
+      this.publish({ ...this.state, parentGraph: outcome.answer.graph });
+    };
+    this.selectionClient.processGraph(request, controller.signal).then(receive, () => receive(selectionUnreachable));
   }
 
   private receivePopulation(request: OpenPopulationRequest, asked: AskedQuestion, outcome: ImportOutcome<ImportedPopulationAnswer>): void {
