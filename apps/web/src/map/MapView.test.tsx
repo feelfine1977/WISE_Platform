@@ -414,7 +414,11 @@ describe("the map of the kept incidents", () => {
       };
     };
     expect(openingDetail(MANY_ACTIVITIES)).toBeUndefined();
-    expect(openingDetail(40)).toEqual({ activityDetail: 0.5, pathDetail: 0.5 });
+    // Many activities: the most frequent ones, and of their paths a main flow however many paths there are.
+    expect(openingDetail(40)).toEqual({ activityDetail: 0.5, pathDetail: 1 });
+    expect(openingDetail(40, 100)).toEqual({ activityDetail: 0.5, pathDetail: 30 / 100 });
+    expect(openingDetail(22, 431)).toEqual({ activityDetail: 20 / 22, pathDetail: 30 / 431 });
+    expect(openingDetail(22, 25)).toEqual({ activityDetail: 20 / 22, pathDetail: 1 });
     // Few activities with many paths between them: every activity, and the most frequent paths first.
     expect(openingDetail(3, 3)).toBeUndefined();
     expect(openingDetail(8, MANY_PATHS)).toBeUndefined();

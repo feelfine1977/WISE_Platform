@@ -474,4 +474,5 @@
 .step > .choice,
 .checks > .choice,
 .report > button { justify-self: start; }
+.map-flows { margin: 0; padding: var(--space-2) var(--space-4) 0; }
 .map-arrange { display: flex; align-items: baseline; gap: var(--space-2); padding: var(--space-2) var(--space-4); }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { begins, contains, ends, follows, followingOpened, parent, suppliedGraph, support } from "../test/selections";
-import { activityTimeLines, boundaryLine, coverageRows, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
+import { activityTimeLines, boundaryLine, coverageRows, flowsLine, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
 
 describe("the words of a step", () => {
   it("says what each kind of step keeps", () => {
@@ -51,7 +51,7 @@ describe("the words of the map", () => {
       "Paths count passages and distinct incidents of the 1 incident whose order of records can be evaluated.",
       "1 incident with 1 record is not evaluable for paths; 0 records have no activity label.",
       "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
-      "Start and End are added by the map: a flow leaves Start for every activity incidents begin with and enters End from every activity they end with, each with that number of incidents. They are always shown.",
+      "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. Start and End are always shown, each with its strongest flow; the other flows follow the Paths detail and are all drawn when every path is.",
       "Lag: the median of elapsed hours between the two records of a path.",
       "Measures: the legend on the map, shown whole, switches what the map writes. " +
         "Frequency: the incidents on every path and activity. " +
@@ -66,6 +66,14 @@ describe("the words of the map", () => {
     expect(boundaryLine("start", "Eröffnet", 12345)).toBe("12,345 incidents on the map begin with “Eröffnet”.");
     expect(boundaryLine("end", "Geschlossen", 1)).toBe("1 incident on the map ends with “Geschlossen”.");
     expect(boundaryLine("end", "Geschlossen", 2)).toBe("2 incidents on the map end with “Geschlossen”.");
+    // Flows that are not drawn are said with the map's own numbers; nothing is said while all are drawn.
+    expect(flowsLine({ flows: 44, drawn: 44 }, 0)).toBeNull();
+    expect(flowsLine({ flows: 44, drawn: 20 }, 254)).toBe(
+      "Not drawn at this detail: 24 of the 44 flows from Start and to End. Each carries fewer than 254 incidents, the number on the weakest path the Paths detail asks for. " +
+        "Start, End and the strongest flow of each stay. Move the Paths slider to draw more; the menu of an activity still offers the incidents that begin or end with it.",
+    );
+    expect(flowsLine({ flows: 3, drawn: 2 }, 1)).toContain("1 of the 3 flows from Start and to End. It carries fewer than 1 incident,");
+    expect(flowsLine({ flows: 5, drawn: 2 }, Number.POSITIVE_INFINITY)).toContain("The Paths detail asks for no path.");
   });
 
   it("says the two times of an activity in hours below two days and in days from there on, with their passages", () => {

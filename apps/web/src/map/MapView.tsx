@@ -11,29 +11,30 @@ import { countOf } from "../data/wording";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
 import { elementOf, selectedElement, stepChoices } from "./elements";
-import { toFlowGraph } from "./graph";
+import { flowCoverage, leastFlowIncidents, toFlowGraph } from "./graph";
 import { askedFor, OPENING_MEASURE } from "./measures";
-import { activityTimeLines, boundaryLine, coverageRows, mapCaption } from "./wording";
+import { activityTimeLines, boundaryLine, coverageRows, flowsLine, mapCaption } from "./wording";
 
 /** The layout runs in the library's workers, so that the page stays responsive while it runs. */
 const workers = { elkWorkerUrl, dagreWorkerUrl };
 /** Above this many activities the map opens on the most frequent ones; its detail panel shows the rest. */
 export const MANY_ACTIVITIES = 20;
-const OPENING_PATHS = 0.5;
 /** Above this many paths the map opens on its most frequent ones, so that the main flow can be read; its detail panel shows the rest. */
 export const MANY_PATHS = 30;
-/** How many paths for each activity such a map opens on. */
+/** How many paths for each shown activity such a map opens on. */
 const OPENING_PATHS_PER_ACTIVITY = 1.5;
 
 /**
- * Where the detail of a map of this many activities and paths opens: everything, the most frequent
- * activities, or every activity with its most frequent paths. Nothing is left out of the counts:
- * the detail panel says how much is shown and shows the rest.
+ * Where the detail of a map of this many activities and paths opens: everything, or the most
+ * frequent activities with their most frequent paths, a main flow of about one and a half paths for
+ * each shown activity however many paths there are. Nothing is left out of the counts: the detail
+ * panel says how much is shown and shows the rest.
  */
 export function openingDetail(activities: number, paths = 0): AbstractOptions | undefined {
-  if (activities > MANY_ACTIVITIES) return { activityDetail: MANY_ACTIVITIES / activities, pathDetail: OPENING_PATHS };
-  if (paths > MANY_PATHS) return { activityDetail: 1, pathDetail: Math.ceil(activities * OPENING_PATHS_PER_ACTIVITY) / paths };
-  return undefined;
+  if (activities <= MANY_ACTIVITIES && paths <= MANY_PATHS) return undefined;
+  const shown = Math.min(activities, MANY_ACTIVITIES);
+  const main = Math.ceil(shown * OPENING_PATHS_PER_ACTIVITY);
+  return { activityDetail: shown / activities, pathDetail: paths > main ? main / paths : 1 };
 }
 
 /** The zoom from which the names on the activities are drawn. */
@@ -100,7 +101,19 @@ interface MapViewProps {
 /** The process map of the kept incidents, with the steps an activity, a path or a flow from Start or to End offers. */
 export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false }: MapViewProps) {
   const parent = useMemo(() => toFlowGraph(parentGraph), [parentGraph]);
-  const graph = useMemo(() => toFlowGraph(shown.graph), [shown.graph]);
+  const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
+  const least = useMemo(() => leastPaths(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
+  // The detail is held here, so that the paths share cannot go below the main flow.
+  const [detail, setDetail] = useState<AbstractOptions | undefined>(opening);
+  useEffect(() => setDetail(opening), [opening]);
+  const changeDetail = useCallback(
+    (next: AbstractOptions) => setDetail(least !== null && (next.pathDetail ?? 1) < least ? { ...next, pathDetail: least } : next),
+    [least],
+  );
+  // The flows from Start and to End follow the paths: a flow weaker than every path the detail asks for is not drawn.
+  const leastFlow = useMemo(() => leastFlowIncidents(shown.graph, detail?.pathDetail), [shown.graph, detail?.pathDetail]);
+  const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow), [shown.graph, leastFlow]);
+  const flowsNotDrawn = useMemo(() => flowsLine(flowCoverage(shown.graph, leastFlow), leastFlow), [shown.graph, leastFlow]);
   /**
    * How the map is arranged. By default it is arranged anew, compactly, for exactly what is shown:
    * the activities and paths the detail leaves out do not shape the picture. On request every
@@ -120,15 +133,6 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
    * a map that is drawn again for other incidents or arranged another way.
    */
   const [measure, setMeasure] = useState<Measure>(OPENING_MEASURE);
-  const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
-  const least = useMemo(() => leastPaths(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
-  // The detail is held here, so that the paths share cannot go below the main flow.
-  const [detail, setDetail] = useState<AbstractOptions | undefined>(opening);
-  useEffect(() => setDetail(opening), [opening]);
-  const changeDetail = useCallback(
-    (next: AbstractOptions) => setDetail(least !== null && (next.pathDetail ?? 1) < least ? { ...next, pathDetail: least } : next),
-    [least],
-  );
 
   // A new map is of other incidents: what was selected on the previous one is not carried over.
   useEffect(() => setSelection(emptySelection), [shown.graph]);
@@ -193,6 +197,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           />
         )}
       </div>
+      {flowsNotDrawn !== null && <p className="muted map-flows">{flowsNotDrawn}</p>}
       <label className="map-arrange">
         <input type="checkbox" checked={inPlace} onChange={(event) => setInPlace(event.target.checked)} />
         <span>
