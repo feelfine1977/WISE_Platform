@@ -30,15 +30,16 @@ interface ImportedInvestigationProps {
   mapInPlace?: boolean;
 }
 
-type View = InvestigationView;
+/** What the centre shows: the map, the incidents, or every path of the map in one list. */
+type View = InvestigationView | "paths";
 /** What the side panel shows beside the map or the table. */
 type Rail = "filters" | "context" | "patterns";
 
 /**
  * The investigation of an imported preparation in one screen: its facts and the selection of whole
  * incidents above; a side panel with how the incidents were opened and with their variants; the
- * kept incidents as a process map or as a table in the centre; and the complete history of one
- * kept incident beside them.
+ * kept incidents as a process map, as the list of every path of that map or as a table in the
+ * centre; and the complete history of one kept incident beside them.
  */
 export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = false }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
@@ -171,7 +172,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           onStay={() => coordinator.stay()}
         />
       )}
-      {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view} onClose={() => setSaveOpen(false)} />}
+      {/* A saved investigation opens on its map or on its incidents; the list of paths is the map's and is saved as the map. */}
+      {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view === "paths" ? "map" : view} onClose={() => setSaveOpen(false)} />}
       {state.saved && <SavedLine binding={state.saved} />}
       {answer && (
         <div className="selection-bar">
@@ -181,6 +183,9 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             </button>
             <button type="button" aria-pressed={view === "incidents"} onClick={() => setView("incidents")}>
               Incidents
+            </button>
+            <button type="button" aria-pressed={view === "paths"} onClick={() => setView("paths")}>
+              Paths
             </button>
           </div>
           <SelectionSteps
@@ -247,17 +252,18 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           </aside>
         )}
         <div className="main-column">
-          {answer && view === "map" && (
+          {/* The map and the list of its paths are one view of the kept incidents: its detail, its selection and its steps stay from one to the other. */}
+          {answer && view !== "incidents" && (
             <section className="map-pane" aria-labelledby="imported-map-title">
               <h3 id="imported-map-title" className="pane-title">
-                Map of the kept incidents
+                {view === "map" ? "Map of the kept incidents" : "Paths of the kept incidents"}
               </h3>
               {shown && state.parentGraph ? (
-                <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} waitingFor={waitingFor} initiallyInPlace={mapInPlace} />
+                <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} waitingFor={waitingFor} initiallyInPlace={mapInPlace} showing={view} />
               ) : state.selection.phase === "failed" ? (
-                <p className="working-text">The map is shown once the incidents are selected.</p>
+                <p className="working-text">{view === "map" ? "The map is shown once the incidents are selected." : "The paths are listed once the incidents are selected."}</p>
               ) : (
-                <p className="working-text">Selecting the incidents and drawing their map…</p>
+                <p className="working-text">{view === "map" ? "Selecting the incidents and drawing their map…" : "Selecting the incidents and listing their paths…"}</p>
               )}
             </section>
           )}

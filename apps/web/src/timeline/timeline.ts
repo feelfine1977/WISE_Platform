@@ -14,8 +14,8 @@ export type Clock = RecordTime["timestamp_kind"];
 
 /** One distinct recorded time and the records that carry exactly it. */
 export interface Mark {
-  /** The time in microseconds on the clock of the incident. */
-  time: number;
+  /** The time in microseconds on the clock of the incident, exact however far from today it lies. */
+  time: bigint;
   /** Where the mark lies on the strip: 0 at the earliest time, 1 at the latest. */
   position: number;
   /** The places in the list of the records at this time, in the declared order. */
@@ -57,11 +57,16 @@ export interface Timeline {
   strip: Strip;
   /** How many records have no readable time; they are on no mark. */
   untimedCount: number;
+  /** The places in the list of the records without a readable time, in the declared order. */
+  untimed: number[];
   /** Why no gap is computed for any record of the incident, or null when the gaps are computed. */
   withheld: "order" | "clocks" | null;
   /** The gap before each record, in the declared order; empty when the gaps are withheld. */
   gaps: Gap[];
-  /** The longest gap above zero, or null when there is none. */
+  /**
+   * The longest gap between two consecutive records, the first of equal ones. It is zero when every
+   * record follows the one before at the same recorded time; null when no gap is computed at all.
+   */
   longest: LongestGap | null;
 }
 
@@ -70,9 +75,10 @@ const written = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))
 /**
  * The supplied time of a record in microseconds on its own clock, or null when the record has no
  * readable time. A wall-clock time is read as it is written, without a zone, so its differences
- * are those of the recorded clock.
+ * are those of the recorded clock. The number is exact: two times a microsecond apart stay two
+ * times in any year, which a floating-point number of microseconds since 1970 does not keep.
  */
-export function microsecondsOf(record: RecordTime): number | null {
+export function microsecondsOf(record: RecordTime): bigint | null {
   if (record.timestamp_status !== "usable") return null;
   const text = record.timestamp_kind === "utc_instant" ? record.utc_instant : record.local_timestamp;
   const parts = text === null ? null : written.exec(text);
@@ -83,27 +89,33 @@ export function microsecondsOf(record: RecordTime): number | null {
   date.setUTCHours(Number(hour), Number(minute), Number(second));
   // A text that names no day of the calendar or no time of the day comes back as another one.
   if (date.toISOString().slice(0, 19) !== text.slice(0, 19)) return null;
-  return date.getTime() * 1000 + Number(fraction.padEnd(6, "0"));
+  return BigInt(date.getTime()) * BigInt(1000) + BigInt(Number(fraction.padEnd(6, "0")));
+}
+
+/** The time from one recorded time to a later one in microseconds, as a number for wording and drawing. */
+function between(earlier: bigint, later: bigint): number {
+  return Number(later - earlier);
 }
 
 /** The timeline of the records of one incident in their declared order, and of what the local service says about that order. */
 export function timelineOf(records: readonly RecordTime[], sequenceEvaluable: boolean): Timeline {
   const times = records.map(microsecondsOf);
-  const untimedCount = times.filter((time) => time === null).length;
+  const untimed = times.flatMap((time, place) => (time === null ? [place] : []));
+  const untimedCount = untimed.length;
   const clocks = new Set(records.filter((_, place) => times[place] !== null).map((record) => record.timestamp_kind));
   if (clocks.size > 1) {
-    return { clock: null, strip: { kind: "two_clocks" }, untimedCount, withheld: "clocks", gaps: [], longest: null };
+    return { clock: null, strip: { kind: "two_clocks" }, untimedCount, untimed, withheld: "clocks", gaps: [], longest: null };
   }
   const [clock = null] = clocks;
   const strip = stripOf(times);
   // Without a known order it is not known which record follows which, so no gap is a gap between two consecutive records.
-  if (!sequenceEvaluable) return { clock, strip, untimedCount, withheld: "order", gaps: [], longest: null };
+  if (!sequenceEvaluable) return { clock, strip, untimedCount, untimed, withheld: "order", gaps: [], longest: null };
   const gaps = times.map((time, place) => gapOf(place === 0 ? undefined : times[place - 1], time));
-  return { clock, strip, untimedCount, withheld: null, gaps, longest: longestOf(gaps) };
+  return { clock, strip, untimedCount, untimed, withheld: null, gaps, longest: longestOf(gaps) };
 }
 
-function stripOf(times: readonly (number | null)[]): Strip {
-  const recordsAt = new Map<number, number[]>();
+function stripOf(times: readonly (bigint | null)[]): Strip {
+  const recordsAt = new Map<bigint, number[]>();
   times.forEach((time, place) => {
     if (time === null) return;
     const records = recordsAt.get(time);
@@ -111,26 +123,27 @@ function stripOf(times: readonly (number | null)[]): Strip {
     else recordsAt.set(time, [place]);
   });
   // The marks stand in the order of their times; the records of a mark keep the order of the list.
-  const distinct = [...recordsAt.keys()].sort((one, other) => one - other);
+  const distinct = [...recordsAt.keys()].sort((one, other) => (one < other ? -1 : one > other ? 1 : 0));
   if (distinct.length === 0) return { kind: "no_time" };
   const earliest = distinct[0];
-  const microseconds = distinct[distinct.length - 1] - earliest;
-  const marks = distinct.map((time) => ({ time, position: microseconds === 0 ? 0 : (time - earliest) / microseconds, records: recordsAt.get(time) ?? [] }));
+  const microseconds = between(earliest, distinct[distinct.length - 1]);
+  const marks = distinct.map((time) => ({ time, position: microseconds === 0 ? 0 : between(earliest, time) / microseconds, records: recordsAt.get(time) ?? [] }));
   return marks.length === 1 ? { kind: "one_time", mark: marks[0] } : { kind: "axis", marks, microseconds };
 }
 
 /** The gap of a record with this time after a record with that time; `undefined` before the first record of the list. */
-function gapOf(before: number | null | undefined, time: number | null): Gap {
+function gapOf(before: bigint | null | undefined, time: bigint | null): Gap {
   if (before === undefined) return { kind: "first" };
   if (time === null) return { kind: "untimed", record: "this" };
   if (before === null) return { kind: "untimed", record: "before" };
-  return time < before ? { kind: "earlier", microseconds: before - time } : { kind: "elapsed", microseconds: time - before };
+  return time < before ? { kind: "earlier", microseconds: between(time, before) } : { kind: "elapsed", microseconds: between(before, time) };
 }
 
 function longestOf(gaps: readonly Gap[]): LongestGap | null {
   let longest: LongestGap | null = null;
   for (const [place, gap] of gaps.entries()) {
-    if (gap.kind !== "elapsed" || gap.microseconds === 0) continue;
+    // A gap of zero is a gap: two records at the same recorded time. Where every gap is zero, the first of them is the longest.
+    if (gap.kind !== "elapsed") continue;
     // Only a longer gap replaces the one found: of equal gaps the first in the declared order stays.
     if (longest === null || gap.microseconds > longest.microseconds) longest = { from: place - 1, to: place, microseconds: gap.microseconds, equalCount: 1 };
     else if (gap.microseconds === longest.microseconds) longest.equalCount += 1;

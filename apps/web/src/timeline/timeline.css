@@ -55,3 +55,6 @@
  */
 .history .history-entry:focus { outline: none; }
 .history-entry:focus > .history-body { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--space-1); }
+
+/* The records without a readable time: one line, each a way to its place in the list. */
+.timeline-untimed { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
