@@ -472,7 +472,7 @@ def test_reopening_a_revision_of_another_analytics_version_is_refused(client, qu
     assert "0.1.0" in body["message"] and "0.2.0" in body["message"]
 
 
-@pytest.mark.parametrize("damage", ["notes", "counts", "truncated", "not-json"])
+@pytest.mark.parametrize("damage", ["notes", "counts", "truncated", "not-json", "not-a-number", "half-a-character"])
 def test_a_hand_damaged_revision_is_refused_and_not_listed_as_saved(client, question, folder, damage):
     revision = saved(client, save_request(question))["revision"]
     [path] = revision_files(folder)
@@ -485,6 +485,12 @@ def test_a_hand_damaged_revision_is_refused_and_not_listed_as_saved(client, ques
         path.write_text(json.dumps(stored), encoding="utf-8")
     elif damage == "truncated":
         path.write_bytes(path.read_bytes()[:200])
+    elif damage == "not-a-number":
+        stored["results"]["selection"]["kept"]["record_count"] = float("nan")
+        path.write_text(json.dumps(stored), encoding="utf-8")
+    elif damage == "half-a-character":
+        stored["content"]["notes"] = "\ud800"
+        path.write_text(json.dumps(stored), encoding="utf-8")
     else:
         path.write_bytes(b"\xff\xfe")
     code = "selection_mismatch" if damage == "counts" else "malformed_saved_revision"
