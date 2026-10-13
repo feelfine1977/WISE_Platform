@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { UploadSourceMetadata } from "../generated/imports";
 import { caseSummaries, evidenceAnswer, importRefusal, inspectionAnswer, populationAnswer, workspaceId } from "../test/imports";
-import { exampleSourceRoute, httpImportClient, importContract, isCutoffProposal, routes, uploadQuery } from "./client";
+import { exampleSourceRoute, httpImportClient, importContract, routes, uploadQuery } from "./client";
 
 const populationRequest = {
   schema_version: 1,
@@ -149,16 +149,21 @@ describe("the cutoff proposal and the example bytes", () => {
     proposed_cutoff: "2026-04-14T07:31:00Z",
   };
 
-  it("accept a proposal on one clock and refuse one that mixes clocks, adds a field or proposes without a latest time", () => {
-    expect(isCutoffProposal(proposal)).toBe(true);
-    expect(isCutoffProposal({ ...proposal, last_usable_time: null, proposed_cutoff: null })).toBe(true);
-    expect(isCutoffProposal({ ...proposal, timestamp_kind: "wall_clock", last_usable_time: "2026-04-14T07:30:20.500000", proposed_cutoff: "2026-04-14T07:31:00" })).toBe(true);
-    expect(isCutoffProposal({ ...proposal, timestamp_kind: "wall_clock" })).toBe(false);
+  it("accept a proposal on one clock and refuse one that mixes clocks, adds or drops a field, proposes without a latest time or writes an instant otherwise", () => {
+    expect(importContract.cutoffProposalAnswer(proposal)).toBe(true);
+    expect(importContract.cutoffProposalAnswer({ ...proposal, last_usable_time: null, proposed_cutoff: null })).toBe(true);
+    expect(importContract.cutoffProposalAnswer({ ...proposal, timestamp_kind: "wall_clock", last_usable_time: "2026-04-14T07:30:20.500000", proposed_cutoff: "2026-04-14T07:31:00" })).toBe(true);
+    expect(importContract.cutoffProposalAnswer({ ...proposal, timestamp_kind: "wall_clock" })).toBe(false);
     // A latest time in the last minute of the year 9999 cannot be rounded up; a proposal without one cannot be.
-    expect(isCutoffProposal({ ...proposal, last_usable_time: "9999-12-31T23:59:30Z", proposed_cutoff: null })).toBe(true);
-    expect(isCutoffProposal({ ...proposal, last_usable_time: null })).toBe(false);
-    expect(isCutoffProposal({ ...proposal, note: "extra" })).toBe(false);
-    expect(isCutoffProposal({ ...proposal, query_revision: "3" })).toBe(false);
+    expect(importContract.cutoffProposalAnswer({ ...proposal, last_usable_time: "9999-12-31T23:59:30Z", proposed_cutoff: null })).toBe(true);
+    expect(importContract.cutoffProposalAnswer({ ...proposal, last_usable_time: null })).toBe(false);
+    expect(importContract.cutoffProposalAnswer({ ...proposal, note: "extra" })).toBe(false);
+    expect(importContract.cutoffProposalAnswer({ ...proposal, query_revision: "3" })).toBe(false);
+    // An instant is written in UTC with a Z and at most six decimals of a second; the source stays named.
+    expect(importContract.cutoffProposalAnswer({ ...proposal, last_usable_time: "2026-04-14T07:30:20.1234567Z" })).toBe(false);
+    expect(importContract.cutoffProposalAnswer({ ...proposal, proposed_cutoff: "2026-04-14T09:31:00+02:00" })).toBe(false);
+    const { source_id: _source, ...unbound } = proposal;
+    expect(importContract.cutoffProposalAnswer(unbound)).toBe(false);
   });
 
   it("fetch an example's bytes from its route and report a missing example as an HTTP failure", async () => {
