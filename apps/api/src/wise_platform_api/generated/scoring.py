@@ -614,7 +614,10 @@ class ScoringRefusal(BaseModel):
     query_revision: QueryRevision | None
     workspace_id: WorkspaceId | None
     operation: Literal[
-        'validate_expectation', 'score_expectation', 'score_case_witness'
+        'validate_expectation',
+        'score_expectation',
+        'score_case_witness',
+        'read_score_run',
     ]
     code: Literal[
         'invalid_request',
@@ -651,6 +654,18 @@ class ScoringRefusal(BaseModel):
             'retry',
         ]
     ]
+
+
+class ReadScoreRunRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['read_score_run_request']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    run_id: ScoreRunId
 
 
 class AnswerIdentity(BaseModel):
@@ -885,6 +900,7 @@ class ScoringMessage(
         | ExpectationValidationAnswer
         | ScoreExpectationRequest
         | ScoreRunAnswer
+        | ReadScoreRunRequest
         | ScoreCaseWitnessRequest
         | ScoreCaseWitnessAnswer
         | ScoringRefusal
@@ -895,6 +911,7 @@ class ScoringMessage(
         | ExpectationValidationAnswer
         | ScoreExpectationRequest
         | ScoreRunAnswer
+        | ReadScoreRunRequest
         | ScoreCaseWitnessRequest
         | ScoreCaseWitnessAnswer
         | ScoringRefusal
