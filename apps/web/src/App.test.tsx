@@ -86,7 +86,7 @@ describe("the investigation screen", () => {
     const { user } = scripted;
     await openPopulationZero(scripted);
 
-    for (let step = 0; step < 10 && document.activeElement?.textContent !== "INC01"; step += 1) await user.tab();
+    for (let step = 0; step < 20 && document.activeElement?.textContent !== "INC01"; step += 1) await user.tab();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "INC01" }));
     await user.keyboard("{ArrowDown}");
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "INC02" }));
@@ -339,6 +339,22 @@ describe("the investigation screen", () => {
     const [opened, unlabelled] = within(screen.getByRole("list", { name: /Every record of incident INC03/ })).getAllByRole("listitem");
     expect(opened.querySelector(".record-activity")?.getAttribute("title")).toBe("Opened");
     expect(unlabelled.querySelector(".record-activity")?.hasAttribute("title")).toBe(false);
+  });
+
+  it("lists the Expectation view as one of the areas, unavailable while only the example is open", async () => {
+    const scripted = renderScreen();
+    await openPopulationZero(scripted);
+    const areas = screen.getByRole("navigation", { name: "Areas" });
+    expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare", "Expectation", "Saved"]);
+    const expectation = within(areas).getByRole("button", { name: "Expectation" });
+    expect(expectation.getAttribute("aria-disabled")).toBe("true");
+    expect(document.getElementById(expectation.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      "Open the incidents of a preparation in the Data area first.",
+    );
+    await scripted.user.click(expectation);
+    expect(expectation.getAttribute("aria-current")).toBeNull();
+    expect(within(areas).getByRole("button", { name: "Investigations" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.queryByRole("heading", { name: "Expectation" })).toBeNull();
   });
 
   it("says investigations are not available when the local service does not offer them, and retries", async () => {

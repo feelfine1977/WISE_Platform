@@ -97,7 +97,7 @@ class Selections:
                 given,
                 "identity",
             )
-        predicates = [_predicate(item) for item in given["predicates"]]
+        predicates = [package_predicate(item) for item in given["predicates"]]
         parent_ids = given["parent_case_ids"]
         try:
             selection = select_cases(prepared, predicates, parent_ids)
@@ -183,7 +183,7 @@ class Selections:
         return workspace, found[0]
 
 
-def _predicate(given: Mapping[str, object]) -> Predicate:
+def package_predicate(given: Mapping[str, object]) -> Predicate:
     """The package's predicate for a predicate of a validated request."""
     kind, negate = given["kind"], bool(given["negate"])
     if kind == "contains_activity":

@@ -223,8 +223,10 @@ describe("the views of the population of an imported preparation", () => {
     expect(tableIncidents()).toEqual(["K-1", "K-3"]);
 
     act(() => app.coordinator.open({ workspaceId, preparationId }));
-    expect(app.coordinator.getState().chosenVariant).toBeNull();
+    // The answer shown, with its chosen variant, stays until the population opened again arrives.
+    expect(app.coordinator.getState().chosenVariant).toBe(variantIds[0]);
     await deliver(() => app.imports.populations[1].reply({ ok: true, answer: viewPopulationAnswer(app.imports.populations[1].request) }));
+    expect(app.coordinator.getState().chosenVariant).toBeNull();
     expect(tableIncidents()).toEqual(["K-1", "K-2", "K-3", "K-4", "K-5"]);
     // A choice of a variant the current answer does not hold yet is not taken.
     act(() => app.coordinator.chooseVariant(variantIds[0]));
@@ -236,9 +238,10 @@ describe("the views of the population of an imported preparation", () => {
     const [firstOpening] = app.views.openings;
     const [firstVariants] = app.views.variants;
     act(() => app.coordinator.open({ workspaceId, preparationId }));
+    await deliver(() => app.imports.populations[1].reply({ ok: true, answer: viewPopulationAnswer(app.imports.populations[1].request) }));
+    // The views of the answer shown are abandoned once the population opened again replaces it.
     expect(firstOpening.signal.aborted).toBe(true);
     expect(firstVariants.signal.aborted).toBe(true);
-    await deliver(() => app.imports.populations[1].reply({ ok: true, answer: viewPopulationAnswer(app.imports.populations[1].request) }));
     expect(app.views.variants[1].request.query_revision).toBe(app.imports.populations[1].request.query_revision);
 
     await deliver(() => firstOpening.reply({ ok: true, answer: openingContextAnswer(firstOpening.request) }));

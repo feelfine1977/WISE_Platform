@@ -16,11 +16,13 @@ interface InspectorProps {
   onLayout: (layout: InspectorLayout) => void;
   onReturn: () => void;
   onRetry: () => void;
+  /** The id of the text saying why trying again has to wait, while it has to. */
+  waitingFor?: string;
   headingRef: RefObject<HTMLHeadingElement | null>;
 }
 
 /** The complete history of one incident: every record in the declared order. */
-export function Inspector({ inspected, summary, policies, layout, onLayout, onReturn, onRetry, headingRef }: InspectorProps) {
+export function Inspector({ inspected, summary, policies, layout, onLayout, onReturn, onRetry, waitingFor, headingRef }: InspectorProps) {
   const collapsed = layout === "collapsed";
   return (
     <section className="inspector" aria-labelledby="inspector-title">
@@ -56,7 +58,7 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
           </p>
         )}
         {inspected.phase === "failed" && (
-          <ProblemNotice title={`The records of ${inspected.caseId} could not be shown`} problem={inspected.problem} onRetry={onRetry} />
+          <ProblemNotice title={`The records of ${inspected.caseId} could not be shown`} problem={inspected.problem} onRetry={onRetry} waitingFor={waitingFor} />
         )}
         {inspected.phase === "ready" && <Records answer={inspected.answer} />}
       </div>

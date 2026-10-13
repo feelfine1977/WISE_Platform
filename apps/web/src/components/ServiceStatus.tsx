@@ -36,7 +36,9 @@ export function ServiceStatus({ checkHealth }: ServiceStatusProps) {
     <details className="service">
       <summary>
         <span className={`service-dot service-${connection.state}`} aria-hidden="true" />
-        Local service: <span role="status">{summary}</span>
+        <span className="service-text">
+          Local service: <span role="status">{summary}</span>
+        </span>
       </summary>
       <div className="service-body">
         {connection.state === "checking" && <p>Checking the connection to this computer…</p>}

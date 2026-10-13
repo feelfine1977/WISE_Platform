@@ -18,8 +18,10 @@ import type {
   SelectionPredicate,
   SuppliedGraph,
 } from "../generated/selection";
+import type { SavedInvestigationContent } from "../generated/saving";
 import type { SelectionClient, SelectionOutcome, SelectionProblem } from "../map/client";
 import { noSteps, redone, type StepHistory, type Steps, undone, withoutStep, withoutSteps, withStep } from "../map/steps";
+import { AwaitedRequest, type Replacement } from "../replacement/replacement";
 import { httpPopulationViewClient, type PopulationViewClient, type ViewOutcome, type ViewProblem } from "../views/client";
 import type { OpeningContextAnswer, OpeningContextRequest, VariantId, VariantsAnswer, VariantsRequest } from "../views/messages";
 
@@ -27,6 +29,35 @@ import type { OpeningContextAnswer, OpeningContextRequest, VariantId, VariantsAn
 export interface PreparationTarget {
   workspaceId: WorkspaceId;
   preparationId: PreparationId;
+  /** The name of the source file, where the caller knows it; it names the preparation until its answer arrives. */
+  sourceName?: string;
+}
+
+/** The view an investigation shows its kept incidents in. */
+export type InvestigationView = "incidents" | "map";
+
+/** The saved investigation the question shown belongs to: its latest revision known here and what it holds. */
+export interface SavedBinding {
+  investigationId: string;
+  revisionId: string;
+  content: SavedInvestigationContent;
+}
+
+/** A saved question to open again: its preparation, its steps on their parent, and what reopening it answered. */
+export interface Restoration {
+  target: PreparationTarget;
+  steps: Steps;
+  parentCaseIds: CaseId[];
+  /** The identity of the selection the local service restored; the steps asked for must give it again. */
+  selectionIdentity: AnswerIdentity;
+  binding: SavedBinding;
+  view: InvestigationView;
+}
+
+/** A question asked for: the population of a preparation, or a saved investigation to open again. */
+export interface AskedQuestion {
+  target: PreparationTarget;
+  restoration: Restoration | null;
 }
 
 export type ImportedPopulationState =
@@ -87,6 +118,17 @@ export interface ImportedInvestigationState {
   chosenVariant: VariantId | null;
   /** The map of every incident of the parent, from which the map's arrangement is computed once. */
   parentGraph: SuppliedGraph | null;
+  /** The saved investigation this question was reopened from or saved as; null until it is saved. */
+  saved: SavedBinding | null;
+  /** The view a reopened investigation was saved in; null for a question opened from the Data area. */
+  restoredView: InvestigationView | null;
+  /** The incidents the selection is made of: every incident of the population (null), or the saved parent. */
+  parentCaseIds: CaseId[] | null;
+  /**
+   * Another question asked for in place of the one shown, while it opens or after it failed; null
+   * when there is none. Everything above stays the question shown until the new population arrives.
+   */
+  replacement: Replacement<AskedQuestion, ImportProblem> | null;
 }
 
 /** The selection whose answer is shown, if one is. */
@@ -109,6 +151,10 @@ const initialState: ImportedInvestigationState = {
   variants: { phase: "idle" },
   chosenVariant: null,
   parentGraph: null,
+  saved: null,
+  restoredView: null,
+  parentCaseIds: null,
+  replacement: null,
 };
 
 /**
@@ -117,14 +163,22 @@ const initialState: ImportedInvestigationState = {
  * the kept ones, and the complete history of one kept incident. Opening the population and every
  * change of the selection start a new revision. A reply whose revision or request is no longer
  * current is dropped, whether it is an answer, a refusal or a failure.
+ *
+ * Once a population is shown, opening another one keeps the question shown in full, with the
+ * requests it has under way, until the new population arrives; a failure is shown beside it.
  */
 export class ImportedInvestigationCoordinator {
   private state: ImportedInvestigationState = initialState;
+  /** The query revision of the question shown. */
   private revision = 0;
+  /** The last revision issued, to the question shown or to the one asked for in its place. */
+  private issued = 0;
   private caseRequestSequence = 0;
   private viewRequestSequence = 0;
   private currentCaseRequestId: string | null = null;
-  private populationRequest: AbortController | null = null;
+  private readonly populationRequest = new AwaitedRequest();
+  /** The question shown, or being opened when none is shown yet; a retry asks for it again. */
+  private asked: AskedQuestion | null = null;
   private caseRequest: AbortController | null = null;
   private selectionRequest: AbortController | null = null;
   private viewTarget: ViewTarget | null = null;
@@ -132,6 +186,12 @@ export class ImportedInvestigationCoordinator {
   private viewRevision = 0;
   private openingRequest: Pending | null = null;
   private variantsRequest: Pending | null = null;
+  /** The steps the population is selected by once it is open; a reopened investigation's saved steps. */
+  private openingSteps: Steps = [];
+  /** The steps, with their undo and redo, that the selection shown was answered under. */
+  private shownHistory: StepHistory = noSteps;
+  /** The identity the first selection of a reopened investigation must have, until it is answered. */
+  private restoredIdentity: AnswerIdentity | null = null;
   private readonly listeners = new Set<() => void>();
 
   constructor(
@@ -148,12 +208,31 @@ export class ImportedInvestigationCoordinator {
   getState = (): ImportedInvestigationState => this.state;
 
   open(target: PreparationTarget): void {
-    this.revision += 1;
-    const revision = this.revision;
-    this.populationRequest?.abort();
-    this.cancelSelectionRequest();
-    this.cancelCaseRequest();
-    this.cancelViewRequests();
+    this.openWith(target, null);
+  }
+
+  /**
+   * Opens a reopened investigation: its population, then its saved steps on its saved parent, with
+   * an undo history that starts with them. The selection answered must have the restored identity;
+   * otherwise it is shown as a failure, never as the saved state.
+   */
+  restore(restoration: Restoration): void {
+    this.openWith(restoration.target, restoration);
+  }
+
+  /** Records the revision the question was saved as. */
+  markSaved(binding: SavedBinding): void {
+    this.publish({ ...this.state, saved: binding });
+  }
+
+  private nextRevision(): number {
+    this.issued += 1;
+    return this.issued;
+  }
+
+  private openWith(target: PreparationTarget, restoration: Restoration | null): void {
+    const revision = this.nextRevision();
+    const asked: AskedQuestion = { target, restoration };
     const request: OpenPopulationRequest = {
       schema_version: 1,
       message_type: "open_population_request",
@@ -162,22 +241,52 @@ export class ImportedInvestigationCoordinator {
       workspace_id: target.workspaceId,
       preparation_id: target.preparationId,
     };
-    this.publish({ ...initialState, population: { phase: "loading", revision, target } });
-    const controller = new AbortController();
-    this.populationRequest = controller;
-    this.client.openPopulation(request, controller.signal).then(
-      (outcome) => this.receivePopulation(request, target, outcome),
-      () => this.receivePopulation(request, target, unreachable),
+    const signal = this.populationRequest.start(revision);
+    if (this.state.population.phase === "ready") {
+      this.publish({ ...this.state, replacement: { phase: "running", revision, asked } });
+    } else {
+      this.leaveQuestion(revision, asked);
+      this.publish({ ...initialState, ...openingOf(restoration), population: { phase: "loading", revision, target } });
+    }
+    this.client.openPopulation(request, signal).then(
+      (outcome) => this.receivePopulation(request, asked, outcome),
+      () => this.receivePopulation(request, asked, unreachable),
     );
   }
 
+  /** Abandons every request of the question shown and takes up the one asked for under its revision. */
+  private leaveQuestion(revision: number, asked: AskedQuestion): void {
+    this.revision = revision;
+    this.cancelSelectionRequest();
+    this.cancelCaseRequest();
+    this.cancelViewRequests();
+    this.asked = asked;
+    this.openingSteps = asked.restoration ? asked.restoration.steps : [];
+    this.restoredIdentity = asked.restoration ? asked.restoration.selectionIdentity : null;
+  }
+
   retryPopulation(): void {
-    const population = this.state.population;
-    if (population.phase === "failed") this.open(population.target);
+    const { population, replacement } = this.state;
+    const asked = replacement?.phase === "failed" ? replacement.asked : population.phase === "failed" ? this.asked : null;
+    if (asked) this.openWith(asked.target, asked.restoration);
+  }
+
+  /** Gives up a failed replacement: the question shown stays as it is. */
+  stay(): void {
+    if (this.state.replacement?.phase === "failed") this.publish({ ...this.state, replacement: null });
+  }
+
+  /** Whether another question is opening in place of the one shown, so that nothing new is asked of it. */
+  private replacing(): boolean {
+    return this.state.replacement?.phase === "running";
   }
 
   /** Opens the complete history of an incident of the selection shown, or of the population before one is. */
   openCase(caseId: CaseId): void {
+    if (!this.replacing()) this.requestCase(caseId);
+  }
+
+  private requestCase(caseId: CaseId): void {
     const population = this.state.population;
     if (population.phase !== "ready") return;
     this.cancelCaseRequest();
@@ -232,17 +341,24 @@ export class ImportedInvestigationCoordinator {
     this.changeSteps(redone);
   }
 
+  /** Gives up steps that could not be selected: the selection shown stays, with the steps and undo it was answered under. */
+  staySelection(): void {
+    const selection = this.state.selection;
+    if (selection.phase !== "failed" || selection.shown === null || this.replacing()) return;
+    this.publish({ ...this.state, selection: { phase: "ready", revision: selection.shown.revision, history: this.shownHistory, shown: selection.shown } });
+  }
+
   retrySelection(): void {
     const selection = this.state.selection;
-    if (selection.phase === "failed") this.select(selection.history);
+    if (selection.phase === "failed" && !this.replacing()) this.select(selection.history);
   }
 
   retryOpeningContext(): void {
-    if (this.viewTarget && this.state.openingContext.phase === "failed") this.requestOpeningContext(this.viewTarget);
+    if (this.viewTarget && this.state.openingContext.phase === "failed" && !this.replacing()) this.requestOpeningContext(this.viewTarget);
   }
 
   retryVariants(): void {
-    if (this.viewTarget && this.state.variants.phase === "failed") this.requestVariants(this.viewTarget);
+    if (this.viewTarget && this.state.variants.phase === "failed" && !this.replacing()) this.requestVariants(this.viewTarget);
   }
 
   /** Lists the incidents of one variant of the current answer in the table; the selection stays as it is. */
@@ -258,9 +374,8 @@ export class ImportedInvestigationCoordinator {
 
   /** Abandons every outstanding request; replies to them are dropped when they arrive. */
   stop(): void {
-    this.revision += 1;
-    this.populationRequest?.abort();
-    this.populationRequest = null;
+    this.revision = this.nextRevision();
+    this.populationRequest.abandon();
     this.cancelSelectionRequest();
     this.cancelCaseRequest();
     this.cancelViewRequests();
@@ -268,7 +383,7 @@ export class ImportedInvestigationCoordinator {
 
   private changeSteps(change: (history: StepHistory) => StepHistory): void {
     const selection = this.state.selection;
-    if (selection.phase === "idle") return;
+    if (selection.phase === "idle" || this.replacing()) return;
     const history = change(selection.history);
     if (history !== selection.history) this.select(history);
   }
@@ -277,7 +392,7 @@ export class ImportedInvestigationCoordinator {
   private select(history: StepHistory): void {
     const population = this.state.population;
     if (population.phase !== "ready") return;
-    this.revision += 1;
+    this.revision = this.nextRevision();
     const revision = this.revision;
     this.cancelSelectionRequest();
     // A history asked for under the earlier selection is asked for again once this one is answered.
@@ -289,7 +404,7 @@ export class ImportedInvestigationCoordinator {
       query_revision: revision,
       workspace_id: population.answer.workspace_id,
       identity: population.answer.identity,
-      parent_case_ids: null,
+      parent_case_ids: this.state.parentCaseIds === null ? null : [...this.state.parentCaseIds],
       predicates: [...history.present],
     };
     this.publish({ ...this.state, selection: { phase: "loading", revision, history, shown: shownSelection(this.state.selection) } });
@@ -309,7 +424,12 @@ export class ImportedInvestigationCoordinator {
     controller: AbortController,
   ): void {
     if (request.query_revision !== this.revision) return;
-    const checked = outcome.ok ? checkSelection(request, population, outcome.answer) : checkSelectionProblem(request, outcome.problem);
+    const restored = this.restoredIdentity;
+    this.restoredIdentity = null;
+    let checked = outcome.ok ? checkSelection(request, population, outcome.answer) : checkSelectionProblem(request, outcome.problem);
+    if (checked.ok && restored !== null && !sameJson(checked.answer.identity, restored)) {
+      checked = mismatch("The incidents selected now are not those of the saved investigation.");
+    }
     if (!checked.ok) {
       this.failSelection(request.query_revision, history, checked.problem);
       return;
@@ -343,6 +463,7 @@ export class ImportedInvestigationCoordinator {
       return;
     }
     const graph = checked.answer.graph;
+    this.shownHistory = history;
     this.publish({
       ...this.state,
       selection: { phase: "ready", revision: request.query_revision, history, shown: { revision: request.query_revision, steps: history.present, answer: selected, graph } },
@@ -360,14 +481,14 @@ export class ImportedInvestigationCoordinator {
     this.publish({ ...this.state, selection: { phase: "failed", revision, history, shown, problem } });
     // A history whose request the selection abandoned is asked for again under the selection still shown.
     const inspected = this.state.inspected;
-    if (inspected.phase === "loading" && this.currentCaseRequestId === null) this.openCase(inspected.caseId);
+    if (inspected.phase === "loading" && this.currentCaseRequestId === null) this.requestCase(inspected.caseId);
   }
 
   /** The inspector shows the complete history of a kept incident under the new selection, or closes. */
   private followSelection(selected: SelectionAnswer): void {
     const inspected = this.state.inspected;
     if (inspected.phase === "closed") return;
-    if (selected.kept.case_ids.includes(inspected.caseId)) this.openCase(inspected.caseId);
+    if (selected.kept.case_ids.includes(inspected.caseId)) this.requestCase(inspected.caseId);
     else this.publish({ ...this.state, inspected: { phase: "closed" } });
   }
 
@@ -376,22 +497,30 @@ export class ImportedInvestigationCoordinator {
     this.selectionRequest = null;
   }
 
-  private receivePopulation(
-    request: OpenPopulationRequest,
-    target: PreparationTarget,
-    outcome: ImportOutcome<ImportedPopulationAnswer>,
-  ): void {
-    if (request.query_revision !== this.revision) return;
-    this.populationRequest = null;
+  private receivePopulation(request: OpenPopulationRequest, asked: AskedQuestion, outcome: ImportOutcome<ImportedPopulationAnswer>): void {
+    if (!this.populationRequest.take(request.query_revision)) return;
     const revision = request.query_revision;
+    const target = asked.target;
     const checked = outcome.ok ? checkPopulation(request, outcome.answer) : checkProblem(request, outcome.problem);
+    const keeping = this.state.population.phase === "ready";
     if (!checked.ok) {
-      this.publish({ ...initialState, population: { phase: "failed", revision, target, problem: checked.problem } });
+      this.publish(
+        keeping
+          ? { ...this.state, replacement: { phase: "failed", revision, asked, problem: checked.problem } }
+          : { ...this.state, population: { phase: "failed", revision, target, problem: checked.problem } },
+      );
       return;
     }
-    this.publish({ ...initialState, population: { phase: "ready", revision, target, answer: checked.answer } });
+    const population: ImportedPopulationState = { phase: "ready", revision, target, answer: checked.answer };
+    if (keeping) {
+      // The new population replaces the question shown, its selection, views and history, in one step.
+      this.leaveQuestion(revision, asked);
+      this.publish({ ...initialState, ...openingOf(asked.restoration), population });
+    } else {
+      this.publish({ ...this.state, population });
+    }
     this.requestViews(checked.answer);
-    this.select(noSteps);
+    this.select(this.openingSteps.length === 0 ? noSteps : { past: [], present: this.openingSteps, future: [] });
   }
 
   private viewRequest<Kind extends "opening_context_request" | "variants_request">(messageType: Kind, target: ViewTarget) {
@@ -482,6 +611,15 @@ export class ImportedInvestigationCoordinator {
     this.state = state;
     for (const listener of this.listeners) listener();
   }
+}
+
+/** What a question opened from a saved investigation starts with; nothing for a question opened from the Data area. */
+function openingOf(restoration: Restoration | null): Pick<ImportedInvestigationState, "saved" | "restoredView" | "parentCaseIds"> {
+  return {
+    saved: restoration ? restoration.binding : null,
+    restoredView: restoration ? restoration.view : null,
+    parentCaseIds: restoration ? restoration.parentCaseIds : null,
+  };
 }
 
 const viewUnreachable: ViewOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
@@ -576,10 +714,17 @@ function checkSelection(
   if (!sameJson(answer.predicate_results.map((result) => result.predicate), request.predicates)) {
     return mismatch("The reply answers different steps.");
   }
-  if (!sameJson(answer.parent.case_ids, population.population.case_ids)) {
+  if (!sameParent(answer.parent.case_ids, request.parent_case_ids, population.population.case_ids)) {
     return mismatch("The reply selects from a different population.");
   }
   return { ok: true, answer };
+}
+
+/** Whether a selection was made of the parent asked for: every incident of the population, or the saved parent. */
+function sameParent(answered: readonly CaseId[], asked: readonly CaseId[] | null, population: readonly CaseId[]): boolean {
+  if (asked === null) return sameJson(answered, population);
+  const expected = new Set(asked);
+  return answered.length === expected.size && answered.every((caseId) => expected.has(caseId));
 }
 
 function checkGraph(request: ProcessGraphRequest, selected: SelectionAnswer, answer: ProcessGraphAnswer): SelectionOutcome<ProcessGraphAnswer> {

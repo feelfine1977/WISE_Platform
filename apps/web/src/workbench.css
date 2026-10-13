@@ -114,6 +114,16 @@
 .inline-error-title { font-weight: var(--font-weight-strong); color: var(--color-error); }
 .inline-error button { margin-top: var(--space-1); }
 
+/* A replacement beside the answer still shown: a quiet line while it runs, an inline error when it fails. */
+.replacement { margin: var(--space-2) 0; }
+.replacement-line {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent-tint);
+  border-left: var(--bar-width) solid var(--color-accent);
+  border-radius: var(--radius);
+}
+.replacement-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
 /* Data area: steps one under the other. */
 .data-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); padding: var(--space-4) var(--space-6) var(--space-6); max-width: var(--size-page); }
 .step {
@@ -440,10 +450,6 @@
 .variant-steps li { display: flex; align-items: center; min-width: 0; }
 .variant-step { padding: 0 var(--space-1); background: var(--color-surface); border: var(--line-width) solid var(--color-line-strong); border-radius: var(--radius); overflow-wrap: anywhere; }
 .variant-arrow { padding: 0 var(--space-1); color: var(--color-ink-muted); }
-
-/* Area navigation in the header. */
-.areas { display: flex; gap: var(--space-1); }
-.areas button[aria-current="page"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
 
 @media (max-width: 1100px) {
   .workbench-body[data-inspector="side"] { grid-template-columns: minmax(0, 1fr); }

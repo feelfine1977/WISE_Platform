@@ -12,11 +12,13 @@ interface ImportedInspectorProps {
   onLayout: (layout: InspectorLayout) => void;
   onReturn: () => void;
   onRetry: () => void;
+  /** The id of the text saying why trying again has to wait, while it has to. */
+  waitingFor?: string;
   headingRef: RefObject<HTMLHeadingElement | null>;
 }
 
 /** Every record of one imported incident in the declared order, as a vertical sequence. */
-export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, headingRef }: ImportedInspectorProps) {
+export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef }: ImportedInspectorProps) {
   const collapsed = layout === "collapsed";
   return (
     <section className="imported-inspector" aria-labelledby="imported-inspector-title">
@@ -51,7 +53,7 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
           </p>
         )}
         {inspected.phase === "failed" && (
-          <ImportProblemNotice title={`The records of ${inspected.caseId} could not be shown`} problem={inspected.problem} onRetry={onRetry} />
+          <ImportProblemNotice title={`The records of ${inspected.caseId} could not be shown`} problem={inspected.problem} onRetry={onRetry} waitingFor={waitingFor} />
         )}
         {inspected.phase === "ready" && <History answer={inspected.answer} />}
       </div>

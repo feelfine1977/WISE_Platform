@@ -9,9 +9,8 @@ and the stored source, and keeps what the package prepared.
 A proposal for the snapshot cutoff prepares the stored bytes under the
 analyst's choices exactly like a confirmation but keeps nothing: it answers
 the package's last usable time and that time rounded up to a full minute, on
-the same clock. The import contract has no message for it yet, so its answer
-is described by ``CutoffProposalAnswer`` here; its refusals are those of a
-confirmation.
+the same clock. Its answer is the import contract's ``CutoffProposalAnswer``;
+its refusals are those of a confirmation.
 
 A ready preparation is kept in the workspace with its identities and report.
 To answer for it later, also in another run of the application, the package
@@ -30,6 +29,7 @@ back exactly as it was confirmed.
 
 from __future__ import annotations
 
+import json
 import logging
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Mapping
@@ -37,19 +37,19 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Lock
-from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ValidationError
 from wise_platform_analytics.csv_inspection import inspect_csv
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
 from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare
 from wise_platform_analytics.prepared_operations import open_prepared_case, open_prepared_population
 from wise_platform_analytics.selection import open_selected_case
 
-from .boundary import SCHEMA_VERSION
+from .boundary import SCHEMA_VERSION, first_difference
 from .generated.imports import (
     ConfirmMappingRequest,
     CsvInspectionAnswer,
+    CutoffProposalAnswer,
     ImportedCaseEvidenceAnswer,
     ImportedCaseEvidenceRequest,
     ImportedPopulationAnswer,
@@ -71,6 +71,7 @@ from .import_boundary import (
     upload_message,
 )
 from .registry import SelectionRegistry
+from .strict_reading import instant_failures
 from .workspace import Problem, StoredPreparation, Workspace
 
 logger = logging.getLogger(__name__)
@@ -84,25 +85,6 @@ CASE_EVIDENCE = "case_evidence"
 
 _PREPARED_KEPT = 2
 _INSPECTIONS_KEPT = 16
-
-
-class CutoffProposalAnswer(BaseModel):
-    """The latest usable time under a set of choices and the cutoff proposed from it, on one clock.
-
-    Both times are null when no record has a usable time under these choices.
-    """
-
-    model_config = ConfigDict(extra="forbid", strict=True)
-
-    schema_version: Literal[1]
-    message_type: Literal["cutoff_proposal_answer"]
-    request_id: str
-    query_revision: int
-    workspace_id: str
-    source_id: str
-    timestamp_kind: Literal["utc_instant", "wall_clock"]
-    last_usable_time: str | None
-    proposed_cutoff: str | None
 
 
 @dataclass(frozen=True)
@@ -276,8 +258,7 @@ class Imports:
         report = result.report
         wall = report["timestamp_kind"] == "wall_clock"
         last = report["last_usable_local_timestamp"] if wall else report["last_usable_utc_instant"]
-        return _answer(
-            CutoffProposalAnswer,
+        return _cutoff_proposal(
             _envelope("cutoff_proposal_answer", given)
             | {
                 "source_id": given["source_id"],
@@ -486,6 +467,32 @@ def _answer(model: type[BaseModel], body: dict) -> ImportReply:
             f"A {body.get('message_type')} answer is outside the contract at "
             f"{'.'.join(str(part) for part in first['loc'])}: {first['msg']}"
         ) from None
+    return ImportReply(200, body)
+
+
+def _cutoff_proposal(body: dict) -> ImportReply:
+    """Check a cutoff proposal as strictly as a request and send it with its own values.
+
+    The clock decides which times are allowed and both times are on it; a time on the UTC clock is
+    also written as the contract writes an instant, which the generated model does not check.
+    """
+    try:
+        parsed = CutoffProposalAnswer.model_validate_json(
+            json.dumps(body, ensure_ascii=False, allow_nan=False), strict=True
+        )
+    except ValidationError as error:
+        first = error.errors(include_url=False)[0]
+        raise ValueError(
+            f"A cutoff proposal is outside the contract at {'.'.join(str(part) for part in first['loc'])}: "
+            f"{first['msg']}"
+        ) from None
+    # Only instants are written in another spelling by the model; their spelling is checked below.
+    different = first_difference(body, parsed.model_dump(mode="json"), compare_text=False)
+    failures = [] if different is None else [different]
+    if body["timestamp_kind"] == "utc_instant":
+        failures += [failure.path for failure in instant_failures(body, (("last_usable_time",), ("proposed_cutoff",)))]
+    if failures:
+        raise ValueError(f"A cutoff proposal is outside the contract at {'.'.join(str(part) for part in failures[0])}")
     return ImportReply(200, body)
 
 

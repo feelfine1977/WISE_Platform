@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { InspectorLayout } from "../components/Inspector";
-import type { CaseId, ImportedCaseSummary, ImportedPopulationAnswer } from "../generated/imports";
+import type { CaseId, ImportedCaseSummary, ImportedPopulationAnswer, PreparationId } from "../generated/imports";
 import type { SelectionPredicate } from "../generated/selection";
 import { ImportProblemNotice } from "../data/ImportProblemNotice";
-import { countOf, delimiterName, encodingName } from "../data/wording";
+import type { ImportProblem } from "../data/client";
+import { countOf, delimiterName, describeImportProblem, encodingName } from "../data/wording";
 import { MapView } from "../map/MapView";
 import { SelectionSteps } from "../map/SelectionSteps";
 import { supportText } from "../map/wording";
-import { type ImportedInvestigationCoordinator, type ShownSelection, shownSelection } from "./coordinator";
+import { ReplacementNotice } from "../replacement/ReplacementNotice";
+import { type AskedQuestion, type ImportedInvestigationCoordinator, type InvestigationView, type ShownSelection, shownSelection } from "./coordinator";
 import { ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
+import type { SavingCoordinator } from "../saved/coordinator";
+import { SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
 import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
@@ -17,30 +21,44 @@ import { Variants } from "../views/Variants";
 interface ImportedInvestigationProps {
   coordinator: ImportedInvestigationCoordinator;
   onShowData: () => void;
+  /** Saving the question shown; without it the toolbar offers no "Save". */
+  saving?: SavingCoordinator;
 }
 
-type View = "incidents" | "map";
+type View = InvestigationView;
 
 /**
  * The investigation of an imported preparation: its facts, the selection of whole incidents, the
  * kept incidents as a table or as a process map, and the complete history of one kept incident.
  */
-export function ImportedInvestigation({ coordinator, onShowData }: ImportedInvestigationProps) {
+export function ImportedInvestigation({ coordinator, onShowData, saving }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
-  const [view, setView] = useState<View>("incidents");
+  // A reopened investigation opens in the view it was saved in.
+  const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? "incidents");
+  const [saveOpen, setSaveOpen] = useState(false);
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
   const [focusIncidents, setFocusIncidents] = useState(0);
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
   const incidentsHeading = useRef<HTMLHeadingElement>(null);
-  const { population, inspected, openingContext, variants, chosenVariant } = state;
+  const waitingReason = useId();
+  const { population, inspected, openingContext, variants, chosenVariant, replacement } = state;
+  // While another question opens, nothing new is asked of the one shown.
+  const waitingFor = replacement?.phase === "running" ? waitingReason : undefined;
   const inspectorOpen = inspected.phase !== "closed";
   const openCaseId = inspected.phase === "closed" ? null : inspected.caseId;
 
   useEffect(() => {
     if (focusInspector > 0) inspectorHeading.current?.focus();
   }, [focusInspector]);
+
+  // A reopened investigation that replaces the question shown opens in its saved view once it arrives.
+  const populationRevision = population.phase === "ready" ? population.revision : null;
+  const restoredView = state.restoredView;
+  useEffect(() => {
+    if (populationRevision !== null && restoredView !== null) setView(restoredView);
+  }, [populationRevision, restoredView]);
 
   // Runs after the table of the new view has mounted, so the heading keeps the focus.
   useEffect(() => {
@@ -124,11 +142,25 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
           </h2>
         </nav>
         {answer && <Facts answer={answer} shown={shown} revision={revision} />}
+        {saving && answer && <SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} waitingFor={waitingFor} />}
         <p role="status" className="visually-hidden">
           {population.phase === "loading" ? "Opening the incidents of this preparation" : population.phase === "ready" ? "Incidents shown" : ""}
         </p>
       </div>
-      {(population.phase === "loading" || state.selection.phase === "loading") && <div className="progress-line" aria-hidden="true" />}
+      {(population.phase === "loading" || state.selection.phase === "loading" || waitingFor) && <div className="progress-line" aria-hidden="true" />}
+      {replacement && answer && (
+        <ReplacementNotice
+          replacement={replacement}
+          shown={preparationName(answer.source.filename, answer.identity.preparation_id)}
+          asked={askedName(replacement.asked)}
+          reasonId={waitingReason}
+          describe={describeReplacementProblem}
+          onRetry={() => coordinator.retryPopulation()}
+          onStay={() => coordinator.stay()}
+        />
+      )}
+      {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view} onClose={() => setSaveOpen(false)} />}
+      {state.saved && <SavedLine binding={state.saved} />}
       {answer && (
         <div className="selection-bar">
           <div className="view-switch" role="group" aria-label="View">
@@ -146,6 +178,8 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
             onUndo={() => coordinator.undo()}
             onRedo={() => coordinator.redo()}
             onRetry={() => coordinator.retrySelection()}
+            onStay={() => coordinator.staySelection()}
+            waitingFor={waitingFor}
           />
         </div>
       )}
@@ -157,7 +191,7 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
                 Map of the kept incidents
               </h3>
               {shown && state.parentGraph ? (
-                <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} />
+                <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} waitingFor={waitingFor} />
               ) : state.selection.phase === "failed" ? (
                 <p className="working-text">The map is shown once the incidents are selected.</p>
               ) : (
@@ -207,6 +241,7 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
                   focusRequest={focusRequest}
                   labelledBy="imported-incidents-title"
                   describedBy="imported-incidents-hint"
+                  waitingFor={waitingFor}
                 />
                 <PreparationDetails answer={answer} />
               </>
@@ -214,13 +249,14 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
           </section>
           {answer && (
             <div className="views">
-              <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} />
+              <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} />
               <Variants
                 state={variants}
                 chosen={chosenVariant}
                 onChoose={chooseVariant}
                 onClear={() => clearVariant(false)}
                 onRetry={() => coordinator.retryVariants()}
+                waitingFor={waitingFor}
               />
             </div>
           )}
@@ -233,12 +269,28 @@ export function ImportedInvestigation({ coordinator, onShowData }: ImportedInves
             onLayout={setLayout}
             onReturn={returnToIncidents}
             onRetry={() => coordinator.retryCase()}
+            waitingFor={waitingFor}
             headingRef={inspectorHeading}
           />
         )}
       </div>
     </main>
   );
+}
+
+/** Names a preparation by its source file and the start of its identity, for example "Vorgänge.csv, preparation 1a2b3c4d". */
+function preparationName(filename: string | undefined, preparationId: PreparationId): string {
+  const digest = preparationId.slice(preparationId.lastIndexOf(":") + 1, preparationId.lastIndexOf(":") + 9);
+  return `${filename ?? "a source"}, preparation ${digest}`;
+}
+
+function askedName({ target, restoration }: AskedQuestion): string {
+  return restoration ? `the saved investigation “${restoration.binding.content.name}”` : preparationName(target.sourceName, target.preparationId);
+}
+
+function describeReplacementProblem(problem: ImportProblem) {
+  const text = describeImportProblem(problem);
+  return { message: text.message, remedy: text.remedy, retryable: problem.kind !== "refusal" || problem.refusal.retryable };
 }
 
 /**

@@ -189,6 +189,58 @@ export function secondsInspectionAnswer(request: InspectCsvRequest): CsvInspecti
   };
 }
 
+/*
+ * The source "Vorgänge.csv" as an inspection could answer it that suggests each column for one role
+ * only: Vorgang for the incident id, Aktivität for the activity, Zeitpunkt for the time and Gruppe for
+ * the context. No column is suggested as a sequence number.
+ */
+export function narrowInspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswer {
+  const answer = inspectionAnswer(request);
+  const roles: CsvInspectionAnswer["role_suggestions"][number]["roles"][] = [["case_id"], ["activity"], ["timestamp"], ["context"]];
+  return { ...answer, role_suggestions: answer.role_suggestions.map((item) => ({ ...item, roles: roles[item.column_index] })) };
+}
+
+/*
+ * Source "Meldungen.csv" (hand-made), commas, UTF-8, four records after the header:
+ *   0  T-1  (empty)  früh  Netz  1
+ *   1  T-1  (empty)  spät  Netz  2
+ *   2  (empty) (empty) früh  Büro  3
+ *   3  T-2  (empty)  spät  Büro  4
+ * No format reads "früh" or "spät", so the time column Zeit is not suggested for the time; the
+ * activity column Schritt is empty throughout, so it is suggested for the context only. Ticket has
+ * 3 filled cells of 2 distinct values; Zeit and Team 4 of 2; Nr 4 of 4, all whole numbers.
+ */
+export function unreadableInspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswer {
+  return {
+    ...inspectionAnswer(request),
+    dialect_candidates: [{ encoding: "utf-8", delimiter: ",", quotechar: '"', header: "first_record" }],
+    columns: ["Ticket", "Schritt", "Zeit", "Team", "Nr"].map((name, index) => ({ index, name })),
+    record_count: 4,
+    sample_rows: [
+      { source_position: 0, cells: ["T-1", "", "früh", "Netz", "1"] },
+      { source_position: 1, cells: ["T-1", "", "spät", "Netz", "2"] },
+      { source_position: 2, cells: ["", "", "früh", "Büro", "3"] },
+      { source_position: 3, cells: ["T-2", "", "spät", "Büro", "4"] },
+    ],
+    role_suggestions: [
+      { column_index: 0, roles: ["context", "case_id", "activity"], nonempty_count: 3, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
+      { column_index: 1, roles: ["context"], nonempty_count: 0, distinct_nonempty_count: 0, timestamp_matches: [...noMatches] },
+      { column_index: 2, roles: ["context", "case_id", "activity"], nonempty_count: 4, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
+      { column_index: 3, roles: ["context", "case_id", "activity"], nonempty_count: 4, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
+      {
+        column_index: 4,
+        roles: ["context", "case_id", "activity", "source_sequence"],
+        nonempty_count: 4,
+        distinct_nonempty_count: 4,
+        timestamp_matches: [...noMatches],
+      },
+    ],
+    unresolved: ["Confirm the proposed encoding, separator and column roles."],
+    blank_record_count: 0,
+    ragged_record_count: 0,
+  };
+}
+
 export function secondsInterpretationAnswer(request: ConfirmMappingRequest): InterpretationAnswer {
   const ready = request.accept_report_issues;
   return {
@@ -251,7 +303,7 @@ export function proposalAnswer(request: ConfirmMappingRequest, last: string | nu
     timestamp_kind: request.policies.time.id === "incident.time.wall_clock_as_recorded.v1" ? "wall_clock" : "utc_instant",
     last_usable_time: last,
     proposed_cutoff: proposed,
-  };
+  } as CutoffProposal;
 }
 
 /** The inspection of a packaged example as the local service answers it: comma, UTF-8, ISO times with their UTC mark. */

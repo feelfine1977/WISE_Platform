@@ -13,10 +13,15 @@ Layout inside the folder::
     sources/<sha256>.csv                the bytes of a source, unchanged
     sources/<sha256>.json               its file name, size and when it was stored
     preparations/<sha256>.json          a confirmed interpretation, its identities and report
+    definitions/<sha256>.json           a version of an expectation's definition, as validated
+    score-runs/<sha256>.json            a score run with every value it answered
+    investigations/                     saved investigations, see ``saved_store``
 
 A source is stored under the SHA-256 of its bytes, so the same bytes are kept
 once. Every file is written beside its final name and then renamed onto it,
-so a reader sees either the previous file or the complete new one.
+so a reader sees either the previous file or the complete new one. A
+definition version and a score run are immutable: once one is stored under
+its id, it is kept as it is.
 
 This module knows nothing of what a CSV means; it keeps bytes and records.
 """
@@ -43,10 +48,14 @@ FORMAT = "wise-platform-workspace"
 FORMAT_VERSION = 1
 SOURCES = "sources"
 PREPARATIONS = "preparations"
+DEFINITIONS = "definitions"
+SCORE_RUNS = "score-runs"
 
 _WORKSPACE_ID = re.compile(r"workspace\.v1:[A-Za-z0-9-]{8,64}")
 _SOURCE_ID = re.compile(r"source\.v1:sha256:([a-f0-9]{64})")
 _PREPARATION_ID = re.compile(r"preparation\.v1:sha256:([a-f0-9]{64})")
+_DEFINITION_ID = re.compile(r"definition-version\.v1:sha256:([a-f0-9]{64})")
+_RUN_ID = re.compile(r"score-run\.v1:sha256:([a-f0-9]{64})")
 # Files an operating system places in an otherwise empty folder.
 _SYSTEM_FILES = frozenset({"desktop.ini", "thumbs.db", ".ds_store"})
 
@@ -286,6 +295,22 @@ class Workspace:
             )
         return None
 
+    def source_bytes_state(self, source_id: str) -> str:
+        """``stored`` while the bytes of a source are kept unchanged, ``changed`` when the file holds other
+        bytes, ``missing`` when the file or its record is gone."""
+        match = _SOURCE_ID.fullmatch(source_id)
+        if match is None:
+            return "missing"
+        digest = match.group(1)
+        data_path = self.path / SOURCES / f"{digest}.csv"
+        if not isinstance(_read_json(self.path / SOURCES / f"{digest}.json"), dict) or not data_path.is_file():
+            return "missing"
+        try:
+            size = data_path.stat().st_size
+        except OSError:
+            return "missing"
+        return "stored" if _holds(data_path, digest, size) else "changed"
+
     def sources(self) -> list[StoredSource]:
         """Every complete stored source, oldest first."""
         found = []
@@ -405,6 +430,86 @@ class Workspace:
             return None
         return StoredPreparation(preparation_id, source_id, descriptor, identity, report, stored_utc)
 
+    # Definitions and score runs ---------------------------------------------------------
+
+    def store_definition(self, version: Mapping[str, object]) -> Mapping[str, object] | Problem:
+        """Keep a definition version under its id; the one already stored under that id is kept and returned."""
+        return self._keep_immutable(
+            DEFINITIONS, _DEFINITION_ID, str(version["definition_version_id"]), version, "definition_unavailable", "definition version"
+        )
+
+    def definition(self, definition_version_id: str) -> Mapping[str, object] | Problem | None:
+        """The definition version stored under this id, nothing if there is none, or why its file cannot be used."""
+        return self._immutable(DEFINITIONS, _DEFINITION_ID, definition_version_id, "definition_unavailable", "definition version")
+
+    def store_run(self, run: Mapping[str, object]) -> Mapping[str, object] | Problem:
+        """Keep a score run under its id; the run already stored under that id is kept and returned."""
+        identity = run["identity"]
+        assert isinstance(identity, Mapping)
+        return self._keep_immutable(SCORE_RUNS, _RUN_ID, str(identity["run_id"]), run, "run_unavailable", "score run")
+
+    def run(self, run_id: str) -> Mapping[str, object] | Problem | None:
+        """The score run stored under this id, nothing if there is none, or why its file cannot be used."""
+        return self._immutable(SCORE_RUNS, _RUN_ID, run_id, "run_unavailable", "score run")
+
+    def _keep_immutable(
+        self, folder: str, pattern: re.Pattern[str], record_id: str, record: Mapping[str, object], code: str, what: str
+    ) -> Mapping[str, object] | Problem:
+        problem = self.check()
+        if problem is not None:
+            return problem
+        match = pattern.fullmatch(record_id)
+        if match is None:
+            raise ValueError("A stored record's id has the contract's form.")
+        with self._lock:
+            # A file that is there and cannot be used is never written over: that would hide the damage.
+            existing = self._immutable(folder, pattern, record_id, code, what)
+            if existing is not None:
+                return existing
+            try:
+                (self.path / folder).mkdir(exist_ok=True)
+                kept = dict(record)
+                write_atomically(
+                    self.path / folder / f"{match.group(1)}.json",
+                    _json_bytes({"id": record_id, "sha256": _record_checksum(kept), "record": kept}),
+                )
+            except OSError as error:
+                return _write_problem(error, "The answer cannot be kept in the workspace", "workspace_id")
+        return record
+
+    def _immutable(
+        self, folder: str, pattern: re.Pattern[str], record_id: str, code: str, what: str
+    ) -> Mapping[str, object] | Problem | None:
+        """A kept record that is never changed after it was written.
+
+        The file holds the record with the checksum of its content. A file that is not there is
+        nothing; a file that is there and is not exactly what was written (not readable, another id,
+        or content that no longer has its checksum) is a problem, so that a value changed outside
+        the application is refused and never answered or silently computed again.
+        """
+        match = pattern.fullmatch(record_id) if isinstance(record_id, str) else None
+        if match is None:
+            return None
+        path = self.path / folder / f"{match.group(1)}.json"
+        if not path.exists():
+            return None
+        stored = _read_json(path)
+        record = stored.get("record") if isinstance(stored, dict) else None
+        if (
+            not isinstance(stored, dict)
+            or stored.get("id") != record_id
+            or not isinstance(record, dict)
+            or stored.get("sha256") != _record_checksum(record)
+        ):
+            return Problem(
+                code,
+                f"The kept {what} in {folder}/{path.name} of the workspace is not what the application wrote: "
+                "it was changed or damaged outside the application. Nothing was computed again. Restore the "
+                "file from a copy, or move it out of the workspace and repeat the step that made it.",
+                None,
+            )
+        return record
+
 
 def write_atomically(target: Path, data: bytes, *, keep: bool = True) -> None:
     """Write beside the target, then rename onto it; a failure leaves the target as it was.
@@ -480,6 +585,12 @@ def _read_json(path: Path) -> object:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, ValueError, RecursionError):
         return None
+
+
+def _record_checksum(record: Mapping[str, object]) -> str:
+    """SHA-256 of a record's content, whatever the order of its names and the spacing of its file."""
+    canonical = json.dumps(record, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _json_bytes(value: object) -> bytes:

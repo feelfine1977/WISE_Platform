@@ -30,6 +30,7 @@ If activation is restricted by company policy, invoke `.\.venv\Scripts\python.ex
 Then run:
 
 ```text
+python -m pip install -c requirements-dev.lock vendor/wise_pm-0.2.0-py3-none-any.whl
 python -m pip install -c requirements-dev.lock -e ".[dev]"
 npm ci
 npm run generate
@@ -39,7 +40,7 @@ npm run build
 python -m wise_platform_api --port 8765
 ```
 
-The root Python project finds the API package under `apps/api/src`; there is no separate API-project install. `npm test` runs `python -m pytest`: foundation behavior and independent fixture checks, with actual analytics acceptance explicitly pending. See [test groups](../tests/README.md). Open `http://127.0.0.1:8765` after the build. The health endpoint is `/api/health`; Ctrl+C stops the host. A health response is a foundation result, not an analytical result.
+The root Python project finds the API package under `apps/api/src`; there is no separate API-project install. The first line installs the packed method library from `vendor/`. `npm test` runs `python -m pytest`: the analytics package's tests, the API's tests and the contract acceptance tests through the real operations. `npm run check` checks the types and runs the browser's component tests. `npm run build` builds the browser files and collects the notices of the packages they contain. See [test groups](../tests/README.md). Open `http://127.0.0.1:8765` after the build. The health endpoint is `/api/health`; Ctrl+C stops the host. A health response is a foundation result, not an analytical result.
 
 For the optional browser development loop, run the API host and `npm run dev` in separate terminals. The browser development server runs at `http://127.0.0.1:5173` and proxies API requests to port 8765. The finished local deployment still uses one Python host and built files.
 
@@ -55,7 +56,7 @@ Introduce `packages/analytics` with its first tested pure implementation. It own
 
 ## Dependency and module discipline
 
-Method owns supported norm validation, measurement, applicability and WISE scoring. Flow owns supplied-scene rendering and its public scene format. Both are exact external release dependencies; eligible pins are an integration gate. The foundation does not bypass missing releases or simulate their results.
+Method owns supported norm validation, measurement, applicability and WISE scoring. Flow owns supplied-scene rendering and its public scene format. Both are external dependencies pinned exactly; eligible released pins remain an integration gate for the first release. Until those releases exist, the application uses the packed unreleased states under `vendor/` (see its README), names them where it shows their results, and does not present those results as results of a released library. It never simulates either library's results.
 
 Shared platform contracts carry source/preparation/representation/population/definition identity, typed support and query revision. Application services own persistence, jobs and coherent publication; the browser owns convenient view state. A single descriptive definition must feed charts, profiles, matrix, variants and scenes. Nullable measures and unevaluable scores must never fall into a passed bucket.
 
@@ -69,4 +70,4 @@ A program upgrade and workspace upgrade are separate operations. Refresh creates
 
 Update the status and guide when a capability becomes available. A placeholder screen or type declaration is not a completed customer journey. See [testing](testing.md) and [roadmap](roadmap.md) for evidence required at each gate.
 
-The first Windows POV qualification uses this source setup on an existing compatible development machine. Confirm Python/Node/npm versions early; a no-development-tools distribution is a separate later packaging gate.
+On Windows there are two ways in. The source setup above needs Python, Node.js and access to the package registries. The download that the workflow's Windows job builds needs none of them; [INSTALL-WINDOWS.md](INSTALL-WINDOWS.md) describes it. Neither has been qualified on Windows by a person yet.

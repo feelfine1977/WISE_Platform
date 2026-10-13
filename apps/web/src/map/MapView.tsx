@@ -63,10 +63,12 @@ interface MapViewProps {
   /** The map of every incident of the parent; its arrangement places every map of a selection. */
   parentGraph: SuppliedGraph;
   onStep: (step: SelectionPredicate) => void;
+  /** The id of the text saying why no step can be taken now; while it is given, the map offers none. */
+  waitingFor?: string;
 }
 
 /** The process map of the kept incidents, with the steps an activity or a path offers. */
-export function MapView({ shown, parentGraph, onStep }: MapViewProps) {
+export function MapView({ shown, parentGraph, onStep, waitingFor }: MapViewProps) {
   const parent = useMemo(() => toFlowGraph(parentGraph), [parentGraph]);
   const graph = useMemo(() => toFlowGraph(shown.graph), [shown.graph]);
   const arrangement = useParentArrangement(parentGraph, parent);
@@ -82,12 +84,12 @@ export function MapView({ shown, parentGraph, onStep }: MapViewProps) {
 
   const menu = useCallback(
     (target: MenuTarget): MenuAction[] | false => {
-      if (target.kind !== "node" && target.kind !== "edge") return false;
+      if ((target.kind !== "node" && target.kind !== "edge") || waitingFor) return false;
       const offered = stepChoices(elementOf(shown.graph, target.kind, target.id));
       if (offered.length === 0) return false;
       return offered.map((choice, index) => ({ id: `keep-${index}`, label: choice.label, group: "filter", run: () => onStep(choice.step) }));
     },
-    [shown.graph, onStep],
+    [shown.graph, onStep, waitingFor],
   );
 
   return (
@@ -143,7 +145,7 @@ export function MapView({ shown, parentGraph, onStep }: MapViewProps) {
         {choices.length > 0 && (
           <div className="map-choices">
             {choices.map((choice) => (
-              <button key={choice.label} type="button" onClick={() => onStep(choice.step)}>
+              <button key={choice.label} type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={() => onStep(choice.step)}>
                 {choice.label}
               </button>
             ))}

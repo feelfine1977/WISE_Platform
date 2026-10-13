@@ -3,6 +3,7 @@ import importSchema from "../../../../contracts/import.schema.json";
 import type {
   ConfirmMappingRequest,
   CsvInspectionAnswer,
+  CutoffProposalAnswer,
   ImportedCaseEvidenceAnswer,
   ImportedCaseEvidenceRequest,
   ImportedPopulationAnswer,
@@ -37,49 +38,9 @@ export function exampleSourceRoute(exampleId: ExampleId): string {
  * The latest usable time of a source under a reading, and the cutoff proposed from it: that time
  * rounded up to a full minute, on the same clock. Both are null when no record has a usable time;
  * only the proposal is null when the latest usable time lies in the last minute of the year 9999.
- * The local service answers it for a confirmation request without keeping anything; the import
- * contract has no message for it yet, so its shape is checked here.
+ * The local service answers it for a confirmation request without keeping anything.
  */
-export interface CutoffProposal {
-  schema_version: 1;
-  message_type: "cutoff_proposal_answer";
-  request_id: string;
-  query_revision: number;
-  workspace_id: string;
-  source_id: string;
-  timestamp_kind: "utc_instant" | "wall_clock";
-  last_usable_time: string | null;
-  proposed_cutoff: string | null;
-}
-
-const proposalTimes = {
-  utc_instant: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/,
-  wall_clock: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?$/,
-} as const;
-
-export function isCutoffProposal(value: unknown): value is CutoffProposal {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const answer = value as Record<string, unknown>;
-  const keys = [
-    "schema_version", "message_type", "request_id", "query_revision", "workspace_id", "source_id",
-    "timestamp_kind", "last_usable_time", "proposed_cutoff",
-  ];
-  if (Object.keys(answer).length !== keys.length || !keys.every((key) => Object.hasOwn(answer, key))) return false;
-  const kind = answer.timestamp_kind;
-  if (kind !== "utc_instant" && kind !== "wall_clock") return false;
-  const time = (item: unknown) => item === null || (typeof item === "string" && proposalTimes[kind].test(item));
-  return (
-    answer.schema_version === 1 &&
-    answer.message_type === "cutoff_proposal_answer" &&
-    typeof answer.request_id === "string" &&
-    Number.isSafeInteger(answer.query_revision) &&
-    typeof answer.workspace_id === "string" &&
-    typeof answer.source_id === "string" &&
-    time(answer.last_usable_time) &&
-    time(answer.proposed_cutoff) &&
-    (answer.last_usable_time !== null || answer.proposed_cutoff === null)
-  );
-}
+export type CutoffProposal = CutoffProposalAnswer;
 
 /**
  * Why an import request produced no answer: a typed refusal from the local service, or a failure
@@ -127,6 +88,7 @@ export const importContract = {
   sourceAnswer: validator<SourceAnswer>("SourceAnswer"),
   inspectionAnswer: validator<CsvInspectionAnswer>("CsvInspectionAnswer"),
   interpretationAnswer: validator<InterpretationAnswer>("InterpretationAnswer"),
+  cutoffProposalAnswer: validator<CutoffProposalAnswer>("CutoffProposalAnswer"),
   populationAnswer: validator<ImportedPopulationAnswer>("ImportedPopulationAnswer"),
   caseEvidenceAnswer: validator<ImportedCaseEvidenceAnswer>("ImportedCaseEvidenceAnswer"),
   refusal: validator<ImportRefusal>("ImportRefusal"),
@@ -200,7 +162,7 @@ export const httpImportClient: ImportClient = {
   inspect: (request, signal) => postJson(routes.inspect, request, "inspect_csv", importContract.inspectionAnswer, signal),
   confirmMapping: (request, signal) =>
     postJson(routes.preparations, request, "confirm_mapping", importContract.interpretationAnswer, signal),
-  proposeCutoff: (request, signal) => postJson(routes.cutoffProposal, request, "confirm_mapping", isCutoffProposal, signal),
+  proposeCutoff: (request, signal) => postJson(routes.cutoffProposal, request, "confirm_mapping", importContract.cutoffProposalAnswer, signal),
   exampleSource: async (exampleId, signal) => {
     let response: Response;
     try {

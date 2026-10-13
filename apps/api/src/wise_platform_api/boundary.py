@@ -208,12 +208,21 @@ def echo_of(message: dict) -> dict[str, str | int | None]:
 
 
 def first_difference(
-    given: object, validated: object, path: Location = (), *, compare_text: bool = True
+    given: object,
+    validated: object,
+    path: Location = (),
+    *,
+    compare_text: bool = True,
+    integers_as_numbers: bool = False,
 ) -> Location | None:
     """Return the location of the first value whose type or content differs, if any.
 
     With ``compare_text=False`` two texts count as equal: a model may write a valid text value,
     such as an instant, in another spelling, and only the type of the given value matters.
+
+    With ``integers_as_numbers=True`` a whole number given where the model holds a JSON number
+    (a float) counts as that number when the float is exactly it: ``4`` is ``4.0``. A truth value
+    is never a number, and a whole number that no float holds exactly still differs.
     """
     if isinstance(given, dict) and isinstance(validated, dict):
         for name in [*given, *validated]:
@@ -221,7 +230,11 @@ def first_difference(
                 return (*path, name)
         for name in given:
             found = first_difference(
-                given[name], validated[name], (*path, name), compare_text=compare_text
+                given[name],
+                validated[name],
+                (*path, name),
+                compare_text=compare_text,
+                integers_as_numbers=integers_as_numbers,
             )
             if found is not None:
                 return found
@@ -230,10 +243,18 @@ def first_difference(
         if len(given) != len(validated):
             return path
         for index, (item, checked) in enumerate(zip(given, validated)):
-            found = first_difference(item, checked, (*path, index), compare_text=compare_text)
+            found = first_difference(
+                item,
+                checked,
+                (*path, index),
+                compare_text=compare_text,
+                integers_as_numbers=integers_as_numbers,
+            )
             if found is not None:
                 return found
         return None
+    if integers_as_numbers and type(given) is int and type(validated) is float:
+        return None if given == validated else path
     if type(given) is not type(validated):
         return path
     if given != validated and (compare_text or not isinstance(given, str)):
