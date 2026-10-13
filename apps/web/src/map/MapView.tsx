@@ -12,7 +12,7 @@ import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
 import { elementOf, selectedElement, stepChoices } from "./elements";
 import { toFlowGraph } from "./graph";
-import { coverageRows, mapCaption } from "./wording";
+import { boundaryLine, coverageRows, mapCaption } from "./wording";
 
 /** The layout runs in the library's workers, so that the page stays responsive while it runs. */
 const workers = { elkWorkerUrl, dagreWorkerUrl };
@@ -96,7 +96,7 @@ interface MapViewProps {
   initiallyInPlace?: boolean;
 }
 
-/** The process map of the kept incidents, with the steps an activity or a path offers. */
+/** The process map of the kept incidents, with the steps an activity, a path or a flow from Start or to End offers. */
 export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false }: MapViewProps) {
   const parent = useMemo(() => toFlowGraph(parentGraph), [parentGraph]);
   const graph = useMemo(() => toFlowGraph(shown.graph), [shown.graph]);
@@ -204,7 +204,11 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
             ? `Activity “${element.label}”`
             : element?.kind === "path"
               ? `Path from “${element.source}” to “${element.target}”`
-              : "Keep or remove incidents"}
+              : element?.kind === "boundary"
+                ? element.side === "start"
+                  ? `Flow from Start to “${element.activity}”`
+                  : `Flow from “${element.activity}” to End`
+                : "Keep or remove incidents"}
         </h4>
         {element === null && (
           <p className="muted">Select an activity or a path on the map, or a row of its table view, to keep or remove the incidents through it.</p>
@@ -216,6 +220,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
             activities; the path joins the labelled records around them.
           </p>
         )}
+        {element?.kind === "boundary" && <p className="muted">{boundaryLine(element.side, element.activity, element.incidents)}</p>}
         {element?.kind === "unrecorded" && (
           <p className="muted">This line stands for activities the map does not show. It is not a recorded path, so no step is taken from it.</p>
         )}

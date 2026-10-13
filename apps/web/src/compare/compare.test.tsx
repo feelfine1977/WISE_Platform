@@ -124,6 +124,54 @@ describe("the Compare view", () => {
     });
   });
 
+  it("chooses a group by how its incidents begin or end, and the other as its opposite", async () => {
+    const app = await openCompare();
+    const groupA = screen.getByRole("group", { name: "Group A" });
+    const kinds = within(groupA).getByLabelText("Incidents that") as HTMLSelectElement;
+    // No opening value is known here, so only the conditions on an activity are offered.
+    expect(Array.from(kinds.options).map((option) => option.textContent)).toEqual([
+      "contain the activity",
+      "do not contain the activity",
+      "begin with the activity",
+      "do not begin with the activity",
+      "end with the activity",
+      "do not end with the activity",
+    ]);
+
+    await app.user.selectOptions(kinds, "begin with the activity");
+    // The same list of activities serves every condition on an activity.
+    const activities = within(groupA).getByLabelText("Activity for group A") as HTMLSelectElement;
+    expect((within(groupA).getByRole("button", { name: "Use as A" }) as HTMLButtonElement).disabled).toBe(true);
+    await app.user.selectOptions(activities, "Opened");
+    await app.user.click(within(groupA).getByRole("button", { name: "Use as A" }));
+    expect(groupA.textContent).toContain("Keep incidents that begin with “Opened”");
+    await app.user.click(within(screen.getByRole("group", { name: "Group B" })).getByRole("button", { name: "The opposite of A as B" }));
+    expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("Keep incidents that do not begin with “Opened”");
+
+    await app.user.click(screen.getByRole("button", { name: "Compare" }));
+    const request = app.comparisons.groups[0].request;
+    expect(comparisonContract.groupRequest(request)).toBe(true);
+    expect(request.definition).toMatchObject({
+      mode: "two_named_groups",
+      target: { definition: { kind: "predicates", predicates: [{ kind: "starts_with_activity", activity: "Opened", negate: false }] } },
+      reference: { definition: { kind: "predicates", predicates: [{ kind: "starts_with_activity", activity: "Opened", negate: true }] } },
+    });
+
+    // The other way round, by the end: B first, A as its opposite.
+    const groupB = screen.getByRole("group", { name: "Group B" });
+    await app.user.selectOptions(within(groupB).getByLabelText("Incidents that"), "do not end with the activity");
+    await app.user.selectOptions(within(groupB).getByLabelText("Activity for group B"), "Resolved");
+    await app.user.click(within(groupB).getByRole("button", { name: "Use as B" }));
+    await app.user.click(within(screen.getByRole("group", { name: "Group A" })).getByRole("button", { name: "The opposite of B as A" }));
+    await app.user.click(screen.getByRole("button", { name: "Compare" }));
+    const second = app.comparisons.groups[1].request;
+    expect(comparisonContract.groupRequest(second)).toBe(true);
+    expect(second.definition).toMatchObject({
+      target: { definition: { kind: "predicates", predicates: [{ kind: "ends_with_activity", activity: "Resolved", negate: false }] } },
+      reference: { definition: { kind: "predicates", predicates: [{ kind: "ends_with_activity", activity: "Resolved", negate: true }] } },
+    });
+  });
+
   it("compares two named groups and shows every figure with its denominator and the overlap", async () => {
     const app = await openCompare();
     await selectAssigned(app);

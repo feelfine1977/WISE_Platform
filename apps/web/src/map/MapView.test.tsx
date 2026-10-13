@@ -7,10 +7,12 @@ import { ImportedInvestigationCoordinator } from "../imported/coordinator";
 import { ImportedInvestigation } from "../imported/ImportedInvestigation";
 import { populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import {
+  begins,
   bothSteps,
   closed,
   contains,
   containingOpened,
+  ends,
   everyIncident,
   type Figures,
   follows,
@@ -189,6 +191,53 @@ describe("the map of the kept incidents", () => {
     expect(items.map((item) => item.textContent).filter((text) => /^(Filter|Exclude)/.test(text ?? ""))).toEqual([]);
     fireEvent.click(items[1]);
     expect(app.selecting.selections[1].request.predicates).toEqual([contains(closed, true)]);
+  });
+
+  it("takes a step from a flow the map adds from Start or to End, chosen in the map's table view", async () => {
+    const app = await renderInvestigation();
+    const map = await openMap(app, [opened, closed]);
+    await app.user.click(within(map).getByRole("button", { name: "Table view" }));
+    const rowOf = (from: string, to: string) =>
+      within(map)
+        .getAllByRole("row")
+        .find((row) => row.textContent?.startsWith(`${from}${to}`))!;
+
+    fireEvent.click(rowOf(closed, "End"));
+    expect(screen.getByRole("heading", { name: "Flow from “Geschlossen” to End" })).toBeTruthy();
+    expect(screen.getByText("1 incident on the map ends with “Geschlossen”.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Keep incidents that end with it" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Keep incidents that do not end with it" })).toBeTruthy();
+
+    fireEvent.click(rowOf("Start", opened));
+    expect(screen.getByRole("heading", { name: "Flow from Start to “Eröffnet”" })).toBeTruthy();
+    expect(screen.getByText("1 incident on the map begins with “Eröffnet”.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Keep incidents that do not begin with it" })).toBeTruthy();
+    await app.user.click(screen.getByRole("button", { name: "Keep incidents that begin with it" }));
+    expect(app.selecting.selections[1].request.predicates).toEqual([begins(opened)]);
+
+    // A-1 begins with "Eröffnet"; the order of B-2 is not known, so it belongs to neither side.
+    const beginning = { kept: support(["A-1"], 2), removed: support([], 0), unevaluable: support(["B-2"], 1) };
+    await answer(app, 1, { population: "a", ...beginning, results: [beginning] });
+    expect(chipTexts()).toEqual([["Keep incidents that begin with “Eröffnet”", "Kept1 incident · 2 records", "Removed0 incidents · 0 records", "Not evaluable1 incident · 1 record"]]);
+  });
+
+  it("offers the beginning or the end of an activity after its own steps, in its menu and under the map", async () => {
+    const app = await renderInvestigation();
+    const map = await openMap(app, [opened, closed]);
+    const own = ["Keep incidents that contain it", "Keep incidents that do not contain it"];
+
+    fireEvent.click(nodeOf(map, opened));
+    const offered = () => Array.from(document.querySelectorAll(".map-choices button")).map((button) => button.textContent);
+    expect(offered()).toEqual([...own, "Keep incidents that begin with it"]);
+    fireEvent.click(nodeOf(map, closed));
+    expect(offered()).toEqual([...own, "Keep incidents that end with it"]);
+
+    fireEvent.contextMenu(nodeOf(map, closed));
+    const items = screen.getAllByRole("menuitem");
+    expect(items.slice(0, 3).map((item) => item.textContent)).toEqual([...own, "Keep incidents that end with it"]);
+    expect(items.map((item) => item.textContent)).not.toContain("Keep incidents that begin with it");
+    fireEvent.click(items[2]);
+    expect(app.selecting.selections[1].request.predicates).toEqual([ends(closed)]);
   });
 
   it("says what its numbers count and that the map library is unreleased", async () => {

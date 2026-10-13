@@ -6,6 +6,21 @@ export const START_ID = "event:start";
 /** The id of the event every incident's flow ends at on the map. */
 export const END_ID = "event:end";
 
+const START_FLOW = "flow:start:";
+const END_FLOW = "flow:end:";
+
+/** The id of the flow the map adds from Start to the activity with this node id. */
+export const startFlowId = (activityId: string) => `${START_FLOW}${activityId}`;
+/** The id of the flow the map adds from the activity with this node id to End. */
+export const endFlowId = (activityId: string) => `${END_FLOW}${activityId}`;
+
+/** The side and the activity node id an id of an added flow names; null for any other id. */
+export function flowOf(id: string): { side: "start" | "end"; activityId: string } | null {
+  if (id.startsWith(START_FLOW)) return { side: "start", activityId: id.slice(START_FLOW.length) };
+  if (id.startsWith(END_FLOW)) return { side: "end", activityId: id.slice(END_FLOW.length) };
+  return null;
+}
+
 /**
  * The supplied graph as the map library's graph, between a start and an end.
  *
@@ -35,11 +50,11 @@ export function toFlowGraph(graph: SuppliedGraph): FlowGraph {
     ],
     edges: [
       ...begun.map(
-        (node): FlowEdge => ({ id: `flow:start:${node.id}`, kind: "flow", source: START_ID, target: node.id, metrics: { count: node.metrics.starts, cases: node.metrics.starts } }),
+        (node): FlowEdge => ({ id: startFlowId(node.id), kind: "flow", source: START_ID, target: node.id, metrics: { count: node.metrics.starts, cases: node.metrics.starts } }),
       ),
       ...paths,
       ...ended.map(
-        (node): FlowEdge => ({ id: `flow:end:${node.id}`, kind: "flow", source: node.id, target: END_ID, metrics: { count: node.metrics.ends, cases: node.metrics.ends } }),
+        (node): FlowEdge => ({ id: endFlowId(node.id), kind: "flow", source: node.id, target: END_ID, metrics: { count: node.metrics.ends, cases: node.metrics.ends } }),
       ),
     ],
     meta: { ...graph.meta },

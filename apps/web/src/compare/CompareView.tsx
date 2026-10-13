@@ -222,8 +222,9 @@ function GroupsSetup({ coordinator, draft, selection, activities, openings }: Gr
   return (
     <>
       <p className="compare-muted">
-        Choose each group from the data: the incidents with or without an activity, or opened with a value. A group can also be the current
-        selection of the investigation, and "Kept against removed" compares the two sides of that selection in one step.
+        Choose each group from the data: the incidents with or without an activity, that begin or end with an activity, or opened with a value. A
+        group can also be the current selection of the investigation, and "Kept against removed" compares the two sides of that selection in one
+        step.
       </p>
       <div className="compare-selection">
         <p>
@@ -264,7 +265,20 @@ function GroupsSetup({ coordinator, draft, selection, activities, openings }: Gr
   );
 }
 
-type ConditionKind = "with" | "without" | "opened" | "not-opened";
+/** The conditions on an activity a group can be chosen by: the kind of step each stands for, and whether it is its opposite. */
+const activityConditions = {
+  with: { kind: "contains_activity", negate: false },
+  without: { kind: "contains_activity", negate: true },
+  begins: { kind: "starts_with_activity", negate: false },
+  "not-begins": { kind: "starts_with_activity", negate: true },
+  ends: { kind: "ends_with_activity", negate: false },
+  "not-ends": { kind: "ends_with_activity", negate: true },
+} as const;
+
+type ActivityCondition = keyof typeof activityConditions;
+type ConditionKind = ActivityCondition | "opened" | "not-opened";
+
+const isActivityCondition = (kind: ConditionKind): kind is ActivityCondition => kind in activityConditions;
 
 /** The words of a missing opening value in a list of values. */
 const NOT_RECORDED = "(not recorded)";
@@ -282,12 +296,12 @@ function GroupSlot({ role, coordinator, draft, selection, activities, openings }
   const group = draft.groups[role];
   const other = draft.groups[role === "target" ? "reference" : "target"];
   const otherLetter = letters[role === "target" ? "reference" : "target"];
-  const byActivity = kind === "with" || kind === "without";
+  const byActivity = isActivityCondition(kind);
   const opening = openings.find((item) => item.index === column) ?? null;
-  const condition: SelectionPredicate | null = byActivity
+  const condition: SelectionPredicate | null = isActivityCondition(kind)
     ? activity === ""
       ? null
-      : { kind: "contains_activity", activity, negate: kind === "without" }
+      : { ...activityConditions[kind], activity }
     : opening === null || value === null || value >= opening.values.length
       ? null
       : { kind: "opening_attribute_equals", column_index: opening.index, value: opening.values[value], negate: kind === "not-opened", anchor_policy: contextPolicy };
@@ -332,6 +346,10 @@ function GroupSlot({ role, coordinator, draft, selection, activities, openings }
         <select id={kindId} value={kind} onChange={(event) => setKind(event.target.value as ConditionKind)}>
           <option value="with">contain the activity</option>
           <option value="without">do not contain the activity</option>
+          <option value="begins">begin with the activity</option>
+          <option value="not-begins">do not begin with the activity</option>
+          <option value="ends">end with the activity</option>
+          <option value="not-ends">do not end with the activity</option>
           {openings.length > 0 && <option value="opened">were opened with</option>}
           {openings.length > 0 && <option value="not-opened">were not opened with</option>}
         </select>

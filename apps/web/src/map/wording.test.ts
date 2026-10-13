@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { begins, contains, ends, follows, followingOpened, parent, suppliedGraph, support } from "../test/selections";
-import { coverageRows, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
+import { boundaryLine, coverageRows, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
 
 describe("the words of a step", () => {
   it("says what each kind of step keeps", () => {
@@ -54,6 +54,13 @@ describe("the words of the map", () => {
       "Start and End are added by the map: a flow leaves Start for every activity incidents begin with and enters End from every activity they end with, each with that number of incidents. They are always shown.",
       "Lag: the median of elapsed hours between the two records of a path.",
     ]);
+  });
+
+  it("says how many incidents begin or end with the activity of a flow from Start or to End", () => {
+    expect(boundaryLine("start", "Eröffnet", 1)).toBe("1 incident on the map begins with “Eröffnet”.");
+    expect(boundaryLine("start", "Eröffnet", 12345)).toBe("12,345 incidents on the map begin with “Eröffnet”.");
+    expect(boundaryLine("end", "Geschlossen", 1)).toBe("1 incident on the map ends with “Geschlossen”.");
+    expect(boundaryLine("end", "Geschlossen", 2)).toBe("2 incidents on the map end with “Geschlossen”.");
   });
 
   it("names a lag of the recorded wall clock with its limitation", () => {

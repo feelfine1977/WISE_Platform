@@ -48,6 +48,12 @@ export function stepWording(step: SelectionPredicate): string {
   }
 }
 
+/** How many incidents on the map begin or end with the activity of a flow from Start or to End. */
+export function boundaryLine(side: "start" | "end", activity: string, incidents: number): string {
+  const verb = side === "start" ? "begin" : "end";
+  return `${countOf(incidents, "incident")} on the map ${incidents === 1 ? `${verb}s` : verb} with ${quoted(activity)}.`;
+}
+
 /** A supplied support as incidents and their records. */
 export function supportText(support: PopulationSupport): string {
   return `${countOf(support.case_count, "incident")} · ${countOf(support.record_count, "record")}`;

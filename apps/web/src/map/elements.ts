@@ -1,11 +1,18 @@
 import type { Selection } from "wise-flow/react";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
+import { flowOf } from "./graph";
 
 /** The element of the map the analyst selected, named by the supplied labels. */
 export type SelectedElement =
-  | { kind: "activity"; label: string }
+  /** `starts` and `ends` are the supplied numbers of incidents that begin and that end with the activity. */
+  | { kind: "activity"; label: string; starts: number; ends: number }
   /** `bridged` of the path's `passages` pass over records without activity label between the two activities. */
   | { kind: "path"; source: string; target: string; passages: number; bridged: number }
+  /**
+   * A flow the map adds from Start to an activity (`side` "start") or from an activity to End, for
+   * the supplied number of `incidents` that begin or end with that activity.
+   */
+  | { kind: "boundary"; side: "start" | "end"; activity: string; incidents: number }
   /** An element the map draws that is no supplied activity or path, such as a line for activities it does not show. */
   | { kind: "unrecorded" }
   | { kind: "several" };
@@ -19,22 +26,32 @@ export function selectedElement(graph: SuppliedGraph, selection: Selection): Sel
   return elementOf(graph, "edge", selection.edges[0]);
 }
 
-/** The supplied activity or path behind an element id of the map. */
+/**
+ * The supplied activity or path behind an element id of the map. A flow the map adds from Start or
+ * to End is no supplied path; it is named by the supplied activity it joins, with that activity's
+ * supplied starts or ends.
+ */
 export function elementOf(graph: SuppliedGraph, kind: "node" | "edge", id: string): SelectedElement {
   if (kind === "node") {
     const node = graph.nodes.find((item) => item.id === id);
-    return node ? { kind: "activity", label: node.label } : { kind: "unrecorded" };
+    return node ? { kind: "activity", label: node.label, starts: node.metrics.starts, ends: node.metrics.ends } : { kind: "unrecorded" };
   }
   const edge = graph.edges.find((item) => item.id === id);
-  return edge
-    ? {
-        kind: "path",
-        source: edge.payload.source_activity,
-        target: edge.payload.target_activity,
-        passages: edge.metrics.count,
-        bridged: edge.payload.bridged_passage_count,
-      }
-    : { kind: "unrecorded" };
+  if (edge) {
+    return {
+      kind: "path",
+      source: edge.payload.source_activity,
+      target: edge.payload.target_activity,
+      passages: edge.metrics.count,
+      bridged: edge.payload.bridged_passage_count,
+    };
+  }
+  const flow = flowOf(id);
+  const joined = flow && graph.nodes.find((item) => item.id === flow.activityId);
+  if (!flow || !joined) return { kind: "unrecorded" };
+  const incidents = flow.side === "start" ? joined.metrics.starts : joined.metrics.ends;
+  // The map draws such a flow only where incidents begin or end; no step is taken from one it does not draw.
+  return incidents > 0 ? { kind: "boundary", side: flow.side, activity: joined.label, incidents } : { kind: "unrecorded" };
 }
 
 export interface StepChoice {
@@ -42,12 +59,27 @@ export interface StepChoice {
   step: SelectionPredicate;
 }
 
-/** The two steps an element offers: keep the incidents through it, or the incidents not through it. */
+/**
+ * The steps an element offers: keep the incidents through it, or the incidents not through it. An
+ * activity incidents begin or end with also offers to keep those, after its own two steps; a flow
+ * from Start or to End offers them and their opposites.
+ */
 export function stepChoices(element: SelectedElement | null): StepChoice[] {
   if (element?.kind === "activity") {
+    const activity = element.label;
+    const choices: StepChoice[] = [
+      { label: "Keep incidents that contain it", step: { kind: "contains_activity", activity, negate: false } },
+      { label: "Keep incidents that do not contain it", step: { kind: "contains_activity", activity, negate: true } },
+    ];
+    if (element.starts > 0) choices.push({ label: "Keep incidents that begin with it", step: { kind: "starts_with_activity", activity, negate: false } });
+    if (element.ends > 0) choices.push({ label: "Keep incidents that end with it", step: { kind: "ends_with_activity", activity, negate: false } });
+    return choices;
+  }
+  if (element?.kind === "boundary") {
+    const [kind, verb] = element.side === "start" ? (["starts_with_activity", "begin"] as const) : (["ends_with_activity", "end"] as const);
     return [
-      { label: "Keep incidents that contain it", step: { kind: "contains_activity", activity: element.label, negate: false } },
-      { label: "Keep incidents that do not contain it", step: { kind: "contains_activity", activity: element.label, negate: true } },
+      { label: `Keep incidents that ${verb} with it`, step: { kind, activity: element.activity, negate: false } },
+      { label: `Keep incidents that do not ${verb} with it`, step: { kind, activity: element.activity, negate: true } },
     ];
   }
   if (element?.kind === "path") {
