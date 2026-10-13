@@ -15,6 +15,7 @@ Layout inside the folder::
     preparations/<sha256>.json          a confirmed interpretation, its identities and report
     definitions/<sha256>.json           a version of an expectation's definition, as validated
     score-runs/<sha256>.json            a score run with every value it answered
+    investigations/                     saved investigations, see ``saved_store``
 
 A source is stored under the SHA-256 of its bytes, so the same bytes are kept
 once. Every file is written beside its final name and then renamed onto it,
@@ -293,6 +294,22 @@ class Workspace:
                 "source_id",
             )
         return None
+
+    def source_bytes_state(self, source_id: str) -> str:
+        """``stored`` while the bytes of a source are kept unchanged, ``changed`` when the file holds other
+        bytes, ``missing`` when the file or its record is gone."""
+        match = _SOURCE_ID.fullmatch(source_id)
+        if match is None:
+            return "missing"
+        digest = match.group(1)
+        data_path = self.path / SOURCES / f"{digest}.csv"
+        if not isinstance(_read_json(self.path / SOURCES / f"{digest}.json"), dict) or not data_path.is_file():
+            return "missing"
+        try:
+            size = data_path.stat().st_size
+        except OSError:
+            return "missing"
+        return "stored" if _holds(data_path, digest, size) else "changed"
 
     def sources(self) -> list[StoredSource]:
         """Every complete stored source, oldest first."""

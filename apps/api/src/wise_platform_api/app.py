@@ -16,6 +16,7 @@ from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
 from .population_views import PopulationViews, ViewReply
+from .saving import Saving, SavingReply
 from .selections import SelectionReply, Selections
 from .workspace import program_folders
 
@@ -34,6 +35,7 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     views = PopulationViews(imports)
     comparisons = Comparisons(imports)
     expectations = Expectations(imports)
+    saving = Saving(imports)
     application.state.selections = imports.selections
 
     @application.get("/api/health", response_model=HealthResponse)
@@ -132,6 +134,18 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     async def score_case_witness(request: Request) -> JSONResponse:
         return _sent_scoring(await run_in_threadpool(expectations.case_witness, await request.body()))
 
+    @application.post("/api/investigations/save")
+    async def save_investigation(request: Request) -> JSONResponse:
+        return _sent_saving(await run_in_threadpool(saving.save, await request.body()))
+
+    @application.post("/api/investigations/list-saved")
+    async def list_saved(request: Request) -> JSONResponse:
+        return _sent_saving(await run_in_threadpool(saving.list_saved, await request.body()))
+
+    @application.post("/api/investigations/reopen")
+    async def reopen_investigation(request: Request) -> JSONResponse:
+        return _sent_saving(await run_in_threadpool(saving.reopen, await request.body()))
+
     @application.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:
         raise HTTPException(status_code=404, detail="API route not found")
@@ -172,6 +186,10 @@ def _sent_comparison(reply: ComparisonReply) -> JSONResponse:
 
 
 def _sent_scoring(reply: ScoringReply) -> JSONResponse:
+    return JSONResponse(reply.body, status_code=reply.status)
+
+
+def _sent_saving(reply: SavingReply) -> JSONResponse:
     return JSONResponse(reply.body, status_code=reply.status)
 
 

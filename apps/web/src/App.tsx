@@ -19,6 +19,9 @@ import { httpInvestigationClient, type InvestigationClient } from "./investigati
 import { InvestigationCoordinator, type PopulationState } from "./investigation/coordinator";
 import { defaultExampleId } from "./investigation/policies";
 import { httpSelectionClient, type SelectionClient } from "./map/client";
+import { httpSavingClient, type SavingClient } from "./saved/client";
+import { SavingCoordinator } from "./saved/coordinator";
+import { SavedInvestigations } from "./saved/SavedInvestigations";
 import { httpPopulationViewClient, type PopulationViewClient } from "./views/client";
 import { httpScoringClient, type ScoringClient } from "./expectation/client";
 import { ExpectationView } from "./expectation/ExpectationView";
@@ -31,11 +34,12 @@ interface AppProps {
   viewClient?: PopulationViewClient;
   comparisonClient?: ComparisonClient;
   scoringClient?: ScoringClient;
+  savingClient?: SavingClient;
   checkHealth?: (signal: AbortSignal) => Promise<HealthResponse>;
 }
 
-/** The area shown: the Data area, the investigation of the example or of an imported preparation, Compare, or the Expectation view. */
-type Area = "data" | "example" | "imported" | "compare" | "expectation";
+/** The area shown: the Data area, the investigation of the example or of an imported preparation, Compare, the Expectation view, or the saved investigations. */
+type Area = "data" | "example" | "imported" | "compare" | "expectation" | "saved";
 
 type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
 
@@ -46,12 +50,14 @@ export default function App({
   viewClient = httpPopulationViewClient,
   comparisonClient = httpComparisonClient,
   scoringClient = httpScoringClient,
+  savingClient = httpSavingClient,
   checkHealth = fetchHealth,
 }: AppProps) {
   const [coordinator] = useState(() => new InvestigationCoordinator(client));
   const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
   const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient, selectionClient, viewClient));
   const [compareCoordinator] = useState(() => new CompareCoordinator(comparisonClient));
+  const [savingCoordinator] = useState(() => new SavingCoordinator(savingClient, importedCoordinator));
   const [area, setArea] = useState<Area>("example");
   const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
@@ -70,8 +76,9 @@ export default function App({
     return () => {
       dataCoordinator.stop();
       importedCoordinator.stop();
+      savingCoordinator.stop();
     };
-  }, [dataCoordinator, importedCoordinator]);
+  }, [dataCoordinator, importedCoordinator, savingCoordinator]);
 
   useEffect(() => () => compareCoordinator.stop(), [compareCoordinator]);
 
@@ -146,6 +153,9 @@ export default function App({
           <button type="button" aria-current={area === "expectation" ? "page" : undefined} onClick={() => setArea("expectation")}>
             Expectation
           </button>
+          <button type="button" aria-current={area === "saved" ? "page" : undefined} onClick={() => setArea("saved")}>
+            Saved
+          </button>
         </nav>
         <ServiceStatus checkHealth={checkHealth} />
       </header>
@@ -155,7 +165,7 @@ export default function App({
           setArea("example");
         }} />
       )}
-      {area === "imported" && <ImportedInvestigation coordinator={importedCoordinator} onShowData={() => setArea("data")} />}
+      {area === "imported" && <ImportedInvestigation coordinator={importedCoordinator} saving={savingCoordinator} onShowData={() => setArea("data")} />}
       {area === "compare" && (
         <CompareView
           coordinator={compareCoordinator}
@@ -165,6 +175,17 @@ export default function App({
         />
       )}
       {area === "expectation" && <ExpectationView investigation={importedCoordinator} client={scoringClient} />}
+      {area === "saved" && (
+        <SavedInvestigations
+          saving={savingCoordinator}
+          data={dataCoordinator}
+          onReopened={() => {
+            setImportedOpen(true);
+            setArea("imported");
+          }}
+          onShowData={() => setArea("data")}
+        />
+      )}
       <main className="investigation" hidden={area !== "example"}>
         <PopulationStrip
           population={population}

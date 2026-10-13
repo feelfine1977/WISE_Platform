@@ -86,7 +86,7 @@ describe("the investigation screen", () => {
     const { user } = scripted;
     await openPopulationZero(scripted);
 
-    for (let step = 0; step < 10 && document.activeElement?.textContent !== "INC01"; step += 1) await user.tab();
+    for (let step = 0; step < 20 && document.activeElement?.textContent !== "INC01"; step += 1) await user.tab();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "INC01" }));
     await user.keyboard("{ArrowDown}");
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "INC02" }));
@@ -345,7 +345,7 @@ describe("the investigation screen", () => {
     const scripted = renderScreen();
     await openPopulationZero(scripted);
     const areas = screen.getByRole("navigation", { name: "Areas" });
-    expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare", "Expectation"]);
+    expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare", "Expectation", "Saved"]);
     await scripted.user.click(within(areas).getByRole("button", { name: "Expectation" }));
     expect(within(areas).getByRole("button", { name: "Expectation" }).getAttribute("aria-current")).toBe("page");
     expect(within(areas).getByRole("button", { name: "Investigations" }).getAttribute("aria-current")).toBeNull();

@@ -51,6 +51,32 @@ COMPARE_PERIODS = "compare_periods"
 Compare = Callable[[PreparedData, Mapping, object, int, str, Mapping], "dict[str, object] | PackageRefusal"]
 
 
+def compared(
+    prepared: PreparedData,
+    kind: str,
+    identity: Mapping[str, object],
+    parent_case_ids: object,
+    context_column_index: int,
+    context_policy: str,
+    definition: Mapping[str, object],
+) -> dict[str, object] | PackageRefusal:
+    """The package's comparison of groups (``kind`` "group") or of periods (``kind`` "period")."""
+    compare = compare_groups if kind == "group" else compare_periods
+    return compare(prepared, identity, parent_case_ids, context_column_index, context_policy, definition)
+
+
+def keep_comparison(
+    registry: SelectionRegistry, workspace_id: str, prepared: PreparedData, answer: Mapping[str, object]
+) -> None:
+    """Keep the parent and both groups of a comparison as selections of exactly their incidents.
+
+    A saved investigation that is opened again keeps its comparison this way, as the comparison
+    operations do when they answer.
+    """
+    for support in (answer["parent"], answer["target"]["included"], answer["reference"]["included"]):
+        registry.keep(workspace_id, select_cases(prepared, (), support["case_ids"]))
+
+
 @dataclass(frozen=True)
 class ComparisonReply:
     """A contract message, as the JSON it is sent as, and its HTTP status."""
