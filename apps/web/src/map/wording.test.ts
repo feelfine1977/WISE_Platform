@@ -47,6 +47,7 @@ describe("the words of the map", () => {
       "Paths count passages and distinct incidents of the 1 incident whose order of records can be evaluated.",
       "1 incident with 1 record is not evaluable for paths; 0 records have no activity label.",
       "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
+      "Start and End are added by the map: a flow leaves Start for every activity incidents begin with and enters End from every activity they end with, each with that number of incidents. They are always shown.",
       "Lag: the median of elapsed hours between the two records of a path.",
     ]);
   });

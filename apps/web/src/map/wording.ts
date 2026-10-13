@@ -71,6 +71,7 @@ export function mapCaption(meta: GraphCoverage): string[] {
       `${meta.sequence_unevaluable_case_count === 1 ? "is" : "are"} not evaluable for paths; ` +
       `${countOf(meta.omitted_activity_record_count, "record")} ${meta.omitted_activity_record_count === 1 ? "has" : "have"} no activity label.`,
     "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
+    "Start and End are added by the map: a flow leaves Start for every activity incidents begin with and enters End from every activity they end with, each with that number of incidents. They are always shown.",
     lagLine(meta),
   ];
 }

@@ -190,7 +190,8 @@ describe("a process map reopened with a saved selection", () => {
     expect(placed).toMatch(/translate/);
     expect(node(map, checked)).toBeNull();
     expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(flow.layoutUnion).mock.calls[0][0][0].nodes.map((item) => item.label)).toEqual([opened, closed, checked]);
+    // The parent's activities between the two events the map adds.
+    expect(vi.mocked(flow.layoutUnion).mock.calls[0][0][0].nodes.map((item) => item.label)).toEqual(["Start", opened, closed, checked, "End"]);
 
     // Clearing only the recipe reveals the same saved parent, not the entire preparation.
     await app.user.click(screen.getByRole("button", { name: "Clear all" }));

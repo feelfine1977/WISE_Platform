@@ -3,21 +3,39 @@ import type { FlowGraph } from "wise-flow";
 import { normalizeGraph, validateGraph } from "wise-flow";
 import type { SuppliedGraph } from "../generated/selection";
 import { suppliedGraph } from "../test/selections";
-import { toFlowGraph } from "./graph";
+import { END_ID, START_ID, toFlowGraph } from "./graph";
 
 describe("the supplied graph as the map library's graph", () => {
-  it("passes every node, path and coverage field on unchanged", () => {
+  it("passes every node, path and coverage field on unchanged, between a start and an end", () => {
     const supplied: SuppliedGraph = suppliedGraph(["A-1", "B-2"]);
     const before = JSON.stringify(supplied);
     // Typed as the library's graph without a cast: the type checker accepts the adapter's result as it is.
     const flow: FlowGraph = toFlowGraph(supplied);
+    const plain = JSON.parse(JSON.stringify(flow)) as FlowGraph;
 
-    expect(JSON.parse(JSON.stringify(flow))).toEqual(JSON.parse(before));
+    // What was supplied is all there, unchanged and in its order.
+    expect(plain.nodes.filter((node) => node.kind === "activity")).toEqual(JSON.parse(before).nodes);
+    expect(plain.edges.filter((edge) => edge.kind === "follows")).toEqual(JSON.parse(before).edges);
+    expect(plain.meta).toEqual(JSON.parse(before).meta);
     expect(JSON.stringify(supplied)).toBe(before);
-    expect(flow.nodes[0].metrics).not.toBe(supplied.nodes[0].metrics);
     expect(flow.meta?.cases).toBe(2);
     expect(validateGraph(flow)).toEqual([]);
-    expect(normalizeGraph(flow).edges.map((edge) => edge.id)).toEqual(supplied.edges.map((edge) => edge.id));
+    expect(normalizeGraph(flow).edges.filter((edge) => edge.kind === "follows").map((edge) => edge.id)).toEqual(supplied.edges.map((edge) => edge.id));
+
+    // Added: Start first and End last, and one flow for every activity incidents begin or end with, with the supplied counts.
+    expect(flow.nodes[0]).toMatchObject({ id: START_ID, kind: "event", label: "Start", tags: ["start"] });
+    expect(flow.nodes[flow.nodes.length - 1]).toMatchObject({ id: END_ID, kind: "event", label: "End", tags: ["end"] });
+    const begun = supplied.nodes.filter((node) => node.metrics.starts > 0);
+    const ended = supplied.nodes.filter((node) => node.metrics.ends > 0);
+    expect(begun.length).toBeGreaterThan(0);
+    expect(ended.length).toBeGreaterThan(0);
+    expect(flow.edges.filter((edge) => edge.source === START_ID).map((edge) => [edge.kind, edge.target, edge.metrics?.cases])).toEqual(
+      begun.map((node) => ["flow", node.id, node.metrics.starts]),
+    );
+    expect(flow.edges.filter((edge) => edge.target === END_ID).map((edge) => [edge.kind, edge.source, edge.metrics?.cases])).toEqual(
+      ended.map((node) => ["flow", node.id, node.metrics.ends]),
+    );
+    expect(flow.nodes[0].metrics?.cases).toBe(begun.reduce((sum, node) => sum + node.metrics.starts, 0));
   });
 
   it("is needed: the contract's closed metrics are not the library's open records as they are", () => {
