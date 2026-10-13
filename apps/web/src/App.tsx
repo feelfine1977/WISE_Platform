@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { fetchHealth } from "./api";
+import { httpComparisonClient, type ComparisonClient } from "./compare/client";
+import { CompareCoordinator } from "./compare/coordinator";
+import { CompareView } from "./compare/CompareView";
 import { IncidentTable } from "./components/IncidentTable";
 import { Inspector, type InspectorLayout } from "./components/Inspector";
 import { PopulationStrip } from "./components/PopulationStrip";
@@ -24,11 +27,12 @@ interface AppProps {
   importClient?: ImportClient;
   selectionClient?: SelectionClient;
   viewClient?: PopulationViewClient;
+  comparisonClient?: ComparisonClient;
   checkHealth?: (signal: AbortSignal) => Promise<HealthResponse>;
 }
 
-/** The area shown: the Data area, or the investigation of the example or of an imported preparation. */
-type Area = "data" | "example" | "imported";
+/** The area shown: the Data area, the investigation of the example or of an imported preparation, or Compare. */
+type Area = "data" | "example" | "imported" | "compare";
 
 type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
 
@@ -37,11 +41,13 @@ export default function App({
   importClient = httpImportClient,
   selectionClient = httpSelectionClient,
   viewClient = httpPopulationViewClient,
+  comparisonClient = httpComparisonClient,
   checkHealth = fetchHealth,
 }: AppProps) {
   const [coordinator] = useState(() => new InvestigationCoordinator(client));
   const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
   const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient, selectionClient, viewClient));
+  const [compareCoordinator] = useState(() => new CompareCoordinator(comparisonClient));
   const [area, setArea] = useState<Area>("example");
   const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
@@ -62,6 +68,8 @@ export default function App({
       importedCoordinator.stop();
     };
   }, [dataCoordinator, importedCoordinator]);
+
+  useEffect(() => () => compareCoordinator.stop(), [compareCoordinator]);
 
   const openIncidents = useCallback(
     (target: PreparationTarget) => {
@@ -123,10 +131,13 @@ export default function App({
           </button>
           <button
             type="button"
-            aria-current={area !== "data" ? "page" : undefined}
+            aria-current={area === "example" || area === "imported" ? "page" : undefined}
             onClick={() => setArea(importedOpen ? "imported" : "example")}
           >
             Investigations
+          </button>
+          <button type="button" aria-current={area === "compare" ? "page" : undefined} onClick={() => setArea("compare")}>
+            Compare
           </button>
         </nav>
         <ServiceStatus checkHealth={checkHealth} />
@@ -138,6 +149,14 @@ export default function App({
         }} />
       )}
       {area === "imported" && <ImportedInvestigation coordinator={importedCoordinator} onShowData={() => setArea("data")} />}
+      {area === "compare" && (
+        <CompareView
+          coordinator={compareCoordinator}
+          investigation={importedCoordinator}
+          onShowData={() => setArea("data")}
+          onShowInvestigation={() => setArea(importedOpen ? "imported" : "example")}
+        />
+      )}
       <main className="investigation" hidden={area !== "example"}>
         <PopulationStrip
           population={population}

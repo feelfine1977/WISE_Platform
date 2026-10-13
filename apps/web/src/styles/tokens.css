@@ -139,6 +139,8 @@
   --size-share-figures: 22ch;
   --size-swatch: 12px;
   --size-swatch-height: 4px;
+  /* The Compare view: the column of what to compare beside the table of how it differs. */
+  --size-compare-setup: 400px;
 
   /* Layers */
   --z-sticky: var(--wf-z-comparison-header);
