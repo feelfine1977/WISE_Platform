@@ -8,7 +8,7 @@
 .map-stages > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .explorer .map-stages[open] { flex: 1 1 100%; }
 
-.stages-editor { display: grid; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-3); color: var(--color-ink); font-size: var(--font-size-base); }
+.stages-editor { display: grid; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-4); color: var(--color-ink); font-size: var(--font-size-base); }
 .stages-editor p { margin: 0; }
 .stages-note { max-width: var(--size-page); color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .stages-not-kept { padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); }

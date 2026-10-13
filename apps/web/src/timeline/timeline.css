@@ -3,7 +3,7 @@
  * its gaps. Every value refers to the token stylesheet. Where a mark lies on the strip is an
  * attribute of the drawing and never a rule here.
  */
-.timeline { display: grid; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-3); }
+.timeline { display: grid; gap: var(--space-2); min-width: 0; }
 .timeline-elapsed { font-variant-numeric: tabular-nums; }
 .timeline-note { color: var(--color-ink-muted); font-size: var(--font-size-small); }
 

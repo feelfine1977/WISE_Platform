@@ -104,7 +104,11 @@
   --focus-offset-inside: calc(var(--focus-width) * -1);
   --shadow-float: var(--wf-shadow-menu);
 
-  /* Spacing on a 4 px grid; the half step only between a label and its own value. */
+  /*
+   * Spacing on a 4 px grid. Between things the steps are 8 inside a group, 16 between groups and
+   * 24 between regions; 4 and 12 stand only inside a control, a chip, a cell or a header row, and
+   * the half step only between a label and its own value.
+   */
   --space-half: 2px;
   --space-1: 4px;
   --space-2: 8px;
@@ -112,8 +116,9 @@
   --space-4: 16px;
   --space-6: 24px;
 
-  /* Sizes */
+  /* Sizes: a row of a table or a list is 32 px high, a header row under the app bar 40 px. */
   --size-app-bar: 44px;
+  --size-header-row: 40px;
   --size-row: 32px;
   --size-control: 32px;
   --size-hit: 40px;

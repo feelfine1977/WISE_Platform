@@ -88,22 +88,22 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-6);
-  padding: var(--space-3) var(--space-6);
+  min-height: var(--size-header-row);
+  padding: var(--space-1) var(--space-6);
   background: var(--color-surface);
   border-bottom: var(--line-width) solid var(--color-line);
 }
 :is(.data-area, .workbench) .breadcrumb { display: flex; align-items: baseline; gap: var(--space-1); }
 :is(.data-area, .workbench) .breadcrumb-current { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
-:is(.data-area, .workbench) .facts { display: flex; flex-wrap: wrap; margin: 0; clip-path: none; }
-:is(.data-area, .workbench) .fact { padding: 0 var(--space-4); }
-:is(.data-area, .workbench) .fact:first-child { padding-left: 0; }
+:is(.data-area, .workbench) .facts { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-6); margin: 0; clip-path: none; }
+:is(.data-area, .workbench) .fact { padding: 0; }
 :is(.data-area, .workbench) .fact dt { font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
 :is(.data-area, .workbench) .fact dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-weight: var(--font-weight-strong); font-variant-numeric: tabular-nums; }
 
 /* Pending work: a thin blue line, what is being done, and a way to stop waiting. */
 .progress-line { position: relative; height: var(--size-progress); overflow: hidden; background: var(--color-accent-tint); }
 .progress-line::after { content: ""; position: absolute; inset: 0; width: 30%; background: var(--color-accent); }
-.working { display: grid; gap: var(--space-2); justify-items: start; margin-top: var(--space-3); }
+.working { display: grid; gap: var(--space-2); justify-items: start; margin-top: var(--space-2); }
 .working .progress-line { justify-self: stretch; }
 .working-text { color: var(--color-ink-muted); padding: var(--space-2) 0; }
 
@@ -112,8 +112,8 @@
   display: grid;
   gap: var(--space-1);
   justify-items: start;
-  margin-top: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   background: var(--color-surface);
   border-left: var(--bar-width) solid var(--color-error);
 }
@@ -134,24 +134,24 @@
 .workspace-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-4); min-width: 0; }
 .workspace-line > details { flex-basis: 100%; }
 .workspace-line > details > summary { cursor: pointer; color: var(--color-ink-muted); }
-.workspace-line > details[open] { display: grid; gap: var(--space-3); }
-.other-folder { display: grid; gap: var(--space-3); }
+.workspace-line > details[open] { display: grid; gap: var(--space-2); }
+.other-folder { display: grid; gap: var(--space-2); }
 
 /* Data area: steps one under the other on the paper, each under its title and without a frame. */
-.data-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); padding: var(--space-4) var(--space-6) var(--space-6); max-width: var(--size-page); }
+.data-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); padding: var(--space-6); max-width: var(--size-page); }
 .step {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-width: 0;
   background: var(--color-surface);
 }
 .step-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
-.inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .example-select { flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .path-input { flex: 1 1 var(--size-path-input); min-width: 0; font-family: var(--font-mono); }
 .settled { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
-.choice-row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); align-items: flex-start; }
+.choice-row { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-6); align-items: flex-start; }
 .choice { display: grid; gap: var(--space-1); min-width: 0; max-width: 100%; }
 .choice select,
 .choice input { max-width: 100%; min-width: 0; }
@@ -164,7 +164,7 @@
 .check-title { font-weight: var(--font-weight-plain); }
 .question { font-weight: var(--font-weight-plain); }
 .proposal { margin: 0; }
-.example-reading { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-canvas); border-left: var(--bar-width) solid var(--color-accent); }
+.example-reading { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--color-canvas); border-left: var(--bar-width) solid var(--color-accent); }
 .example-reading p { margin: 0; }
 .limitation { margin-left: var(--space-6); padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); color: var(--color-ink-muted); }
 .notes { margin: 0; padding-left: var(--space-4); color: var(--color-ink-muted); }
@@ -187,15 +187,15 @@
 /* Interpretation report */
 .report { display: grid; gap: var(--space-4); min-width: 0; }
 .report-more { overflow-x: auto; }
-.state-line { padding: var(--space-2) var(--space-3); border-left: var(--bar-width) solid var(--color-mark); background: var(--color-canvas); }
+.state-line { padding: var(--space-2) var(--space-4); border-left: var(--bar-width) solid var(--color-mark); background: var(--color-canvas); }
 .state-ready { border-left-color: var(--color-accent); }
 .state-confirm { border-left-color: var(--color-attention); }
 .state-blocked { border-left-color: var(--color-error); }
-.report-figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--size-figure-column), 1fr)); gap: var(--space-3) var(--space-6); margin: 0; }
+.report-figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--size-figure-column), 1fr)); gap: var(--space-4) var(--space-6); margin: 0; }
 .report-figures dt { font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
 .report-figures dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-variant-numeric: tabular-nums; font-weight: var(--font-weight-strong); }
 .issues ul { display: grid; gap: var(--space-2); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
-.issue { display: grid; gap: var(--space-half); padding-left: var(--space-3); border-left: var(--bar-width) solid var(--color-line); }
+.issue { display: grid; gap: var(--space-half); padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-line); }
 .issue-confirmation { border-left-color: var(--color-attention); }
 .issue-blocking { border-left-color: var(--color-error); }
 .issue-reason { font-weight: var(--font-weight-plain); }
@@ -207,7 +207,7 @@
 .excluded > button { justify-self: start; }
 .excluded-table td { white-space: normal; vertical-align: top; }
 .original-text { margin: 0; max-height: var(--size-popover); overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--font-size-mono); }
-.confirm { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.confirm { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 
 /* Imported investigation: table left, inspector right. */
 .workbench-body { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
@@ -216,8 +216,9 @@
 .workbench-body[data-inspector="collapsed"] .imported-inspector { order: -1; }
 .main-column { display: grid; align-content: start; min-width: 0; }
 .table-pane { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-4) var(--space-6); }
-:is(.data-area, .workbench) .pane-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
-:is(.data-area, .workbench) .pane-hint { font-size: var(--font-size-small); }
+/* A pane gives its title and its hint their inset: they have none of their own. */
+:is(.data-area, .workbench) .pane-title { margin: 0; padding: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+:is(.data-area, .workbench) .pane-hint { padding: 0; font-size: var(--font-size-small); }
 
 .window-scroll {
   max-height: max(var(--size-table-least), calc(var(--size-viewport-height) - var(--size-table-surround)));
@@ -293,22 +294,22 @@
 .imported-inspector {
   min-width: 0;
   min-height: calc(var(--size-viewport-height) - var(--size-inspector-surround));
-  padding: var(--space-4);
   background: var(--color-surface);
   border-left: var(--line-width) solid var(--color-line);
 }
+/* The head is a header row across the whole pane, over its hairline; the body under it has the inset. */
 .imported-inspector .inspector-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2) var(--space-4); }
 .imported-inspector h2 { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
 /* In the title the identifier of the open incident is part of the title. */
 .imported-inspector h2 .identifier { font-size: inherit; color: inherit; }
 .imported-inspector .inspector-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.imported-inspector #imported-inspector-body { display: grid; gap: var(--space-3); margin-top: var(--space-3); }
+.imported-inspector #imported-inspector-body { display: grid; gap: var(--space-4); padding: var(--space-4); }
 .order-note { padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); color: var(--color-ink-muted); }
 
 /* The history as a vertical sequence: a node per record on a thin line. */
 .history { position: relative; margin: 0; padding: 0 0 0 var(--space-6); list-style: none; }
 .history::before { content: ""; position: absolute; top: var(--history-line-inset); bottom: var(--history-line-inset); left: var(--history-line-left); width: var(--line-width); background: var(--color-mark); }
-.history-entry { position: relative; padding-bottom: var(--space-3); }
+.history-entry { position: relative; padding-bottom: var(--space-4); }
 .history-marker {
   position: absolute;
   top: var(--history-marker-top);
@@ -334,7 +335,8 @@
 .selection-bar {
   display: grid;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-6);
+  min-height: var(--size-header-row);
+  padding: var(--space-1) var(--space-6);
   background: var(--color-surface);
   border-bottom: var(--line-width) solid var(--color-line);
 }
@@ -368,7 +370,7 @@
  * what is written under the map keeps the inset of the header rows.
  */
 .map-pane { display: grid; gap: var(--space-2); min-width: 0; padding: 0; }
-.map-view { display: grid; gap: var(--space-3) 0; min-width: 0; }
+.map-view { display: grid; gap: var(--space-2) 0; min-width: 0; }
 .map-view > .map-element { padding: 0 var(--space-4); }
 .map-view > .map-notes { padding: 0 var(--space-4) var(--space-2); }
 .map-pane > .working-text { padding: var(--space-2) var(--space-4); }
@@ -384,8 +386,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   background: var(--color-accent-tint);
   border-left: var(--bar-width) solid var(--color-accent);
 }
@@ -400,7 +402,7 @@
 }
 .view-panel {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-width: 0;
   padding: var(--space-4);
   background: var(--color-surface);
@@ -422,7 +424,7 @@
 .swatch { display: inline-block; width: var(--size-swatch); height: var(--size-swatch-height); }
 .swatch-population { background: var(--color-accent); }
 .swatch-parent { background: var(--color-mark); }
-.opening-column { display: grid; gap: var(--space-1); min-width: 0; }
+.opening-column { display: grid; gap: var(--space-2); min-width: 0; }
 .opening-column-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-plain); overflow-wrap: anywhere; }
 .opening-column-title .muted { font-weight: var(--font-weight-plain); }
 /* Every row of a list shares its columns, so that all bars of a column are drawn on one scale. */
@@ -450,10 +452,10 @@
 .share-bar-parent { fill: var(--color-mark); }
 
 /* Variants: a ranked list under row lines, each a small chain of its steps as chips. */
-.variant-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.variant { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-2) var(--space-3); border-bottom: var(--line-width) solid var(--color-line-row); }
+.variant-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.variant { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-2); border-bottom: var(--line-width) solid var(--color-line-row); }
 .variant.chosen { background: var(--color-accent-tint); box-shadow: inset var(--bar-width) 0 var(--color-accent); }
-.variant-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.variant-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
 .variant-rank { font-weight: var(--font-weight-plain); }
 .variant-figures { color: var(--color-ink-muted); font-variant-numeric: tabular-nums; }
 .variant-head button { margin-left: auto; }
@@ -492,7 +494,8 @@
  * down the page as before.
  */
 .explorer { display: flex; flex-direction: column; }
-.explorer > .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); }
+/* The header rows of the investigation share one inset, which the side panel, the table pane and the inspector keep. Each keeps the height of what it holds: the column does not shrink it. */
+.explorer > .toolbar { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); padding: var(--space-1) var(--space-4); }
 .explorer .facts { flex: 1 1 auto; row-gap: var(--space-1); }
 .explorer .fact dd { font-size: var(--font-size-base); line-height: var(--line-height-base); font-weight: var(--font-weight-plain); }
 /* Of the facts of an investigation only the kept count is semibold: it is the second fact, after the parent. */
@@ -500,15 +503,16 @@
 .explorer .workbench-body { flex: 1 1 auto; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; }
 .explorer .workbench-body[data-inspector="side"] { grid-template-columns: auto minmax(0, 1fr) var(--size-inspector); }
 .explorer-rail { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; width: var(--size-rail); min-width: 0; background: var(--color-surface); border-right: var(--line-width) solid var(--color-line); }
-.rail-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-bottom: var(--line-width) solid var(--color-line); }
-.rail-body { flex: 1 1 auto; min-height: 0; padding: var(--space-3); }
+.rail-head { display: flex; flex: none; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: var(--size-header-row); padding: var(--space-1) var(--space-4); border-bottom: var(--line-width) solid var(--color-line); }
+.rail-body { flex: 1 1 auto; min-height: 0; padding: var(--space-4); }
 .explorer-rail .view-panel { padding: 0; background: none; border: 0; border-radius: 0; }
 .explorer .main-column { grid-column: 2; grid-row: 2; }
 .explorer .imported-inspector { grid-column: 3; grid-row: 1 / span 2; min-height: 0; }
 .explorer .workbench-body[data-inspector="collapsed"] .imported-inspector { grid-column: 1 / -1; grid-row: 1; order: 0; }
 .explorer .workbench-body[data-inspector="full"] .imported-inspector { grid-column: 1 / -1; grid-row: 1 / span 2; }
 .explorer .workbench-body[data-inspector="full"] .explorer-rail { display: none; }
-.explorer .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-4); }
+.explorer .selection-bar { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-1) var(--space-4); }
+.explorer .table-pane { padding: var(--space-4); }
 .explorer .selection-steps { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
 .workbench .rail-toggle[aria-expanded="true"] { background: var(--color-tint); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
 /* In the row of the steps the heading names the row and is a label: it is not the title of a pane. */
@@ -529,7 +533,7 @@
 .explorer .map-options { flex: 1 1 auto; }
 .explorer .map-view[data-element="selected"] .map-element {
   align-content: start;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-4);
   background: var(--color-surface);
 }
 .map-notes { display: grid; gap: var(--space-1); min-width: 0; }
