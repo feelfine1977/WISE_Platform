@@ -12,6 +12,7 @@ import {
   importRefusal,
   inspectionAnswer,
   interpretationAnswer,
+  narrowInspectionAnswer,
   populationAnswer,
   proposalAnswer,
   raggedText,
@@ -19,6 +20,7 @@ import {
   secondsInspectionAnswer,
   secondsInterpretationAnswer,
   sourceAnswer,
+  unreadableInspectionAnswer,
   workspaceAnswer,
 } from "../test/imports";
 import { scriptedViewClient } from "../test/views";
@@ -654,5 +656,236 @@ describe("the Data area", () => {
     );
     await app.user.click(screen.getByRole("button", { name: "Open incidents" }));
     expect(app.imports.populations[0].request.preparation_id).toBe(`preparation.v1:sha256:${"6".repeat(64)}`);
+  });
+});
+
+/** The headed groups of a column list and the columns under each, in the order shown. */
+function optionGroups(select: HTMLElement): [string, string[]][] {
+  return Array.from(select.querySelectorAll("optgroup")).map((group) => [
+    group.label,
+    Array.from(group.querySelectorAll("option")).map((option) => option.textContent ?? ""),
+  ]);
+}
+
+/** The heading of the group the chosen column of a list stands under. */
+function chosenGroup(select: HTMLElement): string | undefined {
+  return ((select as HTMLSelectElement).selectedOptions[0].parentElement as HTMLOptGroupElement | null)?.label;
+}
+
+function consequences(): string[] {
+  const list = screen.queryByRole("list", { name: "What these choices mean for the reading" });
+  return list === null ? [] : within(list).getAllByRole("listitem").map((item) => item.textContent ?? "");
+}
+
+const NO_TIME =
+  "The chosen time format reads no filled cell of the time column: no record has a usable time, so no incident's order can be evaluated.";
+
+describe("choosing columns and time formats the inspection did not suggest", () => {
+  it("lists the suggested columns of a role first and every other column after them", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app);
+
+    expect(optionGroups(screen.getByLabelText("Time"))).toEqual([
+      ["Suggested for this role", ["Zeitpunkt — 4 filled cells, 4 distinct values"]],
+      [
+        "Other columns",
+        ["Vorgang — 3 filled cells, 2 distinct values", "Aktivität — 4 filled cells, 3 distinct values", "Gruppe — 3 filled cells, 3 distinct values"],
+      ],
+    ]);
+    expect(optionGroups(screen.getByLabelText("Incident id"))).toEqual([
+      [
+        "Suggested for this role",
+        [
+          "Vorgang — 3 filled cells, 2 distinct values",
+          "Aktivität — 4 filled cells, 3 distinct values",
+          "Zeitpunkt — 4 filled cells, 4 distinct values",
+          "Gruppe — 3 filled cells, 3 distinct values",
+        ],
+      ],
+    ]);
+    // No column holds only whole numbers, so none is suggested as a sequence number; each can still be chosen.
+    const sequence = screen.getByLabelText("Sequence number (optional)");
+    expect(optionGroups(sequence)).toEqual([
+      [
+        "Other columns",
+        [
+          "Vorgang — 3 filled cells, 2 distinct values",
+          "Aktivität — 4 filled cells, 3 distinct values",
+          "Zeitpunkt — 4 filled cells, 4 distinct values",
+          "Gruppe — 3 filled cells, 3 distinct values",
+        ],
+      ],
+    ]);
+    expect(within(sequence.parentElement!).getByText("The inspection suggests no column for this role.")).toBeTruthy();
+    expect(consequences()).toEqual([]);
+  });
+
+  it("reads with a column the inspection did not suggest in each role", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, narrowInspectionAnswer);
+
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "1");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Time"), "3");
+    await app.user.selectOptions(screen.getByLabelText("Sequence number (optional)"), "2");
+    for (const label of ["Incident id", "Activity", "Time", "Sequence number (optional)"]) {
+      expect(chosenGroup(screen.getByLabelText(label))).toBe("Other columns");
+    }
+    expect((screen.getByLabelText("Time") as HTMLSelectElement).selectedOptions[0].textContent).toBe("Gruppe — 3 filled cells, 3 distinct values");
+
+    const formats = screen.getByRole("group", { name: "Time format" });
+    expect(within(formats).queryByRole("radio", { checked: true })).toBeNull();
+    await app.user.click(within(formats).getByLabelText(/^Year-Month-Day, ISO 8601/));
+    await app.user.click(screen.getByLabelText("As recorded: no zone is applied"));
+    fireEvent.change(screen.getByLabelText("Export taken at (as recorded)"), { target: { value: "2027-01-01T00:00" } });
+    expect(consequences()).toEqual([
+      "The activity column has empty cells: records without an activity are left out of the activity sequence and stay as raw evidence.",
+      NO_TIME,
+      "The time column has empty cells: a record without a time stays in its incident without a usable time, and that incident's order cannot be evaluated.",
+      "Not every value of the sequence column is a whole number: a value that is not stops the reading.",
+    ]);
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    expect(app.imports.confirmations[0].request.mapping).toEqual({
+      case_column: 1,
+      activity_column: 0,
+      timestamp_column: 3,
+      sequence_column: 2,
+      context_columns: [],
+    });
+
+    // Without a sequence column, Zeitpunkt is free; the inspection suggests it for the time only, so it stands under the other columns.
+    await app.user.selectOptions(screen.getByLabelText("Sequence number (optional)"), "");
+    const context = screen.getByRole("group", { name: "Context attributes (optional)" });
+    expect(Array.from(context.children).slice(1).map((item) => item.textContent)).toEqual([
+      "Other columns",
+      "Zeitpunkt — 4 filled cells, 4 distinct values",
+    ]);
+    await app.user.click(within(context).getByLabelText("Zeitpunkt — 4 filled cells, 4 distinct values"));
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    const second = app.imports.confirmations[1].request;
+    expect(importContract.confirmMappingRequest(second)).toBe(true);
+    expect(second.mapping).toEqual({ case_column: 1, activity_column: 0, timestamp_column: 3, sequence_column: null, context_columns: [2] });
+  });
+
+  it("offers every format for a time column no format reads, says what that means, and keeps the confirmation of rows", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, unreadableInspectionAnswer);
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "3");
+    const time = screen.getByLabelText("Time");
+    expect(optionGroups(time).map(([label]) => label)).toEqual(["Other columns"]);
+    expect(within(time.parentElement!).getByText("The inspection suggests no column for this role.")).toBeTruthy();
+    await app.user.selectOptions(time, "2");
+
+    const formats = screen.getByRole("group", { name: "Time format" });
+    const choices = formatChoices(formats);
+    expect(choices).toHaveLength(11);
+    expect(choices[0]).toBe("Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45) — reads 0 filled cells of 4 filled cells");
+    expect(choices.every((choice) => choice.endsWith("— reads 0 filled cells of 4 filled cells"))).toBe(true);
+    expect(within(formats).queryByRole("radio", { checked: true })).toBeNull();
+    expect(
+      within(formats).getByText(
+        "No format reads any filled cell of this column, so none is proposed. With any format, no record has a usable time and no incident's order can be evaluated.",
+      ),
+    ).toBeTruthy();
+    expect(within(formats).getByText("früh · spät")).toBeTruthy();
+    expect(consequences()).toEqual(["The incident id column has empty cells: rows without an incident id stay outside every incident."]);
+
+    await app.user.click(within(formats).getByLabelText(/^Year-Month-Day, ISO 8601/));
+    await app.user.click(screen.getByLabelText("As recorded: no zone is applied"));
+    const proposal = app.imports.proposals.at(-1)!;
+    expect(proposal.request.policies.time.parameters.format).toBe("iso8601");
+    await deliver(() => proposal.reply({ ok: true, answer: proposalAnswer(proposal.request, null, null) }));
+    expect(screen.getByText("No record has a usable time with these choices, so nothing is proposed. Enter when the export was taken.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Export taken at (as recorded)"), { target: { value: "2027-01-01T00:00" } });
+
+    expect(consequences()).toEqual([
+      "The incident id column has empty cells: rows without an incident id stay outside every incident.",
+      NO_TIME,
+    ]);
+    const read = screen.getByRole("button", { name: "Read the source with these choices" }) as HTMLButtonElement;
+    expect(read.disabled).toBe(false);
+    expect(read.getAttribute("aria-describedby")).toBe(screen.getByText("What these choices mean for the reading").parentElement!.id);
+    await app.user.click(read);
+    const first = app.imports.confirmations[0];
+    expect(first.request.mapping).toEqual({ case_column: 0, activity_column: 3, timestamp_column: 2, sequence_column: null, context_columns: [] });
+    expect(first.request.policies.time).toEqual({
+      id: "incident.time.wall_clock_as_recorded.v1",
+      parameters: { format: "iso8601", timezone: "none_as_recorded", snapshot_cutoff_local: "2027-01-01T00:00:00" },
+    });
+    expect(first.request.accept_report_issues).toBe(false);
+    await deliver(() => first.reply({ ok: true, answer: interpretationAnswer(first.request) }));
+
+    expect(screen.getByText(/Some rows have issues/)).toBeTruthy();
+    const confirm = screen.getByRole("button", { name: "Confirm and prepare" }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    await app.user.click(screen.getByLabelText("I have read the rows with issues; keep them as described above."));
+    await app.user.click(confirm);
+    expect(app.imports.confirmations[1].request.accept_report_issues).toBe(true);
+  });
+
+  it("offers an activity column without any value and says that no activity is mapped", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, unreadableInspectionAnswer);
+    const activity = screen.getByLabelText("Activity");
+    expect(optionGroups(activity)).toEqual([
+      [
+        "Suggested for this role",
+        [
+          "Ticket — 3 filled cells, 2 distinct values",
+          "Zeit — 4 filled cells, 2 distinct values",
+          "Team — 4 filled cells, 2 distinct values",
+          "Nr — 4 filled cells, 4 distinct values",
+        ],
+      ],
+      ["Other columns", ["Schritt — 0 filled cells, 0 distinct values"]],
+    ]);
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "3");
+    await app.user.selectOptions(activity, "1");
+    expect(chosenGroup(activity)).toBe("Other columns");
+    expect(consequences()).toEqual(["The activity column has no filled cell: no activity is mapped; every record stays as raw evidence."]);
+
+    await app.user.selectOptions(screen.getByLabelText("Time"), "2");
+    await app.user.click(screen.getByLabelText(/^Year-Month-Day, ISO 8601/));
+    await app.user.click(screen.getByLabelText("As recorded: no zone is applied"));
+    fireEvent.change(screen.getByLabelText("Export taken at (as recorded)"), { target: { value: "2027-01-01T00:00" } });
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    expect(app.imports.confirmations[0].request.mapping).toEqual({
+      case_column: 3,
+      activity_column: 1,
+      timestamp_column: 2,
+      sequence_column: null,
+      context_columns: [],
+    });
+  });
+
+  it("shows such choices again when the source is inspected again with the same columns", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app, unreadableInspectionAnswer);
+    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
+    await app.user.selectOptions(screen.getByLabelText("Time"), "2");
+    await app.user.click(screen.getByLabelText(/^Day\/Month\/Year, 24-hour clock \(/));
+
+    await app.user.selectOptions(screen.getByLabelText("Encoding"), "windows-1252");
+    const again = app.imports.inspections.at(-1)!;
+    expect(again.request.hints).toEqual({ encoding: "windows-1252", delimiter: "," });
+    await deliver(() => again.reply({ ok: true, answer: unreadableInspectionAnswer(again.request) }));
+
+    expect((screen.getByLabelText("Activity") as HTMLSelectElement).selectedOptions[0].textContent).toBe("Schritt — 0 filled cells, 0 distinct values");
+    expect((screen.getByLabelText("Time") as HTMLSelectElement).selectedOptions[0].textContent).toBe("Zeit — 4 filled cells, 2 distinct values");
+    expect(within(screen.getByRole("group", { name: "Time format" })).getByRole("radio", { checked: true }).parentElement?.textContent).toMatch(
+      /^Day\/Month\/Year, 24-hour clock \(/,
+    );
+    expect(consequences()).toEqual([
+      "The incident id column has empty cells: rows without an incident id stay outside every incident.",
+      "The activity column has no filled cell: no activity is mapped; every record stays as raw evidence.",
+      NO_TIME,
+    ]);
   });
 });
