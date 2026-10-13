@@ -35,7 +35,7 @@ export function StartNotice({ start, onShowData }: StartNoticeProps) {
           {state.phase === "failed" && state.step === "workspace" && state.problem && (
             <>
               <ImportProblemNotice title="The application could not open its workspace" problem={state.problem} onRetry={() => start.retry()} />
-              <p>The Data area shows the folder that was tried, and lets you choose another one.</p>
+              <p>You can also choose a folder yourself in the Data area.</p>
             </>
           )}
           {state.phase === "failed" && state.step === "example" && state.problem && (
