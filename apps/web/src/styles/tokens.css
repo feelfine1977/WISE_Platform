@@ -139,6 +139,10 @@
   --history-marker-pull: 3px;
   /* The views of the population: panels side by side when they fit, and the thin share bars. */
   --size-view-panel: 380px;
+  /* The investigation in one screen: its side panel, the panel of a selected map element, and the most the notes under the map take. */
+  --size-rail: 320px;
+  --size-map-drawer: 300px;
+  --size-map-notes: 38vh;
   --size-share-bars: 10px;
   --size-share-least: 80px;
   --size-share-figures: 22ch;

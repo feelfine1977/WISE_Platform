@@ -121,7 +121,8 @@ export function mapCaption(meta: GraphCoverage): string[] {
       `${countOf(meta.omitted_activity_record_count, "record")} ${meta.omitted_activity_record_count === 1 ? "has" : "have"} no activity label.`,
     "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
     "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. " +
-      "Start and End are always shown, each with its strongest flow; the other flows follow the Paths detail and are all drawn when every path is.",
+      "Start and End are always shown, each with its strongest flow. Another flow is drawn when it carries at least as many incidents as the weakest path the Paths detail asks for, " +
+      "and all are drawn when every path is; the menu of an activity offers the incidents that begin or end with it also while its flow is not drawn.",
     lagLine(meta),
     MEASURES_LINE,
   ];
@@ -134,13 +135,8 @@ export function mapCaption(meta: GraphCoverage): string[] {
 export function flowsLine(coverage: { flows: number; drawn: number }, least: number): string | null {
   const left = coverage.flows - coverage.drawn;
   if (left <= 0) return null;
-  const needed = Number.isFinite(least)
-    ? `${left === 1 ? "It carries" : "Each carries"} fewer than ${countOf(least, "incident")}, the number on the weakest path the Paths detail asks for.`
-    : "The Paths detail asks for no path.";
-  return (
-    `Not drawn at this detail: ${left} of the ${coverage.flows} flows from Start and to End. ${needed} ` +
-    "Start, End and the strongest flow of each stay. Move the Paths slider to draw more; the menu of an activity still offers the incidents that begin or end with it."
-  );
+  const needed = Number.isFinite(least) ? `, ${left === 1 ? "with" : "each with"} fewer than ${countOf(least, "incident")}` : "";
+  return `Not drawn at this detail: ${left} of the ${coverage.flows} flows from Start and to End${needed}. The Paths slider draws more.`;
 }
 
 export function lagLine(meta: GraphCoverage): string {

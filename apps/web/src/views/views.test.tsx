@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { ImportedInvestigationCoordinator } from "../imported/coordinator";
@@ -43,7 +43,12 @@ function tableIncidents(): string[] {
     .map((cell) => cell.textContent ?? "");
 }
 
+/** In the investigation the side panel opens on request and shows one of the two views at a time: the one asked for is brought forward. */
 function panel(name: string): HTMLElement {
+  const toggle = screen.queryByRole("button", { name: "Context and patterns" });
+  if (toggle?.getAttribute("aria-expanded") === "false") fireEvent.click(toggle);
+  const tab = screen.queryByRole("button", { name: name === "Variants" ? /^Patterns/ : /^Context( ·|$)/ });
+  if (tab) fireEvent.click(tab);
   return screen.getByRole("region", { name });
 }
 
@@ -170,6 +175,7 @@ describe("the views of the population of an imported preparation", () => {
     expect(tableIncidents()).toEqual(["K-1", "K-2", "K-3", "K-4", "K-5"]);
     const facts = screen.getByLabelText("Population").textContent;
 
+    panel("Variants");
     const choose = screen.getByRole("button", { name: "List the 2 incidents of variant 1 in the table" });
     expect(choose.getAttribute("aria-pressed")).toBe("false");
     await app.user.click(choose);
@@ -201,6 +207,7 @@ describe("the views of the population of an imported preparation", () => {
   it("opens every record of an incident listed by a variant", async () => {
     const app = await openInvestigation();
     await deliver(() => app.views.variants[0].reply({ ok: true, answer: variantsAnswer(app.views.variants[0].request) }));
+    panel("Variants");
     await app.user.click(screen.getByRole("button", { name: "List the 2 incidents of variant 1 in the table" }));
     await app.user.click(screen.getByRole("button", { name: "K-3" }));
     expect(app.imports.evidence[0].request.case_id).toBe("K-3");

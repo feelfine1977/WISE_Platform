@@ -162,7 +162,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
   );
 
   return (
-    <div className="map-view">
+    <div className="map-view" data-element={element === null ? "none" : "selected"}>
       <div className="map-frame">
         {inPlace && arrangement.phase === "arranging" ? (
           <p className="working-text map-arranging">Arranging the map of every incident of the parent…</p>
@@ -197,23 +197,6 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           />
         )}
       </div>
-      {flowsNotDrawn !== null && <p className="muted map-flows">{flowsNotDrawn}</p>}
-      <label className="map-arrange">
-        <input type="checkbox" checked={inPlace} onChange={(event) => setInPlace(event.target.checked)} />
-        <span>
-          Keep every activity in the place the map of all incidents gives it.{" "}
-          <span className="muted">
-            Off, the map is arranged anew and compactly for what is shown. On, places stay the same from one selection to the next, and
-            hidden paths still shape the picture.
-          </span>
-        </span>
-      </label>
-      {inPlace && arrangement.phase === "unavailable" && (
-        <p className="limitation">
-          The arrangement of every incident of the parent could not be computed. The map arranges the kept incidents by itself, so activities can
-          move from one selection to the next.
-        </p>
-      )}
       <section className="map-element" aria-labelledby="map-element-title" aria-live="polite">
         <h4 id="map-element-title" className="pane-title">
           {element?.kind === "activity"
@@ -256,7 +239,29 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           </div>
         )}
       </section>
-      <MapCaption graph={shown.graph} />
+      <div className="map-notes">
+        {flowsNotDrawn !== null && <p className="muted map-flows">{flowsNotDrawn}</p>}
+        <details className="map-options">
+          <summary>How the map is arranged and what it counts</summary>
+          <label className="map-arrange">
+            <input type="checkbox" checked={inPlace} onChange={(event) => setInPlace(event.target.checked)} />
+            <span>
+              Keep every activity in the place the map of all incidents gives it.{" "}
+              <span className="muted">
+                Off, the map is arranged anew and compactly for what is shown. On, places stay the same from one selection to the next, and
+                hidden paths still shape the picture.
+              </span>
+            </span>
+          </label>
+          {inPlace && arrangement.phase === "unavailable" && (
+            <p className="limitation">
+              The arrangement of every incident of the parent could not be computed. The map arranges the kept incidents by itself, so activities can
+              move from one selection to the next.
+            </p>
+          )}
+          <MapCaption graph={shown.graph} />
+        </details>
+      </div>
     </div>
   );
 }

@@ -30,16 +30,23 @@ interface ImportedInvestigationProps {
 }
 
 type View = InvestigationView;
+/** What the side panel shows beside the map or the table. */
+type Rail = "context" | "patterns";
 
 /**
- * The investigation of an imported preparation: its facts, the selection of whole incidents, the
- * kept incidents as a process map or as a table, and the complete history of one kept incident.
+ * The investigation of an imported preparation in one screen: its facts and the selection of whole
+ * incidents above; a side panel with how the incidents were opened and with their variants; the
+ * kept incidents as a process map or as a table in the centre; and the complete history of one
+ * kept incident beside them.
  */
 export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = false }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   // A reopened investigation opens in the view it was saved in; any other question opens on its map.
   const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? initialView);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [rail, setRail] = useState<Rail>("context");
+  // Closed until it is asked for: the map and the table open on the whole width.
+  const [railOpen, setRailOpen] = useState(false);
   const [layout, setLayout] = useState<InspectorLayout>("side");
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
@@ -134,7 +141,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   }, [chosenVariant, variants, answer, kept]);
   const shownCases = variantView ? variantView.cases : kept;
   return (
-    <main className="workbench" aria-labelledby="imported-title">
+    <main className="workbench explorer" aria-labelledby="imported-title">
       <div className="toolbar">
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <button type="button" className="link-button" onClick={onShowData}>
@@ -185,9 +192,55 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onStay={() => coordinator.staySelection()}
             waitingFor={waitingFor}
           />
+          <button type="button" className="rail-toggle" aria-expanded={railOpen} aria-controls="explorer-rail" onClick={() => setRailOpen((open) => !open)}>
+            Context and patterns
+          </button>
         </div>
       )}
       <div className="workbench-body" data-inspector={inspectorOpen ? layout : "none"}>
+        {answer && railOpen && (
+          <aside className="explorer-rail" id="explorer-rail" aria-label="Context and patterns of the kept incidents">
+            <div className="rail-head">
+              <div className="view-switch" role="group" aria-label="Side panel">
+                {/* A view that cannot be shown says so on its button, so that a failure in the view not shown is not missed. */}
+                <button
+                  type="button"
+                  aria-pressed={rail === "context"}
+                  data-failed={openingContext.phase === "failed" || undefined}
+                  onClick={() => setRail("context")}
+                >
+                  {openingContext.phase === "failed" ? "Context · not shown" : "Context"}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={rail === "patterns"}
+                  data-failed={variants.phase === "failed" || undefined}
+                  onClick={() => setRail("patterns")}
+                >
+                  {variants.phase === "failed" ? "Patterns · not shown" : "Patterns"}
+                </button>
+              </div>
+              <button type="button" aria-label="Hide the side panel" onClick={() => setRailOpen(false)}>
+                Hide
+              </button>
+            </div>
+            <div className="rail-body">
+              <div hidden={rail !== "context"}>
+                <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} />
+              </div>
+              <div hidden={rail !== "patterns"}>
+                <Variants
+                  state={variants}
+                  chosen={chosenVariant}
+                  onChoose={chooseVariant}
+                  onClear={() => clearVariant(false)}
+                  onRetry={() => coordinator.retryVariants()}
+                  waitingFor={waitingFor}
+                />
+              </div>
+            </div>
+          </aside>
+        )}
         <div className="main-column">
           {answer && view === "map" && (
             <section className="map-pane" aria-labelledby="imported-map-title">
@@ -251,19 +304,6 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               </>
             )}
           </section>
-          {answer && (
-            <div className="views">
-              <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} />
-              <Variants
-                state={variants}
-                chosen={chosenVariant}
-                onChoose={chooseVariant}
-                onClear={() => clearVariant(false)}
-                onRetry={() => coordinator.retryVariants()}
-                waitingFor={waitingFor}
-              />
-            </div>
-          )}
         </div>
         {inspected.phase !== "closed" && answer && (
           <ImportedInspector

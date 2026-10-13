@@ -236,8 +236,12 @@ describe("keeping the investigation shown while another preparation is opened", 
     await deliver(() => app.evidence[1].reply({ ok: false, problem: { kind: "unreachable" } }));
     await deliver(() => app.viewing.openings.at(-1)!.reply({ ok: false, problem: { kind: "unreachable" } }));
     await deliver(() => app.viewing.variants.at(-1)!.reply({ ok: false, problem: { kind: "unreachable" } }));
-    const retries = () => screen.getAllByRole("button", { name: "Try again" }) as HTMLButtonElement[];
+    // The side panel shows one view at a time; the retry of the view not shown waits like the others.
+    const retries = () => screen.getAllByRole("button", { name: "Try again", hidden: true }) as HTMLButtonElement[];
+    await app.user.click(screen.getByRole("button", { name: "Context and patterns" }));
     expect(retries()).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "Context · not shown" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Patterns · not shown" })).toBeTruthy();
     const request = askSecond(app);
 
     const reason = `Not available while ${askedName} is opening: what is shown belongs to ${shownName}.`;

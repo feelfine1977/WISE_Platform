@@ -51,7 +51,7 @@ describe("the words of the map", () => {
       "Paths count passages and distinct incidents of the 1 incident whose order of records can be evaluated.",
       "1 incident with 1 record is not evaluable for paths; 0 records have no activity label.",
       "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
-      "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. Start and End are always shown, each with its strongest flow; the other flows follow the Paths detail and are all drawn when every path is.",
+      "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. Start and End are always shown, each with its strongest flow. Another flow is drawn when it carries at least as many incidents as the weakest path the Paths detail asks for, and all are drawn when every path is; the menu of an activity offers the incidents that begin or end with it also while its flow is not drawn.",
       "Lag: the median of elapsed hours between the two records of a path.",
       "Measures: the legend on the map, shown whole, switches what the map writes. " +
         "Frequency: the incidents on every path and activity. " +
@@ -69,11 +69,10 @@ describe("the words of the map", () => {
     // Flows that are not drawn are said with the map's own numbers; nothing is said while all are drawn.
     expect(flowsLine({ flows: 44, drawn: 44 }, 0)).toBeNull();
     expect(flowsLine({ flows: 44, drawn: 20 }, 254)).toBe(
-      "Not drawn at this detail: 24 of the 44 flows from Start and to End. Each carries fewer than 254 incidents, the number on the weakest path the Paths detail asks for. " +
-        "Start, End and the strongest flow of each stay. Move the Paths slider to draw more; the menu of an activity still offers the incidents that begin or end with it.",
+      "Not drawn at this detail: 24 of the 44 flows from Start and to End, each with fewer than 254 incidents. The Paths slider draws more.",
     );
-    expect(flowsLine({ flows: 3, drawn: 2 }, 1)).toContain("1 of the 3 flows from Start and to End. It carries fewer than 1 incident,");
-    expect(flowsLine({ flows: 5, drawn: 2 }, Number.POSITIVE_INFINITY)).toContain("The Paths detail asks for no path.");
+    expect(flowsLine({ flows: 3, drawn: 2 }, 1)).toBe("Not drawn at this detail: 1 of the 3 flows from Start and to End, with fewer than 1 incident. The Paths slider draws more.");
+    expect(flowsLine({ flows: 5, drawn: 2 }, Number.POSITIVE_INFINITY)).toBe("Not drawn at this detail: 3 of the 5 flows from Start and to End. The Paths slider draws more.");
   });
 
   it("says the two times of an activity in hours below two days and in days from there on, with their passages", () => {

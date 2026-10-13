@@ -476,3 +476,93 @@
 .report > button { justify-self: start; }
 .map-flows { margin: 0; padding: var(--space-2) var(--space-4) 0; }
 .map-arrange { display: flex; align-items: baseline; gap: var(--space-2); padding: var(--space-2) var(--space-4); }
+
+/*
+ * The investigation in one screen. A side panel holds how the incidents were opened and their
+ * variants; the map or the table takes the centre; the steps of a selected map element stand
+ * beside the map; the history of one incident stands at the right. On a wide and tall window the
+ * parts scroll on their own and the page does not; on a narrow or low one they follow each other
+ * down the page as before.
+ */
+.explorer { display: flex; flex-direction: column; }
+.explorer > .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); }
+.explorer .facts { flex: 1 1 auto; row-gap: var(--space-1); }
+.explorer .fact dd { font-size: var(--font-size-base); line-height: var(--line-height-base); }
+.explorer .workbench-body { flex: 1 1 auto; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; }
+.explorer .workbench-body[data-inspector="side"] { grid-template-columns: auto minmax(0, 1fr) var(--size-inspector); }
+.explorer-rail { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; width: var(--size-rail); min-width: 0; background: var(--color-surface); border-right: var(--line-width) solid var(--color-line); }
+.rail-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-bottom: var(--line-width) solid var(--color-line); }
+.rail-body { flex: 1 1 auto; min-height: 0; padding: var(--space-3); }
+.explorer-rail .view-panel { padding: 0; background: none; border: 0; border-radius: 0; }
+.explorer .main-column { grid-column: 2; grid-row: 2; }
+.explorer .imported-inspector { grid-column: 3; grid-row: 1 / span 2; min-height: 0; }
+.explorer .workbench-body[data-inspector="collapsed"] .imported-inspector { grid-column: 1 / -1; grid-row: 1; order: 0; }
+.explorer .workbench-body[data-inspector="full"] .imported-inspector { grid-column: 1 / -1; grid-row: 1 / span 2; }
+.explorer .workbench-body[data-inspector="full"] .explorer-rail { display: none; }
+.explorer .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-4); }
+.explorer .selection-steps { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.workbench .rail-toggle[aria-expanded="true"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
+.explorer .map-pane { padding: var(--space-3) var(--space-4); }
+/* The view switch names the map, and while nothing is selected one line says what a selection offers: both headings stay for assistive technology. */
+.explorer .map-pane > .pane-title,
+.explorer .map-view[data-element="none"] .map-element > .pane-title {
+  position: absolute;
+  width: var(--line-width);
+  height: var(--line-width);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.explorer .map-view[data-element="none"] .map-element { font-size: var(--font-size-small); }
+.explorer .map-notes { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); }
+.explorer .map-options { flex: 1 1 auto; }
+.explorer .map-view[data-element="selected"] .map-element {
+  align-content: start;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+}
+.map-notes { display: grid; gap: var(--space-1); min-width: 0; }
+.map-options > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.explorer .map-flows { padding: 0; font-size: var(--font-size-small); }
+.explorer .map-arrange { padding: var(--space-2) 0; }
+
+@media (width > 1100px) and (min-height: 560px) {
+  /* Positioned, so that text kept only for assistive technology inside a scrolling part is clipped with it and does not lengthen the page. */
+  .explorer { position: relative; height: calc(var(--size-viewport-height) - var(--size-app-bar)); min-height: 0; overflow: hidden; }
+  .explorer .rail-body,
+  .explorer .table-pane,
+  .explorer .imported-inspector { position: relative; }
+  .explorer .workbench-body { min-height: 0; }
+  /* A long list in the side panel scrolls in the panel and does not stretch the row. */
+  .explorer-rail { min-height: 0; }
+  .explorer .rail-body,
+  .explorer .table-pane,
+  .explorer .imported-inspector { overflow: auto; }
+  .explorer .main-column { grid-template-rows: minmax(0, 1fr); align-content: stretch; min-height: 0; }
+  .explorer .table-pane { align-content: start; }
+  /* The heading of the pane is out of the flow, so the map view is the pane's only row. */
+  .explorer .map-pane { grid-template-rows: minmax(0, 1fr); min-height: 0; }
+  .explorer .map-view { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; min-height: 0; }
+  .explorer .map-frame { height: auto; min-height: 0; }
+  .explorer .map-view[data-element="selected"] { grid-template-columns: minmax(0, 1fr) var(--size-map-drawer); grid-template-rows: minmax(0, 1fr) auto; }
+  .explorer .map-view[data-element="selected"] .map-element { grid-column: 2; grid-row: 1; overflow: auto; }
+  .explorer .map-view[data-element="selected"] .map-notes { grid-column: 1 / -1; grid-row: 2; }
+  .explorer .map-notes { max-height: var(--size-map-notes); overflow: auto; }
+}
+@media (max-width: 1100px) {
+  .explorer .workbench-body,
+  .explorer .workbench-body[data-inspector="side"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .explorer-rail,
+  .explorer .main-column,
+  .explorer .imported-inspector { grid-column: 1; grid-row: auto; }
+  .explorer-rail { border-right: 0; border-bottom: var(--line-width) solid var(--color-line); }
+  .explorer-rail { width: auto; }
+  .explorer .rail-body { max-height: var(--size-map-notes); overflow: auto; }
+  .explorer .workbench-body[data-inspector="side"] .explorer-rail { display: none; }
+}
+.workbench .rail-head button[data-failed] { color: var(--color-error); }
+/* In the side panel a value takes two lines: its name in full width, then its bars and figures. */
+.explorer-rail .opening-values { grid-template-columns: minmax(var(--size-share-least), 1fr) auto; }
+.explorer-rail .opening-label { grid-column: 1 / -1; }
