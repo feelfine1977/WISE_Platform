@@ -76,7 +76,7 @@ describe("the views of the population of an imported preparation", () => {
     await deliver(() => app.views.openings[0].reply({ ok: true, answer: openingContextAnswer(app.views.openings[0].request) }));
     const opened = panel("Opened as");
     expect(opened.textContent).toContain("These incidents are the whole parent population, so both bars are the same.");
-    expect(opened.textContent).toContain("1 incident of the parent has no readable first record because its order is not known; they are in no share.");
+    expect(opened.textContent).toContain("1 incident of the parent has no readable first record because its order is not known; it is in no share.");
 
     const group = within(opened).getByRole("list", { name: "Opening values of Gruppe, most frequent first" });
     const entries = values(group);

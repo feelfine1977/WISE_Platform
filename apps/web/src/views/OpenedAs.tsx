@@ -49,7 +49,7 @@ function Opening({ answer }: { answer: OpeningContextAnswer }) {
           {countOf(parent.unevaluable_case_count, "incident")} of the parent {parent.unevaluable_case_count === 1 ? "has" : "have"} no readable
           first record because {parent.unevaluable_case_count === 1 ? "its" : "their"} order is not known
           {!isParent && population.unevaluable_case_count > 0 && <>, {countOf(population.unevaluable_case_count, "incident")} of them among these incidents</>}
-          ; they are in no share.
+          ; {parent.unevaluable_case_count === 1 ? "it is" : "they are"} in no share.
         </p>
       )}
       {columns.map((column) => (
