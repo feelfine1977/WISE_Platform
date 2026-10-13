@@ -84,6 +84,7 @@ export type RepresentationId = string;
 export type CaseDictionaryId = string;
 export type PopulationId = string;
 export type ImplementationVersion = string;
+export type ImportedCaseEvidenceAnswer = ImportedCaseEvidenceAnswer1;
 export type ImportedSourceRecord = ImportedSourceRecord1 &
   ImportedSourceRecord2 &
   ImportedSourceRecord1 &
@@ -110,6 +111,54 @@ export type ImportedSourceRecord1 =
       [k: string]: unknown;
     };
 export type RowId = string;
+export type IncidentTimeDiagnostics =
+  KnownUtcIncidentTime | KnownWallIncidentTime | UnknownUtcIncidentTime | UnknownWallIncidentTime;
+export type KnownUtcIncidentTime = KnownUtcSingletonIncidentTime | KnownUtcMultirowIncidentTime;
+export type AvailableUtcCaseTimeSummary = AvailableUtcCaseTimeSummary1;
+export type MaximumRawGapWitness = MaximumRawGapWitness1;
+export type FirstUtcRecordTime = KnownUtcRecordTime & {
+  gap_before?: FirstRawRecordGap;
+  offset_from_first_record_microseconds?: "0";
+  [k: string]: unknown;
+};
+/**
+ * Canonical ASCII timestamp in normalized calendar years 0001..9999. A calendar-aware producer guard rejects invalid dates, invalid times, trailing data, and a clock inconsistent with this branch.
+ */
+export type IncidentUtcTimestampKey = UtcInstant & string;
+/**
+ * Canonical ASCII signed decimal whole string in the inclusive range -62135596800000000..253402300799999999; native microseconds since 1970-01-01 on the declared UTC or wall clock. Calendar validity and correspondence to the timestamp key remain semantic requirements.
+ */
+export type ExactClockMicroseconds = string;
+/**
+ * Canonical ASCII decimal whole string in the inclusive range 0..315537897599999999 microseconds. The alphabet rejection also closes end-anchor trailing-linefeed differences across regex engines.
+ */
+export type ExactDurationMicroseconds = string;
+export type KnownOrderRawGap = AvailableRawRecordGap | FirstRawRecordGap;
+export type KnownUtcMultirowIncidentTime = KnownUtcMultirowIncidentTime1;
+export type FollowingUtcRecordTime = KnownUtcRecordTime & {
+  gap_before?: AvailableRawRecordGap;
+  [k: string]: unknown;
+};
+export type KnownWallIncidentTime = KnownWallSingletonIncidentTime | KnownWallMultirowIncidentTime;
+export type AvailableWallCaseTimeSummary = AvailableWallCaseTimeSummary1;
+export type FirstWallRecordTime = KnownWallRecordTime & {
+  gap_before?: FirstRawRecordGap;
+  offset_from_first_record_microseconds?: "0";
+  [k: string]: unknown;
+};
+/**
+ * Canonical ASCII timestamp in normalized calendar years 0001..9999. A calendar-aware producer guard rejects invalid dates, invalid times, trailing data, and a clock inconsistent with this branch.
+ */
+export type IncidentWallTimestampKey = LocalTimestamp & string;
+export type KnownWallMultirowIncidentTime = KnownWallMultirowIncidentTime1;
+export type FollowingWallRecordTime = KnownWallRecordTime & {
+  gap_before?: AvailableRawRecordGap;
+  [k: string]: unknown;
+};
+export type UnknownUtcIncidentTime = UnknownUtcIncidentTime1;
+export type UnknownOrderUtcRecordTime = UnknownOrderUsableUtcRecordTime | UnknownOrderUnusableRecordTime;
+export type UnknownWallIncidentTime = UnknownWallIncidentTime1;
+export type UnknownOrderWallRecordTime = UnknownOrderUsableWallRecordTime | UnknownOrderUnusableRecordTime;
 export type CutoffProposalAnswer =
   UtcEmptyCutoffProposal | UtcKnownCutoffProposal | WallEmptyCutoffProposal | WallKnownCutoffProposal;
 
@@ -496,7 +545,7 @@ export interface ImportedCaseEvidenceRequest {
   identity: AnswerIdentity;
   case_id: CaseId;
 }
-export interface ImportedCaseEvidenceAnswer {
+export interface ImportedCaseEvidenceAnswer1 {
   schema_version: 1;
   message_type: "imported_case_evidence_answer";
   request_id: RequestId;
@@ -513,6 +562,7 @@ export interface ImportedCaseEvidenceAnswer {
   records: [ImportedSourceRecord, ...ImportedSourceRecord[]];
   mapped_row_ids: RowId[];
   omitted_activity_row_ids: RowId[];
+  incident_time?: IncidentTimeDiagnostics;
 }
 export interface ImportedSourceRecord2 {
   row_id: RowId;
@@ -529,6 +579,230 @@ export interface ImportedSourceRecord2 {
 export interface ContextValue {
   column_index: ColumnIndex;
   value: string | null;
+}
+export interface KnownUtcSingletonIncidentTime {
+  policy_id: "incident.time_diagnostics.full_raw_declared_order.v1";
+  timestamp_kind: "utc_instant";
+  duration_basis: "elapsed_utc";
+  clock_limitation: null;
+  summary: AvailableUtcCaseTimeSummary & {
+    maximum_adjacent_raw_gap_hours?: null;
+    maximum_adjacent_raw_gap_unavailable_reason?: "fewer_than_two_records";
+    maximum_gap_witness?: null;
+    usable_gap_count?: 0;
+    observed_span_hours?: 0;
+    tied_timestamp_group_count?: 0;
+    [k: string]: unknown;
+  };
+  observed_span_microseconds: "0";
+  maximum_adjacent_raw_gap_microseconds: null;
+  maximum_gap_equal_count: null;
+  /**
+   * @minItems 1
+   * @maxItems 1
+   */
+  records: [FirstUtcRecordTime];
+}
+export interface AvailableUtcCaseTimeSummary1 {
+  status: "available";
+  timestamp_kind: "utc_instant";
+  first_recorded_timestamp: UtcInstant;
+  last_recorded_timestamp: UtcInstant;
+  first_recorded_activity: string | null;
+  last_recorded_activity: string | null;
+  observed_span_hours: number;
+  observed_span_unavailable_reason: null;
+  maximum_adjacent_raw_gap_hours: number | null;
+  maximum_adjacent_raw_gap_unavailable_reason: "fewer_than_two_records" | null;
+  maximum_gap_witness: MaximumRawGapWitness | null;
+  usable_gap_count: number;
+  tied_timestamp_group_count: number;
+}
+export interface MaximumRawGapWitness1 {
+  from_row_id: RowId;
+  to_row_id: RowId;
+  from_activity: string | null;
+  to_activity: string | null;
+  from_offset_hours: number;
+  share_of_observed_span: number | null;
+  share_unavailable_reason: "zero_observed_span" | null;
+}
+export interface KnownUtcRecordTime {
+  row_id: RowId;
+  timestamp_key: IncidentUtcTimestampKey;
+  clock_microseconds: ExactClockMicroseconds;
+  offset_from_first_record_microseconds: ExactDurationMicroseconds;
+  gap_before: KnownOrderRawGap;
+}
+export interface AvailableRawRecordGap {
+  status: "available";
+  from_row_id: RowId;
+  microseconds: ExactDurationMicroseconds;
+  hours: number;
+}
+export interface FirstRawRecordGap {
+  status: "unavailable";
+  reason: "first_record";
+  from_row_id: null;
+  microseconds: null;
+  hours: null;
+}
+export interface KnownUtcMultirowIncidentTime1 {
+  policy_id: "incident.time_diagnostics.full_raw_declared_order.v1";
+  timestamp_kind: "utc_instant";
+  duration_basis: "elapsed_utc";
+  clock_limitation: null;
+  summary: AvailableUtcCaseTimeSummary & {
+    maximum_adjacent_raw_gap_hours?: number;
+    maximum_adjacent_raw_gap_unavailable_reason?: null;
+    maximum_gap_witness?: MaximumRawGapWitness;
+    usable_gap_count?: number;
+    [k: string]: unknown;
+  };
+  observed_span_microseconds: ExactDurationMicroseconds;
+  maximum_adjacent_raw_gap_microseconds: ExactDurationMicroseconds;
+  maximum_gap_equal_count: number;
+  /**
+   * @minItems 2
+   */
+  records: [FirstUtcRecordTime, FollowingUtcRecordTime, ...FollowingUtcRecordTime[]];
+}
+export interface KnownWallSingletonIncidentTime {
+  policy_id: "incident.time_diagnostics.full_raw_declared_order.v1";
+  timestamp_kind: "wall_clock";
+  duration_basis: "recorded_wall_clock";
+  clock_limitation: "recorded_wall_duration_may_differ_from_physical_elapsed";
+  summary: AvailableWallCaseTimeSummary & {
+    maximum_adjacent_raw_gap_hours?: null;
+    maximum_adjacent_raw_gap_unavailable_reason?: "fewer_than_two_records";
+    maximum_gap_witness?: null;
+    usable_gap_count?: 0;
+    observed_span_hours?: 0;
+    tied_timestamp_group_count?: 0;
+    [k: string]: unknown;
+  };
+  observed_span_microseconds: "0";
+  maximum_adjacent_raw_gap_microseconds: null;
+  maximum_gap_equal_count: null;
+  /**
+   * @minItems 1
+   * @maxItems 1
+   */
+  records: [FirstWallRecordTime];
+}
+export interface AvailableWallCaseTimeSummary1 {
+  status: "available";
+  timestamp_kind: "wall_clock";
+  first_recorded_timestamp: LocalTimestamp;
+  last_recorded_timestamp: LocalTimestamp;
+  first_recorded_activity: string | null;
+  last_recorded_activity: string | null;
+  observed_span_hours: number;
+  observed_span_unavailable_reason: null;
+  maximum_adjacent_raw_gap_hours: number | null;
+  maximum_adjacent_raw_gap_unavailable_reason: "fewer_than_two_records" | null;
+  maximum_gap_witness: MaximumRawGapWitness | null;
+  usable_gap_count: number;
+  tied_timestamp_group_count: number;
+}
+export interface KnownWallRecordTime {
+  row_id: RowId;
+  timestamp_key: IncidentWallTimestampKey;
+  clock_microseconds: ExactClockMicroseconds;
+  offset_from_first_record_microseconds: ExactDurationMicroseconds;
+  gap_before: KnownOrderRawGap;
+}
+export interface KnownWallMultirowIncidentTime1 {
+  policy_id: "incident.time_diagnostics.full_raw_declared_order.v1";
+  timestamp_kind: "wall_clock";
+  duration_basis: "recorded_wall_clock";
+  clock_limitation: "recorded_wall_duration_may_differ_from_physical_elapsed";
+  summary: AvailableWallCaseTimeSummary & {
+    maximum_adjacent_raw_gap_hours?: number;
+    maximum_adjacent_raw_gap_unavailable_reason?: null;
+    maximum_gap_witness?: MaximumRawGapWitness;
+    usable_gap_count?: number;
+    [k: string]: unknown;
+  };
+  observed_span_microseconds: ExactDurationMicroseconds;
+  maximum_adjacent_raw_gap_microseconds: ExactDurationMicroseconds;
+  maximum_gap_equal_count: number;
+  /**
+   * @minItems 2
+   */
+  records: [FirstWallRecordTime, FollowingWallRecordTime, ...FollowingWallRecordTime[]];
+}
+export interface UnknownUtcIncidentTime1 {
+  policy_id: "incident.time_diagnostics.full_raw_declared_order.v1";
+  timestamp_kind: "utc_instant";
+  duration_basis: "elapsed_utc";
+  clock_limitation: null;
+  summary: UnavailableCaseTimeSummary;
+  observed_span_microseconds: null;
+  maximum_adjacent_raw_gap_microseconds: null;
+  maximum_gap_equal_count: null;
+  /**
+   * @minItems 1
+   */
+  records: [UnknownOrderUtcRecordTime, ...UnknownOrderUtcRecordTime[]];
+}
+export interface UnavailableCaseTimeSummary {
+  status: "unavailable";
+  reason: "order_unknown";
+  unavailable_timestamp_record_count: number;
+  first_recorded_timestamp: null;
+  last_recorded_timestamp: null;
+  first_recorded_activity: null;
+  last_recorded_activity: null;
+  observed_span_hours: null;
+  observed_span_unavailable_reason: "order_unknown";
+  maximum_adjacent_raw_gap_hours: null;
+  maximum_adjacent_raw_gap_unavailable_reason: "order_unknown";
+  maximum_gap_witness: null;
+  usable_gap_count: 0;
+  tied_timestamp_group_count: null;
+}
+export interface UnknownOrderUsableUtcRecordTime {
+  row_id: RowId;
+  timestamp_key: IncidentUtcTimestampKey;
+  clock_microseconds: ExactClockMicroseconds;
+  offset_from_first_record_microseconds: null;
+  gap_before: UnknownOrderRawRecordGap;
+}
+export interface UnknownOrderRawRecordGap {
+  status: "unavailable";
+  reason: "order_unknown";
+  from_row_id: null;
+  microseconds: null;
+  hours: null;
+}
+export interface UnknownOrderUnusableRecordTime {
+  row_id: RowId;
+  timestamp_key: null;
+  clock_microseconds: null;
+  offset_from_first_record_microseconds: null;
+  gap_before: UnknownOrderRawRecordGap;
+}
+export interface UnknownWallIncidentTime1 {
+  policy_id: "incident.time_diagnostics.full_raw_declared_order.v1";
+  timestamp_kind: "wall_clock";
+  duration_basis: "recorded_wall_clock";
+  clock_limitation: "recorded_wall_duration_may_differ_from_physical_elapsed";
+  summary: UnavailableCaseTimeSummary;
+  observed_span_microseconds: null;
+  maximum_adjacent_raw_gap_microseconds: null;
+  maximum_gap_equal_count: null;
+  /**
+   * @minItems 1
+   */
+  records: [UnknownOrderWallRecordTime, ...UnknownOrderWallRecordTime[]];
+}
+export interface UnknownOrderUsableWallRecordTime {
+  row_id: RowId;
+  timestamp_key: IncidentWallTimestampKey;
+  clock_microseconds: ExactClockMicroseconds;
+  offset_from_first_record_microseconds: null;
+  gap_before: UnknownOrderRawRecordGap;
 }
 export interface ImportRefusal {
   schema_version: 1;

@@ -40,6 +40,7 @@ from threading import Lock
 
 from pydantic import BaseModel, ValidationError
 from wise_platform_analytics.csv_inspection import inspect_csv
+from wise_platform_analytics.incident_time import incident_time_diagnostics
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
 from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare
 from wise_platform_analytics.prepared_operations import open_prepared_case, open_prepared_population
@@ -51,7 +52,6 @@ from .generated.imports import (
     ConfirmMappingRequest,
     CsvInspectionAnswer,
     CutoffProposalAnswer,
-    ImportedCaseEvidenceAnswer,
     ImportedCaseEvidenceRequest,
     ImportedPopulationAnswer,
     ImportRefusal,
@@ -72,6 +72,7 @@ from .import_boundary import (
     parse_import_body,
     upload_message,
 )
+from .incident_time_boundary import validate_incident_time_answer
 from .registry import SelectionRegistry
 from .strict_reading import instant_failures
 from .workspace import Problem, StoredPreparation, Workspace
@@ -325,7 +326,10 @@ class Imports:
             evidence = open_selected_case(found[0], selection, identity, given["case_id"])
         if isinstance(evidence, PackageRefusal):
             return _from_package(CASE_EVIDENCE, evidence, given)
-        return _answer(ImportedCaseEvidenceAnswer, _envelope("imported_case_evidence_answer", given) | evidence)
+        body = _envelope("imported_case_evidence_answer", given) | evidence | {
+            "incident_time": incident_time_diagnostics(found[0], given["case_id"])
+        }
+        return ImportReply(200, validate_incident_time_answer(body, found[0], given, require_diagnostics=True))
 
     # Workspaces and prepared snapshots -----------------------------------------------------
 

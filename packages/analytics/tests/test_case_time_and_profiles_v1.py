@@ -121,6 +121,22 @@ def test_wall_summary_and_range_never_append_z():
     assert r["parent_time_range"]["earliest_recorded_timestamp"]=="2026-10-01T00:00:00"
 
 
+def test_unknown_summary_returns_before_unsupported_clock_and_kind_checks():
+    p = prepared()
+
+    class UnknownOrder:
+        histories = {"A": tuple(replace(row, timestamp_kind="unsupported") for row in p.histories["A"])}
+        policies = {"time": {"id": "unsupported"}}
+
+        def sequence_evaluable(self, case_id):
+            return False
+
+    summary = case_time_summary(UnknownOrder(), "A")
+    assert summary["status"] == "unavailable"
+    assert summary["unavailable_timestamp_record_count"] == 0
+    assert "timestamp_kind" not in summary and "records" not in summary
+
+
 @pytest.mark.parametrize("edges",[[],[1],[0,0],[0,24,1],[0,True],[0,float("inf")],[0,float("nan")],[0,10**400],list(range(33))],ids=["empty","nonzero-first","duplicate","descending","bool","infinite","nan","overflow-int","too-many"])
 def test_invalid_distribution_edges_are_explicit_denials(edges):
     result=validate_case_list_query(query(distribution={"measure":"observed_span_hours","edges_hours":edges}))
