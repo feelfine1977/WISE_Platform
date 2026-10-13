@@ -60,6 +60,14 @@ const initialState: SavingState = { list: { phase: "idle" }, reopen: { phase: "i
 
 const unreachable: SavingOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
 
+/** Whether two identities name the same source, reading, representation, dictionary, population and version. */
+function sameIdentity(one: object, other: object): boolean {
+  const left = one as Record<string, unknown>;
+  const right = other as Record<string, unknown>;
+  const names = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return [...names].every((name) => left[name] === right[name]);
+}
+
 function mismatch(detail: string): SavingOutcome<never> {
   return { ok: false, problem: { kind: "unsupported_reply", detail } };
 }
@@ -135,6 +143,8 @@ export class SavingCoordinator {
       notes,
       bookmarks: carriedBookmarks(investigation),
       presentation_state: presentation,
+      // A score run the saved investigation refers to stays referred to until it is taken away on purpose.
+      ...(saved?.content.score_run_ref ? { score_run_ref: saved.content.score_run_ref } : {}),
     };
     // A new investigation names neither an investigation nor the revision it replaces; a new revision names both.
     const request: SaveInvestigationRequest = saved
@@ -204,8 +214,28 @@ export class SavingCoordinator {
       return;
     }
     const { revision } = checked.answer;
+    if (!this.stillShows(request)) {
+      // The answer is for a question that is no longer the one shown. It was saved and is in the list
+      // of saved investigations; the question shown now is another one and is not marked as saved.
+      this.publish({ ...this.state, save: { phase: "idle" } });
+      return;
+    }
     this.investigation.markSaved({ investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content: revision.content });
     this.publish({ ...this.state, save: { phase: "saved", answer: checked.answer } });
+  }
+
+  /** Whether the investigation still shows the question a save request was made for. */
+  private stillShows(request: SaveInvestigationRequest): boolean {
+    const { population, selection } = this.investigation.getState();
+    const shown = shownSelection(selection);
+    return (
+      population.phase === "ready" &&
+      selection.phase === "ready" &&
+      shown !== null &&
+      population.answer.workspace_id === request.workspace_id &&
+      sameIdentity(population.answer.identity, request.base_identity) &&
+      sameIdentity(shown.answer.identity, request.selection_identity)
+    );
   }
 
   private receiveList(request: ListSavedRequest, outcome: SavingOutcome<ListSavedAnswer>): void {
