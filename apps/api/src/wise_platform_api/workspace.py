@@ -495,11 +495,14 @@ class Workspace:
             return None
         stored = _read_json(path)
         record = stored.get("record") if isinstance(stored, dict) else None
+        checksum = _checksum_or_none(record) if isinstance(record, dict) else None
         if (
             not isinstance(stored, dict)
             or stored.get("id") != record_id
             or not isinstance(record, dict)
-            or stored.get("sha256") != _checksum_or_none(record)
+            # Content without a checksum is never accepted, also when the file names none.
+            or checksum is None
+            or stored.get("sha256") != checksum
         ):
             return Problem(
                 code,

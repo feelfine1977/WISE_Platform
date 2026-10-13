@@ -100,6 +100,8 @@ export class SavingCoordinator {
   private revision = 0;
   private readonly current = new Map<keyof SavingState, { requestId: string; controller: AbortController }>();
   private readonly listeners = new Set<() => void>();
+  /** Ends the wait for a reopened investigation to be shown, while such a wait is on. */
+  private awaited: (() => void) | null = null;
 
   constructor(
     private readonly client: SavingClient,
@@ -211,6 +213,7 @@ export class SavingCoordinator {
    * local service restored it; resolves to whether it did.
    */
   reopen(summary: SavedInvestigationSummary, workspaceId: WorkspaceId): Promise<boolean> {
+    this.forgetAwaited();
     const { requestId, revision, signal } = this.issue("reopen", "reopen");
     const request: ReopenInvestigationRequest = {
       schema_version: 1,
@@ -230,6 +233,46 @@ export class SavingCoordinator {
   /** Abandons every outstanding request; replies to them are dropped when they arrive. */
   stop(): void {
     for (const kind of [...this.current.keys()]) this.cancel(kind);
+    this.forgetAwaited();
+  }
+
+  /**
+   * Hands the comparison and the score run of a reopened investigation to their views once the
+   * investigation shows that saved revision on its own reading, and not before: while the reopened
+   * question is still being opened, or if opening it fails, what the views show stays as it is.
+   * A later reopening, or stopping, cancels the wait.
+   */
+  private restoreWhenAccepted(workspaceId: WorkspaceId, revision: ReopenInvestigationAnswer["revision"]): void {
+    this.forgetAwaited();
+    const { content } = revision;
+    const accepted = (): boolean => {
+      const { population, saved } = this.investigation.getState();
+      return (
+        saved?.revisionId === revision.saved_revision_id &&
+        population.phase === "ready" &&
+        population.answer.workspace_id === workspaceId &&
+        sameIdentity(population.answer.identity, content.base_identity)
+      );
+    };
+    const hand = (): void => {
+      this.comparisons?.restore(workspaceId, content.base_identity, content.comparison);
+      this.scores?.restore(content.score_run_ref ?? null);
+    };
+    if (accepted()) {
+      hand();
+      return;
+    }
+    const unsubscribe = this.investigation.subscribe(() => {
+      if (!accepted()) return;
+      this.forgetAwaited();
+      hand();
+    });
+    this.awaited = unsubscribe;
+  }
+
+  private forgetAwaited(): void {
+    this.awaited?.();
+    this.awaited = null;
   }
 
   private receiveSave(request: SaveInvestigationRequest, outcome: SavingOutcome<SaveInvestigationAnswer>): void {
@@ -298,8 +341,7 @@ export class SavingCoordinator {
       binding: { investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content },
       view: recovery.presentation_state?.active_view === "process_map" ? "map" : "incidents",
     });
-    this.comparisons?.restore(request.workspace_id, content.base_identity, content.comparison);
-    this.scores?.restore(content.score_run_ref ?? null);
+    this.restoreWhenAccepted(request.workspace_id, revision);
     this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" } });
     return true;
   }

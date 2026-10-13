@@ -72,6 +72,11 @@ describe("the score run of a saved investigation", () => {
     reply({ ok: true, answer });
 
     expect(await reopened).toBe(true);
+    // Nothing is handed back while the reopened question is still being opened.
+    expect(app.restored).toEqual([]);
+    const population = app.imports.populations[0];
+    population.reply({ ok: true, answer: populationAnswer(population.request) });
+    await settle();
     expect(app.restored).toEqual([answer.revision.content.score_run_ref ?? null]);
   });
 });

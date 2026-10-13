@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SavedComparison } from "../generated/saving";
 import { ImportedInvestigationCoordinator } from "../imported/coordinator";
-import { scriptedImportClient, workspaceId } from "../test/imports";
+import { populationAnswer, scriptedImportClient, workspaceId } from "../test/imports";
 import { reopenAnswer, savedSummary, scriptedSavingClient } from "../test/saving";
 import { scriptedSelectionClient } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
@@ -15,11 +15,8 @@ describe("the comparison of a reopened investigation", () => {
       restore: (workspace, identity, saved) => restored.push({ workspaceId: workspace, identity, saved }),
     };
     const saving = scriptedSavingClient();
-    const investigation = new ImportedInvestigationCoordinator(
-      scriptedImportClient().client,
-      scriptedSelectionClient().client,
-      scriptedViewClient().client,
-    );
+    const imports = scriptedImportClient();
+    const investigation = new ImportedInvestigationCoordinator(imports.client, scriptedSelectionClient().client, scriptedViewClient().client);
     const coordinator = new SavingCoordinator(saving.client, investigation, comparisons);
 
     const reopened = coordinator.reopen(savedSummary, workspaceId);
@@ -28,6 +25,12 @@ describe("the comparison of a reopened investigation", () => {
     reply({ ok: true, answer });
 
     expect(await reopened).toBe(true);
+    // Nothing is handed over while the reopened question is still being opened.
+    expect(restored).toEqual([]);
+    const population = imports.populations[0];
+    population.reply({ ok: true, answer: populationAnswer(population.request) });
+    await Promise.resolve();
+    await Promise.resolve();
     expect(restored).toEqual([
       { workspaceId, identity: answer.revision.content.base_identity, saved: answer.revision.content.comparison },
     ]);
