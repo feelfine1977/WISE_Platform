@@ -1,4 +1,4 @@
-import type { Delimiter, Encoding, ImportRefusal, RowIssue } from "../generated/imports";
+import type { Delimiter, Encoding, ExcludedSourceRecord, ImportRefusal, RowIssue } from "../generated/imports";
 import type { ImportProblem } from "./client";
 import { delimiters, encodings } from "./interpretation";
 
@@ -37,9 +37,11 @@ const remedies: Record<ImportRefusal["code"], string> = {
   invalid_mapping: "Choose a different column for each of incident, activity, time and sequence.",
   unsupported_timezone: "Choose “as recorded”, the offsets written in the values, or one fixed offset.",
   timezone_required: "These times carry no zone. Choose “as recorded” or a fixed offset.",
-  malformed_source: "Check the encoding and the delimiter. If they are right, the file does not hold complete CSV records.",
+  malformed_source:
+    "Check the encoding and the delimiter. If they are right, some records do not fit the header: the strict rule stops at the first of them, the tolerant rule keeps up to 5 % of the records outside every incident. Choose the rule, or correct the export.",
   mixed_timezone_values: "Some times carry a zone and others do not. Choose the zone choice that fits the values, or correct the export.",
-  cutoff_before_records: "Set “Export taken at” to a moment after the last record of the source.",
+  cutoff_before_records:
+    "Set “Export taken at” to the latest usable time of the source or later, for example the cutoff proposed from the data.",
   preparation_unavailable: "Read the source again with the same choices in the Data area.",
   interpretation_not_ready: "Confirm the rows with issues in the report first.",
   case_not_found: "Open the incidents again from the Data area.",
@@ -90,6 +92,12 @@ export const issueLabels: Record<RowIssue["code"], string> = {
   duplicate_candidate: "Same cells as an earlier row: both kept",
   timestamp_sequence_disagreement: "Time and sequence number disagree: time decides",
   ragged_record: "Another number of cells than the header: kept as a raw row, outside every incident",
+};
+
+/** Plain names of why a record stays outside every incident. */
+export const excludedReasonLabels: Record<ExcludedSourceRecord["reason"], string> = {
+  missing_case_id: "No incident id",
+  ragged_record: "Another number of cells than the header",
 };
 
 export const severityLabels: Record<RowIssue["severity"], string> = {

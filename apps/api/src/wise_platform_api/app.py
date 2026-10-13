@@ -4,15 +4,17 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .boundary import read_object
-from .examples import PACKAGED_EXAMPLES
+from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
 from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
+from .population_views import PopulationViews, ViewReply
+from .selections import SelectionReply, Selections
 from .workspace import program_folders
 
 
@@ -20,12 +22,15 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     """Build the application; ``examples_dir`` replaces the packaged synthetic examples.
 
     Workspaces are refused inside the program's own folders, so that nothing is written there.
+    The selections made are held in ``application.state.selections``.
     """
     application = FastAPI(title="WISE Platform", version=__version__)
-    investigations = Investigations(
-        examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
-    )
+    examples = examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
+    investigations = Investigations(examples)
     imports = Imports(forbidden=program_folders())
+    selections = Selections(imports)
+    views = PopulationViews(imports)
+    application.state.selections = imports.selections
 
     @application.get("/api/health", response_model=HealthResponse)
     def health() -> HealthResponse:
@@ -41,6 +46,19 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
         if _message_type(body) == "imported_case_evidence_request":
             return _sent_import(await run_in_threadpool(imports.case_evidence, body))
         return _sent(await run_in_threadpool(investigations.case_evidence, body))
+
+    @application.get("/api/examples/{example_id}/source")
+    def example_source(example_id: str) -> Response:
+        """The unchanged bytes of a packaged example, to be stored in a workspace like any CSV."""
+        if example_id not in CATALOG:
+            raise HTTPException(status_code=404, detail="The application ships no example of this name.")
+        raw = read_example(examples, example_id)
+        if raw is None:
+            raise HTTPException(
+                status_code=503,
+                detail=f"The bytes of example {example_id} cannot be read. Reinstall the application.",
+            )
+        return Response(raw, media_type="text/csv; charset=utf-8")
 
     @application.post("/api/workspaces/open")
     async def open_workspace(request: Request) -> JSONResponse:
@@ -66,9 +84,29 @@ def create_app(static_dir: Path | None = None, examples_dir: Path | None = None)
     async def confirm_mapping(request: Request) -> JSONResponse:
         return _sent_import(await run_in_threadpool(imports.confirm_mapping, await request.body()))
 
+    @application.post("/api/preparations/cutoff-proposal")
+    async def propose_cutoff(request: Request) -> JSONResponse:
+        return _sent_import(await run_in_threadpool(imports.propose_cutoff, await request.body()))
+
     @application.post("/api/investigations/open-population")
     async def open_population(request: Request) -> JSONResponse:
         return _sent_import(await run_in_threadpool(imports.open_population, await request.body()))
+
+    @application.post("/api/investigations/select-cases")
+    async def select_cases(request: Request) -> JSONResponse:
+        return _sent_selection(await run_in_threadpool(selections.select_cases, await request.body()))
+
+    @application.post("/api/investigations/process-graph")
+    async def process_graph(request: Request) -> JSONResponse:
+        return _sent_selection(await run_in_threadpool(selections.process_graph, await request.body()))
+
+    @application.post("/api/investigations/opening-context")
+    async def opening_context(request: Request) -> JSONResponse:
+        return _sent_view(await run_in_threadpool(views.opening_context, await request.body()))
+
+    @application.post("/api/investigations/variants")
+    async def variants(request: Request) -> JSONResponse:
+        return _sent_view(await run_in_threadpool(views.variants, await request.body()))
 
     @application.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:
@@ -94,6 +132,14 @@ def _sent(reply: Reply) -> JSONResponse:
 
 
 def _sent_import(reply: ImportReply) -> JSONResponse:
+    return JSONResponse(reply.body, status_code=reply.status)
+
+
+def _sent_selection(reply: SelectionReply) -> JSONResponse:
+    return JSONResponse(reply.body, status_code=reply.status)
+
+
+def _sent_view(reply: ViewReply) -> JSONResponse:
     return JSONResponse(reply.body, status_code=reply.status)
 
 

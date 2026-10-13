@@ -1,6 +1,7 @@
 import { type FormEvent, useId, useState, useSyncExternalStore } from "react";
 import type { PreparationTarget } from "../imported/coordinator";
 import type { DataCoordinator, DataState } from "./coordinator";
+import { workspaceExamples } from "./examples";
 import { ImportProblemNotice } from "./ImportProblemNotice";
 import { ReadingChoices } from "./ReadingChoices";
 import { byteSize } from "./wording";
@@ -108,7 +109,9 @@ function SourceStep({
 }) {
   const { source, sources, preparations, workspace } = state;
   const inputId = useId();
+  const exampleId = useId();
   const [inputKey, setInputKey] = useState(0);
+  const [example, setExample] = useState(workspaceExamples[0].id);
   if (workspace.phase !== "open") return null;
   const names = new Map(sources.map((item) => [item.source_id, item.filename]));
   const current = source.phase === "stored" ? source.source.source_id : null;
@@ -133,6 +136,24 @@ function SourceStep({
           }}
         />
       </div>
+      <div className="inline-form">
+        <label htmlFor={exampleId} className="label-text">
+          Or load an example into the workspace
+        </label>
+        <select id={exampleId} className="example-select" value={example} onChange={(event) => setExample(event.target.value as typeof example)}>
+          {workspaceExamples.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+        <button type="button" onClick={() => coordinator.loadExample(workspaceExamples.find((item) => item.id === example)!)}>
+          Load the example
+        </button>
+      </div>
+      {source.phase === "fetching" && (
+        <Working label={`Fetching ${source.filename} from the application…`} startedAt={source.startedAt} onStop={() => coordinator.stopWaiting()} />
+      )}
       {source.phase === "uploading" && (
         <Working
           label={`Storing ${source.filename} (${byteSize(source.byteCount)}) in the workspace…`}

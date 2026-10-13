@@ -15,11 +15,15 @@ import type { CaseId } from "./generated/investigation";
 import { httpInvestigationClient, type InvestigationClient } from "./investigation/client";
 import { InvestigationCoordinator, type PopulationState } from "./investigation/coordinator";
 import { defaultExampleId } from "./investigation/policies";
+import { httpSelectionClient, type SelectionClient } from "./map/client";
+import { httpPopulationViewClient, type PopulationViewClient } from "./views/client";
 import { countOf, utcInstant } from "./investigation/wording";
 
 interface AppProps {
   client?: InvestigationClient;
   importClient?: ImportClient;
+  selectionClient?: SelectionClient;
+  viewClient?: PopulationViewClient;
   checkHealth?: (signal: AbortSignal) => Promise<HealthResponse>;
 }
 
@@ -28,10 +32,16 @@ type Area = "data" | "example" | "imported";
 
 type FocusTarget = { to: "inspector" } | { to: "row"; caseId: CaseId };
 
-export default function App({ client = httpInvestigationClient, importClient = httpImportClient, checkHealth = fetchHealth }: AppProps) {
+export default function App({
+  client = httpInvestigationClient,
+  importClient = httpImportClient,
+  selectionClient = httpSelectionClient,
+  viewClient = httpPopulationViewClient,
+  checkHealth = fetchHealth,
+}: AppProps) {
   const [coordinator] = useState(() => new InvestigationCoordinator(client));
   const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
-  const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient));
+  const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient, selectionClient, viewClient));
   const [area, setArea] = useState<Area>("example");
   const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);

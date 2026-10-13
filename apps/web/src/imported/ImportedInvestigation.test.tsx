@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { importContract } from "../data/client";
 import { caseSummaries, evidenceAnswer, importRefusal, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
+import { scriptedSelectionClient } from "../test/selections";
+import { scriptedViewClient } from "../test/views";
 import { ImportedInvestigationCoordinator } from "./coordinator";
 import { ImportedInvestigation } from "./ImportedInvestigation";
 
@@ -14,15 +16,16 @@ async function deliver(action: () => void) {
 
 function renderInvestigation() {
   const scripted = scriptedImportClient();
-  const coordinator = new ImportedInvestigationCoordinator(scripted.client);
+  const selecting = scriptedSelectionClient();
+  const coordinator = new ImportedInvestigationCoordinator(scripted.client, selecting.client, scriptedViewClient().client);
   const user = userEvent.setup();
   render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId }));
-  return { ...scripted, coordinator, user };
+  return { ...scripted, selecting, coordinator, user };
 }
 
 function shownIncidents(): string[] {
-  const table = screen.getByRole("table", { name: "Incidents of this preparation" });
+  const table = screen.getByRole("table", { name: "Kept incidents" });
   return within(table).getAllByRole("rowheader").map((cell) => cell.textContent ?? "");
 }
 
@@ -40,16 +43,20 @@ describe("the investigation of an imported preparation", () => {
     expect(importContract.populationAnswer(answer)).toBe(true);
     await deliver(() => app.populations[0].reply({ ok: true, answer }));
 
-    const table = screen.getByRole("table", { name: "Incidents of this preparation" });
+    const table = screen.getByRole("table", { name: "Kept incidents" });
     expect(table.getAttribute("aria-rowcount")).toBe("40001");
     const first = shownIncidents();
     expect(first[0]).toBe("INC-00000");
     // A 480 px view with 32 px rows shows 15 rows; 8 more are kept ready below them.
     expect(first.length).toBe(23);
-    expect(screen.getByLabelText("Population").textContent).toContain("Incidents40,000 incidents");
+    expect(screen.getByLabelText("Population").textContent).toContain("Parent40,000 incidents · 240,000 records");
 
     await app.user.tab();
     expect(focusedText()).toBe("Data");
+    await app.user.tab();
+    expect(focusedText()).toBe("Incidents");
+    await app.user.tab();
+    expect(focusedText()).toBe("Map");
     await app.user.tab();
     expect(focusedText()).toBe("INC-00000");
     await app.user.keyboard("{ArrowDown}");
@@ -90,9 +97,9 @@ describe("the investigation of an imported preparation", () => {
   it("follows scrolling by rendering the rows that come into view, and keeps the focused row", async () => {
     const app = renderInvestigation();
     await deliver(() => app.populations[0].reply({ ok: true, answer: populationAnswer(app.populations[0].request, caseSummaries(40000)) }));
-    const scroller = screen.getByRole("table", { name: "Incidents of this preparation" }).parentElement!;
-    await app.user.tab();
-    await app.user.tab();
+    const scroller = screen.getByRole("table", { name: "Kept incidents" }).parentElement!;
+    // Data, then the two views, then the table.
+    for (let stop = 0; stop < 4; stop += 1) await app.user.tab();
     await app.user.keyboard("{End}");
     expect(focusedText()).toBe("INC-39999");
 
