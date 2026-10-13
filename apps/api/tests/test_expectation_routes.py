@@ -393,6 +393,59 @@ def test_a_kept_run_changed_outside_the_application_is_refused_and_never_scored_
     assert file.read_bytes() == damaged
 
 
+def reading(workspace_id, run_id, request_id="read-1", revision=7) -> dict:
+    return envelope("read_score_run_request", request_id, revision, workspace_id=workspace_id, run_id=run_id)
+
+
+def test_a_kept_run_is_read_as_it_was_scored_without_the_library(client, workspace_id, base, tmp_path, monkeypatch):
+    version = ready(client, workspace_id, base)
+    run = run_of(client, workspace_id, base, version)
+
+    def never(*args, **kwargs):
+        raise AssertionError("The library was called to read a kept run.")
+
+    for name in ("score", "event_log", "check", "compile_norm", "case_witness"):
+        monkeypatch.setattr(method, name, never)
+
+    request = reading(workspace_id, run["identity"]["run_id"])
+    answer = answered(client.post("/api/expectations/read-run", json=request), "score_run_answer")
+    assert answer["run"] == run
+    assert (answer["request_id"], answer["query_revision"], answer["workspace_id"]) == ("read-1", 7, workspace_id)
+
+    with TestClient(create_app(static_dir=tmp_path / "unbuilt")) as restarted:
+        workspace = next(path for path in tmp_path.iterdir() if (path / "score-runs").is_dir())
+        assert restarted.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(workspace))).status_code == 200
+        again = answered(restarted.post("/api/expectations/read-run", json=request), "score_run_answer")
+        assert again["run"] == run
+
+
+def test_reading_a_run_that_is_not_kept_or_was_changed_is_refused(client, workspace_id, base, tmp_path):
+    version = ready(client, workspace_id, base)
+    run = run_of(client, workspace_id, base, version)
+    unknown = reading(workspace_id, "score-run.v1:sha256:" + "0" * 64)
+    refused(client.post("/api/expectations/read-run", json=unknown), "read_score_run", "run_unavailable", "run_id")
+
+    file = _kept_file(tmp_path, "score-runs")
+    kept = json.loads(file.read_text(encoding="utf-8"))
+    kept["record"]["cases"][0]["in_scope"] = not kept["record"]["cases"][0]["in_scope"]
+    file.write_text(json.dumps(kept), encoding="utf-8")
+
+    body = refused(client.post("/api/expectations/read-run", json=reading(workspace_id, run["identity"]["run_id"])),
+                   "read_score_run", "run_unavailable", "run_id")
+    assert "changed or damaged outside" in body["message"]
+
+
+def test_reading_a_run_whose_source_was_changed_is_refused(client, workspace_id, base, tmp_path):
+    version = ready(client, workspace_id, base)
+    run = run_of(client, workspace_id, base, version)
+    source = next(path for path in tmp_path.rglob("*.csv") if path.parent.name == "sources")
+    original = source.read_bytes()
+    source.write_bytes(original[:-1] + (b"x" if original[-1:] != b"x" else b"y"))
+
+    refused(client.post("/api/expectations/read-run", json=reading(workspace_id, run["identity"]["run_id"])),
+            "read_score_run", "source_unavailable")
+
+
 def test_a_kept_definition_changed_outside_the_application_is_refused(client, workspace_id, base, tmp_path):
     version = ready(client, workspace_id, base)
     file = _kept_file(tmp_path, "definitions")
