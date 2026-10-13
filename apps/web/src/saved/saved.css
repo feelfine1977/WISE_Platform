@@ -94,7 +94,7 @@
   font: inherit;
   color: var(--color-ink);
   background: var(--color-surface);
-  border: var(--line-width) solid var(--color-line);
+  border: var(--line-width) solid var(--color-line-strong);
   border-radius: var(--radius);
 }
 .saved-input { min-height: var(--size-control); }

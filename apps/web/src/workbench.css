@@ -410,6 +410,9 @@
 .map-arranging { padding: var(--space-4); }
 .map-element { display: grid; gap: var(--space-2); }
 .map-choices { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* A button that keeps or removes incidents rests on the tint, so that it is seen as a button before the pointer is over it. */
+.workbench .map-choices button { background: var(--color-tint); }
+.workbench .map-choices button:hover:not(:disabled) { background: var(--color-hover); }
 .map-caption { display: grid; gap: var(--space-1); font-size: var(--font-size-small); color: var(--color-ink-muted); }
 .map-coverage > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; }
 .map-coverage .pairs { margin-top: var(--space-1); }
