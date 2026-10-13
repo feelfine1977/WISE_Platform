@@ -10,6 +10,7 @@ import type {
   SaveInvestigationRequest,
   SavedComparison,
   SavedInvestigationSummary,
+  ScoreRunReference,
 } from "../generated/saving";
 import {
   type ImportedInvestigationCoordinator,
@@ -49,6 +50,13 @@ export interface ComparisonSource {
   savedComparisonFor(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedComparison | null;
   /** Shows the comparison of a reopened investigation again, or forgets one that was waiting when there is none. */
   restore(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"], saved: SavedComparison | null): void;
+}
+
+/** The part of the expectation view that saving needs: the score run shown, as a saved investigation refers to it. */
+export interface ScoreSource {
+  savedReference(): ScoreRunReference | null;
+  /** Shows the score run of a reopened investigation again by reading it, or none when it refers to none. */
+  restore(reference: ScoreRunReference | null): void;
 }
 
 /** What a save of the question shown would hold, or why it cannot be saved now. */
@@ -98,6 +106,8 @@ export class SavingCoordinator {
     private readonly investigation: ImportedInvestigationCoordinator,
     /** Where a comparison made on screen is found, so that saving the investigation keeps it. */
     private readonly comparisons?: ComparisonSource,
+    /** Where the score run shown is found, so that saving the investigation refers to it. */
+    private readonly scores?: ScoreSource,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -139,6 +149,7 @@ export class SavingCoordinator {
       flow_artifact_sha256: null,
       graph_positions: null,
     };
+    const scoreReference = this.scores?.savedReference() ?? saved?.content.score_run_ref ?? null;
     const question = {
       schema_version: 1 as const,
       message_type: "save_investigation_request" as const,
@@ -158,8 +169,9 @@ export class SavingCoordinator {
       notes,
       bookmarks: carriedBookmarks(investigation),
       presentation_state: presentation,
-      // A score run the saved investigation refers to stays referred to until it is taken away on purpose.
-      ...(saved?.content.score_run_ref ? { score_run_ref: saved.content.score_run_ref } : {}),
+      // The score run shown on this reading is referred to; without one, a run the saved investigation
+      // refers to stays referred to until it is taken away on purpose.
+      ...(scoreReference ? { score_run_ref: scoreReference } : {}),
     };
     // A new investigation names neither an investigation nor the revision it replaces; a new revision names both.
     const request: SaveInvestigationRequest = saved
@@ -287,6 +299,7 @@ export class SavingCoordinator {
       view: recovery.presentation_state?.active_view === "process_map" ? "map" : "incidents",
     });
     this.comparisons?.restore(request.workspace_id, content.base_identity, content.comparison);
+    this.scores?.restore(content.score_run_ref ?? null);
     this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" } });
     return true;
   }

@@ -25,6 +25,7 @@ import { SavingCoordinator } from "./saved/coordinator";
 import { SavedInvestigations } from "./saved/SavedInvestigations";
 import { httpPopulationViewClient, type PopulationViewClient } from "./views/client";
 import { httpScoringClient, type ScoringClient } from "./expectation/client";
+import { ExpectationCoordinator } from "./expectation/coordinator";
 import { ExpectationView } from "./expectation/ExpectationView";
 import { countOf, describeProblem, utcInstant } from "./investigation/wording";
 import type { Problem } from "./investigation/client";
@@ -82,7 +83,11 @@ export default function App({
   const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
   const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient, selectionClient, viewClient));
   const [compareCoordinator] = useState(() => new CompareCoordinator(comparisonClient));
-  const [savingCoordinator] = useState(() => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator));
+  // Lives above the areas, so that the expectation, its check and its run stay while another area is shown.
+  const [expectationCoordinator] = useState(() => new ExpectationCoordinator(scoringClient, importedCoordinator));
+  const [savingCoordinator] = useState(
+    () => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator, expectationCoordinator),
+  );
   const [area, setArea] = useState<Area>("example");
   const [importedOpen, setImportedOpen] = useState(false);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
@@ -108,6 +113,10 @@ export default function App({
   }, [dataCoordinator, importedCoordinator, savingCoordinator]);
 
   useEffect(() => () => compareCoordinator.stop(), [compareCoordinator]);
+  useEffect(() => {
+    expectationCoordinator.start();
+    return () => expectationCoordinator.stop();
+  }, [expectationCoordinator]);
 
   const openIncidents = useCallback(
     (target: PreparationTarget) => {
@@ -186,7 +195,7 @@ export default function App({
           onShowInvestigation={() => setArea(importedOpen ? "imported" : "example")}
         />
       )}
-      {area === "expectation" && <ExpectationView investigation={importedCoordinator} client={scoringClient} />}
+      {area === "expectation" && <ExpectationView investigation={importedCoordinator} coordinator={expectationCoordinator} />}
       {area === "saved" && (
         <SavedInvestigations
           saving={savingCoordinator}
