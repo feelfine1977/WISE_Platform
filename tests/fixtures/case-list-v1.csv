@@ -1,0 +1,13 @@
+case_id,activity,timestamp_utc,source_sequence,opening_context
+A,Request,2026-10-01T00:00:00Z,1,East
+A,Ack,2026-10-01T01:00:00Z,2,East
+A,Reminder,2026-10-03T00:00:00Z,3,East
+B,Request,2026-10-02T00:00:00Z,1,West
+B,Reply,2026-10-02T02:00:00Z,2,West
+C,Request,2026-10-01T12:00:00Z,1,
+C,,2026-10-01T12:00:00Z,2,
+C,Reply,2026-10-01T12:00:00Z,3,
+D,Request,2026-10-05T00:00:00Z,1,Unknown
+E,Request,2026-10-01T00:00:00Z,1,East
+E,Ack,invalid-time,2,East
+F,,2026-10-01T12:00:00Z,1,West

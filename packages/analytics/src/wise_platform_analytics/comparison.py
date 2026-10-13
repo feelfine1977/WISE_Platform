@@ -11,7 +11,8 @@ import re
 from .comparison_profiles import opening_context_profile, population_support
 from .mapping import ImportRefusal
 from .preparation import PreparedData, content_identity
-from .selection import (OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
+from .selection import (CaseIdIn, CaseStartInWindow, OpeningAttributeIn, RecordAttributeIn,
+                        ObservedSpanAtLeast, MaxRawGapAtLeast, semantic_predicate, OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
                         OpeningAttributeEquals, SelectionError, StartsWithActivity, case_ids,
                         predicate_descriptor, select_cases)
 from .time_formats import TimeInterpretation, iso_local, iso_utc, parse_format, validate_time_policy
@@ -83,7 +84,27 @@ def _predicates(value: object, field: str) -> tuple[tuple, list[dict[str, object
         if not isinstance(raw, Mapping):
             _fail("invalid_predicate", "Each predicate must be a typed object.", at)
         kind = raw.get("kind")
-        if kind == "contains_activity":
+        if kind == "case_id_in":
+            d = _closed(raw, {"kind", "case_ids", "negate"}, at, "invalid_predicate")
+            p = CaseIdIn(d["case_ids"], d["negate"])
+        elif kind == "case_start_in_window":
+            d = _closed(raw, {"kind", "window", "negate"}, at, "invalid_predicate")
+            w = _closed(d["window"], {"timestamp_kind", "start_inclusive", "end_exclusive"}, at + ".window", "invalid_predicate")
+            p = CaseStartInWindow(w["timestamp_kind"], w["start_inclusive"], w["end_exclusive"], d["negate"])
+        elif kind in ("opening_attribute_in", "record_attribute_in"):
+            keys = {"kind", "column_index", "values", "negate"}
+            if kind == "opening_attribute_in":
+                keys.add("anchor_policy")
+            d = _closed(raw, keys, at, "invalid_predicate")
+            if kind == "opening_attribute_in" and d["anchor_policy"] != OPENING_CONTEXT_POLICY:
+                _fail("unsupported_policy", "Use the declared first-record anchor.", at + ".anchor_policy")
+            constructor = OpeningAttributeIn if kind == "opening_attribute_in" else RecordAttributeIn
+            p = constructor(d["column_index"], d["values"], d["negate"])
+        elif kind in ("observed_span_at_least", "max_raw_gap_at_least"):
+            d = _closed(raw, {"kind", "hours", "negate"}, at, "invalid_predicate")
+            constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
+            p = constructor(d["hours"], d["negate"])
+        elif kind == "contains_activity":
             d = _closed(raw, {"kind", "activity", "negate"}, at, "invalid_predicate")
             p = ContainsActivity(d["activity"], d["negate"])
         elif kind in ("starts_with_activity", "ends_with_activity"):
@@ -144,7 +165,7 @@ def _named_group(prepared: PreparedData, parent: tuple[str, ...], value: object,
 def _semantic(definition: Mapping, periods: bool) -> dict[str, object]:
     result = json.loads(json.dumps(definition, ensure_ascii=False, allow_nan=False))
     def canonical_predicates(predicates):
-        return [json.loads(value) for value in sorted({json.dumps(p, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False) for p in predicates})]
+        return [json.loads(value) for value in sorted({json.dumps(semantic_predicate(p), sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False) for p in predicates})]
     if periods:
         minimum = result["minimum_followup_hours"]
         if isinstance(minimum, float) and math.isfinite(minimum) and minimum.is_integer():

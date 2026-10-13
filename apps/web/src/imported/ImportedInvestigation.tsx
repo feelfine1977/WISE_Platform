@@ -14,6 +14,7 @@ import { ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
 import type { SavingCoordinator } from "../saved/coordinator";
 import { SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
+import { FilterPanel } from "../filters/FilterPanel";
 import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
@@ -31,7 +32,7 @@ interface ImportedInvestigationProps {
 
 type View = InvestigationView;
 /** What the side panel shows beside the map or the table. */
-type Rail = "context" | "patterns";
+type Rail = "filters" | "context" | "patterns";
 
 /**
  * The investigation of an imported preparation in one screen: its facts and the selection of whole
@@ -193,15 +194,16 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             waitingFor={waitingFor}
           />
           <button type="button" className="rail-toggle" aria-expanded={railOpen} aria-controls="explorer-rail" onClick={() => setRailOpen((open) => !open)}>
-            Context and patterns
+            Filters and views
           </button>
         </div>
       )}
       <div className="workbench-body" data-inspector={inspectorOpen ? layout : "none"}>
         {answer && railOpen && (
-          <aside className="explorer-rail" id="explorer-rail" aria-label="Context and patterns of the kept incidents">
+          <aside className="explorer-rail" id="explorer-rail" aria-label="Filters and views of the kept incidents">
             <div className="rail-head">
               <div className="view-switch" role="group" aria-label="Side panel">
+                <button type="button" aria-pressed={rail === "filters"} onClick={() => setRail("filters")}>Filters</button>
                 {/* A view that cannot be shown says so on its button, so that a failure in the view not shown is not missed. */}
                 <button
                   type="button"
@@ -225,6 +227,9 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               </button>
             </div>
             <div className="rail-body">
+              {rail === "filters" && <FilterPanel population={answer} parentIds={state.parentCaseIds}
+                parentIdentity={shown?.answer.parent_identity ?? answer.identity} revision={revision}
+                opening={openingContext} onStep={addStep} waitingFor={waitingFor} />}
               <div hidden={rail !== "context"}>
                 <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} />
               </div>

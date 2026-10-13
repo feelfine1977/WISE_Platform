@@ -408,6 +408,67 @@ class CalibrationId(
     )
 
 
+class CaseStartWindow(RootModel[UtcCaseStartWindow | WallCaseStartWindow]):
+    root: UtcCaseStartWindow | WallCaseStartWindow = Field(..., title='CaseStartWindow')
+
+
+class CaseIdIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['case_id_in']
+    case_ids: list[CaseId] = Field(..., min_length=1)
+    negate: bool
+
+
+class CaseStartInWindow(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['case_start_in_window']
+    window: CaseStartWindow
+    negate: bool
+
+
+class OpeningAttributeIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['opening_attribute_in']
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+    negate: bool
+    anchor_policy: Literal['incident.context.first_record_in_declared_order.v1']
+
+
+class RecordAttributeIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['record_attribute_in']
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+    negate: bool
+
+
+class ObservedSpanAtLeast(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['observed_span_at_least']
+    hours: confloat(ge=0.0)
+    negate: bool
+
+
+class MaxRawGapAtLeast(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['max_raw_gap_at_least']
+    hours: confloat(ge=0.0)
+    negate: bool
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -436,6 +497,12 @@ class SelectionPredicate(
         | OpeningAttributeEquals
         | StartsWithActivity
         | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
     ]
 ):
     root: (
@@ -444,6 +511,12 @@ class SelectionPredicate(
         | OpeningAttributeEquals
         | StartsWithActivity
         | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
     ) = Field(..., title='SelectionPredicate')
 
 

@@ -181,6 +181,24 @@
         },
         {
           "$ref": "#/$defs/EndsWithActivity"
+        },
+        {
+          "$ref": "#/$defs/CaseIdIn"
+        },
+        {
+          "$ref": "#/$defs/CaseStartInWindow"
+        },
+        {
+          "$ref": "#/$defs/OpeningAttributeIn"
+        },
+        {
+          "$ref": "#/$defs/RecordAttributeIn"
+        },
+        {
+          "$ref": "#/$defs/ObservedSpanAtLeast"
+        },
+        {
+          "$ref": "#/$defs/MaxRawGapAtLeast"
         }
       ]
     },
@@ -1816,6 +1834,197 @@
       "title": "CalibrationId",
       "type": "string",
       "pattern": "^calibration\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseStartWindow": {
+      "title": "CaseStartWindow",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcCaseStartWindow"
+        },
+        {
+          "$ref": "#/$defs/WallCaseStartWindow"
+        }
+      ]
+    },
+    "CaseIdIn": {
+      "title": "CaseIdIn",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "case_id_in"
+        },
+        "case_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "case_ids",
+        "negate"
+      ]
+    },
+    "CaseStartInWindow": {
+      "title": "CaseStartInWindow",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "case_start_in_window"
+        },
+        "window": {
+          "$ref": "#/$defs/CaseStartWindow"
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "window",
+        "negate"
+      ]
+    },
+    "OpeningAttributeIn": {
+      "title": "OpeningAttributeIn",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "opening_attribute_in"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "negate": {
+          "type": "boolean"
+        },
+        "anchor_policy": {
+          "type": "string",
+          "const": "incident.context.first_record_in_declared_order.v1"
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "values",
+        "negate",
+        "anchor_policy"
+      ]
+    },
+    "RecordAttributeIn": {
+      "title": "RecordAttributeIn",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "record_attribute_in"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "values",
+        "negate"
+      ]
+    },
+    "ObservedSpanAtLeast": {
+      "title": "ObservedSpanAtLeast",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "observed_span_at_least"
+        },
+        "hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "hours",
+        "negate"
+      ]
+    },
+    "MaxRawGapAtLeast": {
+      "title": "MaxRawGapAtLeast",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "max_raw_gap_at_least"
+        },
+        "hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "hours",
+        "negate"
+      ]
     }
   }
 }

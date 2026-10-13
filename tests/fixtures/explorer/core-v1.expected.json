@@ -1,0 +1,432 @@
+{
+  "all": {
+    "case_ids": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+    ],
+    "case_count": 8,
+    "record_count": 17
+  },
+  "opening_East": {
+    "kept": {
+      "case_ids": [
+        "A"
+      ],
+      "case_count": 1,
+      "record_count": 3
+    },
+    "removed": {
+      "case_ids": [
+        "B",
+        "C",
+        "D",
+        "F",
+        "G",
+        "H"
+      ],
+      "case_count": 6,
+      "record_count": 12
+    },
+    "unevaluable": {
+      "case_ids": [
+        "E"
+      ],
+      "case_count": 1,
+      "record_count": 2
+    }
+  },
+  "any_record_East": {
+    "kept": {
+      "case_ids": [
+        "A",
+        "E",
+        "G"
+      ],
+      "case_count": 3,
+      "record_count": 7
+    },
+    "removed": {
+      "case_ids": [
+        "B",
+        "C",
+        "D",
+        "F",
+        "H"
+      ],
+      "case_count": 5,
+      "record_count": 10
+    },
+    "unevaluable": {
+      "case_ids": [],
+      "case_count": 0,
+      "record_count": 0
+    }
+  },
+  "any_record_missing_Unknown": {
+    "kept": {
+      "case_ids": [
+        "C",
+        "D",
+        "H"
+      ],
+      "case_count": 3,
+      "record_count": 7
+    },
+    "removed": {
+      "case_ids": [
+        "A",
+        "B",
+        "E",
+        "F",
+        "G"
+      ],
+      "case_count": 5,
+      "record_count": 10
+    },
+    "unevaluable": {
+      "case_ids": [],
+      "case_count": 0,
+      "record_count": 0
+    }
+  },
+  "negated_any_record_East": {
+    "kept": {
+      "case_ids": [
+        "B",
+        "C",
+        "D",
+        "F",
+        "H"
+      ],
+      "case_count": 5,
+      "record_count": 10
+    },
+    "removed": {
+      "case_ids": [
+        "A",
+        "E",
+        "G"
+      ],
+      "case_count": 3,
+      "record_count": 7
+    },
+    "unevaluable": {
+      "case_ids": [],
+      "case_count": 0,
+      "record_count": 0
+    }
+  },
+  "observed_span_at_least_0": {
+    "kept": {
+      "case_ids": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "F",
+        "G",
+        "H"
+      ],
+      "case_count": 7,
+      "record_count": 15
+    },
+    "removed": {
+      "case_ids": [],
+      "case_count": 0,
+      "record_count": 0
+    },
+    "unevaluable": {
+      "case_ids": [
+        "E"
+      ],
+      "case_count": 1,
+      "record_count": 2
+    }
+  },
+  "negated_observed_span_at_least_0": {
+    "kept": {
+      "case_ids": [],
+      "case_count": 0,
+      "record_count": 0
+    },
+    "removed": {
+      "case_ids": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "F",
+        "G",
+        "H"
+      ],
+      "case_count": 7,
+      "record_count": 15
+    },
+    "unevaluable": {
+      "case_ids": [
+        "E"
+      ],
+      "case_count": 1,
+      "record_count": 2
+    }
+  },
+  "observed_span_at_least_2": {
+    "kept": {
+      "case_ids": [
+        "A",
+        "B",
+        "H"
+      ],
+      "case_count": 3,
+      "record_count": 8
+    },
+    "removed": {
+      "case_ids": [
+        "C",
+        "D",
+        "F",
+        "G"
+      ],
+      "case_count": 4,
+      "record_count": 7
+    },
+    "unevaluable": {
+      "case_ids": [
+        "E"
+      ],
+      "case_count": 1,
+      "record_count": 2
+    }
+  },
+  "max_raw_gap_at_least_0": {
+    "kept": {
+      "case_ids": [
+        "A",
+        "B",
+        "C",
+        "G",
+        "H"
+      ],
+      "case_count": 5,
+      "record_count": 13
+    },
+    "removed": {
+      "case_ids": [],
+      "case_count": 0,
+      "record_count": 0
+    },
+    "unevaluable": {
+      "case_ids": [
+        "D",
+        "E",
+        "F"
+      ],
+      "case_count": 3,
+      "record_count": 4
+    }
+  },
+  "max_raw_gap_at_least_1": {
+    "kept": {
+      "case_ids": [
+        "A",
+        "B",
+        "G",
+        "H"
+      ],
+      "case_count": 4,
+      "record_count": 10
+    },
+    "removed": {
+      "case_ids": [
+        "C"
+      ],
+      "case_count": 1,
+      "record_count": 3
+    },
+    "unevaluable": {
+      "case_ids": [
+        "D",
+        "E",
+        "F"
+      ],
+      "case_count": 3,
+      "record_count": 4
+    }
+  },
+  "negated_max_raw_gap_at_least_1": {
+    "kept": {
+      "case_ids": [
+        "C"
+      ],
+      "case_count": 1,
+      "record_count": 3
+    },
+    "removed": {
+      "case_ids": [
+        "A",
+        "B",
+        "G",
+        "H"
+      ],
+      "case_count": 4,
+      "record_count": 10
+    },
+    "unevaluable": {
+      "case_ids": [
+        "D",
+        "E",
+        "F"
+      ],
+      "case_count": 3,
+      "record_count": 4
+    }
+  },
+  "any_record_East_AND_gap_at_least_1": {
+    "kept": {
+      "case_ids": [
+        "A",
+        "G"
+      ],
+      "case_count": 2,
+      "record_count": 5
+    },
+    "removed": {
+      "case_ids": [
+        "B",
+        "C",
+        "D",
+        "F",
+        "H"
+      ],
+      "case_count": 5,
+      "record_count": 10
+    },
+    "unevaluable": {
+      "case_ids": [
+        "E"
+      ],
+      "case_count": 1,
+      "record_count": 2
+    }
+  },
+  "date_Oct1_Oct2": {
+    "kept": {
+      "case_ids": [
+        "A",
+        "C",
+        "F",
+        "G",
+        "H"
+      ],
+      "case_count": 5,
+      "record_count": 12
+    },
+    "removed": {
+      "case_ids": [
+        "B",
+        "D"
+      ],
+      "case_count": 2,
+      "record_count": 3
+    },
+    "unevaluable": {
+      "case_ids": [
+        "E"
+      ],
+      "case_count": 1,
+      "record_count": 2
+    }
+  },
+  "max_gap_witness_source_positions": {
+    "A": {
+      "from": 1,
+      "to": 2,
+      "from_activity": "Ack",
+      "to_activity": "Reminder",
+      "hours": 47,
+      "from_offset_hours": 1,
+      "share_of_observed_span": 0.9791666666666666,
+      "share_unavailable_reason": null
+    },
+    "B": {
+      "from": 3,
+      "to": 4,
+      "hours": 2,
+      "from_offset_hours": 0,
+      "share_of_observed_span": 1,
+      "share_unavailable_reason": null
+    },
+    "C": {
+      "from": 5,
+      "to": 6,
+      "from_activity": "Request",
+      "to_activity": null,
+      "hours": 0,
+      "from_offset_hours": 0,
+      "share_of_observed_span": null,
+      "share_unavailable_reason": "zero_observed_span"
+    },
+    "D": null,
+    "E": null,
+    "F": null,
+    "G": {
+      "from": 12,
+      "to": 13,
+      "hours": 1,
+      "from_offset_hours": 0,
+      "share_of_observed_span": 1,
+      "share_unavailable_reason": null
+    },
+    "H": {
+      "from": 14,
+      "to": 15,
+      "from_activity": "Request",
+      "to_activity": null,
+      "hours": 1,
+      "from_offset_hours": 0,
+      "share_of_observed_span": 0.5,
+      "share_unavailable_reason": null
+    }
+  },
+  "original_row_positions_unchanged": {
+    "A": [
+      0,
+      1,
+      2
+    ],
+    "B": [
+      3,
+      4
+    ],
+    "C": [
+      5,
+      6,
+      7
+    ],
+    "D": [
+      8
+    ],
+    "E": [
+      9,
+      10
+    ],
+    "F": [
+      11
+    ],
+    "G": [
+      12,
+      13
+    ],
+    "H": [
+      14,
+      15,
+      16
+    ]
+  }
+}

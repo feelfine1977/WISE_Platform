@@ -59,7 +59,7 @@ describe("the investigation of an imported preparation", () => {
     expect(focusedText()).toBe("Incidents");
     // The switch of the side panel stands before the table; the panel itself is closed until it is asked for.
     await app.user.tab();
-    expect(focusedText()).toBe("Context and patterns");
+    expect(focusedText()).toBe("Filters and views");
     await app.user.tab();
     expect(focusedText()).toBe("INC-00000");
     await app.user.keyboard("{ArrowDown}");

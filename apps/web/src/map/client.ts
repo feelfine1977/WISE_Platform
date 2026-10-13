@@ -34,7 +34,7 @@ export interface SelectionClient {
 type ContractCheck<T> = (value: unknown) => value is T;
 
 // Duplicate items are checked separately, in one pass, so that large populations stay quick.
-const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
+const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true, formats: { "date-time": true } });
 ajv.addSchema(withoutUniqueItems(selectionSchema));
 
 function validator<T>(definition: string): ContractCheck<T> {

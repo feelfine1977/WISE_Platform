@@ -45,7 +45,7 @@ function tableIncidents(): string[] {
 
 /** In the investigation the side panel opens on request and shows one of the two views at a time: the one asked for is brought forward. */
 function panel(name: string): HTMLElement {
-  const toggle = screen.queryByRole("button", { name: "Context and patterns" });
+  const toggle = screen.queryByRole("button", { name: "Filters and views" });
   if (toggle?.getAttribute("aria-expanded") === "false") fireEvent.click(toggle);
   const tab = screen.queryByRole("button", { name: name === "Variants" ? /^Patterns/ : /^Context( ·|$)/ });
   if (tab) fireEvent.click(tab);

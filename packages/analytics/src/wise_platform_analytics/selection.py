@@ -4,6 +4,8 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
+import math
+import re
 import hashlib
 import json
 from types import MappingProxyType
@@ -29,6 +31,9 @@ class PreparedRecordLike(Protocol):
     source_sequence: int | None
     activity: str | None
     timestamp_kind: str
+    timestamp_status: str
+    utc_instant: str | None
+    local_timestamp: str | None
     time_value: datetime | None
     context: tuple[ContextRecord, ...]
 
@@ -74,16 +79,70 @@ class EndsWithActivity:
     negate: bool = False
 
 
+@dataclass(frozen=True)
+class CaseIdIn:
+    case_ids: tuple[str, ...]
+    negate: bool = False
+
+    def __post_init__(self) -> None:
+        if isinstance(self.case_ids, (list, tuple)):
+            object.__setattr__(self, "case_ids", tuple(self.case_ids))
+
+
+@dataclass(frozen=True)
+class CaseStartInWindow:
+    timestamp_kind: str
+    start_inclusive: str
+    end_exclusive: str
+    negate: bool = False
+
+
+@dataclass(frozen=True)
+class OpeningAttributeIn:
+    column_index: int
+    values: tuple[str | None, ...]
+    negate: bool = False
+
+    def __post_init__(self) -> None:
+        if isinstance(self.values, (list, tuple)):
+            object.__setattr__(self, "values", tuple(self.values))
+
+
+@dataclass(frozen=True)
+class RecordAttributeIn:
+    column_index: int
+    values: tuple[str | None, ...]
+    negate: bool = False
+
+    def __post_init__(self) -> None:
+        if isinstance(self.values, (list, tuple)):
+            object.__setattr__(self, "values", tuple(self.values))
+
+
+@dataclass(frozen=True)
+class ObservedSpanAtLeast:
+    hours: float
+    negate: bool = False
+
+
+@dataclass(frozen=True)
+class MaxRawGapAtLeast:
+    hours: float
+    negate: bool = False
+
+
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
-                        | StartsWithActivity | EndsWithActivity)
+                        | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
+                        | OpeningAttributeIn | RecordAttributeIn | ObservedSpanAtLeast | MaxRawGapAtLeast)
 
 
 class SelectionError(ValueError):
     """A malformed predicate or a case outside the prepared dictionary."""
 
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, field: str | None = None):
         super().__init__(message)
         self.code = code
+        self.field = field
 
 
 @dataclass(frozen=True)
@@ -139,6 +198,27 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
     """Canonical pure-data meaning; negation never converts unknown into true."""
     if type(getattr(predicate, "negate", None)) is not bool:
         raise SelectionError("invalid_predicate", "Predicate negation must be Boolean.")
+    if isinstance(predicate, CaseIdIn):
+        _set_values(predicate.case_ids, identifiers=True)
+        return {"kind": "case_id_in", "case_ids": list(predicate.case_ids), "negate": predicate.negate}
+    if isinstance(predicate, CaseStartInWindow):
+        _window_bounds(predicate)
+        return {"kind": "case_start_in_window", "window": {
+            "timestamp_kind": predicate.timestamp_kind, "start_inclusive": predicate.start_inclusive,
+            "end_exclusive": predicate.end_exclusive}, "negate": predicate.negate}
+    if isinstance(predicate, (OpeningAttributeIn, RecordAttributeIn)):
+        if type(predicate.column_index) is not int or predicate.column_index < 0:
+            raise SelectionError("invalid_predicate", "Context needs a nonnegative column index.")
+        _set_values(predicate.values)
+        descriptor = {"kind": "opening_attribute_in" if isinstance(predicate, OpeningAttributeIn) else "record_attribute_in",
+                      "column_index": predicate.column_index, "values": list(predicate.values), "negate": predicate.negate}
+        if isinstance(predicate, OpeningAttributeIn):
+            descriptor["anchor_policy"] = OPENING_CONTEXT_POLICY
+        return descriptor
+    if isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)):
+        _hours(predicate.hours)
+        return {"kind": "observed_span_at_least" if isinstance(predicate, ObservedSpanAtLeast) else "max_raw_gap_at_least",
+                "hours": predicate.hours, "negate": predicate.negate}
     if isinstance(predicate, ContainsActivity):
         _label(predicate.activity)
         return {"kind": "contains_activity", "activity": predicate.activity, "negate": predicate.negate}
@@ -159,6 +239,75 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
         kind = "starts_with_activity" if isinstance(predicate, StartsWithActivity) else "ends_with_activity"
         return {"kind": kind, "activity": predicate.activity, "negate": predicate.negate}
     raise SelectionError("invalid_predicate", "Unsupported descriptive predicate.")
+
+
+_UTC_WINDOW = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z")
+_WALL_WINDOW = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?")
+
+
+def _set_values(values: object, *, identifiers: bool = False) -> None:
+    if not isinstance(values, (list, tuple)) or not values:
+        raise SelectionError("invalid_predicate", "At least one exact value is required.")
+    for value in values:
+        if value is None and not identifiers:
+            continue
+        if not isinstance(value, str) or not value or (identifiers and len(value) > 256):
+            raise SelectionError("invalid_predicate", "Values must be supported nonempty text, or explicit missing context.")
+        try:
+            value.encode("utf-8")
+        except UnicodeEncodeError:
+            raise SelectionError("invalid_predicate", "Values must contain valid Unicode scalar values.") from None
+    if len(set(values)) != len(values):
+        raise SelectionError("invalid_predicate", "Values must not repeat.")
+
+
+def _hours(value: object) -> None:
+    try:
+        valid = type(value) in (int, float) and math.isfinite(value) and value >= 0
+    except OverflowError:
+        valid = False
+    if not valid:
+        raise SelectionError("invalid_predicate", "Hours must be a finite nonnegative number.")
+
+
+def _window_bounds(predicate: CaseStartInWindow) -> tuple[datetime, datetime]:
+    pattern = _UTC_WINDOW if predicate.timestamp_kind == "utc_instant" else _WALL_WINDOW
+    if predicate.timestamp_kind not in ("utc_instant", "wall_clock"):
+        raise SelectionError("invalid_predicate", "Use the declared UTC or recorded wall clock.")
+    moments = []
+    for value in (predicate.start_inclusive, predicate.end_exclusive):
+        if not isinstance(value, str) or pattern.fullmatch(value) is None:
+            raise SelectionError("invalid_predicate", "Window bounds must use canonical timestamps in their clock domain.")
+        try:
+            moments.append(datetime.fromisoformat(value.replace("Z", "+00:00")))
+        except ValueError:
+            raise SelectionError("invalid_predicate", "Window bounds must be valid calendar timestamps.") from None
+    if moments[0] >= moments[1]:
+        raise SelectionError("invalid_predicate", "A half-open window needs its start strictly before its end.")
+    return moments[0], moments[1]
+
+
+def semantic_predicate(descriptor: Mapping[str, object]) -> dict[str, object]:
+    """Canonical meaning for hashing; the public descriptor retains the requested wire values."""
+    result = dict(descriptor)
+    kind = result["kind"]
+    if kind == "case_id_in":
+        result["case_ids"] = sorted(result["case_ids"])
+    elif kind in ("opening_attribute_in", "record_attribute_in"):
+        result["values"] = sorted(result["values"], key=lambda value: (value is not None, value or ""))
+    elif kind in ("observed_span_at_least", "max_raw_gap_at_least"):
+        hours = result["hours"]
+        if isinstance(hours, float) and hours.is_integer():
+            result["hours"] = int(hours)
+    elif kind == "case_start_in_window":
+        from .time_formats import iso_local, iso_utc
+        window = result["window"]
+        predicate = CaseStartInWindow(window["timestamp_kind"], window["start_inclusive"], window["end_exclusive"])
+        start, end = _window_bounds(predicate)
+        render = iso_utc if predicate.timestamp_kind == "utc_instant" else iso_local
+        result["window"] = {"timestamp_kind": predicate.timestamp_kind,
+                            "start_inclusive": render(start), "end_exclusive": render(end)}
+    return result
 
 
 def boundary_activities(records: Sequence[PreparedRecordLike]) -> tuple[str | None, str | None]:
@@ -196,11 +345,32 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
     Those overlapping removals must not be added to form the conjunction count.
     """
     parent = case_ids(prepared, parent_ids)
-    definitions = [predicate_descriptor(predicate) for predicate in predicates]
-    for predicate in predicates:
-        if isinstance(predicate, OpeningAttributeEquals) and predicate.column_index not in prepared.mapping["context_columns"]:
-            raise SelectionError("unmapped_context_column", "Opening context must use a mapped context column.")
-    evaluations = [dict((case_id, _evaluate(prepared, case_id, predicate)) for case_id in parent)
+    definitions = []
+    for index, predicate in enumerate(predicates):
+        try:
+            definitions.append(predicate_descriptor(predicate))
+        except SelectionError as error:
+            error.field = error.field or f"predicates.{index}"
+            raise
+        if isinstance(predicate, (OpeningAttributeEquals, OpeningAttributeIn, RecordAttributeIn)):
+            if predicate.column_index not in prepared.mapping["context_columns"]:
+                raise SelectionError("unmapped_context_column", "Context must use a mapped context column.",
+                                     None if isinstance(predicate, OpeningAttributeEquals) else f"predicates.{index}.column_index")
+        if isinstance(predicate, CaseIdIn):
+            requested = set(predicate.case_ids)
+            if requested.difference(prepared.histories):
+                raise SelectionError("unknown_case", "An exact ID is absent from the prepared dictionary.", f"predicates.{index}.case_ids")
+            if requested.difference(parent):
+                raise SelectionError("case_outside_parent", "An exact ID lies outside the frozen parent.", f"predicates.{index}.case_ids")
+        if isinstance(predicate, CaseStartInWindow):
+            clock = "wall_clock" if prepared.policies["time"]["id"] == "incident.time.wall_clock_as_recorded.v1" else "utc_instant"
+            if predicate.timestamp_kind != clock:
+                raise SelectionError("invalid_predicate", "The window must use the preparation's clock.", f"predicates.{index}.window.timestamp_kind")
+    summaries = {}
+    if any(isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)) for predicate in predicates):
+        from .case_time import case_time_summary
+        summaries = {case: case_time_summary(prepared, case) for case in parent}
+    evaluations = [dict((case_id, _evaluate(prepared, case_id, predicate, summaries)) for case_id in parent)
                    for predicate in predicates]
     combined: dict[str, bool | None] = {}
     for case_id in parent:
@@ -215,7 +385,7 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
         "preparation_id": source_identity["preparation_id"],
         "representation_id": source_identity["representation_id"],
         "case_dictionary_id": source_identity["case_dictionary_id"], "parent_case_ids": parent,
-        "predicates": sorted({_canonical(definition) for definition in definitions}),
+        "predicates": sorted({_canonical(semantic_predicate(definition)) for definition in definitions}),
         "kept_case_ids": kept.case_ids, "removed_case_ids": removed.case_ids,
         "unevaluable_case_ids": unevaluable.case_ids,
     }
@@ -224,12 +394,29 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
                            individual, MappingProxyType(identity))
 
 
-def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate) -> bool | None:
+def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, summaries: Mapping[str, Mapping] | None = None) -> bool | None:
     records = prepared.histories[case_id]
-    if isinstance(predicate, ContainsActivity):
-        value: bool | None = any(record.activity == predicate.activity for record in records)
+    if isinstance(predicate, CaseIdIn):
+        value: bool | None = case_id in predicate.case_ids
+    elif isinstance(predicate, RecordAttributeIn):
+        value = any(next((context.value for context in record.context if context.column_index == predicate.column_index), None)
+                    in predicate.values for record in records)
+    elif isinstance(predicate, ContainsActivity):
+        value = any(record.activity == predicate.activity for record in records)
     elif not prepared.sequence_evaluable(case_id):
         value = None
+    elif isinstance(predicate, CaseStartInWindow):
+        start, end = _window_bounds(predicate)
+        moment = records[0].time_value if records else None
+        value = None if moment is None else start <= moment < end
+    elif isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)):
+        assert summaries is not None
+        key = "observed_span_hours" if isinstance(predicate, ObservedSpanAtLeast) else "maximum_adjacent_raw_gap_hours"
+        hours = summaries[case_id][key]
+        value = None if hours is None else hours >= predicate.hours
+    elif isinstance(predicate, OpeningAttributeIn):
+        opening = next((context.value for context in records[0].context if context.column_index == predicate.column_index), None) if records else None
+        value = None if not records else opening in predicate.values
     elif isinstance(predicate, DirectlyFollows):
         mapped = [record.activity for record in records if record.activity is not None]
         value = any(left == predicate.source_activity and right == predicate.target_activity

@@ -142,24 +142,6 @@ class EndsWithActivity(BaseModel):
     negate: bool
 
 
-class SelectionPredicate(
-    RootModel[
-        ContainsActivity
-        | DirectlyFollows
-        | OpeningAttributeEquals
-        | StartsWithActivity
-        | EndsWithActivity
-    ]
-):
-    root: (
-        ContainsActivity
-        | DirectlyFollows
-        | OpeningAttributeEquals
-        | StartsWithActivity
-        | EndsWithActivity
-    ) = Field(..., title='SelectionPredicate')
-
-
 class UtcInstant(RootModel[AwareDatetime]):
     root: AwareDatetime = Field(..., title='UtcInstant')
 
@@ -198,62 +180,12 @@ class ComparisonId(RootModel[constr(pattern=r'^comparison\.v1:sha256:[a-f0-9]{64
     )
 
 
-class PredicateGroupDefinition(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    kind: Literal['predicates']
-    predicates: list[SelectionPredicate]
-
-
 class ExplicitCaseGroupDefinition(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
     kind: Literal['explicit_case_ids']
     case_ids: CaseIds
-
-
-class NamedGroupDefinition(
-    RootModel[PredicateGroupDefinition | ExplicitCaseGroupDefinition]
-):
-    root: PredicateGroupDefinition | ExplicitCaseGroupDefinition = Field(
-        ..., title='NamedGroupDefinition'
-    )
-
-
-class NamedGroup(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    name: Name
-    definition: NamedGroupDefinition
-
-
-class TwoNamedGroups(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    mode: Literal['two_named_groups']
-    target: NamedGroup
-    reference: NamedGroup
-
-
-class SelectionPartition(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    mode: Literal['selection_partition']
-    target_name: Name
-    reference_name: Name
-    predicates: list[SelectionPredicate]
-    target_side: Literal['kept', 'removed']
-
-
-class GroupComparisonDefinition(RootModel[TwoNamedGroups | SelectionPartition]):
-    root: TwoNamedGroups | SelectionPartition = Field(
-        ..., title='GroupComparisonDefinition'
-    )
 
 
 class UtcCaseStartWindow(BaseModel):
@@ -536,44 +468,6 @@ class PeriodCohort(BaseModel):
     endpoint_coverage: EndpointCoverage | None
 
 
-class GroupComparisonRequest(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    message_type: Literal['compare_groups_request']
-    identity: AnswerIdentity
-    parent_case_ids: CaseIds | None
-    context_column_index: conint(ge=0, le=9007199254740991)
-    context_policy: ContextPolicy
-    definition: GroupComparisonDefinition
-
-
-class GroupComparisonAnswer(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    message_type: Literal['group_comparison_answer']
-    identity: AnswerIdentity
-    parent_identity: AnswerIdentity
-    parent: PopulationSupport
-    comparison_id: ComparisonId
-    context_column_index: conint(ge=0, le=9007199254740991)
-    context_policy: ContextPolicy
-    pair_support: PairSupport
-    context_profile: ContextProfile
-    definition: GroupComparisonDefinition
-    target: GroupCohort
-    reference: GroupCohort
-
-
 class ComparisonRefusal(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -644,12 +538,187 @@ class WallPeriodComparisonDefinition(BaseModel):
     endpoint_activity: constr(min_length=1) | None
 
 
+class CaseIdIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['case_id_in']
+    case_ids: list[CaseId] = Field(..., min_length=1)
+    negate: bool
+
+
+class CaseStartInWindow(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['case_start_in_window']
+    window: CaseStartWindow
+    negate: bool
+
+
+class OpeningAttributeIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['opening_attribute_in']
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+    negate: bool
+    anchor_policy: Literal['incident.context.first_record_in_declared_order.v1']
+
+
+class RecordAttributeIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['record_attribute_in']
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+    negate: bool
+
+
+class ObservedSpanAtLeast(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['observed_span_at_least']
+    hours: confloat(ge=0.0)
+    negate: bool
+
+
+class MaxRawGapAtLeast(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['max_raw_gap_at_least']
+    hours: confloat(ge=0.0)
+    negate: bool
+
+
+class SelectionPredicate(
+    RootModel[
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
+    ]
+):
+    root: (
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
+    ) = Field(..., title='SelectionPredicate')
+
+
+class PredicateGroupDefinition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['predicates']
+    predicates: list[SelectionPredicate]
+
+
+class NamedGroupDefinition(
+    RootModel[PredicateGroupDefinition | ExplicitCaseGroupDefinition]
+):
+    root: PredicateGroupDefinition | ExplicitCaseGroupDefinition = Field(
+        ..., title='NamedGroupDefinition'
+    )
+
+
+class NamedGroup(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: Name
+    definition: NamedGroupDefinition
+
+
+class TwoNamedGroups(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    mode: Literal['two_named_groups']
+    target: NamedGroup
+    reference: NamedGroup
+
+
+class SelectionPartition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    mode: Literal['selection_partition']
+    target_name: Name
+    reference_name: Name
+    predicates: list[SelectionPredicate]
+    target_side: Literal['kept', 'removed']
+
+
+class GroupComparisonDefinition(RootModel[TwoNamedGroups | SelectionPartition]):
+    root: TwoNamedGroups | SelectionPartition = Field(
+        ..., title='GroupComparisonDefinition'
+    )
+
+
 class PeriodComparisonDefinition(
     RootModel[UtcPeriodComparisonDefinition | WallPeriodComparisonDefinition]
 ):
     root: UtcPeriodComparisonDefinition | WallPeriodComparisonDefinition = Field(
         ..., title='PeriodComparisonDefinition'
     )
+
+
+class GroupComparisonRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    message_type: Literal['compare_groups_request']
+    identity: AnswerIdentity
+    parent_case_ids: CaseIds | None
+    context_column_index: conint(ge=0, le=9007199254740991)
+    context_policy: ContextPolicy
+    definition: GroupComparisonDefinition
+
+
+class GroupComparisonAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    message_type: Literal['group_comparison_answer']
+    identity: AnswerIdentity
+    parent_identity: AnswerIdentity
+    parent: PopulationSupport
+    comparison_id: ComparisonId
+    context_column_index: conint(ge=0, le=9007199254740991)
+    context_policy: ContextPolicy
+    pair_support: PairSupport
+    context_profile: ContextProfile
+    definition: GroupComparisonDefinition
+    target: GroupCohort
+    reference: GroupCohort
 
 
 class PeriodComparisonRequest(BaseModel):

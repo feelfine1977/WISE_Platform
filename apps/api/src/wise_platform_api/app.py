@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .boundary import read_object
+from .case_lists import CaseLists
 from .comparisons import ComparisonReply, Comparisons
 from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
 from .expectations import Expectations, ScoringReply
@@ -50,6 +51,7 @@ def create_app(
     imports = Imports(forbidden=program_folders(), workspace_path=workspace_path)
     selections = Selections(imports)
     views = PopulationViews(imports)
+    case_lists = CaseLists(imports)
     comparisons = Comparisons(imports)
     expectations = Expectations(imports)
     saving = Saving(imports)
@@ -126,6 +128,11 @@ def create_app(
     @application.post("/api/investigations/process-graph")
     async def process_graph(request: Request) -> JSONResponse:
         return _sent_selection(await run_in_threadpool(selections.process_graph, await request.body()))
+
+    @application.post("/api/investigations/case-list")
+    async def case_list(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(case_lists.case_list, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/opening-context")
     async def opening_context(request: Request) -> JSONResponse:

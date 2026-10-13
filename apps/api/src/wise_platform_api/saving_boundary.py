@@ -30,6 +30,7 @@ from .boundary import SCHEMA_VERSION, read_object
 from .generated import saving as saving_models
 from .generated.saving import SaveInvestigationRequest1, SavingRefusal
 from .import_boundary import import_echo
+from .selection_boundary import predicate_wire_failures, _value_at
 from .strict_reading import (
     Failure,
     alternatives_of,
@@ -156,8 +157,8 @@ def parse_saving_body(
     if not failures:
         assert not isinstance(read, list)
         return read, message
-    failure = min(failures, key=lambda item: (_is_policy(item), len(item.path)))
-    code = "unsupported_policy" if _is_policy(failure) else "invalid_request"
+    failure = min(failures, key=lambda item: (_is_policy(item, message), len(item.path)))
+    code = "unsupported_policy" if _is_policy(failure, message) else "invalid_request"
     where = failure.field or "the request"
     text = (
         f"The policy at {where} is not supported: {failure.reason}."
@@ -181,6 +182,10 @@ def _beyond_the_models(message: dict, model: type[BaseModel]) -> list[Failure]:
                 "a new investigation names neither",
             )
         )
+    predicate_paths = (("selection_recipe", "predicates"), ("comparison", "definition", "predicates"),
+                       ("comparison", "definition", "target", "definition", "predicates"),
+                       ("comparison", "definition", "reference", "definition", "predicates"))
+    failures += predicate_wire_failures(message, predicate_paths)
     failures += repeated_failures(message, _UNIQUE)
     failures += version_failures(message, _VERSIONS)
     comparison = message.get("comparison")
@@ -197,5 +202,9 @@ def _beyond_the_models(message: dict, model: type[BaseModel]) -> list[Failure]:
     return failures
 
 
-def _is_policy(failure: Failure) -> bool:
+def _is_policy(failure: Failure, message: Mapping | None = None) -> bool:
+    if failure.path and failure.path[-1] == "anchor_policy" and message is not None:
+        predicate = _value_at(message, failure.path[:-1])
+        if isinstance(predicate, Mapping) and predicate.get("kind") == "record_attribute_in":
+            return False
     return bool(failure.path) and failure.path[-1] in _POLICIES
