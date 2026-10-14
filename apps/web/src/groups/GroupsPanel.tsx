@@ -137,7 +137,9 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
         <>
           <p className="groups-summary">
             {countOf(answer.group_count, "group")}
-            {cover !== null && groups.length > 1 && ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the eligible kept incidents`}
+            {cover !== null &&
+              groups.length > 1 &&
+              ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the ${groups[0].population.denominator.toLocaleString("en")} eligible kept incidents`}
           </p>
           {coverage !== null && (coverage.kept.unevaluable.case_count > 0 || coverage.parent.unevaluable.case_count > 0) && (
             <p className="groups-limit">
