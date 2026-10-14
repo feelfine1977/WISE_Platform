@@ -84,6 +84,12 @@ export function SavedMetadataRecovery({ workspaceId, savedRevisionId, client = h
       <button type="button" disabled={metadata.literature_claims.offset === 0} onClick={() => void read({ ...page, claims_offset: Math.max(0, metadata.literature_claims.offset - 10) })}>Previous literature page</button>
       <button type="button" disabled={metadata.literature_claims.next_offset === null} onClick={() => void read({ ...page, claims_offset: metadata.literature_claims.next_offset ?? 0 })}>Next literature page</button>
     </>}
-    {metadata && lineage.state.phase !== "closed" && <div onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); lineage.close(); } }}><p>{lineage.context?.reason}</p><p>Original-source times and records are independently verified by this read; native outputs and saved selected membership remain unverified.</p><ImportedInspector inspected={lineage.state} summary={undefined} layout={layout} onLayout={setLayout} onReturn={lineage.close} onRetry={lineage.retry} headingRef={heading} highlightedRowIds={lineage.context?.rowIds} /></div>}
+    {metadata && lineage.state.phase !== "closed" && <div onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); lineage.close(); } }}>
+      <p>{lineage.context?.reason}</p>
+      <p>{lineage.state.phase === "ready" ? "Original-source times and records are independently verified by this read" :
+        lineage.state.phase === "loading" ? "Original-source verification is pending; no source history is verified yet" :
+        "Original-source verification failed; no source history was verified by this read"}; native outputs and saved selected membership remain unverified.</p>
+      <ImportedInspector inspected={lineage.state} summary={undefined} layout={layout} onLayout={setLayout} onReturn={lineage.close} onRetry={lineage.retry} headingRef={heading} highlightedRowIds={lineage.context?.rowIds} />
+    </div>}
   </section>;
 }

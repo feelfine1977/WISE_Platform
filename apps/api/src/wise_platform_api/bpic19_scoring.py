@@ -169,6 +169,16 @@ class Bpic19Scoring:
     def read(self, body: bytes) -> Bpic19ScoringReply:
         return self._answer(body, generated.Bpic19ReadRequest, self._read_run)
 
+    def read_saved_snapshot(self, body: bytes) -> Bpic19ScoringReply:
+        """Verify the complete stored result at save/replay, then read its page.
+
+        Ordinary browser reads stay paged. A saved native action, however,
+        must not certify a run whose undisplayed snapshot chunks are missing
+        or changed. Verification reads recorded bytes without evaluating,
+        decoding all chunks or replacing any artifact.
+        """
+        return self._answer(body, generated.Bpic19ReadRequest, self._read_saved_snapshot)
+
     def associate(self, body: bytes) -> Bpic19ScoringReply:
         return self._answer(body, generated.Bpic19AssociationRequest, self._associate)
 
@@ -307,6 +317,12 @@ class Bpic19Scoring:
 
     def _read_run(self, given: dict) -> dict:
         workspace, run = self._stored(given)
+        return self._page(workspace, run, given)
+
+    def _read_saved_snapshot(self, given: dict) -> dict:
+        workspace, run = self._stored(given)
+        for ref in run["snapshot"]["artifacts"]:
+            _artifact_bytes(workspace, ref)
         return self._page(workspace, run, given)
 
     def _variant(self, workspace: Workspace, parent: dict, report: dict, operation: str, recipe: dict) -> dict:

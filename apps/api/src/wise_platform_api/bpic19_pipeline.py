@@ -89,7 +89,7 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
             registry[name] = (operator, "bpic19_operator_request")
     if "bpic19_score" in operations:
         from .bpic19_scoring import Bpic19Scoring
-        registry["bpic19_score"] = (Bpic19Scoring(imports).read, "bpic19_read_request")
+        registry["bpic19_score"] = (Bpic19Scoring(imports).read_saved_snapshot, "bpic19_read_request")
     if "bpic19_flow_comparison" in operations:
         from .bpic19_flow_comparison import Bpic19FlowComparisons
         registry["bpic19_flow_comparison"] = (Bpic19FlowComparisons(imports).compare, "bpic19_flow_comparison_request")

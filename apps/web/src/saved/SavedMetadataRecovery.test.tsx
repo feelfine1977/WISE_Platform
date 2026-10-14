@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SavedMetadataRecovery } from "./SavedMetadataRecovery";
 import { httpSavingMetadataClient, savingContract, type SavingMetadataClient, type SavingOutcome } from "./client";
 import type { RecoverInvestigationMetadataAnswer, RecoverInvestigationMetadataRequest } from "../generated/saving";
 import { firstRevisionId, investigationId } from "../test/saving";
 import rawEvidence from "../bpic19/retained-cohort-h7-evidence.json";
-import { importContract, type ImportClient } from "../data/client";
+import { importContract, type ImportClient, type ImportOutcome } from "../data/client";
+import type { ImportedCaseEvidenceAnswer, ImportedCaseEvidenceRequest } from "../generated/imports";
 
 if (!importContract.caseEvidenceAnswer(rawEvidence)) throw new Error("The independent H7 source evidence fixture is invalid");
 const evidence = rawEvidence;
@@ -26,6 +27,51 @@ const client = (): SavingMetadataClient => ({ recoverMetadata: vi.fn(async reque
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe("historical metadata recovery", () => {
+  it("reports pending source verification until the independent original-history answer is accepted", async () => {
+    const user = userEvent.setup();
+    let release: ((value: ImportOutcome<ImportedCaseEvidenceAnswer>) => void) | undefined;
+    let requested: ImportedCaseEvidenceRequest | undefined;
+    const source: Pick<ImportClient, "caseEvidence"> = { caseEvidence: vi.fn(request => {
+      requested = request; return new Promise<ImportOutcome<ImportedCaseEvidenceAnswer>>(resolve => { release = resolve; });
+    }) };
+    render(<SavedMetadataRecovery workspaceId={wid} savedRevisionId={firstRevisionId} client={client()} evidenceClient={source} />);
+    await user.click(screen.getByRole("button", { name: "Read historical notes and references" }));
+    await screen.findByText(/Historical metadata only/);
+    expect(screen.queryByText(/Original-source times and records are independently verified/)).toBeNull();
+    await user.click(screen.getByText("Original A witness · A"));
+    await user.click(screen.getByRole("button", { name: "Inspect independent source history A" }));
+    await screen.findByText(/Original-source verification is pending; no source history is verified yet/);
+    expect(screen.queryByText(/Original-source times and records are independently verified/)).toBeNull();
+    expect(document.querySelectorAll(".imported-inspector .history-entry")).toHaveLength(0);
+    if (!release || !requested) throw new Error("Independent history verification must be pending.");
+    const answer = { ...evidence, request_id: requested.request_id, query_revision: requested.query_revision,
+      workspace_id: requested.workspace_id, identity: requested.identity };
+    await act(async () => release?.({ ok: true, answer }));
+    await screen.findByText(/Original-source times and records are independently verified by this read/);
+    expect(screen.queryByText(/Original-source verification is pending/)).toBeNull();
+    expect(screen.getByText(/Complete history in the declared order/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Save/ })).toBeNull();
+  });
+  it("keeps independently unavailable source history unverified while historical notes remain available", async () => {
+    const user = userEvent.setup();
+    const source: Pick<ImportClient, "caseEvidence"> = { caseEvidence: vi.fn(async request => ({ ok: false as const, problem: {
+      kind: "refusal" as const, refusal: { schema_version: 1 as const, message_type: "import_refusal" as const,
+        request_id: request.request_id, query_revision: request.query_revision, workspace_id: request.workspace_id,
+        operation: "case_evidence" as const, code: "source_unavailable" as const, message: "Original source bytes are missing.",
+        field: "identity.source_id", retryable: false } } })) };
+    render(<SavedMetadataRecovery workspaceId={wid} savedRevisionId={firstRevisionId} client={client()} evidenceClient={source} />);
+    await user.click(screen.getByRole("button", { name: "Read historical notes and references" }));
+    await screen.findByText(/Historical metadata only/);
+    await user.click(screen.getByText("Original A witness · A"));
+    await user.click(screen.getByRole("button", { name: "Inspect independent source history A" }));
+    await screen.findByText(/Original-source verification failed; no source history was verified by this read/);
+    expect(screen.queryByText(/Original-source times and records are independently verified/)).toBeNull();
+    expect(document.querySelectorAll(".imported-inspector .history-entry")).toHaveLength(0);
+    expect(screen.getByText(/Original source bytes are missing/)).toBeTruthy();
+    expect(screen.getByText(/Saved control hypothesis/)).toBeTruthy();
+    expect(screen.getByText(/outputs unverified and not restored/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Save/ })).toBeNull();
+  });
   it("requires an explicit read, preserves reported claims and verifies complete original evidence independently by keyboard", async () => {
     const user = userEvent.setup(), service = client();
     const source: Pick<ImportClient, "caseEvidence"> = { caseEvidence: vi.fn(async request => ({ ok: true as const, answer: { ...evidence,
