@@ -218,6 +218,10 @@ def create_app(
     async def reopen_investigation(request: Request) -> JSONResponse:
         return _sent_saving(await run_in_threadpool(saving.reopen, await request.body()))
 
+    @application.post("/api/investigations/recover-metadata")
+    async def recover_investigation_metadata(request: Request) -> JSONResponse:
+        return _sent_saving(await run_in_threadpool(saving.recover_metadata, await request.body()))
+
     @application.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:
         raise HTTPException(status_code=404, detail="API route not found")

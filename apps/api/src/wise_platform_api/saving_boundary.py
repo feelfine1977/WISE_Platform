@@ -46,6 +46,7 @@ RequestModel = TypeVar("RequestModel", bound=BaseModel)
 SAVE = "save_investigation"
 LIST_SAVED = "list_saved"
 REOPEN = "reopen_investigation"
+RECOVER_METADATA = "recover_investigation_metadata"
 
 STATUS: dict[str, int] = {
     "invalid_request": 400,
@@ -73,6 +74,8 @@ STATUS: dict[str, int] = {
     "incompatible_saved_revision": 409,
     "publication_failed": 503,
     "computation_failed": 500,
+    "artifact_unavailable": 409,
+    "checksum_mismatch": 409,
 }
 RETRYABLE = frozenset({"workspace_unavailable", "publication_failed", "computation_failed"})
 """Codes for a state of this computer rather than of the request: the same request can succeed later."""

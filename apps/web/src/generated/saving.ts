@@ -15,7 +15,9 @@ export type SavingMessage =
   | ListSavedAnswer
   | ReopenInvestigationRequest
   | ReopenInvestigationAnswer
-  | SavingRefusal;
+  | SavingRefusal
+  | RecoverInvestigationMetadataRequest
+  | RecoverInvestigationMetadataAnswer;
 export type SaveInvestigationRequest = SaveInvestigationRequest1 & SaveInvestigationRequest2;
 export type SaveInvestigationRequest1 =
   | {
@@ -558,7 +560,7 @@ export interface SavingRefusal1 {
   request_id: RequestId | null;
   query_revision: QueryRevision | null;
   workspace_id: WorkspaceId | null;
-  operation: "save_investigation" | "list_saved" | "reopen_investigation";
+  operation: "save_investigation" | "list_saved" | "reopen_investigation" | "recover_investigation_metadata";
   code:
     | "invalid_request"
     | "unsupported_schema"
@@ -584,11 +586,375 @@ export interface SavingRefusal1 {
     | "incompatible_saved_revision"
     | "publication_failed"
     | "computation_failed"
-    | "unsupported_action";
+    | "unsupported_action"
+    | "artifact_unavailable"
+    | "checksum_mismatch";
   message: string;
   field: string | null;
   retryable: boolean;
   investigation_id?: InvestigationId | null;
   expected_revision_id?: SavedRevisionId | null;
   current_revision_id?: SavedRevisionId | null;
+}
+export interface RecoverInvestigationMetadataRequest {
+  schema_version: 1;
+  message_type: "recover_investigation_metadata_request";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  saved_revision_id: SavedRevisionId;
+  page: MetadataRecoveryPage;
+}
+export interface MetadataRecoveryPage {
+  notes_offset: number;
+  bookmarks_offset: number;
+  claims_offset: number;
+}
+export interface RecoverInvestigationMetadataAnswer {
+  schema_version: 1;
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  saved_revision_id: SavedRevisionId;
+  message_type: "recover_investigation_metadata_answer";
+  investigation_id: InvestigationId;
+  status: "historical_metadata_only";
+  metadata_integrity: "saved_content_hash_verified";
+  outputs_restored: false;
+  selection_restored: false;
+  source_verified: false;
+  metadata: HistoricalInvestigationMetadata;
+}
+export interface HistoricalInvestigationMetadata {
+  name: string;
+  name_truncated: boolean;
+  base_identity: AnswerIdentity;
+  selection_identity: AnswerIdentity;
+  notes: RecoveredNotesPage;
+  bookmarks: RecoveredBookmarkPage;
+  literature_claims: RecoveredClaimPage;
+}
+export interface RecoveredNotesPage {
+  offset: number;
+  total: number;
+  text: string;
+  next_offset: number | null;
+}
+export interface RecoveredBookmarkPage {
+  offset: number;
+  total: number;
+  /**
+   * @maxItems 20
+   */
+  items:
+    | []
+    | [RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark, RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ];
+  next_offset: number | null;
+}
+export interface RecoveredBookmark {
+  label: string;
+  identity: AnswerIdentity;
+  case_id: CaseId;
+  /**
+   * @maxItems 200
+   */
+  row_ids: RowId[];
+  note: string;
+  label_truncated: boolean;
+  row_count: number;
+  row_ids_complete: boolean;
+  note_truncated: boolean;
+}
+export interface RecoveredClaimPage {
+  offset: number;
+  total: number;
+  /**
+   * @maxItems 10
+   */
+  items:
+    | []
+    | [Bpic19LiteratureClaim]
+    | [Bpic19LiteratureClaim, Bpic19LiteratureClaim]
+    | [Bpic19LiteratureClaim, Bpic19LiteratureClaim, Bpic19LiteratureClaim]
+    | [Bpic19LiteratureClaim, Bpic19LiteratureClaim, Bpic19LiteratureClaim, Bpic19LiteratureClaim]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ];
+  next_offset: number | null;
 }

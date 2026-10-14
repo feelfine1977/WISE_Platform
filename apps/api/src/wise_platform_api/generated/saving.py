@@ -359,7 +359,12 @@ class SavingRefusal(BaseModel):
     request_id: RequestId | None
     query_revision: QueryRevision | None
     workspace_id: WorkspaceId | None
-    operation: Literal['save_investigation', 'list_saved', 'reopen_investigation']
+    operation: Literal[
+        'save_investigation',
+        'list_saved',
+        'reopen_investigation',
+        'recover_investigation_metadata',
+    ]
     code: Literal[
         'invalid_request',
         'unsupported_schema',
@@ -386,6 +391,8 @@ class SavingRefusal(BaseModel):
         'publication_failed',
         'computation_failed',
         'unsupported_action',
+        'artifact_unavailable',
+        'checksum_mismatch',
     ]
     message: constr(min_length=1)
     field: str | None
@@ -541,6 +548,48 @@ class Bpic19LiteratureClaim(BaseModel):
     compared_run_id: constr(min_length=1) | None
 
 
+class MetadataRecoveryPage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    notes_offset: conint(ge=0, le=9007199254740991)
+    bookmarks_offset: conint(ge=0, le=9007199254740991)
+    claims_offset: conint(ge=0, le=9007199254740991)
+
+
+class RecoverInvestigationMetadataRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['recover_investigation_metadata_request']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    saved_revision_id: SavedRevisionId
+    page: MetadataRecoveryPage
+
+
+class RecoveredClaimPage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    offset: conint(ge=0, le=9007199254740991)
+    total: conint(ge=0, le=9007199254740991)
+    items: list[Bpic19LiteratureClaim] = Field(..., max_length=10)
+    next_offset: conint(ge=0, le=9007199254740991) | None
+
+
+class RecoveredNotesPage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    offset: conint(ge=0, le=9007199254740991)
+    total: conint(ge=0, le=9007199254740991)
+    text: constr(max_length=4000)
+    next_offset: conint(ge=0, le=9007199254740991) | None
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -680,6 +729,63 @@ class RecordAttributeEvidence(BaseModel):
     )
     policy_id: Literal['incident.raw.same_record_all.v1']
     cases: list[RecordAttributeCaseEvidence]
+
+
+class RecoveredBookmark(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    label: constr(min_length=1, max_length=256)
+    identity: AnswerIdentity
+    case_id: CaseId
+    row_ids: list[RowId] = Field(..., max_length=200)
+    note: constr(min_length=0, max_length=4000)
+    label_truncated: bool
+    row_count: conint(ge=0, le=9007199254740991)
+    row_ids_complete: bool
+    note_truncated: bool
+
+
+class RecoveredBookmarkPage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    offset: conint(ge=0, le=9007199254740991)
+    total: conint(ge=0, le=9007199254740991)
+    items: list[RecoveredBookmark] = Field(..., max_length=20)
+    next_offset: conint(ge=0, le=9007199254740991) | None
+
+
+class HistoricalInvestigationMetadata(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: constr(max_length=256)
+    name_truncated: bool
+    base_identity: AnswerIdentity
+    selection_identity: AnswerIdentity
+    notes: RecoveredNotesPage
+    bookmarks: RecoveredBookmarkPage
+    literature_claims: RecoveredClaimPage
+
+
+class RecoverInvestigationMetadataAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    saved_revision_id: SavedRevisionId
+    message_type: Literal['recover_investigation_metadata_answer']
+    investigation_id: InvestigationId
+    status: Literal['historical_metadata_only']
+    metadata_integrity: Literal['saved_content_hash_verified']
+    outputs_restored: Literal[False]
+    selection_restored: Literal[False]
+    source_verified: Literal[False]
+    metadata: HistoricalInvestigationMetadata
 
 
 class SelectionPredicate(
@@ -993,6 +1099,8 @@ class SavingMessage(
         | ReopenInvestigationRequest
         | ReopenInvestigationAnswer
         | SavingRefusal
+        | RecoverInvestigationMetadataRequest
+        | RecoverInvestigationMetadataAnswer
     ]
 ):
     root: (
@@ -1003,6 +1111,8 @@ class SavingMessage(
         | ReopenInvestigationRequest
         | ReopenInvestigationAnswer
         | SavingRefusal
+        | RecoverInvestigationMetadataRequest
+        | RecoverInvestigationMetadataAnswer
     ) = Field(
         ...,
         description='Unscored immutable investigation revisions with verified source/interpretation/selection meaning and atomic expected-head publication.',

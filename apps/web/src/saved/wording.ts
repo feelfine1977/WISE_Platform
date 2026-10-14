@@ -30,6 +30,8 @@ const remedies: Record<SavingRefusal["code"], string> = {
   incompatible_saved_revision: "Reopen it with the application version that saved it, or read its source again and save a new investigation.",
   publication_failed: "Try again in a moment; the earlier revisions are unchanged.",
   computation_failed: "Try again. If it fails again, restart the application.",
+  artifact_unavailable: "Restore the same missing native artifact from its matching backup. You can read integrity-checked saved notes and independently resolvable original source evidence without restoring computed outputs.",
+  checksum_mismatch: "Restore the original native artifact from its matching backup; do not overwrite it with a new computation. Read saved notes and original source evidence separately while the stored output remains unverified.",
 };
 
 export interface SavingProblemText {

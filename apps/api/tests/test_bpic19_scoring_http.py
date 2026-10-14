@@ -224,7 +224,7 @@ def test_native_runs_reopen_without_evaluation_export_complete_and_corrupt_artif
         artifact = workspace / "score-run-artifacts" / ref["filename"]
         artifact.write_bytes(b"changed")
         refused = fresh.post("/api/investigations/bpic19-read", json=read(wid, answer["run_id"]))
-        assert refused.status_code == 409 and refused.json()["code"] == "artifact_unavailable"
+        assert refused.status_code == 409 and refused.json()["code"] == "checksum_mismatch"
         assert artifact.read_bytes() == b"changed"
 
 

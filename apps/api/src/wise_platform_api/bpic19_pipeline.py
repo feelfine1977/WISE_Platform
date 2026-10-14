@@ -148,6 +148,8 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
         given = envelopes[index]
         reply = operation(json.dumps(given, allow_nan=False).encode())
         if reply.status != 200:
+            if action["operation"] == "bpic19_score" and reply.body.get("code") in {"artifact_unavailable", "checksum_mismatch"}:
+                return Problem(reply.body["code"], "The saved native output could not be read: " + reply.body["message"], field + ".query.run_id")
             return Problem("invalid_parameter", "The saved action was refused: " + reply.body["message"], field + ".query")
         answer = reply.body
         if action["operation"] in comparison_names and answer.get("operation") != action["operation"]:

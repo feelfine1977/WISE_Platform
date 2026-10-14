@@ -46,6 +46,8 @@ from .generated.saving import (
     PresentationRecovery,
     ReopenInvestigationAnswer,
     ReopenInvestigationRequest,
+    RecoverInvestigationMetadataRequest,
+    RecoverInvestigationMetadataAnswer,
     SaveInvestigationAnswer,
     SaveInvestigationRequest1,
     SavingRefusal,
@@ -56,6 +58,7 @@ from .saved_store import Conflict, SavedInvestigations, StoredRevision
 from .saving_boundary import (
     LIST_SAVED,
     REOPEN,
+    RECOVER_METADATA,
     SAVE,
     STATUS,
     parse_saving_body,
@@ -113,7 +116,51 @@ class Saving:
     def reopen(self, body: bytes) -> SavingReply:
         return _answering(REOPEN, parse_saving_body(body, ReopenInvestigationRequest, REOPEN), self._reopen)
 
+    def recover_metadata(self, body: bytes) -> SavingReply:
+        return _answering(RECOVER_METADATA, parse_saving_body(body, RecoverInvestigationMetadataRequest, RECOVER_METADATA), self._recover_metadata)
+
     # Use cases ----------------------------------------------------------------------------
+
+    def _recover_metadata(self, request: RecoverInvestigationMetadataRequest, given: dict) -> SavingReply:
+        """Read bounded saved notes/references without replay, selection restoration or writes.
+
+        The content hash is checked by the revision store. Source bytes and analytical
+        artifacts are intentionally not admitted here: any original history is fetched
+        independently through the normal source-evidence route.
+        """
+        workspace = self._imports.opened_workspace(given["workspace_id"])
+        if isinstance(workspace, Problem):
+            return _problem(RECOVER_METADATA, workspace, given)
+        revision = SavedInvestigations(workspace).revision(given["saved_revision_id"])
+        if isinstance(revision, Problem):
+            return _problem(RECOVER_METADATA, revision, given)
+        content = revision.content
+        page = given["page"]
+        def paged(items, offset, limit):
+            end = min(offset + limit, len(items))
+            return {"offset": offset, "total": len(items), "items": items[offset:end],
+                    "next_offset": end if end < len(items) else None}
+        note = content["notes"]
+        offset = page["notes_offset"]
+        end = min(offset + 4000, len(note))
+        # Python string offsets are Unicode code points; the client follows the
+        # supplied next offset rather than guessing from UTF-16 string length.
+        notes = {"offset": offset, "total": len(note), "text": note[offset:end],
+                 "next_offset": end if end < len(note) else None}
+        bookmarks = paged(content["bookmarks"], page["bookmarks_offset"], 20)
+        bookmarks["items"] = [{**bookmark, "label": bookmark["label"][:256],
+            "label_truncated": len(bookmark["label"]) > 256,
+            "note": bookmark["note"][:4000], "note_truncated": len(bookmark["note"]) > 4000,
+            "row_ids": bookmark["row_ids"][:200], "row_count": len(bookmark["row_ids"]),
+            "row_ids_complete": len(bookmark["row_ids"]) <= 200} for bookmark in bookmarks["items"]]
+        claims = paged((content.get("bpic19_pipeline") or {}).get("literature_claims", []), page["claims_offset"], 10)
+        return _answer(RecoverInvestigationMetadataAnswer, _envelope("recover_investigation_metadata_answer", given) | {
+            "saved_revision_id": revision.saved_revision_id, "investigation_id": revision.investigation_id,
+            "status": "historical_metadata_only", "metadata_integrity": "saved_content_hash_verified",
+            "outputs_restored": False, "selection_restored": False, "source_verified": False,
+            "metadata": {"name": content["name"][:256], "name_truncated": len(content["name"]) > 256,
+                "base_identity": content["base_identity"], "selection_identity": content["selection_identity"],
+                "notes": notes, "bookmarks": bookmarks, "literature_claims": claims}})
 
     def _save(self, request: SaveInvestigationRequest1, given: dict) -> SavingReply:
         workspace = self._imports.opened_workspace(given["workspace_id"])

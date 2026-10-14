@@ -111,7 +111,7 @@ def _store_artifact(workspace: Workspace, payload: object, kind: str) -> dict:
     path = folder / (digest + ".json.gz")
     if path.exists():
         if _digest(path.read_bytes()) != digest:
-            raise _Refused(Problem("artifact_unavailable", "A stored native snapshot artifact was changed. Nothing was overwritten."))
+            raise _Refused(Problem("checksum_mismatch", "A stored native snapshot artifact was changed. Nothing was overwritten."))
     else:
         write_atomically(path, compressed)
     return {"kind": kind, "sha256": digest, "byte_count": len(compressed), "json_byte_count": len(raw),
@@ -121,12 +121,12 @@ def _store_artifact(workspace: Workspace, payload: object, kind: str) -> dict:
 def _artifact_bytes(workspace: Workspace, receipt: dict) -> bytes:
     digest = receipt.get("sha256")
     if not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest) or receipt.get("filename") != digest + ".json.gz":
-        raise _Refused(Problem("artifact_unavailable", "The snapshot artifact receipt is not valid."))
+        raise _Refused(Problem("checksum_mismatch", "The snapshot artifact receipt is not valid."))
     try: raw = (workspace.path / "score-run-artifacts" / (digest + ".json.gz")).read_bytes()
     except OSError:
         raise _Refused(Problem("artifact_unavailable", "A native result artifact is missing or unreadable. Nothing was computed again.")) from None
     if len(raw) != receipt.get("byte_count") or _digest(raw) != digest:
-        raise _Refused(Problem("artifact_unavailable", "A native result artifact failed its checksum. Nothing was computed again."))
+        raise _Refused(Problem("checksum_mismatch", "A native result artifact failed its checksum. Nothing was computed again."))
     return raw
 
 
@@ -135,8 +135,8 @@ def _load_artifact(workspace: Workspace, receipt: dict):
         raw = gzip.decompress(_artifact_bytes(workspace, receipt))
         if len(raw) != receipt["json_byte_count"]: raise ValueError("Wrong size")
         return json.loads(raw)
-    except (ValueError, OSError, EOFError):
-        raise _Refused(Problem("artifact_unavailable", "A native result artifact is not the recorded JSON snapshot.")) from None
+    except (ValueError, OSError, EOFError, KeyError, TypeError):
+        raise _Refused(Problem("checksum_mismatch", "A native result artifact is not the recorded JSON snapshot.")) from None
 
 
 def _bounded_analysis(value, limit=200):

@@ -24,6 +24,12 @@
     },
     {
       "$ref": "#/$defs/SavingRefusal"
+    },
+    {
+      "$ref": "#/$defs/RecoverInvestigationMetadataRequest"
+    },
+    {
+      "$ref": "#/$defs/RecoverInvestigationMetadataAnswer"
     }
   ],
   "$defs": {
@@ -1739,7 +1745,8 @@
           "enum": [
             "save_investigation",
             "list_saved",
-            "reopen_investigation"
+            "reopen_investigation",
+            "recover_investigation_metadata"
           ]
         },
         "code": {
@@ -1769,7 +1776,9 @@
             "incompatible_saved_revision",
             "publication_failed",
             "computation_failed",
-            "unsupported_action"
+            "unsupported_action",
+            "artifact_unavailable",
+            "checksum_mismatch"
           ]
         },
         "message": {
@@ -2457,6 +2466,357 @@
         "claim",
         "claim_level",
         "compared_run_id"
+      ]
+    },
+    "MetadataRecoveryPage": {
+      "title": "MetadataRecoveryPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notes_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "bookmarks_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "claims_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "notes_offset",
+        "bookmarks_offset",
+        "claims_offset"
+      ]
+    },
+    "RecoverInvestigationMetadataRequest": {
+      "title": "RecoverInvestigationMetadataRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "recover_investigation_metadata_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "saved_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        },
+        "page": {
+          "$ref": "#/$defs/MetadataRecoveryPage"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "saved_revision_id",
+        "page"
+      ]
+    },
+    "RecoveredBookmark": {
+      "title": "RecoveredBookmark",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          },
+          "uniqueItems": true,
+          "maxItems": 200
+        },
+        "note": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 4000
+        },
+        "label_truncated": {
+          "type": "boolean"
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "row_ids_complete": {
+          "type": "boolean"
+        },
+        "note_truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label",
+        "identity",
+        "case_id",
+        "row_ids",
+        "note",
+        "label_truncated",
+        "row_count",
+        "row_ids_complete",
+        "note_truncated"
+      ]
+    },
+    "RecoveredBookmarkPage": {
+      "title": "RecoveredBookmarkPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/RecoveredBookmark"
+          }
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "offset",
+        "total",
+        "items",
+        "next_offset"
+      ]
+    },
+    "RecoveredClaimPage": {
+      "title": "RecoveredClaimPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "$ref": "#/$defs/Bpic19LiteratureClaim"
+          }
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "offset",
+        "total",
+        "items",
+        "next_offset"
+      ]
+    },
+    "RecoveredNotesPage": {
+      "title": "RecoveredNotesPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "offset",
+        "total",
+        "text",
+        "next_offset"
+      ]
+    },
+    "HistoricalInvestigationMetadata": {
+      "title": "HistoricalInvestigationMetadata",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "name_truncated": {
+          "type": "boolean"
+        },
+        "base_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "selection_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "notes": {
+          "$ref": "#/$defs/RecoveredNotesPage"
+        },
+        "bookmarks": {
+          "$ref": "#/$defs/RecoveredBookmarkPage"
+        },
+        "literature_claims": {
+          "$ref": "#/$defs/RecoveredClaimPage"
+        }
+      },
+      "required": [
+        "name",
+        "name_truncated",
+        "base_identity",
+        "selection_identity",
+        "notes",
+        "bookmarks",
+        "literature_claims"
+      ]
+    },
+    "RecoverInvestigationMetadataAnswer": {
+      "title": "RecoverInvestigationMetadataAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "saved_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "recover_investigation_metadata_answer"
+        },
+        "investigation_id": {
+          "$ref": "#/$defs/InvestigationId"
+        },
+        "status": {
+          "type": "string",
+          "const": "historical_metadata_only"
+        },
+        "metadata_integrity": {
+          "type": "string",
+          "const": "saved_content_hash_verified"
+        },
+        "outputs_restored": {
+          "type": "boolean",
+          "const": false
+        },
+        "selection_restored": {
+          "type": "boolean",
+          "const": false
+        },
+        "source_verified": {
+          "type": "boolean",
+          "const": false
+        },
+        "metadata": {
+          "$ref": "#/$defs/HistoricalInvestigationMetadata"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "saved_revision_id",
+        "message_type",
+        "investigation_id",
+        "status",
+        "metadata_integrity",
+        "outputs_restored",
+        "selection_restored",
+        "source_verified",
+        "metadata"
       ]
     }
   }

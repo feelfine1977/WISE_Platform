@@ -1213,7 +1213,8 @@
           "const": "bpic19_refusal"
         },
         "code": {
-          "type": "string"
+          "type": "string",
+          "description": "Native artifact reads distinguish artifact_unavailable (missing/unreadable) from checksum_mismatch (recorded byte/digest/JSON integrity failed); neither recomputes or overwrites stored results."
         },
         "message": {
           "type": "string"

@@ -292,7 +292,10 @@ class Bpic19Refusal(BaseModel):
     query_revision: QueryRevision | None
     workspace_id: WorkspaceId | None
     message_type: Literal['bpic19_refusal']
-    code: str
+    code: str = Field(
+        ...,
+        description='Native artifact reads distinguish artifact_unavailable (missing/unreadable) from checksum_mismatch (recorded byte/digest/JSON integrity failed); neither recomputes or overwrites stored results.',
+    )
     message: str
     retryable: bool
     field: str | None = None
