@@ -131,7 +131,10 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
       <div className="stages-head">
         <p className={kept ? "stages-note" : "stages-note stages-not-kept"}>{kept ? STAGES_KEPT_LINE : STAGES_NOT_KEPT_LINE}</p>
         <InfoPopover label="About stages">
-          <p className="popover-lead">Stages are yours to define for this log; they are kept in this browser, not in a saved investigation.</p>
+          <p className="popover-lead">
+            The table counts each incident of the whole parent once for each activity it contains. Stages are yours to define for this log and stay
+            in this browser, outside the saved investigation.
+          </p>
           <section className="popover-section">
             <p>{kept ? STAGES_KEPT : STAGES_NOT_KEPT}</p>
             <p>{STAGES_ARE}</p>
