@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import (
     AwareDatetime,
@@ -469,6 +469,24 @@ class MaxRawGapAtLeast(BaseModel):
     negate: bool
 
 
+class Bpic19PipelineOutput(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    operation: Literal['bpic19_profile', 'bpic19_measures']
+    definition_id: constr(min_length=1)
+    sha256: constr(pattern=r'^[a-f0-9]{64}$')
+    output: dict[str, Any]
+
+
+class Bpic19PipelineManifest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    outputs: list[Bpic19PipelineOutput] = Field(..., max_length=2, min_length=1)
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -589,6 +607,27 @@ class EvidenceBookmark(BaseModel):
     case_id: CaseId
     row_ids: list[RowId]
     note: constr(min_length=0)
+
+
+class Bpic19PipelineAction(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    operation: Literal['bpic19_profile', 'bpic19_measures']
+    identity: AnswerIdentity
+    query: dict[str, Any] = Field(
+        ...,
+        description='Validated against the registered operation request before save or replay.',
+    )
+    definition_id: constr(min_length=1)
+
+
+class Bpic19Pipeline(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    actions: list[Bpic19PipelineAction] = Field(..., max_length=2, min_length=1)
 
 
 class PredicateResult(BaseModel):
@@ -717,6 +756,7 @@ class SavedInvestigationContent(BaseModel):
     notes: constr(min_length=0)
     bookmarks: list[EvidenceBookmark]
     score_run_ref: ScoreRunReference | None
+    bpic19_pipeline: Bpic19Pipeline | None = None
 
 
 class SavedRevision(BaseModel):
@@ -749,6 +789,7 @@ class SaveInvestigationRequest1(BaseModel):
     bookmarks: list[EvidenceBookmark]
     score_run_ref: ScoreRunReference | None = None
     presentation_state: PresentationRecovery | None = None
+    bpic19_pipeline: Bpic19Pipeline | None = None
 
 
 class SaveInvestigationRequest2(BaseModel):
@@ -776,6 +817,7 @@ class SaveInvestigationRequest2(BaseModel):
     bookmarks: list[EvidenceBookmark]
     score_run_ref: ScoreRunReference | None = None
     presentation_state: PresentationRecovery | None = None
+    bpic19_pipeline: Bpic19Pipeline | None = None
 
 
 class SaveInvestigationRequest(
@@ -799,6 +841,7 @@ class SaveInvestigationAnswer(BaseModel):
     created_investigation: bool
     semantic_change: bool
     recovery: RecoveryAnswer
+    bpic19_outputs: Bpic19PipelineManifest | None = None
 
 
 class ReopenInvestigationAnswer(BaseModel):
@@ -814,6 +857,7 @@ class ReopenInvestigationAnswer(BaseModel):
     restored_selection: RestoredSelection
     restored_comparison_id: ComparisonId | None
     recovery: RecoveryAnswer
+    bpic19_outputs: Bpic19PipelineManifest | None = None
 
 
 class SavingMessage(

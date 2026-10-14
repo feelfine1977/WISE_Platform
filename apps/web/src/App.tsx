@@ -22,6 +22,8 @@ import { httpPopulationViewClient, type PopulationViewClient } from "./views/cli
 import { httpScoringClient, type ScoringClient } from "./expectation/client";
 import { ExpectationCoordinator } from "./expectation/coordinator";
 import { ExpectationView } from "./expectation/ExpectationView";
+import { Bpic19Workspace } from "./bpic19/Bpic19Workspace";
+import { Bpic19Session } from "./bpic19/session";
 
 interface AppProps {
   importClient?: ImportClient;
@@ -36,12 +38,13 @@ interface AppProps {
 }
 
 /** The areas of the application, in the order of the work. */
-type Area = "data" | "investigations" | "compare" | "expectation" | "saved";
+type Area = "data" | "investigations" | "purchasing" | "compare" | "expectation" | "saved";
 
 /** Every area can be entered at any time; an area that needs incidents says so and offers the step. */
 const areaTabs: AreaTab<Area>[] = [
   { id: "data", label: "Data", unavailable: null },
   { id: "investigations", label: "Investigations", unavailable: null },
+  { id: "purchasing", label: "Purchasing analysis", unavailable: null },
   { id: "compare", label: "Compare", unavailable: null },
   { id: "expectation", label: "Expectation", unavailable: null },
   { id: "saved", label: "Saved", unavailable: null },
@@ -62,8 +65,9 @@ export default function App({
   const [compareCoordinator] = useState(() => new CompareCoordinator(comparisonClient));
   // Lives above the areas, so that the expectation, its check and its run stay while another area is shown.
   const [expectationCoordinator] = useState(() => new ExpectationCoordinator(scoringClient, importedCoordinator));
+  const [bpic19Session] = useState(() => new Bpic19Session());
   const [savingCoordinator] = useState(
-    () => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator, expectationCoordinator),
+    () => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator, expectationCoordinator, bpic19Session),
   );
   // The start opens a reading by itself and leaves the area the analyst is in as it is.
   const [firstOpen] = useState(
@@ -78,6 +82,8 @@ export default function App({
       ),
   );
   const [area, setArea] = useState<Area>("investigations");
+  const [purchasingVisited, setPurchasingVisited] = useState(false);
+  useEffect(() => { if (area === "purchasing") setPurchasingVisited(true); }, [area]);
   const incidentsOpen = useSyncExternalStore(importedCoordinator.subscribe, () => importedCoordinator.getState().population.phase !== "idle");
 
   useEffect(() => {
@@ -146,6 +152,7 @@ export default function App({
         <ServiceStatus checkHealth={checkHealth} />
       </header>
       {area === "data" && <DataArea coordinator={dataCoordinator} onOpenIncidents={openIncidents} />}
+      {purchasingVisited && <div hidden={area !== "purchasing"}><Bpic19Workspace active={area === "purchasing"} investigation={importedCoordinator} comparison={compareCoordinator} saving={savingCoordinator} session={bpic19Session} onShowData={showData} onShowComparison={() => setArea("compare")} /></div>}
       {area === "investigations" &&
         (incidentsOpen ? (
           <ImportedInvestigation coordinator={importedCoordinator} saving={savingCoordinator} onShowData={showData} />

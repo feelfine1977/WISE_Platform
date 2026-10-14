@@ -1,4 +1,5 @@
 import type { WorkspaceId } from "../generated/imports";
+import { sameJson } from "../data/coordinator";
 import type {
   EvidenceBookmark,
   ListSavedAnswer,
@@ -11,6 +12,7 @@ import type {
   SavedComparison,
   SavedInvestigationSummary,
   ScoreRunReference,
+  Bpic19Pipeline,
 } from "../generated/saving";
 import {
   type ImportedInvestigationCoordinator,
@@ -57,6 +59,11 @@ export interface ScoreSource {
   savedReference(): ScoreRunReference | null;
   /** Shows the score run of a reopened investigation again by reading it, or none when it refers to none. */
   restore(reference: ScoreRunReference | null): void;
+}
+
+export interface PipelineSource {
+  readyForSave(): boolean;
+  savedPipeline(): Bpic19Pipeline | null;
 }
 
 /** What a save of the question shown would hold, or why it cannot be saved now. */
@@ -115,6 +122,7 @@ export class SavingCoordinator {
     private readonly comparisons?: ComparisonSource,
     /** Where the score run shown is found, so that saving the investigation refers to it. */
     private readonly scores?: ScoreSource,
+    private readonly pipeline?: PipelineSource,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -127,6 +135,7 @@ export class SavingCoordinator {
   /** What saving the question shown now would hold, from the investigation's state. */
   draft(investigation: ImportedInvestigationState): SaveDraft {
     const { population, selection, saved } = investigation;
+    if (this.pipeline && !this.pipeline.readyForSave()) return { ready: false, reason: "Review the changed BPIC19 definitions or finish the pending analysis before saving." };
     if (population.phase !== "ready") return { ready: false, reason: "The incidents are not open yet." };
     if (investigation.replacement?.phase === "running") return { ready: false, reason: "Saving is possible once the other incidents asked for are open." };
     const shown = shownSelection(selection);
@@ -145,6 +154,7 @@ export class SavingCoordinator {
 
   /** Saves the question shown under a name and a note; a question saved before gets a new revision. */
   save(name: string, notes: string, view: InvestigationView): void {
+    if (this.pipeline && !this.pipeline.readyForSave()) return;
     const investigation = this.investigation.getState();
     const { population, selection, saved, parentCaseIds } = investigation;
     const shown = shownSelection(selection);
@@ -157,6 +167,7 @@ export class SavingCoordinator {
       graph_positions: null,
     };
     const scoreReference = this.scores?.savedReference() ?? saved?.content.score_run_ref ?? null;
+    const pipeline = this.pipeline?.savedPipeline() ?? (saved && sameIdentity(saved.content.selection_identity, shown.answer.identity) ? saved.content.bpic19_pipeline : null);
     const question = {
       schema_version: 1 as const,
       message_type: "save_investigation_request" as const,
@@ -179,6 +190,7 @@ export class SavingCoordinator {
       // The score run shown on this reading is referred to; without one, a run the saved investigation
       // refers to stays referred to until it is taken away on purpose.
       ...(scoreReference ? { score_run_ref: scoreReference } : {}),
+      ...(pipeline ? { bpic19_pipeline: pipeline } : {}),
     };
     // A new investigation names neither an investigation nor the revision it replaces; a new revision names both.
     const request: SaveInvestigationRequest = saved
@@ -311,9 +323,11 @@ export class SavingCoordinator {
 
   /** Whether the investigation still shows the question a save request was made for. */
   private stillShows(request: SaveInvestigationRequest): boolean {
-    const { population, selection } = this.investigation.getState();
+    const { population, selection, saved } = this.investigation.getState();
     const shown = shownSelection(selection);
+    const currentPipeline = this.pipeline?.savedPipeline() ?? (saved && shown && sameIdentity(saved.content.selection_identity, shown.answer.identity) ? saved.content.bpic19_pipeline : null);
     return (
+      (!this.pipeline || (this.pipeline.readyForSave() && sameJson(request.bpic19_pipeline ?? null, currentPipeline ?? null))) &&
       population.phase === "ready" &&
       selection.phase === "ready" &&
       shown !== null &&

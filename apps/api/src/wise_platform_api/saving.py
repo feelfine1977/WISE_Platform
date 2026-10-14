@@ -38,6 +38,7 @@ from wise_platform_analytics.version import IMPLEMENTATION_VERSION
 
 from . import __version__
 from .boundary import SCHEMA_VERSION
+from .bpic19_pipeline import replay_pipeline
 from .comparisons import compared, keep_comparison
 from .generated.saving import (
     ListSavedAnswer,
@@ -134,9 +135,14 @@ class Saving:
             "bookmarks": given["bookmarks"],
             "score_run_ref": reference,
         }
+        if given.get("bpic19_pipeline") is not None:
+            content["bpic19_pipeline"] = given["bpic19_pipeline"]
         question = self._question(workspace, content, None)
         if isinstance(question, Problem):
             return _problem(SAVE, question, given)
+        pipeline = self._pipeline(workspace.workspace_id, content, question)
+        if isinstance(pipeline, Problem):
+            return _problem(SAVE, pipeline, given)
         presentation = given.get("presentation_state")
         published = SavedInvestigations(workspace).publish(
             given["investigation_id"],
@@ -147,7 +153,7 @@ class Saving:
                 "analytics_version": IMPLEMENTATION_VERSION,
                 "source": dict(question.source),
                 "preparation": dict(question.preparation.descriptor),
-                "results": _results(question),
+                "results": {**_results(question), **({"bpic19_pipeline": pipeline} if pipeline is not None else {})},
                 "presentation_state": presentation,
             },
         )
@@ -175,6 +181,7 @@ class Saving:
                 "created_investigation": published.created_investigation,
                 "semantic_change": published.semantic_change,
                 "recovery": {"presentation_state": presentation, "warnings": []},
+                **({"bpic19_outputs": pipeline} if pipeline is not None else {}),
             },
         )
 
@@ -230,6 +237,11 @@ class Saving:
         differs = _differing_results(revision, question)
         if differs is not None:
             return _problem(REOPEN, Problem(differs.code, differs.message, "saved_revision_id"), given)
+        pipeline = self._pipeline(workspace.workspace_id, revision.content, question)
+        if isinstance(pipeline, Problem):
+            return _problem(REOPEN, pipeline, given)
+        if revision.results.get("bpic19_pipeline") != pipeline:
+            return _problem(REOPEN, Problem("identity_mismatch", "The saved pipeline output differs from its source replay. The saved revision was not overwritten.", "saved_revision_id"), given)
         registry = self._imports.selections
         registry.keep(workspace.workspace_id, question.parent)
         registry.keep(workspace.workspace_id, question.selection)
@@ -241,6 +253,7 @@ class Saving:
             _envelope("reopen_investigation_answer", given)
             | {
                 "revision": revision.revision(),
+                **({"bpic19_outputs": pipeline} if pipeline is not None else {}),
                 "restored_selection": {
                     "identity": selected["identity"],
                     "parent_identity": question.parent.identity_dict(),
@@ -329,6 +342,13 @@ class Saving:
         if problem is not None:
             return problem
         return Question(prepared, source, preparation, parent, selection, comparison)
+
+    def _pipeline(self, workspace_id: str, content: dict, question: Question):
+        registry = self._imports.selections
+        registry.keep(workspace_id, question.parent)
+        registry.keep(workspace_id, question.selection)
+        return replay_pipeline(self._imports, workspace_id, content.get("bpic19_pipeline"),
+                               [question.prepared.identity_dict(), question.parent.identity_dict(), question.selection.identity_dict()])
 
     def _source(
         self, workspace: Workspace, source_id: str, saved: StoredRevision | None

@@ -1,0 +1,22 @@
+.bpic19-profile { display: grid; gap: var(--space-3); padding: var(--space-4); color: var(--color-ink); min-width: 0; }
+.bpic19-profile h2, .bpic19-profile h3, .bpic19-profile p { margin: 0; }
+.bpic19-profile details { padding: var(--space-3); border: var(--line-width) solid var(--color-line); border-radius: var(--radius); }
+.bpic19-profile summary { cursor: pointer; font-weight: var(--font-weight-strong); }
+.bpic19-profile details[open] > summary { margin-bottom: var(--space-2); }
+.bpic19-role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--size-source-select)), 1fr)); gap: var(--space-3); margin: var(--space-3) 0; }
+.bpic19-profile label { display: grid; gap: var(--space-1); }
+.bpic19-profile select, .bpic19-profile input:not([type="checkbox"]) { max-width: 100%; min-height: var(--size-control); }
+.bpic19-profile label.bpic19-column-check { display: flex; align-items: center; gap: var(--space-2); }
+.bpic19-table-scroll { max-width: 100%; overflow-x: auto; }
+.bpic19-profile table { width: 100%; font-variant-numeric: tabular-nums; }
+.bpic19-profile td, .bpic19-profile th { text-align: left; padding: var(--space-2); vertical-align: top; }
+.bpic19-profile th small { display: block; font-weight: var(--font-weight-plain); color: var(--color-ink-muted); }
+.bpic19-profile button { margin: var(--space-1) var(--space-2) var(--space-1) 0; }
+.bpic19-answers { display: grid; gap: var(--space-3); }
+.bpic19-population { font-variant-numeric: tabular-nums; }
+.bpic19-quality { padding: var(--space-3); background: var(--color-tint); }
+.bpic19-compare { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: end; }
+.bpic19-profile button:focus-visible, .bpic19-profile select:focus-visible, .bpic19-profile input:focus-visible, .bpic19-profile summary:focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--focus-offset); }
+
+.bpic19-profile code { overflow-wrap: anywhere; }
+.bpic19-profile fieldset { min-width: 0; margin: var(--space-2) 0; border: var(--line-width) solid var(--color-line); }

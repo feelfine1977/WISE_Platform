@@ -17,10 +17,11 @@ interface ImportedInspectorProps {
   /** The id of the text saying why trying again has to wait, while it has to. */
   waitingFor?: string;
   headingRef: RefObject<HTMLHeadingElement | null>;
+  highlightedRowIds?: readonly string[];
 }
 
 /** Every record of one imported incident in the declared order, as a vertical sequence. */
-export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef }: ImportedInspectorProps) {
+export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds }: ImportedInspectorProps) {
   const collapsed = layout === "collapsed";
   return (
     <section className="imported-inspector" aria-labelledby="imported-inspector-title">
@@ -57,14 +58,14 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
         {inspected.phase === "failed" && (
           <ImportProblemNotice title={`The records of ${inspected.caseId} could not be shown`} problem={inspected.problem} onRetry={onRetry} waitingFor={waitingFor} />
         )}
-        {inspected.phase === "ready" && <History answer={inspected.answer} />}
+        {inspected.phase === "ready" && <History answer={inspected.answer} highlightedRowIds={highlightedRowIds} />}
       </div>
     </section>
   );
 }
 
 /** The records in the declared order, and above them their elapsed time: the strip of the recorded times and the longest gap. */
-function History({ answer }: { answer: ImportedCaseEvidenceAnswer }) {
+function History({ answer, highlightedRowIds = [] }: { answer: ImportedCaseEvidenceAnswer; highlightedRowIds?: readonly string[] }) {
   const { coverage } = answer;
   const omitted = new Set(answer.omitted_activity_row_ids);
   const names = new Map(answer.columns.map((column) => [column.index, column.name]));
@@ -99,6 +100,7 @@ function History({ answer }: { answer: ImportedCaseEvidenceAnswer }) {
             names={names}
             gap={timeline.gaps[place]}
             longest={timeline.longest?.to === place}
+            highlighted={highlightedRowIds.includes(record.row_id)}
           />
         ))}
       </ol>
@@ -115,13 +117,15 @@ interface HistoryEntryProps {
   gap: Gap | undefined;
   /** Whether that gap is the longest of the incident. */
   longest: boolean;
+  highlighted: boolean;
 }
 
-function HistoryEntry({ record, omitted, columns, names, gap, longest }: HistoryEntryProps) {
+function HistoryEntry({ record, omitted, columns, names, gap, longest, highlighted }: HistoryEntryProps) {
   return (
-    <li className={omitted ? "history-entry no-label" : "history-entry"} tabIndex={-1}>
+    <li className={omitted ? "history-entry no-label" : "history-entry"} data-contributing={highlighted || undefined} tabIndex={-1}>
       <span className="history-marker" aria-hidden="true" />
       <div className="history-body">
+        {highlighted && <p className="flag">Contributing source record · {record.row_id}</p>}
         <p className="history-activity">{record.activity === null ? <span className="missing-text">no activity label</span> : record.activity}</p>
         <p className="history-meta">
           <TimeText record={record} /> · source position {record.source_position}

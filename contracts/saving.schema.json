@@ -1178,6 +1178,16 @@
               "type": "null"
             }
           ]
+        },
+        "bpic19_pipeline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19Pipeline"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1412,6 +1422,16 @@
               "type": "null"
             }
           ]
+        },
+        "bpic19_pipeline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19Pipeline"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1487,6 +1507,9 @@
         },
         "recovery": {
           "$ref": "#/$defs/RecoveryAnswer"
+        },
+        "bpic19_outputs": {
+          "$ref": "#/$defs/Bpic19PipelineManifest"
         }
       },
       "required": [
@@ -1645,6 +1668,9 @@
         },
         "recovery": {
           "$ref": "#/$defs/RecoveryAnswer"
+        },
+        "bpic19_outputs": {
+          "$ref": "#/$defs/Bpic19PipelineManifest"
         }
       },
       "required": [
@@ -2024,6 +2050,114 @@
         "kind",
         "hours",
         "negate"
+      ]
+    },
+    "Bpic19PipelineAction": {
+      "title": "Bpic19PipelineAction",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "bpic19_profile",
+            "bpic19_measures"
+          ]
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "type": "object",
+          "description": "Validated against the registered operation request before save or replay."
+        },
+        "definition_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "operation",
+        "identity",
+        "query",
+        "definition_id"
+      ]
+    },
+    "Bpic19Pipeline": {
+      "title": "Bpic19Pipeline",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/Bpic19PipelineAction"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "actions"
+      ]
+    },
+    "Bpic19PipelineOutput": {
+      "title": "Bpic19PipelineOutput",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "bpic19_profile",
+            "bpic19_measures"
+          ]
+        },
+        "definition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "definition_id",
+        "sha256",
+        "output"
+      ]
+    },
+    "Bpic19PipelineManifest": {
+      "title": "Bpic19PipelineManifest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "outputs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/Bpic19PipelineOutput"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "outputs"
       ]
     }
   }

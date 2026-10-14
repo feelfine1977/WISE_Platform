@@ -87,6 +87,7 @@ export interface SaveInvestigationRequest2 {
   bookmarks: EvidenceBookmark[];
   score_run_ref?: ScoreRunReference | null;
   presentation_state?: PresentationRecovery | null;
+  bpic19_pipeline?: Bpic19Pipeline | null;
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -294,6 +295,25 @@ export interface PositionPoint {
   x: number;
   y: number;
 }
+export interface Bpic19Pipeline {
+  schema_version: 1;
+  /**
+   * @minItems 1
+   * @maxItems 2
+   */
+  actions: [Bpic19PipelineAction] | [Bpic19PipelineAction, Bpic19PipelineAction];
+}
+export interface Bpic19PipelineAction {
+  operation: "bpic19_profile" | "bpic19_measures";
+  identity: AnswerIdentity;
+  /**
+   * Validated against the registered operation request before save or replay.
+   */
+  query: {
+    [k: string]: unknown;
+  };
+  definition_id: string;
+}
 export interface SaveInvestigationAnswer {
   schema_version: 1;
   message_type: "save_investigation_answer";
@@ -304,6 +324,7 @@ export interface SaveInvestigationAnswer {
   created_investigation: boolean;
   semantic_change: boolean;
   recovery: RecoveryAnswer;
+  bpic19_outputs?: Bpic19PipelineManifest;
 }
 export interface SavedRevision {
   investigation_id: InvestigationId;
@@ -321,6 +342,7 @@ export interface SavedInvestigationContent {
   notes: string;
   bookmarks: EvidenceBookmark[];
   score_run_ref: ScoreRunReference | null;
+  bpic19_pipeline?: Bpic19Pipeline | null;
 }
 export interface RecoveryAnswer {
   presentation_state: PresentationRecovery | null;
@@ -329,6 +351,22 @@ export interface RecoveryAnswer {
 export interface RecoveryWarning {
   code: "presentation_unavailable" | "presentation_invalid" | "layout_version_mismatch";
   message: string;
+}
+export interface Bpic19PipelineManifest {
+  schema_version: 1;
+  /**
+   * @minItems 1
+   * @maxItems 2
+   */
+  outputs: [Bpic19PipelineOutput] | [Bpic19PipelineOutput, Bpic19PipelineOutput];
+}
+export interface Bpic19PipelineOutput {
+  operation: "bpic19_profile" | "bpic19_measures";
+  definition_id: string;
+  sha256: string;
+  output: {
+    [k: string]: unknown;
+  };
 }
 export interface ListSavedRequest {
   schema_version: 1;
@@ -375,6 +413,7 @@ export interface ReopenInvestigationAnswer {
   restored_selection: RestoredSelection;
   restored_comparison_id: ComparisonId | null;
   recovery: RecoveryAnswer;
+  bpic19_outputs?: Bpic19PipelineManifest;
 }
 export interface RestoredSelection {
   identity: AnswerIdentity;

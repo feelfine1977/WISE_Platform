@@ -1,0 +1,1754 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/bpic19-profile.v1.schema.json",
+  "title": "Bpic19ProfileMessage",
+  "description": "Explicit all-record attribute/grain profile and supplied-category purchasing-family partition; not observed-order classification or scoring.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Bpic19ProfileRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19ProfileAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19ProfileRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "Bpic19Roles": {
+      "title": "Bpic19Roles",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_category": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "item_type": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "goods_receipt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "gr_based_iv": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "purchasing_document": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "item": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "source_case": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "item_category",
+        "item_type",
+        "goods_receipt",
+        "gr_based_iv",
+        "purchasing_document",
+        "item",
+        "source_case"
+      ]
+    },
+    "Bpic19SuggestedRoles": {
+      "title": "Bpic19SuggestedRoles",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_category": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "item_type": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "goods_receipt": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gr_based_iv": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "purchasing_document": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "item": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_case": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "item_category",
+        "item_type",
+        "goods_receipt",
+        "gr_based_iv",
+        "purchasing_document",
+        "item",
+        "source_case"
+      ]
+    },
+    "Bpic19ProfileQuery": {
+      "title": "Bpic19ProfileQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "roles": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19Roles"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "profile_columns": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.all_raw_case_attributes.v1"
+        },
+        "source_interpretation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19SourceInterpretation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "roles",
+        "profile_columns",
+        "policy_id"
+      ]
+    },
+    "Bpic19Column": {
+      "title": "Bpic19Column",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "name": {
+          "type": "string"
+        },
+        "mapped_context": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "index",
+        "name",
+        "mapped_context"
+      ]
+    },
+    "Bpic19Flow": {
+      "title": "Bpic19Flow",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "flow_id": {
+          "type": "string",
+          "enum": [
+            "after_gr",
+            "before_gr",
+            "two_way",
+            "consignment"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "category_value": {
+          "type": "string"
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "example_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "flow_id",
+        "label",
+        "category_value",
+        "case_ids",
+        "case_count",
+        "record_count",
+        "document_count",
+        "share",
+        "example_case_ids"
+      ]
+    },
+    "Bpic19StateSupport": {
+      "title": "Bpic19StateSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "type": "string"
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "example_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "state",
+        "case_ids",
+        "case_count",
+        "record_count",
+        "document_count",
+        "share",
+        "example_case_ids"
+      ]
+    },
+    "Bpic19TypeCell": {
+      "title": "Bpic19TypeCell",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "flow_id": {
+          "type": "string",
+          "enum": [
+            "after_gr",
+            "before_gr",
+            "two_way",
+            "consignment"
+          ]
+        },
+        "item_type_state": {
+          "type": "string",
+          "enum": [
+            "invariant",
+            "missing",
+            "conflicting"
+          ]
+        },
+        "item_type_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "example_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "flow_id",
+        "item_type_state",
+        "item_type_value",
+        "case_ids",
+        "case_count",
+        "record_count",
+        "document_count",
+        "share",
+        "example_case_ids"
+      ]
+    },
+    "Bpic19AttributeValue": {
+      "title": "Bpic19AttributeValue",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "example_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "value",
+        "case_count",
+        "record_count",
+        "document_count",
+        "example_case_ids"
+      ]
+    },
+    "Bpic19Attribute": {
+      "title": "Bpic19Attribute",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "column_name": {
+          "type": "string"
+        },
+        "distinct_nonmissing_value_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "missing_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "invariant_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "missing_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "conflicting_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "missing_example_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "conflicting_example_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19AttributeValue"
+          }
+        },
+        "omitted_distinct_value_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "value_membership_overlaps": {
+          "type": "boolean"
+        },
+        "invariant_document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "missing_document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "conflicting_document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_conflict_examples": {
+          "type": "array",
+          "items": {
+            "title": "DocumentFieldConflict",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "document": {
+                "type": "string"
+              },
+              "case_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/CaseId"
+                },
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "document",
+              "case_ids"
+            ]
+          }
+        },
+        "conflicting_witnesses": {
+          "type": "array",
+          "items": {
+            "title": "Bpic19AttributeConflict",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "case_id": {
+                "$ref": "#/$defs/CaseId"
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "title": "Bpic19AttributeWitness",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "row_id": {
+                      "type": "string"
+                    },
+                    "source_position": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "row_id",
+                    "source_position",
+                    "value"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "case_id",
+              "rows"
+            ]
+          }
+        }
+      },
+      "required": [
+        "column_index",
+        "column_name",
+        "distinct_nonmissing_value_count",
+        "missing_record_count",
+        "invariant_case_count",
+        "missing_case_count",
+        "conflicting_case_count",
+        "missing_example_case_ids",
+        "conflicting_example_case_ids",
+        "values",
+        "omitted_distinct_value_count",
+        "value_membership_overlaps",
+        "invariant_document_count",
+        "missing_document_count",
+        "conflicting_document_count",
+        "document_conflict_examples"
+      ]
+    },
+    "Bpic19Definition": {
+      "title": "Bpic19Definition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.all_raw_case_attributes.v1"
+        },
+        "roles": {
+          "$ref": "#/$defs/Bpic19Roles"
+        },
+        "profile_columns": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "category_labels": {
+          "title": "CategoryLabels",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "after_gr": {
+              "type": "string"
+            },
+            "before_gr": {
+              "type": "string"
+            },
+            "two_way": {
+              "type": "string"
+            },
+            "consignment": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "after_gr",
+            "before_gr",
+            "two_way",
+            "consignment"
+          ]
+        },
+        "category_assignment": {
+          "type": "string",
+          "const": "supplied_exact_invariant_category"
+        },
+        "flag_policy": {
+          "type": "string",
+          "const": "bpic19.category_flags_and_consignment_type.v1"
+        },
+        "grain_policy": {
+          "type": "string",
+          "const": "bpic19.document_item_underscore.v1"
+        },
+        "source_interpretation": {
+          "$ref": "#/$defs/Bpic19SourceInterpretation"
+        }
+      },
+      "required": [
+        "policy_id",
+        "roles",
+        "profile_columns",
+        "category_labels",
+        "category_assignment",
+        "flag_policy",
+        "grain_policy"
+      ]
+    },
+    "Bpic19Profile": {
+      "title": "Bpic19Profile",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-profile\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "definition": {
+          "$ref": "#/$defs/Bpic19Definition"
+        },
+        "population": {
+          "title": "Bpic19Population",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "case_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "record_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "document_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "document_unknown_case_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "case_count",
+            "record_count",
+            "document_count",
+            "document_unknown_case_count"
+          ]
+        },
+        "flows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19Flow"
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19StateSupport"
+          }
+        },
+        "cross_checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19StateSupport"
+          }
+        },
+        "partition": {
+          "title": "Bpic19Partition",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "classified_case_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "unresolved_case_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "is_disjoint": {
+              "type": "boolean"
+            },
+            "covers_parent": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "classified_case_count",
+            "unresolved_case_count",
+            "is_disjoint",
+            "covers_parent"
+          ]
+        },
+        "grain": {
+          "title": "Bpic19Grain",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mixed_flow_document_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "mixed_flow_document_examples": {
+              "type": "array",
+              "items": {
+                "title": "MixedDocument",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "type": "string"
+                  },
+                  "flow_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "case_ids": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/CaseId"
+                    },
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "document",
+                  "flow_ids",
+                  "case_ids"
+                ]
+              }
+            },
+            "identity_issues": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Bpic19StateSupport"
+              }
+            }
+          },
+          "required": [
+            "mixed_flow_document_count",
+            "mixed_flow_document_examples",
+            "identity_issues"
+          ]
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19Attribute"
+          }
+        },
+        "flow_item_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19TypeCell"
+          }
+        },
+        "source_review": {
+          "$ref": "#/$defs/Bpic19SourceReview"
+        }
+      },
+      "required": [
+        "definition_id",
+        "definition",
+        "population",
+        "flows",
+        "unresolved",
+        "cross_checks",
+        "partition",
+        "grain",
+        "attributes",
+        "flow_item_types"
+      ]
+    },
+    "Bpic19ProfileRequest": {
+      "title": "Bpic19ProfileRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_profile_request"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/Bpic19ProfileQuery"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "query"
+      ]
+    },
+    "Bpic19ProfileAnswer": {
+      "title": "Bpic19ProfileAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_profile_answer"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/Bpic19ProfileQuery"
+        },
+        "binding_state": {
+          "type": "string",
+          "enum": [
+            "needs_review",
+            "reviewed"
+          ]
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19Column"
+          }
+        },
+        "suggested_roles": {
+          "$ref": "#/$defs/Bpic19SuggestedRoles"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19Profile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "parent_identity",
+        "query",
+        "binding_state",
+        "columns",
+        "suggested_roles",
+        "profile"
+      ]
+    },
+    "Bpic19ProfileRefusal": {
+      "title": "Bpic19ProfileRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_profile_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "bpic19_profile"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_parent",
+            "unknown_case",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    },
+    "Bpic19SourceInclusion": {
+      "title": "Bpic19SourceInclusion",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "all_source",
+            "item_start",
+            "document_start",
+            "record_projection"
+          ]
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "start_inclusive": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end_exclusive": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "timestamp_kind",
+        "start_inclusive",
+        "end_exclusive"
+      ]
+    },
+    "Bpic19SourceHorizon": {
+      "title": "Bpic19SourceHorizon",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "value",
+        "provenance"
+      ]
+    },
+    "Bpic19SourceDiscrepancy": {
+      "title": "Bpic19SourceDiscrepancy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "reported_total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "reported_subtotal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "reference",
+        "reported_total",
+        "reported_subtotal"
+      ]
+    },
+    "Bpic19SourceInterpretation": {
+      "title": "Bpic19SourceInterpretation",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.raw_source_interpretation.v1"
+        },
+        "inclusion": {
+          "$ref": "#/$defs/Bpic19SourceInclusion"
+        },
+        "horizon": {
+          "$ref": "#/$defs/Bpic19SourceHorizon"
+        },
+        "discrepancies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19SourceDiscrepancy"
+          },
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "profile_name",
+        "policy_id",
+        "inclusion",
+        "horizon",
+        "discrepancies"
+      ]
+    },
+    "Bpic19SourceSupport": {
+      "title": "Bpic19SourceSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "example_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count",
+        "document_count",
+        "share",
+        "example_case_ids"
+      ]
+    },
+    "Bpic19SourceReview": {
+      "title": "Bpic19SourceReview",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "interpretation": {
+          "$ref": "#/$defs/Bpic19SourceInterpretation"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "parser_time_policy": {
+          "type": "string"
+        },
+        "parser_cutoff": {
+          "type": "string"
+        },
+        "clock_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "observed_raw_minimum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_raw_maximum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "horizon_state": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "reviewed"
+          ]
+        },
+        "due_assessment": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "due_assessment_reason": {
+          "type": "string",
+          "enum": [
+            "observation_horizon_unknown",
+            "payment_terms_and_due_obligation_not_defined"
+          ]
+        },
+        "raw_support": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "retained": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "excluded": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "unavailable": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "projection": {
+          "anyOf": [
+            {
+              "title": "Bpic19RecordProjection",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "row_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+                  },
+                  "uniqueItems": true
+                },
+                "record_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "case_ids": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/CaseId"
+                  },
+                  "uniqueItems": true
+                },
+                "case_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "document_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "raw_histories_preserved": {
+                  "type": "boolean",
+                  "const": true
+                }
+              },
+              "required": [
+                "row_ids",
+                "record_count",
+                "case_ids",
+                "case_count",
+                "document_count",
+                "raw_histories_preserved"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inclusion_evidence": {
+          "type": "array",
+          "items": {
+            "title": "Bpic19SourceInclusionEvidence",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "case_id": {
+                "$ref": "#/$defs/CaseId"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "row_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+                },
+                "uniqueItems": true
+              },
+              "witness_case_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/CaseId"
+                },
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "case_id",
+              "reason",
+              "row_ids",
+              "witness_case_ids"
+            ]
+          }
+        },
+        "omitted_inclusion_evidence_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "anomalies": {
+          "type": "array",
+          "items": {
+            "title": "Bpic19SourceAnomaly",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "state": {
+                "type": "string"
+              },
+              "record_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "case_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "witnesses": {
+                "type": "array",
+                "items": {
+                  "title": "Bpic19TimeWitness",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "case_id": {
+                      "$ref": "#/$defs/CaseId"
+                    },
+                    "row_id": {
+                      "type": "string",
+                      "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+                    },
+                    "source_position": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "raw_timestamp": {
+                      "type": "string"
+                    },
+                    "interpreted_timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "case_id",
+                    "row_id",
+                    "source_position",
+                    "raw_timestamp",
+                    "interpreted_timestamp"
+                  ]
+                }
+              },
+              "omitted_witness_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "state",
+              "record_count",
+              "case_count",
+              "witnesses",
+              "omitted_witness_count"
+            ]
+          }
+        },
+        "discrepancies": {
+          "type": "array",
+          "items": {
+            "title": "Bpic19MeasuredSourceDiscrepancy",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reference": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "reported_total": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "reported_subtotal": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "difference": {
+                "type": "integer"
+              },
+              "measured_parent_case_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "reference",
+              "reported_total",
+              "reported_subtotal",
+              "difference",
+              "measured_parent_case_count"
+            ]
+          }
+        }
+      },
+      "required": [
+        "interpretation",
+        "source_id",
+        "preparation_id",
+        "parser_time_policy",
+        "parser_cutoff",
+        "clock_kind",
+        "observed_raw_minimum",
+        "observed_raw_maximum",
+        "horizon_state",
+        "due_assessment",
+        "due_assessment_reason",
+        "raw_support",
+        "retained",
+        "excluded",
+        "unavailable",
+        "projection",
+        "inclusion_evidence",
+        "omitted_inclusion_evidence_count",
+        "anomalies",
+        "discrepancies"
+      ]
+    }
+  }
+}

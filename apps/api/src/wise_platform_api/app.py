@@ -9,6 +9,8 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .boundary import read_object
+from .bpic19_profiles import Bpic19Profiles
+from .bpic19_measures import Bpic19Measures
 from .case_lists import CaseLists
 from .comparisons import ComparisonReply, Comparisons
 from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
@@ -58,6 +60,8 @@ def create_app(
     rule_group_views = RuleGroups(imports)
     comparisons = Comparisons(imports)
     expectations = Expectations(imports)
+    bpic19_profiles = Bpic19Profiles(imports)
+    bpic19_measures = Bpic19Measures(imports)
     saving = Saving(imports)
     application.state.selections = imports.selections
 
@@ -132,6 +136,16 @@ def create_app(
     @application.post("/api/investigations/process-graph")
     async def process_graph(request: Request) -> JSONResponse:
         return _sent_selection(await run_in_threadpool(selections.process_graph, await request.body()))
+
+    @application.post("/api/investigations/bpic19-profile")
+    async def bpic19_profile(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(bpic19_profiles.profile, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/bpic19-measures")
+    async def bpic19_measure(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(bpic19_measures.measures, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/case-list")
     async def case_list(request: Request) -> JSONResponse:
