@@ -1,5 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
-import { InfoPopover } from "../components/InfoPopover";
+import { IconButton } from "../components/icons";
 import { countOf } from "../data/wording";
 import type { SuppliedGraph } from "../generated/selection";
 import { moved, nameProblem, renamed, type Stage, type StageDefinitions, stageName, withActivity, withoutStage, withStage } from "./definitions";
@@ -125,18 +125,53 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
     newField.current?.focus();
   }
 
+  // The explanation of the stages, opened under the line that says where they stay.
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const aboutId = useId();
+  const aboutButton = useRef<HTMLButtonElement>(null);
+
   return (
     <section className="stages-editor" aria-label="Stages of this log">
-      {/* One line says where the stages stay and that a saved investigation does not hold them; the rest is behind "About stages", which the keyboard reaches. */}
+      {/*
+        One line says where the stages stay and that a saved investigation does not hold them. The rest opens under it from
+        "About stages", inside the editor and as wide as it: the editor is a narrow column that scrolls, and a panel floating
+        over it would be cut at its edges. Escape closes it and gives the keyboard back to its button.
+      */}
       <div className="stages-head">
         <p className={kept ? "stages-note" : "stages-note stages-not-kept"}>{kept ? STAGES_KEPT_LINE : STAGES_NOT_KEPT_LINE}</p>
-        <InfoPopover label="About stages">
-          <section className="popover-section">
-            <p>{kept ? STAGES_KEPT : STAGES_NOT_KEPT}</p>
-            <p>{STAGES_ARE}</p>
-          </section>
-        </InfoPopover>
+        <IconButton
+          icon="info"
+          label="About stages"
+          aria-expanded={aboutOpen}
+          aria-controls={aboutId}
+          ref={aboutButton}
+          onClick={() => setAboutOpen(!aboutOpen)}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || !aboutOpen) return;
+            event.preventDefault();
+            event.stopPropagation();
+            setAboutOpen(false);
+          }}
+        />
       </div>
+      {aboutOpen && (
+        <section
+          id={aboutId}
+          className="stages-about"
+          aria-label="About stages"
+          tabIndex={-1}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape") return;
+            event.preventDefault();
+            event.stopPropagation();
+            setAboutOpen(false);
+            aboutButton.current?.focus();
+          }}
+        >
+          <p>{kept ? STAGES_KEPT : STAGES_NOT_KEPT}</p>
+          <p>{STAGES_ARE}</p>
+        </section>
+      )}
       <div className="stages-parts">
         <div className="stages-part">
           <h4 id={stagesTitle} className="stages-title">
