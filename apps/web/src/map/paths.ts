@@ -1,5 +1,5 @@
 import type { FlowGraph } from "wise-flow";
-import type { GraphCoverage, PathMetrics, SuppliedGraph } from "../generated/selection";
+import type { SuppliedGraph } from "../generated/selection";
 import { flowTitle, pathTitle } from "./elementTitle";
 import { endFlowId, startFlowId } from "./graph";
 
@@ -37,24 +37,9 @@ export interface PathRow {
  * the flows from Start, the paths, the flows to End. `drawn` is the graph the map draws at its
  * detail (`mapDetail`): a row is drawn when that graph holds its path or flow.
  */
-/** The total lag the local service supplies on a path (#88); a reply without it is still read. */
-type WithTotalLag = PathMetrics & { totalLagHours?: number; totalLagMicroseconds?: string; shareOfTotalLag?: number | null };
-
-/** The supplied total lag of all paths and of the five with the largest, for the line over the list. */
-export interface PathLagTotals {
-  total_hours: number;
-  total_microseconds: string;
-  usable_passage_count: number;
-  usable_path_count: number;
-  top_five_path_ids: string[];
-  top_five_total_hours: number;
-  top_five_total_microseconds: string;
-  top_five_share: number | null;
-}
-
-/** The supplied totals of a graph's paths, or nothing where the reply has none. */
-export function lagTotalsOf(graph: SuppliedGraph): PathLagTotals | undefined {
-  return (graph.meta as GraphCoverage & { path_lag_totals?: PathLagTotals }).path_lag_totals;
+/** The service's supplied totals of all paths and of the five with the largest total. */
+export function lagTotalsOf(graph: SuppliedGraph): SuppliedGraph["meta"]["path_lag_totals"] {
+  return graph.meta.path_lag_totals;
 }
 
 export function pathRows(graph: SuppliedGraph, drawn: FlowGraph): PathRow[] {
@@ -68,7 +53,7 @@ export function pathRows(graph: SuppliedGraph, drawn: FlowGraph): PathRow[] {
       return [{ id, kind: side, ...ends, title: flowTitle(side, node.label), incidents, drawn: onTheMap.has(id) }];
     });
   const paths = graph.edges.map((edge): PathRow => {
-    const metrics: WithTotalLag = edge.metrics;
+    const metrics = edge.metrics;
     return {
       id: edge.id,
       kind: "path",
@@ -97,9 +82,8 @@ export interface PathOrder {
 }
 
 /**
- * The list opens on the paths where most time goes: the largest supplied total lag first (the
- * owner's decision of 14 October). Where the service supplies no totals, every row is equal there
- * and the list stands in the order of the most incidents.
+ * The list opens on the paths with the largest supplied total lag.
+ * Equal totals follow the supplied incident support and path order.
  */
 export const OPENING_ORDER: PathOrder = { column: "total", descending: true };
 

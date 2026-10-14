@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { SuppliedGraph } from "../generated/selection";
 import { emptySelection } from "wise-flow/react";
 import { describe, expect, it } from "vitest";
 import { suppliedGraph } from "../test/selections";
@@ -6,10 +7,10 @@ import { toFlowGraph } from "./graph";
 import { PathsTable } from "./PathsTable";
 
 /** The graph of A-1, its one path with a supplied total lag of two days, and the supplied totals of all paths. */
-function withTotals() {
+function withTotals(): SuppliedGraph {
   const graph = suppliedGraph(["A-1"]);
   const [path] = graph.edges;
-  const totals = {
+  const totals: SuppliedGraph["meta"]["path_lag_totals"] = {
     total_hours: 48,
     total_microseconds: "172800000000",
     usable_passage_count: 1,
