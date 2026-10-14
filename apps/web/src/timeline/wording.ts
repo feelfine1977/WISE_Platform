@@ -1,6 +1,9 @@
 import { countOf, utcText, wallText } from "../data/wording";
 import type { ImportedSourceRecord2 } from "../generated/imports";
-import type { Clock, Gap, LongestGap, RecordTime, Strip, Timeline } from "./timeline";
+import type { Gap, LongestGap, Strip, Timeline } from "./timeline";
+
+/** What the words read of a record of the list: its time as the list writes it. */
+export type RecordTime = Pick<ImportedSourceRecord2, "utc_instant" | "local_timestamp">;
 
 const quoted = (text: string) => `“${text}”`;
 
@@ -41,7 +44,9 @@ export function recordName(record: ListedRecord): string {
 }
 
 /** What a mark stands for: its time, how far it lies from the earliest one, and its records. */
-export function markLabel(time: string, recordCount: number, sinceEarliest: number): string {
+export function markLabel(time: string, recordCount: number, sinceEarliest: number | null): string {
+  // Where the order is not known, no time since the earliest is given: the mark says its time and its records.
+  if (sinceEarliest === null) return `${time}: ${countOf(recordCount, "record")}`;
   const where = sinceEarliest === 0 ? "the earliest recorded time" : `${elapsedText(sinceEarliest)} after the earliest recorded time`;
   return `${time}, ${where}: ${countOf(recordCount, "record")}`;
 }
@@ -57,8 +62,10 @@ export function noAxisLine(strip: Exclude<Strip, { kind: "axis" }>, recordCount:
   switch (strip.kind) {
     case "no_time":
       return `No record of this incident has a readable time; ${nothing}`;
-    case "two_clocks":
-      return "The records of this incident carry times of two kinds, UTC instants and wall-clock times as recorded. These are not compared, so nothing is drawn.";
+    case "not_supplied":
+      return strip.reason === "omitted"
+        ? "Time diagnostics were not supplied for this incident, so no elapsed time is drawn or computed here."
+        : "The time diagnostics do not match the records of this incident, so no elapsed time is drawn.";
     case "one_time": {
       const timed = strip.mark.records.length;
       const untimed = recordCount - timed;
@@ -94,10 +101,6 @@ export function gapLine(gap: Gap): string | null {
       return null;
     case "elapsed":
       return gap.microseconds === 0 ? `${said} none, the same recorded time` : `${said} ${elapsedText(gap.microseconds)}`;
-    case "earlier":
-      return `${said} not computed; the time of this record lies ${elapsedText(gap.microseconds)} before the time of the record before`;
-    case "untimed":
-      return gap.record === "this" ? `${said} not computed; this record has no readable time` : `${said} not computed; the record before has no readable time`;
   }
 }
 
@@ -109,17 +112,15 @@ export function longestGapWords(longest: LongestGap, from: ListedRecord, to: Lis
   return [length, `between ${recordName(from)} and ${recordName(to)}.${first}`];
 }
 
-/** Why no gap is computed for any record of the incident. */
-export function withheldLine(reason: NonNullable<Timeline["withheld"]>): string {
-  return reason === "order"
-    ? "No gap is computed for this incident: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which."
-    : "No gap is computed for this incident: a UTC instant and a wall-clock time as recorded are not compared.";
+/** Why no gap is given for any record of the incident. */
+export function withheldLine(): string {
+  return "No gap is given for this incident: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which.";
 }
 
 /** Where the numbers of the timeline come from, and what a recorded wall clock does not say. */
-export function basisLine(clock: Clock | null): string {
-  const basis = "The elapsed times here are plain differences of the recorded times shown in the list, computed in this browser and not supplied by the local service.";
-  return clock === "wall_clock"
+export function basisLine(timeline: Pick<Timeline, "clock">): string {
+  const basis = "The elapsed times here are supplied by the local service, exactly to the microsecond, from every record in the declared order.";
+  return timeline.clock === "wall_clock"
     ? `${basis} The times are wall-clock times as recorded; across a clock change a difference may differ from the physical elapsed time.`
     : basis;
 }

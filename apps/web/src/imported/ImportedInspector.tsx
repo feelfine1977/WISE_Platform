@@ -4,7 +4,7 @@ import type { InspectorLayout } from "../components/Inspector";
 import { ImportProblemNotice } from "../data/ImportProblemNotice";
 import { countOf, utcText, wallText } from "../data/wording";
 import { GapSince, IncidentTimeline } from "../timeline/IncidentTimeline";
-import { timelineOf, type Gap } from "../timeline/timeline";
+import { suppliedTimeline, type Gap } from "../timeline/timeline";
 import type { ImportedCaseState } from "./coordinator";
 
 interface ImportedInspectorProps {
@@ -68,7 +68,8 @@ function History({ answer }: { answer: ImportedCaseEvidenceAnswer }) {
   const { coverage } = answer;
   const omitted = new Set(answer.omitted_activity_row_ids);
   const names = new Map(answer.columns.map((column) => [column.index, column.name]));
-  const timeline = useMemo(() => timelineOf(answer.records, answer.sequence_evaluable), [answer]);
+  // The elapsed times are the local service's, bound to the records place by place; where it supplied none, none are computed here.
+  const timeline = useMemo(() => suppliedTimeline(answer.records, answer.incident_time), [answer]);
   const list = useRef<HTMLOListElement>(null);
   /** A mark of the strip and the longest gap lead to a record of the list: the focus moves to it, which brings it into view. */
   const showRecord = (place: number) => {

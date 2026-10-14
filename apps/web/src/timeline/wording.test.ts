@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { timelineOf } from "./timeline";
+import { stripOf } from "./timeline";
 import {
   basisLine,
   elapsedText,
@@ -71,45 +71,40 @@ describe("the words of the strip", () => {
 
   it("says in place of the axis why there is none", () => {
     const time = "2026-04-03 06:00:00 UTC";
-    const sentence = (records: Parameters<typeof timelineOf>[0]) => {
-      const { strip } = timelineOf(records, false);
+    // The supplied times of the records, the one at six o'clock as 1, a record without a usable time as null.
+    const sentence = (times: (bigint | null)[]) => {
+      const strip = stripOf(times);
       if (strip.kind === "axis") throw new Error("no axis is expected");
-      return noAxisLine(strip, records.length, time);
+      return noAxisLine(strip, times.length, time);
     };
-    const untimed = { ...opened, timestamp_status: "invalid", utc_instant: null } as const;
-    expect(sentence([opened])).toBe("This incident has one record, at 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
-    expect(sentence([opened, opened, opened])).toBe("All 3 records of this incident carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
-    expect(sentence([opened, opened])).toBe("Both records of this incident carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
-    expect(sentence([opened, untimed, untimed])).toBe(
+    expect(sentence([1n])).toBe("This incident has one record, at 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
+    expect(sentence([1n, 1n, 1n])).toBe("All 3 records of this incident carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
+    expect(sentence([1n, 1n])).toBe("Both records of this incident carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
+    expect(sentence([1n, null, null])).toBe(
       "Only one of the 3 records of this incident has a readable time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.",
     );
-    expect(sentence([opened, opened, untimed])).toBe(
+    expect(sentence([1n, 1n, null])).toBe(
       "The 2 records with a readable time carry the same recorded time, 2026-04-03 06:00:00 UTC, and 1 record has no readable time; there is no elapsed time to draw.",
     );
-    expect(sentence([untimed, untimed])).toBe("No record of this incident has a readable time; there is no elapsed time to draw.");
-    expect(sentence([opened, recorded])).toBe(
-      "The records of this incident carry times of two kinds, UTC instants and wall-clock times as recorded. These are not compared, so nothing is drawn.",
+    expect(sentence([null, null])).toBe("No record of this incident has a readable time; there is no elapsed time to draw.");
+    expect(noAxisLine({ kind: "not_supplied", reason: "omitted" }, 3, "")).toBe(
+      "Time diagnostics were not supplied for this incident, so no elapsed time is drawn or computed here.",
     );
+    expect(noAxisLine({ kind: "not_supplied", reason: "mismatch" }, 3, "")).toBe("The time diagnostics do not match the records of this incident, so no elapsed time is drawn.");
   });
 });
 
 describe("the words of the gaps", () => {
   it("says the gap before a record, and nothing before the first record", () => {
     expect(gapLine({ kind: "first" })).toBeNull();
-    expect(gapLine({ kind: "elapsed", microseconds: 25.5 * HOUR })).toBe("Gap since the record before: 25.5 hours");
-    expect(gapLine({ kind: "elapsed", microseconds: 0 })).toBe("Gap since the record before: none, the same recorded time");
+    expect(gapLine({ kind: "elapsed", exact: BigInt(25.5 * HOUR), microseconds: 25.5 * HOUR })).toBe("Gap since the record before: 25.5 hours");
+    expect(gapLine({ kind: "elapsed", exact: 0n, microseconds: 0 })).toBe("Gap since the record before: none, the same recorded time");
   });
 
-  it("says why a gap is not computed", () => {
-    expect(gapLine({ kind: "untimed", record: "this" })).toBe("Gap since the record before: not computed; this record has no readable time");
-    expect(gapLine({ kind: "untimed", record: "before" })).toBe("Gap since the record before: not computed; the record before has no readable time");
-    expect(gapLine({ kind: "earlier", microseconds: 2 * HOUR })).toBe(
-      "Gap since the record before: not computed; the time of this record lies 2.0 hours before the time of the record before",
+  it("says why no gap is given", () => {
+    expect(withheldLine()).toBe(
+      "No gap is given for this incident: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which.",
     );
-    expect(withheldLine("order")).toBe(
-      "No gap is computed for this incident: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which.",
-    );
-    expect(withheldLine("clocks")).toBe("No gap is computed for this incident: a UTC instant and a wall-clock time as recorded are not compared.");
   });
 
   it("names a record by its activity, its time and its place in the source", () => {
@@ -118,19 +113,19 @@ describe("the words of the gaps", () => {
   });
 
   it("names the longest gap with the two records it lies between, and says when it is the first of equal ones", () => {
-    expect(longestGapWords({ from: 0, to: 1, microseconds: 25.5 * HOUR, equalCount: 1 }, opened, unlabelled)).toEqual([
+    expect(longestGapWords({ from: 0, to: 1, exact: BigInt(25.5 * HOUR), microseconds: 25.5 * HOUR, equalCount: 1 }, opened, unlabelled)).toEqual([
       "Longest gap: 25.5 hours",
       "between “Eröffnet” (2026-04-03 06:00:00 UTC, source position 0) and a record without activity label (2026-04-04 07:30:00 UTC, source position 1).",
     ]);
-    expect(longestGapWords({ from: 0, to: 1, microseconds: 25.5 * HOUR, equalCount: 3 }, opened, unlabelled)[1]).toMatch(
+    expect(longestGapWords({ from: 0, to: 1, exact: BigInt(25.5 * HOUR), microseconds: 25.5 * HOUR, equalCount: 3 }, opened, unlabelled)[1]).toMatch(
       / It is the first of 3 gaps of this length in the declared order\.$/,
     );
   });
 
   it("says where the numbers come from, and what a recorded wall clock does not say", () => {
-    const basis = "The elapsed times here are plain differences of the recorded times shown in the list, computed in this browser and not supplied by the local service.";
-    expect(basisLine("utc_instant")).toBe(basis);
-    expect(basisLine("wall_clock")).toBe(
+    const basis = "The elapsed times here are supplied by the local service, exactly to the microsecond, from every record in the declared order.";
+    expect(basisLine({ clock: "utc_instant" })).toBe(basis);
+    expect(basisLine({ clock: "wall_clock" })).toBe(
       `${basis} The times are wall-clock times as recorded; across a clock change a difference may differ from the physical elapsed time.`,
     );
   });

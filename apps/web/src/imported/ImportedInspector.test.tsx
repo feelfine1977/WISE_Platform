@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { importContract } from "../data/client";
 import type { ImportedCaseEvidenceAnswer, ImportedCaseEvidenceRequest, ImportedSourceRecord } from "../generated/imports";
 import { evidenceAnswer, identity, workspaceId } from "../test/imports";
+import { diagnosticsFor } from "../test/incidentTime";
 import { ImportedInspector } from "./ImportedInspector";
 
 const request: ImportedCaseEvidenceRequest = {
@@ -22,7 +23,9 @@ const request: ImportedCaseEvidenceRequest = {
  * at 07:30 UTC on 4 April, 25.5 hours after it, and "Prüfung" whose time is not readable. Its order
  * cannot be evaluated.
  */
-const scripted = evidenceAnswer(request);
+// The scripted incident with the time diagnostics the local service supplies with it.
+const bare = evidenceAnswer(request);
+const scripted: ImportedCaseEvidenceAnswer = { ...bare, incident_time: diagnosticsFor(bare.records, bare.sequence_evaluable) };
 
 /**
  * The scripted incident with other records, written by hand: each has an activity or none and a
@@ -52,6 +55,7 @@ function incidentOf(listed: [activity: string | null, time: string | null][], ev
     records,
     mapped_row_ids: labelled.map((record) => record.row_id),
     omitted_activity_row_ids: records.filter((record) => record.activity === null).map((record) => record.row_id),
+    incident_time: diagnosticsFor(records, evaluable),
   } as ImportedCaseEvidenceAnswer;
   expect(importContract.caseEvidenceAnswer(answer)).toBe(true);
   return answer;
@@ -105,25 +109,21 @@ describe("the timeline of one incident", () => {
     expect(importContract.caseEvidenceAnswer(scripted)).toBe(true);
     const { timeline, entries } = renderIncident(scripted);
 
-    expect(within(timeline).getByText("Elapsed from the earliest to the latest recorded time:", { exact: false }).textContent).toBe(
-      "Elapsed from the earliest to the latest recorded time: 25.5 hours · 2 distinct times",
-    );
+    // The order is not known, so the service gives no span and no time since the earliest: the strip says the distinct times only.
+    expect(timeline.querySelector(".timeline-elapsed")?.textContent).toBe("2 distinct times");
     const { marks } = stripOf(timeline);
-    expect(marks.map((mark) => mark.getAttribute("aria-label"))).toEqual([
-      "2026-04-03 06:00:00 UTC, the earliest recorded time: 1 record",
-      "2026-04-04 07:30:00 UTC, 25.5 hours after the earliest recorded time: 1 record",
-    ]);
+    expect(marks.map((mark) => mark.getAttribute("aria-label"))).toEqual(["2026-04-03 06:00:00 UTC: 1 record", "2026-04-04 07:30:00 UTC: 1 record"]);
     expect(marks.map(placeOf)).toEqual(["0%", "100%"]);
     expect(timeline.querySelector(".timeline-ends")?.textContent).toBe("2026-04-03 06:00:00 UTC2026-04-04 07:30:00 UTC");
     expect(within(timeline).getByText("1 record without a readable time is not on the strip.")).toBeTruthy();
 
-    expect(within(timeline).getByText("No gap is computed for this incident:", { exact: false }).textContent).toContain(
+    expect(within(timeline).getByText("No gap is given for this incident:", { exact: false }).textContent).toContain(
       "the local service says that the order of its records cannot be evaluated",
     );
     expect(timeline.textContent).not.toContain("Longest gap");
     expect(timeline.querySelector(".timeline-longest-span")).toBeNull();
     expect(gapsOf(entries)).toEqual([null, null, null]);
-    expect(within(timeline).getByText("The elapsed times here are plain differences of the recorded times shown in the list", { exact: false })).toBeTruthy();
+    expect(timeline.textContent).not.toContain("The elapsed times here");
 
     // The list stays the complete evidence in its declared order.
     expect(entries.map((entry) => entry.querySelector(".history-activity")?.textContent)).toEqual(["Eröffnet", "no activity label", "Prüfung"]);
@@ -265,23 +265,29 @@ describe("the timeline of one incident", () => {
     expect(within(timeline).getByText("The times are wall-clock times as recorded; across a clock change a difference may differ from the physical elapsed time.", { exact: false })).toBeTruthy();
   });
 
-  it("computes nothing across a record whose time is not readable, and says why at that record and the next", () => {
-    // No such answer comes from the local service today, which holds an order to be unknown as soon as one time is not readable.
+  it("gives no gap at all where a record has no readable time, since the local service then holds the order to be unknown", () => {
     const broken = incidentOf(
       [
         ["Eröffnet", "2026-04-03T06:00:00Z"],
         ["Prüfung", null],
         ["Geschlossen", "2026-04-05T06:00:00Z"],
       ],
-      true,
+      false,
     );
     const { timeline, entries } = renderIncident(broken);
-    expect(gapsOf(entries)).toEqual([
-      null,
-      "Gap since the record before: not computed; this record has no readable time",
-      "Gap since the record before: not computed; the record before has no readable time",
-    ]);
+    expect(gapsOf(entries)).toEqual([null, null, null]);
     expect(timeline.textContent).not.toContain("Longest gap");
     expect(within(timeline).getByText("1 record without a readable time is not on the strip.")).toBeTruthy();
+    // The two readable times still stand as marks; the record without one can be reached from the row under the strip.
+    expect(within(timeline).getAllByRole("button").length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("draws and computes nothing where the local service supplied no time diagnostics, and says so", () => {
+    const { incident_time: _supplied, ...legacy } = ordered;
+    void _supplied;
+    const { timeline, entries } = renderIncident(legacy as ImportedCaseEvidenceAnswer);
+    expect(timeline.textContent).toContain("Time diagnostics were not supplied for this incident, so no elapsed time is drawn or computed here.");
+    expect(gapsOf(entries).every((gap) => gap === null)).toBe(true);
+    expect(timeline.textContent).not.toContain("Longest gap");
   });
 });

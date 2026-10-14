@@ -30,16 +30,17 @@ interface IncidentTimelineProps {
 /** The elapsed time of one incident above its history: the strip of its recorded times, its longest gap, and what the numbers rest on. */
 export function IncidentTimeline({ caseId, records, timeline, onShowRecord }: IncidentTimelineProps) {
   const { strip, longest, withheld } = timeline;
-  const computed = strip.kind === "axis" || timeline.gaps.some((gap) => gap.kind === "elapsed" || gap.kind === "earlier");
+  // Elapsed times are given only where the order is known: then the line says where they come from.
+  const supplied = withheld === null && (strip.kind === "axis" || timeline.gaps.some((gap) => gap.kind === "elapsed"));
   return (
     <section className="timeline" aria-label={`Elapsed time of incident ${caseId}`}>
       {strip.kind === "axis" ? (
-        <TimeStrip caseId={caseId} records={records} strip={strip} longest={longest} onShowRecord={onShowRecord} />
+        <TimeStrip caseId={caseId} records={records} strip={strip} longest={longest} ordered={withheld === null} onShowRecord={onShowRecord} />
       ) : (
         <p>{noAxisLine(strip, records.length, strip.kind === "one_time" ? timeText(records[strip.mark.records[0]]) : "")}</p>
       )}
       {/* The records without a readable time stand in a row of their own under the strip, each leading to its place in the list. */}
-      {timeline.untimedCount > 0 && strip.kind !== "no_time" && (
+      {timeline.untimedCount > 0 && strip.kind !== "no_time" && strip.kind !== "not_supplied" && (
         <p className="timeline-untimed">
           <span>{untimedLine(timeline.untimedCount)}</span>
           {timeline.untimed.slice(0, UNTIMED_SHOWN).map((place) => (
@@ -52,8 +53,8 @@ export function IncidentTimeline({ caseId, records, timeline, onShowRecord }: In
       )}
       {longest && <Longest longest={longest} records={records} onShowRecord={onShowRecord} />}
       {/* One record has no record before it, so there is no gap to withhold. */}
-      {withheld && records.length > 1 && <p className="timeline-note">{withheldLine(withheld)}</p>}
-      {computed && <p className="timeline-note">{basisLine(timeline.clock)}</p>}
+      {withheld && records.length > 1 && <p className="timeline-note">{withheldLine()}</p>}
+      {supplied && <p className="timeline-note">{basisLine(timeline)}</p>}
     </section>
   );
 }
@@ -72,6 +73,8 @@ interface TimeStripProps {
   records: readonly ImportedSourceRecord[];
   strip: Extract<Strip, { kind: "axis" }>;
   longest: LongestGap | null;
+  /** Whether the order of the records is known. Where it is not, the service gives no span and no offset, and the strip says neither. */
+  ordered: boolean;
   onShowRecord: (place: number) => void;
 }
 
@@ -79,12 +82,12 @@ interface TimeStripProps {
  * The recorded times on a linear axis from the earliest to the latest: one mark per distinct time.
  * Only one mark is a tab stop, so Tab passes the strip; the arrow keys, Home and End move between the marks.
  */
-function TimeStrip({ caseId, records, strip, longest, onShowRecord }: TimeStripProps) {
+function TimeStrip({ caseId, records, strip, longest, ordered, onShowRecord }: TimeStripProps) {
   const { marks } = strip;
   const last = marks.length - 1;
   const [stop, setStop] = useState(0);
   const controls = useRef(new Map<number, SVGGElement>()).current;
-  const labels = marks.map((mark) => markLabel(timeText(records[mark.records[0]]), mark.records.length, Number(mark.time - marks[0].time)));
+  const labels = marks.map((mark) => markLabel(timeText(records[mark.records[0]]), mark.records.length, ordered ? Number(mark.time - marks[0].time) : null));
   const positionOf = (place: number) => marks.find((mark) => mark.records.includes(place))?.position ?? 0;
 
   const moves: Record<string, (place: number) => number> = {
@@ -109,7 +112,13 @@ function TimeStrip({ caseId, records, strip, longest, onShowRecord }: TimeStripP
   return (
     <>
       <p className="timeline-elapsed">
-        Elapsed from the earliest to the latest recorded time: <strong>{elapsedText(strip.microseconds)}</strong> · {countOf(marks.length, "distinct time")}
+        {ordered ? (
+          <>
+            Elapsed from the earliest to the latest recorded time: <strong>{elapsedText(strip.microseconds)}</strong> · {countOf(marks.length, "distinct time")}
+          </>
+        ) : (
+          countOf(marks.length, "distinct time")
+        )}
       </p>
       <div className="timeline-frame">
         <svg
