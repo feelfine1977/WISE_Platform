@@ -108,16 +108,19 @@ describe("the theme of the map", () => {
     expect(tokenValue("--color-map-selected")).toBe(`#${onPaper}`);
   });
 
-  it.each<Measure>(["frequency", "performance"])("draws the flows from Start and to End in one flat grey and writes the number of a path in the muted ink (%s)", async (measure) => {
+  it.each<Measure>(["frequency", "performance", "shortfall"])("dots the flows from Start and to End in neutral grey and writes the number of a path in the muted ink (%s)", async (measure) => {
     const { scene } = await drawn(undefined, undefined, measure);
     const edge = (id: string) => scene.edgeMarks.find((mark) => mark.id === id)!;
     for (const id of [startFlowId(nodeIds[opened]), endFlowId(nodeIds[closed])]) {
-      expect(edge(id)).toMatchObject({ kind: "flow", color: colorTokens.neutral });
-      // Solid: the library's dash says that a path was not directly observed.
-      expect(edge(id).dash).toBeUndefined();
+      expect(edge(id)).toMatchObject({ kind: "flow", color: colorTokens.neutral, addedFlow: true });
+      // Round dots are spaced by the count-based width; reconnections keep their separate dash.
+      expect(edge(id).dash).toEqual([0, 3 * edge(id).width]);
     }
+    expect(scene.legend.rows).toContainEqual({ kind: "key", key: "addedFlow", glyph: "···", text: "Added by the map: start and end of the recorded history." });
     // A path of the log keeps the colour the library gives it in the measure.
     expect(edge(pathId).kind).toBe("follows");
+    expect(edge(pathId).addedFlow).toBeUndefined();
+    expect(edge(pathId).dash).toBeUndefined();
     expect(edge(pathId).color).toBe(buildScene(scene.graph, scene.positions, { measure, style: styleOver(measure) }).edgeMarks.find((mark) => mark.id === pathId)!.color);
     for (const mark of scene.edgeMarks) expect(mark.texts.map((text) => [text.size, text.paint]), mark.id).toEqual([[11, colorTokens.inkMuted]]);
   });

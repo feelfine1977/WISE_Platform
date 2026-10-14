@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildScene, colorTokens, layout, type Measure } from "wise-flow";
+import { abstract, buildScene, colorTokens, layout, type Measure } from "wise-flow";
+import { noStages, withActivity, withStage } from "../stages/definitions";
 import { checked, closed, nodeIds, opened, pathId, suppliedGraph } from "../test/selections";
-import { endFlowId, startFlowId, toFlowGraph } from "./graph";
+import { END_ID, endFlowId, START_ID, startFlowId, toFlowGraph } from "./graph";
 import { LAG_CLASSES_HOURS, OPENING_MEASURE, styleOver } from "./measures";
 
 /**
@@ -30,12 +31,15 @@ describe("the measures of the map", () => {
     // Width and labels remain incidents while colour keeps supplied long waits visible.
     expect(styleOver(OPENING_MEASURE)).toEqual({
       edgeWidth: { metric: "cases", range: [1, 6] },
+      addedFlowLabel: "Added by the map: start and end of the recorded history.",
       edgeColor: { metric: "medianLagHours", palette: "performance", bins: [24, 168] },
+      frequencyColorLegend: true,
     });
     const { scene, line, path } = await written(OPENING_MEASURE);
     expect(scene.scales.pathMetric).toBe("cases");
     expect(scene.style.pathLabel).toBeUndefined();
     expect(scene.style.nodeLine).toBeUndefined();
+    expect(scene.legend.rows).toContainEqual({ kind: "measure", text: "Frequency: width = cases per path. Colour = median lag classes. Bar = share of all cases." });
     expect(path(pathId)).toEqual({ label: ["1"], notEvaluated: false });
     expect(path(startFlowId(nodeIds[opened]))).toEqual({ label: ["1"], notEvaluated: false });
     expect(line(opened)).toEqual(["1", "· 50 %"]);
@@ -133,6 +137,57 @@ describe("the measures of the map", () => {
   });
 
   it("leaves the shortfall measure's own colour and labels to the library", () => {
-    expect(styleOver("shortfall")).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
+    expect(styleOver("shortfall")).toEqual({
+      edgeWidth: { metric: "cases", range: [1, 6] },
+      addedFlowLabel: "Added by the map: start and end of the recorded history.",
+    });
+  });
+
+  it("keeps added flows dotted when a stage combines several recorded starts and ends", async () => {
+    const supplied = suppliedGraph(["A-1", "B-2"]);
+    // Two single-record histories in different activities of one analyst-defined stage.
+    const singles = {
+      ...supplied,
+      nodes: supplied.nodes.filter((node) => node.label !== checked).map((node) => ({ ...node, metrics: { ...node.metrics, starts: 1, ends: 1 } })),
+      edges: [],
+    };
+    const named = withStage(noStages, "Recorded activities");
+    const stage = named.stages[0].id;
+    const definitions = withActivity(withActivity(named, opened, stage), closed, stage);
+    const graph = abstract(toFlowGraph(singles, 0, undefined, definitions), { collapse: "all" });
+    const scene = buildScene(graph, await layout(graph, { engine: "dagre" }), { measure: "frequency", style: styleOver("frequency"), locale: "en" });
+    expect(scene.edgeMarks).toHaveLength(2);
+    expect(scene.edgeMarks.map((edge) => [edge.edge.source, edge.edge.target])).toEqual([[START_ID, stage], [stage, END_ID]]);
+    for (const edge of scene.edgeMarks) {
+      expect(edge.edge.tags).toContain("added-by-map");
+      // The library preserves its documented lower bound for merged case counts; it has no case IDs to union.
+      expect(edge.edge.metrics).toMatchObject({ count: 2, cases: 1 });
+      expect(edge.edge.metricBasis?.cases).toBe("atLeast");
+      expect(edge.edge.metrics?.medianLagHours).toBeUndefined();
+      expect(edge).toMatchObject({ addedFlow: true, color: colorTokens.neutral, width: 6, dash: [0, 18] });
+      expect(edge.texts.map((text) => text.text)).toEqual(["≥1"]);
+    }
+  });
+
+  it("keeps a reconnected path distinct from added flows and a recorded long self-loop coloured by lag", async () => {
+    const graph = toFlowGraph(suppliedGraph(["A-1", "B-2"]));
+    const original = graph.edges.find((edge) => edge.id === pathId)!;
+    const several = {
+      ...graph,
+      edges: [
+        ...graph.edges,
+        { ...original, id: "reconnected", tags: ["reconnected"] },
+        { ...original, id: "recorded-loop", target: original.source, metrics: { ...original.metrics, medianLagHours: 192 } },
+      ],
+    };
+    const scene = buildScene(several, await layout(several, { engine: "dagre" }), { measure: "frequency", style: styleOver("frequency"), locale: "en" });
+    const reconnected = scene.edgeMarks.find((edge) => edge.id === "reconnected")!;
+    expect(reconnected).toMatchObject({ reconnected: true, dash: [6, 5] });
+    expect(reconnected.addedFlow).toBeUndefined();
+    expect(scene.edgeMarks.find((edge) => edge.id === pathId)?.dash).toBeUndefined();
+    const loop = scene.marks.find((mark) => mark.kind === "selfLoop" && mark.overlay.payload?.edgeId === "recorded-loop")!;
+    expect(loop).toBeDefined();
+    expect(loop.color).toBe("#08306b");
+    expect(scene.legend.rows).toContainEqual({ kind: "key", key: "reconnected", glyph: "┄", text: "Not directly observed (re-added)" });
   });
 });

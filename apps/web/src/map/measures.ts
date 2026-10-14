@@ -6,9 +6,13 @@ export const OPENING_MEASURE: Measure = "frequency";
 /**
  * Laid over every measure: a path is as wide as its incidents say, from 1 for the rarest paths to
  * 6 for the strongest path of the map, on the library's own scale. The library's widest line is 8,
- * which is heavier than the cards it joins.
+ * which is heavier than the cards it joins. Tagged Start/End flows use the map-added style and
+ * its explicit recorded-history legend.
  */
-const WIDTH_BY_INCIDENTS: StyleSpec = { edgeWidth: { metric: "cases", range: [1, 6] } };
+const BASE_STYLE: StyleSpec = {
+  edgeWidth: { metric: "cases", range: [1, 6] },
+  addedFlowLabel: "Added by the map: start and end of the recorded history.",
+};
 
 /**
  * The bounds in hours of the classes a path's supplied median lag is drawn in under both incident
@@ -23,8 +27,9 @@ export const LAG_CLASSES_HOURS = [24, 168] as const;
  * Without lag the path stays neutral and still displays its supplied incidents.
  */
 const IN_INCIDENTS: StyleSpec = {
-  ...WIDTH_BY_INCIDENTS,
+  ...BASE_STYLE,
   edgeColor: { metric: "medianLagHours", palette: "performance", bins: LAG_CLASSES_HOURS },
+  frequencyColorLegend: true,
 };
 
 /**
@@ -33,7 +38,7 @@ const IN_INCIDENTS: StyleSpec = {
  * library writes the activity's count there.
  */
 const IN_PERFORMANCE: StyleSpec = {
-  ...IN_INCIDENTS,
+  ...BASE_STYLE,
   edgeColor: { ...IN_INCIDENTS.edgeColor, required: true },
   nodeLine: { metric: "medianNextHours", missing: "dash" },
 };
@@ -45,7 +50,7 @@ const IN_PERFORMANCE: StyleSpec = {
  * them writes on a path and on an activity is its decision, and no number is derived here.
  */
 export function styleOver(measure: Measure): StyleSpec {
-  return measure === "performance" ? IN_PERFORMANCE : measure === "frequency" ? IN_INCIDENTS : WIDTH_BY_INCIDENTS;
+  return measure === "performance" ? IN_PERFORMANCE : measure === "frequency" ? IN_INCIDENTS : BASE_STYLE;
 }
 
 /** What the map is asked for in a measure: the measure itself and what is laid over its style. */

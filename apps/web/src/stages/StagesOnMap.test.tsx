@@ -174,7 +174,7 @@ describe("the stages of a log on its map", () => {
 
     // The legend of the map names the stages beside the colours the library gave them.
     await user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
-    expect(Array.from(map.querySelectorAll(".wf-legend__cat")).map((entry) => entry.textContent)).toEqual(["Intake", "Closure"]);
+    expect(Array.from(map.querySelectorAll(".wf-legend__cat")).map((entry) => entry.textContent)).toEqual(["up to 24 h", "24 h to 7.0 d", "over 7.0 d", "Intake", "Closure"]);
     // The editor beside the map shows the same stages.
     expect(within(await openStages(user)).getByRole("combobox", { name: `Stage of “${closed}”` })).toHaveProperty("value", closure);
   });
