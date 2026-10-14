@@ -77,7 +77,11 @@
   background: var(--color-surface);
 }
 .path-list > .working-text { padding: var(--space-2) var(--space-4); }
-.path-table { min-width: calc(var(--size-column-number) * 3 + var(--size-column-label) + var(--size-column-id-least) * 2); }
+/* Its columns take the width of what they hold, so a total and its share are never cut; a list wider than its room scrolls inside it. */
+.path-table {
+  min-width: calc(var(--size-column-number) * 4 + var(--size-column-label) + var(--size-column-id-least) * 2);
+  table-layout: auto;
+}
 .path-table tbody tr { cursor: pointer; }
 .path-table tbody tr:hover > * { background: var(--color-hover); }
 .path-table tbody tr.selected > * { background: var(--color-accent-tint); }
