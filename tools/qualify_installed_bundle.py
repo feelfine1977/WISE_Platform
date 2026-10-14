@@ -810,8 +810,8 @@ CLOCK,ClockA,2026-10-01T00:00:00+02:00,1,East
 CLOCK,ClockB,2026-10-01T00:30:00+01:00,2,West
 '''
             if wall:
-                huge_raw = re.sub(rb'Z,', b',', huge_raw)
-                tied_raw = re.sub(rb'Z,', b',', tied_raw)
+                huge_raw = re.sub(rb'(T\d\d:\d\d:\d\d(?:\.\d+)?)Z,', rb'\1,', huge_raw)
+                tied_raw = re.sub(rb'(T\d\d:\d\d:\d\d(?:\.\d+)?)Z,', rb'\1,', tied_raw)
                 clock_raw = clock_raw.replace(b'+02:00,', b',').replace(b'+01:00,', b',')
             extra = {name: prepare_fixture(blob, name, cutoff)['identity'] for name, blob, cutoff in (
                 ('huge', huge_raw, '9999-12-31T23:59:59.999999Z'), ('tied', tied_raw, '2026-12-01T00:00:00Z'),
