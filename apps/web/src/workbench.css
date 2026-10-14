@@ -369,7 +369,6 @@
 .map-pane { display: grid; gap: var(--space-2); min-width: 0; padding: 0; }
 .map-view { display: grid; gap: var(--space-2) 0; min-width: 0; }
 .map-view > .map-element { padding: 0 var(--space-4); }
-.map-view > .map-notes { padding: 0 var(--space-4) var(--space-2); }
 .map-pane > .working-text { padding: var(--space-2) var(--space-4); }
 .map-frame {
   height: max(var(--size-map-least), calc(var(--size-viewport-height) - var(--size-map-surround)));
@@ -551,8 +550,6 @@
   .explorer .map-view[data-element="selected"] { grid-template-columns: minmax(0, 1fr) var(--size-map-drawer); grid-template-rows: minmax(0, 1fr) auto; }
   /* Beside the map the panel of a selected element is a pane of its own: one hairline between the two. */
   .explorer .map-view[data-element="selected"] .map-element { grid-column: 2; grid-row: 1; overflow: auto; border-left: var(--line-width) solid var(--color-line); }
-  .explorer .map-view[data-element="selected"] .map-notes { grid-column: 1 / -1; grid-row: 2; }
-  .explorer .map-notes { max-height: var(--size-map-notes); overflow: auto; }
   .explorer .map-view[data-element="selected"] { grid-template-columns: minmax(0, 1fr) var(--size-map-drawer); }
   .explorer .map-view[data-element="selected"] .map-element { grid-column: 2; grid-row: 1; overflow: auto; }
 }

@@ -44,8 +44,7 @@
 
 .saved-label {
   font-size: var(--font-size-label);
-  font-weight: var(--font-weight-strong);
-  text-transform: uppercase;
+  font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-label);
   color: var(--color-ink-muted);
 }
@@ -62,8 +61,7 @@
 }
 .saved-table thead th {
   font-size: var(--font-size-label);
-  font-weight: var(--font-weight-strong);
-  text-transform: uppercase;
+  font-weight: var(--font-weight-label);
   letter-spacing: var(--letter-spacing-label);
   color: var(--color-ink-muted);
 }

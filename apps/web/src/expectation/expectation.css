@@ -20,7 +20,6 @@
   color: var(--color-ink-muted);
   font-size: var(--font-size-label);
   letter-spacing: var(--letter-spacing-label);
-  text-transform: uppercase;
 }
 .expectation-identifier { font-family: var(--font-mono); font-size: var(--font-size-mono); }
 .expectation-missing { color: var(--color-ink-muted); font-style: italic; }
