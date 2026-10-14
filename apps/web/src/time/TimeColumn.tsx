@@ -97,8 +97,8 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor
         <InfoPopover label="About these charts">
           <section className="popover-section">
             <p>
-              Recorded span: the time from the first to the last record of an incident, over its whole history. An incident whose order of records
-              is not known, or that has fewer than two records, has none.
+              Recorded span: the time from the first to the last record of an incident, over its whole history. An incident with one record has a
+              span of zero and no longest gap; an incident whose order of records is not known has neither.
             </p>
             <p>
               Starts: each incident counts once, in the {per} of its first record in the declared order. The periods are fixed by the parent: weeks

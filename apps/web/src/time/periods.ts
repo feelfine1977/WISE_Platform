@@ -67,6 +67,20 @@ const monthStart = (months: number) => {
  * the calendar can read.
  */
 export function startPeriods(range: { timestamp_kind: "utc_instant" | "wall_clock"; earliest_recorded_timestamp: string; latest_recorded_timestamp: string }): Periods | null {
+  const periods = calendarPeriods(range);
+  if (periods === null) return null;
+  // The calendar of the service ends with the year 9999. Where the period of the latest record would end after it, the last
+  // period ends at the last microsecond of that year instead, which still lies after the latest record unless that record is
+  // at that very microsecond: such a range has no periods, and the chart says so.
+  const last = periods.edges[periods.edges.length - 1];
+  if (/^\d{4}-/.test(last)) return periods;
+  const utc = range.timestamp_kind === "utc_instant";
+  const end = `9999-12-31T23:59:59.999999${utc ? "Z" : ""}`;
+  if (range.latest_recorded_timestamp.replace(/Z$/, "") >= end.replace(/Z$/, "")) return null;
+  return { ...periods, edges: [...periods.edges.slice(0, -1), end] };
+}
+
+function calendarPeriods(range: { timestamp_kind: "utc_instant" | "wall_clock"; earliest_recorded_timestamp: string; latest_recorded_timestamp: string }): Periods | null {
   const earliest = dateOf(range.earliest_recorded_timestamp);
   const latest = dateOf(range.latest_recorded_timestamp);
   if (earliest === null || latest === null || latest < earliest) return null;
@@ -87,13 +101,9 @@ export function startPeriods(range: { timestamp_kind: "utc_instant" | "wall_cloc
     if (count <= MAX_PERIODS) return { per, edges: Array.from({ length: count + 1 }, (_, place) => midnight(monthStart(first + place * months), utc)) };
   }
   // A longer range is divided into spans of as many whole years as keep the periods at 64, counted from year 1.
-  // Their last edge must still be a day of the calendar, in the year 9999 at the latest; a range that needs a later one has no periods.
-  const lastWritable = 9999 * 12 - 1;
   for (let each = Math.ceil((latest.getUTCFullYear() - earliest.getUTCFullYear() + 1) / MAX_PERIODS); ; each += 1) {
     const { first, count } = span(each * 12);
-    if (count > MAX_PERIODS) continue;
-    if (first + count * each * 12 > lastWritable) return null;
-    return { per: `${each} years`, edges: Array.from({ length: count + 1 }, (_, place) => midnight(monthStart(first + place * each * 12), utc)) };
+    if (count <= MAX_PERIODS) return { per: `${each} years`, edges: Array.from({ length: count + 1 }, (_, place) => midnight(monthStart(first + place * each * 12), utc)) };
   }
 }
 

@@ -47,8 +47,13 @@ describe("the periods of starts", () => {
     const whole = startPeriods({ timestamp_kind: "wall_clock", earliest_recorded_timestamp: "0001-01-01T00:00:00", latest_recorded_timestamp: "9000-01-01T00:00:00" })!;
     expect(whole.edges.length).toBeLessThanOrEqual(MAX_PERIODS + 1);
     expect(whole.edges.every((edge) => /^\d{4}-/.test(edge))).toBe(true);
-    // A range that reaches into the last months of the year 9999 has no edge after it that the calendar can write.
-    expect(startPeriods({ timestamp_kind: "wall_clock", earliest_recorded_timestamp: "0001-01-01T00:00:00", latest_recorded_timestamp: "9999-12-31T00:00:00" })).toBeNull();
+    // In the last period of the year 9999 the last edge is the last microsecond of that year; only a record at that very microsecond has no edge after it.
+    const toTheEnd = startPeriods({ timestamp_kind: "wall_clock", earliest_recorded_timestamp: "0001-01-01T00:00:00", latest_recorded_timestamp: "9999-12-31T00:00:00" })!;
+    expect(toTheEnd.edges.at(-1)).toBe("9999-12-31T23:59:59.999999");
+    expect(toTheEnd.edges.length).toBeLessThanOrEqual(MAX_PERIODS + 1);
+    const lastWeek = startPeriods({ timestamp_kind: "utc_instant", earliest_recorded_timestamp: "9999-12-20T00:00:00Z", latest_recorded_timestamp: "9999-12-30T12:00:00Z" })!;
+    expect([lastWeek.per, lastWeek.edges.at(-1)]).toEqual(["week", "9999-12-31T23:59:59.999999Z"]);
+    expect(startPeriods({ timestamp_kind: "wall_clock", earliest_recorded_timestamp: "9999-01-01T00:00:00", latest_recorded_timestamp: "9999-12-31T23:59:59.999999" })).toBeNull();
   });
 
   it("read years far from today, and refuse a range the calendar cannot read", () => {
