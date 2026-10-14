@@ -483,6 +483,360 @@ X,Outside,2026-10-03T00:00:00Z,2,West
     return proofs, counts
 
 
+def next_service_checks(base, workspace, prior=None):
+    """Literal passage totals, whole-case ranges and ordered-prefix HTTP proof."""
+    raw = b"""case,activity,at,seq,Desk
+SK,A,2026-10-01T00:00:00Z,1,East
+SK,B,2026-10-01T01:00:00Z,2,East
+SK,A,2026-10-01T02:00:00Z,3,East
+SK,B,2026-10-01T03:00:00Z,4,East
+SK,A,2026-10-01T04:00:00Z,5,East
+SK,B,2026-10-05T06:00:00Z,6,West
+BUSY,C,2026-10-01T00:00:00Z,1,East
+BUSY,D,2026-10-01T20:00:00Z,2,East
+BUSY,C,2026-10-01T21:00:00Z,3,East
+BUSY,D,2026-10-02T17:00:00Z,4,East
+BUSY,C,2026-10-02T18:00:00Z,5,East
+BUSY,D,2026-10-03T14:00:00Z,6,West
+RARE,E,2026-10-01T00:00:00Z,1,East
+RARE,F,2026-10-04T08:00:00Z,2,West
+BRIDGE,H,2026-10-01T00:00:00Z,1,East
+BRIDGE,,2026-10-01T01:00:00Z,2,East
+BRIDGE,I,2026-10-01T04:00:00.000001Z,3,West
+SELF,J,2026-10-01T00:00:00Z,1,West
+SELF,J,2026-10-01T00:00:00Z,2,West
+SIDE,K,2026-10-01T00:00:00Z,1,East
+SIDE,L,2026-10-01T03:00:00Z,2,West
+U,A,2026-10-01T00:00:00Z,1,East
+U,B,,2,West
+SINGLE,S,2026-10-01T00:00:00Z,1,East
+OUT,A,2026-10-01T00:00:00Z,1,East
+OUT,B,2026-11-11T16:00:00Z,2,West
+"""
+    parent = ['BRIDGE', 'BUSY', 'RARE', 'SELF', 'SIDE', 'SINGLE', 'SK', 'U']
+    sizes = dict(zip(parent, (3, 6, 2, 2, 2, 1, 6, 2)))
+    positions = {'SK': [0, 1, 2, 3, 4, 5], 'BUSY': [6, 7, 8, 9, 10, 11], 'RARE': [12, 13],
+                 'BRIDGE': [14, 15, 16], 'SELF': [17, 18], 'SIDE': [19, 20], 'U': [21, 22], 'SINGLE': [23]}
+    # Rank and passage sums are literal expectations, including every repeat.
+    paths = [('A', 'B', 360000000000, 3, 1, 1), ('E', 'F', 288000000000, 1, 1, 80),
+             ('C', 'D', 216000000000, 3, 1, 20), ('H', 'I', 14400000001, 1, 1, 4.000000000277778),
+             ('K', 'L', 10800000000, 1, 1, 3), ('B', 'A', 7200000000, 2, 1, 1),
+             ('D', 'C', 7200000000, 2, 1, 1), ('J', 'J', 0, 1, 1, 0)]
+    counts, proofs = {}, []
+
+    def ask(route, request, kind, preview=True):
+        before = workspace_bytes(workspace) if preview else None
+        result = answer(base, route, request, kind)
+        counts[route] = counts.get(route, 0) + 1
+        if preview:
+            assert workspace_bytes(workspace) == before, (route, 'Preview wrote durable files.')
+        return result
+
+    def support(ids):
+        return {'case_ids': ids, 'case_count': len(ids), 'record_count': sum(sizes[case] for case in ids)}
+
+    def partition(result, kept, unknown=()):
+        assert result['kept'] == support(kept)
+        assert result['unevaluable'] == support(list(unknown))
+        assert result['removed'] == support([case for case in parent if case not in kept and case not in unknown])
+
+    def pick(identity, predicates, active=None):
+        fields = {} if active is None else {'active_step_count': active}
+        result = ask('/api/investigations/select-cases', envelope('select_cases_request',
+            workspace_id=workspace['workspace_id'], identity=identity, parent_case_ids=parent,
+            predicates=predicates, **fields), 'selection_answer')
+        assert result['parent'] == support(parent)
+        assert result['active_step_count'] == (len(predicates) if active is None else active)
+        assert len(result['step_results']) == len(result['predicate_results']) == len(predicates)
+        for number, (step, predicate) in enumerate(zip(result['step_results'], predicates), 1):
+            assert step['step_number'] == number and step['predicate'] == predicate
+        return result
+
+    def denied(identity, predicates, code='invalid_predicate', status=422, **fields):
+        request = envelope('select_cases_request', workspace_id=workspace['workspace_id'], identity=identity,
+                           parent_case_ids=parent, predicates=predicates, **fields)
+        before = workspace_bytes(workspace)
+        actual_status, body = http(base, '/api/investigations/select-cases', request)
+        result = json.loads(body)
+        assert actual_status == status and result['message_type'] == 'selection_refusal', (actual_status, result)
+        assert result['code'] == code and result['operation'] == 'select_cases'
+        for field in ('request_id', 'query_revision', 'workspace_id'):
+            assert result[field] == request[field]
+        assert workspace_bytes(workspace) == before
+        counts['/api/investigations/select-cases:refusal'] = counts.get('/api/investigations/select-cases:refusal', 0) + 1
+
+    def graph_proof(identity, expected_paths, cases):
+        result = ask('/api/investigations/process-graph', envelope('process_graph_request',
+            workspace_id=workspace['workspace_id'], identity=identity), 'process_graph_answer')
+        assert result['identity'] == identity
+        supplied = result['graph']
+        assert supplied['meta']['selected_case_ids'] == cases
+        edges = {(edge['payload']['source_activity'], edge['payload']['target_activity']): edge for edge in supplied['edges']}
+        assert len(edges) == len(supplied['edges']) == len(expected_paths)
+        assert set(edges) == {(source, target) for source, target, *_ in expected_paths}
+        total = sum(item[2] for item in expected_paths)
+        for source, target, ticks, passages, incidents, middle in expected_paths:
+            edge = edges[source, target]
+            assert edge['kind'] == 'follows'
+            metrics = edge['metrics']
+            assert type(metrics['count']) is type(metrics['usableLagCount']) is type(metrics['cases']) is int
+            assert metrics['count'] == metrics['usableLagCount'] == passages and metrics['cases'] == incidents
+            assert metrics['medianLagHours'] == middle
+            assert metrics['totalLagMicroseconds'] == str(ticks)
+            assert type(metrics['totalLagMicroseconds']) is str and re.fullmatch(r'0|[1-9][0-9]{0,63}', metrics['totalLagMicroseconds'])
+            assert metrics['totalLagHours'] == ticks / 3600000000
+            assert type(metrics['totalLagHours']) in (int, float)
+            assert metrics['shareOfTotalLag'] == (ticks / total if total else None)
+            assert metrics['shareOfTotalLag'] is None or type(metrics['shareOfTotalLag']) in (int, float)
+        top = expected_paths[:5]
+        assert supplied['meta']['path_lag_totals'] == {
+            'total_hours': total / 3600000000, 'total_microseconds': str(total),
+            'usable_passage_count': sum(item[3] for item in expected_paths), 'usable_path_count': len(expected_paths),
+            'top_five_path_ids': [edges[source, target]['id'] for source, target, *_ in top],
+            'top_five_total_hours': sum(item[2] for item in top) / 3600000000,
+            'top_five_total_microseconds': str(sum(item[2] for item in top)),
+            'top_five_share': sum(item[2] for item in top) / total if total else None}
+        return supplied
+
+    def measure(kind, low, high, negate=False):
+        unit = 'records' if kind == 'raw_record_count_between' else 'hours'
+        return {'kind': kind, 'minimum_' + unit: low, 'maximum_' + unit: high, 'negate': negate}
+
+    def passage(source, target, low, high, quantifier='any', negate=False):
+        return {**measure('directly_follows_lag_between', low, high, negate), 'source_activity': source,
+                'target_activity': target, 'quantifier': quantifier}
+
+    for wall in (False, True):
+        kind = 'wall_clock' if wall else 'utc_instant'
+        stamp = lambda value: value.removesuffix('Z') if wall else value
+        current_raw = re.sub(rb'(T\d\d:\d\d:\d\d(?:\.\d+)?)Z,', rb'\1,', raw) if wall else raw
+        original = list(csv.reader(io.StringIO(current_raw.decode(), newline='')))[1:]
+        trail = [measure('raw_record_count_between', 2, 6), passage('A', 'B', 1, 1),
+                 measure('raw_record_count_between', 3, 6), measure('observed_span_between', 0, 100)]
+
+        def prepare_fixture(blob, name, cutoff='2026-12-01T00:00:00Z'):
+            status, body = http(base, '/api/sources', raw=blob, query=envelope('upload_source_metadata',
+                workspace_id=workspace['workspace_id'], filename=kind + '-' + name + '.csv'))
+            assert status == 200
+            counts['/api/sources'] = counts.get('/api/sources', 0) + 1
+            source = json.loads(body)['source']
+            assert source['source_id'] == 'source.v1:sha256:' + hashlib.sha256(blob).hexdigest()
+            policies = b_policies(cutoff)
+            if wall:
+                policies['time'] = {'id': 'incident.time.wall_clock_as_recorded.v1', 'parameters':
+                    {'format': 'iso8601', 'timezone': 'none_as_recorded', 'snapshot_cutoff_local': stamp(cutoff)}}
+            prepared = ask('/api/preparations', envelope('confirm_mapping_request', workspace_id=workspace['workspace_id'],
+                source_id=source['source_id'], dialect={'encoding': 'utf-8', 'delimiter': ',', 'quotechar': '"', 'header': 'first_record'},
+                mapping={'case_column': 0, 'activity_column': 1, 'timestamp_column': 2, 'sequence_column': 3, 'context_columns': [4]},
+                policies=policies, accept_report_issues=True), 'interpretation_answer', preview=False)
+            assert prepared['state'] == 'ready'
+            return ask('/api/investigations/open-population', envelope('open_population_request', workspace_id=workspace['workspace_id'],
+                preparation_id=prepared['preparation']['preparation_id']), 'imported_population_answer')
+
+        if prior is None:
+            population = prepare_fixture(current_raw, 'service-slices')
+            assert population['population'] == {'case_ids': ['BRIDGE', 'BUSY', 'OUT', 'RARE', 'SELF', 'SIDE', 'SINGLE', 'SK', 'U'],
+                                                'case_count': 9, 'record_count': 26}
+            full = pick(population['identity'], [])
+            parent_graph = graph_proof(full['identity'], paths, parent)
+            assert parent_graph['meta']['sequence_unevaluable_case_ids'] == ['U']
+            assert parent_graph['meta']['lag_clock'] == ('recorded_wall_clock_hours' if wall else 'elapsed_utc_hours')
+            subset = pick(population['identity'], [{'kind': 'case_id_in', 'case_ids': ['BRIDGE', 'SELF', 'SK', 'U'], 'negate': False}])
+            graph_proof(subset['identity'], [paths[i] for i in (0, 3, 5, 7)], ['BRIDGE', 'SELF', 'SK', 'U'])
+            zero = pick(population['identity'], [{'kind': 'case_id_in', 'case_ids': ['SELF'], 'negate': False}])
+            graph_proof(zero['identity'], [paths[7]], ['SELF'])
+            unavailable = pick(population['identity'], [{'kind': 'case_id_in', 'case_ids': ['SINGLE', 'U'], 'negate': False}])
+            graph_proof(unavailable['identity'], [], ['SINGLE', 'U'])
+            empty = pick(population['identity'], [{'kind': 'contains_activity', 'activity': 'Absent', 'negate': False}])
+            graph_proof(empty['identity'], [], [])
+            controls = [
+                (measure('raw_record_count_between', 2, 2), ['RARE', 'SELF', 'SIDE', 'U'], []),
+                (measure('raw_record_count_between', 2, 2, True), ['BRIDGE', 'BUSY', 'SINGLE', 'SK'], []),
+                (measure('raw_record_count_between', 0, 0), [], []),
+                (measure('raw_record_count_between', 3, None), ['BRIDGE', 'BUSY', 'SK'], []),
+                (measure('observed_span_between', 0, 0), ['SELF', 'SINGLE'], ['U']),
+                (measure('observed_span_between', 0, 0, True), ['BRIDGE', 'BUSY', 'RARE', 'SIDE', 'SK'], ['U']),
+                (measure('observed_span_between', 3, 4.000000000277778), ['BRIDGE', 'SIDE'], ['U']),
+                (measure('observed_span_between', 4.000000000277778, None), ['BUSY', 'RARE', 'SK'], ['U']),
+                (measure('max_raw_gap_between', 0, 0), ['SELF'], ['SINGLE', 'U']),
+                (measure('max_raw_gap_between', 0, 0, True), ['BRIDGE', 'BUSY', 'RARE', 'SIDE', 'SK'], ['SINGLE', 'U']),
+                (measure('max_raw_gap_between', 3, 3), ['SIDE'], ['SINGLE', 'U']),
+                (measure('max_raw_gap_between', 3.000000000277778, None), ['BUSY', 'RARE', 'SK'], ['SINGLE', 'U']),
+                (passage('A', 'B', 1, 1), ['SK'], ['U']),
+                (passage('A', 'B', 1, 1, 'every'), [], ['U']),
+                (passage('A', 'B', 1, 98, 'every'), ['SK'], ['U']),
+                (passage('A', 'B', 1, 1, negate=True), ['BRIDGE', 'BUSY', 'RARE', 'SELF', 'SIDE', 'SINGLE'], ['U']),
+                (passage('H', 'I', 4, 4), [], ['U']),
+                (passage('H', 'I', 4, 4.000000000277778), ['BRIDGE'], ['U']),
+                (passage('H', 'I', 4.000000000277778, None), [], ['U']),
+                (passage('J', 'J', 0, 0), ['SELF'], ['U']),
+                (passage('Absent', 'Missing', 0, None, 'every'), [], ['U']),
+                (passage('Absent', 'Missing', 0, None, 'every', True), parent[:-1], ['U']),
+            ]
+            for predicate, kept, unknown in controls:
+                result = pick(population['identity'], [predicate])
+                partition(result, kept, unknown)
+                partition(result['step_results'][0], kept, unknown)
+                partition(result['predicate_results'][0], kept, unknown)
+            comparison_ranges = [controls[index] for index in (0, 4, 8, 12)]
+            comparison_ranges.append((None, ['SK'], ['U']))
+            for predicate, kept, unknown in comparison_ranges:
+                cohort_predicates = [predicate] if predicate is not None else [
+                    trail[0], measure('observed_span_between', 0, 200), measure('max_raw_gap_between', 0, 100), trail[1]]
+                comparison_definition = {'mode': 'two_named_groups',
+                    'target': {'name': 'Literal ranges', 'definition': {'kind': 'predicates', 'predicates': cohort_predicates}},
+                    'reference': {'name': 'Recorded side path', 'definition': {'kind': 'explicit_case_ids', 'case_ids': ['SIDE']}}}
+                comparison = ask('/api/investigations/compare-groups', envelope('compare_groups_request', workspace_id=workspace['workspace_id'],
+                    identity=population['identity'], parent_case_ids=parent, context_column_index=4,
+                    context_policy=CONTEXT, definition=comparison_definition), 'group_comparison_answer')
+                assert comparison['identity'] == population['identity'] and comparison['parent_identity'] == full['identity']
+                assert comparison['parent'] == support(parent) and comparison['definition'] == comparison_definition
+                assert comparison['target']['included'] == support(kept) and comparison['target']['unevaluable'] == support(unknown)
+                assert comparison['target']['excluded'] == support([case for case in parent if case not in kept and case not in unknown])
+                assert comparison['reference']['included'] == support(['SIDE'])
+            chosen = pick(population['identity'], trail, active=2)
+            partition(chosen, ['SK'], ['U'])
+            expected_prefixes = [(parent[:5] + ['SK', 'U'], []), (['SK'], ['U']), (['SK'], []), ([], [])]
+            for step, (kept, unknown) in zip(chosen['step_results'], expected_prefixes):
+                partition(step, kept, unknown)
+            for result, (kept, unknown) in zip(chosen['predicate_results'], [
+                    (parent[:5] + ['SK', 'U'], []), (['SK'], ['U']), (['BRIDGE', 'BUSY', 'SK'], []),
+                    (['BRIDGE', 'BUSY', 'RARE', 'SELF', 'SIDE', 'SINGLE'], ['U'])]):
+                partition(result, kept, unknown)
+            prefix = pick(population['identity'], trail[:2])
+            assert chosen['identity'] == prefix['identity']
+            for key in ('kept', 'removed', 'unevaluable'):
+                assert chosen[key] == prefix[key]
+            beginning = pick(population['identity'], trail, active=0)
+            partition(beginning, parent)
+            assert beginning['identity'] == full['identity'] and beginning['step_results'] == chosen['step_results']
+            first_step = pick(population['identity'], trail, active=1)
+            first_prefix = pick(population['identity'], trail[:1])
+            assert first_step['identity'] == first_prefix['identity']
+            partition(first_step, parent[:5] + ['SK', 'U'])
+            completed = pick(population['identity'], trail)
+            partition(completed, [])
+            permuted = pick(population['identity'], [trail[1], trail[0], *trail[2:]])
+            assert completed['identity'] == permuted['identity']
+            partition(permuted['step_results'][0], ['SK'], ['U'])
+            duplicate = pick(population['identity'], [trail[0], trail[0], trail[1]])
+            assert duplicate['identity'] == prefix['identity']
+            assert duplicate['step_results'][0]['kept'] == duplicate['step_results'][1]['kept']
+            bad = [
+                {**trail[0], 'minimum_records': True}, {**trail[0], 'maximum_records': 2.5},
+                {**trail[0], 'minimum_records': -1}, {**trail[0], 'minimum_records': 9007199254740992},
+                {**trail[0], 'minimum_records': 7, 'maximum_records': 6},
+                {**trail[3], 'minimum_hours': '0'}, {**trail[3], 'minimum_hours': None},
+                {**trail[3], 'minimum_hours': -1}, {**trail[3], 'minimum_hours': 101},
+                {**trail[3], 'minimum_hours': 10 ** 309},
+                {**trail[1], 'quantifier': 'some'}, {k: v for k, v in trail[1].items() if k != 'quantifier'},
+                {**trail[1], 'source_activity': ''}, {**trail[1], 'extra': 0}]
+            for predicate in bad:
+                denied(population['identity'], [predicate])
+            for active in (None, True, .5, -1, len(trail) + 1):
+                denied(population['identity'], trail, 'invalid_request', 400, active_step_count=active)
+            denied(population['identity'], [*trail, {'kind': 'case_id_in', 'case_ids': ['OUT'], 'negate': False}],
+                   'case_outside_parent', active_step_count=0)
+            denied(population['identity'], [*trail, {**trail[1], 'maximum_hours': -1}], active_step_count=0)
+            stale = {**population['identity'], 'population_id': 'population.v1:sha256:' + '0' * 64}
+            denied(stale, [trail[0]], 'identity_mismatch', 409)
+        else:
+            before = prior[wall]
+            restored = ask('/api/investigations/reopen', envelope('reopen_investigation_request', workspace_id=workspace['workspace_id'],
+                saved_revision_id=before['saved']['saved_revision_id']), 'reopen_investigation_answer', preview=False)
+            assert restored['revision'] == before['saved']
+            assert restored['restored_comparison_id'] == before['comparison']['comparison_id']
+            comparison = before['comparison']
+            chosen = restored['restored_selection']
+            for field in ('identity', 'parent_identity', 'parent', 'kept', 'removed', 'unevaluable', 'predicate_results', 'step_results', 'active_step_count'):
+                assert chosen[field] == before['prefix'][field]
+            partition(chosen, ['SK'], ['U'])
+            full = {'identity': chosen['parent_identity']}
+        traces = {}
+        for case in parent:
+            trace = ask('/api/investigations/case-evidence', envelope('imported_case_evidence_request', workspace_id=workspace['workspace_id'],
+                identity=full['identity'], case_id=case), 'imported_case_evidence_answer')
+            assert trace['identity'] == full['identity'] and trace['case_id'] == case
+            assert [row['source_position'] for row in trace['records']] == positions[case]
+            assert [row['original_cells'] for row in trace['records']] == [original[index] for index in positions[case]]
+            assert isinstance(trace.get('incident_time'), dict)
+            traces[case] = trace
+        current_graph = graph_proof(chosen['identity'], [paths[i] for i in (0, 5)], ['SK'])
+        bridge = next(edge for edge in graph_proof(full['identity'], paths, parent)['edges']
+                      if edge['payload']['source_activity'] == 'H' and edge['payload']['target_activity'] == 'I')
+        assert bridge['payload']['bridged_passage_count'] == 1 and bridge['payload']['gap_case_ids'] == ['BRIDGE']
+        assert bridge['payload']['omitted_row_ids'] == [traces['BRIDGE']['records'][1]['row_id']]
+        listed = ask('/api/investigations/case-list', envelope('case_list_request', workspace_id=workspace['workspace_id'], identity=chosen['identity'],
+            query={'search_text': None, 'sort': {'field': 'case_id', 'direction': 'ascending'}, 'offset': 0, 'limit': 20}), 'case_list_answer')
+        assert [row['case_id'] for row in listed['rows']] == ['SK']
+        assert listed['rows'][0]['time_summary'] == traces['SK']['incident_time']['summary']
+        trend = ask('/api/investigations/start-trend', envelope('start_trend_request', workspace_id=workspace['workspace_id'], identity=chosen['identity'],
+            definition={'policy_id': 'incident.start_trend.first_raw_declared_order_half_open.v1', 'binning': {'kind': 'explicit_edges',
+                'timestamp_kind': kind, 'edges': [stamp(value) for value in ('2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z', '2026-10-06T00:00:00Z')]}}), 'start_trend_answer')
+        assert trend['parent_support'] == support(parent)
+        assert [item['kept_support']['case_ids'] for item in trend['bins']] == [['SK'], []]
+        assert trend['unevaluable']['parent_support'] == support(['U'])
+        groups = ask('/api/investigations/rule-groups', envelope('rule_groups_request', workspace_id=workspace['workspace_id'], identity=chosen['identity'],
+            query={'rule': {'kind': 'activity_presence', 'activity': 'A'}, 'distribution_edges_hours': [0, 1, 200], 'offset': 0, 'limit': 20}), 'rule_groups_answer')
+        assert groups['parent_identity'] == full['identity'] and groups['catalogue_scope'] == 'frozen_parent'
+        assert {group['key']['present']: group['population']['cases']['case_ids'] for group in groups['groups']} == {False: [], True: ['SK']}
+        views = {'graph': current_graph, 'case_list': listed, 'start_trend': trend, 'rule_groups': groups}
+        views['comparison_cohorts'] = {}
+        for role, case, expected_paths in [('target', 'SK', [paths[i] for i in (0, 5)]), ('reference', 'SIDE', [paths[4]])]:
+            identity = comparison[role]['identity']
+            trace = ask('/api/investigations/case-evidence', envelope('imported_case_evidence_request',
+                workspace_id=workspace['workspace_id'], identity=identity, case_id=case), 'imported_case_evidence_answer')
+            assert trace['identity'] == identity and trace['records'] == traces[case]['records']
+            assert trace['incident_time'] == traces[case]['incident_time']
+            views['comparison_cohorts'][role] = {'identity': identity, 'trace': trace,
+                                                'graph': graph_proof(identity, expected_paths, [case])}
+        # The six hours values round equal; the supplied exact ranking must not.
+        huge_paths = [('P' + str(i), 'Q' + str(i), 315506361600000001 + i, 1, 1, 87640656) for i in range(5, -1, -1)]
+        tied_paths = [('Z', 'Z', 36000000000, 2, 2, 5), ('A', 'B', 36000000000, 1, 1, 10)]
+        if prior is None:
+            huge_raw = ('case,activity,at,seq,Desk\n' + ''.join(
+                f'H{i},P{i},0001-01-01T00:00:00Z,1,East\nH{i},Q{i},9999-01-01T00:00:00.00000{i + 1}Z,2,West\n'
+                for i in range(6))).encode()
+            tied_raw = b'''case,activity,at,seq,Desk
+T1,A,2026-10-01T00:00:00Z,1,East
+T1,B,2026-10-01T10:00:00Z,2,West
+T2,Z,2026-10-01T00:00:00Z,1,East
+T2,Z,2026-10-01T05:00:00Z,2,West
+T3,Z,2026-10-01T00:00:00Z,1,East
+T3,Z,2026-10-01T05:00:00Z,2,West
+'''
+            clock_raw = b'''case,activity,at,seq,Desk
+CLOCK,ClockA,2026-10-01T00:00:00+02:00,1,East
+CLOCK,ClockB,2026-10-01T00:30:00+01:00,2,West
+'''
+            if wall:
+                huge_raw = re.sub(rb'Z,', b',', huge_raw)
+                tied_raw = re.sub(rb'Z,', b',', tied_raw)
+                clock_raw = clock_raw.replace(b'+02:00,', b',').replace(b'+01:00,', b',')
+            extra = {name: prepare_fixture(blob, name, cutoff)['identity'] for name, blob, cutoff in (
+                ('huge', huge_raw, '9999-12-31T23:59:59.999999Z'), ('tied', tied_raw, '2026-12-01T00:00:00Z'),
+                ('clock', clock_raw, '2026-12-01T00:00:00Z'))}
+        else:
+            extra = before['extra_identities']
+        views['huge_graph'] = graph_proof(extra['huge'], huge_paths, ['H0', 'H1', 'H2', 'H3', 'H4', 'H5'])
+        views['tied_graph'] = graph_proof(extra['tied'], tied_paths, ['T1', 'T2', 'T3'])
+        views['clock_graph'] = graph_proof(extra['clock'], [('ClockA', 'ClockB', 1800000000 if wall else 5400000000,
+                                                          1, 1, .5 if wall else 1.5)], ['CLOCK'])
+        if prior is None:
+            saved = ask('/api/investigations/save', envelope('save_investigation_request', workspace_id=workspace['workspace_id'], investigation_id=None,
+                expected_revision_id=None, name=kind + ' passage ranges and active prefix', base_identity=population['identity'],
+                selection_identity=chosen['identity'], selection_recipe={'parent_case_ids': parent, 'predicates': trail[:2]}, context_policy=CONTEXT,
+                comparison={'kind': 'group', 'comparison_id': comparison['comparison_id'], 'parent_case_ids': parent,
+                    'context_column_index': 4, 'context_policy': CONTEXT, 'definition': comparison_definition},
+                notes='Invented complete records; active prefix only.', bookmarks=[]), 'save_investigation_answer', preview=False)['revision']
+            assert saved['content']['selection_recipe'] == {'parent_case_ids': parent, 'predicates': trail[:2]}
+            proofs.append({'saved': saved, 'prefix': prefix, 'traces': traces, 'views': views, 'extra_identities': extra,
+                           'comparison': comparison})
+        else:
+            assert traces == before['traces'] and views == before['views']
+    return proofs, counts
+
+
 def main():
     parser = argparse.ArgumentParser(); parser.add_argument('--spec', type=Path, required=True); parser.add_argument('--receipt', type=Path, required=True)
     args = parser.parse_args(); spec = json.loads(args.spec.read_text()); bundle = Path(spec['bundle']); env = Path(spec['runtime_env']).resolve(); features = spec['features']
@@ -554,12 +908,14 @@ def main():
             scored, score_proof = scoring(base, workspace, bundle, spec['scoring_definition']) if 'scoring' in features else (None, None)
             scored_saved = save_scored_question(base, workspace, score_proof) if scored and 'saving' in features else None
             recorded_proofs, recorded_counts = recorded_route_checks(base, workspace)
+            service_proofs, service_counts = next_service_checks(base, workspace)
         assert first.poll() is not None
         with host(work, 2, port) as (base, second):
             assert first.pid != second.pid
             reopened_workspace = initialize_workspace(base, workspace_path)
             assert reopened_workspace['workspace_id'] == workspace['workspace_id']
             _, restored_recorded_counts = recorded_route_checks(base, reopened_workspace, recorded_proofs)
+            _, restored_service_counts = next_service_checks(base, reopened_workspace, service_proofs)
             assert source in reopened_workspace['sources']
             assert {key: preparation['preparation'][key] for key in ('preparation_id', 'source_id')} in reopened_workspace['preparations']
             if saved:
@@ -629,6 +985,19 @@ def main():
                    'all_six_predicates': True, 'fixture_cases': 5, 'fixture_records': 10,
                    'fixed_parent_cases': 4, 'fixed_parent_records': 8, 'complete_raw_preserved': True,
                    'preview_no_durable_writes': True, 'two_saved_recipes_reopened_before_fresh_queries': True},
+               'next_service_routes': {'issues': [88, 89, 90, 93], 'clocks': ['utc_instant', 'wall_clock'],
+                   'before_restart_requests': service_counts, 'after_restart_requests': restored_service_counts,
+                   'fixture_cases': 9, 'fixture_records': 26, 'fixed_parent_cases': 8, 'fixed_parent_records': 24,
+                   'exact_total_microseconds': '903600000001', 'top_five_total_microseconds': '889200000001',
+                   'all_passage_repeats_and_missing_label_bridge': True, 'zero_and_unavailable_distinct': True,
+                   'six_rounded_equal_huge_paths_ranked_by_exact_microseconds': True, 'case_support_tie_order_checked': True,
+                   'offset_utc_elapsed_differs_from_recorded_wall': True,
+                   'inclusive_ranges_with_unbounded_upper': True, 'any_and_every_passage_quantifiers': True,
+                   'exact_microsecond_boundary_discriminators': True, 'strict_typed_refusals': True,
+                   'ordered_prefix_counts_and_independent_partitions': True, 'inactive_suffix_still_validated': True,
+                   'all_four_ranges_in_actual_comparison': True, 'saved_range_comparison_cohorts_restored': True,
+                   'active_prefix_identity_and_registry': True, 'complete_raw_preserved': True, 'preview_no_durable_writes': True,
+                   'two_active_prefix_recipes_reopened_before_fresh_selections': True},
                'owned_process_ids': [first.pid, second.pid]}
     args.receipt.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf8')
     print(json.dumps({'all_passed': True, 'features': features, 'real_owned_processes': 2}))
