@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type MouseEvent, type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CaseId, ImportedCaseSummary } from "../generated/imports";
 
 /** Height of one table row in CSS pixels; the stylesheet gives every row exactly this height. */
@@ -10,6 +10,8 @@ const COLUMNS = 5;
 export interface IncidentTimes {
   span: number | null;
   gap: number | null;
+  /** Where the longest gap lies, in words: between which records and how far after the first; said on its cell. */
+  gapAt?: string;
 }
 /** Rows rendered above and below the visible ones, so that scrolling does not show empty space. */
 const OVERSCAN = 8;
@@ -47,6 +49,8 @@ interface IncidentWindowProps {
  */
 export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy, waitingFor, times, duration = String, extra }: IncidentWindowProps) {
   const columns = (times === undefined ? COLUMNS : COLUMNS + 2) + (extra === undefined ? 0 : 1);
+  // Where the longest gap of a row lies is said to the row's button too, which is what the keyboard reaches; a cell's tooltip is not.
+  const gapIds = useId();
   const scroller = useRef<HTMLDivElement>(null);
   const controls = useRef(new Map<number, HTMLButtonElement>()).current;
   const [scrollTop, setScrollTop] = useState(0);
@@ -139,6 +143,8 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
 
   function row(index: number) {
     const summary = cases[index];
+    const gapAt = times?.get(summary.case_id)?.gapAt;
+    const gapId = gapAt === undefined ? undefined : `${gapIds}-gap-${index}`;
     const open = summary.case_id === openCaseId;
     return (
       <tr
@@ -154,7 +160,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
             tabIndex={index === active ? 0 : -1}
             aria-current={open ? "true" : undefined}
             aria-disabled={waitingFor ? "true" : undefined}
-            aria-describedby={waitingFor}
+            aria-describedby={[waitingFor, gapId].filter(Boolean).join(" ") || undefined}
             title={summary.case_id}
             ref={(element) => {
               if (element) controls.set(index, element);
@@ -177,7 +183,14 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
         {times !== undefined && (
           <>
             <td className="number">{durationCell(times.get(summary.case_id)?.span ?? null)}</td>
-            <td className="number">{durationCell(times.get(summary.case_id)?.gap ?? null)}</td>
+            <td className="number" title={gapAt}>
+              {durationCell(times.get(summary.case_id)?.gap ?? null)}
+              {gapId !== undefined && (
+                <span id={gapId} className="visually-hidden">
+                  Longest gap: {gapAt}.
+                </span>
+              )}
+            </td>
           </>
         )}
         {extra !== undefined && <td className="extra-cell">{extra.cell(summary.case_id)}</td>}

@@ -3,6 +3,7 @@ import type { ImportedPopulationAnswer } from "../generated/imports";
 import type { SelectionPredicate } from "../generated/selection";
 import type { OpeningContextAnswer } from "../views/messages";
 import type { ViewState } from "../imported/coordinator";
+import { IncidentRangeFilter } from "./RangeConditions";
 import "./filters.css";
 
 export interface RecordedRange {
@@ -86,6 +87,10 @@ export function Filters({ population, parentIds, opening, onStep, range, rangePr
           <p className="muted">Equality is included. Unknown chronology is not evaluable; an incident with one record has no adjacent gap. These are recorded times, not proof of working time or resolution.</p>
           <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep by recorded time</button>
         </form>
+      </details>
+      <details>
+        <summary>A range of span, longest gap or raw records</summary>
+        <IncidentRangeFilter onStep={onStep} waitingFor={waitingFor} timestampKind={clock === "UTC" ? "utc_instant" : "wall_clock"} />
       </details>
       <details>
         <summary>First record in a period</summary>

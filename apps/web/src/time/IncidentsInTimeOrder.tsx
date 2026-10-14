@@ -37,10 +37,20 @@ interface IncidentsInTimeOrderProps {
 
 type Listed = { phase: "loading" } | { phase: "ready"; rows: ExplorerCaseSummary[]; answer: CaseListAnswer; more: boolean } | { phase: "failed"; message: string };
 
-const timesOf = (row: ExplorerCaseSummary): IncidentTimes =>
-  row.time_summary.status === "available"
-    ? { span: row.time_summary.observed_span_hours, gap: row.time_summary.maximum_adjacent_raw_gap_hours }
-    : { span: null, gap: null };
+const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 });
+const named = (activity: string | null) => (activity === null ? "a record without activity label" : `“${activity}”`);
+
+const timesOf = (row: ExplorerCaseSummary): IncidentTimes => {
+  if (row.time_summary.status !== "available") return { span: null, gap: null };
+  const witness = row.time_summary.maximum_gap_witness;
+  // Where the supplied longest gap lies: its two records, how far after the first record it begins, and its share of the span where there is one.
+  const gapAt =
+    witness === null
+      ? undefined
+      : `Between ${named(witness.from_activity)} and ${named(witness.to_activity)}, ${durationName(witness.from_offset_hours)} after the first record` +
+        (witness.share_of_observed_span === null ? "" : `; ${percent.format(witness.share_of_observed_span)} of the span`);
+  return { span: row.time_summary.observed_span_hours, gap: row.time_summary.maximum_adjacent_raw_gap_hours, gapAt };
+};
 
 /**
  * The kept incidents in the order the local service sorts them by recorded span or by longest gap,
@@ -51,18 +61,21 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   const asked = useId();
   const [listed, setListed] = useState<Listed>({ phase: "loading" });
   const [offset, setOffset] = useState(0);
+  // The incident numbers to look for, as the local service matches them; empty lists every kept incident.
+  const [search, setSearch] = useState("");
+  const [typed, setTyped] = useState("");
   // A failed page is asked again on request; the order and the kept incidents stay as they are.
   const [attempt, setAttempt] = useState(0);
   const identityKey = JSON.stringify(identity);
 
   // Another order, another selection or another revision starts the list again from its first page.
-  useEffect(() => setOffset(0), [order, identityKey, revision]);
+  useEffect(() => setOffset(0), [order, identityKey, revision, search]);
 
   useEffect(() => {
     const controller = new AbortController();
     const request: CaseListRequest = {
       schema_version: 1, message_type: "case_list_request", request_id: `order-${asked}-${revision}-${offset}-${attempt}`, query_revision: revision,
-      workspace_id: workspaceId, identity, query: { search_text: null, sort: { field: order, direction: "descending" }, offset, limit: PAGE },
+      workspace_id: workspaceId, identity, query: { search_text: search === "" ? null : search, sort: { field: order, direction: "descending" }, offset, limit: PAGE },
     };
     if (offset === 0) setListed({ phase: "loading" });
     caseLists.list(request, controller.signal).then(
@@ -84,7 +97,7 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
     );
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [caseLists, workspaceId, revision, identityKey, order, offset, asked, attempt]);
+  }, [caseLists, workspaceId, revision, identityKey, order, offset, asked, attempt, search]);
 
   const keptById = useMemo(() => new Map(kept.map((summary) => [summary.case_id, summary])), [kept]);
   const rows = listed.phase === "ready" ? listed.rows : [];
@@ -94,7 +107,35 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   const loader = useMemo(() => new MarksLoader(evidence, { workspaceId, revision, identity }), [evidence, workspaceId, revision, identityKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const axisHours = useMemo(() => Math.max(0, ...rows.map((row) => timesOf(row).span ?? 0)), [rows]);
 
-  if (listed.phase === "loading") return <p className="working-text">Ordering the kept incidents…</p>;
+  const finder = (
+    <form
+      className="incident-search"
+      role="search"
+      onSubmit={(event) => {
+        event.preventDefault();
+        setSearch(typed.trim());
+      }}
+    >
+      <label>
+        <span className="visually-hidden">Find incidents by number</span>
+        <input type="search" value={typed} placeholder="Incident number" onChange={(event) => setTyped(event.target.value)} />
+      </label>
+      <button type="submit">Find</button>
+      {search !== "" && (
+        <button
+          type="button"
+          onClick={() => {
+            setTyped("");
+            setSearch("");
+          }}
+        >
+          Show all
+        </button>
+      )}
+    </form>
+  );
+
+  if (listed.phase === "loading") return <>{finder}<p className="working-text">Ordering the kept incidents…</p></>;
   if (listed.phase === "failed") {
     return (
       <div className="inline-error" role="alert">
@@ -115,6 +156,8 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   const total = listed.answer.total_matching_case_count;
   return (
     <>
+      {finder}
+      {cases.length === 0 && search !== "" && <p className="working-text">No kept incident has a number that matches “{search}”.</p>}
       <IncidentWindow
         cases={cases}
         times={times}

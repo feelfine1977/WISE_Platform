@@ -25,7 +25,7 @@ VALID = {"schema_version": 1, "message_type": "select_cases_request", "request_i
 def test_selection_schema_and_generated_request_agree():
     Draft202012Validator.check_schema(SCHEMA)
     Draft202012Validator(SCHEMA).validate(VALID)
-    assert SelectCasesRequest.model_validate(VALID).model_dump(mode="json") == VALID
+    assert SelectCasesRequest.model_validate(VALID).model_dump(mode="json", exclude_unset=True) == VALID
 
 
 @pytest.mark.parametrize("mutation", ["boolean-revision", "unsafe-revision", "text-negation", "duplicate-parent", "extra-score", "unsupported-anchor"])
@@ -49,7 +49,8 @@ def test_selection_boundary_rejects_ambiguous_or_unbound_intents(mutation):
 
 STEP_DEFINITIONS = ["SelectionPredicate", "ContainsActivity", "DirectlyFollows", "OpeningAttributeEquals",
                     "StartsWithActivity", "EndsWithActivity", "CaseIdIn", "CaseStartInWindow",
-                    "OpeningAttributeIn", "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast"]
+                    "OpeningAttributeIn", "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast",
+                    "RawRecordCountBetween", "ObservedSpanBetween", "MaxRawGapBetween", "DirectlyFollowsLagBetween"]
 
 
 @pytest.mark.parametrize("kind", ["starts_with_activity", "ends_with_activity"])
@@ -58,7 +59,7 @@ def test_a_step_by_how_incidents_begin_or_end_is_a_closed_intent_of_three_fields
     value["predicates"] = [{"kind": kind, "activity": "Recorded", "negate": False},
                            {"kind": kind, "activity": "Recorded", "negate": True}]
     Draft202012Validator(SCHEMA).validate(value)
-    assert SelectCasesRequest.model_validate(value).model_dump(mode="json") == value
+    assert SelectCasesRequest.model_validate(value).model_dump(mode="json", exclude_unset=True) == value
     for change in (lambda step: step.pop("activity"), lambda step: step.pop("negate"),
                    lambda step: step.update(activity=""), lambda step: step.update(negate="false"),
                    lambda step: step.update(target_activity="Closed"),
@@ -91,7 +92,7 @@ def test_an_activity_carries_its_counts_and_for_each_time_the_passages_it_rests_
                                       "usablePreviousCount", "usableNextCount"]
     assert definition["additionalProperties"] is False
     # Hours and their supports are named as those of a path are.
-    assert list(SCHEMA["$defs"]["PathMetrics"]["properties"]) == ["count", "cases", "medianLagHours", "usableLagCount"]
+    assert list(SCHEMA["$defs"]["PathMetrics"]["properties"]) == ["count", "cases", "medianLagHours", "usableLagCount", "totalLagHours", "shareOfTotalLag", "totalLagMicroseconds"]
 
 
 def test_an_activity_gives_a_time_exactly_where_it_names_passages_for_it():

@@ -12,7 +12,7 @@ describe("the rows of the list of every path", () => {
     const rows = pathRows(graph, mapDetail(toFlowGraph(graph), WHOLE_DETAIL).drawn);
     expect(rows).toEqual([
       { id: startFlowId(nodeIds[opened]), kind: "start", from: "Start", to: opened, title: "Flow from Start to “Eröffnet”", incidents: 1, drawn: true },
-      { id: pathId, kind: "path", from: opened, to: closed, title: "Path from “Eröffnet” to “Geschlossen”", incidents: 1, passages: 1, medianLagHours: 25.5, drawn: true },
+      { id: pathId, kind: "path", from: opened, to: closed, title: "Path from “Eröffnet” to “Geschlossen”", incidents: 1, passages: 1, medianLagHours: 25.5, totalLag: { exact: 91800000000n, hours: 25.5 }, shareOfTotalLag: 1, drawn: true },
       { id: endFlowId(nodeIds[closed]), kind: "end", from: closed, to: "End", title: "Flow from “Geschlossen” to End", incidents: 1, drawn: true },
     ]);
     expect(pathRows(suppliedGraph(["B-2"]), mapDetail(toFlowGraph(suppliedGraph(["B-2"])), WHOLE_DETAIL).drawn)).toEqual([]);
@@ -77,14 +77,15 @@ describe("the order of the list of every path", () => {
     return [take(sorted[0]), take(sorted[sorted.length - 1])];
   };
 
-  it("opens on the most incidents, and a column chosen first starts where it reads best", () => {
-    expect(OPENING_ORDER).toEqual({ column: "incidents", descending: true });
+  it("opens on the largest supplied total lag, and a column chosen first starts where it reads best", () => {
+    expect(OPENING_ORDER).toEqual({ column: "total", descending: true });
     expect(sortedRows(rows, OPENING_ORDER).slice(0, 3).map((row) => [row.from, row.to, row.incidents])).toEqual([
-      [stepName(0), stepName(1), 105],
-      ["Start", stepName(0), 100],
-      [stepName(1), stepName(2), 95],
+      [stepName(3), stepName(3), 15],
+      [stepName(3), stepName(5), 24],
+      [stepName(0), stepName(2), 30],
     ]);
-    expect(orderBy(OPENING_ORDER, "incidents")).toEqual({ column: "incidents", descending: false });
+    expect(orderBy(OPENING_ORDER, "incidents")).toEqual({ column: "incidents", descending: true });
+    expect(orderBy(OPENING_ORDER, "total")).toEqual({ column: "total", descending: false });
     expect(orderBy(OPENING_ORDER, "from")).toEqual({ column: "from", descending: false });
     expect(orderBy(OPENING_ORDER, "to")).toEqual({ column: "to", descending: false });
     expect(orderBy(OPENING_ORDER, "passages")).toEqual({ column: "passages", descending: true });
@@ -106,7 +107,7 @@ describe("the order of the list of every path", () => {
 
   it("keeps the flows, which have no passages and no lag, after every path when sorted by one of those", () => {
     for (const descending of [true, false]) {
-      for (const column of ["passages", "lag"] as const) {
+      for (const column of ["passages", "total", "lag"] as const) {
         const kinds = sortedRows(rows, { column, descending }).map((row) => row.kind === "path");
         expect(kinds.lastIndexOf(true)).toBe(41);
         expect(kinds.indexOf(false)).toBe(42);
@@ -135,5 +136,29 @@ describe("the order of the list of every path", () => {
       [stepName(11), stepName(10)],
       [stepName(8), stepName(11)],
     ]);
+  });
+
+  it("reads the supplied total lag of a path and orders by its exact microseconds, which rounded hours would not keep apart", () => {
+    const graph = suppliedGraph(["A-1"]);
+    const [path] = graph.edges;
+    const withTotals = (id: string, microseconds: string, hours: number, share: number) => ({
+      ...path,
+      id,
+      metrics: { ...path.metrics, totalLagMicroseconds: microseconds, totalLagHours: hours, shareOfTotalLag: share },
+    });
+    // Two totals a microsecond apart round to the same hours; the larger stands first.
+    const several = {
+      ...graph,
+      edges: [withTotals("smaller", "90000000000000000000", 25000000000, 0.4), withTotals("larger", "90000000000000000001", 25000000000, 0.6)],
+    };
+    const listed = sortedRows(pathRows(several, toFlowGraph(several)), { column: "total", descending: true }).filter((row) => row.kind === "path");
+    expect(listed.map((row) => row.id)).toEqual(["larger", "smaller"]);
+    expect(listed[0].totalLag).toEqual({ exact: 90000000000000000001n, hours: 25000000000 });
+    expect(listed[0].shareOfTotalLag).toBe(0.6);
+    // A path without usable lag omits its total. A usable zero is retained as a total.
+    const noLag = { ...graph, edges: [{ ...path, metrics: { count: 1, cases: 1, medianLagHours: 0, usableLagCount: 0, shareOfTotalLag: null } }] };
+    expect(pathRows(noLag, toFlowGraph(noLag)).find((row) => row.kind === "path")?.totalLag).toBeUndefined();
+    const zero = { ...graph, edges: [withTotals("zero", "0", 0, 0)] };
+    expect(pathRows(zero, toFlowGraph(zero)).find((row) => row.kind === "path")?.totalLag).toEqual({ exact: 0n, hours: 0 });
   });
 });

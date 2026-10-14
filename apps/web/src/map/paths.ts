@@ -21,6 +21,13 @@ export interface PathRow {
   incidents: number;
   passages?: number;
   medianLagHours?: number;
+  /**
+   * The supplied total lag of its usable passages: exact microseconds, by which the list orders, and
+   * hours for display; absent where no passage is usable, and on a flow from Start or to End.
+   */
+  totalLag?: { exact: bigint; hours: number };
+  /** Its supplied share of the total lag of all paths; null where the service has none. */
+  shareOfTotalLag?: number | null;
   /** Whether the map draws it at its detail. */
   drawn: boolean;
 }
@@ -30,6 +37,11 @@ export interface PathRow {
  * the flows from Start, the paths, the flows to End. `drawn` is the graph the map draws at its
  * detail (`mapDetail`): a row is drawn when that graph holds its path or flow.
  */
+/** The service's supplied totals of all paths and of the five with the largest total. */
+export function lagTotalsOf(graph: SuppliedGraph): SuppliedGraph["meta"]["path_lag_totals"] {
+  return graph.meta.path_lag_totals;
+}
+
 export function pathRows(graph: SuppliedGraph, drawn: FlowGraph): PathRow[] {
   const onTheMap = new Set(drawn.edges.map((edge) => edge.id));
   const flows = (side: "start" | "end"): PathRow[] =>
@@ -40,8 +52,9 @@ export function pathRows(graph: SuppliedGraph, drawn: FlowGraph): PathRow[] {
       const ends = side === "start" ? { from: "Start", to: node.label } : { from: node.label, to: "End" };
       return [{ id, kind: side, ...ends, title: flowTitle(side, node.label), incidents, drawn: onTheMap.has(id) }];
     });
-  const paths = graph.edges.map(
-    (edge): PathRow => ({
+  const paths = graph.edges.map((edge): PathRow => {
+    const metrics = edge.metrics;
+    return {
       id: edge.id,
       kind: "path",
       from: edge.payload.source_activity,
@@ -50,13 +63,17 @@ export function pathRows(graph: SuppliedGraph, drawn: FlowGraph): PathRow[] {
       incidents: edge.metrics.cases,
       passages: edge.metrics.count,
       medianLagHours: edge.metrics.medianLagHours,
+      ...(metrics.totalLagMicroseconds !== undefined && metrics.totalLagHours !== undefined
+        ? { totalLag: { exact: BigInt(metrics.totalLagMicroseconds), hours: metrics.totalLagHours } }
+        : {}),
+      ...(metrics.shareOfTotalLag !== undefined ? { shareOfTotalLag: metrics.shareOfTotalLag } : {}),
       drawn: onTheMap.has(edge.id),
-    }),
-  );
+    };
+  });
   return [...flows("start"), ...paths, ...flows("end")];
 }
 
-export type PathColumn = "from" | "to" | "incidents" | "passages" | "lag" | "drawn";
+export type PathColumn = "from" | "to" | "incidents" | "passages" | "total" | "lag" | "drawn";
 
 /** The column the list is sorted by, and in which direction. */
 export interface PathOrder {
@@ -64,8 +81,11 @@ export interface PathOrder {
   descending: boolean;
 }
 
-/** The list opens on the paths with the most incidents, the number the map ranks its paths by. */
-export const OPENING_ORDER: PathOrder = { column: "incidents", descending: true };
+/**
+ * The list opens on the paths with the largest supplied total lag.
+ * Equal totals follow the supplied incident support and path order.
+ */
+export const OPENING_ORDER: PathOrder = { column: "total", descending: true };
 
 /**
  * The order after a column is chosen: the other direction when the list is sorted by it already,
@@ -80,7 +100,7 @@ export function orderBy(current: PathOrder, column: PathColumn): PathOrder {
 /** Names in the order of the application's language, a number inside a name by its value. */
 const names = new Intl.Collator("en", { numeric: true });
 
-function valueOf(row: PathRow, column: PathColumn): string | number | undefined {
+function valueOf(row: PathRow, column: PathColumn): string | number | bigint | undefined {
   switch (column) {
     case "from":
       return row.from;
@@ -90,6 +110,8 @@ function valueOf(row: PathRow, column: PathColumn): string | number | undefined 
       return row.incidents;
     case "passages":
       return row.passages;
+    case "total":
+      return row.totalLag?.exact;
     case "lag":
       return row.medianLagHours;
     case "drawn":
@@ -109,7 +131,13 @@ export function sortedRows(rows: readonly PathRow[], order: PathOrder): PathRow[
     if (a === undefined || b === undefined) {
       if (a !== b) return a === undefined ? 1 : -1;
     } else {
-      const ascending = typeof a === "string" || typeof b === "string" ? names.compare(String(a), String(b)) : a - b;
+      // The total is ordered by its exact microseconds, which hours rounded for display would not keep apart.
+      const ascending =
+        typeof a === "bigint" && typeof b === "bigint"
+          ? a < b ? -1 : a > b ? 1 : 0
+          : typeof a === "string" || typeof b === "string"
+            ? names.compare(String(a), String(b))
+            : Number(a) - Number(b);
       if (ascending !== 0) return order.descending ? -ascending : ascending;
     }
     return other.incidents - one.incidents;

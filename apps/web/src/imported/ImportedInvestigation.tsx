@@ -238,6 +238,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onClear={() => coordinator.clearSteps()}
             onUndo={() => coordinator.undo()}
             onRedo={() => coordinator.redo()}
+            onChoose={(count) => coordinator.chooseStep(count)}
             onRetry={() => coordinator.retrySelection()}
             onStay={() => coordinator.staySelection()}
             waitingFor={waitingFor}
@@ -517,6 +518,7 @@ function Facts({ answer, shown, revision }: { answer: ImportedPopulationAnswer; 
         <Limit name="Records without activity label" count={answer.coverage.omitted_activity_record_count} word="unlabelled" />
       </dl>
       <InfoPopover label="About this data">
+        <p className="popover-lead">The incidents and records kept, each counted once, against the parent they are kept of, and what the preparation leaves out.</p>
         <DataDetails answer={answer} revision={revision} />
       </InfoPopover>
     </div>

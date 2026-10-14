@@ -11,6 +11,10 @@ import json
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Protocol, TypeAlias
 
+from .range_predicates import (RawRecordCountBetween, ObservedSpanBetween, MaxRawGapBetween,
+                               DirectlyFollowsLagBetween, RANGE_TYPES, TIME_RANGE_TYPES,
+                               range_descriptor, exact_range_measurements, evaluate_range)
+
 if TYPE_CHECKING:
     from .mapping import ImportRefusal
     from .preparation import PreparedData
@@ -133,7 +137,8 @@ class MaxRawGapAtLeast:
 
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
                         | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
-                        | OpeningAttributeIn | RecordAttributeIn | ObservedSpanAtLeast | MaxRawGapAtLeast)
+                        | OpeningAttributeIn | RecordAttributeIn | ObservedSpanAtLeast | MaxRawGapAtLeast
+                        | RawRecordCountBetween | ObservedSpanBetween | MaxRawGapBetween | DirectlyFollowsLagBetween)
 
 
 class SelectionError(ValueError):
@@ -172,12 +177,29 @@ class PredicateResult:
 
 
 @dataclass(frozen=True)
+class StepResult:
+    """The three-way partition after one ordered prefix, over the same frozen parent."""
+    step_number: int
+    predicate: Predicate
+    kept: PopulationSupport
+    removed: PopulationSupport
+    unevaluable: PopulationSupport
+
+    def to_dict(self) -> dict[str, object]:
+        return {"step_number": self.step_number, "predicate": predicate_descriptor(self.predicate),
+                "kept": self.kept.to_dict(), "removed": self.removed.to_dict(),
+                "unevaluable": self.unevaluable.to_dict()}
+
+
+@dataclass(frozen=True)
 class SelectionResult:
     parent: PopulationSupport
     kept: PopulationSupport
     removed: PopulationSupport
     unevaluable: PopulationSupport
     predicate_results: tuple[PredicateResult, ...]
+    active_step_count: int
+    step_results: tuple[StepResult, ...]
     identity: Mapping[str, str] = field(repr=False)
 
     def identity_dict(self) -> dict[str, str]:
@@ -191,13 +213,20 @@ class SelectionResult:
         return {"identity": self.identity_dict(), "parent": self.parent.to_dict(),
                 "kept": self.kept.to_dict(), "removed": self.removed.to_dict(),
                 "unevaluable": self.unevaluable.to_dict(),
-                "predicate_results": [result.to_dict() for result in self.predicate_results]}
+                "predicate_results": [result.to_dict() for result in self.predicate_results],
+                "active_step_count": self.active_step_count,
+                "step_results": [result.to_dict() for result in self.step_results]}
 
 
 def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
     """Canonical pure-data meaning; negation never converts unknown into true."""
     if type(getattr(predicate, "negate", None)) is not bool:
         raise SelectionError("invalid_predicate", "Predicate negation must be Boolean.")
+    if isinstance(predicate, RANGE_TYPES):
+        try:
+            return range_descriptor(predicate)
+        except ValueError as error:
+            raise SelectionError("invalid_predicate", str(error)) from None
     if isinstance(predicate, CaseIdIn):
         _set_values(predicate.case_ids, identifiers=True)
         return {"kind": "case_id_in", "case_ids": list(predicate.case_ids), "negate": predicate.negate}
@@ -299,6 +328,11 @@ def semantic_predicate(descriptor: Mapping[str, object]) -> dict[str, object]:
         hours = result["hours"]
         if isinstance(hours, float) and hours.is_integer():
             result["hours"] = int(hours)
+    elif kind in ("observed_span_between", "max_raw_gap_between", "directly_follows_lag_between"):
+        for bound in ("minimum_hours", "maximum_hours"):
+            value = result[bound]
+            if isinstance(value, float) and value.is_integer():
+                result[bound] = int(value)
     elif kind == "case_start_in_window":
         from .time_formats import iso_local, iso_utc
         window = result["window"]
@@ -338,12 +372,16 @@ def case_ids(prepared: PreparedDataLike, requested: Iterable[str] | None = None)
 
 
 def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (),
-                 parent_ids: Iterable[str] | None = None) -> SelectionResult:
+                 parent_ids: Iterable[str] | None = None, *,
+                 active_step_count: int | None = None) -> SelectionResult:
     """AND predicates with false dominating unknown; retain complete histories.
 
     Each chip's removal is measured independently against the frozen parent.
     Those overlapping removals must not be added to form the conjunction count.
     """
+    active = len(predicates) if active_step_count is None else active_step_count
+    if type(active) is not int or not 0 <= active <= len(predicates):
+        raise SelectionError("invalid_parameter", "The active step count must be a whole number from zero to the number of trail steps.", "active_step_count")
     parent = case_ids(prepared, parent_ids)
     definitions = []
     for index, predicate in enumerate(predicates):
@@ -370,13 +408,21 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
     if any(isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)) for predicate in predicates):
         from .case_time import case_time_summary
         summaries = {case: case_time_summary(prepared, case) for case in parent}
-    evaluations = [dict((case_id, _evaluate(prepared, case_id, predicate, summaries)) for case_id in parent)
+    exact_ranges = exact_range_measurements(prepared, parent) if any(isinstance(p, TIME_RANGE_TYPES) for p in predicates) else {}
+    evaluations = [dict((case_id, _evaluate(prepared, case_id, predicate, summaries, exact_ranges)) for case_id in parent)
                    for predicate in predicates]
-    combined: dict[str, bool | None] = {}
-    for case_id in parent:
-        values = [evaluation[case_id] for evaluation in evaluations]
-        combined[case_id] = False if False in values else None if None in values else True
-    kept, removed, unevaluable = _partition(prepared, combined)
+    combined: dict[str, bool | None] = dict.fromkeys(parent, True)
+    prefixes = []
+    active_partition = _partition(prepared, combined)
+    for number, (predicate, evaluation) in enumerate(zip(predicates, evaluations), 1):
+        for case_id in parent:
+            before, value = combined[case_id], evaluation[case_id]
+            combined[case_id] = False if before is False or value is False else None if before is None or value is None else True
+        partition = _partition(prepared, combined)
+        prefixes.append(StepResult(number, predicate, *partition))
+        if number == active:
+            active_partition = partition
+    kept, removed, unevaluable = active_partition
     individual = tuple(PredicateResult(predicate, *_partition(prepared, evaluation))
                        for predicate, evaluation in zip(predicates, evaluations))
     source_identity = prepared.identity_dict()
@@ -385,17 +431,19 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
         "preparation_id": source_identity["preparation_id"],
         "representation_id": source_identity["representation_id"],
         "case_dictionary_id": source_identity["case_dictionary_id"], "parent_case_ids": parent,
-        "predicates": sorted({_canonical(semantic_predicate(definition)) for definition in definitions}),
+        "predicates": sorted({_canonical(semantic_predicate(definition)) for definition in definitions[:active]}),
         "kept_case_ids": kept.case_ids, "removed_case_ids": removed.case_ids,
         "unevaluable_case_ids": unevaluable.case_ids,
     }
     identity = {**source_identity, "population_id": "population.v1:sha256:" + hashlib.sha256(_canonical(meaning).encode("utf-8")).hexdigest()}
     return SelectionResult(_support(prepared, parent), kept, removed, unevaluable,
-                           individual, MappingProxyType(identity))
+                           individual, active, tuple(prefixes), MappingProxyType(identity))
 
 
-def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, summaries: Mapping[str, Mapping] | None = None) -> bool | None:
+def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, summaries: Mapping[str, Mapping] | None = None, exact_ranges: Mapping | None = None) -> bool | None:
     records = prepared.histories[case_id]
+    if isinstance(predicate, RANGE_TYPES):
+        return evaluate_range(predicate, len(records), (exact_ranges or {}).get(case_id))
     if isinstance(predicate, CaseIdIn):
         value: bool | None = case_id in predicate.case_ids
     elif isinstance(predicate, RecordAttributeIn):

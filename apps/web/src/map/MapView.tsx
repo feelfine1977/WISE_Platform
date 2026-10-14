@@ -5,6 +5,7 @@ import { emptySelection, ProcessMap, type Selection } from "wise-flow/react";
 import "wise-flow/react-flow.css";
 import "wise-flow/style.unlayered.css";
 import { IconButton } from "../components/icons";
+import { PathLagRangeFilter } from "../filters/RangeConditions";
 import { countOf } from "../data/wording";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
@@ -449,6 +450,12 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
               </button>
             ))}
           </div>
+        )}
+        {element?.kind === "path" && shown.graph.meta.timestamp_kind !== undefined && (
+          <details key={JSON.stringify([element.source, element.target])} className="path-lag-range">
+            <summary>Path lag range</summary>
+            <PathLagRangeFilter sourceActivity={element.source} targetActivity={element.target} timestampKind={shown.graph.meta.timestamp_kind} onStep={onStep} waitingFor={waitingFor} />
+          </details>
         )}
       </section>
     </div>

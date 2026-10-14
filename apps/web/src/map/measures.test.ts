@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildScene, layout, type Measure } from "wise-flow";
 import { checked, closed, nodeIds, opened, pathId, suppliedGraph } from "../test/selections";
 import { endFlowId, startFlowId, toFlowGraph } from "./graph";
-import { OPENING_MEASURE, styleOver } from "./measures";
+import { LAG_CLASSES_HOURS, OPENING_MEASURE, styleOver } from "./measures";
 
 /**
  * What the map library writes in a measure on the map of both incidents, built as the map asks for
@@ -67,5 +67,25 @@ describe("the measures of the map", () => {
     // No time until a next event is supplied where no path leads out of the activity.
     expect(line(closed)).toEqual(["–", "· 50 %"]);
     expect(line(checked)).toEqual(["–", "· 50 %"]);
+  });
+
+  it("draws a path's median lag in classes under the time measure: up to a day in the neutral grey, then two blues", async () => {
+    expect(LAG_CLASSES_HOURS).toEqual([24, 168]);
+    const graph = toFlowGraph(suppliedGraph(["A-1", "B-2"]));
+    const original = graph.edges.find((edge) => edge.id === pathId)!;
+    // A busy path without lag, a path of about a day and a half, and a slow rare one.
+    const lags = [0, 36, 400];
+    const several = {
+      ...graph,
+      edges: lags.map((hours, place) => ({ ...original, id: `path:${place}`, metrics: { ...original.metrics, count: place === 0 ? 100 : 2, cases: place === 0 ? 100 : 2, medianLagHours: hours, usableLagCount: 2 } })),
+    };
+    const scene = buildScene(several, await layout(several, { engine: "dagre" }), { measure: "performance", style: styleOver("performance"), locale: "en" });
+    const colours = lags.map((_, place) => scene.edgeMarks.find((edge) => edge.id === `path:${place}`)!.color);
+    expect(scene.style.edgeColor).toMatchObject({ metric: "medianLagHours", bins: [24, 168] });
+    // The path without lag is not a blue at all, and the two slower classes differ.
+    expect(colours[0]).not.toBe(colours[1]);
+    expect(colours[1]).not.toBe(colours[2]);
+    expect(colours[0].toLowerCase()).not.toMatch(/^#(2171b5|08306b)$/);
+    expect([colours[1], colours[2]].map((colour) => colour.toLowerCase())).toEqual(["#2171b5", "#08306b"]);
   });
 });

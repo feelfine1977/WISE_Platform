@@ -305,6 +305,18 @@
         },
         {
           "$ref": "#/$defs/MaxRawGapAtLeast"
+        },
+        {
+          "$ref": "#/$defs/RawRecordCountBetween"
+        },
+        {
+          "$ref": "#/$defs/ObservedSpanBetween"
+        },
+        {
+          "$ref": "#/$defs/MaxRawGapBetween"
+        },
+        {
+          "$ref": "#/$defs/DirectlyFollowsLagBetween"
         }
       ]
     },
@@ -487,13 +499,69 @@
         "usableLagCount": {
           "type": "integer",
           "minimum": 0
+        },
+        "totalLagHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Sum of the lags of every usable mapped passage of this path, including repeats and disclosed missing-label bridges, on lag_clock. Summed in integer microseconds then rendered once in hours. Present exactly when usableLagCount is positive."
+        },
+        "shareOfTotalLag": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Share of the supplied path_lag_totals.total_hours of the kept graph, excluding artificial Start/End flows. Null when the denominator is zero or this path has no usable lag."
+        },
+        "totalLagMicroseconds": {
+          "$ref": "#/$defs/LagMicroseconds"
         }
       },
       "required": [
         "count",
         "cases",
         "medianLagHours",
-        "usableLagCount"
+        "usableLagCount",
+        "shareOfTotalLag"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "usableLagCount": {
+                "const": 0
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "totalLagHours"
+                  ]
+                },
+                {
+                  "required": [
+                    "totalLagMicroseconds"
+                  ]
+                }
+              ]
+            },
+            "properties": {
+              "shareOfTotalLag": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "totalLagHours",
+              "totalLagMicroseconds"
+            ]
+          }
+        }
       ]
     },
     "PathWitnesses": {
@@ -714,6 +782,9 @@
             "string",
             "null"
           ]
+        },
+        "path_lag_totals": {
+          "$ref": "#/$defs/PathLagTotals"
         }
       },
       "required": [
@@ -742,7 +813,8 @@
         "boundary_policy",
         "timestamp_kind",
         "lag_clock",
-        "clock_limitation"
+        "clock_limitation",
+        "path_lag_totals"
       ],
       "oneOf": [
         {
@@ -849,6 +921,11 @@
           "items": {
             "$ref": "#/$defs/SelectionPredicate"
           }
+        },
+        "active_step_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional active prefix length, from zero through predicates.length. Omitted means every trail predicate. The complete predicates trail is still evaluated for step_results."
         }
       },
       "required": [
@@ -907,6 +984,18 @@
           "items": {
             "$ref": "#/$defs/PredicateResult"
           }
+        },
+        "active_step_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many of the ordered trail predicates form the active selection. Future trail steps do not enter its population identity."
+        },
+        "step_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StepResult"
+          },
+          "description": "One supplied kept-after-step result for every full-trail prefix, in requested order; separate from independent predicate_results."
         }
       },
       "required": [
@@ -921,7 +1010,9 @@
         "kept",
         "removed",
         "unevaluable",
-        "predicate_results"
+        "predicate_results",
+        "active_step_count",
+        "step_results"
       ]
     },
     "ProcessGraphRequest": {
@@ -1341,6 +1432,296 @@
       "required": [
         "kind",
         "hours",
+        "negate"
+      ]
+    },
+    "PathLagTotals": {
+      "title": "PathLagTotals",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Supplied totals over all usable actual paths of the selected graph, on lag_clock. Artificial boundary flows contribute no time. The top five are ranked by total lag descending, distinct incidents descending, then the supplied source/target activity order. A zero total has unavailable shares, not invented zero percentages.",
+      "properties": {
+        "total_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "usable_passage_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "usable_path_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "top_five_path_ids": {
+          "type": "array",
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^path\\.v1:sha256:[0-9a-f]{64}$"
+          }
+        },
+        "top_five_total_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "top_five_share": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "total_microseconds": {
+          "$ref": "#/$defs/LagMicroseconds"
+        },
+        "top_five_total_microseconds": {
+          "$ref": "#/$defs/LagMicroseconds"
+        }
+      },
+      "required": [
+        "total_hours",
+        "usable_passage_count",
+        "usable_path_count",
+        "top_five_path_ids",
+        "top_five_total_hours",
+        "top_five_share",
+        "total_microseconds",
+        "top_five_total_microseconds"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "total_hours": {
+                "const": 0
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "top_five_share": {
+                "type": "null"
+              },
+              "top_five_total_hours": {
+                "const": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "top_five_share": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "LagMicroseconds": {
+      "title": "LagMicroseconds",
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 64,
+      "description": "Exact nonnegative integer microseconds, as canonical decimal text. This is a computational coordinate on the declared clock, not an assertion of physical recording resolution.",
+      "not": {
+        "pattern": "[^0-9]"
+      }
+    },
+    "StepResult": {
+      "title": "StepResult",
+      "description": "Supplied kept-after-step partition for an ordered prefix, counted over the same frozen parent, including all raw records.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "step_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "predicate": {
+          "$ref": "#/$defs/SelectionPredicate"
+        },
+        "kept": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "removed": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "step_number",
+        "predicate",
+        "kept",
+        "removed",
+        "unevaluable"
+      ]
+    },
+    "RawRecordCountBetween": {
+      "title": "RawRecordCountBetween",
+      "description": "Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "raw_record_count_between"
+        },
+        "minimum_records": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maximum_records": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "minimum_records",
+        "maximum_records",
+        "negate"
+      ]
+    },
+    "ObservedSpanBetween": {
+      "title": "ObservedSpanBetween",
+      "description": "Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "observed_span_between"
+        },
+        "minimum_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "minimum_hours",
+        "maximum_hours",
+        "negate"
+      ]
+    },
+    "MaxRawGapBetween": {
+      "title": "MaxRawGapBetween",
+      "description": "Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "max_raw_gap_between"
+        },
+        "minimum_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "minimum_hours",
+        "maximum_hours",
+        "negate"
+      ]
+    },
+    "DirectlyFollowsLagBetween": {
+      "title": "DirectlyFollowsLagBetween",
+      "description": "Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation. Both quantifiers require at least one mapped passage; no passage is false, unknown whole order is unevaluable.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "directly_follows_lag_between"
+        },
+        "source_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimum_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quantifier": {
+          "type": "string",
+          "enum": [
+            "any",
+            "every"
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "source_activity",
+        "target_activity",
+        "minimum_hours",
+        "maximum_hours",
+        "quantifier",
         "negate"
       ]
     }

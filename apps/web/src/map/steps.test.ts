@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { contains, follows } from "../test/selections";
-import { canRedo, canUndo, noSteps, redone, undone, withoutStep, withoutSteps, withStep } from "./steps";
+import { afterStep, stepTrail, canRedo, canUndo, noSteps, redone, undone, withoutStep, withoutSteps, withStep } from "./steps";
 
 const first = contains("Eröffnet");
 const second = follows("Eröffnet", "Geschlossen");
@@ -52,5 +52,34 @@ describe("the history of the steps of a selection", () => {
     const other = withStep(back, contains("Prüfung"));
     expect(other.present).toEqual([first, contains("Prüfung")]);
     expect(canRedo(other)).toBe(false);
+  });
+});
+
+
+describe("the ordered trail cursor", () => {
+  it("retains every later prefix through choosing, Undo and Redo, until a new step branches", () => {
+    const third = contains("Prüfung");
+    const full = [first, second, third].reduce(withStep, noSteps);
+    const early = afterStep(full, 1);
+    expect(early.present).toEqual([first]);
+    expect(stepTrail(early)).toEqual([first, second, third]);
+    expect(undone(early).present).toEqual([]);
+    expect(stepTrail(undone(early))).toEqual([first, second, third]);
+    expect(redone(early).present).toEqual([first, second]);
+    expect(redone(redone(early)).present).toEqual([first, second, third]);
+    expect(afterStep(early, 3).present).toEqual([first, second, third]);
+    const branched = withStep(early, contains("Other"));
+    expect(stepTrail(branched)).toEqual([first, contains("Other")]);
+    expect(canRedo(branched)).toBe(false);
+  });
+  it("returns to the parent without erasing the trail and ignores invalid cursor numbers", () => {
+    const full = withStep(withStep(noSteps, first), second);
+    const parent = afterStep(full, 0);
+    expect(parent.present).toEqual([]);
+    expect(stepTrail(parent)).toEqual([first, second]);
+    expect(afterStep(full, 3)).toBe(full);
+    expect(afterStep(full, -1)).toBe(full);
+    expect(afterStep(full, 0.5)).toBe(full);
+    expect(afterStep(full, 2)).toBe(full);
   });
 });

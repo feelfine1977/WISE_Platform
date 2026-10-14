@@ -44,3 +44,6 @@
 @media (prefers-reduced-motion: no-preference) {
   .popover-panel { animation: open var(--motion-open); }
 }
+
+/* The one line an explanation opens with: what is counted, and over which incidents. */
+.popover-lead { margin: 0 0 var(--space-2); font-weight: var(--font-weight-strong); }

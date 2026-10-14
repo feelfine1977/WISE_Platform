@@ -31,12 +31,21 @@ export type SelectionPredicate =
   | OpeningAttributeIn
   | RecordAttributeIn
   | ObservedSpanAtLeast
-  | MaxRawGapAtLeast;
+  | MaxRawGapAtLeast
+  | RawRecordCountBetween
+  | ObservedSpanBetween
+  | MaxRawGapBetween
+  | DirectlyFollowsLagBetween;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
 export type LocalTimestamp = string;
 export type NodeMetrics = NodeMetrics1;
 export type ActivityNodeId = string;
+export type PathMetrics = PathMetrics1;
+/**
+ * Exact nonnegative integer microseconds, as canonical decimal text. This is a computational coordinate on the declared clock, not an assertion of physical recording resolution.
+ */
+export type LagMicroseconds = string;
 export type RowId = string;
 export type GraphCoverage = GraphCoverage1 & GraphCoverage2;
 export type GraphCoverage1 =
@@ -52,6 +61,10 @@ export type GraphCoverage1 =
       clock_limitation?: null;
       [k: string]: unknown;
     };
+/**
+ * Supplied totals over all usable actual paths of the selected graph, on lag_clock. Artificial boundary flows contribute no time. The top five are ranked by total lag descending, distinct incidents descending, then the supplied source/target activity order. A zero total has unavailable shares, not invented zero percentages.
+ */
+export type PathLagTotals = PathLagTotals1;
 
 export interface SelectCasesRequest {
   schema_version: 1;
@@ -62,6 +75,10 @@ export interface SelectCasesRequest {
   identity: AnswerIdentity;
   parent_case_ids: CaseId[] | null;
   predicates: SelectionPredicate[];
+  /**
+   * Optional active prefix length, from zero through predicates.length. Omitted means every trail predicate. The complete predicates trail is still evaluated for step_results.
+   */
+  active_step_count?: number;
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -151,6 +168,45 @@ export interface MaxRawGapAtLeast {
   hours: number;
   negate: boolean;
 }
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface RawRecordCountBetween {
+  kind: "raw_record_count_between";
+  minimum_records: number;
+  maximum_records: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface ObservedSpanBetween {
+  kind: "observed_span_between";
+  minimum_hours: number;
+  maximum_hours: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface MaxRawGapBetween {
+  kind: "max_raw_gap_between";
+  minimum_hours: number;
+  maximum_hours: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation. Both quantifiers require at least one mapped passage; no passage is false, unknown whole order is unevaluable.
+ */
+export interface DirectlyFollowsLagBetween {
+  kind: "directly_follows_lag_between";
+  source_activity: string;
+  target_activity: string;
+  minimum_hours: number;
+  maximum_hours: number | null;
+  quantifier: "any" | "every";
+  negate: boolean;
+}
 export interface SelectionAnswer {
   schema_version: 1;
   message_type: "selection_answer";
@@ -164,6 +220,14 @@ export interface SelectionAnswer {
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
   predicate_results: PredicateResult[];
+  /**
+   * How many of the ordered trail predicates form the active selection. Future trail steps do not enter its population identity.
+   */
+  active_step_count: number;
+  /**
+   * One supplied kept-after-step result for every full-trail prefix, in requested order; separate from independent predicate_results.
+   */
+  step_results: StepResult[];
 }
 export interface PopulationSupport {
   case_ids: CaseId[];
@@ -171,6 +235,16 @@ export interface PopulationSupport {
   record_count: number;
 }
 export interface PredicateResult {
+  predicate: SelectionPredicate;
+  kept: PopulationSupport;
+  removed: PopulationSupport;
+  unevaluable: PopulationSupport;
+}
+/**
+ * Supplied kept-after-step partition for an ordered prefix, counted over the same frozen parent, including all raw records.
+ */
+export interface StepResult {
+  step_number: number;
   predicate: SelectionPredicate;
   kept: PopulationSupport;
   removed: PopulationSupport;
@@ -236,11 +310,20 @@ export interface FollowsEdge {
   payload: PathWitnesses;
   tags?: "bridged_missing_activity"[];
 }
-export interface PathMetrics {
+export interface PathMetrics1 {
   count: number;
   cases: number;
   medianLagHours: number;
   usableLagCount: number;
+  /**
+   * Sum of the lags of every usable mapped passage of this path, including repeats and disclosed missing-label bridges, on lag_clock. Summed in integer microseconds then rendered once in hours. Present exactly when usableLagCount is positive.
+   */
+  totalLagHours?: number;
+  /**
+   * Share of the supplied path_lag_totals.total_hours of the kept graph, excluding artificial Start/End flows. Null when the denominator is zero or this path has no usable lag.
+   */
+  shareOfTotalLag: number | null;
+  totalLagMicroseconds?: LagMicroseconds;
 }
 export interface PathWitnesses {
   source_activity: string;
@@ -277,6 +360,26 @@ export interface GraphCoverage2 {
   timestamp_kind: "utc_instant" | "wall_clock";
   lag_clock: "recorded_wall_clock_hours" | "elapsed_utc_hours";
   clock_limitation: string | null;
+  path_lag_totals: PathLagTotals;
+}
+export interface PathLagTotals1 {
+  total_hours: number;
+  usable_passage_count: number;
+  usable_path_count: number;
+  /**
+   * @maxItems 5
+   */
+  top_five_path_ids:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string];
+  top_five_total_hours: number;
+  top_five_share: number | null;
+  total_microseconds: LagMicroseconds;
+  top_five_total_microseconds: LagMicroseconds;
 }
 export interface SelectionRefusal {
   schema_version: 1;

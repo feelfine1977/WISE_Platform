@@ -51,7 +51,11 @@ export type SelectionPredicate =
   | OpeningAttributeIn
   | RecordAttributeIn
   | ObservedSpanAtLeast
-  | MaxRawGapAtLeast;
+  | MaxRawGapAtLeast
+  | RawRecordCountBetween
+  | ObservedSpanBetween
+  | MaxRawGapBetween
+  | DirectlyFollowsLagBetween;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
 export type LocalTimestamp = string;
@@ -178,6 +182,45 @@ export interface ObservedSpanAtLeast {
 export interface MaxRawGapAtLeast {
   kind: "max_raw_gap_at_least";
   hours: number;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface RawRecordCountBetween {
+  kind: "raw_record_count_between";
+  minimum_records: number;
+  maximum_records: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface ObservedSpanBetween {
+  kind: "observed_span_between";
+  minimum_hours: number;
+  maximum_hours: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface MaxRawGapBetween {
+  kind: "max_raw_gap_between";
+  minimum_hours: number;
+  maximum_hours: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation. Both quantifiers require at least one mapped passage; no passage is false, unknown whole order is unevaluable.
+ */
+export interface DirectlyFollowsLagBetween {
+  kind: "directly_follows_lag_between";
+  source_activity: string;
+  target_activity: string;
+  minimum_hours: number;
+  maximum_hours: number | null;
+  quantifier: "any" | "every";
   negate: boolean;
 }
 export interface SavedGroupComparison {
@@ -384,6 +427,14 @@ export interface RestoredSelection {
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
   predicate_results: PredicateResult[];
+  /**
+   * How many of the ordered trail predicates form the active selection. Future trail steps do not enter its population identity.
+   */
+  active_step_count: number;
+  /**
+   * One supplied kept-after-step result for every full-trail prefix, in requested order; separate from independent predicate_results.
+   */
+  step_results: StepResult[];
 }
 export interface PopulationSupport {
   case_ids: CaseId[];
@@ -391,6 +442,16 @@ export interface PopulationSupport {
   record_count: number;
 }
 export interface PredicateResult {
+  predicate: SelectionPredicate;
+  kept: PopulationSupport;
+  removed: PopulationSupport;
+  unevaluable: PopulationSupport;
+}
+/**
+ * Supplied kept-after-step partition for an ordered prefix, counted over the same frozen parent, including all raw records.
+ */
+export interface StepResult {
+  step_number: number;
   predicate: SelectionPredicate;
   kept: PopulationSupport;
   removed: PopulationSupport;

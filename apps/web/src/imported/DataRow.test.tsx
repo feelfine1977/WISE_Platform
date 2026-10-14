@@ -85,12 +85,20 @@ describe("the data row of an investigation", () => {
   });
 
   it("writes large numbers as the rest of the application does", async () => {
-    const app = await renderInvestigation();
-    await select(app, 0, everyIncident, (answer) => ({
-      ...answer,
-      parent: { ...answer.parent, case_count: 12063, record_count: 74077 },
-      kept: { ...answer.kept, case_count: 803, record_count: 4398 },
-    }));
+    // A coherent formatting fixture: the first 803 incidents have 4,398 raw records,
+    // the other 11,260 have 69,679. The component must still format the same totals.
+    const cases = Array.from({ length: 12063 }, (_, index) => {
+      const records = index < 803 ? (index < 383 ? 6 : 5) : (index - 803 < 2119 ? 7 : 6);
+      return { case_id: `CASE-${String(index).padStart(5, "0")}`, record_count: records, mapped_record_count: records, omitted_activity_record_count: 0, sequence_evaluable: true };
+    });
+    const parent = { case_ids: cases.map((item) => item.case_id), case_count: 12063, record_count: 74077 };
+    const kept = { case_ids: parent.case_ids.slice(0, 803), case_count: 803, record_count: 4398 };
+    const removed = { case_ids: parent.case_ids.slice(803), case_count: 11260, record_count: 69679 };
+    const unevaluable = { case_ids: [], case_count: 0, record_count: 0 };
+    const app = await renderInvestigation((answer) => ({ ...answer, population: parent, cases,
+      coverage: { raw_record_count: 74077, mapped_record_count: 74077, omitted_activity_record_count: 0 } }));
+    app.coordinator.addStep(contains(opened));
+    await select(app, 1, { population: "5", kept, removed, unevaluable, results: [{ kept, removed, unevaluable }] }, (answer) => ({ ...answer, parent }));
     expect(figures().slice(0, 2)).toEqual(["803 of 12,063 incidents", "4,398 of 74,077 records"]);
     expect(Array.from(population().querySelectorAll("strong"), (kept) => kept.textContent)).toEqual(["803", "4,398"]);
   });

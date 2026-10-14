@@ -1,3 +1,5 @@
+import { SavingCoordinator } from "../saved/coordinator";
+import { scriptedSavingClient } from "../test/saving";
 import { describe, expect, it } from "vitest";
 import { selectionContract } from "../map/client";
 import { evidenceAnswer, identity, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
@@ -47,7 +49,7 @@ async function answer(app: Opened, place: number, figures: Figures) {
 }
 
 function asked(app: Opened) {
-  return app.selecting.selections.map((call) => call.request.predicates);
+  return app.selecting.selections.map((call) => call.request.predicates.slice(0, call.request.active_step_count ?? call.request.predicates.length));
 }
 
 function chips(app: Opened) {
@@ -154,7 +156,8 @@ describe("the selection of whole incidents of an imported preparation", () => {
     expect(app.coordinator.getState().selection.phase).toBe("loading");
 
     const current = app.selecting.selections[3];
-    expect(current.request.predicates).toEqual([contains(opened)]);
+    expect(current.request.predicates).toEqual([contains(opened), contains(opened, true)]);
+    expect(current.request.active_step_count).toBe(1);
     current.reply({ ok: true, answer: selectionAnswer(current.request, containingOpened) });
     await settle();
     // A newer step is taken while the map of this one is still being drawn: that map arrives late.
@@ -276,5 +279,84 @@ describe("the selection of whole incidents of an imported preparation", () => {
     await answer(app, 1, withoutOpened);
     expect(app.imports.evidence[1].request.identity.population_id).toBe(`population.v1:sha256:${"8".repeat(64)}`);
     expect(app.imports.evidence[1].request.case_id).toBe("B-2");
+  });
+});
+
+
+describe("supplied ordered prefixes under one query revision", () => {
+  it("selects an earlier prefix with the full future trail, then Undo/Redo and a new branch preserve exact active questions", async () => {
+    const app=await opening();await answer(app,0,everyIncident);
+    app.coordinator.addStep(contains(opened));await answer(app,1,containingOpened);
+    app.coordinator.addStep(follows(opened,closed));await answer(app,2,bothSteps);
+    app.coordinator.chooseStep(1);
+    const prefix=app.selecting.selections[3].request;
+    expect(prefix.predicates).toEqual([contains(opened),follows(opened,closed)]);expect(prefix.active_step_count).toBe(1);
+    await answer(app,3,containingOpened);
+    expect(shownSelection(app.coordinator.getState().selection)?.steps).toEqual([contains(opened)]);
+    app.coordinator.undo();expect(app.selecting.selections[4].request.active_step_count).toBe(0);
+    await answer(app,4,everyIncident);
+    app.coordinator.redo();expect(app.selecting.selections[5].request.active_step_count).toBe(1);await answer(app,5,containingOpened);
+    app.coordinator.redo();expect(app.selecting.selections[6].request.active_step_count).toBe(2);await answer(app,6,bothSteps);
+    app.coordinator.chooseStep(1);await answer(app,7,containingOpened);
+    app.coordinator.addStep(contains(checked));
+    expect(app.selecting.selections[8].request.predicates).toEqual([contains(opened),contains(checked)]);
+    expect(app.selecting.selections[8].request.active_step_count).toBe(2);
+    expect(app.coordinator.getState().selection.phase!=="idle" && app.coordinator.getState().selection).toBeTruthy();
+  });
+
+  it.each(["active", "numbering", "binding", "partition", "source"] as const)("refuses a %s mismatch instead of publishing mixed trail evidence",async(kind)=>{
+    const app=await opening();await answer(app,0,everyIncident);
+    app.coordinator.addStep(contains(opened));const call=app.selecting.selections[1];const supplied=selectionAnswer(call.request,containingOpened);
+    if(kind==="active")supplied.active_step_count=0;
+    if(kind==="numbering")supplied.step_results[0].step_number=2;
+    if(kind==="binding")supplied.step_results[0].predicate=contains(closed);
+    if(kind==="partition")supplied.step_results[0].kept=support(["A-1","B-2"],3);
+    if(kind==="source")supplied.identity={...supplied.identity,source_id:"source.v1:sha256:"+"0".repeat(64)};
+    call.reply({ok:true,answer:supplied});await settle();
+    expect(app.coordinator.getState().selection.phase).toBe("failed");
+    expect(shownSelection(app.coordinator.getState().selection)?.steps).toEqual([]);
+    expect(app.selecting.graphs).toHaveLength(1);
+  });
+});
+
+
+it("saves only the active prefix and its exact answered identity while later steps remain in the session trail",async()=>{
+ const app=await opening();await answer(app,0,everyIncident);app.coordinator.addStep(contains(opened));await answer(app,1,containingOpened);
+ app.coordinator.addStep(follows(opened,closed));await answer(app,2,bothSteps);app.coordinator.chooseStep(1);await answer(app,3,containingOpened);
+ const saves=scriptedSavingClient();const saving=new SavingCoordinator(saves.client,app.coordinator);saving.save("Prefix","","incidents");
+ expect(saves.saves[0].request.selection_recipe.predicates).toEqual([contains(opened)]);
+ expect(saves.saves[0].request.selection_identity).toEqual(shownSelection(app.coordinator.getState().selection)?.answer.identity);
+ expect(app.selecting.selections[3].request.predicates).toEqual([contains(opened),follows(opened,closed)]);
+});
+
+
+describe("structural accounting of every supplied trail prefix", () => {
+  it.each([0, 1, 2])("refuses impossible non-active supports with active prefix %s", async (active) => {
+    for (const mutation of ["foreign", "cardinality", "overlap", "missing", "raw-total", "raw-swap", "duplicate", "negative-raw"]) {
+      const app = await opening(); await answer(app, 0, everyIncident);
+      app.coordinator.addStep(contains(opened)); await answer(app, 1, containingOpened);
+      app.coordinator.addStep(follows(opened, closed));
+      let index = 2;
+      if (active !== 2) { await answer(app, 2, bothSteps); app.coordinator.chooseStep(active); index = 3; }
+      const call = app.selecting.selections[index];
+      const reply = structuredClone(selectionAnswer(call.request, active === 0 ? everyIncident : active === 1 ? containingOpened : bothSteps));
+      const target = active === 2 ? 0 : 1;
+      reply.step_results[target] = structuredClone(reply.step_results[target]);
+      const prefix = reply.step_results[target];
+      if (mutation === "foreign") prefix.kept.case_ids = ["FOREIGN-INCIDENT"];
+      if (mutation === "cardinality") prefix.kept.case_count = 123;
+      if (mutation === "overlap") prefix.unevaluable = support(["A-1"], 2);
+      if (mutation === "missing") { prefix.removed = support([], 0); prefix.unevaluable = support([], 0); }
+      if (mutation === "raw-total") prefix.kept.record_count += 1;
+      if (mutation === "raw-swap") { prefix.kept.record_count -= 1; (prefix.unevaluable.case_count ? prefix.unevaluable : prefix.removed).record_count += 1; }
+      if (mutation === "duplicate") { prefix.kept.case_ids.push("A-1"); prefix.kept.case_count += 1; prefix.kept.record_count += 2; }
+      if (mutation === "negative-raw") prefix.kept.record_count = -1;
+      const beforeGraphs = app.selecting.graphs.length;
+      const beforeShown = shownSelection(app.coordinator.getState().selection);
+      call.reply({ ok: true, answer: reply }); await settle();
+      expect(app.coordinator.getState().selection.phase, `${active}/${mutation}`).toBe("failed");
+      expect(shownSelection(app.coordinator.getState().selection)).toBe(beforeShown);
+      expect(app.selecting.graphs).toHaveLength(beforeGraphs);
+    }
   });
 });

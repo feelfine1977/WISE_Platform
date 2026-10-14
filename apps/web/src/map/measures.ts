@@ -11,10 +11,23 @@ export const OPENING_MEASURE: Measure = "frequency";
 const WIDTH_BY_INCIDENTS: StyleSpec = { edgeWidth: { metric: "cases", range: [1, 6] } };
 
 /**
- * Laid over the library's performance measure besides: an activity without a supplied time until
- * the next event reads "–" in its place. Left to itself, the library writes the activity's count there.
+ * The bounds in hours of the classes a path's median lag is drawn in under the time measure: up to
+ * one day, one day to one week, more than one week. The library's readable ramp keeps only its two
+ * darkest blues, so a path without lag looked as dark as the slowest; in classes the first is drawn
+ * in the neutral grey and only the slower ones in blue, and the legend names the bounds.
  */
-const IN_PERFORMANCE: StyleSpec = { ...WIDTH_BY_INCIDENTS, nodeLine: { metric: "medianNextHours", missing: "dash" } };
+export const LAG_CLASSES_HOURS = [24, 168] as const;
+
+/**
+ * Laid over the library's performance measure besides: paths in classes of their median lag, and an
+ * activity without a supplied time until the next event reads "–" in its place. Left to itself, the
+ * library writes the activity's count there.
+ */
+const IN_PERFORMANCE: StyleSpec = {
+  ...WIDTH_BY_INCIDENTS,
+  edgeColor: { metric: "medianLagHours", palette: "performance", bins: LAG_CLASSES_HOURS, required: true },
+  nodeLine: { metric: "medianNextHours", missing: "dash" },
+};
 
 /**
  * What the application lays over the map library's own style of a measure. What the library calls

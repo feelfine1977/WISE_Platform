@@ -102,7 +102,7 @@ function chipTexts() {
   const list = screen.getByRole("list", { name: "Steps of the selection" });
   return within(list)
     .getAllByRole("listitem")
-    .map((chip) => [chip.querySelector(".chip-wording")?.textContent, ...Array.from(chip.querySelectorAll(".chip-counts > div")).map((pair) => pair.textContent)]);
+    .map((chip) => [chip.querySelector(".chip-full-wording")?.textContent, ...Array.from(chip.querySelectorAll(".chip-independent > div")).map((pair) => pair.textContent)]);
 }
 
 describe("the map of the kept incidents", () => {
@@ -171,6 +171,7 @@ describe("the map of the kept incidents", () => {
         "An incident that several steps remove is counted by each of them, so the removals overlap and do not add up.",
     );
 
+    await app.user.click(screen.getByText("Details of step 1"));
     await app.user.click(screen.getByRole("button", { name: "Remove the step: Keep incidents that contain “Eröffnet”" }));
     expect(app.selecting.selections[3].request.predicates).toEqual([follows(opened, closed, true)]);
     await app.user.click(screen.getByRole("button", { name: "Undo" }));
@@ -454,7 +455,7 @@ describe("the map of the kept incidents", () => {
           id: `path.v1:sha256:${String(index).padStart(64, "0")}`,
           source: id(index),
           target: id(index + 1),
-          metrics: { count: 39 - index, cases: 39 - index, medianLagHours: 1, usableLagCount: 39 - index },
+          metrics: { count: 39 - index, cases: 39 - index, medianLagHours: 1, usableLagCount: 39 - index, totalLagHours: 39 - index, totalLagMicroseconds: String((39 - index) * 3_600_000_000), shareOfTotalLag: (39 - index) / 780 },
           payload: { ...graph.edges[0].payload, source_activity: labels[index], target_activity: labels[index + 1] },
         })),
       };

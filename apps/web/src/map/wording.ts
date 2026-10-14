@@ -65,6 +65,15 @@ export function stepWording(step: SelectionPredicate): string {
       const measure = step.kind === "observed_span_at_least" ? "recorded span" : "longest adjacent recorded gap";
       return `Keep incidents with ${measure} ${step.negate ? "less than" : "at least"} ${step.hours} hours`;
     }
+    case "raw_record_count_between":
+      return `Keep incidents with raw-record count ${step.negate ? "outside" : "in"} ${step.minimum_records} to ${step.maximum_records ?? "no upper limit"} (bounds included)`;
+    case "observed_span_between":
+    case "max_raw_gap_between": {
+      const measure = step.kind === "observed_span_between" ? "recorded span" : "longest adjacent raw-record gap";
+      return `Keep incidents with ${measure} ${step.negate ? "outside" : "in"} ${step.minimum_hours} to ${step.maximum_hours ?? "no upper limit"} hours (bounds included)`;
+    }
+    case "directly_follows_lag_between":
+      return `Keep incidents ${step.negate ? "not matching" : "matching"} ${step.quantifier === "any" ? "at least one" : "every"} passage from ${quoted(step.source_activity)} to ${quoted(step.target_activity)} in ${step.minimum_hours} to ${step.maximum_hours ?? "no upper limit"} hours (bounds included; ${step.negate ? "known incidents with no passage are included" : "a passage is required"})`;
     case "starts_with_activity":
       return step.negate
         ? `Keep incidents that do not begin with ${quoted(step.activity)}`
@@ -235,4 +244,11 @@ export function describeSelectionProblem(problem: SelectionProblem): SelectionPr
     case "unsupported_reply":
       return { message: "The local service sent a reply this screen cannot use.", remedy: problem.detail };
   }
+}
+
+/** A short trail label; full operational wording remains in the chip’s accessible disclosure. */
+export function shortStepWording(step: SelectionPredicate): string {
+  if (step.kind === "case_id_in") return `${step.negate ? "Exclude" : "Keep"} ${countOf(step.case_ids.length, "incident number")}`;
+  const wording = stepWording(step).replace(/^Keep incidents /, "");
+  return wording.length > 64 ? `${wording.slice(0, 61)}…` : wording;
 }

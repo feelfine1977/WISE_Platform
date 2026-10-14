@@ -469,6 +469,49 @@ class MaxRawGapAtLeast(BaseModel):
     negate: bool
 
 
+class RawRecordCountBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['raw_record_count_between']
+    minimum_records: conint(ge=0, le=9007199254740991)
+    maximum_records: conint(ge=0, le=9007199254740991) | None
+    negate: bool
+
+
+class ObservedSpanBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['observed_span_between']
+    minimum_hours: confloat(ge=0.0)
+    maximum_hours: confloat(ge=0.0) | None
+    negate: bool
+
+
+class MaxRawGapBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['max_raw_gap_between']
+    minimum_hours: confloat(ge=0.0)
+    maximum_hours: confloat(ge=0.0) | None
+    negate: bool
+
+
+class DirectlyFollowsLagBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['directly_follows_lag_between']
+    source_activity: constr(min_length=1)
+    target_activity: constr(min_length=1)
+    minimum_hours: confloat(ge=0.0)
+    maximum_hours: confloat(ge=0.0) | None
+    quantifier: Literal['any', 'every']
+    negate: bool
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -503,6 +546,10 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | RawRecordCountBetween
+        | ObservedSpanBetween
+        | MaxRawGapBetween
+        | DirectlyFollowsLagBetween
     ]
 ):
     root: (
@@ -517,6 +564,10 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | RawRecordCountBetween
+        | ObservedSpanBetween
+        | MaxRawGapBetween
+        | DirectlyFollowsLagBetween
     ) = Field(..., title='SelectionPredicate')
 
 
@@ -591,6 +642,17 @@ class EvidenceBookmark(BaseModel):
     note: constr(min_length=0)
 
 
+class StepResult(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    step_number: conint(ge=1)
+    predicate: SelectionPredicate
+    kept: PopulationSupport
+    removed: PopulationSupport
+    unevaluable: PopulationSupport
+
+
 class PredicateResult(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -640,6 +702,14 @@ class RestoredSelection(BaseModel):
     removed: PopulationSupport
     unevaluable: PopulationSupport
     predicate_results: list[PredicateResult]
+    active_step_count: conint(ge=0) = Field(
+        ...,
+        description='How many of the ordered trail predicates form the active selection. Future trail steps do not enter its population identity.',
+    )
+    step_results: list[StepResult] = Field(
+        ...,
+        description='One supplied kept-after-step result for every full-trail prefix, in requested order; separate from independent predicate_results.',
+    )
 
 
 class NamedGroup(BaseModel):

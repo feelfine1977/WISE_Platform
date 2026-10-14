@@ -32,6 +32,7 @@ from wise_platform_analytics.selection import (
     RecordAttributeIn,
     ObservedSpanAtLeast,
     MaxRawGapAtLeast,
+    RawRecordCountBetween, ObservedSpanBetween, MaxRawGapBetween, DirectlyFollowsLagBetween,
     DirectlyFollows,
     EndsWithActivity,
     OpeningAttributeEquals,
@@ -51,6 +52,7 @@ from .generated.selection import (
     SelectionRefusal,
 )
 from .import_boundary import import_echo
+from .graph_lag_boundary import validate_graph_lag_totals
 from .imports import Imports
 from .selection_boundary import STATUS, parse_selection_body, selection_refusal
 from .workspace import Problem, Workspace
@@ -108,7 +110,7 @@ class Selections:
         predicates = [package_predicate(item) for item in given["predicates"]]
         parent_ids = given["parent_case_ids"]
         try:
-            selection = select_cases(prepared, predicates, parent_ids)
+            selection = select_cases(prepared, predicates, parent_ids, active_step_count=given.get("active_step_count"))
             parent = selection if not predicates else select_cases(prepared, (), parent_ids)
         except SelectionError as error:
             return _package_error(SELECT_CASES, error, given)
@@ -126,6 +128,8 @@ class Selections:
                 "removed": answered["removed"],
                 "unevaluable": answered["unevaluable"],
                 "predicate_results": answered["predicate_results"],
+                "active_step_count": answered["active_step_count"],
+                "step_results": answered["step_results"],
             },
         )
 
@@ -205,6 +209,14 @@ def package_predicate(given: Mapping[str, object]) -> Predicate:
     if kind in ("observed_span_at_least", "max_raw_gap_at_least"):
         constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
         return constructor(given["hours"], negate)
+    if kind == "raw_record_count_between":
+        return RawRecordCountBetween(given["minimum_records"], given["maximum_records"], negate)
+    if kind in ("observed_span_between", "max_raw_gap_between"):
+        constructor = ObservedSpanBetween if kind == "observed_span_between" else MaxRawGapBetween
+        return constructor(given["minimum_hours"], given["maximum_hours"], negate)
+    if kind == "directly_follows_lag_between":
+        return DirectlyFollowsLagBetween(given["source_activity"], given["target_activity"],
+                                        given["minimum_hours"], given["maximum_hours"], given["quantifier"], negate)
     if kind == "contains_activity":
         return ContainsActivity(str(given["activity"]), negate)
     if kind == "starts_with_activity":
@@ -264,6 +276,8 @@ def _answer(model: type[BaseModel], body: dict) -> SelectionReply:
             f"A {body.get('message_type')} answer is outside the contract at "
             f"{'.'.join(str(part) for part in first['loc'])}: {first['msg']}"
         ) from None
+    if body.get("message_type") == "process_graph_answer":
+        validate_graph_lag_totals(body["graph"])
     return SelectionReply(200, body)
 
 

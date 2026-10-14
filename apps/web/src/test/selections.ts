@@ -57,6 +57,8 @@ export interface Figures {
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
   results: Omit<PredicateResult, "predicate">[];
+  /** Literal cumulative supports where this actor is asked for a full trail. */
+  prefixes?: Omit<PredicateResult, "predicate">[];
 }
 
 /** The parent of every selection here: both incidents with their three records. */
@@ -64,6 +66,12 @@ export const parent = support(["A-1", "B-2"], 3);
 export const parentPopulation = `population.v1:sha256:${hex("f")}`;
 
 export function selectionAnswer(request: SelectCasesRequest, figures: Figures): SelectionAnswer {
+  const active = request.active_step_count ?? request.predicates.length;
+  const independent = request.predicates.map((predicate, index) => {
+    const known = predicate.kind === "contains_activity" && predicate.activity === opened ? (predicate.negate ? withoutOpened : containingOpened)
+      : predicate.kind === "directly_follows" ? followingOpened : everyIncident;
+    return { predicate, ...(figures.results[index] ?? known.results[0] ?? { kept: parent, removed: support([], 0), unevaluable: support([], 0) }) };
+  });
   return {
     schema_version: 1,
     message_type: "selection_answer",
@@ -76,7 +84,9 @@ export function selectionAnswer(request: SelectCasesRequest, figures: Figures): 
     kept: figures.kept,
     removed: figures.removed,
     unevaluable: figures.unevaluable,
-    predicate_results: request.predicates.map((predicate, index) => ({ predicate, ...figures.results[index] })),
+    predicate_results: independent,
+    active_step_count: active,
+    step_results: independent.map((result, index) => ({ ...result, ...(figures.prefixes?.[index] ?? (index === active - 1 ? {kept: figures.kept, removed: figures.removed, unevaluable: figures.unevaluable} : {})), step_number: index + 1 })),
   };
 }
 
@@ -150,7 +160,7 @@ export function suppliedGraph(caseIds: string[]): SuppliedGraph {
             kind: "follows",
             source: nodeIds[opened],
             target: nodeIds[closed],
-            metrics: { count: 1, cases: 1, medianLagHours: 25.5, usableLagCount: 1 },
+            metrics: { count: 1, cases: 1, medianLagHours: 25.5, usableLagCount: 1, totalLagHours: 25.5, totalLagMicroseconds: "91800000000", shareOfTotalLag: 1 },
             payload: { source_activity: opened, target_activity: closed, case_ids: ["A-1"], gap_case_ids: [], omitted_row_ids: [], bridged_passage_count: 0 },
           },
         ]
@@ -182,6 +192,9 @@ export function suppliedGraph(caseIds: string[]): SuppliedGraph {
       timestamp_kind: "utc_instant",
       lag_clock: "elapsed_utc_hours",
       clock_limitation: null,
+      path_lag_totals: withA
+        ? { total_hours: 25.5, total_microseconds: "91800000000", usable_passage_count: 1, usable_path_count: 1, top_five_path_ids: [pathId], top_five_total_hours: 25.5, top_five_total_microseconds: "91800000000", top_five_share: 1 }
+        : { total_hours: 0, total_microseconds: "0", usable_passage_count: 0, usable_path_count: 0, top_five_path_ids: [], top_five_total_hours: 0, top_five_total_microseconds: "0", top_five_share: null },
     },
   };
 }

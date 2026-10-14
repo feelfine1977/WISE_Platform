@@ -6,7 +6,7 @@ import { checked, closed, opened, suppliedGraph } from "../test/selections";
 import { END_ID, endFlowId, flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, START_ID, startFlowId, toFlowGraph } from "./graph";
 
 describe("the supplied graph as the map library's graph", () => {
-  it("passes every node, path and coverage field on unchanged, between a start and an end", () => {
+  it("passes drawing metrics and coverage between a start and an end, preserving the supplied exact coordinates", () => {
     const supplied: SuppliedGraph = suppliedGraph(["A-1", "B-2"]);
     const before = JSON.stringify(supplied);
     // Typed as the library's graph without a cast: the type checker accepts the adapter's result as it is.
@@ -15,7 +15,11 @@ describe("the supplied graph as the map library's graph", () => {
 
     // What was supplied is all there, unchanged and in its order.
     expect(plain.nodes.filter((node) => node.kind === "activity")).toEqual(JSON.parse(before).nodes);
-    expect(plain.edges.filter((edge) => edge.kind === "follows")).toEqual(JSON.parse(before).edges);
+    expect(plain.edges.filter((edge) => edge.kind === "follows")).toEqual(supplied.edges.map((edge) => {
+      const { totalLagMicroseconds: _exact, ...metrics } = edge.metrics;
+      return { ...edge, metrics };
+    }));
+    expect(supplied.edges[0].metrics.totalLagMicroseconds).toBe("91800000000");
     expect(plain.meta).toEqual(JSON.parse(before).meta);
     expect(JSON.stringify(supplied)).toBe(before);
     expect(flow.meta?.cases).toBe(2);
