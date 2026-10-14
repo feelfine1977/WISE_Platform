@@ -12,7 +12,8 @@ from .comparison_profiles import opening_context_profile, population_support
 from .mapping import ImportRefusal
 from .preparation import PreparedData, content_identity
 from .selection import (CaseIdIn, CaseStartInWindow, OpeningAttributeIn, RecordAttributeIn,
-                        ObservedSpanAtLeast, MaxRawGapAtLeast, semantic_predicate, OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
+                        ObservedSpanAtLeast, MaxRawGapAtLeast, RawRecordCountBetween, ObservedSpanBetween,
+                        MaxRawGapBetween, DirectlyFollowsLagBetween, semantic_predicate, OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
                         OpeningAttributeEquals, SelectionError, StartsWithActivity, case_ids,
                         predicate_descriptor, select_cases)
 from .time_formats import TimeInterpretation, iso_local, iso_utc, parse_format, validate_time_policy
@@ -104,6 +105,17 @@ def _predicates(value: object, field: str) -> tuple[tuple, list[dict[str, object
             d = _closed(raw, {"kind", "hours", "negate"}, at, "invalid_predicate")
             constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
             p = constructor(d["hours"], d["negate"])
+        elif kind == "raw_record_count_between":
+            d = _closed(raw, {"kind", "minimum_records", "maximum_records", "negate"}, at, "invalid_predicate")
+            p = RawRecordCountBetween(d["minimum_records"], d["maximum_records"], d["negate"])
+        elif kind in ("observed_span_between", "max_raw_gap_between"):
+            d = _closed(raw, {"kind", "minimum_hours", "maximum_hours", "negate"}, at, "invalid_predicate")
+            constructor = ObservedSpanBetween if kind == "observed_span_between" else MaxRawGapBetween
+            p = constructor(d["minimum_hours"], d["maximum_hours"], d["negate"])
+        elif kind == "directly_follows_lag_between":
+            d = _closed(raw, {"kind", "source_activity", "target_activity", "minimum_hours", "maximum_hours", "quantifier", "negate"}, at, "invalid_predicate")
+            p = DirectlyFollowsLagBetween(d["source_activity"], d["target_activity"], d["minimum_hours"],
+                                          d["maximum_hours"], d["quantifier"], d["negate"])
         elif kind == "contains_activity":
             d = _closed(raw, {"kind", "activity", "negate"}, at, "invalid_predicate")
             p = ContainsActivity(d["activity"], d["negate"])
