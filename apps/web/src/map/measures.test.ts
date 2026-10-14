@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildScene, layout, type Measure } from "wise-flow";
+import { buildScene, colorTokens, layout, type Measure } from "wise-flow";
 import { checked, closed, nodeIds, opened, pathId, suppliedGraph } from "../test/selections";
 import { endFlowId, startFlowId, toFlowGraph } from "./graph";
 import { LAG_CLASSES_HOURS, OPENING_MEASURE, styleOver } from "./measures";
@@ -27,8 +27,11 @@ async function written(measure: Measure) {
 describe("the measures of the map", () => {
   it("opens on the counts: the incidents on every path and on every activity", async () => {
     expect(OPENING_MEASURE).toBe("frequency");
-    // Only the widths of the paths are laid over the library's style of the counts.
-    expect(styleOver(OPENING_MEASURE)).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
+    // Width and labels remain incidents while colour keeps supplied long waits visible.
+    expect(styleOver(OPENING_MEASURE)).toEqual({
+      edgeWidth: { metric: "cases", range: [1, 6] },
+      edgeColor: { metric: "medianLagHours", palette: "performance", bins: [24, 168] },
+    });
     const { scene, line, path } = await written(OPENING_MEASURE);
     expect(scene.scales.pathMetric).toBe("cases");
     expect(scene.style.pathLabel).toBeUndefined();
@@ -69,23 +72,67 @@ describe("the measures of the map", () => {
     expect(line(checked)).toEqual(["–", "· 50 %"]);
   });
 
-  it("draws a path's median lag in classes under the time measure: up to a day in the neutral grey, then two blues", async () => {
+  it.each<Measure>(["frequency", "performance"])("draws supplied median lag in the same classes, including each exact upper bound (%s)", async (measure) => {
     expect(LAG_CLASSES_HOURS).toEqual([24, 168]);
     const graph = toFlowGraph(suppliedGraph(["A-1", "B-2"]));
     const original = graph.edges.find((edge) => edge.id === pathId)!;
-    // A busy path without lag, a path of about a day and a half, and a slow rare one.
-    const lags = [0, 36, 400];
+    // Literal supplied values at and on either side of the two inclusive upper bounds.
+    const lags = [0, 24, 24.000001, 168, 168.000001, 400];
     const several = {
       ...graph,
       edges: lags.map((hours, place) => ({ ...original, id: `path:${place}`, metrics: { ...original.metrics, count: place === 0 ? 100 : 2, cases: place === 0 ? 100 : 2, medianLagHours: hours, usableLagCount: 2 } })),
     };
-    const scene = buildScene(several, await layout(several, { engine: "dagre" }), { measure: "performance", style: styleOver("performance"), locale: "en" });
+    const scene = buildScene(several, await layout(several, { engine: "dagre" }), { measure, style: styleOver(measure), locale: "en" });
     const colours = lags.map((_, place) => scene.edgeMarks.find((edge) => edge.id === `path:${place}`)!.color);
     expect(scene.style.edgeColor).toMatchObject({ metric: "medianLagHours", bins: [24, 168] });
-    // The path without lag is not a blue at all, and the two slower classes differ.
-    expect(colours[0]).not.toBe(colours[1]);
-    expect(colours[1]).not.toBe(colours[2]);
-    expect(colours[0].toLowerCase()).not.toMatch(/^#(2171b5|08306b)$/);
-    expect([colours[1], colours[2]].map((colour) => colour.toLowerCase())).toEqual(["#2171b5", "#08306b"]);
+    expect(styleOver(measure).edgeColor?.bins).toBe(LAG_CLASSES_HOURS);
+    expect(colours.map((colour) => colour.toLowerCase())).toEqual([colorTokens.neutral, colorTokens.neutral, "#2171b5", "#2171b5", "#08306b", "#08306b"]);
+    expect(scene.legend.rows).toContainEqual({
+      kind: "swatches", title: "Path colour: median lag (min, h, d)", entries: [
+        { text: "up to 24 h", color: colorTokens.neutral, pattern: "solid" },
+        { text: "24 h to 7.0 d", color: "#2171b5", pattern: "solid" },
+        { text: "over 7.0 d", color: "#08306b", pattern: "solid" },
+      ],
+    });
+    expect(scene.legend.rows.some((row) => row.kind === "width" && row.title.startsWith("Path width: cases"))).toBe(true);
+  });
+
+  it.each<Measure>(["frequency", "performance"])("keeps missing lag and Start/End out of the slow classes, with incidents still supplying width (%s)", async (measure) => {
+    const graph = toFlowGraph(suppliedGraph(["A-1", "B-2"]));
+    const original = graph.edges.find((edge) => edge.id === pathId)!;
+    const { medianLagHours: _missing, ...withoutLag } = original.metrics!;
+    const several = {
+      ...graph,
+      edges: [
+        ...graph.edges.filter((edge) => edge.id !== pathId),
+        { ...original, id: "busy-fast", metrics: { ...original.metrics, count: 100, cases: 100, medianLagHours: 0 } },
+        { ...original, id: "slower", metrics: { ...original.metrics, count: 999, cases: 25, medianLagHours: 400 } },
+        { ...original, id: "missing-lag", metrics: { ...withoutLag, count: 999, cases: 1, usableLagCount: 0 } },
+      ],
+    };
+    const scene = buildScene(several, await layout(several, { engine: "dagre" }), { measure, style: styleOver(measure), locale: "en" });
+    const mark = (id: string) => scene.edgeMarks.find((edge) => edge.id === id)!;
+    expect(["busy-fast", "slower", "missing-lag"].map((id) => mark(id).width)).toEqual([6, 3, 1]);
+    expect(mark("busy-fast")).toMatchObject({ color: colorTokens.neutral });
+    expect(mark("busy-fast").notEvaluated).toBeUndefined();
+    if (measure === "frequency") {
+      expect(styleOver(measure).edgeColor?.required).toBeUndefined();
+      expect(mark("missing-lag").color).toBe(colorTokens.neutral);
+      expect(mark("missing-lag").notEvaluated).toBeUndefined();
+    } else {
+      expect(styleOver(measure).edgeColor?.required).toBe(true);
+      expect(mark("missing-lag")).toMatchObject({ color: colorTokens.line, notEvaluated: true });
+    }
+    expect(mark("missing-lag").texts.map((text) => text.text)).toEqual([measure === "frequency" ? "1" : "– · 1"]);
+    for (const id of [startFlowId(nodeIds[opened]), endFlowId(nodeIds[closed])]) {
+      expect(mark(id)).toMatchObject({ color: colorTokens.neutral });
+      expect(mark(id).notEvaluated).toBeUndefined();
+      expect(mark(id).texts.map((text) => text.text)).toEqual(["1"]);
+    }
+    expect(scene.legend.rows.some((row) => row.kind === "key" && row.key === "notEvaluated")).toBe(measure === "performance");
+  });
+
+  it("leaves the shortfall measure's own colour and labels to the library", () => {
+    expect(styleOver("shortfall")).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
   });
 });

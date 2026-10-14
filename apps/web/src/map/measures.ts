@@ -11,21 +11,30 @@ export const OPENING_MEASURE: Measure = "frequency";
 const WIDTH_BY_INCIDENTS: StyleSpec = { edgeWidth: { metric: "cases", range: [1, 6] } };
 
 /**
- * The bounds in hours of the classes a path's median lag is drawn in under the time measure: up to
- * one day, one day to one week, more than one week. The library's readable ramp keeps only its two
- * darkest blues, so a path without lag looked as dark as the slowest; in classes the first is drawn
- * in the neutral grey and only the slower ones in blue, and the legend names the bounds.
+ * The bounds in hours of the classes a path's supplied median lag is drawn in under both incident
+ * and time measures: up to one day, one day to one week, more than one week. The first class is
+ * drawn in neutral grey and only the slower ones in the two darker blues; the legend names the
+ * bounds. Missing lag is handled separately by each measure.
  */
 export const LAG_CLASSES_HOURS = [24, 168] as const;
 
 /**
- * Laid over the library's performance measure besides: paths in classes of their median lag, and an
+ * Incidents set the width and count labels; supplied median lag keeps long waits visible in colour.
+ * Without lag the path stays neutral and still displays its supplied incidents.
+ */
+const IN_INCIDENTS: StyleSpec = {
+  ...WIDTH_BY_INCIDENTS,
+  edgeColor: { metric: "medianLagHours", palette: "performance", bins: LAG_CLASSES_HOURS },
+};
+
+/**
+ * Laid over the library's performance measure besides: the same width and lag classes, and an
  * activity without a supplied time until the next event reads "–" in its place. Left to itself, the
  * library writes the activity's count there.
  */
 const IN_PERFORMANCE: StyleSpec = {
-  ...WIDTH_BY_INCIDENTS,
-  edgeColor: { metric: "medianLagHours", palette: "performance", bins: LAG_CLASSES_HOURS, required: true },
+  ...IN_INCIDENTS,
+  edgeColor: { ...IN_INCIDENTS.edgeColor, required: true },
   nodeLine: { metric: "medianNextHours", missing: "dash" },
 };
 
@@ -36,7 +45,7 @@ const IN_PERFORMANCE: StyleSpec = {
  * them writes on a path and on an activity is its decision, and no number is derived here.
  */
 export function styleOver(measure: Measure): StyleSpec {
-  return measure === "performance" ? IN_PERFORMANCE : WIDTH_BY_INCIDENTS;
+  return measure === "performance" ? IN_PERFORMANCE : measure === "frequency" ? IN_INCIDENTS : WIDTH_BY_INCIDENTS;
 }
 
 /** What the map is asked for in a measure: the measure itself and what is laid over its style. */
