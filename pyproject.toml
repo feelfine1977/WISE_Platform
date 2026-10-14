@@ -27,7 +27,7 @@ dev = [
 where = ["apps/api/src", "packages/analytics/src"]
 
 [tool.setuptools.package-data]
-wise_platform_api = ["static/*", "static/**/*", "examples/*.csv", "examples/README.md"]
+wise_platform_api = ["static/*", "static/**/*", "examples/*.csv", "examples/README.md", "bpic19_reference/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "packages/analytics/tests", "apps/api/tests"]

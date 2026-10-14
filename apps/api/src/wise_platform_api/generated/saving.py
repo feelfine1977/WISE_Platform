@@ -473,7 +473,17 @@ class Bpic19PipelineOutput(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    operation: Literal['bpic19_profile', 'bpic19_measures']
+    operation: Literal[
+        'bpic19_profile',
+        'bpic19_measures',
+        'bpic19_cohorts',
+        'bpic19_score',
+        'bpic19_ordinal',
+        'bpic19_fifo',
+        'bpic19_cancellation',
+        'bpic19_rule',
+        'bpic19_waiting',
+    ]
     definition_id: constr(min_length=1)
     sha256: constr(pattern=r'^[a-f0-9]{64}$')
     output: dict[str, Any]
@@ -484,7 +494,7 @@ class Bpic19PipelineManifest(BaseModel):
         extra='forbid',
     )
     schema_version: Literal[1]
-    outputs: list[Bpic19PipelineOutput] = Field(..., max_length=2, min_length=1)
+    outputs: list[Bpic19PipelineOutput] = Field(..., max_length=32, min_length=1)
 
 
 class AnswerIdentity(BaseModel):
@@ -613,13 +623,27 @@ class Bpic19PipelineAction(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    operation: Literal['bpic19_profile', 'bpic19_measures']
+    operation: Literal[
+        'bpic19_profile',
+        'bpic19_measures',
+        'bpic19_cohorts',
+        'bpic19_score',
+        'bpic19_ordinal',
+        'bpic19_fifo',
+        'bpic19_cancellation',
+        'bpic19_rule',
+        'bpic19_waiting',
+    ]
     identity: AnswerIdentity
     query: dict[str, Any] = Field(
         ...,
         description='Validated against the registered operation request before save or replay.',
     )
     definition_id: constr(min_length=1)
+    selection_prefix_length: conint(ge=0, le=100) | None = Field(
+        None,
+        description='Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position.',
+    )
 
 
 class Bpic19Pipeline(BaseModel):
@@ -627,7 +651,7 @@ class Bpic19Pipeline(BaseModel):
         extra='forbid',
     )
     schema_version: Literal[1]
-    actions: list[Bpic19PipelineAction] = Field(..., max_length=2, min_length=1)
+    actions: list[Bpic19PipelineAction] = Field(..., max_length=32, min_length=1)
 
 
 class PredicateResult(BaseModel):

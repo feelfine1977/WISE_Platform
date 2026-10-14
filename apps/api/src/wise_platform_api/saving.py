@@ -345,10 +345,35 @@ class Saving:
 
     def _pipeline(self, workspace_id: str, content: dict, question: Question):
         registry = self._imports.selections
-        registry.keep(workspace_id, question.parent)
-        registry.keep(workspace_id, question.selection)
+        prefixes = [question.parent]
+        pipeline = content.get("bpic19_pipeline")
+        recipe = content["selection_recipe"]
+        if pipeline is not None:
+            try:
+                predicates = [package_predicate(item) for item in recipe["predicates"]]
+                prefixes.extend(select_cases(question.prepared, predicates[:length], recipe["parent_case_ids"])
+                                for length in range(1, len(predicates)))
+            except SelectionError as error:
+                return Problem("selection_mismatch", f"An intermediate selection prefix cannot be replayed: {error}", "selection_recipe")
+        if recipe["predicates"]: prefixes.append(question.selection)
+        if pipeline is not None:
+            for index, action in enumerate(pipeline["actions"]):
+                if "selection_prefix_length" not in action: continue
+                length = action["selection_prefix_length"]
+                field = f"bpic19_pipeline.actions.{index}.selection_prefix_length"
+                if length is None:
+                    computed = question.prepared.identity_dict()
+                elif type(length) is int and 0 <= length < len(prefixes):
+                    computed = prefixes[length].identity_dict()
+                else:
+                    return Problem("identity_mismatch", "The declared selection-prefix position is outside this saved recipe.", field)
+                if action["identity"] != computed:
+                    return Problem("identity_mismatch", "The action identity differs from its declared, replayed selection prefix.", field)
+        # Only populations computed from this frozen parent and these exact steps
+        # enter the registry. Caller-supplied action identities are never registered.
+        for selection in prefixes: registry.keep(workspace_id, selection)
         return replay_pipeline(self._imports, workspace_id, content.get("bpic19_pipeline"),
-                               [question.prepared.identity_dict(), question.parent.identity_dict(), question.selection.identity_dict()])
+                               [question.prepared.identity_dict(), *[selection.identity_dict() for selection in prefixes]])
 
     def _source(
         self, workspace: Workspace, source_id: str, saved: StoredRevision | None

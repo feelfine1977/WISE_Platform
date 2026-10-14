@@ -23,11 +23,12 @@ export interface Bpic19ProfileProps {
   onInspect: (caseId: string, rowIds?: string[]) => void;
   onCompare?: (target: Bpic19ComparisonSide, comparator: Bpic19ComparisonSide) => void;
   onReviewed?: (answer: Bpic19ProfileAnswer) => void;
+  onColumns?: (answer: Bpic19ProfileAnswer) => void;
   onValidityChange?: (current: boolean) => void;
 }
 
 /** Source-derived answers lead this view; local state chooses reviewed bindings and navigation only. */
-export function Bpic19Profile({ workspaceId, identity, revision, query, client = httpBpic19ProfileClient, onKeep, onInspect, onCompare, onReviewed, onValidityChange }: Bpic19ProfileProps) {
+export function Bpic19Profile({ workspaceId, identity, revision, query, client = httpBpic19ProfileClient, onKeep, onInspect, onCompare, onReviewed, onColumns, onValidityChange }: Bpic19ProfileProps) {
   const [answer, setAnswer] = useState<Bpic19ProfileAnswer | null>(null);
   const [roles, setRoles] = useState<Bpic19SuggestedRoles>(emptyRoles);
   const [columns, setColumns] = useState<number[] | null>(null);
@@ -57,6 +58,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
     setAnswer(outcome.answer); setRoles(next.roles ?? outcome.answer.suggested_roles);
     setColumns(next.profile_columns); setSource(outcome.answer.profile?.source_review?.interpretation ?? next.source_interpretation ?? null); setTarget(""); setComparator("");
     if (outcome.answer.profile) onReviewed?.(outcome.answer);
+    else onColumns?.(outcome.answer);
   }
   useEffect(() => {
     validity.current?.(false); setAnswer(null); setRoles(emptyRoles); setColumns(null); setSource(null);

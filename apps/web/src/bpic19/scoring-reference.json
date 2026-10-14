@@ -1,0 +1,2212 @@
+{
+  "paper": {
+    "completion": {
+      "schema_version": 3,
+      "missing_values": "three_valued",
+      "name": "bpic19.paper.2026-10-12.v1.completion",
+      "version": "1",
+      "scoring_mode": "flat",
+      "metadata": {
+        "source_sha256": "abc7d58c3558790395622c5758f55e005ed1816092f5cd47a186744569608408",
+        "grain": "PO item",
+        "time_policy": "independent_parsed_minima_2017_inclusive_2020_exclusive",
+        "criteria_family": "completion",
+        "raw_binding_recipe": {
+          "C01": {
+            "activities": [
+              "Record Invoice Receipt"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C02": {
+            "activities": [
+              "Clear Invoice"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C03": {
+            "activities": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C04": {
+            "activation": [
+              "Record Invoice Receipt"
+            ],
+            "response": [
+              "Clear Invoice"
+            ],
+            "operator": "independent_parsed_minima_then_range_and_nonnegative",
+            "unit": "elapsed_days"
+          },
+          "C05": {
+            "invoice": [
+              "Record Invoice Receipt"
+            ],
+            "receipt": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "operator": "strict_invoice_minimum_precedes_receipt_minimum_tie_zero"
+          },
+          "C06": {
+            "activities": [
+              "Cancel Invoice Receipt"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C07": {
+            "activities": [
+              "Change Price",
+              "Change Quantity"
+            ],
+            "operator": "exact_union_count"
+          },
+          "C08": {
+            "activities": [
+              "Record Invoice Receipt"
+            ],
+            "operator": "exact_count"
+          },
+          "C09": {
+            "operator": "all_event_resource_readiness_then_user_count",
+            "user_pattern": "user_[0-9]+",
+            "batch_pattern": "batch_[0-9]+",
+            "match": "full",
+            "normalization": "outer_trim_casefold"
+          },
+          "C10": {
+            "operator": "all_event_resource_readiness_then_distinct_normalized_users",
+            "user_pattern": "user_[0-9]+",
+            "batch_pattern": "batch_[0-9]+",
+            "match": "full",
+            "normalization": "outer_trim_casefold"
+          },
+          "presence_edge_policy": "positive witness proves binary presence; no match proves absence only with complete labels; exact multiplicity remains separately unavailable"
+        }
+      },
+      "layers": [
+        {
+          "id": "Completion"
+        },
+        {
+          "id": "Timing"
+        },
+        {
+          "id": "Rework"
+        },
+        {
+          "id": "Effort"
+        }
+      ],
+      "views": [
+        {
+          "name": "Balanced",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1
+          }
+        },
+        {
+          "name": "Completion",
+          "constraint_weights": {
+            "C01": 3,
+            "C02": 3,
+            "C03": 3
+          }
+        },
+        {
+          "name": "Operations",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "id": "C01",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice recorded",
+          "params": {
+            "attribute": "invoice_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C02",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice cleared",
+          "params": {
+            "attribute": "clearing_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C03",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Goods or service receipt recorded",
+          "params": {
+            "attribute": "receipt_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2"
+            ]
+          }
+        }
+      ]
+    },
+    "completion_timing": {
+      "schema_version": 3,
+      "missing_values": "three_valued",
+      "name": "bpic19.paper.2026-10-12.v1.completion_timing",
+      "version": "1",
+      "scoring_mode": "flat",
+      "metadata": {
+        "source_sha256": "abc7d58c3558790395622c5758f55e005ed1816092f5cd47a186744569608408",
+        "grain": "PO item",
+        "time_policy": "independent_parsed_minima_2017_inclusive_2020_exclusive",
+        "criteria_family": "completion_timing",
+        "raw_binding_recipe": {
+          "C01": {
+            "activities": [
+              "Record Invoice Receipt"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C02": {
+            "activities": [
+              "Clear Invoice"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C03": {
+            "activities": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C04": {
+            "activation": [
+              "Record Invoice Receipt"
+            ],
+            "response": [
+              "Clear Invoice"
+            ],
+            "operator": "independent_parsed_minima_then_range_and_nonnegative",
+            "unit": "elapsed_days"
+          },
+          "C05": {
+            "invoice": [
+              "Record Invoice Receipt"
+            ],
+            "receipt": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "operator": "strict_invoice_minimum_precedes_receipt_minimum_tie_zero"
+          },
+          "C06": {
+            "activities": [
+              "Cancel Invoice Receipt"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C07": {
+            "activities": [
+              "Change Price",
+              "Change Quantity"
+            ],
+            "operator": "exact_union_count"
+          },
+          "C08": {
+            "activities": [
+              "Record Invoice Receipt"
+            ],
+            "operator": "exact_count"
+          },
+          "C09": {
+            "operator": "all_event_resource_readiness_then_user_count",
+            "user_pattern": "user_[0-9]+",
+            "batch_pattern": "batch_[0-9]+",
+            "match": "full",
+            "normalization": "outer_trim_casefold"
+          },
+          "C10": {
+            "operator": "all_event_resource_readiness_then_distinct_normalized_users",
+            "user_pattern": "user_[0-9]+",
+            "batch_pattern": "batch_[0-9]+",
+            "match": "full",
+            "normalization": "outer_trim_casefold"
+          },
+          "presence_edge_policy": "positive witness proves binary presence; no match proves absence only with complete labels; exact multiplicity remains separately unavailable"
+        }
+      },
+      "layers": [
+        {
+          "id": "Completion"
+        },
+        {
+          "id": "Timing"
+        },
+        {
+          "id": "Rework"
+        },
+        {
+          "id": "Effort"
+        }
+      ],
+      "views": [
+        {
+          "name": "Balanced",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1,
+            "C04": 1,
+            "C05": 1
+          }
+        },
+        {
+          "name": "Completion",
+          "constraint_weights": {
+            "C01": 3,
+            "C02": 3,
+            "C03": 3,
+            "C04": 2,
+            "C05": 2
+          }
+        },
+        {
+          "name": "Operations",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1,
+            "C04": 1,
+            "C05": 1
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "id": "C01",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice recorded",
+          "params": {
+            "attribute": "invoice_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C02",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice cleared",
+          "params": {
+            "attribute": "clearing_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C03",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Goods or service receipt recorded",
+          "params": {
+            "attribute": "receipt_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2"
+            ]
+          }
+        },
+        {
+          "id": "C04",
+          "layer": "Timing",
+          "type": "metric",
+          "description": "Invoice to clearing within 30 days",
+          "params": {
+            "attribute": "invoice_to_clearing_days",
+            "threshold": 30,
+            "width": 60,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C05",
+          "layer": "Timing",
+          "type": "metric",
+          "description": "Receipt before invoice in DF1",
+          "params": {
+            "attribute": "invoice_precedes_receipt",
+            "threshold": 0,
+            "width": 1,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1"
+            ]
+          }
+        }
+      ]
+    },
+    "completion_rework_effort": {
+      "schema_version": 3,
+      "missing_values": "three_valued",
+      "name": "bpic19.paper.2026-10-12.v1.completion_rework_effort",
+      "version": "1",
+      "scoring_mode": "flat",
+      "metadata": {
+        "source_sha256": "abc7d58c3558790395622c5758f55e005ed1816092f5cd47a186744569608408",
+        "grain": "PO item",
+        "time_policy": "independent_parsed_minima_2017_inclusive_2020_exclusive",
+        "criteria_family": "completion_rework_effort",
+        "raw_binding_recipe": {
+          "C01": {
+            "activities": [
+              "Record Invoice Receipt"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C02": {
+            "activities": [
+              "Clear Invoice"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C03": {
+            "activities": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C04": {
+            "activation": [
+              "Record Invoice Receipt"
+            ],
+            "response": [
+              "Clear Invoice"
+            ],
+            "operator": "independent_parsed_minima_then_range_and_nonnegative",
+            "unit": "elapsed_days"
+          },
+          "C05": {
+            "invoice": [
+              "Record Invoice Receipt"
+            ],
+            "receipt": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "operator": "strict_invoice_minimum_precedes_receipt_minimum_tie_zero"
+          },
+          "C06": {
+            "activities": [
+              "Cancel Invoice Receipt"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C07": {
+            "activities": [
+              "Change Price",
+              "Change Quantity"
+            ],
+            "operator": "exact_union_count"
+          },
+          "C08": {
+            "activities": [
+              "Record Invoice Receipt"
+            ],
+            "operator": "exact_count"
+          },
+          "C09": {
+            "operator": "all_event_resource_readiness_then_user_count",
+            "user_pattern": "user_[0-9]+",
+            "batch_pattern": "batch_[0-9]+",
+            "match": "full",
+            "normalization": "outer_trim_casefold"
+          },
+          "C10": {
+            "operator": "all_event_resource_readiness_then_distinct_normalized_users",
+            "user_pattern": "user_[0-9]+",
+            "batch_pattern": "batch_[0-9]+",
+            "match": "full",
+            "normalization": "outer_trim_casefold"
+          },
+          "presence_edge_policy": "positive witness proves binary presence; no match proves absence only with complete labels; exact multiplicity remains separately unavailable"
+        }
+      },
+      "layers": [
+        {
+          "id": "Completion"
+        },
+        {
+          "id": "Timing"
+        },
+        {
+          "id": "Rework"
+        },
+        {
+          "id": "Effort"
+        }
+      ],
+      "views": [
+        {
+          "name": "Balanced",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1,
+            "C06": 1,
+            "C07": 1,
+            "C08": 1,
+            "C09": 1,
+            "C10": 1
+          }
+        },
+        {
+          "name": "Completion",
+          "constraint_weights": {
+            "C01": 3,
+            "C02": 3,
+            "C03": 3,
+            "C06": 1,
+            "C07": 1,
+            "C08": 1,
+            "C09": 1,
+            "C10": 1
+          }
+        },
+        {
+          "name": "Operations",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1,
+            "C06": 2,
+            "C07": 2,
+            "C08": 2,
+            "C09": 3,
+            "C10": 3
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "id": "C01",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice recorded",
+          "params": {
+            "attribute": "invoice_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C02",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice cleared",
+          "params": {
+            "attribute": "clearing_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C03",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Goods or service receipt recorded",
+          "params": {
+            "attribute": "receipt_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2"
+            ]
+          }
+        },
+        {
+          "id": "C06",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "No invoice cancellation",
+          "params": {
+            "attribute": "cancellation_presence",
+            "threshold": 0,
+            "width": 1,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C07",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "Price and quantity changes",
+          "params": {
+            "attribute": "edit_count",
+            "threshold": 0,
+            "width": 3,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C08",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "Repeated invoice receipts",
+          "params": {
+            "attribute": "invoice_count",
+            "threshold": 1,
+            "width": 3,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C09",
+          "layer": "Effort",
+          "type": "metric",
+          "description": "User attributed event count",
+          "params": {
+            "attribute": "user_event_count",
+            "threshold": 5,
+            "width": 10,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C10",
+          "layer": "Effort",
+          "type": "metric",
+          "description": "Distinct user identities",
+          "params": {
+            "attribute": "distinct_user_count",
+            "threshold": 2,
+            "width": 5,
+            "direction": "high"
+          },
+          "applicability": {}
+        }
+      ]
+    },
+    "full": {
+      "schema_version": 3,
+      "missing_values": "three_valued",
+      "name": "bpic19.paper.2026-10-12.v1",
+      "version": "1",
+      "scoring_mode": "flat",
+      "metadata": {
+        "source_sha256": "abc7d58c3558790395622c5758f55e005ed1816092f5cd47a186744569608408",
+        "grain": "PO item",
+        "time_policy": "independent_parsed_minima_2017_inclusive_2020_exclusive",
+        "criteria_family": "full",
+        "raw_binding_recipe": {
+          "C01": {
+            "activities": [
+              "Record Invoice Receipt"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C02": {
+            "activities": [
+              "Clear Invoice"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C03": {
+            "activities": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C04": {
+            "activation": [
+              "Record Invoice Receipt"
+            ],
+            "response": [
+              "Clear Invoice"
+            ],
+            "operator": "independent_parsed_minima_then_range_and_nonnegative",
+            "unit": "elapsed_days"
+          },
+          "C05": {
+            "invoice": [
+              "Record Invoice Receipt"
+            ],
+            "receipt": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "operator": "strict_invoice_minimum_precedes_receipt_minimum_tie_zero"
+          },
+          "C06": {
+            "activities": [
+              "Cancel Invoice Receipt"
+            ],
+            "operator": "witnessed_binary_presence"
+          },
+          "C07": {
+            "activities": [
+              "Change Price",
+              "Change Quantity"
+            ],
+            "operator": "exact_union_count"
+          },
+          "C08": {
+            "activities": [
+              "Record Invoice Receipt"
+            ],
+            "operator": "exact_count"
+          },
+          "C09": {
+            "operator": "all_event_resource_readiness_then_user_count",
+            "user_pattern": "user_[0-9]+",
+            "batch_pattern": "batch_[0-9]+",
+            "match": "full",
+            "normalization": "outer_trim_casefold"
+          },
+          "C10": {
+            "operator": "all_event_resource_readiness_then_distinct_normalized_users",
+            "user_pattern": "user_[0-9]+",
+            "batch_pattern": "batch_[0-9]+",
+            "match": "full",
+            "normalization": "outer_trim_casefold"
+          },
+          "presence_edge_policy": "positive witness proves binary presence; no match proves absence only with complete labels; exact multiplicity remains separately unavailable"
+        }
+      },
+      "layers": [
+        {
+          "id": "Completion"
+        },
+        {
+          "id": "Timing"
+        },
+        {
+          "id": "Rework"
+        },
+        {
+          "id": "Effort"
+        }
+      ],
+      "views": [
+        {
+          "name": "Balanced",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1,
+            "C04": 1,
+            "C05": 1,
+            "C06": 1,
+            "C07": 1,
+            "C08": 1,
+            "C09": 1,
+            "C10": 1
+          }
+        },
+        {
+          "name": "Completion",
+          "constraint_weights": {
+            "C01": 3,
+            "C02": 3,
+            "C03": 3,
+            "C04": 2,
+            "C05": 2,
+            "C06": 1,
+            "C07": 1,
+            "C08": 1,
+            "C09": 1,
+            "C10": 1
+          }
+        },
+        {
+          "name": "Operations",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1,
+            "C04": 1,
+            "C05": 1,
+            "C06": 2,
+            "C07": 2,
+            "C08": 2,
+            "C09": 3,
+            "C10": 3
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "id": "C01",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice recorded",
+          "params": {
+            "attribute": "invoice_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C02",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice cleared",
+          "params": {
+            "attribute": "clearing_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C03",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Goods or service receipt recorded",
+          "params": {
+            "attribute": "receipt_presence",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2"
+            ]
+          }
+        },
+        {
+          "id": "C04",
+          "layer": "Timing",
+          "type": "metric",
+          "description": "Invoice to clearing within 30 days",
+          "params": {
+            "attribute": "invoice_to_clearing_days",
+            "threshold": 30,
+            "width": 60,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C05",
+          "layer": "Timing",
+          "type": "metric",
+          "description": "Receipt before invoice in DF1",
+          "params": {
+            "attribute": "invoice_precedes_receipt",
+            "threshold": 0,
+            "width": 1,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1"
+            ]
+          }
+        },
+        {
+          "id": "C06",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "No invoice cancellation",
+          "params": {
+            "attribute": "cancellation_presence",
+            "threshold": 0,
+            "width": 1,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C07",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "Price and quantity changes",
+          "params": {
+            "attribute": "edit_count",
+            "threshold": 0,
+            "width": 3,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C08",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "Repeated invoice receipts",
+          "params": {
+            "attribute": "invoice_count",
+            "threshold": 1,
+            "width": 3,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C09",
+          "layer": "Effort",
+          "type": "metric",
+          "description": "User attributed event count",
+          "params": {
+            "attribute": "user_event_count",
+            "threshold": 5,
+            "width": 10,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C10",
+          "layer": "Effort",
+          "type": "metric",
+          "description": "Distinct user identities",
+          "params": {
+            "attribute": "distinct_user_count",
+            "threshold": 2,
+            "width": 5,
+            "direction": "high"
+          },
+          "applicability": {}
+        }
+      ]
+    }
+  },
+  "historical": {
+    "schema_version": 3,
+    "missing_values": "three_valued",
+    "name": "bpic19.notebook.1.0-paper-aligned.v1",
+    "version": "1",
+    "scoring_mode": "layer_balanced",
+    "layers": [
+      {
+        "id": "L1_closure_completeness"
+      },
+      {
+        "id": "L2_flow_discipline"
+      },
+      {
+        "id": "L3_timeliness_ageing"
+      },
+      {
+        "id": "L4_rework_instability"
+      },
+      {
+        "id": "L5_exceptions_corrections"
+      },
+      {
+        "id": "L6_value_commercial"
+      },
+      {
+        "id": "L7_effort_automation"
+      }
+    ],
+    "views": [
+      {
+        "name": "Finance",
+        "layer_weights": {
+          "L1_closure_completeness": 0.24,
+          "L2_flow_discipline": 0.08,
+          "L3_timeliness_ageing": 0.24,
+          "L4_rework_instability": 0.06,
+          "L5_exceptions_corrections": 0.08,
+          "L6_value_commercial": 0.24,
+          "L7_effort_automation": 0.06
+        }
+      },
+      {
+        "name": "Logistics",
+        "layer_weights": {
+          "L1_closure_completeness": 0.08,
+          "L2_flow_discipline": 0.24,
+          "L3_timeliness_ageing": 0.22,
+          "L4_rework_instability": 0.22,
+          "L5_exceptions_corrections": 0.08,
+          "L6_value_commercial": 0.04,
+          "L7_effort_automation": 0.12
+        }
+      },
+      {
+        "name": "Compliance",
+        "layer_weights": {
+          "L1_closure_completeness": 0.12,
+          "L2_flow_discipline": 0.3,
+          "L3_timeliness_ageing": 0.1,
+          "L4_rework_instability": 0.06,
+          "L5_exceptions_corrections": 0.26,
+          "L6_value_commercial": 0.06,
+          "L7_effort_automation": 0.1
+        }
+      },
+      {
+        "name": "Automation",
+        "layer_weights": {
+          "L1_closure_completeness": 0.06,
+          "L2_flow_discipline": 0.08,
+          "L3_timeliness_ageing": 0.1,
+          "L4_rework_instability": 0.28,
+          "L5_exceptions_corrections": 0.06,
+          "L6_value_commercial": 0.08,
+          "L7_effort_automation": 0.34
+        }
+      }
+    ],
+    "constraints": [
+      {
+        "id": "c_l1_invoice_present",
+        "layer": "L1_closure_completeness",
+        "type": "metric",
+        "description": "Invoice evidence should exist for invoice-bearing flows.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l1_invoice_present",
+          "threshold": 1,
+          "width": 1,
+          "direction": "low"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ]
+        }
+      },
+      {
+        "id": "c_l1_clear_invoice_present",
+        "layer": "L1_closure_completeness",
+        "type": "metric",
+        "description": "Invoice-bearing flows should eventually be cleared.",
+        "weight": 1.4,
+        "params": {
+          "attribute": "c_l1_clear_invoice_present",
+          "threshold": 1,
+          "width": 1,
+          "direction": "low"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ]
+        }
+      },
+      {
+        "id": "c_l1_goods_or_ses_present",
+        "layer": "L1_closure_completeness",
+        "type": "metric",
+        "description": "3-way flows should contain goods or service receipt evidence.",
+        "weight": 1.1,
+        "params": {
+          "attribute": "c_l1_goods_or_ses_present",
+          "threshold": 1,
+          "width": 1,
+          "direction": "low"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2"
+          ]
+        }
+      },
+      {
+        "id": "c_l2_df1_invoice_after_goods",
+        "layer": "L2_flow_discipline",
+        "type": "metric",
+        "description": "In DF1, invoice evidence should not precede the first goods/service event.",
+        "weight": 1.4,
+        "params": {
+          "attribute": "c_l2_df1_invoice_after_goods",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1"
+          ]
+        }
+      },
+      {
+        "id": "c_l2_df2_release_after_goods",
+        "layer": "L2_flow_discipline",
+        "type": "metric",
+        "description": "In DF2, payment-block release should happen after the first goods/service event.",
+        "weight": 1.5,
+        "params": {
+          "attribute": "c_l2_df2_release_after_goods",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF2"
+          ]
+        }
+      },
+      {
+        "id": "c_l2_2way_no_goods_expected",
+        "layer": "L2_flow_discipline",
+        "type": "metric",
+        "description": "2-way match should not show goods/service receipt postings.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l2_2way_no_goods_expected",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "two_way"
+          ]
+        }
+      },
+      {
+        "id": "c_l2_consignment_no_clear_invoice",
+        "layer": "L2_flow_discipline",
+        "type": "metric",
+        "description": "Consignment should normally not be settled through standard Clear Invoice in this log scope.",
+        "weight": 0.8,
+        "params": {
+          "attribute": "c_l2_consignment_no_clear_invoice",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l3_df1_goods_to_invoice_days",
+        "layer": "L3_timeliness_ageing",
+        "type": "metric",
+        "description": "In DF1, invoice should follow goods/service within a target time.",
+        "weight": 1.3,
+        "params": {
+          "attribute": "c_l3_df1_goods_to_invoice_days",
+          "threshold": 10,
+          "width": 20,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1"
+          ]
+        }
+      },
+      {
+        "id": "c_l3_invoice_to_clear_days",
+        "layer": "L3_timeliness_ageing",
+        "type": "metric",
+        "description": "Invoice-bearing flows should clear in a reasonable time.",
+        "weight": 1.5,
+        "params": {
+          "attribute": "c_l3_invoice_to_clear_days",
+          "threshold": 30,
+          "width": 60,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ]
+        }
+      },
+      {
+        "id": "c_l3_df2_goods_to_rpb_days",
+        "layer": "L3_timeliness_ageing",
+        "type": "metric",
+        "description": "In DF2, goods/service to Remove Payment Block should be timely.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l3_df2_goods_to_rpb_days",
+          "threshold": 2,
+          "width": 10,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF2"
+          ]
+        }
+      },
+      {
+        "id": "c_l3_df2_rpb_to_clear_days",
+        "layer": "L3_timeliness_ageing",
+        "type": "metric",
+        "description": "In DF2, released items should clear quickly.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l3_df2_rpb_to_clear_days",
+          "threshold": 5,
+          "width": 20,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF2"
+          ]
+        }
+      },
+      {
+        "id": "c_l4_goods_fragmentation",
+        "layer": "L4_rework_instability",
+        "type": "metric",
+        "description": "Too many goods/service receipt events indicate fragmentation.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l4_goods_fragmentation",
+          "threshold": 2,
+          "width": 3,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l4_change_approval_repeats",
+        "layer": "L4_rework_instability",
+        "type": "metric",
+        "description": "Approval changes should be rare.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l4_change_approval_repeats",
+          "threshold": 0,
+          "width": 2,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l4_repeated_invoice_receipt",
+        "layer": "L4_rework_instability",
+        "type": "metric",
+        "description": "Repeated invoice receipt events indicate invoice handling churn.",
+        "weight": 1.0,
+        "params": {
+          "attribute": "c_l4_repeated_invoice_receipt",
+          "threshold": 1,
+          "width": 2,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ]
+        }
+      },
+      {
+        "id": "c_l4_change_payment_terms_repeats",
+        "layer": "L4_rework_instability",
+        "type": "metric",
+        "description": "Repeated payment-term changes indicate unstable commercial handling.",
+        "weight": 1.0,
+        "params": {
+          "attribute": "c_l4_change_payment_terms_repeats",
+          "threshold": 0,
+          "width": 2,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l5_cancel_invoice_receipt",
+        "layer": "L5_exceptions_corrections",
+        "type": "metric",
+        "description": "Invoice receipt cancellations should be exceptional.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l5_cancel_invoice_receipt",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ]
+        }
+      },
+      {
+        "id": "c_l5_cancel_goods_receipt",
+        "layer": "L5_exceptions_corrections",
+        "type": "metric",
+        "description": "Goods receipt cancellations should be exceptional.",
+        "weight": 1.0,
+        "params": {
+          "attribute": "c_l5_cancel_goods_receipt",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l5_delete_item",
+        "layer": "L5_exceptions_corrections",
+        "type": "metric",
+        "description": "PO item deletion should be exceptional once execution is underway.",
+        "weight": 1.1,
+        "params": {
+          "attribute": "c_l5_delete_item",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l5_debit_memo",
+        "layer": "L5_exceptions_corrections",
+        "type": "metric",
+        "description": "Vendor debit memos should be rare.",
+        "weight": 1.3,
+        "params": {
+          "attribute": "c_l5_debit_memo",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l5_credit_memo",
+        "layer": "L5_exceptions_corrections",
+        "type": "metric",
+        "description": "Vendor credit memos should be rare.",
+        "weight": 1.1,
+        "params": {
+          "attribute": "c_l5_credit_memo",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l6_change_price",
+        "layer": "L6_value_commercial",
+        "type": "metric",
+        "description": "Price changes after ordering indicate commercial inconsistency risk.",
+        "weight": 1.4,
+        "params": {
+          "attribute": "c_l6_change_price",
+          "threshold": 0,
+          "width": 2,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l6_change_quantity",
+        "layer": "L6_value_commercial",
+        "type": "metric",
+        "description": "Quantity changes after ordering indicate commercial inconsistency risk.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l6_change_quantity",
+          "threshold": 0,
+          "width": 2,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l6_high_exposure_memo",
+        "layer": "L6_value_commercial",
+        "type": "metric",
+        "description": "Correction documents on high-exposure cases matter more financially.",
+        "weight": 1.2,
+        "params": {
+          "attribute": "c_l6_high_exposure_memo",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l6_high_exposure_price_change",
+        "layer": "L6_value_commercial",
+        "type": "metric",
+        "description": "Price changes on high-exposure cases are financially more critical.",
+        "weight": 1.0,
+        "params": {
+          "attribute": "c_l6_high_exposure_price_change",
+          "threshold": 0,
+          "width": 1,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l7_manual_touches",
+        "layer": "L7_effort_automation",
+        "type": "metric",
+        "description": "Too many manual touches reduce touchless processing potential.",
+        "weight": 1.4,
+        "params": {
+          "attribute": "c_l7_manual_touches",
+          "threshold": 4,
+          "width": 6,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l7_distinct_human_resources",
+        "layer": "L7_effort_automation",
+        "type": "metric",
+        "description": "Too many human handoffs indicate coordination cost.",
+        "weight": 1.1,
+        "params": {
+          "attribute": "c_l7_distinct_human_resources",
+          "threshold": 2,
+          "width": 4,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l7_total_events",
+        "layer": "L7_effort_automation",
+        "type": "metric",
+        "description": "Very long event chains indicate execution friction.",
+        "weight": 1.0,
+        "params": {
+          "attribute": "c_l7_total_events",
+          "threshold": 10,
+          "width": 15,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l7_manual_share",
+        "layer": "L7_effort_automation",
+        "type": "metric",
+        "description": "High manual share indicates low straight-through processing.",
+        "weight": 0.9,
+        "params": {
+          "attribute": "c_l7_manual_share",
+          "threshold": 0.5,
+          "width": 0.5,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        }
+      },
+      {
+        "id": "c_l6_bal_networth_volatility",
+        "layer": "L6_value_commercial",
+        "type": "metric",
+        "description": "Large swings in cumulative net worth across events indicate commercial inconsistency (paper: balance constraint pattern, Table V c3/c4).",
+        "weight": 1.0,
+        "params": {
+          "attribute": "c_l6_bal_networth_volatility",
+          "threshold": 0.5,
+          "width": 1.0,
+          "direction": "high"
+        },
+        "applicability": {
+          "flow": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "source_sha256": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef",
+      "partial": false,
+      "requested_criterion_count": 29,
+      "omissions": [],
+      "compatibility": "source count, union-invoice, parsed-minimum, prefix resource, sample-CV and frozen max-absolute P95 recipes; Method uses explicit three-valued scope",
+      "raw_bindings": {
+        "c_l1_invoice_present": {
+          "activities": [
+            "Record Invoice Receipt",
+            "Vendor creates invoice"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l1_clear_invoice_present": {
+          "activities": [
+            "Clear Invoice"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l1_goods_or_ses_present": {
+          "activities": [
+            "Record Goods Receipt",
+            "Record Service Entry Sheet"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l2_df1_invoice_after_goods": {
+          "measure": "historical_invoice_precedes_receipt"
+        },
+        "c_l2_df2_release_after_goods": {
+          "measure": "historical_release_precedes_receipt"
+        },
+        "c_l2_2way_no_goods_expected": {
+          "activities": [
+            "Record Goods Receipt",
+            "Record Service Entry Sheet"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l2_consignment_no_clear_invoice": {
+          "activities": [
+            "Clear Invoice"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l3_df1_goods_to_invoice_days": {
+          "measure": "historical_goods_to_invoice_days"
+        },
+        "c_l3_invoice_to_clear_days": {
+          "measure": "historical_invoice_to_clear_days"
+        },
+        "c_l3_df2_goods_to_rpb_days": {
+          "measure": "historical_goods_to_release_days"
+        },
+        "c_l3_df2_rpb_to_clear_days": {
+          "measure": "historical_release_to_clear_days"
+        },
+        "c_l4_goods_fragmentation": {
+          "activities": [
+            "Record Goods Receipt",
+            "Record Service Entry Sheet"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l4_change_approval_repeats": {
+          "activities": [
+            "Change Approval for Purchase Order"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l4_repeated_invoice_receipt": {
+          "activities": [
+            "Record Invoice Receipt"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l4_change_payment_terms_repeats": {
+          "activities": [
+            "Change Payment Terms"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l5_cancel_invoice_receipt": {
+          "activities": [
+            "Cancel Invoice Receipt"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l5_cancel_goods_receipt": {
+          "activities": [
+            "Cancel Goods Receipt"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l5_delete_item": {
+          "activities": [
+            "Delete Purchase Order Item"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l5_debit_memo": {
+          "activities": [
+            "Vendor creates debit memo"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l5_credit_memo": {
+          "activities": [
+            "Vendor creates credit memo"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l6_change_price": {
+          "activities": [
+            "Change Price"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l6_change_quantity": {
+          "activities": [
+            "Change Quantity"
+          ],
+          "selector_policy": "historical_slug_v1"
+        },
+        "c_l6_high_exposure_memo": {
+          "measure": "historical_memo_exposure"
+        },
+        "c_l6_high_exposure_price_change": {
+          "measure": "historical_price_exposure"
+        },
+        "c_l7_manual_touches": {
+          "measure": "historical_manual_touch_count"
+        },
+        "c_l7_distinct_human_resources": {
+          "measure": "historical_distinct_human_resources"
+        },
+        "c_l7_total_events": {
+          "record_count": true
+        },
+        "c_l7_manual_share": {
+          "measure": "historical_manual_share"
+        },
+        "c_l6_bal_networth_volatility": {
+          "measure": "historical_networth_cv"
+        }
+      },
+      "source_operators": {
+        "c_l1_invoice_present": {
+          "type": "presence_any",
+          "params": {
+            "activities_any_of": [
+              "Record Invoice Receipt",
+              "Vendor creates invoice"
+            ],
+            "min_count": 1
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way"
+          ]
+        },
+        "c_l1_clear_invoice_present": {
+          "type": "presence",
+          "params": {
+            "activity": "Clear Invoice",
+            "min_count": 1
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way"
+          ]
+        },
+        "c_l1_goods_or_ses_present": {
+          "type": "presence_any",
+          "params": {
+            "activities_any_of": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "min_count": 1
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2"
+          ]
+        },
+        "c_l2_df1_invoice_after_goods": {
+          "type": "order",
+          "params": {
+            "first_any_of_a": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "first_any_of_b": [
+              "Record Invoice Receipt",
+              "Vendor creates invoice"
+            ]
+          },
+          "applicable_flows": [
+            "DF1"
+          ]
+        },
+        "c_l2_df2_release_after_goods": {
+          "type": "order",
+          "params": {
+            "first_any_of_a": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "first_activity_b": "Remove Payment Block"
+          },
+          "applicable_flows": [
+            "DF2"
+          ]
+        },
+        "c_l2_2way_no_goods_expected": {
+          "type": "absence_any",
+          "params": {
+            "activities_any_of": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ]
+          },
+          "applicable_flows": [
+            "2-way"
+          ]
+        },
+        "c_l2_consignment_no_clear_invoice": {
+          "type": "absence",
+          "params": {
+            "activity": "Clear Invoice"
+          },
+          "applicable_flows": [
+            "Consignment"
+          ]
+        },
+        "c_l3_df1_goods_to_invoice_days": {
+          "type": "lag",
+          "params": {
+            "first_any_of_a": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "first_any_of_b": [
+              "Record Invoice Receipt",
+              "Vendor creates invoice"
+            ],
+            "threshold_days": 10,
+            "saturation_width_days": 20
+          },
+          "applicable_flows": [
+            "DF1"
+          ]
+        },
+        "c_l3_invoice_to_clear_days": {
+          "type": "lag",
+          "params": {
+            "first_any_of_a": [
+              "Record Invoice Receipt",
+              "Vendor creates invoice"
+            ],
+            "first_activity_b": "Clear Invoice",
+            "threshold_days": 30,
+            "saturation_width_days": 60
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way"
+          ]
+        },
+        "c_l3_df2_goods_to_rpb_days": {
+          "type": "lag",
+          "params": {
+            "first_any_of_a": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "first_activity_b": "Remove Payment Block",
+            "threshold_days": 2,
+            "saturation_width_days": 10
+          },
+          "applicable_flows": [
+            "DF2"
+          ]
+        },
+        "c_l3_df2_rpb_to_clear_days": {
+          "type": "lag",
+          "params": {
+            "first_activity_a": "Remove Payment Block",
+            "first_activity_b": "Clear Invoice",
+            "threshold_days": 5,
+            "saturation_width_days": 20
+          },
+          "applicable_flows": [
+            "DF2"
+          ]
+        },
+        "c_l4_goods_fragmentation": {
+          "type": "count_excess",
+          "params": {
+            "activities_any_of": [
+              "Record Goods Receipt",
+              "Record Service Entry Sheet"
+            ],
+            "allowed_count": 2,
+            "saturation_width": 3
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "Consignment"
+          ]
+        },
+        "c_l4_change_approval_repeats": {
+          "type": "count_excess",
+          "params": {
+            "activity": "Change Approval for Purchase Order",
+            "allowed_count": 0,
+            "saturation_width": 2
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l4_repeated_invoice_receipt": {
+          "type": "count_excess",
+          "params": {
+            "activity": "Record Invoice Receipt",
+            "allowed_count": 1,
+            "saturation_width": 2
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way"
+          ]
+        },
+        "c_l4_change_payment_terms_repeats": {
+          "type": "count_excess",
+          "params": {
+            "activity": "Change Payment Terms",
+            "allowed_count": 0,
+            "saturation_width": 2
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l5_cancel_invoice_receipt": {
+          "type": "absence",
+          "params": {
+            "activity": "Cancel Invoice Receipt"
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way"
+          ]
+        },
+        "c_l5_cancel_goods_receipt": {
+          "type": "absence",
+          "params": {
+            "activity": "Cancel Goods Receipt"
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "Consignment"
+          ]
+        },
+        "c_l5_delete_item": {
+          "type": "absence",
+          "params": {
+            "activity": "Delete Purchase Order Item"
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l5_debit_memo": {
+          "type": "absence",
+          "params": {
+            "activity": "Vendor creates debit memo"
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l5_credit_memo": {
+          "type": "absence",
+          "params": {
+            "activity": "Vendor creates credit memo"
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l6_change_price": {
+          "type": "count_excess",
+          "params": {
+            "activity": "Change Price",
+            "allowed_count": 0,
+            "saturation_width": 2
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l6_change_quantity": {
+          "type": "count_excess",
+          "params": {
+            "activity": "Change Quantity",
+            "allowed_count": 0,
+            "saturation_width": 2
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l6_high_exposure_memo": {
+          "type": "any_of_with_multiplier",
+          "params": {
+            "activities_any_of": [
+              "Vendor creates debit memo",
+              "Vendor creates credit memo"
+            ],
+            "multiplier_feature": "exposure_norm"
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l6_high_exposure_price_change": {
+          "type": "activity_with_multiplier",
+          "params": {
+            "activity": "Change Price",
+            "multiplier_feature": "exposure_norm"
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l7_manual_touches": {
+          "type": "threshold_excess",
+          "params": {
+            "feature": "manual_touch_count",
+            "threshold": 4,
+            "saturation_width": 6
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l7_distinct_human_resources": {
+          "type": "threshold_excess",
+          "params": {
+            "feature": "distinct_human_resources",
+            "threshold": 2,
+            "saturation_width": 4
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l7_total_events": {
+          "type": "threshold_excess",
+          "params": {
+            "feature": "total_events",
+            "threshold": 10,
+            "saturation_width": 15
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l7_manual_share": {
+          "type": "threshold_excess",
+          "params": {
+            "feature": "manual_share",
+            "threshold": 0.5,
+            "saturation_width": 0.5
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way",
+            "Consignment"
+          ]
+        },
+        "c_l6_bal_networth_volatility": {
+          "type": "threshold_excess",
+          "params": {
+            "feature": "networth_cv",
+            "threshold": 0.5,
+            "saturation_width": 1.0
+          },
+          "applicable_flows": [
+            "DF1",
+            "DF2",
+            "2-way"
+          ]
+        }
+      },
+      "selector_policy": "historical_slug_v1_case_and_punctuation_normalization_without_plural_aliases",
+      "timestamp_policy": "independent_parsed_minima_without_paper_range_filter; reversed_elapsed_interval_unavailable; tie_zero",
+      "resource_policy": "outer_trim_lower_for_classification; exclude_empty_nan_none_null_and_batch_prefix; distinct_original_labels",
+      "value_policy": "sample_SD_ddof1_divided_by_mean_clipped_at_1e-6; item_maxabs_global_linear_P95; explicit_legacy_missing_fill_zero"
+    }
+  }
+}

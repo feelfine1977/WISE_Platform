@@ -370,8 +370,17 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
     if any(isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)) for predicate in predicates):
         from .case_time import case_time_summary
         summaries = {case: case_time_summary(prepared, case) for case in parent}
-    evaluations = [dict((case_id, _evaluate(prepared, case_id, predicate, summaries)) for case_id in parent)
-                   for predicate in predicates]
+    evaluations = []
+    for predicate in predicates:
+        if isinstance(predicate, CaseIdIn):
+            # The declared tuple stays unchanged in the receipt and identity.
+            # Build one index for the frozen parent instead of scanning a large
+            # ID tuple for every item (the before-GR flow contains 221,010).
+            members = frozenset(predicate.case_ids)
+            evaluations.append({case_id: (case_id not in members if predicate.negate else case_id in members)
+                                for case_id in parent})
+        else:
+            evaluations.append({case_id: _evaluate(prepared, case_id, predicate, summaries) for case_id in parent})
     combined: dict[str, bool | None] = {}
     for case_id in parent:
         values = [evaluation[case_id] for evaluation in evaluations]

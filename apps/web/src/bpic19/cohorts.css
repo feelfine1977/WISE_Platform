@@ -1,0 +1,8 @@
+.bpic19-cohorts { border-top: var(--line-width) solid var(--color-line); padding-block: var(--space-4); }
+.bpic19-cohorts label { display: block; margin-block: var(--space-3); }
+.bpic19-cohorts label select, .bpic19-cohorts label input { display: block; max-width: 100%; min-width: min(var(--size-path-input), 100%); min-height: var(--size-control); }
+.bpic19-cohorts table { width: 100%; overflow-wrap: anywhere; margin-block: var(--space-4); }
+.bpic19-cohorts td, .bpic19-cohorts th { vertical-align: top; }
+.bpic19-cohorts button { margin: var(--space-1); }
+.bpic19-cohorts [data-stale="true"] { opacity: var(--opacity-disabled); }
+@media (max-width: 700px) { .bpic19-cohorts table { display: block; overflow-x: auto; } }

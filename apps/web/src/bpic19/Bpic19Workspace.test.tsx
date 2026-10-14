@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Bpic19ProfileAnswer, Bpic19ProfileQuery } from "../generated/bpic19-profile";
 import type { Bpic19ProfileProps } from "./Bpic19Profile";
+import type { Bpic19MeasuresProps } from "./Bpic19Measures";
+import { measuresAnswer } from "./measures-test-fixture";
 import { CompareCoordinator } from "../compare/coordinator";
 import { ImportedInvestigationCoordinator, shownSelection } from "../imported/coordinator";
 import { SavingCoordinator } from "../saved/coordinator";
@@ -59,6 +61,7 @@ vi.mock("./Bpic19Profile", () => ({ Bpic19Profile: function ProfileBoundary(prop
   return <section aria-label="Scripted source profile">
     <output data-testid="current-source-query">{JSON.stringify(props.query ?? null)}</output>
     <output data-testid="current-profile-population">{props.identity.population_id}</output>
+    <button onClick={() => props.onColumns?.({ ...reviewedAnswer(props), profile: null, binding_state: "needs_review", query: { ...query, roles: null } })}>Inspect scripted columns</button>
     <button onClick={() => { props.onReviewed?.(reviewedAnswer(props)); props.onValidityChange?.(true); }}>Review scripted source</button>
     <button onClick={() => props.onValidityChange?.(false)}>Edit scripted source definition</button>
     <button onClick={() => {
@@ -71,7 +74,14 @@ vi.mock("./Bpic19Profile", () => ({ Bpic19Profile: function ProfileBoundary(prop
     }}>Keep scripted first item</button>
   </section>;
 } }));
-vi.mock("./Bpic19Measures", () => ({ Bpic19Measures: () => <p>Measures not requested by this test</p> }));
+vi.mock("./Bpic19Measures", () => ({ Bpic19Measures: (props: Bpic19MeasuresProps) => <section aria-label="Scripted activity counts">
+  <button onClick={() => {
+    props.onReviewed?.(measuresAnswer({ schema_version: 1, message_type: "bpic19_measures_request", request_id: "count-first-fixture",
+      query_revision: props.revision, workspace_id: props.workspaceId, identity: props.identity,
+      query: { policy_id: "bpic19.source_witnessed_measures.v1", measure_profile: "paper_v1", roles: {}, offset: 0, limit: 20 } }));
+    props.onValidityChange?.(true);
+  }}>Review scripted activity counts</button>
+</section> }));
 
 const active: { stop(): void }[] = [];
 afterEach(() => { for (const coordinator of active.splice(0)) coordinator.stop(); });
@@ -116,6 +126,18 @@ async function opening() {
 
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("reviews and saves recorded counts before the purchasing flow roles are accepted", async () => {
+    const app = await opening();
+    expect(screen.queryByRole("region", { name: "Scripted activity counts" })).toBeNull();
+    await app.user.click(screen.getByRole("button", { name: "Inspect scripted columns" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    expect(app.session.readyForSave()).toBe(true);
+    expect(app.session.savedPipeline()?.actions.map(action => action.operation)).toEqual(["bpic19_measures"]);
+    await act(async () => { app.saving.save("Recorded counts before flow review", "Count all recorded activities", "incidents"); await settle(); });
+    expect(app.saves.saves).toHaveLength(1);
+    expect(app.saves.saves[0].request.bpic19_pipeline?.actions.map(action => action.operation)).toEqual(["bpic19_measures"]);
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null")).toBeNull();
+  });
   it("keeps the latest reviewed source, horizon and role query when Keep changes the population identity", async () => {
     const app = await opening();
     await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
@@ -132,7 +154,7 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     // A new identity needs a matching answer before that action enters the saved pipeline.
     expect(app.session.savedPipeline()).toBeNull();
     await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
-    expect(app.session.savedPipeline()?.actions[0]).toMatchObject({ identity: child?.answer.identity, query });
+    expect(app.session.savedPipeline()?.actions.at(-1)).toMatchObject({ identity: child?.answer.identity, query });
   });
 
   it("removes current export and blocks save after the displayed source definition becomes dirty", async () => {

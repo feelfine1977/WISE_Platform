@@ -299,12 +299,21 @@ export interface Bpic19Pipeline {
   schema_version: 1;
   /**
    * @minItems 1
-   * @maxItems 2
+   * @maxItems 32
    */
-  actions: [Bpic19PipelineAction] | [Bpic19PipelineAction, Bpic19PipelineAction];
+  actions: [Bpic19PipelineAction, ...Bpic19PipelineAction[]];
 }
 export interface Bpic19PipelineAction {
-  operation: "bpic19_profile" | "bpic19_measures";
+  operation:
+    | "bpic19_profile"
+    | "bpic19_measures"
+    | "bpic19_cohorts"
+    | "bpic19_score"
+    | "bpic19_ordinal"
+    | "bpic19_fifo"
+    | "bpic19_cancellation"
+    | "bpic19_rule"
+    | "bpic19_waiting";
   identity: AnswerIdentity;
   /**
    * Validated against the registered operation request before save or replay.
@@ -313,6 +322,10 @@ export interface Bpic19PipelineAction {
     [k: string]: unknown;
   };
   definition_id: string;
+  /**
+   * Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position.
+   */
+  selection_prefix_length?: number | null;
 }
 export interface SaveInvestigationAnswer {
   schema_version: 1;
@@ -356,12 +369,21 @@ export interface Bpic19PipelineManifest {
   schema_version: 1;
   /**
    * @minItems 1
-   * @maxItems 2
+   * @maxItems 32
    */
-  outputs: [Bpic19PipelineOutput] | [Bpic19PipelineOutput, Bpic19PipelineOutput];
+  outputs: [Bpic19PipelineOutput, ...Bpic19PipelineOutput[]];
 }
 export interface Bpic19PipelineOutput {
-  operation: "bpic19_profile" | "bpic19_measures";
+  operation:
+    | "bpic19_profile"
+    | "bpic19_measures"
+    | "bpic19_cohorts"
+    | "bpic19_score"
+    | "bpic19_ordinal"
+    | "bpic19_fifo"
+    | "bpic19_cancellation"
+    | "bpic19_rule"
+    | "bpic19_waiting";
   definition_id: string;
   sha256: string;
   output: {

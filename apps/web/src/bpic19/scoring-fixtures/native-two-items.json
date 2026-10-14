@@ -1,0 +1,928 @@
+{
+  "schema_version": 1,
+  "message_type": "bpic19_score_answer",
+  "request_id": "fixture-1",
+  "query_revision": 1,
+  "workspace_id": "workspace.v1:0123456789abcdef",
+  "base_identity": {
+    "source_id": "source.v1:sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "preparation_id": "preparation.v1:sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "representation_id": "representation.v1:sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "case_dictionary_id": "case-dictionary.v1:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "population_id": "population.v1:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "implementation_version": "0.1.0"
+  },
+  "named_population": {
+    "name": "Literal two-item oracle",
+    "identity": {
+      "source_id": "source.v1:sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "preparation_id": "preparation.v1:sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "representation_id": "representation.v1:sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "case_dictionary_id": "case-dictionary.v1:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "population_id": "population.v1:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "implementation_version": "0.1.0"
+    }
+  },
+  "run_id": "bpic19-run:literal-fixture",
+  "report": {
+    "profile_id": "bpic19.paper.2026-10-12.v1",
+    "profile_complete": true,
+    "requested_criterion_count": 10,
+    "admitted_criterion_count": 10,
+    "omissions": [],
+    "method_artifact": {
+      "distribution": "wise-pm",
+      "version": "0.2.0",
+      "source_commit": "6883db5269e622d9ce5274d207e831d12ab134fe",
+      "wheel_sha256": "7329b7929bb8a3e40c596b359f352aace23cc233d8f29322ee063612733aecc3",
+      "qualification": "candidate_component_checked_release_pending",
+      "eligible_release": false
+    },
+    "norm": {
+      "schema_version": 3,
+      "missing_values": "three_valued",
+      "name": "bpic19.paper.2026-10-12.v1",
+      "version": "1",
+      "scoring_mode": "flat",
+      "metadata": {
+        "source_sha256": "abc7d58c3558790395622c5758f55e005ed1816092f5cd47a186744569608408",
+        "grain": "PO item",
+        "time_policy": "independent_parsed_minima_2017_inclusive_2020_exclusive",
+        "criteria_family": "full"
+      },
+      "layers": [
+        {
+          "id": "Completion"
+        },
+        {
+          "id": "Timing"
+        },
+        {
+          "id": "Rework"
+        },
+        {
+          "id": "Effort"
+        }
+      ],
+      "views": [
+        {
+          "name": "Balanced",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1,
+            "C04": 1,
+            "C05": 1,
+            "C06": 1,
+            "C07": 1,
+            "C08": 1,
+            "C09": 1,
+            "C10": 1
+          }
+        },
+        {
+          "name": "Completion",
+          "constraint_weights": {
+            "C01": 3,
+            "C02": 3,
+            "C03": 3,
+            "C04": 2,
+            "C05": 2,
+            "C06": 1,
+            "C07": 1,
+            "C08": 1,
+            "C09": 1,
+            "C10": 1
+          }
+        },
+        {
+          "name": "Operations",
+          "constraint_weights": {
+            "C01": 1,
+            "C02": 1,
+            "C03": 1,
+            "C04": 1,
+            "C05": 1,
+            "C06": 2,
+            "C07": 2,
+            "C08": 2,
+            "C09": 3,
+            "C10": 3
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "id": "C01",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice recorded",
+          "params": {
+            "attribute": "invoice_count",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C02",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Invoice cleared",
+          "params": {
+            "attribute": "clearing_count",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C03",
+          "layer": "Completion",
+          "type": "metric",
+          "description": "Goods or service receipt recorded",
+          "params": {
+            "attribute": "receipt_count",
+            "threshold": 1,
+            "width": 1,
+            "direction": "low"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2"
+            ]
+          }
+        },
+        {
+          "id": "C04",
+          "layer": "Timing",
+          "type": "metric",
+          "description": "Invoice to clearing within 30 days",
+          "params": {
+            "attribute": "invoice_to_clearing_days",
+            "threshold": 30,
+            "width": 60,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C05",
+          "layer": "Timing",
+          "type": "metric",
+          "description": "Receipt before invoice in DF1",
+          "params": {
+            "attribute": "invoice_precedes_receipt",
+            "threshold": 0,
+            "width": 1,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1"
+            ]
+          }
+        },
+        {
+          "id": "C06",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "No invoice cancellation",
+          "params": {
+            "attribute": "cancellation_count",
+            "threshold": 0,
+            "width": 1,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C07",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "Price and quantity changes",
+          "params": {
+            "attribute": "edit_count",
+            "threshold": 0,
+            "width": 3,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C08",
+          "layer": "Rework",
+          "type": "metric",
+          "description": "Repeated invoice receipts",
+          "params": {
+            "attribute": "invoice_count",
+            "threshold": 1,
+            "width": 3,
+            "direction": "high"
+          },
+          "applicability": {
+            "flow": [
+              "DF1",
+              "DF2",
+              "two_way"
+            ]
+          }
+        },
+        {
+          "id": "C09",
+          "layer": "Effort",
+          "type": "metric",
+          "description": "User attributed event count",
+          "params": {
+            "attribute": "user_event_count",
+            "threshold": 5,
+            "width": 10,
+            "direction": "high"
+          },
+          "applicability": {}
+        },
+        {
+          "id": "C10",
+          "layer": "Effort",
+          "type": "metric",
+          "description": "Distinct user identities",
+          "params": {
+            "attribute": "distinct_user_count",
+            "threshold": 2,
+            "width": 5,
+            "direction": "high"
+          },
+          "applicability": {}
+        }
+      ]
+    },
+    "norm_fingerprint": "3bcbf2811b1a03bfd86f89fdd4e1bc414ad99089578f9b254ddb90465f75f370",
+    "assessment_log_fingerprint": "165cca19af80f6fbe3b138ecf0d3d383bc85a30e4f7784310bad83e9ccb1b42e",
+    "transport": "prepared measurements; assessment rows are not source events",
+    "settings": {
+      "view": "Balanced",
+      "criteria_family": "full",
+      "mode": "flat",
+      "gamma": 0.0,
+      "group_by": [
+        "company",
+        "spend_area"
+      ],
+      "volume": "cases",
+      "min_cases": 1
+    },
+    "exposure_calibration": null,
+    "population_case_count": 2,
+    "scored_case_count": 2,
+    "unscored_case_count": 0,
+    "mean_score": 0.925,
+    "mean_coverage": 1.0,
+    "coverage_available_case_count": 2,
+    "view_summaries": [
+      {
+        "view": "Balanced",
+        "n_scored": 2,
+        "mean_score": 0.925,
+        "contrib__Completion": 0.0,
+        "contrib__Timing": 0.025,
+        "contrib__Rework": 0.05,
+        "contrib__Effort": 0.0
+      },
+      {
+        "view": "Completion",
+        "n_scored": 2,
+        "mean_score": 0.9444444444444444,
+        "contrib__Completion": 0.0,
+        "contrib__Timing": 0.027777777777777776,
+        "contrib__Rework": 0.027777777777777776,
+        "contrib__Effort": 0.0
+      },
+      {
+        "view": "Operations",
+        "n_scored": 2,
+        "mean_score": 0.9264705882352942,
+        "contrib__Completion": 0.0,
+        "contrib__Timing": 0.014705882352941176,
+        "contrib__Rework": 0.058823529411764705,
+        "contrib__Effort": 0.0
+      }
+    ],
+    "criterion_summary": [
+      {
+        "constraint": "C06",
+        "layer": "Rework",
+        "type": "metric",
+        "mean_penalty": 0.05,
+        "mean_violation": 0.5,
+        "share_violated": 0.5,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "No invoice cancellation"
+      },
+      {
+        "constraint": "C04",
+        "layer": "Timing",
+        "type": "metric",
+        "mean_penalty": 0.025,
+        "mean_violation": 0.25,
+        "share_violated": 0.5,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "Invoice to clearing within 30 days"
+      },
+      {
+        "constraint": "C01",
+        "layer": "Completion",
+        "type": "metric",
+        "mean_penalty": 0.0,
+        "mean_violation": 0.0,
+        "share_violated": 0.0,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "Invoice recorded"
+      },
+      {
+        "constraint": "C02",
+        "layer": "Completion",
+        "type": "metric",
+        "mean_penalty": 0.0,
+        "mean_violation": 0.0,
+        "share_violated": 0.0,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "Invoice cleared"
+      },
+      {
+        "constraint": "C03",
+        "layer": "Completion",
+        "type": "metric",
+        "mean_penalty": 0.0,
+        "mean_violation": 0.0,
+        "share_violated": 0.0,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "Goods or service receipt recorded"
+      },
+      {
+        "constraint": "C05",
+        "layer": "Timing",
+        "type": "metric",
+        "mean_penalty": 0.0,
+        "mean_violation": 0.0,
+        "share_violated": 0.0,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "Receipt before invoice in DF1"
+      },
+      {
+        "constraint": "C07",
+        "layer": "Rework",
+        "type": "metric",
+        "mean_penalty": 0.0,
+        "mean_violation": 0.0,
+        "share_violated": 0.0,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "Price and quantity changes"
+      },
+      {
+        "constraint": "C08",
+        "layer": "Rework",
+        "type": "metric",
+        "mean_penalty": 0.0,
+        "mean_violation": 0.0,
+        "share_violated": 0.0,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "Repeated invoice receipts"
+      },
+      {
+        "constraint": "C09",
+        "layer": "Effort",
+        "type": "metric",
+        "mean_penalty": 0.0,
+        "mean_violation": 0.0,
+        "share_violated": 0.0,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "User attributed event count"
+      },
+      {
+        "constraint": "C10",
+        "layer": "Effort",
+        "type": "metric",
+        "mean_penalty": 0.0,
+        "mean_violation": 0.0,
+        "share_violated": 0.0,
+        "share_in_scope": 1.0,
+        "share_evaluated": 1.0,
+        "description": "Distinct user identities"
+      }
+    ],
+    "backlog_spec": {
+      "by": [
+        "company",
+        "spend_area"
+      ],
+      "view": "Balanced",
+      "gamma": 0.0,
+      "volume": "cases",
+      "baseline": null,
+      "global_mean": 0.925,
+      "min_cases": 1,
+      "z": null,
+      "norm_fingerprint": "3bcbf2811b1a03bfd86f89fdd4e1bc414ad99089578f9b254ddb90465f75f370",
+      "score_col": "score",
+      "mode": "flat"
+    },
+    "groups": [
+      {
+        "company": "A",
+        "spend_area": "Parts",
+        "n_cases": 1,
+        "mean_score": 0.9,
+        "volume": 1.0,
+        "gap": 0.025000000000000022,
+        "PI": 0.025000000000000022,
+        "stable_mean": 0.9,
+        "stable_gap": 0.025000000000000022,
+        "stable_PI": 0.025000000000000022,
+        "global_mean": 0.925
+      },
+      {
+        "company": "B",
+        "spend_area": "Parts",
+        "n_cases": 1,
+        "mean_score": 0.95,
+        "volume": 1.0,
+        "gap": 0.0,
+        "PI": 0.0,
+        "stable_mean": 0.95,
+        "stable_gap": 0.0,
+        "stable_PI": 0.0,
+        "global_mean": 0.925
+      }
+    ],
+    "group_page": {
+      "offset": 0,
+      "limit": 100,
+      "total": 2,
+      "document_total": 2
+    },
+    "layer_drivers": [
+      {
+        "company": "A",
+        "spend_area": "Parts",
+        "volume": 1.0,
+        "n_cases": 1,
+        "Completion": 0.0,
+        "Timing": 0.0,
+        "Rework": 0.1,
+        "Effort": 0.0,
+        "Completion__delta": 0.0,
+        "Timing__delta": -0.025,
+        "Rework__delta": 0.05,
+        "Effort__delta": 0.0,
+        "dominant_layer": "Rework",
+        "Completion__signed_PI": 0.0,
+        "Completion__signed_stable_PI": 0.0,
+        "Timing__signed_PI": -0.025,
+        "Timing__signed_stable_PI": -0.025,
+        "Rework__signed_PI": 0.05,
+        "Rework__signed_stable_PI": 0.05,
+        "Effort__signed_PI": 0.0,
+        "Effort__signed_stable_PI": 0.0
+      },
+      {
+        "company": "B",
+        "spend_area": "Parts",
+        "volume": 1.0,
+        "n_cases": 1,
+        "Completion": 0.0,
+        "Timing": 0.05,
+        "Rework": 0.0,
+        "Effort": 0.0,
+        "Completion__delta": 0.0,
+        "Timing__delta": 0.025,
+        "Rework__delta": -0.05,
+        "Effort__delta": 0.0,
+        "dominant_layer": "Timing",
+        "Completion__signed_PI": 0.0,
+        "Completion__signed_stable_PI": 0.0,
+        "Timing__signed_PI": 0.025,
+        "Timing__signed_stable_PI": 0.025,
+        "Rework__signed_PI": -0.05,
+        "Rework__signed_stable_PI": -0.05,
+        "Effort__signed_PI": 0.0,
+        "Effort__signed_stable_PI": 0.0
+      }
+    ],
+    "documents": [
+      {
+        "document": "A",
+        "n_cases": 1,
+        "mean_score": 0.9,
+        "volume": 1.0,
+        "gap": 0.025000000000000022,
+        "PI": 0.025000000000000022,
+        "stable_mean": 0.9,
+        "stable_gap": 0.025000000000000022,
+        "stable_PI": 0.025000000000000022,
+        "global_mean": 0.925
+      },
+      {
+        "document": "B",
+        "n_cases": 1,
+        "mean_score": 0.95,
+        "volume": 1.0,
+        "gap": 0.0,
+        "PI": 0.0,
+        "stable_mean": 0.95,
+        "stable_gap": 0.0,
+        "stable_PI": 0.0,
+        "global_mean": 0.925
+      }
+    ],
+    "document_grain": "scored PO items within each purchasing document",
+    "driver_units": "native mean penalty deltas; signed PI terms use native volume before positive-gap truncation",
+    "associations": [],
+    "case_page": {
+      "offset": 0,
+      "limit": 100,
+      "total": 2,
+      "cases": [
+        {
+          "case_id": "A",
+          "flow": "DF1",
+          "document": "A",
+          "company": "A",
+          "spend_area": "Parts",
+          "score": 0.9,
+          "scores": {
+            "Balanced": 0.9,
+            "Completion": 0.9444444444444444,
+            "Operations": 0.8823529411764706
+          },
+          "coverage": 1.0,
+          "in_scope_raw_weight": 10.0,
+          "evaluated_raw_weight": 10.0,
+          "scope_unknown_count": 0,
+          "layers": {
+            "Completion": 0.0,
+            "Timing": 0.0,
+            "Rework": 0.1,
+            "Effort": 0.0
+          },
+          "criteria": [
+            {
+              "criterion_id": "C01",
+              "layer": "Completion",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:invoice_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C02",
+              "layer": "Completion",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:clearing_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C03",
+              "layer": "Completion",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:receipt_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C04",
+              "layer": "Timing",
+              "measurement": 0,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:invoice_to_clearing_days"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C05",
+              "layer": "Timing",
+              "measurement": 0,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:invoice_precedes_receipt"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C06",
+              "layer": "Rework",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:cancellation_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 1.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.1
+            },
+            {
+              "criterion_id": "C07",
+              "layer": "Rework",
+              "measurement": 0,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:edit_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C08",
+              "layer": "Rework",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:invoice_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C09",
+              "layer": "Effort",
+              "measurement": 2,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:user_event_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C10",
+              "layer": "Effort",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "A:distinct_user_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            }
+          ]
+        },
+        {
+          "case_id": "B",
+          "flow": "DF1",
+          "document": "B",
+          "company": "B",
+          "spend_area": "Parts",
+          "score": 0.95,
+          "scores": {
+            "Balanced": 0.95,
+            "Completion": 0.9444444444444444,
+            "Operations": 0.9705882352941176
+          },
+          "coverage": 1.0,
+          "in_scope_raw_weight": 10.0,
+          "evaluated_raw_weight": 10.0,
+          "scope_unknown_count": 0,
+          "layers": {
+            "Completion": 0.0,
+            "Timing": 0.05,
+            "Rework": 0.0,
+            "Effort": 0.0
+          },
+          "criteria": [
+            {
+              "criterion_id": "C01",
+              "layer": "Completion",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:invoice_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C02",
+              "layer": "Completion",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:clearing_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C03",
+              "layer": "Completion",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:receipt_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C04",
+              "layer": "Timing",
+              "measurement": 60,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:invoice_to_clearing_days"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.5,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.05
+            },
+            {
+              "criterion_id": "C05",
+              "layer": "Timing",
+              "measurement": 0,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:invoice_precedes_receipt"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C06",
+              "layer": "Rework",
+              "measurement": 0,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:cancellation_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C07",
+              "layer": "Rework",
+              "measurement": 0,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:edit_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C08",
+              "layer": "Rework",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:invoice_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C09",
+              "layer": "Effort",
+              "measurement": 2,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:user_event_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            },
+            {
+              "criterion_id": "C10",
+              "layer": "Effort",
+              "measurement": 1,
+              "measurement_reason": null,
+              "row_ids": [
+                "B:distinct_user_count"
+              ],
+              "in_scope": true,
+              "reason": "evaluated",
+              "deviation": 0.0,
+              "raw_weight": 1.0,
+              "effective_weight": 0.1,
+              "penalty": 0.0
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

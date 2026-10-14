@@ -1,0 +1,21 @@
+.bpic19-operators { display: grid; gap: var(--space-3); padding: var(--space-4); min-width: 0; color: var(--color-ink); }
+.bpic19-operator-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--size-source-select)), 1fr)); gap: var(--space-4); }
+.bpic19-operators fieldset { min-width: 0; border: var(--line-width) solid var(--color-line); border-radius: var(--radius); padding: var(--space-3); }
+.bpic19-operators legend { font-weight: var(--font-weight-strong); padding: 0 var(--space-1); }
+.bpic19-operators label { display: grid; gap: var(--space-1); margin-bottom: var(--space-3); }
+.bpic19-operators :is(input,select,textarea) { min-width: 0; max-width: 100%; min-height: var(--size-control); font: inherit; }
+.bpic19-operators textarea { min-height: var(--size-expectation-text); resize: vertical; }
+.bpic19-operator-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; margin: var(--space-3) 0; }
+.bpic19-operator-scroll { max-width: 100%; overflow-x: auto; }
+.bpic19-operators table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.bpic19-operators th, .bpic19-operators td { text-align: left; vertical-align: top; padding: var(--space-2); }
+.bpic19-operators tbody tr { border-top: var(--line-width) solid var(--color-line); }
+.bpic19-operators table button { margin: var(--space-1) var(--space-2) var(--space-1) 0; }
+.bpic19-operators :is(small,code) { overflow-wrap: anywhere; }
+.bpic19-operators small { display: block; margin-top: var(--space-1); font-weight: var(--font-weight-plain); }
+.bpic19-operators pre { max-height: var(--size-floating-max-height); overflow: auto; }
+.bpic19-operator-item { padding: var(--space-3) 0; border-bottom: var(--line-width) solid var(--color-line); }
+.bpic19-operators summary { cursor: pointer; font-weight: var(--font-weight-strong); margin-bottom: var(--space-3); }
+.bpic19-operators [data-stale="true"] { opacity: var(--opacity-disabled); }
+.bpic19-operators :is(button,input,select,textarea,summary):focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--focus-offset); }
+@media (max-width: 650px) { .bpic19-operator-actions { align-items: stretch; } }
