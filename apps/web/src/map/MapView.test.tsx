@@ -294,24 +294,29 @@ describe("the map of the kept incidents", () => {
   it("says the supplied times of a selected activity under the map", async () => {
     const app = await renderInvestigation();
     const map = await openMap(app, [opened, closed]);
-    const lines = () => Array.from(document.querySelectorAll(".map-element p")).map((line) => line.textContent);
+    const rows = () => Array.from(document.querySelectorAll(".activity-times-rows > div"), (row) => `${row.querySelector("dt")?.textContent}: ${row.querySelector("dd")?.textContent}`);
+    const paths = (title: string) => Array.from(document.querySelectorAll(`[aria-label^="${title}"] .activity-path`), (path) => path.getAttribute("aria-label"));
 
     fireEvent.click(nodeOf(map, opened));
-    expect(lines()).toEqual([
-      "Time since the event before: not available; no path leads into this activity.",
-      "Time until the next event: median 25.5 hours over 1 passage out of this activity.",
+    expect(rows()).toEqual([
+      "From previous: Not available: no labelled record comes before it in an incident whose order is known.",
+      "To next: median 26 h · 1 passage of 1 record",
     ]);
+    expect(paths("Paths out")).toEqual([`To ${closed}: 1 passages, median lag 26 h. Select this path on the map.`]);
+    expect(screen.getByText("No path leads into it.")).toBeTruthy();
     fireEvent.click(nodeOf(map, closed));
-    expect(lines()).toEqual([
-      "Time since the event before: median 25.5 hours over 1 passage into this activity.",
-      "Time until the next event: not available; no path leads out of this activity.",
+    expect(rows()).toEqual([
+      "From previous: median 26 h · 1 passage of 1 record",
+      "To next: Not available: no labelled record follows it in an incident whose order is known.",
     ]);
-    // The order of B-2 is not known, so no path leads into or out of its only activity.
+    // Choosing a path of the activity selects that path on the map, and the card is the path's.
+    fireEvent.click(document.querySelector(".activity-path")!);
+    expect(document.querySelector("#map-element-title")?.textContent).toContain(opened);
+    expect(document.querySelector(".activity-times")).toBeNull();
+    // The order of B-2 is not known, so no path leads into or out of its only activity, and the card says that such incidents are not in its times.
     fireEvent.click(nodeOf(map, "Prüfung"));
-    expect(lines()).toEqual([
-      "Time since the event before: not available; no path leads into this activity.",
-      "Time until the next event: not available; no path leads out of this activity.",
-    ]);
+    expect(rows().every((row) => row.includes("Not available"))).toBe(true);
+    expect(document.querySelector(".activity-times-note")?.textContent).toBe("1 incident whose order of records is not known is not in these times.");
     void app;
   });
 
@@ -355,10 +360,8 @@ describe("the map of the kept incidents", () => {
 
     // Both times of an activity stay worded under the map, also the one the map does not write on it.
     fireEvent.click(nodeOf(map, closed));
-    expect(Array.from(document.querySelectorAll(".map-element p")).map((line) => line.textContent)).toEqual([
-      "Time since the event before: median 25.5 hours over 1 passage into this activity.",
-      "Time until the next event: not available; no path leads out of this activity.",
-    ]);
+    expect(Array.from(document.querySelectorAll(".activity-times-rows dt"), (name) => name.textContent)).toEqual(["From previous", "To next"]);
+    expect(document.querySelector(".activity-times-rows dd")?.textContent).toBe("median 26 h · 1 passage of 1 record");
     expect(screen.getByRole("button", { name: "Keep incidents that end with it" })).toBeTruthy();
 
     await app.user.click(within(map).getByRole("button", { name: "Frequency" }));

@@ -226,6 +226,10 @@
   --size-bar: 3px;
   /* A part of a switch of two in a row of controls. */
   --size-switch: 24px;
+  /* The times of a selected activity: the column of their names, of a duration, and a row of a path. */
+  --size-time-label: 96px;
+  --size-time-value: 56px;
+  --size-row-compact: 28px;
   /* A header row of one line, and the bar of the kept share in the data row. */
   --size-kept-share: 48px;
 

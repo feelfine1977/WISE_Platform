@@ -12,7 +12,7 @@ export type ActivityTimes = Pick<NodeMetrics, "medianPreviousHours" | "usablePre
 /** The element of the map the analyst selected, named by the supplied labels. */
 export type SelectedElement =
   /** `starts` and `ends` are the supplied numbers of incidents that begin and that end with the activity. */
-  | { kind: "activity"; label: string; starts: number; ends: number; times: ActivityTimes }
+  | { kind: "activity"; id: string; label: string; starts: number; ends: number; times: ActivityTimes }
   /** `bridged` of the path's `passages` pass over records without activity label between the two activities. */
   | { kind: "path"; source: string; target: string; passages: number; bridged: number }
   /**
@@ -42,7 +42,7 @@ export function elementOf(graph: SuppliedGraph, kind: "node" | "edge", id: strin
   if (kind === "node") {
     const node = graph.nodes.find((item) => item.id === id);
     return node
-      ? { kind: "activity", label: node.label, starts: node.metrics.starts, ends: node.metrics.ends, times: timesOf(node.metrics) }
+      ? { kind: "activity", id: node.id, label: node.label, starts: node.metrics.starts, ends: node.metrics.ends, times: timesOf(node.metrics) }
       : { kind: "unrecorded" };
   }
   const edge = graph.edges.find((item) => item.id === id);

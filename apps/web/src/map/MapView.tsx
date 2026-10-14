@@ -12,6 +12,7 @@ import type { StageDefinitions } from "../stages/definitions";
 import { StagesEditor } from "../stages/StagesEditor";
 import { type StagedReading, useStages } from "../stages/store";
 import { AboutMap } from "./AboutMap";
+import { ActivityTimesCard } from "./ActivityTimesCard";
 import { mapArrangement, type MapDirection, OPENING_DIRECTION, parentArrangement } from "./arrange";
 import { CANVAS_FROM, mapDetail, WHOLE_DETAIL } from "./detail";
 import { DetailStrip } from "./DetailStrip";
@@ -25,7 +26,7 @@ import { MapToolbar } from "./MapToolbar";
 import { MeasureSwitch } from "./MeasureSwitch";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { PathsTable } from "./PathsTable";
-import { activityTimeLines, boundaryLine, clockTag, flowsLine, unevaluableLine } from "./wording";
+import { boundaryLine, clockTag, flowsLine, unevaluableLine } from "./wording";
 
 /** Above this many activities the map opens on the most frequent ones; its detail controls show the rest. */
 export const MANY_ACTIVITIES = 20;
@@ -421,12 +422,9 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           </p>
         )}
         {element?.kind === "several" && <p className="muted">Select one activity or one path; a step is taken from one of them.</p>}
-        {element?.kind === "activity" &&
-          activityTimeLines(element.times).map((line) => (
-            <p key={line} className="muted">
-              {line}
-            </p>
-          ))}
+        {element?.kind === "activity" && (
+          <ActivityTimesCard graph={shown.graph} nodeId={element.id} onSelectPath={(id) => setSelection({ nodes: [], edges: [id], groups: [] })} />
+        )}
         {element?.kind === "path" && element.bridged > 0 && (
           <p className="limitation">
             In {countOf(element.bridged, "passage")} of {countOf(element.passages, "passage")}, records without activity label lie between the two
