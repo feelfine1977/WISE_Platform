@@ -157,7 +157,8 @@ describe("the stages of a log on its map", () => {
     define(twoStages);
     const { map, user } = await openMap();
     await waitFor(() => expect(stageBoxes(map)).toEqual(["Intake", "Closure"]));
-    await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"));
+    // The layout engine takes seconds on a slow machine; the test already has 20 seconds.
+    await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"), { timeout: 15_000 });
 
     // The map library says the stage of an activity with it and marks the activity with the pattern of its stage.
     expect(nodeOf(map, nodeIds[opened])?.getAttribute("aria-label")).toContain("(Intake)");

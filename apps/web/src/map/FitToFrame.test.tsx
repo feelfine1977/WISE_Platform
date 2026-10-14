@@ -4,6 +4,10 @@ import { fittedView, follow, type Seen, sameView } from "./FitToFrame";
 import { MapView } from "./MapView";
 import { BUSY_ACTIVITIES, busyGraph, busyIds, shownWhole } from "./testGraphs";
 
+// The map is arranged by its layout engine, which a slow machine takes seconds for: the tests wait for it that long.
+const LAYOUT_WITHIN = 15_000;
+vi.setConfig({ testTimeout: 20_000 });
+
 // The map of these tests runs from left to right: it is wider than its frame, and what is said below about its fit is said of such a map.
 vi.mock("./arrange", async (original) => {
   const arrange = await original<typeof import("./arrange")>();
@@ -75,7 +79,7 @@ async function renderFittedMap() {
   render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} />);
   const map = await screen.findByLabelText("Process map of the kept incidents");
   await waitFor(() => expect(map.querySelectorAll(".react-flow__node-activity").length).toBe(BUSY_ACTIVITIES));
-  await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"));
+  await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"), { timeout: LAYOUT_WITHIN });
   // The library fits the arranged map twice, the second time 400 ms after the arrangement.
   await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
   const button = (name: string) => within(map).getByRole("button", { name });

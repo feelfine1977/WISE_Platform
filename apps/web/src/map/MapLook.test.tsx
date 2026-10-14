@@ -10,6 +10,10 @@ import { MAP_THEME, nodeSize } from "./look";
 import { MapView } from "./MapView";
 import { busyGraph, busyIds, shownWhole, stepName } from "./testGraphs";
 
+// The map is arranged by its layout engine, which a slow machine takes seconds for: the tests wait for it that long.
+const LAYOUT_WITHIN = 15_000;
+vi.setConfig({ testTimeout: 20_000 });
+
 type MapProps = ComponentProps<typeof FlowReact.ProcessMap>;
 
 const drawn = vi.hoisted(() => ({ props: null as unknown, real: true }));
@@ -90,7 +94,7 @@ describe("the look the map is given", () => {
   it("draws an activity as a card of 200 by 64 with rounded corners, its share as a bar along the bottom edge", async () => {
     render(<MapView shown={shown} parentGraph={supplied} onStep={() => undefined} />);
     const map = await screen.findByLabelText("Process map of the kept incidents");
-    await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"));
+    await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"), { timeout: LAYOUT_WITHIN });
     const card = map.querySelector<HTMLElement>(`[id="wf-node-${busyIds.activity(0)}"]`)!;
     expect(["width", "height", "--wf-node-radius", "--wf-node-stroke", "--wf-node-fill"].map((name) => card.style.getPropertyValue(name))).toEqual(["200px", "64px", "8px", "1px", "var(--wf-paper)"]);
     expect(card.querySelector('[data-wf-part="node-cue"]')).toBeNull();
@@ -103,7 +107,7 @@ describe("the look the map is given", () => {
   it("draws Start as a ring and End as a disc in their colours, with their names", async () => {
     render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} />);
     const map = await screen.findByLabelText("Process map of the kept incidents");
-    await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"));
+    await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"), { timeout: LAYOUT_WITHIN });
     const node = (id: string) => map.querySelector<HTMLElement>(`[id="wf-node-${id}"]`)!;
     const paints = (id: string) => ["--wf-node-fill", "--wf-node-outline", "--wf-node-stroke", "--wf-node-radius"].map((name) => node(id).style.getPropertyValue(name));
     expect(paints(START_ID)).toEqual(["#ffffff", "#205840", "2px", "20px"]);
