@@ -31,7 +31,11 @@ export type SelectionPredicate =
   | OpeningAttributeIn
   | RecordAttributeIn
   | ObservedSpanAtLeast
-  | MaxRawGapAtLeast;
+  | MaxRawGapAtLeast
+  | RawRecordCountBetween
+  | ObservedSpanBetween
+  | MaxRawGapBetween
+  | DirectlyFollowsLagBetween;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
 export type LocalTimestamp = string;
@@ -162,6 +166,45 @@ export interface ObservedSpanAtLeast {
 export interface MaxRawGapAtLeast {
   kind: "max_raw_gap_at_least";
   hours: number;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface RawRecordCountBetween {
+  kind: "raw_record_count_between";
+  minimum_records: number;
+  maximum_records: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface ObservedSpanBetween {
+  kind: "observed_span_between";
+  minimum_hours: number;
+  maximum_hours: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation.
+ */
+export interface MaxRawGapBetween {
+  kind: "max_raw_gap_between";
+  minimum_hours: number;
+  maximum_hours: number | null;
+  negate: boolean;
+}
+/**
+ * Inclusive bounds, lower no greater than upper; null upper is unbounded. Unknown measures remain unevaluable under negation. Both quantifiers require at least one mapped passage; no passage is false, unknown whole order is unevaluable.
+ */
+export interface DirectlyFollowsLagBetween {
+  kind: "directly_follows_lag_between";
+  source_activity: string;
+  target_activity: string;
+  minimum_hours: number;
+  maximum_hours: number | null;
+  quantifier: "any" | "every";
   negate: boolean;
 }
 export interface SelectionAnswer {

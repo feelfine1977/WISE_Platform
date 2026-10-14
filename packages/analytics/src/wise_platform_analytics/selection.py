@@ -11,6 +11,10 @@ import json
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Protocol, TypeAlias
 
+from .range_predicates import (RawRecordCountBetween, ObservedSpanBetween, MaxRawGapBetween,
+                               DirectlyFollowsLagBetween, RANGE_TYPES, TIME_RANGE_TYPES,
+                               range_descriptor, exact_range_measurements, evaluate_range)
+
 if TYPE_CHECKING:
     from .mapping import ImportRefusal
     from .preparation import PreparedData
@@ -133,7 +137,8 @@ class MaxRawGapAtLeast:
 
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
                         | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
-                        | OpeningAttributeIn | RecordAttributeIn | ObservedSpanAtLeast | MaxRawGapAtLeast)
+                        | OpeningAttributeIn | RecordAttributeIn | ObservedSpanAtLeast | MaxRawGapAtLeast
+                        | RawRecordCountBetween | ObservedSpanBetween | MaxRawGapBetween | DirectlyFollowsLagBetween)
 
 
 class SelectionError(ValueError):
@@ -217,6 +222,11 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
     """Canonical pure-data meaning; negation never converts unknown into true."""
     if type(getattr(predicate, "negate", None)) is not bool:
         raise SelectionError("invalid_predicate", "Predicate negation must be Boolean.")
+    if isinstance(predicate, RANGE_TYPES):
+        try:
+            return range_descriptor(predicate)
+        except ValueError as error:
+            raise SelectionError("invalid_predicate", str(error)) from None
     if isinstance(predicate, CaseIdIn):
         _set_values(predicate.case_ids, identifiers=True)
         return {"kind": "case_id_in", "case_ids": list(predicate.case_ids), "negate": predicate.negate}
@@ -318,6 +328,11 @@ def semantic_predicate(descriptor: Mapping[str, object]) -> dict[str, object]:
         hours = result["hours"]
         if isinstance(hours, float) and hours.is_integer():
             result["hours"] = int(hours)
+    elif kind in ("observed_span_between", "max_raw_gap_between", "directly_follows_lag_between"):
+        for bound in ("minimum_hours", "maximum_hours"):
+            value = result[bound]
+            if isinstance(value, float) and value.is_integer():
+                result[bound] = int(value)
     elif kind == "case_start_in_window":
         from .time_formats import iso_local, iso_utc
         window = result["window"]
@@ -393,7 +408,8 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
     if any(isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)) for predicate in predicates):
         from .case_time import case_time_summary
         summaries = {case: case_time_summary(prepared, case) for case in parent}
-    evaluations = [dict((case_id, _evaluate(prepared, case_id, predicate, summaries)) for case_id in parent)
+    exact_ranges = exact_range_measurements(prepared, parent) if any(isinstance(p, TIME_RANGE_TYPES) for p in predicates) else {}
+    evaluations = [dict((case_id, _evaluate(prepared, case_id, predicate, summaries, exact_ranges)) for case_id in parent)
                    for predicate in predicates]
     combined: dict[str, bool | None] = dict.fromkeys(parent, True)
     prefixes = []
@@ -424,8 +440,10 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
                            individual, active, tuple(prefixes), MappingProxyType(identity))
 
 
-def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, summaries: Mapping[str, Mapping] | None = None) -> bool | None:
+def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, summaries: Mapping[str, Mapping] | None = None, exact_ranges: Mapping | None = None) -> bool | None:
     records = prepared.histories[case_id]
+    if isinstance(predicate, RANGE_TYPES):
+        return evaluate_range(predicate, len(records), (exact_ranges or {}).get(case_id))
     if isinstance(predicate, CaseIdIn):
         value: bool | None = case_id in predicate.case_ids
     elif isinstance(predicate, RecordAttributeIn):

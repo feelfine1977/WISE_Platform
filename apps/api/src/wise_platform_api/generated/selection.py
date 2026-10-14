@@ -322,6 +322,49 @@ class LagMicroseconds(RootModel[constr(pattern=r'^(0|[1-9][0-9]*)$', max_length=
     )
 
 
+class RawRecordCountBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['raw_record_count_between']
+    minimum_records: conint(ge=0, le=9007199254740991)
+    maximum_records: conint(ge=0, le=9007199254740991) | None
+    negate: bool
+
+
+class ObservedSpanBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['observed_span_between']
+    minimum_hours: confloat(ge=0.0)
+    maximum_hours: confloat(ge=0.0) | None
+    negate: bool
+
+
+class MaxRawGapBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['max_raw_gap_between']
+    minimum_hours: confloat(ge=0.0)
+    maximum_hours: confloat(ge=0.0) | None
+    negate: bool
+
+
+class DirectlyFollowsLagBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['directly_follows_lag_between']
+    source_activity: constr(min_length=1)
+    target_activity: constr(min_length=1)
+    minimum_hours: confloat(ge=0.0)
+    maximum_hours: confloat(ge=0.0) | None
+    quantifier: Literal['any', 'every']
+    negate: bool
+
+
 class PathMetrics(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -512,6 +555,10 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | RawRecordCountBetween
+        | ObservedSpanBetween
+        | MaxRawGapBetween
+        | DirectlyFollowsLagBetween
     ]
 ):
     root: (
@@ -526,6 +573,10 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | RawRecordCountBetween
+        | ObservedSpanBetween
+        | MaxRawGapBetween
+        | DirectlyFollowsLagBetween
     ) = Field(..., title='SelectionPredicate')
 
 

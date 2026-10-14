@@ -103,6 +103,10 @@ _PREDICATES = _by(
         "record_attribute_in": "RecordAttributeIn",
         "observed_span_at_least": "ObservedSpanAtLeast",
         "max_raw_gap_at_least": "MaxRawGapAtLeast",
+        "raw_record_count_between": "RawRecordCountBetween",
+        "observed_span_between": "ObservedSpanBetween",
+        "max_raw_gap_between": "MaxRawGapBetween",
+        "directly_follows_lag_between": "DirectlyFollowsLagBetween",
     },
 )
 _PERIODS = ("target", _period_member)
@@ -119,6 +123,7 @@ _UNIONS: dict[str, tuple[str, Callable[[Mapping[str, object]], str | None]]] = {
             "StartsWithActivity",
             "EndsWithActivity", "CaseIdIn", "CaseStartInWindow", "OpeningAttributeIn",
             "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast",
+            "RawRecordCountBetween", "ObservedSpanBetween", "MaxRawGapBetween", "DirectlyFollowsLagBetween",
         )
     },
     "UtcCaseStartWindow": _by("timestamp_kind", {"utc_instant": "UtcCaseStartWindow", "wall_clock": "WallCaseStartWindow"}),

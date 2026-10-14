@@ -32,6 +32,7 @@ from wise_platform_analytics.selection import (
     RecordAttributeIn,
     ObservedSpanAtLeast,
     MaxRawGapAtLeast,
+    RawRecordCountBetween, ObservedSpanBetween, MaxRawGapBetween, DirectlyFollowsLagBetween,
     DirectlyFollows,
     EndsWithActivity,
     OpeningAttributeEquals,
@@ -208,6 +209,14 @@ def package_predicate(given: Mapping[str, object]) -> Predicate:
     if kind in ("observed_span_at_least", "max_raw_gap_at_least"):
         constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
         return constructor(given["hours"], negate)
+    if kind == "raw_record_count_between":
+        return RawRecordCountBetween(given["minimum_records"], given["maximum_records"], negate)
+    if kind in ("observed_span_between", "max_raw_gap_between"):
+        constructor = ObservedSpanBetween if kind == "observed_span_between" else MaxRawGapBetween
+        return constructor(given["minimum_hours"], given["maximum_hours"], negate)
+    if kind == "directly_follows_lag_between":
+        return DirectlyFollowsLagBetween(given["source_activity"], given["target_activity"],
+                                        given["minimum_hours"], given["maximum_hours"], given["quantifier"], negate)
     if kind == "contains_activity":
         return ContainsActivity(str(given["activity"]), negate)
     if kind == "starts_with_activity":
