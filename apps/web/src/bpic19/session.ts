@@ -1,9 +1,9 @@
-import type { AnswerIdentity, Bpic19Pipeline, Bpic19PipelineAction } from "../generated/saving";
+import type { AnswerIdentity, Bpic19Pipeline, Bpic19PipelineAction, Bpic19LiteratureClaim } from "../generated/saving";
 import type { PipelineSource } from "../saved/coordinator";
 import { sameJson } from "../data/coordinator";
 
 const operations = ["bpic19_profile", "bpic19_measures", "bpic19_cohorts", "bpic19_score",
-  "bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting", "bpic19_flow_comparison", "bpic19_interval_comparison", "bpic19_method_gate"] as const;
+  "bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting", "bpic19_flow_comparison", "bpic19_interval_comparison", "bpic19_operator_comparison", "bpic19_cohort_comparison", "bpic19_method_gate"] as const;
 type Reviewed = { action: Bpic19PipelineAction; path: readonly unknown[] };
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -26,6 +26,8 @@ export class Bpic19Session implements PipelineSource {
   private binding = "";
   private baseIdentity: AnswerIdentity | undefined;
   private replayMode: "require_all" | "partial" | undefined;
+  private literatureClaims:Bpic19LiteratureClaim[]=[];
+  private literatureDraftCurrent=true;
 
   basis(workspaceId: string, identity: AnswerIdentity, predicates?: readonly unknown[], baseIdentity?: AnswerIdentity): void {
     const next = JSON.stringify([workspaceId, identity]);
@@ -41,7 +43,7 @@ export class Bpic19Session implements PipelineSource {
           if (this.validity.get(operation) === true) this.ancestors.push({ action: structuredClone(action), path: structuredClone(this.path) });
         }
       }
-    } else { this.ancestors = []; this.replayMode = undefined; }
+    } else { this.ancestors = []; this.replayMode = undefined;this.literatureClaims=[];this.literatureDraftCurrent=true; }
     this.key = next;
     this.binding = nextBinding;
     this.baseIdentity = baseIdentity === undefined ? undefined : structuredClone(baseIdentity);
@@ -85,6 +87,9 @@ export class Bpic19Session implements PipelineSource {
   }
 
   declarations(): Bpic19PipelineAction[] { return structuredClone(this.orderedActions()); }
+  claims():Bpic19LiteratureClaim[]{return structuredClone(this.literatureClaims);}
+  setClaims(claims:readonly Bpic19LiteratureClaim[]):void{this.literatureClaims=structuredClone([...claims]);this.literatureDraftCurrent=true;}
+  validClaims(current:boolean):boolean{const changed=this.literatureDraftCurrent!==current;this.literatureDraftCurrent=current;return changed;}
 
   setReplayMode(mode: "require_all" | "partial"): void { this.replayMode = mode; }
 
@@ -101,9 +106,10 @@ export class Bpic19Session implements PipelineSource {
   }
 
   /** Called once with a successful server-reopened manifest, never unverified local storage. */
-  restore(workspaceId: string, identity: AnswerIdentity, predicates: readonly unknown[], actions: readonly Bpic19PipelineAction[], baseIdentity?: AnswerIdentity, replayMode?: "require_all" | "partial"): boolean {
+  restore(workspaceId: string, identity: AnswerIdentity, predicates: readonly unknown[], actions: readonly Bpic19PipelineAction[], baseIdentity?: AnswerIdentity, replayMode?: "require_all" | "partial",literatureClaims:readonly Bpic19LiteratureClaim[]=[]): boolean {
     this.basis(workspaceId, identity, predicates, baseIdentity);
     this.replayMode = replayMode;
+    this.setClaims(literatureClaims);
     const accepted: Reviewed[] = [];
     for (const action of actions) {
       if (binding(workspaceId, action.identity) !== this.binding) return false;
@@ -135,7 +141,8 @@ export class Bpic19Session implements PipelineSource {
   }
 
   readyForSave(): boolean {
-    if (this.actions.size === 0 && this.ancestors.length === 0) return true;
+    if(!this.literatureDraftCurrent)return false;
+    if (this.actions.size === 0 && this.ancestors.length === 0) return this.literatureClaims.length===0;
     if (this.orderedActions().length > 32) return false;
     if (this.orderedActions().some(action => action.operation === "bpic19_method_gate") && this.replayMode !== "partial") return false;
     return [...this.validity.values()].every(Boolean);
@@ -154,6 +161,7 @@ export class Bpic19Session implements PipelineSource {
     if (!this.readyForSave()) return null;
     const ordered = this.orderedActions(); if (ordered.length === 0) return null;
     return { schema_version: 1, actions: structuredClone(ordered) as Bpic19Pipeline["actions"],
+      ...(this.literatureClaims.length?{literature_claims:this.claims()}:{}),
       ...(this.replayMode === undefined ? {} : { replay_mode: this.replayMode }) };
   }
 }

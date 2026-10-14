@@ -39,7 +39,8 @@ function Labels({ label, value, change }: { label: string; value: string[]; chan
 }
 function EpisodeControls({ recipe, change }: { recipe: OrdinalRecipe | FifoRecipe; change: (recipe: OperatorRecipe) => void }) {
   return <>
-    {recipe.kind === "ordinal" ? <Choice label="Ordinal ordering" value={recipe.order} options={["numeric_event_id", "timestamp_source_position"]} names={{ numeric_event_id: "Numeric original eventID · source-compatible ordinal", timestamp_source_position: "Parsed time, then original source position · distinct recipe" }} change={order => change({ ...recipe, order })} /> : <Choice label="FIFO ordering" value={recipe.order} options={["source_position", "timestamp_source_position"]} names={{ source_position: "Strictly later original source positions", timestamp_source_position: "Parsed time, then original source position" }} change={order => change({ ...recipe, order })} />}
+    {recipe.kind === "ordinal" ? <Choice label="Ordinal ordering" value={recipe.order} options={["numeric_event_id", "timestamp_source_position"]} names={{ numeric_event_id: "Numeric original eventID · source-compatible ordinal", timestamp_source_position: "Parsed time, then original source position · distinct recipe" }} change={order => change({ ...recipe, order })} /> : <Choice label="FIFO ordering" value={recipe.order} options={["source_position", "timestamp_source_position", "timestamp_numeric_event_id"]} names={{ source_position: "Strictly later original source positions · R08 reproduction", timestamp_source_position: "Parsed time, then original source position", timestamp_numeric_event_id: "Parsed time, numeric eventID, then original source position · panel convention" }} change={order => change({ ...recipe, order })} />}
+    {recipe.kind === "fifo" && recipe.order === "timestamp_numeric_event_id" && <p>Parsed time determines chronology; numeric eventID orders equal-time records. Equal numeric IDs use original source position. Review the original eventID field: every original item record needs a trimmed ASCII integer of 1–64 digits. Missing or malformed IDs leave that item unknown with exact raw witnesses. This declared tie convention does not prove chronology from eventIDs.</p>}
     <Choice label="Episode stage sequence" value={recipe.stages} options={["gr_ir_ci", "ir_gr_ci", "ir_ci", "auto_flow"]} names={{ gr_ir_ci: "Receipt → invoice → clearing", ir_gr_ci: "Invoice → receipt → clearing", ir_ci: "Invoice → clearing", auto_flow: "Invariant flow category and first relevant stage" }} change={stages => change({ ...recipe, stages })} />
     <Choice label="Receipt selector" value={recipe.receipt} options={["goods", "goods_or_service"]} names={{ goods: "Record Goods Receipt", goods_or_service: "Goods receipt or service entry sheet" }} change={receipt => change({ ...recipe, receipt })} />
     <Choice label="Item cancellation policy" value={recipe.cancellation} options={["retain", "exclude_item"]} names={{ retain: "Retain complete items containing cancellations", exclude_item: "Exclude such items from episode evaluation" }} change={cancellation => change({ ...recipe, cancellation })} />
@@ -93,12 +94,22 @@ function CaseEvidence({ feature, disabled, inspect }: { feature: OperatorCase; d
 export interface Bpic19OperatorsProps {
   workspaceId: string; identity: AnswerIdentity; revision: number; roles: OperatorRoles; query?: OperatorQuery;
   retainedQueries?: OperatorQuery[]; onRetain?: (answer: Bpic19OperatorAnswer) => void;
+  restoredComparison?: Bpic19OperatorComparison;
+  onCompared?: (comparison: Bpic19OperatorComparison) => void;
+  onComparisonValidityChange?: (current: boolean) => void;
   columns?: { index: number; name: string }[]; client?: Bpic19OperatorClient;
   onInspect: (caseId: string, rowIds?: string[]) => void; onKeepCases?: (caseIds: string[], label: string) => void;
   onReviewed?: (answer: Bpic19OperatorAnswer) => void; onValidityChange?: (current: boolean) => void;
 }
 
-export function Bpic19Operators({ workspaceId, identity, revision, roles, query, retainedQueries = [], onRetain, columns, client = httpBpic19OperatorsClient, onInspect, onKeepCases, onReviewed, onValidityChange }: Bpic19OperatorsProps) {
+export interface Bpic19OperatorComparison {
+  policy_id: "bpic19.ordinal_fifo_comparison.v1";
+  identity: AnswerIdentity;
+  ordinal: { definition_id: string; query: OperatorQuery };
+  fifo: { definition_id: string; query: OperatorQuery };
+}
+
+export function Bpic19Operators({ workspaceId, identity, revision, roles, query, retainedQueries = [], onRetain, restoredComparison, onCompared, onComparisonValidityChange, columns, client = httpBpic19OperatorsClient, onInspect, onKeepCases, onReviewed, onValidityChange }: Bpic19OperatorsProps) {
   const heading = useId();
   const [draft, setDraft] = useState<OperatorQuery>(() => initial(roles, query));
   const [answer, setAnswer] = useState<Bpic19OperatorAnswer | null>(null), [catalogue, setCatalogue] = useState<OperatorCatalogue | null>(null);
@@ -109,12 +120,16 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
   const [comparison, setComparison] = useState<[Bpic19OperatorAnswer, Bpic19OperatorAnswer] | null>(null);
   const [compareBusy, setCompareBusy] = useState(false), [compareProblem, setCompareProblem] = useState<string | null>(null);
   const compareController = useRef<AbortController | null>(null), compareSerial = useRef(0);
+  const reviewedComparison = useRef<Bpic19OperatorComparison | null>(null);
+  const comparisonCallbacks = useRef({ onCompared, onComparisonValidityChange }); comparisonCallbacks.current = { onCompared, onComparisonValidityChange };
   const controller = useRef<AbortController | null>(null), serial = useRef(0), retry = useRef<OperatorQuery | null>(null);
   const callbacks = useRef({ onReviewed, onValidityChange }); callbacks.current = { onReviewed, onValidityChange };
   const identityKey = JSON.stringify(identity), roleKey = JSON.stringify(roleBindings(roles)), queryKey = JSON.stringify(query ?? null);
+  const restoredComparisonKey = JSON.stringify(restoredComparison ?? null);
   const envelope = (next: OperatorQuery, requestId: string): Bpic19OperatorRequest => ({ schema_version: 1, message_type: "bpic19_operator_request", request_id: requestId, query_revision: revision, workspace_id: workspaceId, identity, query: next });
   const choices = new Map<string, OperatorQuery>();
-  for (const candidate of [...retainedQueries, ...Object.values(retainedAnswers).filter(value => value.workspace_id === workspaceId && sameJson(value.identity, identity) && value.query_revision === revision).map(value => value.query)]) {
+  const restoredChoices = restoredComparison && sameJson(restoredComparison.identity, identity) ? [restoredComparison.ordinal.query, restoredComparison.fifo.query] : [];
+  for (const candidate of [...retainedQueries, ...restoredChoices, ...Object.values(retainedAnswers).filter(value => value.workspace_id === workspaceId && sameJson(value.identity, identity) && value.query_revision === revision).map(value => value.query)]) {
     if (candidate.recipe !== null && bpic19OperatorContract.request(envelope(candidate, "retained-admission"))) choices.set(meaning(candidate), candidate);
   }
   const retainedChoices = [...choices.entries()];
@@ -147,25 +162,53 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, identityKey, roleKey, revision, queryKey, client]);
   useEffect(() => {
-    ++compareSerial.current; compareController.current?.abort(); setRetainedAnswers({}); setRetainedSelection(""); setComparison(null); setCompareBusy(false); setCompareProblem(null); setLeftChoice(""); setRightChoice("");
+    ++compareSerial.current; compareController.current?.abort(); reviewedComparison.current = null; setRetainedAnswers({}); setRetainedSelection(""); setComparison(null); setCompareBusy(false); setCompareProblem(null); setLeftChoice(""); setRightChoice("");
     return () => { ++compareSerial.current; compareController.current?.abort(); };
   }, [workspaceId, identityKey, revision]);
+  useEffect(() => {
+    if (!restoredComparison) return;
+    if (!sameJson(restoredComparison.identity, identity) || restoredComparison.policy_id !== "bpic19.ordinal_fifo_comparison.v1" ||
+        restoredComparison.ordinal.query.recipe?.kind !== "ordinal" || restoredComparison.fifo.query.recipe?.kind !== "fifo" ||
+        !restoredComparison.ordinal.definition_id || !restoredComparison.fifo.definition_id ||
+        !bpic19OperatorContract.request(envelope(restoredComparison.ordinal.query, "restored-ordinal-admission")) ||
+        !bpic19OperatorContract.request(envelope(restoredComparison.fifo.query, "restored-fifo-admission"))) {
+      ++compareSerial.current; compareController.current?.abort(); setComparison(null); setCompareBusy(false);
+      setCompareProblem("The saved comparison does not declare an admitted ordinal/FIFO pair on this exact source and population. No pair was inferred.");
+      comparisonCallbacks.current.onComparisonValidityChange?.(false); return;
+    }
+    if (sameJson(reviewedComparison.current, restoredComparison)) return;
+    reviewedComparison.current = structuredClone(restoredComparison);
+    setLeftChoice(meaning(restoredComparison.ordinal.query)); setRightChoice(meaning(restoredComparison.fifo.query));
+    void readComparison(restoredComparison.ordinal.query, restoredComparison.fifo.query, restoredComparison);
+    return () => { ++compareSerial.current; compareController.current?.abort(); };
+    // Only a newly supplied verified pair/source/revision is replayed. Feedback after publication is already answered.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId, identityKey, revision, restoredComparisonKey, client]);
   const recipe = draft.recipe ?? defaults("ordinal");
   const dirty = answer !== null && meaning(draft) !== meaning(answer.query);
   const paused = busy || !!problem || cancelled || dirty;
   useEffect(() => { callbacks.current.onValidityChange?.(answer !== null && !paused); }, [answer, paused, draft]);
-  function edit(patch: Partial<OperatorQuery>) { ++serial.current; controller.current?.abort(); setBusy(false); setProblem(null); setCancelled(false); setDraft(current => ({ ...current, ...patch, offset: 0 })); callbacks.current.onValidityChange?.(false); }
+  function edit(patch: Partial<OperatorQuery>) { ++serial.current; controller.current?.abort(); ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); if (reviewedComparison.current) comparisonCallbacks.current.onComparisonValidityChange?.(false); setBusy(false); setProblem(null); setCancelled(false); setDraft(current => ({ ...current, ...patch, offset: 0 })); callbacks.current.onValidityChange?.(false); }
   const change = (recipe: OperatorRecipe) => edit({ recipe });
   function cancel() { ++serial.current; controller.current?.abort(); setBusy(false); setCancelled(true); callbacks.current.onValidityChange?.(false); }
   function restore() { if (!answer) return; ++serial.current; controller.current?.abort(); setDraft(answer.query); setBusy(false); setProblem(null); setCancelled(false); callbacks.current.onReviewed?.(answer); }
   function download() { if (!answer || paused) return; downloadJson(answer, `${answer.operation}-${answer.result_id.split(":").at(-1)?.slice(0, 12)}.json`); }
   function retain() { if (!answer || paused || answer.query.recipe === null) return; const key = meaning(answer.query); if (choices.size >= 32 && !choices.has(key)) return; setRetainedAnswers(current => ({ ...current, [key]: answer })); onRetain?.(answer); }
   function selectRetained(key: string) { const selected = choices.get(key); if (!selected) return; setRetainedSelection(key); setDraft(selected); void load(selected); }
-  function changeComparison(side: "left" | "right", value: string) { ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); setCompareProblem(null); setComparison(null); (side === "left" ? setLeftChoice : setRightChoice)(value); }
+  function changeComparison(side: "left" | "right", value: string) { ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); setCompareProblem(null); setComparison(null); if (reviewedComparison.current) comparisonCallbacks.current.onComparisonValidityChange?.(false); (side === "left" ? setLeftChoice : setRightChoice)(value); }
   async function compare() {
     const left = choices.get(leftChoice), right = choices.get(rightChoice);
     if (!left || !right || left.recipe?.kind !== "ordinal" || right.recipe?.kind !== "fifo") return;
+    await readComparison(left, right);
+  }
+  function restoreComparison() {
+    const pair = reviewedComparison.current; if (!pair || !sameJson(pair.identity, identity)) return;
+    setLeftChoice(meaning(pair.ordinal.query)); setRightChoice(meaning(pair.fifo.query));
+    void readComparison(pair.ordinal.query, pair.fifo.query, pair);
+  }
+  async function readComparison(left: OperatorQuery, right: OperatorQuery, expected?: Bpic19OperatorComparison) {
     const token = ++compareSerial.current; compareController.current?.abort(); const abort = new AbortController(); compareController.current = abort; setCompareBusy(true); setCompareProblem(null);
+    comparisonCallbacks.current.onComparisonValidityChange?.(false);
     const requests = [left, right].map((value, index) => envelope({ ...value, offset: 0, limit: 20 }, `bpic19-compare-${revision}-${token}-${index}`));
     let outcomes: Bpic19OperatorOutcome[];
     try { outcomes = await Promise.all(requests.map(request => client.operators(request, abort.signal))); }
@@ -178,12 +221,22 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
       if (!answersBpic19Operators(requests[index], outcome.answer)) { setCompareProblem("A comparison answer differs from its retained source, population or definition."); return; }
       supplied.push(outcome.answer);
     }
-    if (supplied.length === 2 && supplied[0].population_case_count === supplied[1].population_case_count && supplied[0].population_record_count === supplied[1].population_record_count && sameJson(supplied[0].parent_identity, supplied[1].parent_identity)) setComparison([supplied[0], supplied[1]]);
-    else setCompareProblem("The comparison does not have two complete answers for the same population.");
+    if (supplied.length !== 2 || supplied[0].operation !== "bpic19_ordinal" || supplied[1].operation !== "bpic19_fifo" ||
+        supplied[0].population_case_count !== supplied[1].population_case_count || supplied[0].population_record_count !== supplied[1].population_record_count || !sameJson(supplied[0].parent_identity, supplied[1].parent_identity)) {
+      setCompareProblem("The comparison does not have two complete ordinal/FIFO answers for the same population."); return;
+    }
+    if (expected && (supplied[0].definition_id !== expected.ordinal.definition_id || supplied[1].definition_id !== expected.fifo.definition_id)) {
+      setCompareProblem("A saved comparison definition differs from its recorded ordinal or FIFO result. No current default or alternative pair was substituted."); return;
+    }
+    const pair: Bpic19OperatorComparison = { policy_id: "bpic19.ordinal_fifo_comparison.v1", identity,
+      ordinal: { definition_id: supplied[0].definition_id, query: requests[0].query }, fifo: { definition_id: supplied[1].definition_id, query: requests[1].query } };
+    reviewedComparison.current = structuredClone(pair); setComparison([supplied[0], supplied[1]]);
+    comparisonCallbacks.current.onCompared?.(structuredClone(pair)); comparisonCallbacks.current.onComparisonValidityChange?.(true);
   }
   const request: Bpic19OperatorRequest = { schema_version: 1, message_type: "bpic19_operator_request", request_id: "review", query_revision: revision, workspace_id: workspaceId, identity, query: { ...draft, recipe } };
   const needsAuthority = recipe.kind === "waiting" && recipe.completion === "right_censored" && !recipe.horizon_provenance?.trim();
-  const valid = bpic19OperatorContract.request(request) && !needsAuthority;
+  const needsEventId = (recipe.kind === "ordinal" && recipe.order === "numeric_event_id" || recipe.kind === "fifo" && recipe.order === "timestamp_numeric_event_id") && draft.roles.event_id === null;
+  const valid = bpic19OperatorContract.request(request) && !needsAuthority && !needsEventId;
   const bindings = columns ?? catalogue?.columns ?? [];
   const comparisonCurrent = comparison?.every(value => value.workspace_id === workspaceId && sameJson(value.identity, identity) && value.query_revision === revision);
   const comparisonPaused = paused || compareBusy || !!compareProblem;
@@ -203,7 +256,7 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
         {recipe.kind === "waiting" && <WaitingControls recipe={recipe} change={change} catalogue={catalogue} />}
       </fieldset></div>
       <div className="bpic19-operator-actions"><button className="primary" type="button" disabled={busy || !valid} onClick={() => void load({ ...draft, recipe, offset: 0 })}>Review and run operator</button>{busy && <button type="button" onClick={cancel}>Cancel operator request</button>}{answer && (dirty || cancelled || problem) && <button type="button" onClick={restore}>Restore reviewed operator</button>}</div>
-      {needsAuthority ? <p role="alert">Right censoring requires a reviewed source or observation authority for the declared horizon. Enter that provenance before running it.</p> : !valid && <p role="alert">Review the admitted parameters and 1–8 distinct exact labels before running this recipe.</p>}
+      {needsAuthority ? <p role="alert">Right censoring requires a reviewed source or observation authority for the declared horizon. Enter that provenance before running it.</p> : needsEventId ? <p role="alert">Review and map the original eventID field before running this ordering recipe. Another field or source-position ordering will not be substituted.</p> : !valid && <p role="alert">Review the admitted parameters and 1–8 distinct exact labels before running this recipe.</p>}
     </details>
     {busy && <p role="status">Reading declared matching evidence… Earlier result actions are paused.</p>}{dirty && <p role="status">The definition has unreviewed changes. Run it to replace the earlier answer, or restore the reviewed definition.</p>}{cancelled && <p role="status">Operator request cancelled. The draft and original source remain available.</p>}
     {problem && <div role="alert"><p>{problem}</p><button type="button" disabled={busy} onClick={() => { if (retry.current) void load(retry.current); }}>Retry operator</button></div>}
@@ -228,7 +281,8 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
       <div className="bpic19-operator-actions"><label>Retained ordinal definition<select value={leftChoice} onChange={event => changeComparison("left", event.target.value)}><option value="">Choose retained ordinal</option>{retainedChoices.filter(([,value]) => value.recipe?.kind === "ordinal").map(([key,value],index) => <option key={key} value={key}>{index+1}: {recipeLabel(value)}</option>)}</select></label>
         <label>Retained FIFO definition<select value={rightChoice} onChange={event => changeComparison("right", event.target.value)}><option value="">Choose retained FIFO</option>{retainedChoices.filter(([,value]) => value.recipe?.kind === "fifo").map(([key,value],index) => <option key={key} value={key}>{index+1}: {recipeLabel(value)}</option>)}</select></label>
         <button type="button" disabled={busy || compareBusy || !leftChoice || !rightChoice} onClick={() => void compare()}>Read retained ordinal/FIFO comparison</button>
-        {compareBusy && <button type="button" onClick={() => { ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); setCompareProblem("Comparison request cancelled; retain or select the definitions before retrying."); }}>Cancel comparison request</button>}
+        {reviewedComparison.current && <button type="button" disabled={busy || compareBusy} onClick={restoreComparison}>Restore reviewed ordinal/FIFO comparison</button>}
+        {compareBusy && <button type="button" onClick={() => { ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); comparisonCallbacks.current.onComparisonValidityChange?.(false); setCompareProblem("Comparison request cancelled; retain or select the definitions before retrying."); }}>Cancel comparison request</button>}
       </div>
       {compareBusy && <p role="status">Reading both retained definitions… No partial pair is published.</p>}{compareProblem && <p role="alert">{compareProblem}</p>}
       {comparison && comparisonCurrent && <div data-stale={comparisonPaused ? "true" : undefined}>

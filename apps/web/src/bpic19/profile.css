@@ -11,6 +11,7 @@
 .bpic19-profile table { width: 100%; font-variant-numeric: tabular-nums; }
 .bpic19-profile td, .bpic19-profile th { text-align: left; padding: var(--space-2); vertical-align: top; }
 .bpic19-profile th small { display: block; font-weight: var(--font-weight-plain); color: var(--color-ink-muted); }
+.bpic19-profile th[scope="row"] { min-width: var(--size-source-select); white-space: normal; overflow: visible; text-overflow: clip; }
 .bpic19-profile button { margin: var(--space-1) var(--space-2) var(--space-1) 0; }
 .bpic19-answers { display: grid; gap: var(--space-3); }
 .bpic19-population { font-variant-numeric: tabular-nums; }

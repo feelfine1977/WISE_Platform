@@ -263,6 +263,122 @@ def test_fifo_equal_sourcepositions_and_auto_flow_are_declared():
     ] == ["r1", "r2", "r3"]
 
 
+def test_fifo_timestamp_numeric_ids_reverse_equal_time_source_order_explicitly():
+    p = snapshot([("a", IR, 0, "10"), ("a", GR, 0, "2"), ("a", CI, 0, "11")])
+    source = evaluate(p, fifo())
+    timestamp_source = evaluate(p, fifo(order="timestamp_source_position"))
+    numeric_ties = evaluate(p, fifo(order="timestamp_numeric_event_id"))
+    assert source["cases"][0]["totals"]["paired_episode_count"]["value"] == 0
+    assert timestamp_source["cases"][0]["totals"]["paired_episode_count"]["value"] == 0
+    case = numeric_ties["cases"][0]
+    assert case["record_row_ids"] == ["r1", "r2", "r3"]
+    assert case["observations"][0]["stage_row_ids"] == ["r2", "r1", "r3"]
+    assert case["observations"][0]["state"] == "zero"
+    assert case["totals"]["paired_episode_count"]["value"] == 1
+    assert case["totals"]["paired_endpoint_event_count"]["value"] == 3
+    assert case["unmatched_row_ids"] == []
+    assert (
+        len({v["definition_id"] for v in [source, timestamp_source, numeric_ties]}) == 3
+    )
+    assert numeric_ties["definition"]["representative_policy"] == (
+        "parsed_time_then_numeric_event_id_then_original_source_position"
+    )
+    assert (
+        "Panel-declared modern FIFO order"
+        in numeric_ties["definition"]["source_evidence"][-1]
+    )
+    strict = evaluate(p, fifo(order="timestamp_numeric_event_id", ties="strict_time"))
+    assert strict["cases"][0]["totals"]["paired_episode_count"]["value"] == 0
+    assert strict["cases"][0]["unmatched_row_ids"] == ["r1", "r2", "r3"]
+
+
+def test_fifo_timestamp_is_primary_and_duplicate_numeric_ids_tie_by_source_position():
+    p = snapshot([("a", IR, 1, "1"), ("a", GR, 0, "9"), ("a", CI, 2, "0")])
+    case = evaluate(p, fifo(order="timestamp_numeric_event_id"))["cases"][0]
+    assert case["observations"][0]["stage_row_ids"] == ["r2", "r1", "r3"]
+    assert [v["value"] for v in case["observations"][0]["intervals"].values()] == [1, 1]
+    p = snapshot([("a", GR, 0, " 01 "), ("a", IR, 0, "1"), ("a", CI, 0, "001")])
+    case = evaluate(p, fifo(order="timestamp_numeric_event_id"))["cases"][0]
+    assert case["observations"][0]["stage_row_ids"] == ["r1", "r2", "r3"]
+    assert case["observations"][0]["state"] == "zero"
+    assert evaluate(p, ordinal())["cases"][0]["reason"] == "ambiguous_event_id"
+
+
+@pytest.mark.parametrize("bad_id", ["", "no-id", "-1", "1.0", "١", "1" * 65])
+def test_fifo_numeric_tie_ids_do_not_fallback_even_for_unrelated_original_rows(bad_id):
+    p = snapshot(
+        [("a", GR, 0, "1"), ("a", IR, 1, "2"), ("a", CI, 2, "3"), ("a", "X", 0, bad_id)]
+    )
+    case = evaluate(p, fifo(order="timestamp_numeric_event_id"))["cases"][0]
+    assert case["state"] == "unknown" and case["reason"] == "invalid_event_id"
+    assert case["unknown_row_ids"] == ["r4"] and case["observations"] == []
+    assert case["record_row_ids"] == ["r1", "r2", "r3", "r4"]
+    assert case["activation_count"] == case["known_activation_count"] == 1
+    assert case["unmatched_row_ids"] == ["r1", "r2", "r3"]
+    # Other finite definitions do not acquire an eventID dependency.
+    for order in ["source_position", "timestamp_source_position"]:
+        assert (
+            evaluate(p, fifo(order=order))["cases"][0]["totals"][
+                "paired_episode_count"
+            ]["value"]
+            == 1
+        )
+
+
+def test_fifo_timestamp_numeric_auto_flow_uses_same_order_and_exact_unknown_witnesses():
+    category = "3-way match, invoice before GR"
+    p = snapshot(
+        [
+            ("a", IR, 0, "2", category),
+            ("a", GR, 0, "1", category),
+            ("a", CI, 0, "3", category),
+        ]
+    )
+    case = evaluate(p, fifo(order="timestamp_numeric_event_id", stages="auto_flow"))[
+        "cases"
+    ][0]
+    assert case["observations"][0]["stage_row_ids"] == ["r2", "r1", "r3"]
+    assert evaluate(p, fifo(stages="auto_flow"))["cases"][0]["observations"][0][
+        "stage_row_ids"
+    ] == ["r1", "r2", "r3"]
+    p = snapshot(
+        [
+            ("a", IR, None, "2", category),
+            ("a", GR, 0, "1", category),
+            ("a", CI, 1, "3", category),
+        ]
+    )
+    case = evaluate(p, fifo(order="timestamp_numeric_event_id", stages="auto_flow"))[
+        "cases"
+    ][0]
+    assert case["state"] == "unknown" and case["reason"] == "unknown_flow_stage_order"
+    assert case["unknown_row_ids"] == ["r1"] and case["observations"] == []
+    assert case["activation_count"] is None
+    p = snapshot(
+        [
+            ("a", IR, 0, "bad", category),
+            ("a", GR, 0, "1", category),
+            ("a", CI, 1, "3", category),
+        ]
+    )
+    case = evaluate(p, fifo(order="timestamp_numeric_event_id", stages="auto_flow"))[
+        "cases"
+    ][0]
+    assert case["reason"] == "invalid_event_id" and case["unknown_row_ids"] == ["r1"]
+
+
+def test_fifo_timestamp_numeric_requires_mapped_original_ids_and_keeps_unknown_times():
+    p = snapshot([("a", GR, 0), ("a", IR, None), ("a", CI, 2)])
+    result = operator_population(
+        p, ["a"], {**ROLES, "event_id": None}, fifo(order="timestamp_numeric_event_id")
+    )
+    assert result.code == "invalid_parameter" and "reviewed event_id" in result.message
+    case = evaluate(p, fifo(order="timestamp_numeric_event_id"))["cases"][0]
+    assert case["state"] == "unknown" and case["reason"] == "unknown_chronology"
+    assert case["unknown_row_ids"] == ["r2"] and case["observations"] == []
+    assert case["activation_count"] == case["known_activation_count"] == 1
+
+
 def test_episode_cancellation_exclusion_keeps_full_history():
     out = evaluate(
         snapshot([("a", IR, 0), ("a", CI, 1), ("a", CANCEL, 2)]),

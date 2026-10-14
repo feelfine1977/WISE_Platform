@@ -28,7 +28,8 @@ from pydantic import BaseModel
 
 from .boundary import SCHEMA_VERSION, read_object
 from .generated import saving as saving_models
-from .generated.saving import SaveInvestigationRequest1, SavingRefusal
+from .generated.saving import SaveInvestigationRequest1, SavingRefusal, Bpic19PipelineAction
+from typing import get_args
 from .import_boundary import import_echo
 from .selection_boundary import predicate_wire_failures, _value_at
 from .strict_reading import (
@@ -48,6 +49,7 @@ REOPEN = "reopen_investigation"
 
 STATUS: dict[str, int] = {
     "invalid_request": 400,
+    "unsupported_action": 400,
     "unsupported_schema": 400,
     "unsupported_policy": 400,
     "invalid_parameter": 400,
@@ -153,6 +155,13 @@ def parse_saving_body(
             field="schema_version",
         )
     read = read_strictly(message, model, _ALTERNATIVES)
+    pipeline = message.get("bpic19_pipeline")
+    if isinstance(pipeline, dict) and isinstance(pipeline.get("actions"), list):
+        registered = set(get_args(Bpic19PipelineAction.model_fields["operation"].annotation))
+        for index, action in enumerate(pipeline["actions"]):
+            if isinstance(action, dict) and isinstance(action.get("operation"), str) and action["operation"] not in registered:
+                return saving_refusal(operation, "unsupported_action", "This pipeline action is not registered; supplied code is never executed.",
+                                      echo=echo, field=f"bpic19_pipeline.actions.{index}.operation")
     failures = read if isinstance(read, list) else _beyond_the_models(message, model)
     if not failures:
         assert not isinstance(read, list)

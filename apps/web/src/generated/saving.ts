@@ -327,6 +327,10 @@ export interface Bpic19Pipeline {
    * Explicit partial mode omits only registered unresolved source-method gates; it never omits a failed admitted operation.
    */
   replay_mode?: "require_all" | "partial";
+  /**
+   * @maxItems 100
+   */
+  literature_claims?: Bpic19LiteratureClaim[];
 }
 export interface Bpic19PipelineAction {
   operation:
@@ -341,7 +345,9 @@ export interface Bpic19PipelineAction {
     | "bpic19_waiting"
     | "bpic19_flow_comparison"
     | "bpic19_method_gate"
-    | "bpic19_interval_comparison";
+    | "bpic19_interval_comparison"
+    | "bpic19_operator_comparison"
+    | "bpic19_cohort_comparison";
   identity: AnswerIdentity;
   /**
    * Validated against the registered operation request before save or replay.
@@ -354,6 +360,31 @@ export interface Bpic19PipelineAction {
    * Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position.
    */
   selection_prefix_length?: number | null;
+}
+export interface Bpic19LiteratureClaim {
+  claim_id: string;
+  report_id:
+    | "R01"
+    | "R02"
+    | "R03"
+    | "R04"
+    | "R05"
+    | "R06"
+    | "R07"
+    | "R08"
+    | "R09"
+    | "R10"
+    | "R11"
+    | "R12"
+    | "R13"
+    | "R14"
+    | "R15"
+    | "notebook"
+    | "wise-paper";
+  source_locator: string;
+  claim: string;
+  claim_level: "reported_not_rerun";
+  compared_run_id: string | null;
 }
 export interface SaveInvestigationAnswer {
   schema_version: 1;
@@ -406,6 +437,10 @@ export interface Bpic19PipelineManifest {
    * @maxItems 32
    */
   omissions?: Bpic19PipelineOmission[];
+  /**
+   * @maxItems 100
+   */
+  literature_claims?: Bpic19LiteratureClaim[];
 }
 export interface Bpic19PipelineOutput {
   operation:
@@ -419,7 +454,9 @@ export interface Bpic19PipelineOutput {
     | "bpic19_rule"
     | "bpic19_waiting"
     | "bpic19_flow_comparison"
-    | "bpic19_interval_comparison";
+    | "bpic19_interval_comparison"
+    | "bpic19_operator_comparison"
+    | "bpic19_cohort_comparison";
   definition_id: string;
   sha256: string;
   output: {
@@ -546,7 +583,8 @@ export interface SavingRefusal1 {
     | "malformed_saved_revision"
     | "incompatible_saved_revision"
     | "publication_failed"
-    | "computation_failed";
+    | "computation_failed"
+    | "unsupported_action";
   message: string;
   field: string | null;
   retryable: boolean;

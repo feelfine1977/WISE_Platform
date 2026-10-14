@@ -93,8 +93,8 @@ WAITING = {
 }
 
 
-def original_ids():
-    source_id = "source.v1:sha256:" + hashlib.sha256(RAW).hexdigest()
+def original_ids(raw=RAW, count=21):
+    source_id = "source.v1:sha256:" + hashlib.sha256(raw).hexdigest()
     return {
         n: "row.v1:sha256:"
         + hashlib.sha256(
@@ -104,11 +104,11 @@ def original_ids():
                 separators=(",", ":"),
             ).encode()
         ).hexdigest()
-        for n in range(1, 22)
+        for n in range(1, count + 1)
     }
 
 
-def prepare(client, workspace):
+def prepare(client, workspace, raw=RAW):
     opened = client.post(
         "/api/workspaces/open",
         json=envelope("open_workspace_request", path=str(workspace)),
@@ -120,7 +120,7 @@ def prepare(client, workspace):
         params=envelope(
             "upload_source_metadata", workspace_id=wid, filename="operator-literal.csv"
         ),
-        content=RAW,
+        content=raw,
         headers={"Content-Type": "application/octet-stream"},
     )
     assert stored.status_code == 200, stored.text
@@ -175,6 +175,59 @@ def request(wid, identity, recipe=ORDINAL, offset=0, limit=20):
             "limit": limit,
         },
     )
+
+
+def test_timestamp_numeric_fifo_http_is_distinct_and_refuses_unmapped_ids(tmp_path):
+    raw = b"""case,activity,time,eventID,category,value
+a,Record Invoice Receipt,2018-01-01T00:00:00,2,"3-way match, invoice after GR",100
+a,Record Goods Receipt,2018-01-01T00:00:00,1,"3-way match, invoice after GR",100
+a,Clear Invoice,2018-01-01T00:00:00,3,"3-way match, invoice after GR",100
+b,Record Goods Receipt,2018-01-01T00:00:00,4,"3-way match, invoice after GR",100
+b,Record Invoice Receipt,2018-01-01T00:00:00,5,"3-way match, invoice after GR",100
+b,Clear Invoice,2018-01-01T00:00:00,6,"3-way match, invoice after GR",100
+b,Change Price,2018-01-01T00:00:00,,"3-way match, invoice after GR",100
+"""
+    workspace = tmp_path / "numeric-fifo"
+    workspace.mkdir()
+    rows = original_ids(raw, 7)
+    recipe = {**FIFO, "order": "timestamp_numeric_event_id"}
+    with TestClient(create_app()) as client:
+        wid, identity = prepare(client, workspace, raw)
+        answers = []
+        for order in [
+            "source_position",
+            "timestamp_source_position",
+            "timestamp_numeric_event_id",
+        ]:
+            response = client.post(
+                ROUTE, json=request(wid, identity, {**recipe, "order": order})
+            )
+            assert response.status_code == 200, response.text
+            answer = response.json()
+            VALIDATOR.validate(answer)
+            answers.append(answer)
+        assert len({answer["definition_id"] for answer in answers}) == 3
+        assert [
+            answer["cases"][0]["totals"]["paired_episode_count"]["value"]
+            for answer in answers
+        ] == [0, 0, 1]
+        a, b = answers[2]["cases"]
+        assert a["record_row_ids"] == [rows[1], rows[2], rows[3]]
+        assert a["observations"][0]["stage_row_ids"] == [rows[2], rows[1], rows[3]]
+        assert a["observations"][0]["state"] == "zero"
+        assert b["state"] == "unknown" and b["reason"] == "invalid_event_id"
+        assert b["unknown_row_ids"] == [rows[7]]
+        assert b["record_row_ids"] == [rows[n] for n in range(4, 8)]
+        assert (
+            answers[2]["population_case_count"] == 2
+            and answers[2]["population_record_count"] == 7
+        )
+        bad = request(wid, identity, recipe)
+        bad["query"]["roles"]["event_id"] = None
+        refused = client.post(ROUTE, json=bad)
+        assert refused.status_code == 400, refused.text
+        assert refused.json()["code"] == "invalid_parameter"
+        assert "reviewed event_id column" in refused.json()["message"]
 
 
 def test_five_real_http_operators_witnesses_and_frozen_paging(tmp_path):

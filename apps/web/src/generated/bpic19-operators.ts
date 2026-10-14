@@ -60,7 +60,7 @@ export interface OrdinalRecipe {
 }
 export interface FifoRecipe {
   kind: "fifo";
-  order: "source_position" | "timestamp_source_position";
+  order: "source_position" | "timestamp_source_position" | "timestamp_numeric_event_id";
   stages: "gr_ir_ci" | "ir_gr_ci" | "ir_ci" | "auto_flow";
   receipt: "goods" | "goods_or_service";
   cancellation: "retain" | "exclude_item";
@@ -156,7 +156,9 @@ export interface OperatorDefinition {
   source_evidence: string[];
   original_history_policy: "immutable_complete_item_histories";
   inferred_invoice_id_policy: "none";
-  representative_policy: "source_position_first_with_all_tied_candidates";
+  representative_policy:
+    | "source_position_first_with_all_tied_candidates"
+    | "parsed_time_then_numeric_event_id_then_original_source_position";
   definition_id: string;
 }
 export interface OperatorCatalogue {

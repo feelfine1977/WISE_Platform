@@ -16,6 +16,27 @@ from .bpic19_measures import Bpic19Measures
 from .bpic19_profiles import Bpic19Profiles
 from .imports import Imports
 from .workspace import Problem
+from .strict_reading import alternatives_of, read_strictly
+
+
+def _request_model(operation):
+    from .generated import (bpic19_profile, bpic19_measures, bpic19_cohorts,
+                            bpic19_operators, bpic19_scoring, bpic19_flow_comparison,
+                            bpic19_interval_comparison, bpic19_recipe_comparison)
+    models = {
+        "bpic19_profile": (bpic19_profile, "Bpic19ProfileRequest"),
+        "bpic19_measures": (bpic19_measures, "Bpic19MeasuresRequest"),
+        "bpic19_cohorts": (bpic19_cohorts, "Bpic19CohortsRequest"),
+        "bpic19_score": (bpic19_scoring, "Bpic19ReadRequest"),
+        "bpic19_flow_comparison": (bpic19_flow_comparison, "Bpic19FlowComparisonRequest"),
+        "bpic19_interval_comparison": (bpic19_interval_comparison, "Bpic19IntervalComparisonRequest"),
+        "bpic19_operator_comparison": (bpic19_recipe_comparison, "Bpic19RecipeComparisonRequest"),
+        "bpic19_cohort_comparison": (bpic19_recipe_comparison, "Bpic19RecipeComparisonRequest"),
+    }
+    for name in ("ordinal", "fifo", "cancellation", "rule", "waiting"):
+        models["bpic19_" + name] = (bpic19_operators, "Bpic19OperatorRequest")
+    module, name = models[operation]
+    return getattr(module, name), alternatives_of(module)
 
 
 def canonical_output(answer: dict) -> dict:
@@ -27,6 +48,13 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
                     allowed_identities: list[dict]) -> dict | None | Problem:
     if pipeline is None:
         return None
+    claims = pipeline.get("literature_claims", [])
+    if len({claim["claim_id"] for claim in claims}) != len(claims):
+        return Problem("invalid_parameter", "Literature claim identifiers must be distinct.", "bpic19_pipeline.literature_claims")
+    run_ids = {action["query"].get("run_id") for action in pipeline["actions"] if action["operation"] == "bpic19_score" and isinstance(action["query"].get("run_id"), str)}
+    for index, claim in enumerate(claims):
+        if claim["compared_run_id"] is not None and claim["compared_run_id"] not in run_ids:
+            return Problem("identity_mismatch", "A literature comparison may reference only an explicitly retained native score run.", f"bpic19_pipeline.literature_claims.{index}.compared_run_id")
     # Admission gates are finite data from the reviewed source-method ledger.
     # A partial run may omit these gates; it cannot hide a failed supported step.
     gate = json.loads((Path(__file__).parent / "bpic19_reference" / "source-method-gate.json").read_text())
@@ -68,9 +96,44 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
     if "bpic19_interval_comparison" in operations:
         from .bpic19_interval_comparison import Bpic19IntervalComparisons
         registry["bpic19_interval_comparison"] = (Bpic19IntervalComparisons(imports).compare, "bpic19_interval_comparison_request")
+    comparison_names = {"bpic19_operator_comparison", "bpic19_cohort_comparison"}
+    if operations & comparison_names:
+        from .bpic19_recipe_comparison import Bpic19RecipeComparisons
+        service = Bpic19RecipeComparisons(imports)
+        for name in comparison_names:
+            registry[name] = (service.compare, "bpic19_recipe_comparison_request")
     keys = [(action["operation"], action["definition_id"], json.dumps(action["identity"], sort_keys=True, separators=(",", ":"))) for action in pipeline["actions"]]
     if len(set(keys)) != len(keys):
         return Problem("invalid_parameter", "A reviewed action definition may appear once per exact population identity in a saved pipeline.", "bpic19_pipeline.actions")
+    # Admit every closed request before any service computes an output. Partial
+    # mode omits only the explicit registered source gate, never a malformed
+    # admitted query. This also checks both inner recipes of a comparison.
+    envelopes = {}
+    for index, action in enumerate(pipeline["actions"]):
+        if action["operation"] == "bpic19_method_gate": continue
+        field = f"bpic19_pipeline.actions.{index}"
+        registered = registry.get(action["operation"])
+        if registered is None: return Problem("unsupported_action", "This pipeline action is not registered.", field + ".operation")
+        given = {"schema_version": 1, "message_type": registered[1], "request_id": "saved-bpic19-" + str(index),
+                 "query_revision": 1, "workspace_id": workspace_id, "identity": action["identity"], "query": action["query"]}
+        if action["operation"] == "bpic19_score":
+            allowed = {"run_id", "case_offset", "case_limit", "group_offset", "group_limit", "case_filter"}
+            if set(action["query"]) - allowed: return Problem("invalid_parameter", "A saved score action names only a stored run and its declared page.", field + ".query")
+            given.pop("identity"); given.pop("query"); given.update(action["query"])
+        model, alternatives = _request_model(action["operation"])
+        if isinstance(read_strictly(given, model, alternatives), list):
+            return Problem("invalid_parameter", "The saved action does not match its registered request contract.", field + ".query")
+        if action["operation"] in comparison_names:
+            query = action["query"]
+            operator = query["policy_id"] == "bpic19.ordinal_fifo_comparison.v1"
+            if operator != (action["operation"] == "bpic19_operator_comparison"):
+                return Problem("identity_mismatch", "The saved pair names another comparison operation.", field + ".operation")
+            for role in (("ordinal", "fifo") if operator else ("target", "reference")):
+                inner = {**given, "message_type": "bpic19_operator_request" if operator else "bpic19_cohorts_request", "query": query[role]["query"]}
+                inner_model, inner_alternatives = _request_model("bpic19_ordinal" if operator else "bpic19_cohorts")
+                if isinstance(read_strictly(inner, inner_model, inner_alternatives), list):
+                    return Problem("invalid_parameter", "A compared recipe does not match its registered request contract.", field + ".query." + role)
+        envelopes[index] = given
     outputs = []
     for index, action in enumerate(pipeline["actions"]):
         if action["operation"] == "bpic19_method_gate":
@@ -82,18 +145,13 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
         if registered is None:
             return Problem("unsupported_policy", "This pipeline action is not registered.", field + ".operation")
         operation, message_type = registered
-        given = {"schema_version": 1, "message_type": message_type,
-                 "request_id": "saved-bpic19-" + str(index), "query_revision": 1,
-                 "workspace_id": workspace_id, "identity": action["identity"], "query": action["query"]}
-        if action["operation"] == "bpic19_score":
-            allowed = {"run_id", "case_offset", "case_limit", "group_offset", "group_limit", "case_filter"}
-            if set(action["query"]) - allowed:
-                return Problem("invalid_parameter", "A saved score action names only a stored run and its declared page.", field + ".query")
-            given.pop("identity"); given.pop("query"); given.update(action["query"])
+        given = envelopes[index]
         reply = operation(json.dumps(given, allow_nan=False).encode())
         if reply.status != 200:
             return Problem("invalid_parameter", "The saved action was refused: " + reply.body["message"], field + ".query")
         answer = reply.body
+        if action["operation"] in comparison_names and answer.get("operation") != action["operation"]:
+            return Problem("identity_mismatch", "The reviewed recipe pair names another registered comparison.", field + ".operation")
         if action["operation"] in operator_names and answer.get("operation") != action["operation"]:
             return Problem("identity_mismatch", "The operator recipe differs from the reviewed saved action.", field + ".operation")
         if action["operation"] == "bpic19_score" and answer.get("named_population", {}).get("identity") != action["identity"]:
@@ -110,7 +168,8 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
     if not outputs:
         return Problem("unsupported_policy", "A partial pipeline needs at least one admitted result; omissions alone are not an analysis.", "bpic19_pipeline.actions")
     manifest = {"schema_version": 1, "outputs": outputs}
-    if omissions or "replay_mode" in pipeline:
+    if claims: manifest["literature_claims"] = claims
+    if omissions or "replay_mode" in pipeline or claims:
         manifest.update(claim_level="partial" if omissions else "complete_registered_pipeline", omissions=omissions)
         manifest["run_id"] = content_identity("bpic19-pipeline", {"recipe": pipeline, "manifest": manifest})
     return manifest

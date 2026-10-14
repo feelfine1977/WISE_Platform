@@ -136,7 +136,11 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
             (
                 {"numeric_event_id", "timestamp_source_position"}
                 if kind == "ordinal"
-                else {"source_position", "timestamp_source_position"}
+                else {
+                    "source_position",
+                    "timestamp_source_position",
+                    "timestamp_numeric_event_id",
+                }
             ),
         )
         enum("stages", {"gr_ir_ci", "ir_gr_ci", "ir_ci", "auto_flow"})
@@ -153,6 +157,10 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
         if r["order"] == "numeric_event_id" and roles["event_id"] is None:
             raise ValueError(
                 "Numeric-eventID ordinals require an explicitly reviewed event_id column."
+            )
+        if r["order"] == "timestamp_numeric_event_id" and roles["event_id"] is None:
+            raise ValueError(
+                "Timestamp/numeric-eventID FIFO requires an explicitly reviewed event_id column."
             )
         if r["stages"] == "auto_flow" and roles["item_category"] is None:
             raise ValueError(
@@ -395,6 +403,21 @@ def _stages(
                 )
             elif recipe["order"] == "source_position":
                 relevant.sort(key=lambda row: row.source_position)
+            elif recipe["order"] == "timestamp_numeric_event_id":
+                keys, invalid = _fifo_event_id_keys(
+                    prepared.histories[case_id], roles["event_id"]
+                )
+                if invalid:
+                    return [], "invalid_event_id"
+                if any(row.time_value is None for row in relevant):
+                    return [], "unknown_flow_stage_order"
+                relevant.sort(
+                    key=lambda row: (
+                        row.time_value,
+                        keys[row.row_id],
+                        row.source_position,
+                    )
+                )
             elif any(row.time_value is None for row in relevant):
                 return [], "unknown_flow_stage_order"
             else:
@@ -413,6 +436,25 @@ def _stages(
     return stages, None
 
 
+def _fifo_event_id_keys(
+    records: tuple[PreparedRecord, ...], column: int
+) -> tuple[dict[str, int], list[str]]:
+    """Panel convention: every raw row needs a numeric ID; duplicate IDs tie by position.
+
+    This is separate from source-compatible numeric ordinals, which reject duplicate
+    IDs. Numeric IDs here break equal parsed-time ties and do not prove chronology.
+    """
+    keys, invalid = {}, []
+    for row in records:
+        raw = row.original_cells[column] if column < len(row.original_cells) else None
+        text = raw.strip() if isinstance(raw, str) else ""
+        if _EVENT_ID.fullmatch(text) is None:
+            invalid.append(row.row_id)
+        else:
+            keys[row.row_id] = int(text)
+    return keys, invalid
+
+
 def episode_case(
     prepared: PreparedData,
     case_id: str,
@@ -422,6 +464,10 @@ def episode_case(
 ) -> dict:
     result = _case(prepared, case_id)
     records = prepared.histories[case_id]
+    numeric_fifo = recipe["order"] == "timestamp_numeric_event_id"
+    event_id_keys, invalid_event_ids = (
+        _fifo_event_id_keys(records, roles["event_id"]) if numeric_fifo else ({}, [])
+    )
     stages, problem = _stages(prepared, case_id, recipe, roles)
     cancellations = [
         row
@@ -442,6 +488,24 @@ def episode_case(
     elif problem and not problem.startswith("consignment_"):
         result["activation_count"] = None
     if problem:
+        if numeric_fifo:
+            result["unknown_row_ids"] = (
+                invalid_event_ids
+                if problem == "invalid_event_id"
+                else [
+                    row.row_id
+                    for row in records
+                    if problem == "unknown_flow_stage_order"
+                    and row.activity
+                    in {"Record Goods Receipt", "Record Invoice Receipt"}
+                    | (
+                        {"Record Service Entry Sheet"}
+                        if recipe["receipt"] == "goods_or_service"
+                        else set()
+                    )
+                    and row.time_value is None
+                ]
+            )
         result.update(
             state="outside_scope" if problem.startswith("consignment_") else "unknown",
             reason=problem,
@@ -477,13 +541,31 @@ def episode_case(
     elif order == "source_position":
         rows = sorted(records, key=lambda row: row.source_position)
     else:
+        if numeric_fifo and invalid_event_ids:
+            problem = "invalid_event_id"
+            result["unknown_row_ids"] += invalid_event_ids
         unknown_times = [row.row_id for row in relevant if row.time_value is None]
         if unknown_times:
             problem = "unknown_chronology"
             result["unknown_row_ids"] += unknown_times
         rows = sorted(
-            (row for row in records if row.time_value is not None),
-            key=lambda row: (row.time_value, row.source_position),
+            (
+                row
+                for row in records
+                if row.time_value is not None
+                and (not numeric_fifo or row.row_id in event_id_keys)
+            ),
+            key=(
+                lambda row: (
+                    (
+                        row.time_value,
+                        event_id_keys[row.row_id],
+                        row.source_position,
+                    )
+                    if numeric_fifo
+                    else (row.time_value, row.source_position)
+                )
+            ),
         )
         if recipe["kind"] == "ordinal" and recipe["ties"] == "ambiguous":
             for stage in stages:
@@ -1473,6 +1555,14 @@ def operator_population(
         "inferred_invoice_id_policy": "none",
         "representative_policy": "source_position_first_with_all_tied_candidates",
     }
+    if r and r["kind"] == "fifo" and r["order"] == "timestamp_numeric_event_id":
+        definition["representative_policy"] = (
+            "parsed_time_then_numeric_event_id_then_original_source_position"
+        )
+        definition["source_evidence"] = [
+            *definition["source_evidence"],
+            "Panel-declared modern FIFO order: parsed time primary; trimmed ASCII 1–64 digit original eventID secondary; original source position resolves equal numeric IDs. Every original item row must have a valid numeric ID; otherwise the item is unknown with raw witnesses. Relevant missing timestamps are unknown. IDs do not prove chronology. This is separate from R08 source-position reproduction and duplicate-refusing numeric ordinals.",
+        ]
     definition_id = content_identity("bpic19-operator-definition", definition)
     definition["definition_id"] = definition_id
     result_id = content_identity(

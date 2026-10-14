@@ -108,7 +108,9 @@ class FifoRecipe(BaseModel):
         extra='forbid',
     )
     kind: Literal['fifo']
-    order: Literal['source_position', 'timestamp_source_position']
+    order: Literal[
+        'source_position', 'timestamp_source_position', 'timestamp_numeric_event_id'
+    ]
     stages: Literal['gr_ir_ci', 'ir_gr_ci', 'ir_ci', 'auto_flow']
     receipt: Literal['goods', 'goods_or_service']
     cancellation: Literal['retain', 'exclude_item']
@@ -221,7 +223,10 @@ class OperatorDefinition(BaseModel):
     source_evidence: list[str]
     original_history_policy: Literal['immutable_complete_item_histories']
     inferred_invoice_id_policy: Literal['none']
-    representative_policy: Literal['source_position_first_with_all_tied_candidates']
+    representative_policy: Literal[
+        'source_position_first_with_all_tied_candidates',
+        'parsed_time_then_numeric_event_id_then_original_source_position',
+    ]
     definition_id: constr(
         pattern=r'^bpic19-operator-definition\.v1:sha256:[a-f0-9]{64}$'
     )

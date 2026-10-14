@@ -6,6 +6,7 @@ import type { SavingProblem } from "./client";
 /** What the analyst can do about each refusal of saving, listing or reopening. */
 const remedies: Record<SavingRefusal["code"], string> = {
   invalid_request: "This screen and the local service do not agree on the request. Reload the page; if it repeats, restart the application.",
+  unsupported_action: "This pipeline action is not supported. Remove it or choose a reviewed application operation; source code cannot be executed by a saved pipeline.",
   unsupported_schema: "This screen and the local service are different versions. Reload the page or restart the application.",
   unsupported_policy: "This screen asked for a policy the local service does not support. Reload the page or restart the application.",
   invalid_parameter: "This screen and the local service do not agree on the request. Reload the page; if it repeats, restart the application.",

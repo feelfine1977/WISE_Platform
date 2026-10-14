@@ -70,3 +70,38 @@ def test_actual_distinct_pid_reopens_exact_partial_manifest(tmp_path):
         assert reopened.json()['bpic19_outputs']==answer['bpic19_outputs']
         assert reopened.json()['revision']==answer['revision']
     finally: second.terminate();second.wait(timeout=15)
+
+def test_every_registered_request_is_admitted_before_first_dispatch(tmp_path,monkeypatch):
+    folder=tmp_path/'workspace';folder.mkdir()
+    with TestClient(create_app()) as client:
+        given=save_request(client,folder)
+        given['bpic19_pipeline']['actions'][1]['query']['injected_unknown_parameter']='must be refused before profile computes'
+        from wise_platform_api.bpic19_profiles import Bpic19Profiles
+        def forbidden(*args):raise AssertionError('No service may dispatch before all request boundaries are admitted')
+        monkeypatch.setattr(Bpic19Profiles,'profile',forbidden)
+        reply=client.post('/api/investigations/save',json=given)
+        assert reply.status_code==400 and reply.json()['code']=='invalid_parameter',reply.text
+        assert reply.json()['field']=='bpic19_pipeline.actions.1.query'
+        assert not list((folder/'investigations/revisions').glob('*.json'))
+
+def test_unregistered_notebook_action_has_named_refusal_before_execution(tmp_path):
+    folder=tmp_path/'workspace';folder.mkdir()
+    with TestClient(create_app()) as client:
+        given=save_request(client,folder);given['bpic19_pipeline']['actions'][0]['operation']='notebook_python'
+        reply=client.post('/api/investigations/save',json=given)
+        assert reply.status_code==400 and reply.json()['code']=='unsupported_action',reply.text
+        assert reply.json()['field']=='bpic19_pipeline.actions.0.operation'
+        assert not list((folder/'investigations/revisions').glob('*.json'))
+
+def test_literature_claim_cannot_name_an_unretained_or_invented_run(tmp_path,monkeypatch):
+    folder=tmp_path/'workspace';folder.mkdir()
+    with TestClient(create_app()) as client:
+        given=save_request(client,folder)
+        given['bpic19_pipeline']['literature_claims']=[{'claim_id':'report1','report_id':'R01','source_locator':'Synthetic source page1','claim':'Reported analyst observation','claim_level':'reported_not_rerun','compared_run_id':'invented-run'}]
+        from wise_platform_api.bpic19_profiles import Bpic19Profiles
+        def forbidden(*args):raise AssertionError('An invented literature/run link must be refused before any service dispatch')
+        monkeypatch.setattr(Bpic19Profiles,'profile',forbidden)
+        reply=client.post('/api/investigations/save',json=given)
+        assert reply.status_code==409 and reply.json()['code']=='identity_mismatch',reply.text
+        assert reply.json()['field']=='bpic19_pipeline.literature_claims.0.compared_run_id'
+        assert not list((folder/'investigations/revisions').glob('*.json'))

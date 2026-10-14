@@ -385,6 +385,7 @@ class SavingRefusal(BaseModel):
         'incompatible_saved_revision',
         'publication_failed',
         'computation_failed',
+        'unsupported_action',
     ]
     message: constr(min_length=1)
     field: str | None
@@ -485,6 +486,8 @@ class Bpic19PipelineOutput(BaseModel):
         'bpic19_waiting',
         'bpic19_flow_comparison',
         'bpic19_interval_comparison',
+        'bpic19_operator_comparison',
+        'bpic19_cohort_comparison',
     ]
     definition_id: constr(min_length=1)
     sha256: constr(pattern=r'^[a-f0-9]{64}$')
@@ -506,6 +509,36 @@ class RecordAttributeCaseEvidence(BaseModel):
     case_id: CaseId
     matching_row_ids: list[RowId]
     unevaluable_row_ids: list[RowId]
+
+
+class Bpic19LiteratureClaim(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    claim_id: constr(min_length=1, max_length=128)
+    report_id: Literal[
+        'R01',
+        'R02',
+        'R03',
+        'R04',
+        'R05',
+        'R06',
+        'R07',
+        'R08',
+        'R09',
+        'R10',
+        'R11',
+        'R12',
+        'R13',
+        'R14',
+        'R15',
+        'notebook',
+        'wise-paper',
+    ]
+    source_locator: constr(pattern=r'\S', min_length=1, max_length=2000)
+    claim: constr(pattern=r'\S', min_length=1, max_length=4000)
+    claim_level: Literal['reported_not_rerun']
+    compared_run_id: constr(min_length=1) | None
 
 
 class AnswerIdentity(BaseModel):
@@ -590,6 +623,8 @@ class Bpic19PipelineAction(BaseModel):
         'bpic19_flow_comparison',
         'bpic19_method_gate',
         'bpic19_interval_comparison',
+        'bpic19_operator_comparison',
+        'bpic19_cohort_comparison',
     ]
     identity: AnswerIdentity
     query: dict[str, Any] = Field(
@@ -613,6 +648,7 @@ class Bpic19Pipeline(BaseModel):
         None,
         description='Explicit partial mode omits only registered unresolved source-method gates; it never omits a failed admitted operation.',
     )
+    literature_claims: list[Bpic19LiteratureClaim] | None = Field(None, max_length=100)
 
 
 class Bpic19PipelineOmission(BaseModel):
@@ -734,6 +770,7 @@ class Bpic19PipelineManifest(BaseModel):
     claim_level: Literal['complete_registered_pipeline', 'partial'] | None = None
     run_id: constr(pattern=r'^bpic19-pipeline\.v1:sha256:[a-f0-9]{64}$') | None = None
     omissions: list[Bpic19PipelineOmission] | None = Field(None, max_length=32)
+    literature_claims: list[Bpic19LiteratureClaim] | None = Field(None, max_length=100)
 
 
 class PredicateResult(BaseModel):

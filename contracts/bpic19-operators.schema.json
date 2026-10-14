@@ -212,7 +212,8 @@
           "type": "string",
           "enum": [
             "source_position",
-            "timestamp_source_position"
+            "timestamp_source_position",
+            "timestamp_numeric_event_id"
           ]
         },
         "stages": {
@@ -622,7 +623,10 @@
           "const": "none"
         },
         "representative_policy": {
-          "const": "source_position_first_with_all_tied_candidates"
+          "enum": [
+            "source_position_first_with_all_tied_candidates",
+            "parsed_time_then_numeric_event_id_then_original_source_position"
+          ]
         },
         "definition_id": {
           "type": "string",
