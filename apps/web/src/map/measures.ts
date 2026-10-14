@@ -6,26 +6,40 @@ export const OPENING_MEASURE: Measure = "frequency";
 /**
  * Laid over every measure: a path is as wide as its incidents say, from 1 for the rarest paths to
  * 6 for the strongest path of the map, on the library's own scale. The library's widest line is 8,
- * which is heavier than the cards it joins.
+ * which is heavier than the cards it joins. Tagged Start/End flows use the map-added style and
+ * its explicit recorded-history legend.
  */
-const WIDTH_BY_INCIDENTS: StyleSpec = { edgeWidth: { metric: "cases", range: [1, 6] } };
+const BASE_STYLE: StyleSpec = {
+  edgeWidth: { metric: "cases", range: [1, 6] },
+  addedFlowLabel: "Added by the map: start and end of the recorded history.",
+};
 
 /**
- * The bounds in hours of the classes a path's median lag is drawn in under the time measure: up to
- * one day, one day to one week, more than one week. The library's readable ramp keeps only its two
- * darkest blues, so a path without lag looked as dark as the slowest; in classes the first is drawn
- * in the neutral grey and only the slower ones in blue, and the legend names the bounds.
+ * The bounds in hours of the classes a path's supplied median lag is drawn in under both incident
+ * and time measures: up to one day, one day to one week, more than one week. The first class is
+ * drawn in neutral grey and only the slower ones in the two darker blues; the legend names the
+ * bounds. Missing lag is handled separately by each measure.
  */
 export const LAG_CLASSES_HOURS = [24, 168] as const;
 
 /**
- * Laid over the library's performance measure besides: paths in classes of their median lag, and an
+ * Incidents set the width and count labels; supplied median lag keeps long waits visible in colour.
+ * Without lag the path stays neutral and still displays its supplied incidents.
+ */
+const IN_INCIDENTS: StyleSpec = {
+  ...BASE_STYLE,
+  edgeColor: { metric: "medianLagHours", palette: "performance", bins: LAG_CLASSES_HOURS },
+  frequencyColorLegend: true,
+};
+
+/**
+ * Laid over the library's performance measure besides: the same width and lag classes, and an
  * activity without a supplied time until the next event reads "–" in its place. Left to itself, the
  * library writes the activity's count there.
  */
 const IN_PERFORMANCE: StyleSpec = {
-  ...WIDTH_BY_INCIDENTS,
-  edgeColor: { metric: "medianLagHours", palette: "performance", bins: LAG_CLASSES_HOURS, required: true },
+  ...BASE_STYLE,
+  edgeColor: { ...IN_INCIDENTS.edgeColor, required: true },
   nodeLine: { metric: "medianNextHours", missing: "dash" },
 };
 
@@ -36,7 +50,7 @@ const IN_PERFORMANCE: StyleSpec = {
  * them writes on a path and on an activity is its decision, and no number is derived here.
  */
 export function styleOver(measure: Measure): StyleSpec {
-  return measure === "performance" ? IN_PERFORMANCE : WIDTH_BY_INCIDENTS;
+  return measure === "performance" ? IN_PERFORMANCE : measure === "frequency" ? IN_INCIDENTS : BASE_STYLE;
 }
 
 /** What the map is asked for in a measure: the measure itself and what is laid over its style. */

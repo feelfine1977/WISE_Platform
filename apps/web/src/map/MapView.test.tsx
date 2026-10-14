@@ -324,12 +324,15 @@ describe("the map of the kept incidents", () => {
   it("opens on the counts and offers the measures in the map's whole legend", async () => {
     const app = await renderInvestigation();
     const map = await openMap(app, [opened, closed]);
-    expect(legendMeasure(map)).toBe("Frequency: cases.");
+    expect(legendMeasure(map)).toBe("Frequency: width = cases per path.");
     expect(numberLine(map, opened)).toBe("1 · 50 %");
     expect(numberLine(map, closed)).toBe("1 · 50 %");
     // The switch is the map library's own and belongs to its whole legend.
     expect(within(map).queryByRole("group", { name: "Measure" })).toBeNull();
     await app.user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
+    expect(within(map).getByText("Frequency: width = cases per path. Colour = median lag classes. Bar = share of all cases.")).toBeTruthy();
+    expect(Array.from(map.querySelectorAll(".wf-legend__cat"), (entry) => entry.textContent)).toEqual(["up to 24 h", "24 h to 7.0 d", "over 7.0 d"]);
+    expect(within(map).getByText("Added by the map: start and end of the recorded history.")).toBeTruthy();
     expect(pressed(measureSwitch(map))).toEqual([
       ["Frequency", "true"],
       ["Shortfall", "false"],

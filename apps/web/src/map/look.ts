@@ -52,11 +52,10 @@ export function nodeSize(node: FlowNode): NodeSize {
  * the bottom edge and no longer as a grey stripe behind its texts. Its band follows the corners. A
  * selected card is filled with the tint of a selection and outlined in the colour of the focus.
  *
- * A path keeps the library's colour, which is darker the more incidents it carries, so that the
- * main flow is the widest and darkest line; its number is written in the muted ink. The flows from
- * Start and to End are added by the map and are no paths of the log: they are one flat grey in
- * every measure, as wide as their incidents say. The library's dash keeps its own meaning, a path
- * that was not directly observed.
+ * A path keeps the colour of its supplied measure and is as wide as its incidents say; its number
+ * is written in the muted ink. The flows from Start and to End are added by the map and are no paths
+ * of the log: they are one flat grey in every measure, dotted and as wide as their incidents say.
+ * The library's dash keeps its own meaning, a path that was not directly observed.
  *
  * The box of a stage is tinted lightly with the colour of its stage, and its title is in the ink.
  */

@@ -9,6 +9,7 @@ export const END_ID = "event:end";
 
 const START_FLOW = "flow:start:";
 const END_FLOW = "flow:end:";
+const ADDED_FLOW_TAG = "added-by-map";
 
 /** The id of the flow the map adds from Start to the activity with this node id. */
 export const startFlowId = (activityId: string) => `${START_FLOW}${activityId}`;
@@ -119,7 +120,8 @@ export function flowCoverage(graph: SuppliedGraph, least: number, shown?: Readon
  *
  * Two events are added, Start and End, with a flow from Start to an activity incidents begin with
  * and from an activity incidents end with to End. Their counts are the supplied counts of starts
- * and ends of those activities; nothing is counted here. Start and End say the supplied totals of
+ * and ends of those activities; nothing is counted here. The added flows are marked for the
+ * library, separately from recorded paths. Start and End say the supplied totals of
  * every start and end, whichever flows are drawn.
  *
  * The map library always shows events and every flow it is given, whatever its detail is set to,
@@ -148,11 +150,11 @@ export function toFlowGraph(graph: SuppliedGraph, least = 0, shown?: ReadonlySet
     ],
     edges: [
       ...begun.map(
-        (node): FlowEdge => ({ id: startFlowId(node.id), kind: "flow", source: START_ID, target: node.id, metrics: { count: node.metrics.starts, cases: node.metrics.starts } }),
+        (node): FlowEdge => ({ id: startFlowId(node.id), kind: "flow", source: START_ID, target: node.id, tags: [ADDED_FLOW_TAG], metrics: { count: node.metrics.starts, cases: node.metrics.starts } }),
       ),
       ...paths,
       ...ended.map(
-        (node): FlowEdge => ({ id: endFlowId(node.id), kind: "flow", source: node.id, target: END_ID, metrics: { count: node.metrics.ends, cases: node.metrics.ends } }),
+        (node): FlowEdge => ({ id: endFlowId(node.id), kind: "flow", source: node.id, target: END_ID, tags: [ADDED_FLOW_TAG], metrics: { count: node.metrics.ends, cases: node.metrics.ends } }),
       ),
     ],
     meta: { ...graph.meta },

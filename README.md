@@ -12,6 +12,8 @@ WISE_Platform is a local web application for investigating event histories with 
 - scores one expectation about the time from one activity to another with the method library, with the records behind each score;
 - saves an investigation and reopens it after the application was stopped and started.
 
+On the incidents map, path widths and labels show incident counts; colours show the supplied median lag: grey up to 24 hours, mid blue above 24 hours up to 168 hours, and dark blue above 168 hours. The time map uses the same colour classes. A missing lag stays neutral on the incidents map. Dotted neutral flows from Start and to End are added by the map, with widths from the supplied start and end counts. They mark the boundaries of the recorded history; a flow into End does not establish completion. The expanded legend names both encodings and the class bounds.
+
 Each of these passes its contract tests through the real operations and has been used in a browser on synthetic data. **Not done yet:** qualification on Windows by a person; charts with brushing and the transition matrix; everything else the [roadmap](docs/roadmap.md) lists for the first release. The process map uses `wise-flow` 0.3.5 and the scoring uses `wise-pm` 0.2.0. Both are unreleased states of those libraries, kept as packed files under [`vendor/`](vendor/README.md); the application says so where it shows them, and their results are not those of a released library.
 
 ## Installing

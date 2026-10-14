@@ -44,8 +44,14 @@ describe("the measure the map is asked for", () => {
     const graph = suppliedGraph(["A-1", "B-2"]);
     render(<MapView shown={{ revision: 1, steps: [], answer: selectionAnswer(request, everyIncident), graph }} parentGraph={graph} onStep={() => undefined} />);
     expect(asked().measure).toBe("frequency");
-    // Over the library's own style of the counts: only the widths of the paths.
-    expect(asked().style).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
+    // Counts supply width and labels; supplied median lag keeps long waits visible in colour.
+    const incidentsStyle = {
+      edgeWidth: { metric: "cases", range: [1, 6] },
+      addedFlowLabel: "Added by the map: start and end of the recorded history.",
+      edgeColor: { metric: "medianLagHours", palette: "performance", bins: [24, 168] },
+      frequencyColorLegend: true,
+    };
+    expect(asked().style).toEqual(incidentsStyle);
     // The map offers its measures only to a host that listens for the choice.
     expect(asked().onMeasureChange).toBeTypeOf("function");
     expect(asked().legend).toBe(true);
@@ -56,6 +62,7 @@ describe("the measure the map is asked for", () => {
     // Over the library's own performance style: the same widths, and a dash where no time until the next event is supplied.
     expect(asked().style).toEqual({
       edgeWidth: { metric: "cases", range: [1, 6] },
+      addedFlowLabel: "Added by the map: start and end of the recorded history.",
       edgeColor: { metric: "medianLagHours", palette: "performance", bins: [24, 168], required: true },
       nodeLine: { metric: "medianNextHours", missing: "dash" },
     });
@@ -66,6 +73,6 @@ describe("the measure the map is asked for", () => {
 
     act(() => asked().onMeasureChange?.("frequency"));
     expect(asked().measure).toBe("frequency");
-    expect(asked().style).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
+    expect(asked().style).toEqual(incidentsStyle);
   });
 });

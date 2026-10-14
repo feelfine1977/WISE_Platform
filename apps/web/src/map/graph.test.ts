@@ -40,6 +40,11 @@ describe("the supplied graph as the map library's graph", () => {
       ended.map((node) => ["flow", node.id, node.metrics.ends]),
     );
     expect(flow.nodes[0].metrics?.cases).toBe(begun.reduce((sum, node) => sum + node.metrics.starts, 0));
+    // Only the flows added by this adapter opt into the library's history-boundary style.
+    const added = flow.edges.filter((edge) => edge.source === START_ID || edge.target === END_ID);
+    expect(added.every((edge) => edge.tags?.includes("added-by-map"))).toBe(true);
+    expect(flow.edges.filter((edge) => edge.kind === "follows").some((edge) => edge.tags?.includes("added-by-map"))).toBe(false);
+    expect(added.every((edge) => edge.metrics?.medianLagHours === undefined)).toBe(true);
   });
 
   it("passes the times of an activity on as they are supplied, and gives Start and End none", () => {

@@ -15,7 +15,7 @@
     "elkjs": "^0.9.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "wise-flow": "file:../../vendor/wise-flow-0.3.5.tgz"
+    "wise-flow": "file:../../vendor/wise-flow-0.3.5-d50b204bb1f8681b24efb3f6d9d4aec730af0050.tgz"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
