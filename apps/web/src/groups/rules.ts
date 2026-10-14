@@ -10,8 +10,8 @@ export interface RuleChoice {
   rule: GroupRule;
 }
 
-/** The rules offered: four that need nothing more, and the shared value of each mapped context column. */
-export function ruleChoices(contextColumns: readonly { index: number; name: string }[]): RuleChoice[] {
+/** The rules offered: four that need nothing more, the shared value of each mapped context column, and with or without each activity. */
+export function ruleChoices(contextColumns: readonly { index: number; name: string }[], activities: readonly string[] = []): RuleChoice[] {
   return [
     { value: "first", label: "First activity", rule: { kind: "first_raw_activity" } },
     { value: "last", label: "Last activity", rule: { kind: "last_raw_activity" } },
@@ -22,6 +22,7 @@ export function ruleChoices(contextColumns: readonly { index: number; name: stri
       label: `Same ${column.name}`,
       rule: { kind: "shared_reference" as const, column_index: column.index, minimum_parent_case_count: 2 },
     })),
+    ...activities.map((activity) => ({ value: `presence-${activity}`, label: `With or without ${activity}`, rule: { kind: "activity_presence" as const, activity } })),
   ];
 }
 

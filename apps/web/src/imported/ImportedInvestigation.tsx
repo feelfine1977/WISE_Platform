@@ -173,6 +173,11 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
       name: names.find((column) => column.column_index === index)?.column_name || `column ${index}`,
     }));
   }, [answer, openingContext]);
+  // The activities of the parent's map, the most frequent first, for the rule that groups the incidents with and without one.
+  const parentActivities = useMemo(
+    () => (state.parentGraph ? [...state.parentGraph.nodes].sort((one, other) => other.metrics.cases - one.metrics.cases).map((node) => node.label) : []),
+    [state.parentGraph],
+  );
   const shownCases = variantView ? variantView.cases : groupView ? groupView.cases : kept;
   /** Keeps or removes the incidents of the chosen group as a step; the table shows every kept incident again. */
   const stepFromGroup = (negate: boolean) => {
@@ -367,6 +372,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                     revision={revision}
                     identity={shown.answer.identity}
                     contextColumns={contextColumns}
+                    activities={parentActivities}
+                    onOpen={openCase}
                     chosen={chosenGroup?.id ?? null}
                     onChoose={setChosenGroup}
                   />

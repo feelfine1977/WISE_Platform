@@ -19,7 +19,16 @@ function grouping(unassigned = 0) {
         id: `group-${name}`,
         key: many ? { kind: "exact_sequence", activities: [name, "Ende"], variant_id: `v${place}` } : { kind: "activity", activity: name },
         population: { cases: support(place === 0 ? ["A-1", "A-2", "A-3"] : [`B-${place}`]), share: place === 0 ? 0.75 : 0.25, denominator: 4 },
-        parent: { cases: support([]), share: null, denominator: 4 },
+        parent: { cases: support(["A-1", "A-2", "A-3", "A-4", "A-5", "A-6"]), share: 0.5, denominator: 12 },
+        span_distribution: {
+          edges_hours: [0, 24],
+          bins: [
+            { start_inclusive_hours: 0, end_exclusive_hours: 24, parent_case_count: 4, kept_case_count: 2 },
+            { start_inclusive_hours: 24, end_exclusive_hours: null, parent_case_count: 2, kept_case_count: 1 },
+          ],
+          unavailable: { kept_case_count: 0 },
+        },
+        exemplars: { status: "available", shortest: { case_id: "A-2", record_count: 2, observed_span_hours: 3 }, longest: { case_id: "A-3", record_count: 5, observed_span_hours: 50 } },
       }) as unknown as RuleGroup);
       const page = all.slice(request.query.offset, request.query.offset + request.query.limit);
       const next = request.query.offset + page.length;
@@ -34,18 +43,39 @@ function grouping(unassigned = 0) {
   };
 }
 
-function setup(unassigned = 0) {
+function setup(unassigned = 0, chosen: string | null = null) {
   const client = grouping(unassigned);
   const onChoose = vi.fn();
-  const view = render(<GroupsPanel workspaceId="workspace-1" revision={4} identity={kept} contextColumns={[{ index: 2, name: "Kanal" }]} chosen={null} onChoose={onChoose} client={client} />);
-  return { client, onChoose, view, user: userEvent.setup() };
+  const onOpen = vi.fn();
+  const view = render(
+    <GroupsPanel
+      workspaceId="workspace-1"
+      revision={4}
+      identity={kept}
+      contextColumns={[{ index: 2, name: "Kanal" }]}
+      activities={["Eröffnet", "Erinnerung"]}
+      onOpen={onOpen}
+      chosen={chosen}
+      onChoose={onChoose}
+      client={client}
+    />,
+  );
+  return { client, onChoose, onOpen, view, user: userEvent.setup() };
 }
 
 describe("the groups of the kept incidents", () => {
   it("offer the stated rules, the shared value of each context column among them, and group by the first activity at first", async () => {
     const { client } = setup();
     const rule = screen.getByRole("combobox", { name: "Grouped by" });
-    expect(within(rule).getAllByRole("option").map((option) => option.textContent)).toEqual(["First activity", "Last activity", "Number of records", "Exact sequence of activities", "Same Kanal"]);
+    expect(within(rule).getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "First activity",
+      "Last activity",
+      "Number of records",
+      "Exact sequence of activities",
+      "Same Kanal",
+      "With or without Eröffnet",
+      "With or without Erinnerung",
+    ]);
     await screen.findByText("Eröffnet");
     expect(client.groups.mock.calls[0][0].query).toMatchObject({ rule: { kind: "first_raw_activity" }, offset: 0, limit: GROUP_PAGE });
     expect(client.groups.mock.calls[0][0].identity).toEqual(kept);
@@ -75,6 +105,26 @@ describe("the groups of the kept incidents", () => {
     expect(client.groups.mock.calls.at(-1)?.[0].query).toMatchObject({ rule: { kind: "exact_mapped_sequence" }, offset: 50 });
     expect(await screen.findByText("A59 → Ende")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Show more groups" })).toBeNull();
+  });
+});
+
+describe("a chosen group", () => {
+  it("is grouped with or without an activity by the sixth rule", async () => {
+    const { client, user } = setup();
+    await screen.findByText("Eröffnet");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "With or without Erinnerung");
+    expect(client.groups.mock.calls.at(-1)?.[0].query.rule).toEqual({ kind: "activity_presence", activity: "Erinnerung" });
+  });
+
+  it("shows under its row what it rests on: its incidents in the parent and kept, their spans, and its shortest and longest incident to open", async () => {
+    const { user, onOpen } = setup(0, "group-Eröffnet");
+    const row = (await screen.findByRole("button", { name: /Eröffnet/ })).closest("li")!;
+    const figures = Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent);
+    expect(figures).toEqual(["In the parent6 · 50%", "Kept3 · 75%"]);
+    expect(within(row).getByRole("group", { name: "Recorded spans of the group, parent and kept" })).toBeTruthy();
+    await user.click(within(row).getByRole("button", { name: "Longest: A-3, 2.1 d" }));
+    expect(onOpen).toHaveBeenCalledWith("A-3");
+    expect(within(row).getByRole("button", { name: "Shortest: A-2, 3 h" })).toBeTruthy();
   });
 });
 

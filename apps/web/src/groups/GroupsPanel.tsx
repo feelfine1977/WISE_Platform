@@ -2,7 +2,8 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { countOf } from "../data/wording";
 import type { RuleGroup, RuleGroupsAnswer, RuleGroupsRequest } from "../generated/rule-groups";
 import type { AnswerIdentity } from "../generated/selection";
-import { SPAN_EDGES_HOURS } from "../time/periods";
+import { ColumnChart } from "../time/ColumnChart";
+import { durationName, SPAN_EDGES_HOURS, spanBinLabel } from "../time/periods";
 import { answersRuleGroups, httpRuleGroupsClient, type RuleGroupsClient } from "./client";
 import { groupLabel, ruleChoices } from "./rules";
 import "./groups.css";
@@ -18,6 +19,10 @@ interface GroupsPanelProps {
   /** The identity of the kept incidents: the groups count them, in the catalogue of their parent. */
   identity: AnswerIdentity;
   contextColumns: readonly { index: number; name: string }[];
+  /** The activities of the parent's map, the most frequent first: each can group the incidents with it and without it. */
+  activities?: readonly string[];
+  /** Opens an incident in the inspector, as a row of the table does. */
+  onOpen?: (caseId: string) => void;
   /** The group whose incidents the table shows, by its id; null while it shows every kept incident. */
   chosen: string | null;
   onChoose: (group: { id: string; label: string; caseIds: readonly string[] } | null) => void;
@@ -33,9 +38,9 @@ const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionD
  * ranks them in the catalogue of the parent, each with its incidents and their share. Choosing a
  * group only shows its incidents in the table; keeping or removing them is a step taken there.
  */
-export function GroupsPanel({ workspaceId, revision, identity, contextColumns, chosen, onChoose, client = httpRuleGroupsClient }: GroupsPanelProps) {
+export function GroupsPanel({ workspaceId, revision, identity, contextColumns, activities = [], onOpen, chosen, onChoose, client = httpRuleGroupsClient }: GroupsPanelProps) {
   const asked = useId();
-  const choices = useMemo(() => ruleChoices(contextColumns), [contextColumns]);
+  const choices = useMemo(() => ruleChoices(contextColumns, activities), [contextColumns, activities]);
   const [ruleValue, setRuleValue] = useState(choices[0].value);
   const rule = (choices.find((choice) => choice.value === ruleValue) ?? choices[0]).rule;
   const [offset, setOffset] = useState(0);
@@ -91,11 +96,24 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, c
             onChoose(null);
           }}
         >
-          {choices.map((choice) => (
-            <option key={choice.value} value={choice.value}>
-              {choice.label}
-            </option>
-          ))}
+          {choices
+            .filter((choice) => choice.rule.kind !== "activity_presence")
+            .map((choice) => (
+              <option key={choice.value} value={choice.value}>
+                {choice.label}
+              </option>
+            ))}
+          {activities.length > 0 && (
+            <optgroup label="With or without an activity">
+              {choices
+                .filter((choice) => choice.rule.kind === "activity_presence")
+                .map((choice) => (
+                  <option key={choice.value} value={choice.value}>
+                    {choice.label}
+                  </option>
+                ))}
+            </optgroup>
+          )}
         </select>
       </label>
       {listed.phase === "loading" && <p className="working-text">Grouping the kept incidents…</p>}
@@ -135,6 +153,7 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, c
                       <rect className="groups-bar-share" x={0} y={0} width={(count / largest) * 100} height={3} />
                     </svg>
                   </button>
+                  {chosen === group.id && <GroupDetail group={group} onOpen={onOpen} />}
                 </li>
               );
             })}
@@ -147,5 +166,62 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, c
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * What a chosen group rests on, as supplied: its incidents in the parent and among the kept ones
+ * with their shares, the recorded spans of its incidents against the parent's, and its shortest and
+ * longest incident, each of which opens in the inspector.
+ */
+function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: string) => void }) {
+  const share = (value: number | null) => (value === null ? "–" : percent.format(value));
+  const spans = group.span_distribution;
+  const bins = spans.bins.map((bin) => ({ label: spanBinLabel(bin.start_inclusive_hours, bin.end_exclusive_hours), parent: bin.parent_case_count, kept: bin.kept_case_count }));
+  const exemplars = group.exemplars;
+  return (
+    <div className="groups-detail">
+      <dl className="groups-figures">
+        <div>
+          <dt>In the parent</dt>
+          <dd>
+            {group.parent.cases.case_count.toLocaleString("en")} · {share(group.parent.share)}
+          </dd>
+        </div>
+        <div>
+          <dt>Kept</dt>
+          <dd>
+            {group.population.cases.case_count.toLocaleString("en")} · {share(group.population.share)}
+          </dd>
+        </div>
+      </dl>
+      {bins.length > 0 && (
+        <ColumnChart
+          name={`Recorded spans of the group, parent and kept`}
+          bins={bins}
+          band={false}
+          applicable={() => false}
+          chosenName={(from) => bins[from].label}
+          stepName={() => ""}
+          onApply={() => undefined}
+          ticks={[bins[0].label, bins[bins.length - 1].label]}
+        />
+      )}
+      {spans.unavailable.kept_case_count > 0 && <p className="groups-limit">{countOf(spans.unavailable.kept_case_count, "incident")} without a span</p>}
+      {exemplars.status === "available" ? (
+        <p className="groups-exemplars">
+          {(["shortest", "longest"] as const).map((which) => {
+            const exemplar = exemplars[which];
+            return (
+              <button key={which} type="button" className="link-button" disabled={!onOpen} onClick={() => onOpen?.(exemplar.case_id)}>
+                {which === "shortest" ? "Shortest" : "Longest"}: {exemplar.case_id}, {durationName(exemplar.observed_span_hours)}
+              </button>
+            );
+          })}
+        </p>
+      ) : (
+        <p className="muted groups-exemplars">{exemplars.reason === "empty_current_group" ? "No kept incident is in this group." : "No incident of this group has a known order."}</p>
+      )}
+    </div>
   );
 }

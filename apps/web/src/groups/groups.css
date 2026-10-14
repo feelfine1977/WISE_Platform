@@ -35,3 +35,10 @@
 @media (max-width: 900px) {
   .incident-area[data-groups="open"] { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* What a chosen group rests on, under its row: two figures, the spans of its incidents and its shortest and longest incident. */
+.groups-detail { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-2) var(--space-3); }
+.groups-figures { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin: 0; }
+.groups-figures dt { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.groups-figures dd { margin: 0; font-variant-numeric: tabular-nums; }
+.groups-exemplars { display: grid; justify-items: start; gap: var(--space-1); margin: 0; font-size: var(--font-size-small); }
