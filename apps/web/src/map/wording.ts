@@ -3,7 +3,7 @@ import type { GraphCoverage, PopulationSupport, PredicateResult, SelectionPredic
 import type { SelectionProblem } from "./client";
 import type { ActivityTimes } from "./elements";
 
-const quoted = (text: string) => `“${text}”`;
+const quoted = (text: string) => /[\r\n\t]/.test(text) ? JSON.stringify(text) : `“${text}”`;
 
 /** The names of the context columns of the reading shown, by their place in the source. */
 let contextColumnNames: ReadonlyMap<number, string> = new Map();
@@ -37,6 +37,25 @@ export function stepWording(step: SelectionPredicate): string {
       return step.negate
         ? `Keep incidents whose first record does not have ${value} in ${columnWording(step.column_index)}`
         : `Keep incidents whose first record has ${value} in ${columnWording(step.column_index)}`;
+    }
+    case "case_id_in":
+      return `Keep incidents ${step.negate ? "outside" : "with"} these exact numbers: ${step.case_ids.map(quoted).join(", ")}`;
+    case "case_start_in_window":
+      return `Keep incidents whose first record ${step.negate ? "is outside" : "is in"} ${step.window.start_inclusive} to ${step.window.end_exclusive} (end excluded; ${step.window.timestamp_kind === "utc_instant" ? "UTC" : "recorded wall clock"})`;
+    case "opening_attribute_in":
+    case "record_attribute_in": {
+      const values = step.values.map((value) => value === null ? "no value" : quoted(value)).join(" or ");
+      const anchor = step.kind === "opening_attribute_in" ? "the first record" : "any record";
+      return step.negate
+        ? step.kind === "record_attribute_in"
+          ? `Keep incidents where no raw record has ${values} in ${columnWording(step.column_index)}`
+          : `Keep incidents where the first record does not have ${values} in ${columnWording(step.column_index)}`
+        : `Keep incidents where ${anchor} has ${values} in ${columnWording(step.column_index)}`;
+    }
+    case "observed_span_at_least":
+    case "max_raw_gap_at_least": {
+      const measure = step.kind === "observed_span_at_least" ? "recorded span" : "longest adjacent recorded gap";
+      return `Keep incidents with ${measure} ${step.negate ? "less than" : "at least"} ${step.hours} hours`;
     }
     case "starts_with_activity":
       return step.negate
@@ -198,7 +217,8 @@ const remedies: Record<SelectionRefusal["code"], string> = {
   population_unavailable: "Try again; the selection is made again from the incidents of the preparation.",
   invalid_predicate: "Undo the last step or remove it.",
   invalid_parent: "Open the incidents again from the Data area.",
-  unknown_case: "Open the incidents again from the Data area.",
+  unknown_case: "Correct the incident numbers or remove the last step; none of the invalid entry was applied.",
+  case_outside_parent: "Choose numbers from this parent or remove the last step; the parent was not widened.",
   unmapped_context_column: "Undo the last step or remove it.",
   inconsistent_sequence: "The order of the records of an incident cannot be evaluated as prepared. Read the source again in the Data area.",
   mixed_time_kinds: "Read the source again in the Data area with one reading of its times.",

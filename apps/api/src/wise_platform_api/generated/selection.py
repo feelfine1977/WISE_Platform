@@ -5,7 +5,16 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel, confloat, conint, constr
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    confloat,
+    conint,
+    constr,
+)
 
 
 class RequestId(RootModel[constr(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$')]):
@@ -139,34 +148,6 @@ class EndsWithActivity(BaseModel):
     kind: Literal['ends_with_activity']
     activity: constr(min_length=1)
     negate: bool
-
-
-class SelectionPredicate(
-    RootModel[
-        ContainsActivity
-        | DirectlyFollows
-        | OpeningAttributeEquals
-        | StartsWithActivity
-        | EndsWithActivity
-    ]
-):
-    root: (
-        ContainsActivity
-        | DirectlyFollows
-        | OpeningAttributeEquals
-        | StartsWithActivity
-        | EndsWithActivity
-    ) = Field(..., title='SelectionPredicate')
-
-
-class PredicateResult(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    predicate: SelectionPredicate
-    kept: PopulationSupport
-    removed: PopulationSupport
-    unevaluable: PopulationSupport
 
 
 class NodeMetrics(BaseModel):
@@ -308,38 +289,6 @@ class GraphCoverage(RootModel[GraphCoverage1 | GraphCoverage2]):
     root: GraphCoverage1 | GraphCoverage2 = Field(..., title='GraphCoverage')
 
 
-class SelectCasesRequest(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    message_type: Literal['select_cases_request']
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    identity: AnswerIdentity
-    parent_case_ids: list[CaseId] | None
-    predicates: list[SelectionPredicate]
-
-
-class SelectionAnswer(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    message_type: Literal['selection_answer']
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    identity: AnswerIdentity
-    parent_identity: AnswerIdentity
-    parent: PopulationSupport
-    kept: PopulationSupport
-    removed: PopulationSupport
-    unevaluable: PopulationSupport
-    predicate_results: list[PredicateResult]
-
-
 class ProcessGraphRequest(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -380,10 +329,71 @@ class SelectionRefusal(BaseModel):
         'mixed_time_kinds',
         'inconsistent_time_kind',
         'computation_failed',
+        'case_outside_parent',
     ]
     message: constr(min_length=1)
     field: str | None
     retryable: bool
+
+
+class UtcInstant(RootModel[AwareDatetime]):
+    root: AwareDatetime = Field(..., title='UtcInstant')
+
+
+class LocalTimestamp(
+    RootModel[constr(pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?$')]
+):
+    root: constr(pattern=r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?$') = (
+        Field(..., title='LocalTimestamp')
+    )
+
+
+class CaseIdIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['case_id_in']
+    case_ids: list[CaseId] = Field(..., min_length=1)
+    negate: bool
+
+
+class OpeningAttributeIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['opening_attribute_in']
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+    negate: bool
+    anchor_policy: Literal['incident.context.first_record_in_declared_order.v1']
+
+
+class RecordAttributeIn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['record_attribute_in']
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+    negate: bool
+
+
+class ObservedSpanAtLeast(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['observed_span_at_least']
+    hours: confloat(ge=0.0)
+    negate: bool
+
+
+class MaxRawGapAtLeast(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['max_raw_gap_at_least']
+    hours: confloat(ge=0.0)
+    negate: bool
 
 
 class FollowsEdge(BaseModel):
@@ -419,6 +429,109 @@ class ProcessGraphAnswer(BaseModel):
     workspace_id: WorkspaceId
     identity: AnswerIdentity
     graph: SuppliedGraph
+
+
+class UtcCaseStartWindow(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    timestamp_kind: Literal['utc_instant']
+    start_inclusive: UtcInstant
+    end_exclusive: UtcInstant
+
+
+class WallCaseStartWindow(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    timestamp_kind: Literal['wall_clock']
+    start_inclusive: LocalTimestamp
+    end_exclusive: LocalTimestamp
+
+
+class CaseStartWindow(RootModel[UtcCaseStartWindow | WallCaseStartWindow]):
+    root: UtcCaseStartWindow | WallCaseStartWindow = Field(..., title='CaseStartWindow')
+
+
+class CaseStartInWindow(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['case_start_in_window']
+    window: CaseStartWindow
+    negate: bool
+
+
+class SelectionPredicate(
+    RootModel[
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
+    ]
+):
+    root: (
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
+    ) = Field(..., title='SelectionPredicate')
+
+
+class PredicateResult(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    predicate: SelectionPredicate
+    kept: PopulationSupport
+    removed: PopulationSupport
+    unevaluable: PopulationSupport
+
+
+class SelectCasesRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['select_cases_request']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    identity: AnswerIdentity
+    parent_case_ids: list[CaseId] | None
+    predicates: list[SelectionPredicate]
+
+
+class SelectionAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['selection_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    identity: AnswerIdentity
+    parent_identity: AnswerIdentity
+    parent: PopulationSupport
+    kept: PopulationSupport
+    removed: PopulationSupport
+    unevaluable: PopulationSupport
+    predicate_results: list[PredicateResult]
 
 
 class SelectionMessage(

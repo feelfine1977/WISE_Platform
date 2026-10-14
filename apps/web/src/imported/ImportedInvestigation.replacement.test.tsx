@@ -247,7 +247,7 @@ describe("keeping the investigation shown while another preparation is opened", 
     await deliver(() => app.viewing.variants.at(-1)!.reply({ ok: false, problem: { kind: "unreachable" } }));
     // The side panel shows one view at a time; the retry of the view not shown waits like the others.
     const retries = () => screen.getAllByRole("button", { name: "Try again", hidden: true }) as HTMLButtonElement[];
-    await app.user.click(screen.getByRole("button", { name: "Context and patterns" }));
+    await app.user.click(screen.getByRole("button", { name: "Filters and views" }));
     expect(retries()).toHaveLength(3);
     expect(screen.getByRole("button", { name: "Context · not shown" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Patterns · not shown" })).toBeTruthy();

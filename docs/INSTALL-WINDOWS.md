@@ -74,10 +74,10 @@ py -3.13 -I -m venv "%LOCALAPPDATA%\WISE\env"
 Then install from the folder:
 
 ```bat
-"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -I -m pip install --no-index --find-links wheelhouse --only-binary=:all: --require-hashes -r install-runtime.lock
+"%LOCALAPPDATA%\WISE\env\Scripts\python.exe" -I -m pip install --force-reinstall --no-index --find-links wheelhouse --only-binary=:all: --require-hashes -r install-runtime.lock
 ```
 
-`--no-index` means that nothing is fetched from the internet; `--require-hashes` means that every file must have the checksum the list names. The last line of the output begins with `Successfully installed`.
+`--no-index` means that nothing is fetched from the internet; `--require-hashes` means that every file must have the checksum the list names. `--force-reinstall` installs the files of this bundle even if an earlier candidate has the same version number. Stop the running application before updating; the separate workspace and saved investigations remain available. The last line of the output begins with `Successfully installed`.
 
 ## 4. Start
 

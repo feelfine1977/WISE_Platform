@@ -36,6 +36,7 @@ from pydantic import BaseModel, ValidationError
 from .boundary import SCHEMA_VERSION, first_difference, read_object
 from .generated.comparison import ComparisonRefusal
 from .import_boundary import import_echo
+from .selection_boundary import predicate_wire_failures, predicate_window_paths, restored_window_echo, _value_at
 
 RequestModel = TypeVar("RequestModel", bound=BaseModel)
 Location = tuple[str | int, ...]
@@ -96,6 +97,12 @@ _PREDICATES = _by(
         "opening_attribute_equals": "OpeningAttributeEquals",
         "starts_with_activity": "StartsWithActivity",
         "ends_with_activity": "EndsWithActivity",
+        "case_id_in": "CaseIdIn",
+        "case_start_in_window": "CaseStartInWindow",
+        "opening_attribute_in": "OpeningAttributeIn",
+        "record_attribute_in": "RecordAttributeIn",
+        "observed_span_at_least": "ObservedSpanAtLeast",
+        "max_raw_gap_at_least": "MaxRawGapAtLeast",
     },
 )
 _PERIODS = ("target", _period_member)
@@ -110,9 +117,12 @@ _UNIONS: dict[str, tuple[str, Callable[[Mapping[str, object]], str | None]]] = {
             "DirectlyFollows",
             "OpeningAttributeEquals",
             "StartsWithActivity",
-            "EndsWithActivity",
+            "EndsWithActivity", "CaseIdIn", "CaseStartInWindow", "OpeningAttributeIn",
+            "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast",
         )
     },
+    "UtcCaseStartWindow": _by("timestamp_kind", {"utc_instant": "UtcCaseStartWindow", "wall_clock": "WallCaseStartWindow"}),
+    "WallCaseStartWindow": _by("timestamp_kind", {"utc_instant": "UtcCaseStartWindow", "wall_clock": "WallCaseStartWindow"}),
     **{member: _PERIODS for member in ("UtcPeriodComparisonDefinition", "WallPeriodComparisonDefinition")},
 }
 
@@ -179,8 +189,8 @@ def parse_comparison_body(
         if not failures:
             return parsed, message
 
-    path, reason = min(failures, key=lambda failure: (_rank(failure[0]), len(failure[0])))
-    rank = _rank(path)
+    path, reason = min(failures, key=lambda failure: (_rank(failure[0], message), len(failure[0])))
+    rank = _rank(path, message)
     return comparison_refusal(
         operation, _CODES[rank], _message(path, reason), echo=echo, field=".".join(str(part) for part in path)
     )
@@ -188,13 +198,19 @@ def parse_comparison_body(
 
 def _weaker_than_the_contract(message: dict, parsed: BaseModel) -> list[Failure]:
     """The places where the validated model accepted more than the contract allows."""
-    # Only instants are written in another spelling by the models; their spelling is checked below.
-    different = first_difference(
-        message, parsed.model_dump(mode="json", exclude_unset=True), compare_text=False, integers_as_numbers=True
-    )
+    predicate_paths = (("definition", "predicates"), ("definition", "target", "definition", "predicates"),
+                       ("definition", "reference", "definition", "predicates"))
+    paths = list(predicate_window_paths(message, predicate_paths))
+    for role in ("target", "reference"):
+        group = message["definition"].get(role)
+        window = group.get("window") if isinstance(group, Mapping) else None
+        if isinstance(window, Mapping) and window.get("timestamp_kind") == "utc_instant":
+            paths.extend(("definition", role, "window", bound) for bound in ("start_inclusive", "end_exclusive"))
+    written = restored_window_echo(message, parsed.model_dump(mode="json", exclude_unset=True), tuple(paths))
+    different = first_difference(message, written, integers_as_numbers=True)
     if different is not None:
         return [(different, "the value has another JSON type than the contract requires")]
-    failures: list[Failure] = []
+    failures: list[Failure] = [(failure.path, failure.reason) for failure in predicate_wire_failures(message, predicate_paths)]
     definition = message["definition"]
     lists: list[tuple[Location, object]] = [(("parent_case_ids",), message["parent_case_ids"])]
     for role in ("target", "reference"):
@@ -250,7 +266,7 @@ def _on_chosen_member(message: Mapping[str, object], location: Location, reason:
     return tuple(path), reason
 
 
-def _rank(path: Location) -> int:
+def _rank(path: Location, message: Mapping | None = None) -> int:
     if path[:1] == ("context_policy",):
         return _POLICY
     if path[:1] == ("parent_case_ids",):
@@ -260,6 +276,9 @@ def _rank(path: Location) -> int:
     if "predicates" in path:
         index = path.index("predicates")
         if len(path) > index + 1 and isinstance(path[index + 1], int):
+            predicate = _value_at(message, path[:index + 2]) if message is not None else None
+            if isinstance(predicate, Mapping) and predicate.get("kind") == "record_attribute_in":
+                return _PREDICATE
             return _POLICY if path[index + 2 : index + 3] == ("anchor_policy",) else _PREDICATE
     if len(path) > 2 and path[2] == "window":
         return _CLOCK if path[3:4] == ("timestamp_kind",) else _WINDOW

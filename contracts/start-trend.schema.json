@@ -1,0 +1,712 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/start-trend.v1.schema.json",
+  "title": "StartTrendMessage",
+  "description": "Supplied distinct incident starts on a frozen authorized parent, first raw declared-order anchor, exact half-open clock bounds and explicit U support. Preview causes no population/storage writes.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/StartTrendRequest"
+    },
+    {
+      "$ref": "#/$defs/StartTrendAnswer"
+    },
+    {
+      "$ref": "#/$defs/StartTrendRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "UtcInstant": {
+      "title": "UtcInstant",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "LocalTimestamp": {
+      "title": "LocalTimestamp",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?$"
+    },
+    "RecordedTimestamp": {
+      "title": "RecordedTimestamp",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z?$",
+      "description": "Exact canonical recorded-wall timestamp or UTC instant; producer checks the declared clock and calendar."
+    },
+    "ParentObservedRangeBinning": {
+      "title": "ParentObservedRangeBinning",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "parent_observed_range"
+        },
+        "max_bin_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        }
+      },
+      "required": [
+        "kind",
+        "max_bin_count"
+      ],
+      "description": "Positive-width bins derived once from all usable raw timestamps of the frozen parent. End extends its latest observation by one microsecond; tied ranges use one bin."
+    },
+    "UtcExplicitEdgesBinning": {
+      "title": "UtcExplicitEdgesBinning",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "explicit_edges"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "edges": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 65,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/UtcInstant"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "timestamp_kind",
+        "edges"
+      ],
+      "description": "Exact increasing half-open edges in the preparation clock. Outside starts remain explicit before/after support."
+    },
+    "WallExplicitEdgesBinning": {
+      "title": "WallExplicitEdgesBinning",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "explicit_edges"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "edges": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 65,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/LocalTimestamp"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "timestamp_kind",
+        "edges"
+      ],
+      "description": "Exact increasing half-open edges in the preparation clock. Outside starts remain explicit before/after support."
+    },
+    "StartTrendDefinition": {
+      "title": "StartTrendDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.start_trend.first_raw_declared_order_half_open.v1"
+        },
+        "binning": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ParentObservedRangeBinning"
+            },
+            {
+              "$ref": "#/$defs/UtcExplicitEdgesBinning"
+            },
+            {
+              "$ref": "#/$defs/WallExplicitEdgesBinning"
+            }
+          ]
+        }
+      },
+      "required": [
+        "policy_id",
+        "binning"
+      ]
+    },
+    "PopulationSupport": {
+      "title": "PopulationSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count"
+      ]
+    },
+    "SupportPair": {
+      "title": "SupportPair",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parent_support": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "kept_support": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "parent_support",
+        "kept_support"
+      ]
+    },
+    "UnevaluableReasons": {
+      "title": "UnevaluableReasons",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "order_unknown": {
+          "$ref": "#/$defs/SupportPair"
+        },
+        "first_raw_timestamp_missing": {
+          "$ref": "#/$defs/SupportPair"
+        }
+      },
+      "required": [
+        "order_unknown",
+        "first_raw_timestamp_missing"
+      ]
+    },
+    "UnevaluableStartSupport": {
+      "title": "UnevaluableStartSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parent_support": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "kept_support": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "reason_supports": {
+          "$ref": "#/$defs/UnevaluableReasons"
+        },
+        "reason_supports_are_nonadditive": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "required": [
+        "parent_support",
+        "kept_support",
+        "reason_supports",
+        "reason_supports_are_nonadditive"
+      ],
+      "description": "Unknown chronology remains U even under negation. Reason supports may overlap and must not be summed; unavailable first raw time is declared only when no presentation ordering inference is needed."
+    },
+    "UtcStartTrendClock": {
+      "title": "UtcStartTrendClock",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "snapshot_cutoff": {
+          "$ref": "#/$defs/UtcInstant"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "snapshot_cutoff"
+      ],
+      "description": "Exact unchanged source policy cutoff; this is an observation boundary, never a completion marker."
+    },
+    "WallStartTrendClock": {
+      "title": "WallStartTrendClock",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "snapshot_cutoff": {
+          "$ref": "#/$defs/LocalTimestamp"
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "snapshot_cutoff"
+      ],
+      "description": "Exact unchanged source policy cutoff; this is an observation boundary, never a completion marker."
+    },
+    "ObservedRawTimeRange": {
+      "title": "ObservedRawTimeRange",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "earliest_recorded_timestamp": {
+          "$ref": "#/$defs/RecordedTimestamp"
+        },
+        "latest_recorded_timestamp": {
+          "$ref": "#/$defs/RecordedTimestamp"
+        }
+      },
+      "required": [
+        "earliest_recorded_timestamp",
+        "latest_recorded_timestamp"
+      ],
+      "description": "Usable raw observations; not the incident-start range. No current-date anchor."
+    },
+    "StartTrendBin": {
+      "title": "StartTrendBin",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "start_inclusive": {
+          "$ref": "#/$defs/RecordedTimestamp"
+        },
+        "end_exclusive": {
+          "$ref": "#/$defs/RecordedTimestamp"
+        },
+        "parent_support": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "kept_support": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "start_inclusive",
+        "end_exclusive",
+        "parent_support",
+        "kept_support"
+      ]
+    },
+    "StartTrendBinGeneration": {
+      "title": "StartTrendBinGeneration",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "parent_observed_range",
+            "explicit_edges"
+          ]
+        },
+        "max_bin_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "upper_extension_microseconds": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "available",
+            "empty_parent",
+            "no_usable_parent_timestamps"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "max_bin_count",
+        "upper_extension_microseconds",
+        "status"
+      ]
+    },
+    "StartTrendRequest": {
+      "title": "StartTrendRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "start_trend_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "definition": {
+          "$ref": "#/$defs/StartTrendDefinition"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "definition"
+      ]
+    },
+    "StartTrendAnswer": {
+      "title": "StartTrendAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "start_trend_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "definition": {
+          "$ref": "#/$defs/StartTrendDefinition"
+        },
+        "grain": {
+          "type": "string",
+          "const": "distinct_incident_starts"
+        },
+        "anchor_policy": {
+          "type": "string",
+          "const": "first_raw_record_in_declared_order_of_sequence_evaluable_case"
+        },
+        "clock": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/UtcStartTrendClock"
+            },
+            {
+              "$ref": "#/$defs/WallStartTrendClock"
+            }
+          ]
+        },
+        "source_time_range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservedRawTimeRange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent_time_range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservedRawTimeRange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bin_generation": {
+          "$ref": "#/$defs/StartTrendBinGeneration"
+        },
+        "edges": {
+          "type": "array",
+          "maxItems": 65,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RecordedTimestamp"
+          }
+        },
+        "parent_support": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "kept_support": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "bins": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/StartTrendBin"
+          }
+        },
+        "available": {
+          "$ref": "#/$defs/SupportPair"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/UnevaluableStartSupport"
+        },
+        "before_range": {
+          "$ref": "#/$defs/SupportPair"
+        },
+        "after_range": {
+          "$ref": "#/$defs/SupportPair"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "parent_identity",
+        "definition",
+        "grain",
+        "anchor_policy",
+        "clock",
+        "source_time_range",
+        "parent_time_range",
+        "bin_generation",
+        "edges",
+        "parent_support",
+        "kept_support",
+        "bins",
+        "available",
+        "unevaluable",
+        "before_range",
+        "after_range"
+      ],
+      "description": "Read-only distinct raw-record start counts and exact complete-incident membership on the authorized frozen parent. No event volume, active-work or resolution inference."
+    },
+    "StartTrendRefusal": {
+      "title": "StartTrendRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "start_trend_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "start_trend"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_parent",
+            "unknown_case",
+            "inconsistent_sequence",
+            "inconsistent_time_kind",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

@@ -26,6 +26,12 @@ from wise_platform_analytics.preparation import PreparedData
 from wise_platform_analytics.process_graph import build_process_graph
 from wise_platform_analytics.selection import (
     ContainsActivity,
+    CaseIdIn,
+    CaseStartInWindow,
+    OpeningAttributeIn,
+    RecordAttributeIn,
+    ObservedSpanAtLeast,
+    MaxRawGapAtLeast,
     DirectlyFollows,
     EndsWithActivity,
     OpeningAttributeEquals,
@@ -187,7 +193,18 @@ class Selections:
 
 def package_predicate(given: Mapping[str, object]) -> Predicate:
     """The package's predicate for a predicate of a validated request."""
-    kind, negate = given["kind"], bool(given["negate"])
+    kind, negate = given["kind"], given["negate"]
+    if kind == "case_id_in":
+        return CaseIdIn(tuple(given["case_ids"]), negate)
+    if kind == "case_start_in_window":
+        window = given["window"]
+        return CaseStartInWindow(window["timestamp_kind"], window["start_inclusive"], window["end_exclusive"], negate)
+    if kind in ("opening_attribute_in", "record_attribute_in"):
+        constructor = OpeningAttributeIn if kind == "opening_attribute_in" else RecordAttributeIn
+        return constructor(given["column_index"], tuple(given["values"]), negate)
+    if kind in ("observed_span_at_least", "max_raw_gap_at_least"):
+        constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
+        return constructor(given["hours"], negate)
     if kind == "contains_activity":
         return ContainsActivity(str(given["activity"]), negate)
     if kind == "starts_with_activity":
@@ -254,7 +271,7 @@ def _package_error(operation: str, error: SelectionError, given: Mapping[str, ob
     code = error.code if error.code in STATUS else "computation_failed"
     if code != error.code:
         logger.error("The analytics package refused with a code the contract does not name: %s", error.code)
-    return _refused(operation, code, str(error) or "The selection cannot be evaluated.", given, _FIELDS.get(code))
+    return _refused(operation, code, str(error) or "The selection cannot be evaluated.", given, getattr(error, "field", None) or _FIELDS.get(code))
 
 
 def _refused(

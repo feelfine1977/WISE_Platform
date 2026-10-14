@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .boundary import read_object
+from .case_lists import CaseLists
 from .comparisons import ComparisonReply, Comparisons
 from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
 from .expectations import Expectations, ScoringReply
@@ -16,8 +17,10 @@ from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .investigations import Investigations, Reply
 from .population_views import PopulationViews, ViewReply
+from .rule_groups import RuleGroups
 from .saving import Saving, SavingReply
 from .selections import SelectionReply, Selections
+from .start_trends import StartTrends
 from .workspace import program_folders
 
 
@@ -50,6 +53,9 @@ def create_app(
     imports = Imports(forbidden=program_folders(), workspace_path=workspace_path)
     selections = Selections(imports)
     views = PopulationViews(imports)
+    case_lists = CaseLists(imports)
+    start_trends = StartTrends(imports)
+    rule_group_views = RuleGroups(imports)
     comparisons = Comparisons(imports)
     expectations = Expectations(imports)
     saving = Saving(imports)
@@ -127,9 +133,24 @@ def create_app(
     async def process_graph(request: Request) -> JSONResponse:
         return _sent_selection(await run_in_threadpool(selections.process_graph, await request.body()))
 
+    @application.post("/api/investigations/case-list")
+    async def case_list(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(case_lists.case_list, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/start-trend")
+    async def start_trend(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(start_trends.start_trend, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
     @application.post("/api/investigations/opening-context")
     async def opening_context(request: Request) -> JSONResponse:
         return _sent_view(await run_in_threadpool(views.opening_context, await request.body()))
+
+    @application.post("/api/investigations/rule-groups")
+    async def rule_groups(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(rule_group_views.rule_groups, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/variants")
     async def variants(request: Request) -> JSONResponse:

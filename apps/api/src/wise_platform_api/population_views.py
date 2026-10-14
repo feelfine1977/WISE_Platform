@@ -110,48 +110,38 @@ class PopulationViews:
         )
 
     def _population(self, operation: str, given: dict) -> tuple[PreparedData, Population] | ViewReply:
-        identity: Mapping[str, str] = given["identity"]
-        found = self._imports.prepared(given["workspace_id"], identity["preparation_id"])
+        found = resolve_population(self._imports, given)
         if isinstance(found, Problem):
             return _refused(operation, found.code, found.message, given, found.field)
-        if isinstance(found, PackageRefusal):
-            return _refused(
-                operation,
-                "preparation_unavailable",
-                "This preparation cannot be reproduced from the stored source. Confirm the interpretation "
-                "of the source again.",
-                given,
-                "identity.preparation_id",
-            )
-        prepared = found[0]
-        base = prepared.identity_dict()
-        everything = tuple(sorted(prepared.histories))
-        if dict(identity) == base:
-            return prepared, Population(base, everything, base, everything)
-        different = next((name for name in base if name != "population_id" and identity[name] != base[name]), None)
-        if different is not None:
-            return _refused(
-                operation,
-                "identity_mismatch",
-                "The identity does not belong to this preparation.",
-                given,
-                f"identity.{different}",
-            )
-        selection = self._selections.find(given["workspace_id"], identity["population_id"])
-        if selection is None or selection.identity_dict() != dict(identity):
-            return _refused(
-                operation,
-                "population_unavailable",
-                "This population is neither the parent of the preparation nor a selection the application "
-                "holds. Open the incidents again or repeat the selection.",
-                given,
-                "identity.population_id",
-            )
-        parent_ids = selection.parent.case_ids
-        # The parent of a held selection is the frozen parent the selection named, also when it holds
-        # every incident: its identity is that of the selection without steps, not of the preparation.
-        parent_identity = select_cases(prepared, (), parent_ids).identity_dict()
-        return prepared, Population(selection.identity_dict(), selection.kept.case_ids, parent_identity, parent_ids)
+        return found
+
+
+def resolve_population(imports: Imports, given: dict) -> tuple[PreparedData, Population] | Problem:
+    """Read the exact checked source/selection and its frozen parent, without registration."""
+    identity: Mapping[str, str] = given["identity"]
+    found = imports.prepared(given["workspace_id"], identity["preparation_id"])
+    if isinstance(found, Problem):
+        return found
+    if isinstance(found, PackageRefusal):
+        return Problem("preparation_unavailable",
+            "This preparation cannot be reproduced from the stored source. Confirm the interpretation of the source again.",
+            "identity.preparation_id")
+    prepared = found[0]
+    base = prepared.identity_dict()
+    everything = tuple(sorted(prepared.histories))
+    if dict(identity) == base:
+        return prepared, Population(base, everything, base, everything)
+    different = next((name for name in base if name != "population_id" and identity[name] != base[name]), None)
+    if different is not None:
+        return Problem("identity_mismatch", "The identity does not belong to this preparation.", "identity." + different)
+    selection = imports.selections.find(given["workspace_id"], identity["population_id"])
+    if selection is None or selection.identity_dict() != dict(identity):
+        return Problem("population_unavailable",
+            "This population is neither the parent of the preparation nor a selection the application holds. Open the incidents again or repeat the selection.",
+            "identity.population_id")
+    parent_ids = selection.parent.case_ids
+    parent_identity = select_cases(prepared, (), parent_ids).identity_dict()
+    return prepared, Population(selection.identity_dict(), selection.kept.case_ids, parent_identity, parent_ids)
 
 
 def _parse(body: bytes, model: type[BaseModel], operation: str) -> dict | ViewReply:

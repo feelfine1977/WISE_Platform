@@ -21,7 +21,20 @@ export type PopulationId = string;
 export type ImplementationVersion = string;
 export type CaseId = string;
 export type SelectionPredicate =
-  ContainsActivity | DirectlyFollows | OpeningAttributeEquals | StartsWithActivity | EndsWithActivity;
+  | ContainsActivity
+  | DirectlyFollows
+  | OpeningAttributeEquals
+  | StartsWithActivity
+  | EndsWithActivity
+  | CaseIdIn
+  | CaseStartInWindow
+  | OpeningAttributeIn
+  | RecordAttributeIn
+  | ObservedSpanAtLeast
+  | MaxRawGapAtLeast;
+export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
+export type UtcInstant = string;
+export type LocalTimestamp = string;
 export type NodeMetrics = NodeMetrics1;
 export type ActivityNodeId = string;
 export type RowId = string;
@@ -84,6 +97,58 @@ export interface StartsWithActivity {
 export interface EndsWithActivity {
   kind: "ends_with_activity";
   activity: string;
+  negate: boolean;
+}
+export interface CaseIdIn {
+  kind: "case_id_in";
+  /**
+   * @minItems 1
+   */
+  case_ids: [CaseId, ...CaseId[]];
+  negate: boolean;
+}
+export interface CaseStartInWindow {
+  kind: "case_start_in_window";
+  window: CaseStartWindow;
+  negate: boolean;
+}
+export interface UtcCaseStartWindow {
+  timestamp_kind: "utc_instant";
+  start_inclusive: UtcInstant;
+  end_exclusive: UtcInstant;
+}
+export interface WallCaseStartWindow {
+  timestamp_kind: "wall_clock";
+  start_inclusive: LocalTimestamp;
+  end_exclusive: LocalTimestamp;
+}
+export interface OpeningAttributeIn {
+  kind: "opening_attribute_in";
+  column_index: number;
+  /**
+   * @minItems 1
+   */
+  values: [string | null, ...(string | null)[]];
+  negate: boolean;
+  anchor_policy: "incident.context.first_record_in_declared_order.v1";
+}
+export interface RecordAttributeIn {
+  kind: "record_attribute_in";
+  column_index: number;
+  /**
+   * @minItems 1
+   */
+  values: [string | null, ...(string | null)[]];
+  negate: boolean;
+}
+export interface ObservedSpanAtLeast {
+  kind: "observed_span_at_least";
+  hours: number;
+  negate: boolean;
+}
+export interface MaxRawGapAtLeast {
+  kind: "max_raw_gap_at_least";
+  hours: number;
   negate: boolean;
 }
 export interface SelectionAnswer {
@@ -237,7 +302,8 @@ export interface SelectionRefusal {
     | "inconsistent_sequence"
     | "mixed_time_kinds"
     | "inconsistent_time_kind"
-    | "computation_failed";
+    | "computation_failed"
+    | "case_outside_parent";
   message: string;
   field: string | null;
   retryable: boolean;

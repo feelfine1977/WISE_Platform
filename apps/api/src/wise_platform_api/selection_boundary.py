@@ -10,7 +10,7 @@ The failing place decides the code. Another whole schema version is
 ``unsupported_schema``; the anchor policy of an opening predicate is
 ``unsupported_policy``; anything else inside a predicate is
 ``invalid_predicate``; everything else is ``invalid_request``. A predicate is
-one of five kinds told apart by its ``kind``; a failure is named within the
+one of eleven kinds told apart by its ``kind``; a failure is named within the
 kind the request chose, and a kind the contract does not know is named at the
 kind itself.
 """
@@ -18,6 +18,7 @@ kind itself.
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from collections.abc import Mapping
 from typing import TypeVar
 
@@ -26,6 +27,7 @@ from pydantic import BaseModel, ValidationError
 from .boundary import SCHEMA_VERSION, first_difference, read_object
 from .generated.selection import SelectionRefusal
 from .import_boundary import import_echo
+from .strict_reading import Failure, UTC_INSTANT, instant_failures, repeated_failures
 
 RequestModel = TypeVar("RequestModel", bound=BaseModel)
 Location = tuple[str | int, ...]
@@ -43,6 +45,7 @@ STATUS: dict[str, int] = {
     "invalid_predicate": 422,
     "invalid_parent": 422,
     "unknown_case": 422,
+    "case_outside_parent": 422,
     "unmapped_context_column": 422,
     "inconsistent_sequence": 422,
     "mixed_time_kinds": 422,
@@ -66,6 +69,12 @@ _KINDS = {
     "OpeningAttributeEquals": "opening_attribute_equals",
     "StartsWithActivity": "starts_with_activity",
     "EndsWithActivity": "ends_with_activity",
+    "CaseIdIn": "case_id_in",
+    "CaseStartInWindow": "case_start_in_window",
+    "OpeningAttributeIn": "opening_attribute_in",
+    "RecordAttributeIn": "record_attribute_in",
+    "ObservedSpanAtLeast": "observed_span_at_least",
+    "MaxRawGapAtLeast": "max_raw_gap_at_least",
 }
 
 # Order in which failing places are named, first one first.
@@ -121,13 +130,16 @@ def parse_selection_body(
             message, [(tuple(item["loc"]), item["msg"]) for item in error.errors(include_url=False)]
         )
     else:
-        different = first_difference(message, parsed.model_dump(mode="json", exclude_unset=True))
-        if different is None:
+        paths = predicate_window_paths(message, (("predicates",),))
+        written = restored_window_echo(message, parsed.model_dump(mode="json", exclude_unset=True), paths)
+        different = first_difference(message, written, integers_as_numbers=True)
+        failures = [] if different is None else [(different, "the value has another JSON type than the contract requires")]
+        failures += [(failure.path, failure.reason) for failure in predicate_wire_failures(message, (("predicates",),))]
+        if not failures:
             return parsed, message
-        failures = [(different, "the value has another JSON type than the contract requires")]
 
-    path, reason = min(failures, key=lambda failure: (_rank(failure[0]), len(failure[0])))
-    rank = _rank(path)
+    path, reason = min(failures, key=lambda failure: (_rank(failure[0], message), len(failure[0])))
+    rank = _rank(path, message)
     return selection_refusal(
         operation, _CODES[rank], _message(rank, path, reason), echo=echo, field=".".join(str(part) for part in path)
     )
@@ -149,14 +161,27 @@ def _chosen_kinds(message: Mapping[str, object], failures: list[tuple[Location, 
                 continue
             else:
                 path = (*path[:2], *path[3:])
+        branch = next((index for index, part in enumerate(path) if part in ("UtcCaseStartWindow", "WallCaseStartWindow")), None)
+        if branch is not None:
+            prefix = path[:branch]
+            given = _value_at(message, prefix)
+            clock = given.get("timestamp_kind") if isinstance(given, Mapping) else None
+            selected = "UtcCaseStartWindow" if clock == "utc_instant" else "WallCaseStartWindow" if clock == "wall_clock" else None
+            if selected is not None and path[branch] != selected:
+                continue
+            path = (*prefix, *path[branch + 1:]) if selected else (*prefix, "timestamp_kind")
         if (path, reason) not in kept:
             kept.append((path, reason))
     return kept or failures
 
 
-def _rank(path: Location) -> int:
+def _rank(path: Location, message: Mapping | None = None) -> int:
     if len(path) < 2 or path[0] != "predicates" or not isinstance(path[1], int):
         return _ENVELOPE
+    if path[2:3] == ("anchor_policy",) and message is not None:
+        predicate = _value_at(message, path[:2])
+        if isinstance(predicate, Mapping) and predicate.get("kind") == "record_attribute_in":
+            return _PREDICATE
     return _POLICY if path[2:3] == ("anchor_policy",) else _PREDICATE
 
 
@@ -168,3 +193,49 @@ def _message(rank: int, path: Location, reason: str) -> str:
     if rank == _PREDICATE:
         return f"The predicate is not valid at {where}: {reason}."
     return f"The request is not valid at {where}: {reason}."
+
+
+def _value_at(message: object, path: Location) -> object:
+    value = message
+    for part in path:
+        if isinstance(part, int) and isinstance(value, list) and part < len(value):
+            value = value[part]
+        elif isinstance(part, str) and isinstance(value, Mapping):
+            value = value.get(part)
+        else:
+            return None
+    return value
+
+
+def predicate_window_paths(message: Mapping, predicate_paths: tuple[Location, ...]) -> tuple[Location, ...]:
+    """Only UTC bounds of the declared date predicate may normalize in a generated model."""
+    paths = []
+    for prefix in predicate_paths:
+        predicates = _value_at(message, prefix)
+        if not isinstance(predicates, list):
+            continue
+        for index, predicate in enumerate(predicates):
+            window = predicate.get("window") if isinstance(predicate, Mapping) else None
+            if predicate.get("kind") == "case_start_in_window" and isinstance(window, Mapping) and window.get("timestamp_kind") == "utc_instant":
+                paths.extend((*prefix, index, "window", bound) for bound in ("start_inclusive", "end_exclusive"))
+    return tuple(paths)
+
+
+def restored_window_echo(message: Mapping, written: dict, paths: tuple[Location, ...]) -> dict:
+    """Restore only allowlisted, canonically spelled UTC text for wire-type comparison."""
+    result = deepcopy(written)
+    for path in paths:
+        given = _value_at(message, path)
+        if not isinstance(given, str) or UTC_INSTANT.fullmatch(given) is None:
+            continue
+        current = result
+        for part in path[:-1]:
+            current = current[part]
+        current[path[-1]] = given
+    return result
+
+
+def predicate_wire_failures(message: Mapping, predicate_paths: tuple[Location, ...]) -> list[Failure]:
+    """Source-only set uniqueness and UTC spelling checks at every predicate-bearing seam."""
+    unique = [(*prefix, "*", member) for prefix in predicate_paths for member in ("case_ids", "values")]
+    return repeated_failures(message, unique) + instant_failures(message, predicate_window_paths(message, predicate_paths))
