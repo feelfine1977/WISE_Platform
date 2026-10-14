@@ -13,6 +13,9 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["src/test/setup.ts"],
+    // The hosted Windows runners are several times slower than a desk computer; a test that renders the map or the
+    // whole investigation can take more than the default five seconds there without being wrong.
+    testTimeout: 30_000,
     // Stylesheets are read as text by the style checks; no test applies them.
     css: { include: [/\.css\?raw$/] },
   },
