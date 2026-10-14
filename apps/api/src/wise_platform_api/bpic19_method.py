@@ -381,8 +381,11 @@ class Bpic19Assessment:
             native[key][position] for key in ["weights", "penalties", "scope", "evaluated", "reasons"]
         )
         raw = self.raw_weights
-        denominator = sum(raw[key] for index, key in enumerate(raw) if bool(known[index]))
-        numerator = sum(raw[key] for index, key in enumerate(raw) if bool(evaluated[index]))
+        # Native masks follow constraint order; the ID→weight lookup may be
+        # grouped by layer and must not supply a second positional order.
+        constraint_ids = [constraint.id for constraint in result.norm.constraints]
+        denominator = sum(raw[key] for index, key in enumerate(constraint_ids) if bool(known[index]))
+        numerator = sum(raw[key] for index, key in enumerate(constraint_ids) if bool(evaluated[index]))
         scope_unknown = sum(str(reason) == "scope_unknown" for reason in reasons)
         criteria = []
         for index, constraint in enumerate(result.norm.constraints):
