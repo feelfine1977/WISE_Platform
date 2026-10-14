@@ -13,6 +13,24 @@ const base = answer();
 const subject: Bpic19ScoringSubject = { workspace_id: base.workspace_id, base_identity: base.base_identity,
   named_population: base.named_population, roles: { item_category: 3, resource: 5, net_worth: 7 } };
 describe("BPIC19 criterion analysis", () => {
+  it("reads a frozen assessment without offering evaluation, edits or current-selection mutations", async () => {
+    const reviewed = vi.fn(), valid = vi.fn(), keep = vi.fn();
+    const client: Bpic19Client = {
+      score: vi.fn(), associate: vi.fn(), review: vi.fn(),
+      read: vi.fn<Bpic19Client["read"]>(async request => ({ ok: true, answer: { ...answer(), request_id: request.request_id, query_revision: request.query_revision } })),
+    };
+    render(<Bpic19Scoring subject={subject} client={client} initialRun={answer()} readOnly
+      onReviewed={reviewed} onValidityChange={valid} onKeepCases={keep} />);
+    expect(screen.getByText(/Frozen assessment: Balanced/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Run analysis" })).toBeNull();
+    expect(screen.queryByLabelText("Stakeholder view")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Keep these complete items" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Inspect members of A · Parts" }));
+    await waitFor(() => expect(client.read).toHaveBeenCalledTimes(1));
+    expect(client.read).toHaveBeenCalledWith(expect.objectContaining({run_id: base.run_id, case_filter: {group_values: {company: "A", spend_area: "Parts"}}}), expect.any(AbortSignal));
+    expect(client.score).not.toHaveBeenCalled(); expect(client.associate).not.toHaveBeenCalled(); expect(client.review).not.toHaveBeenCalled();
+    expect(reviewed).not.toHaveBeenCalled(); expect(valid).not.toHaveBeenCalled(); expect(keep).not.toHaveBeenCalled();
+  });
   it("runs the reviewed role recipe and exposes exact raw witness callbacks", async () => {
     const inspect = vi.fn();
     const client: Bpic19Client = { score: vi.fn<Bpic19Client["score"]>(async request => ({ ok: true, answer: answer(request) })), read: vi.fn<Bpic19Client["read"]>(async () => ({ ok: true, answer: answer() })) };

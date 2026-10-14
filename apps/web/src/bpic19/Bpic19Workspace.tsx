@@ -14,6 +14,7 @@ import { Bpic19Profile } from "./Bpic19Profile";
 import { Bpic19Measures } from "./Bpic19Measures";
 import { Bpic19Cohorts, type Bpic19CohortComparison } from "./Bpic19Cohorts";
 import { Bpic19SavedScore } from "./Bpic19SavedScore";
+import { Bpic19RetainedAssessments } from "./Bpic19RetainedAssessments";
 import type { Bpic19ScoreAnswer } from "./scoring-types";
 import { Bpic19Operators, type Bpic19OperatorComparison } from "./Bpic19Operators";
 import { Bpic19Admission } from "./Bpic19Admission";
@@ -225,6 +226,7 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   if (!population || !identity) return <main className="bpic19-workspace"><h1>Purchasing analysis</h1><p>Open a reviewed source to inspect its purchasing flows and recorded measures.</p><button onClick={onShowData}>Open Data</button></main>;
   const profileQuery = queries.current.profile;
   const measuresQuery = queries.current.measures;
+  const currentSavedRunId = queries.current.scorePopulationId === identity.population_id ? queries.current.scoreRunId : undefined;
   const currentProfile = profile && JSON.stringify(profile.identity) === JSON.stringify(identity) ? profile : null;
   const roles: MeasureRoles = { ...currentProfile?.query.roles };
   const headers: Record<string, string> = { company: "case Company", spend_area: "case Spend area text", resource: "event org:resource", value: "event Cumulative net worth (EUR)", net_worth: "event Cumulative net worth (EUR)" };
@@ -285,6 +287,9 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
         </>}
         <Bpic19RetainedCohorts workspaceId={population.workspace_id} currentIdentity={identity} actions={session.declarations()} revision={revision}
           onInspect={(parentIdentity,caseId,rowIds,reason)=>{investigation.closeCase();setLayout('side');void lineage.open({identity:parentIdentity,caseId,rowIds,reason});}} />
+        <Bpic19RetainedAssessments workspaceId={population.workspace_id} baseIdentity={population.identity} currentIdentity={identity}
+          actions={session.declarations()} revision={revision} labels={saving.nativeRunLabels(savedRevision)}
+          onInspect={(parentIdentity,caseId,rowIds,reason)=>{investigation.closeCase();setLayout('side');void lineage.open({identity:parentIdentity,caseId,rowIds,reason});}} />
         {currentProfile?.profile && <>
           {!operatorsEnabled && !queries.current.operators && <button onClick={() => setOperatorsEnabled(true)}>Review invoice matches, recorded rules and waiting intervals</button>}
           {(operatorsEnabled || queries.current.operators) && <Bpic19Operators key={key} workspaceId={population.workspace_id} identity={identity} revision={revision}
@@ -298,8 +303,8 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
             onKeepCases={caseIds => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }} />}
         </>}
         {currentProfile?.profile && <>
-          {!scoreEnabled && !queries.current.scoreRunId && <button onClick={() => setScoreEnabled(true)}>Evaluate purchasing criteria and priorities</button>}
-          {(scoreEnabled || queries.current.scoreRunId) && <Bpic19SavedScore key={key} revision={revision} savedRunId={queries.current.scorePopulationId === identity.population_id ? queries.current.scoreRunId : undefined}
+          {!scoreEnabled && !currentSavedRunId && <button onClick={() => setScoreEnabled(true)}>Evaluate purchasing criteria and priorities</button>}
+          {(scoreEnabled || currentSavedRunId && state.selection.phase === "ready") && <Bpic19SavedScore key={key} revision={revision} savedRunId={currentSavedRunId}
             subject={{ workspace_id: population.workspace_id, base_identity: population.identity,
               named_population: { name: "Current reviewed PO items", identity }, roles }}
             onReviewed={reviewedScore} onValidityChange={scoreValid} onInspect={inspect}

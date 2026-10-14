@@ -31,6 +31,7 @@ export interface Bpic19ScoringProps {
   onReviewed?: (answer: Bpic19ScoreAnswer) => void;
   onValidityChange?: (current: boolean) => void;
   onKeepCases?: (caseIds: string[], label: string) => void;
+  readOnly?: boolean;
 }
 const defaults: Settings = { profile: "paper", criteria_family: "full", view: "Balanced", mode: "flat", gamma: 0,
   group_by: ["company", "spend_area"], min_cases: 1, volume: "cases", exposure_policy: "max_absolute_p95", association_min_support:1 };
@@ -102,7 +103,7 @@ function NativeTable({ caption, rows, columns, onDocument, onMembers }: { captio
     {rows.length === 0 && <p>No eligible groups for these settings.</p>}</div>;
 }
 export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun, onRun, onInspect, onInspectDocument, revision,
-  onReviewed, onValidityChange, onKeepCases }: Bpic19ScoringProps) {
+  onReviewed, onValidityChange, onKeepCases, readOnly = false }: Bpic19ScoringProps) {
   const [settings, setSettings] = useState<Settings>(() => restoredSettings(initialRun));
   const [answer, setAnswer] = useState<Bpic19ScoreAnswer | null>(initialRun ?? null);
   const [resultSettings, setResultSettings] = useState<string | null>(initialRun ? JSON.stringify(restoredSettings(initialRun)) : null);
@@ -124,18 +125,20 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       sameIdentity(previous.named_population.identity, subject.named_population.identity) ? previous : null);
     return () => { generation.current += 1; controller.current?.abort(); };
   }, [subjectKey, settingsKey]);
-  useEffect(() => { callbacks.current.onValidityChange?.(Boolean(answer && resultSettings === settingsKey && resultSubject === subjectKey && !pending));
+  useEffect(() => { if (readOnly) return;
+    callbacks.current.onValidityChange?.(Boolean(answer && resultSettings === settingsKey && resultSubject === subjectKey && !pending));
     return () => callbacks.current.onValidityChange?.(false);
-  }, [answer, resultSettings, settingsKey, resultSubject, subjectKey, pending]);
+  }, [answer, resultSettings, settingsKey, resultSubject, subjectKey, pending, readOnly]);
   const update = (patch: Partial<Settings>) => setSettings(current => ({ ...current, ...patch }));
   const run = async (offset: number | null = null, filter: Bpic19ReadRequest["case_filter"] | null = caseFilter, groupOffset?: number) => {
+    const paging = offset !== null && answer && resultSettings === settingsKey && resultSubject === subjectKey;
+    if (readOnly && !paging) return;
     controller.current?.abort();
     const abort = new AbortController(); controller.current = abort;
     const mine = ++generation.current;
     setPending(true); setProblem(null);
     const envelope = { schema_version: 1 as const, request_id: crypto.randomUUID(), query_revision: revision ?? mine,
       workspace_id: subject.workspace_id, case_offset: offset ?? 0, case_limit: 50, group_offset: groupOffset ?? answer?.report.group_page.offset ?? 0, group_limit: 50 };
-    const paging = offset !== null && answer && resultSettings === settingsKey;
     const outcome = paging ? await client.read({ ...envelope, message_type: "bpic19_read_request", run_id: answer.run_id, ...(filter ? {case_filter: filter} : {}) }, abort.signal) :
       await client.score({ ...envelope, message_type: "bpic19_score_request", base_identity: subject.base_identity,
         named_population: subject.named_population, roles: subject.roles, settings } satisfies Bpic19ScoreRequest, abort.signal);
@@ -148,7 +151,7 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       setProblem("The answer belongs to another source or population. Retry this analysis."); return;
     }
     setAnswer(next); setResultSettings(settingsKey); setResultSubject(subjectKey); setCaseFilter(paging ? filter ?? undefined : undefined);
-    onRun?.(next); callbacks.current.onReviewed?.(next);
+    if (!readOnly) { onRun?.(next); callbacks.current.onReviewed?.(next); }
   };
   const current = answer && resultSettings === settingsKey && resultSubject === subjectKey && sameIdentity(answer.base_identity, subject.base_identity) &&
     sameIdentity(answer.named_population.identity, subject.named_population.identity);
@@ -169,7 +172,8 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
   };
   return <section className="bpic19-scoring" aria-label="BPIC19 criterion analysis">
     <h2>Criteria and priorities</h2><p>Assess {subject.named_population.name} at PO item grain, then inspect business groups and purchasing documents.</p>
-    <form className="bpic19-controls" onSubmit={event => { event.preventDefault(); void run(); }}>
+    {readOnly && <p>Frozen assessment: {settings.view} · {settings.mode === "flat" ? "flat criterion weights" : "layer balanced"} · gamma {settings.gamma}. Reading members and exporting preserves this run and its original population.</p>}
+    {!readOnly && <form className="bpic19-controls" onSubmit={event => { event.preventDefault(); void run(); }}>
       <label>Reference profile<select value={settings.profile} onChange={e => update(e.target.value === "paper" ? { profile: "paper", criteria_family: "full", view: "Balanced", mode: "flat", gamma: 0 } : { profile: "historical", criteria_family: "full", view: "Finance", mode: "layer_balanced", gamma: 20 })}>
         <option value="paper">WISE paper · 10 criteria</option><option value="historical">Historical notebook · 29 criteria</option></select></label>
       {settings.profile === "paper" && <label>Criterion assembly<select value={settings.criteria_family} onChange={e => update({ criteria_family: e.target.value as Settings["criteria_family"] })}>
@@ -186,15 +190,15 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       {settings.volume === "exposure" && <label>Exposure recipe<select value={settings.exposure_policy} onChange={e => update({ exposure_policy: e.target.value as Settings["exposure_policy"] })}><option value="max_absolute_p95">Maximum absolute value · frozen parent 95th percentile</option><option value="creation_unique_event">Unique creation event value</option><option value="creation_unique_value">Unique finite creation value</option></select></label>}
       <button type="submit" disabled={pending || !Number.isFinite(settings.gamma) || settings.gamma < 0 || !Number.isInteger(settings.min_cases) || settings.min_cases < 1 || !Number.isInteger(settings.association_min_support ?? 1) || (settings.association_min_support ?? 1) < 1}>{pending ? "Analysing…" : "Run analysis"}</button>
       {pending && <button type="button" onClick={() => { generation.current += 1; controller.current?.abort(); setPending(false); setResultSettings(null); }}>Cancel</button>}
-    </form>
-    <details className="bpic19-definition-preview"><summary>Review criterion definitions and stakeholder weights before running</summary>
+    </form>}
+    {!readOnly && <details className="bpic19-definition-preview"><summary>Review criterion definitions and stakeholder weights before running</summary>
       <p>{settings.profile === "paper" ? "WISE_12_10_2026.pdf · Table B2, PDF page 35; weights Table B3, PDF page 36." : "Historical notebook norm bpic19_norm_v1.json · version 1.0-paper-aligned, 7 March 2026."}
         {` ${preview.constraints.length} criteria compiled for ${settings.view}. Thresholds are researcher screening choices.`}</p>
       <div className="bpic19-table-wrap"><table><caption>Selected native definitions</caption><thead><tr><th>Criterion</th><th>Meaning</th><th>Raw measurement</th><th>Scope</th><th>Direction</th><th>Threshold</th><th>Width</th><th>Raw weight</th><th>Supplied mandatory control</th></tr></thead>
         <tbody>{preview.constraints.map(c => <tr key={c.id}><td>{c.id}</td><td>{c.description}</td><td>{c.params.attribute}<small>{recipeText(preview,c.id)}</small></td><td>{c.applicability.flow?.join(", ") ?? "All flows"}</td>
           <td>{c.params.direction}</td><td>{c.params.threshold}</td><td>{c.params.width}</td><td>{previewView?.constraint_weights ? number(previewView.constraint_weights[c.id]) : `${number(c.weight)} within layer; ${number(previewView?.layer_weights?.[c.layer])} layer weight`}</td><td>{answer?.report.analysis_review?.mandatory_controls.find(control=>control.criterion_id===c.id)?.mandatory === undefined ? "No flag supplied" : answer.report.analysis_review.mandatory_controls.find(control=>control.criterion_id===c.id)?.mandatory ? "Mandatory" : "Not mandatory"}</td></tr>)}</tbody></table></div>
       <p>Paper timing selects independent parsed minima in 2017–2019. Paper resource measures require every record to match a user or batch identity. Historical recipes retain their separate invoice union, timestamp, attribution and frozen exposure rules.</p>
-    </details>
+    </details>}
     <p className="bpic19-muted">Gamma changes ranking stability. Priorities use the arithmetic mean of scored items; exposure changes the multiplier. Associations and effort measures describe proxies.</p>
     {problem && <p role="alert">{problem}</p>}
     {answer && !current && <p role="status">Settings changed. Run the analysis to produce a result for these settings.</p>}
@@ -224,10 +228,10 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
         onMembers={row => void run(0,{criterion_id:String(row.left),right_criterion_id:String(row.right),criterion_state:"positive"})} />
       {!!report.suppressed_associations?.length && <details><summary>Suppressed pairs and zero-support statistics</summary><NativeTable caption="Pairs below reviewed minimum support" rows={report.suppressed_associations} columns={["left","right","eligible_case_count","support","suppression_reason","jaccard","jaccard_reason","lift","lift_reason"]}
         onMembers={row => void run(0,{criterion_id:String(row.left),right_criterion_id:String(row.right),criterion_state:"positive"})} /></details>}
-      {client.associate && answer && <Bpic19Associations key={answer.run_id} answer={answer} client={client} revision={revision}
+      {!readOnly && client.associate && answer && <Bpic19Associations key={answer.run_id} answer={answer} client={client} revision={revision}
         onReviewed={next=>{setAnswer(next);setResultSettings(settingsKey);setResultSubject(subjectKey);onRun?.(next);callbacks.current.onReviewed?.(next);}}
         onValidityChange={valid=>callbacks.current.onValidityChange?.(valid)} onMembers={filter=>void run(0,filter)} />}
-      {client.review && answer && <Bpic19Review key={answer.run_id+":review"} answer={answer} client={client} revision={revision}
+      {!readOnly && client.review && answer && <Bpic19Review key={answer.run_id+":review"} answer={answer} client={client} revision={revision}
         onReviewed={next=>{setAnswer(next);setResultSettings(settingsKey);setResultSubject(subjectKey);onRun?.(next);callbacks.current.onReviewed?.(next);}}
         onValidityChange={valid=>callbacks.current.onValidityChange?.(valid)} />}
       {report.representation_scores && <div><h3>Scored paths and signatures</h3><p>These joins use this frozen run. Exact paths retain repetitions; first-occurrence signatures keep only the first occurrence of each activity. {number(report.representation_page?.unavailable_case_count)} items have unavailable sequence evidence.</p>
@@ -241,7 +245,7 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       {report.selector_warnings?.map((warning,i) => <p key={i} role="status">{String(warning.message)}</p>)}
       {caseFilter && <p>Inspecting stored members; the parent scores and reference are unchanged. <button type="button" disabled={pending} onClick={() => void run(0,null)}>Show all assessed items</button></p>}
       <Cases cases={report.case_page.cases} onInspect={onInspect} />
-      {onKeepCases && <button type="button" disabled={pending || !report.case_page.cases.length} onClick={() => onKeepCases(report.case_page.cases.map(c => c.case_id), "Stored native result · current evidence page")}>Keep these complete items</button>}
+      {!readOnly && onKeepCases && <button type="button" disabled={pending || !report.case_page.cases.length} onClick={() => onKeepCases(report.case_page.cases.map(c => c.case_id), "Stored native result · current evidence page")}>Keep these complete items</button>}
       <div className="bpic19-pagination"><span>Items {report.case_page.offset + 1}–{report.case_page.offset + report.case_page.cases.length} of {report.case_page.total}</span>
         <button type="button" disabled={pending || report.case_page.offset === 0} onClick={() => void run(Math.max(0, report.case_page.offset - report.case_page.limit))}>Previous items</button>
         <button type="button" disabled={pending || report.case_page.offset + report.case_page.cases.length >= report.case_page.total} onClick={() => void run(report.case_page.offset + report.case_page.limit)}>Next items</button></div>

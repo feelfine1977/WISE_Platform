@@ -1,17 +1,18 @@
 import { useEffect } from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Bpic19ProfileAnswer, Bpic19ProfileQuery } from "../generated/bpic19-profile";
 import type { Bpic19ProfileProps } from "./Bpic19Profile";
 import type { Bpic19MeasuresProps } from "./Bpic19Measures";
+import type { Bpic19ScoringProps } from "./Bpic19Scoring";
 import { measuresAnswer } from "./measures-test-fixture";
 import { CompareCoordinator } from "../compare/coordinator";
 import { ImportedInvestigationCoordinator, shownSelection } from "../imported/coordinator";
 import { SavingCoordinator } from "../saved/coordinator";
 import { scriptedComparisonClient } from "../test/comparisons";
 import { earlierPreparationId, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
-import { firstRevisionId, saveAnswer, scriptedSavingClient } from "../test/saving";
+import { firstRevisionId, saveAnswer, savedContent, scriptedSavingClient } from "../test/saving";
 import { containingOpened, everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer, type Figures } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
 import { Bpic19Workspace } from "./Bpic19Workspace";
@@ -82,6 +83,10 @@ vi.mock("./Bpic19Measures", () => ({ Bpic19Measures: (props: Bpic19MeasuresProps
     props.onValidityChange?.(true);
   }}>Review scripted activity counts</button>
 </section> }));
+vi.mock("./Bpic19SavedScore", () => ({ Bpic19SavedScore: function NativeDraft(props: Bpic19ScoringProps & {savedRunId?: string}) {
+  useEffect(() => { props.onValidityChange?.(false); }, [props.onValidityChange]);
+  return <section aria-label="Scripted current assessment">{props.savedRunId ?? "Unrequested current draft"}</section>;
+} }));
 
 const active: { stop(): void }[] = [];
 afterEach(() => { for (const coordinator of active.splice(0)) coordinator.stop(); });
@@ -126,6 +131,30 @@ async function opening() {
 
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("keeps restored source-parent assessments separate without opening an unrequested current-selection draft", async () => {
+    const app = fixture(); app.investigation.open({workspaceId, preparationId});
+    await act(async () => {
+      app.imports.populations[0].reply({ok:true,answer:populationAnswer(app.imports.populations[0].request)}); await settle();
+    });
+    const state = app.investigation.getState();
+    if (state.population.phase !== "ready") throw new Error("The source parent is ready while its selection is pending");
+    const base = state.population.answer.identity;
+    const selected = selectionAnswer(app.selecting.selections[0].request, everyIncident).identity;
+    app.investigation.markSaved({investigationId: "investigation.v1:11111111111141118111111111111111", revisionId:firstRevisionId,
+      content:{...savedContent,base_identity:base,selection_identity:selected,selection_recipe:{parent_case_ids:["A-1","B-2"],predicates:[]},comparison:null,
+        bpic19_pipeline:{schema_version:1,actions:[{operation:"bpic19_score",identity:base,selection_prefix_length:null,query:{run_id:"frozen-source-parent"},definition_id:"frozen-definition"}]}}});
+    render(<Bpic19Workspace {...app.props}/>);
+    fireEvent.click(screen.getByRole("button",{name:"Review scripted source"}));
+    expect(screen.queryByRole("region",{name:"Scripted current assessment"})).toBeNull();
+    await answerSelection(app,0,everyIncident);
+    const user=userEvent.setup(); await user.click(screen.getByRole("button",{name:"Review scripted source"}));
+    await user.click(screen.getByRole("button",{name:"Review scripted activity counts"}));
+    expect(base.population_id).not.toBe(selected.population_id);
+    expect(screen.queryByRole("region",{name:"Scripted current assessment"})).toBeNull();
+    expect(screen.getByRole("button",{name:"Evaluate purchasing criteria and priorities"})).toBeTruthy();
+    expect(app.session.readyForSave()).toBe(true);
+    expect(app.session.savedPipeline()?.actions).toEqual(expect.arrayContaining([expect.objectContaining({operation:"bpic19_score",identity:base})]));
+  });
   it("reviews and saves recorded counts before the purchasing flow roles are accepted", async () => {
     const app = await opening();
     expect(screen.queryByRole("region", { name: "Scripted activity counts" })).toBeNull();

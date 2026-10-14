@@ -13,6 +13,7 @@ import type {
   SavedInvestigationSummary,
   ScoreRunReference,
   Bpic19Pipeline,
+  Bpic19PipelineManifest,
 } from "../generated/saving";
 import {
   type ImportedInvestigationCoordinator,
@@ -81,6 +82,10 @@ export type SaveDraft =
 
 const initialState: SavingState = { list: { phase: "idle" }, reopen: { phase: "idle" }, save: { phase: "idle" } };
 
+function metadataRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 const unreachable: SavingOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
 
 /** The revision of the population shown, or 0 while none is shown. */
@@ -114,6 +119,7 @@ export class SavingCoordinator {
   private readonly listeners = new Set<() => void>();
   /** Ends the wait for a reopened investigation to be shown, while such a wait is on. */
   private awaited: (() => void) | null = null;
+  private nativeLabels: { revisionId: string; labels: Readonly<Record<string, string>> } | null = null;
 
   constructor(
     private readonly client: SavingClient,
@@ -131,6 +137,26 @@ export class SavingCoordinator {
   };
 
   getState = (): SavingState => this.state;
+
+  /** Presentation labels come only from a verified immutable save/reopen answer. */
+  nativeRunLabels(revisionId?: string): Readonly<Record<string, string>> {
+    const stored = this.nativeLabels;
+    return stored && revisionId === stored.revisionId ? stored.labels : {};
+  }
+
+  private rememberNativeLabels(revisionId: string, manifest?: Bpic19PipelineManifest): void {
+    const labels: Record<string, string> = {};
+    for (const entry of manifest?.outputs ?? []) {
+      const output = entry.output, report = output.report;
+      if (entry.operation !== "bpic19_score" || typeof output.run_id !== "string" || !metadataRecord(report)) continue;
+      const settings = report.settings;
+      if (!metadataRecord(settings) || typeof settings.view !== "string" || !["flat", "layer_balanced"].includes(String(settings.mode)) || typeof settings.gamma !== "number" || !Number.isFinite(settings.gamma) || typeof report.profile_id !== "string") continue;
+      const profile = report.profile_id.startsWith("bpic19.notebook") ? "Historical notebook" : report.profile_id.startsWith("bpic19.paper") ? "WISE paper" : null;
+      if (profile === null) continue;
+      labels[output.run_id] = `${profile} · ${settings.view} · ${settings.mode === "flat" ? "flat" : "layer balanced"} · gamma ${settings.gamma}`;
+    }
+    this.nativeLabels = { revisionId, labels };
+  }
 
   /** What saving the question shown now would hold, from the investigation's state. */
   draft(investigation: ImportedInvestigationState): SaveDraft {
@@ -318,6 +344,7 @@ export class SavingCoordinator {
       return;
     }
     this.investigation.markSaved({ investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content: revision.content });
+    this.rememberNativeLabels(revision.saved_revision_id, checked.answer.bpic19_outputs);
     this.publish({ ...this.state, save: { phase: "saved", answer: checked.answer } });
   }
 
@@ -361,6 +388,7 @@ export class SavingCoordinator {
       return false;
     }
     const { revision, restored_selection, recovery } = checked.answer;
+    this.rememberNativeLabels(revision.saved_revision_id, checked.answer.bpic19_outputs);
     const { content } = revision;
     // The population shown before this reopening: only a later one can be the reopened question.
     const shownBefore = populationRevision(this.investigation.getState());
