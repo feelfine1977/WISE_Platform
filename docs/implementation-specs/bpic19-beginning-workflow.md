@@ -1,6 +1,6 @@
 # BPIC19: what the analyst needs before a process map or score
 
-Status: proposed workflow and gap analysis, revised after owner feedback on 14 October 2026. Production behavior was inspected at source `3d76a578703102d969792bc1be1ef8f272831520`; the proposed additions have not been implemented or browser-qualified.
+Status: approved beginning-workflow requirements, acceptance expanded after the source/ticket review on 14 October 2026; runtime qualification remains open. Production behavior was inspected at source `3d76a578703102d969792bc1be1ef8f272831520`; the proposed additions have not been implemented or browser-qualified.
 
 The initial draft gave generic context filtering too much credit. Preserving a column in a CSV and offering a manual predicate are useful foundations, but they do not deliver the reviewed beginning of the analyst's workflow. BPIC19 analysis begins with business identity, source profiling, purchasing-flow classification and population decisions. Model discovery and WISE scoring follow those decisions.
 
@@ -64,7 +64,7 @@ The abbreviation PR must also remain explicit: source spend classification PR me
 
 ## Revised delivery order
 
-The [full specification](bpic19-analysis-pipeline.md) now has 104 user stories. The [numbered breakdown](../ticket-proposals/bpic19-analysis-pipeline/breakdown.md) has 27 proposed slices with explicit blockers. The new beginning is:
+The [full specification](bpic19-analysis-pipeline.md) now has 104 user stories. The [numbered breakdown](../ticket-proposals/bpic19-analysis-pipeline/breakdown.md) has 27 approved, published slices with explicit blockers. The new beginning is:
 
 1. **Review source and observation policy** — no new blocker; save the source interpretation.
 2. **Profile case attributes and business grain** — no new blocker; expose invariance, values, identity and mixed-document support.

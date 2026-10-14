@@ -1,8 +1,8 @@
 # Finite source-method activation and disposition ledger
 
-AI specialist synthesis, 14 October 2026. This is a planning ledger, not an execution/qualification receipt or human experiment. Audited platform source: `3d76a578`. **All 182 source steps are mapped:** 139 human-report steps, 26 historical-notebook code steps and 17 revised-paper steps. All original source-review inputs were preserved and their SHA-256 hashes checked. No tracker changes or supplied source code execution occurred.
+AI specialist synthesis, 14 October 2026. This is a planning ledger, not an execution/qualification receipt or human experiment. Audited platform source: `3d76a578`. **All 182 source steps are mapped:** 139 human-report steps, 26 historical-notebook code steps and 17 revised-paper steps. All original source-review inputs were preserved and their SHA-256 hashes checked. This original ledger did not execute supplied source code. The approved 27-ticket packet was subsequently published; its [acceptance review](acceptance-review.md) distinguishes source rules, proposed finite policies and remaining method gates.
 
-All 182 source steps retain exact PDF/cell pointers in the private review record. Current numbered references are proposed01–27. A step with several dispositions is only partly covered by foundations. An unavailable manifest is honest reporting, not implementation of a missing method.
+All 182 source steps retain exact PDF/cell pointers in the private review record. Current numbered references are approved local slices 01–27, mapped to tracker #103–129. A step with several dispositions is only partly covered by foundations. An unavailable manifest is honest reporting, not implementation of a missing method.
 
 ## Beginning-workflow correction
 
@@ -11,7 +11,7 @@ The [beginning-workflow review](../../implementation-specs/bpic19-beginning-work
 ## Admission rules
 
 - Reuse current import, complete histories, generic selectors, DFGs, exact variants, first-record context, stated-rule groups, comparisons and saving at the existing Investigation/optional Score seam. Component Method support is separate from platform admission.
-- Proposed 01–27 await the owner seam/granularity checkpoint. Paper qualification 24 assembles the admitted full ten-criterion profile and beginning workflow; historical profile 25 remains separately named. Quantified rules 26 and optional exposure 27 do not silently modify the primary profiles.
+- The owner approved slices 01–27 and the testing seam; the child issues are published. Paper qualification 24 assembles the admitted full ten-criterion profile and beginning workflow; historical profile 25 remains separately named. Quantified rules 26 and optional exposure 27 do not silently modify the primary profiles.
 - Preserve existing issue bodies/native edges. Amendments below are concrete proposed scope changes or finite linked slices; #33 is not broad discovery, #68 is not arbitrary clustering, and #31 stage visits are not general activity grouping.
 - Every finite slice cuts definitions → real API → browser/table evidence → save/stop/reopen with independent literal fixtures. Choose a finite algorithm/build/licence/interface and parameters; do not clone proprietary tools or replace an algorithm while claiming source parity.
 - Externally generated ProM models can be reviewed inputs with external-run provenance. Local execution is only claimed when a qualified adapter executes the registered operation.

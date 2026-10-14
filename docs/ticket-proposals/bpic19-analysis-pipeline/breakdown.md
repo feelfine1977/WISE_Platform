@@ -1,10 +1,10 @@
 # BPIC19 delivery breakdown
 
-Status: **proposed — no new tracker issues or native edges published**. Feature branch `codex/bpic19-analysis-pipeline` is based on source `3d76a578703102d969792bc1be1ef8f272831520`.
+Status: **approved and published — parent #102, tickets #103–129, 27 native child links and 41 native blockers; first priority**. Feature branch `codex/bpic19-analysis-pipeline` is based on source `3d76a578703102d969792bc1be1ef8f272831520`.
 
-27 new vertical slices are proposed. Each delivers a complete inspectable analyst behavior through definitions/contracts, real API, browser, evidence and durable reopening. Existing implemented foundations are reused. The final paper qualification ticket is a bounded full-workload acceptance slice, not a substitute for independent slice completion.
+27 approved vertical slices are published. Their [extended user stories and exact acceptance criteria](acceptance-review.md) were reviewed on 14 October 2026. Each delivers a complete inspectable analyst behavior through definitions/contracts, real API, browser, evidence and durable reopening. Existing implemented foundations are reused. The final paper qualification ticket is a bounded full-workload acceptance slice, not a substitute for independent slice completion.
 
-## Proposed numbered breakdown
+## Approved numbered breakdown
 
 1. **[Review a named source and observation policy](01-review-a-named-source-and-observation-policy.md)** — **Blocked by:** None. **Delivers:** The analyst reviews one reproduction profile, original-source identity, whole-case inclusion, raw timestamp anomalies and a trusted observation horizon, then saves/reopens that interpretation.
 
@@ -89,10 +89,11 @@ These refinements propose acceptance amendments under existing ownership; none i
 
 ## Dependency and frontier review
 
-Can start on current implemented foundations: 01, 02, 05, 07, 08, 09, 17. Genuine proposed blocking edges: 03 ← 02; 04 ← 03; 06 ← 01+03+05; 10 ← 03+05; 11 ← 07+10; 12 ← 08+10; 13 ← 10; 14 ← 13; 15 ← 13; 16 ← 02+13; 18 ← 05+07; 19 ← 18; 20 ← 05+09; 21 ← 10; 22 ← 01+07; 23 ← 01; 24 ← 04+06+11+12+14+15+16+23; 25 ← 09+11+12+17; 26 ← 05+07; 27 ← 09+16. Existing native edges remain untouched; an open tracker state does not make implemented source behavior a new blocker.
+Can start on current implemented foundations: 01, 02, 05, 07, 08, 09, 17. Approved native blocking edges: 03 ← 02; 04 ← 03; 06 ← 01+03+05; 10 ← 03+05; 11 ← 07+10; 12 ← 08+10; 13 ← 10; 14 ← 13; 15 ← 13; 16 ← 02+13; 18 ← 05+07; 19 ← 18; 20 ← 05+09; 21 ← 10; 22 ← 01+07; 23 ← 01; 24 ← 04+06+11+12+14+15+16+23; 25 ← 09+11+12+17; 26 ← 05+07; 27 ← 09+16. Existing native edges remain untouched; an open tracker state does not make implemented source behavior a new blocker.
 
-## Owner checkpoint required by the invoked skills
+## Approved testing seam
 
-Review the proposed primary seam: real local HTTP → matching built browser on that same host → frozen export/save → actual process stop/restart/reopen, using independent literal IDs/measures and separate full-source workload receipts.
+The owner approved the granularity and dependencies, publication, first priority and the seam: real local HTTP → matching built browser on the same host → exact evidence/export/save → actual process stop/restart/reopen. The extended acceptance review makes each complete action testable; no further granularity checkpoint is pending. No acceptance box is checked without its required receipt.
+## Approved testing seam
 
-Does the granularity fit a fresh context window? Are the listed dependencies genuine gates? Which proposed slices should be merged or split? Approval precedes spec/ticket tracker publication and ready-for-agent labels. All concrete draft issue bodies are adjacent, one file per slice.
+The owner approved the granularity and dependencies, publication, first priority and the seam: real local HTTP → matching built browser on the same host → exact evidence/export/save → actual process stop/restart/reopen. The extended acceptance review makes each complete action testable; no further granularity checkpoint is pending. No acceptance box is checked without its required receipt.

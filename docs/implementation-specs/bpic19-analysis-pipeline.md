@@ -1,6 +1,6 @@
 # BPIC19 analyst analysis pipelines
 
-Status: **proposed feature specification — testing seam and ticket breakdown pending owner review, 14 October 2026**.
+Status: **approved for implementation and publication, 14 October 2026; Priority 1 acceptance expanded; qualification remains open**.
 
 ## Problem Statement
 
@@ -146,7 +146,7 @@ Deliver the paper’s actual ten-criterion profile first, then the separately na
 
 ## Testing Decisions
 
-1. **Proposed primary seam, pending owner confirmation:** exercise real local HTTP through a matching built browser on the same owned host; create a source/preparation/measure/optional norm/run, investigate and export exact evidence, save, stop the process, and reopen with a new process. Extend the existing import, selection, comparison, scoring and two-process investigation-restart acceptance patterns. One complete analyst behavior seam is preferred to separate mock-heavy layer test programs.
+1. **Approved primary seam:** exercise real local HTTP through a matching built browser on the same owned host; create a source/preparation/measure/optional norm/run, investigate and export exact evidence, save, stop the process, and reopen with a new process. Extend the existing import, selection, comparison, scoring and two-process investigation-restart acceptance patterns. One complete analyst behavior seam is preferred to separate mock-heavy layer test programs.
 2. Tests compare external answers, identity, support, refused meaning, exact case/record membership, witnesses and persisted output against independent literal oracles. They do not assert implementation internals or mirror production formulas with shared helpers. Exact IDs/counts/states must match; finite numerical comparisons use declared units/tolerances, not rounded chart equality.
 3. A small synthetic oracle includes all four purchasing categories, before-GR/Consignment with identical flags, one document containing several flows, case-varying/missing category fields, Standard/Service subgroups, and missing clearing with evaluated absence but unavailable lag; outside-scope consignment; invalid earliest1948 followed by valid2018; tied GR/IR; missing/unknown/batch attribution; zero/negative monetary values; repeated/cancelled/unmatched invoice events; differing ordinal/FIFO endpoints; multiple items in one document; mixed context; an entirely unscored case; signed offsets yielding zero relative PI despite positive absolute violations; and unequal applicability distinguishing flat from layer-balanced scoring.
 4. Freeze arithmetic examples for weighted coverage, effective weights, arithmetic item reference, group/document aggregation, gamma, count/exposure scaling, signed contribution sum, Pareto and top-list order/membership. Source-profile adapters need raw-record witnesses: native/reference parity on shared prepared assessments does not validate input extraction.
@@ -170,4 +170,4 @@ The source analysis reviews all fifteen human reports individually and separatel
 
 The [finite source-method ledger](../ticket-proposals/bpic19-analysis-pipeline/source-method-activation.md) maps every inventoried source step, including45 separately gated operator briefs and20 explicit existing-owner acceptance amendments. Paper qualification24 does not claim reproduction of the historical notebook or all fifteen reports. Complete report-specific reproduction requires the relevant named operator/definition/engine receipts; an unsupported manifest alone does not complete those steps.
 
-The issue breakdown is a proposed set of narrow complete behaviors, with explicit blockers and existing-owner dispositions. It awaits the skill-required seam/granularity/dependency checkpoint before tracker publication and `ready-for-agent` labels. The original issue bodies, comments and native blocking edges are preserved; already implemented foundations are not made new blockers simply because their tickets remain open.
+The 27-slice breakdown and testing seam are approved. Spec #102 and child tickets #103–129 are published with first priority and native dependencies; the current triage label is `ready`. The [acceptance review](../ticket-proposals/bpic19-analysis-pipeline/acceptance-review.md) supplies extended per-ticket stories and exact closure criteria. The original issue bodies, comments and native blocking edges are preserved; already implemented foundations are not made new blockers simply because their tickets remain open.
