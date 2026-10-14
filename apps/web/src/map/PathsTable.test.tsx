@@ -67,16 +67,17 @@ describe("the list of every path in the investigation", () => {
     expect([pressed("Map"), pressed("Incidents"), pressed("Paths")]).toEqual(["false", "false", "true"]);
     expect(screen.getByRole("heading", { name: "Paths of the kept incidents" })).toBeTruthy();
     expect(screen.queryByLabelText("Process map of the kept incidents")).toBeNull();
-    expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Incidents▼", "Passages", "Median lag (h)", "On the map"]);
+    expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Incidents", "Passages", "Total lag (days, all passages)▼", "Median lag (h)", "On the map"]);
     // The heading that sorts by the incidents is not taken for the view of that name.
     expect(within(list()).getByRole("button", { name: "Incidents: sort the list" })).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Incidents" })).toHaveLength(1);
     // A-1 begins with "Eröffnet", goes on to "Geschlossen" 25.5 hours later and ends there; B-2 has no known order.
     // A flow has incidents only: where a path has its passages and its lag, a flow has a dash.
     expect(listed()).toEqual([
-      ["Start", opened, "1", "–", "–", "Drawn"],
-      [opened, closed, "1", "1", "25.5", "Drawn"],
-      [closed, "End", "1", "–", "–", "Drawn"],
+      // This reply carries no total lag yet: the column holds a dash and the list stands by incidents.
+      ["Start", opened, "1", "–", "–", "–", "Drawn"],
+      [opened, closed, "1", "1", "–", "25.5", "Drawn"],
+      [closed, "End", "1", "–", "–", "–", "Drawn"],
     ]);
 
     // A row is selected as its path is on the map, and offers the same steps in the same place.
@@ -130,7 +131,7 @@ describe("the list of every path beside the map", () => {
   const detail = () => screen.getByRole("form", { name: "Detail" });
   const drawnRows = () =>
     listed()
-      .filter((row) => row[5] === "Drawn")
+      .filter((row) => row[6] === "Drawn")
       .map((row) => row.slice(0, 2).join(" → "))
       .sort();
 
@@ -158,7 +159,7 @@ describe("the list of every path beside the map", () => {
     rerender(view("paths"));
     expect(listed()).toHaveLength(49);
     expect(drawnRows()).toEqual(opening);
-    expect(listed().filter((row) => row[5] === "Not drawn")).toHaveLength(13);
+    expect(listed().filter((row) => row[6] === "Not drawn")).toHaveLength(13);
 
     // The detail controls stand above the list as above the map, without the switch to the map's own table.
     expect(within(detail()).queryByRole("button")).toBeNull();
@@ -179,9 +180,12 @@ describe("the list of every path beside the map", () => {
     const heading = (name: string) => within(list()).getByRole("columnheader", { name });
     const sort = (name: string) => fireEvent.click(within(heading(name)).getByRole("button"));
     const first = () => listed()[0].slice(0, 3);
-    expect(heading("Incidents").getAttribute("aria-sort")).toBe("descending");
+    // The list opens on the total lag; this reply has none, so the rows stand by their incidents.
+    expect(heading("Total lag (days, all passages)").getAttribute("aria-sort")).toBe("descending");
     expect(first()).toEqual([stepName(0), stepName(1), "105"]);
 
+    sort("Incidents");
+    expect(heading("Incidents").getAttribute("aria-sort")).toBe("descending");
     sort("Incidents");
     expect(heading("Incidents").getAttribute("aria-sort")).toBe("ascending");
     expect(heading("Incidents").textContent).toBe("Incidents▲");
@@ -201,11 +205,11 @@ describe("the list of every path beside the map", () => {
     expect(listed()[0].slice(0, 4)).toEqual([stepName(0), stepName(1), "105", "105"]);
     sort("Median lag (h)");
     // The last path of the graph, the fourth activity to itself, takes the longest: 84 hours.
-    expect(listed()[0]).toEqual([stepName(3), stepName(3), "15", "17", "84.0", "Drawn"]);
+    expect(listed()[0]).toEqual([stepName(3), stepName(3), "15", "17", "–", "84.0", "Drawn"]);
     sort("On the map");
-    expect(listed()[0][5]).toBe("Drawn");
+    expect(listed()[0][6]).toBe("Drawn");
     sort("On the map");
-    expect(listed()[0][5]).toBe("Not drawn");
+    expect(listed()[0][6]).toBe("Not drawn");
     expect(heading("On the map").getAttribute("aria-sort")).toBe("ascending");
   });
 
@@ -225,6 +229,7 @@ describe("the list of every path beside the map", () => {
       ["To", null],
       ["Incidents", null],
       ["Passages", "A flow has incidents only"],
+      ["Total lag (days, all passages)", "A flow has incidents only"],
       ["Median lag (h)", "A flow has incidents only"],
       ["On the map", "Drawn at the current detail"],
     ]);
@@ -255,7 +260,8 @@ describe("the list of every path beside the map", () => {
     }
     // A path has both, and no dash.
     const path = within(list()).getByRole("button", { name: `Path from “${stepName(0)}” to “${stepName(1)}”` }).closest("tr")!;
-    expect(Array.from(path.children, (cell) => cell.textContent).slice(2, 5)).toEqual(["105", "105", "2.0"]);
+    // This reply carries no total lag: a dash in its column.
+    expect(Array.from(path.children, (cell) => cell.textContent).slice(2, 6)).toEqual(["105", "105", "–", "2.0"]);
   });
 
   it("has one row as its tab stop and moves between rows with the keyboard", async () => {
