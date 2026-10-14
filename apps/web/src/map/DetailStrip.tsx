@@ -13,6 +13,8 @@ interface DetailStripProps {
   /** Whether the map is shown as the map library's table; without `onViewChange` the strip offers no switch. */
   view?: "map" | "table";
   onViewChange?: (view: "map" | "table") => void;
+  /** What stands in the row before the controls: the switch of what the map's numbers count. */
+  lead?: ReactNode;
   /** What else stands in the row of the strip, after the controls: the tools of the map. */
   children?: ReactNode;
 }
@@ -25,9 +27,10 @@ interface DetailStripProps {
  * the other, the controls say it in a live region of their own. The tools of the map stand in the
  * same row, after the controls.
  */
-export function DetailStrip({ detail, shown, onChange, view, onViewChange, children }: DetailStripProps) {
+export function DetailStrip({ detail, shown, onChange, view, onViewChange, lead, children }: DetailStripProps) {
   return (
     <div className="map-detail">
+      {lead}
       <AbstractionControls
         value={detail}
         onChange={onChange}

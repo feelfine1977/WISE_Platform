@@ -71,6 +71,7 @@ describe("the place of the detail controls", () => {
     // The row above the map then holds no detail controls: only what stays in view of the incidents not evaluable for paths, and the tools, which do what they do.
     expect(screen.getByRole("group", { name: "Map tools" }).parentElement?.className).toBe("map-detail");
     expect(Array.from(screen.getByRole("group", { name: "Map tools" }).parentElement!.children, (part) => part.className)).toEqual([
+      "measure-switch",
       "map-basis",
       "icon-toolbar map-toolbar",
     ]);

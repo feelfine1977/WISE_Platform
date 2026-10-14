@@ -22,6 +22,7 @@ import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, showsS
 import { MAP_THEME, nodeSize } from "./look";
 import "./look.css";
 import { MapToolbar } from "./MapToolbar";
+import { MeasureSwitch } from "./MeasureSwitch";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { PathsTable } from "./PathsTable";
 import { activityTimeLines, boundaryLine, clockTag, flowsLine, unevaluableLine } from "./wording";
@@ -314,12 +315,22 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
       <div className="map-main">
         {controlsAbove ? (
           // The switch to the map library's table belongs to the map; over the list of every path it is left out.
-          <DetailStrip detail={ranked} shown={detailShown} onChange={changeDetail} view={listed ? undefined : view} onViewChange={listed ? undefined : setView}>
+          <DetailStrip
+            detail={ranked}
+            shown={detailShown}
+            onChange={changeDetail}
+            view={listed ? undefined : view}
+            onViewChange={listed ? undefined : setView}
+            lead={listed ? undefined : <MeasureSwitch measure={measure} onMeasure={setMeasure} />}
+          >
             {tools}
           </DetailStrip>
         ) : (
           // The map holds its detail controls itself: the row is the tools' alone.
-          <div className="map-detail">{tools}</div>
+          <div className="map-detail">
+            <MeasureSwitch measure={measure} onMeasure={setMeasure} />
+            {tools}
+          </div>
         )}
         {listed ? (
           <PathsTable graph={shown.graph} drawn={detailShown.drawn} selection={selection} onSelect={setSelection} />

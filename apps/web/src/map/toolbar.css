@@ -31,6 +31,12 @@
 /* Without the detail controls, which the map then holds itself, the row is as high as a control. */
 .map-toolbar { min-height: var(--size-control); }
 
+/* What the map counts, as two parts of one switch at the start of the row; the part chosen stands out on a pale track. */
+.measure-switch { display: inline-flex; flex: none; gap: var(--space-half); padding: var(--space-half); background: var(--color-tint); border-radius: var(--radius); }
+.measure-switch > button { min-height: var(--size-switch); padding: 0 var(--space-3); background: none; border: 0; border-radius: var(--radius); }
+.measure-switch > button[aria-pressed="true"] { background: var(--color-surface); font-weight: var(--font-weight-strong); }
+.map-main > .map-detail > .measure-switch { margin-left: var(--space-2); }
+
 /* A limit of the picture is said in one line of its own at the top of the row, in the amber of a limit. */
 .map-main > .map-detail > .map-limit { flex: 1 1 100%; order: -1; padding: var(--space-1) var(--space-3) 0; color: var(--color-limit); font-size: var(--font-size-small); }
 
