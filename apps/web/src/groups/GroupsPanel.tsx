@@ -80,7 +80,8 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
   const largest = Math.max(1, ...groups.map((group) => group.population.cases.case_count));
   // The groups stand in the order of the parent's catalogue. Where they do not overlap, the shares of the parent's largest
   // groups add up to how much of the kept incidents those groups hold; the line names that ranking, which is not the kept one.
-  const cover = answer !== null && !answer.group_membership_overlaps
+  // Where no kept incident is eligible, every share is unavailable: no cover is said, never a share of none.
+  const cover = answer !== null && !answer.group_membership_overlaps && answer.population_coverage.eligible.case_count > 0
     ? groups.slice(0, COVER_OF).reduce((sum, group) => sum + (group.population.share ?? 0), 0)
     : null;
   // Who the rule cannot place, said apart: incidents it cannot evaluate, and evaluated incidents it puts in no group, among the kept and in the parent.

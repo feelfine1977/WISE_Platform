@@ -10,7 +10,7 @@ import { groupLabel } from "./rules";
 const support = (ids: string[]) => ({ case_ids: ids, case_count: ids.length, record_count: ids.length * 3, omitted_activity_record_count: 0 });
 
 /** Groups by first activity: "Eröffnet" with three incidents, "Rückfrage" with one; 60 groups in all where asked for the sequence. */
-function grouping(unassigned = 0, failAtOffsetOnce: number | null = null) {
+function grouping(unassigned = 0, failAtOffsetOnce: number | null = null, noneEligible = false) {
   let failed = false;
   return {
     groups: vi.fn(async (request: RuleGroupsRequest): Promise<RuleGroupsOutcome> => {
@@ -48,7 +48,14 @@ function grouping(unassigned = 0, failAtOffsetOnce: number | null = null) {
       }) as unknown as RuleGroup);
       const page = all.slice(request.query.offset, request.query.offset + request.query.limit);
       const next = request.query.offset + page.length;
-      const coverage = { total: support([]), eligible: support([]), unevaluable: support([]), assigned: support([]), unassigned: support(Array.from({ length: unassigned }, (_, place) => `U-${place}`)), membership_incidence: support([]) };
+      const coverage = {
+        total: support([]),
+        eligible: support(noneEligible ? [] : ["A-1", "A-2", "A-3", "B-1"]),
+        unevaluable: support(noneEligible ? ["U-1"] : []),
+        assigned: support([]),
+        unassigned: support(Array.from({ length: unassigned }, (_, place) => `U-${place}`)),
+        membership_incidence: support([]),
+      };
       const parentCoverage = { ...coverage, unevaluable: support(["P-1", "P-2"]), unassigned: support(Array.from({ length: unassigned * 2 }, (_, place) => `PU-${place}`)) };
       const answer = {
         request_id: request.request_id, query_revision: request.query_revision, workspace_id: request.workspace_id, identity: request.identity, parent_identity: parent,
@@ -188,5 +195,13 @@ describe("a group that keeps no incident", () => {
     const row = empty.closest("li")!;
     expect(Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent)).toEqual(["In the parent6 of 12 eligible · 50%", "Kept0 of 4 eligible · 0%"]);
     expect(within(row).getByText("No kept incident is in this group.")).toBeTruthy();
+  });
+
+  it("says no cover where no kept incident is eligible for the rule, never a share of none", async () => {
+    const client = grouping(0, null, true);
+    render(<GroupsPanel workspaceId="workspace-1" revision={4} identity={kept} contextColumns={[]} chosen={null} onChoose={vi.fn()} client={client} />);
+    expect(await screen.findByText("3 groups")).toBeTruthy();
+    expect(screen.queryByText(/hold/)).toBeNull();
+    expect(screen.getByText("1 incident the rule cannot evaluate (parent 2)")).toBeTruthy();
   });
 });
