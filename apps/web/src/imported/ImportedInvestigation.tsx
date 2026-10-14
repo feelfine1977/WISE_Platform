@@ -17,6 +17,7 @@ import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
 import type { SavingCoordinator } from "../saved/coordinator";
 import { SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
 import { FilterPanel } from "../filters/FilterPanel";
+import { IncidentsInTimeOrder, type TimeOrder } from "../time/IncidentsInTimeOrder";
 import { TimeColumn } from "../time/TimeColumn";
 import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
@@ -38,6 +39,13 @@ type View = InvestigationView | "paths";
 /** What the side panel shows beside the map or the table. */
 type Rail = "filters" | "context" | "patterns";
 
+/** The orders of the list of kept incidents, with the words of their buttons. */
+const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
+  ["case", "By number"],
+  ["observed_span_hours", "Longest span first"],
+  ["maximum_adjacent_raw_gap_hours", "Longest gap first"],
+];
+
 /**
  * The investigation of an imported preparation in one screen: its facts and the selection of whole
  * incidents above; a side panel with how the incidents were opened and with their variants; the
@@ -48,6 +56,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   // A reopened investigation opens in the view it was saved in; any other question opens on its map.
   const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? initialView);
+  // The kept incidents by number, as kept, or the longest first by recorded span or by longest gap, as the local service orders them.
+  const [incidentOrder, setIncidentOrder] = useState<"case" | TimeOrder>("case");
   const [saveOpen, setSaveOpen] = useState(false);
   const [rail, setRail] = useState<Rail>("context");
   // Closed until it is asked for: the map and the table open on the whole width.
@@ -312,16 +322,41 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   {variantView ? `The kept incidents that follow variant ${variantView.rank}.` : "The incidents the selection keeps; with no step, every incident with an incident id."}{" "}
                   Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every record of an incident.
                 </p>
-                <IncidentWindow
-                  key={variantView ? `variant-${chosenVariant}` : "every-incident"}
-                  cases={shownCases}
-                  openCaseId={openCaseId}
-                  onOpen={openCase}
-                  focusRequest={focusRequest}
-                  labelledBy="imported-incidents-title"
-                  describedBy="imported-incidents-hint"
-                  waitingFor={waitingFor}
-                />
+                {!variantView && shown && (
+                  <div className="incident-order" role="group" aria-label="Order of the incidents">
+                    {INCIDENT_ORDERS.map(([value, label]) => (
+                      <button key={value} type="button" aria-pressed={incidentOrder === value} onClick={() => setIncidentOrder(value)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!variantView && shown && incidentOrder !== "case" ? (
+                  <IncidentsInTimeOrder
+                    workspaceId={answer.workspace_id}
+                    revision={revision}
+                    identity={shown.answer.identity}
+                    kept={kept}
+                    order={incidentOrder}
+                    openCaseId={openCaseId}
+                    onOpen={openCase}
+                    focusRequest={focusRequest}
+                    labelledBy="imported-incidents-title"
+                    describedBy="imported-incidents-hint"
+                    waitingFor={waitingFor}
+                  />
+                ) : (
+                  <IncidentWindow
+                    key={variantView ? `variant-${chosenVariant}` : "every-incident"}
+                    cases={shownCases}
+                    openCaseId={openCaseId}
+                    onOpen={openCase}
+                    focusRequest={focusRequest}
+                    labelledBy="imported-incidents-title"
+                    describedBy="imported-incidents-hint"
+                    waitingFor={waitingFor}
+                  />
+                )}
               </>
             )}
           </section>

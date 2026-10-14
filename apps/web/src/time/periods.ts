@@ -17,6 +17,13 @@ export function hoursName(hours: number): string {
   return hours < 48 ? `${Number(hours.toFixed(1))} h` : `${Number((hours / 24).toFixed(1))} d`;
 }
 
+/** A duration in hours as a table cell says it: minutes below an hour, hours below two days, days from there on. */
+export function durationName(hours: number): string {
+  if (hours < 1) return `${Math.round(hours * 60)} min`;
+  if (hours < 48) return `${Number(hours.toFixed(1))} h`;
+  return `${Number((hours / 24).toFixed(1))} d`;
+}
+
 /** The label of a bin of spans: "under 1 h", "1 h–4 h", "1 yr or more". */
 export function spanBinLabel(start: number, end: number | null): string {
   if (end === null) return `${hoursName(start)} or more`;
