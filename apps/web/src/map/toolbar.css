@@ -65,6 +65,9 @@
 .map-stages-head > .pane-title:focus { outline: none; }
 
 @media (width > 1100px) and (min-height: 560px) {
+  /* What selects by time stands in a column of its own beside the map, a hairline between them, while nothing else stands there. */
+  .explorer .map-view[data-element][data-beside="aside"] { grid-template-columns: minmax(0, 1fr) var(--size-map-aside); }
+  .explorer .map-view > .map-aside { grid-column: 2; grid-row: 1; min-height: 0; overflow: auto; border-left: var(--line-width) solid var(--color-line); }
   .explorer .map-view[data-element][data-beside="stages"] { grid-template-columns: minmax(0, 1fr) var(--size-map-stages); }
   .explorer .map-view > .map-stages-panel { grid-column: 2; grid-row: 1; min-height: 0; overflow: auto; }
 }

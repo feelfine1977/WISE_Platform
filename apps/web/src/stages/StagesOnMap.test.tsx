@@ -117,8 +117,8 @@ describe("the stages of a log on its map", () => {
     expect(stagesSwitch.closest(".map-detail")).not.toBeNull();
     expect(stagesSwitch.getAttribute("aria-pressed")).toBe("false");
     expect(screen.queryByRole("region", { name: "Stages of this log" })).toBeNull();
-    // Nothing stands under the map: beside it in the page is only what a selection offers, kept for assistive technology.
-    expect(Array.from(map.closest(".map-view")!.children, (part) => part.className)).toEqual(["map-main", "map-element visually-hidden"]);
+    // Nothing stands under the map: beside it stand the column of time and what a selection offers, kept for assistive technology.
+    expect(Array.from(map.closest(".map-view")!.children, (part) => part.className)).toEqual(["map-main", "map-aside", "map-element visually-hidden"]);
 
     const panel = await openStages(user);
     expect(stagesSwitch.getAttribute("aria-pressed")).toBe("true");

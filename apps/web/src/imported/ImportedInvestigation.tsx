@@ -17,6 +17,7 @@ import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
 import type { SavingCoordinator } from "../saved/coordinator";
 import { SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
 import { FilterPanel } from "../filters/FilterPanel";
+import { TimeColumn } from "../time/TimeColumn";
 import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
@@ -261,7 +262,15 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 {view === "map" ? "Map of the kept incidents" : "Paths of the kept incidents"}
               </h3>
               {shown && state.parentGraph ? (
-                <MapView shown={shown} parentGraph={state.parentGraph} onStep={addStep} waitingFor={waitingFor} initiallyInPlace={mapInPlace} showing={view} />
+                <MapView
+                  shown={shown}
+                  parentGraph={state.parentGraph}
+                  onStep={addStep}
+                  waitingFor={waitingFor}
+                  initiallyInPlace={mapInPlace}
+                  showing={view}
+                  aside={<TimeColumn workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep} waitingFor={waitingFor} />}
+                />
               ) : state.selection.phase === "failed" ? (
                 <p className="working-text">{view === "map" ? "The map is shown once the incidents are selected." : "The paths are listed once the incidents are selected."}</p>
               ) : (

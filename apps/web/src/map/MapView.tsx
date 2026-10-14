@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
 import { emptySelection, ProcessMap, type Selection } from "wise-flow/react";
 // The page has unlayered base rules, so the library's styles come unlayered too, after React Flow's.
@@ -112,6 +112,11 @@ interface MapViewProps {
    * offers what the map offers; all of them stay when the one is shown in place of the other.
    */
   showing?: "map" | "paths";
+  /**
+   * What stands in a column beside the map while nothing else does: the card of a selected element
+   * and the editor of the stages take its place, and it keeps its state under them. Not beside the list of every path.
+   */
+  aside?: ReactNode;
 }
 
 /** What the mark on "About this map" says while some flows from Start or to End are not drawn; the panel says which. */
@@ -130,7 +135,7 @@ const NOT_ARRANGED_IN_FULL =
  * know about it opens over it, and the steps of a selected element or the editor of the stages
  * stand beside it.
  */
-export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false, showing = "map" }: MapViewProps) {
+export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false, showing = "map", aside }: MapViewProps) {
   // The stages the analyst defined for the reading shown; the map draws its activities in them.
   const workspaceId = shown.answer.workspace_id;
   const preparationId = shown.answer.identity.preparation_id;
@@ -301,7 +306,11 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
   );
 
   return (
-    <div className="map-view" data-element={element === null ? "none" : "selected"} data-beside={editingStages ? "stages" : element === null ? "none" : "element"}>
+    <div
+      className="map-view"
+      data-element={element === null ? "none" : "selected"}
+      data-beside={editingStages ? "stages" : element !== null ? "element" : aside !== undefined && !listed ? "aside" : "none"}
+    >
       <div className="map-main">
         {controlsAbove ? (
           // The switch to the map library's table belongs to the map; over the list of every path it is left out.
@@ -373,6 +382,11 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
             <IconButton icon="close" label="Close the editor of the stages" onClick={closeStages} />
           </div>
           <StagesEditor reading={reading} parentGraph={parentGraph} />
+        </div>
+      )}
+      {aside !== undefined && (
+        <div className="map-aside" hidden={editingStages || element !== null || listed}>
+          {aside}
         </div>
       )}
       {/*

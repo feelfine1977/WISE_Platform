@@ -217,6 +217,10 @@
   --size-viewport-width: 100vw;
   /* The editor of the stages in the column beside the map. */
   --size-map-stages: 360px;
+  /* The column beside the map with what selects by time, its plots and the line that reads out what is under the hand. */
+  --size-map-aside: 340px;
+  --size-chart: 96px;
+  --size-readout: 18px;
   /* A header row of one line, and the bar of the kept share in the data row. */
   --size-kept-share: 48px;
 
