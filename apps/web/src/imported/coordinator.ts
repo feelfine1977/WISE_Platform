@@ -11,6 +11,7 @@ import type { ImportClient, ImportOutcome, ImportProblem } from "../data/client"
 import { sameJson } from "../data/coordinator";
 import type {
   AnswerIdentity,
+  PopulationSupport,
   ProcessGraphAnswer,
   ProcessGraphRequest,
   SelectCasesRequest,
@@ -775,16 +776,56 @@ function checkSelection(
       answer.step_results.some((result, index) => result.step_number !== index + 1 || !sameJson(result.predicate, request.predicates[index]))) {
     return mismatch("The reply answers a different ordered trail or active prefix.");
   }
+  if (!sameParent(answer.parent.case_ids, request.parent_case_ids, population.population.case_ids)) {
+    return mismatch("The reply selects from a different population.");
+  }
+  // Validate supplied accounting, never predicate membership: every chip must partition this
+  // same parent and count the complete RAW histories already named by the population answer.
+  const records = new Map(population.cases.map((item) => [item.case_id, item.record_count]));
+  const parentIds = new Set(answer.parent.case_ids);
+  if (records.size !== population.cases.length || !validSupport(answer.parent, parentIds, records) ||
+      [...answer.step_results, ...answer.predicate_results].some((result) => !validPartition(result, answer.parent, parentIds, records))) {
+    return mismatch("The supplied step supports do not form complete, disjoint partitions of the frozen parent and its raw records.");
+  }
   const partition = active === 0
     ? { kept: answer.parent, removed: { case_ids: [], case_count: 0, record_count: 0 }, unevaluable: { case_ids: [], case_count: 0, record_count: 0 } }
     : answer.step_results[active - 1];
   if (!sameJson(answer.kept, partition.kept) || !sameJson(answer.removed, partition.removed) || !sameJson(answer.unevaluable, partition.unevaluable)) {
     return mismatch("The selection does not match the supplied active-prefix partition.");
   }
-  if (!sameParent(answer.parent.case_ids, request.parent_case_ids, population.population.case_ids)) {
-    return mismatch("The reply selects from a different population.");
-  }
   return { ok: true, answer };
+}
+
+/** Structural validation of supplied support; it derives no analytical truth or predicate result. */
+function validSupport(support: PopulationSupport, parentIds: ReadonlySet<CaseId>, records: ReadonlyMap<CaseId, number>): boolean {
+  if (!Number.isSafeInteger(support.case_count) || support.case_count !== support.case_ids.length ||
+      !Number.isSafeInteger(support.record_count) || support.record_count < 0) return false;
+  const seen = new Set<CaseId>();
+  let raw = 0;
+  for (const id of support.case_ids) {
+    const count = records.get(id);
+    if (!parentIds.has(id) || seen.has(id) || count === undefined || !Number.isSafeInteger(count) || count < 0) return false;
+    seen.add(id);
+    raw += count;
+    if (!Number.isSafeInteger(raw)) return false;
+  }
+  return raw === support.record_count;
+}
+
+/** The three supplied supports must cover the parent once each, including its whole raw histories. */
+function validPartition(partition: Pick<SelectionAnswer, "kept" | "removed" | "unevaluable">, parent: PopulationSupport,
+  parentIds: ReadonlySet<CaseId>, records: ReadonlyMap<CaseId, number>): boolean {
+  const seen = new Set<CaseId>();
+  let raw = 0;
+  for (const support of [partition.kept, partition.removed, partition.unevaluable]) {
+    if (!validSupport(support, parentIds, records)) return false;
+    for (const id of support.case_ids) {
+      if (seen.has(id)) return false;
+      seen.add(id);
+    }
+    raw += support.record_count;
+  }
+  return seen.size === parentIds.size && Number.isSafeInteger(raw) && raw === parent.record_count;
 }
 
 /** Whether a selection was made of the parent asked for: every incident of the population, or the saved parent. */

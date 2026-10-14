@@ -328,3 +328,35 @@ it("saves only the active prefix and its exact answered identity while later ste
  expect(saves.saves[0].request.selection_identity).toEqual(shownSelection(app.coordinator.getState().selection)?.answer.identity);
  expect(app.selecting.selections[3].request.predicates).toEqual([contains(opened),follows(opened,closed)]);
 });
+
+
+describe("structural accounting of every supplied trail prefix", () => {
+  it.each([0, 1, 2])("refuses impossible non-active supports with active prefix %s", async (active) => {
+    for (const mutation of ["foreign", "cardinality", "overlap", "missing", "raw-total", "raw-swap", "duplicate", "negative-raw"]) {
+      const app = await opening(); await answer(app, 0, everyIncident);
+      app.coordinator.addStep(contains(opened)); await answer(app, 1, containingOpened);
+      app.coordinator.addStep(follows(opened, closed));
+      let index = 2;
+      if (active !== 2) { await answer(app, 2, bothSteps); app.coordinator.chooseStep(active); index = 3; }
+      const call = app.selecting.selections[index];
+      const reply = structuredClone(selectionAnswer(call.request, active === 0 ? everyIncident : active === 1 ? containingOpened : bothSteps));
+      const target = active === 2 ? 0 : 1;
+      reply.step_results[target] = structuredClone(reply.step_results[target]);
+      const prefix = reply.step_results[target];
+      if (mutation === "foreign") prefix.kept.case_ids = ["FOREIGN-INCIDENT"];
+      if (mutation === "cardinality") prefix.kept.case_count = 123;
+      if (mutation === "overlap") prefix.unevaluable = support(["A-1"], 2);
+      if (mutation === "missing") { prefix.removed = support([], 0); prefix.unevaluable = support([], 0); }
+      if (mutation === "raw-total") prefix.kept.record_count += 1;
+      if (mutation === "raw-swap") { prefix.kept.record_count -= 1; (prefix.unevaluable.case_count ? prefix.unevaluable : prefix.removed).record_count += 1; }
+      if (mutation === "duplicate") { prefix.kept.case_ids.push("A-1"); prefix.kept.case_count += 1; prefix.kept.record_count += 2; }
+      if (mutation === "negative-raw") prefix.kept.record_count = -1;
+      const beforeGraphs = app.selecting.graphs.length;
+      const beforeShown = shownSelection(app.coordinator.getState().selection);
+      call.reply({ ok: true, answer: reply }); await settle();
+      expect(app.coordinator.getState().selection.phase, `${active}/${mutation}`).toBe("failed");
+      expect(shownSelection(app.coordinator.getState().selection)).toBe(beforeShown);
+      expect(app.selecting.graphs).toHaveLength(beforeGraphs);
+    }
+  });
+});
