@@ -10,6 +10,8 @@ export interface ChartBin {
 interface ColumnChartProps {
   /** The name of the chart for assistive technology. */
   name: string;
+  /** A chart only to read: no column takes a step, and nothing says that one would. */
+  readOnly?: boolean;
   bins: readonly ChartBin[];
   /** Whether neighbouring columns can be chosen together as one band, or one column at a time. */
   band: boolean;
@@ -38,7 +40,7 @@ const integer = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
  * and Enter takes the step. With the pointer a column is pressed, or a band is dragged. A step is
  * taken at once; the steps row undoes it.
  */
-export function ColumnChart({ name, bins, band, applicable, chosenName, stepName, onApply, waitingFor, ticks }: ColumnChartProps) {
+export function ColumnChart({ name, readOnly = false, bins, band, applicable, chosenName, stepName, onApply, waitingFor, ticks }: ColumnChartProps) {
   const hint = useId();
   const plot = useRef<HTMLDivElement>(null);
   const [anchor, setAnchor] = useState<number | null>(null);
@@ -155,14 +157,16 @@ export function ColumnChart({ name, bins, band, applicable, chosenName, stepName
         {chosen !== null && counted !== null && from !== null && to !== null && (
           <>
             <span className="column-chart-chosen-name">{chosen}</span> {integer.format(counted.kept)} of {integer.format(counted.parent)}
-            <span className="visually-hidden">. {applicable(from, to) ? `${stepName(from, to)}: Enter.` : "No step is taken from here."}</span>
+            {!readOnly && <span className="visually-hidden">. {applicable(from, to) ? `${stepName(from, to)}: Enter.` : "No step is taken from here."}</span>}
           </>
         )}
       </p>
       <p id={hint} className="visually-hidden">
-        {band
-          ? "The arrow keys go from column to column; with Shift they widen the band. Enter takes the step, Escape lets go."
-          : "The arrow keys go from column to column. Enter takes the step, Escape lets go."}
+        {readOnly
+          ? "The arrow keys go from column to column and read each one out."
+          : band
+            ? "The arrow keys go from column to column; with Shift they widen the band. Enter takes the step, Escape lets go."
+            : "The arrow keys go from column to column. Enter takes the step, Escape lets go."}
       </p>
     </div>
   );

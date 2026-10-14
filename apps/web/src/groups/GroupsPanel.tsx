@@ -137,7 +137,7 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
         <>
           <p className="groups-summary">
             {countOf(answer.group_count, "group")}
-            {cover !== null && groups.length > 1 && ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the kept incidents`}
+            {cover !== null && groups.length > 1 && ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the eligible kept incidents`}
           </p>
           {coverage !== null && (coverage.kept.unevaluable.case_count > 0 || coverage.parent.unevaluable.case_count > 0) && (
             <p className="groups-limit">
@@ -201,13 +201,14 @@ function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: st
         <div>
           <dt>In the parent</dt>
           <dd>
-            {group.parent.cases.case_count.toLocaleString("en")} · {share(group.parent.share)}
+            {/* A share is supplied against the incidents the rule can place, the eligible ones; the figure names that denominator. */}
+            {group.parent.cases.case_count.toLocaleString("en")} of {group.parent.denominator.toLocaleString("en")} eligible · {share(group.parent.share)}
           </dd>
         </div>
         <div>
           <dt>Kept</dt>
           <dd>
-            {group.population.cases.case_count.toLocaleString("en")} · {share(group.population.share)}
+            {group.population.cases.case_count.toLocaleString("en")} of {group.population.denominator.toLocaleString("en")} eligible · {share(group.population.share)}
           </dd>
         </div>
       </dl>
@@ -240,6 +241,7 @@ function GroupDistribution({ title, name, distribution, unavailable }: { title: 
       <p className="groups-distribution-title">{title}</p>
       <ColumnChart
         name={name}
+        readOnly
         bins={bins}
         band={false}
         applicable={() => false}

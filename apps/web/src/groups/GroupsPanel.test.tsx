@@ -102,7 +102,7 @@ describe("the groups of the kept incidents", () => {
     setup();
     const first = await screen.findByRole("button", { name: /Eröffnet/ });
     expect(first.textContent).toContain("3");
-    expect(screen.getByText("3 groups · the parent's largest 3 hold 100% of the kept incidents")).toBeTruthy();
+    expect(screen.getByText("3 groups · the parent's largest 3 hold 100% of the eligible kept incidents")).toBeTruthy();
   });
 
   it("hand the incidents of a chosen group to the table, and let it go when another rule is chosen", async () => {
@@ -156,7 +156,9 @@ describe("a chosen group", () => {
     const { user, onOpen } = setup(0, "group-Eröffnet");
     const row = (await screen.findByRole("button", { name: /Eröffnet/ })).closest("li")!;
     const figures = Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent);
-    expect(figures).toEqual(["In the parent6 · 50%", "Kept3 · 75%"]);
+    expect(figures).toEqual(["In the parent6 of 12 eligible · 50%", "Kept3 of 4 eligible · 75%"]);
+    // The charts of a group are only to read: their description says no step.
+    expect(row.textContent).not.toContain("Enter takes the step");
     expect(within(row).getByRole("group", { name: "Recorded spans of the group, parent and kept" })).toBeTruthy();
     expect(within(row).getByRole("group", { name: "Longest gaps of the group, parent and kept" })).toBeTruthy();
     expect(within(row).getByText("1 incident without a gap")).toBeTruthy();
@@ -184,7 +186,7 @@ describe("a group that keeps no incident", () => {
     await user.click(empty);
     expect(onChoose).toHaveBeenLastCalledWith(null);
     const row = empty.closest("li")!;
-    expect(Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent)).toEqual(["In the parent6 · 50%", "Kept0 · 0%"]);
+    expect(Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent)).toEqual(["In the parent6 of 12 eligible · 50%", "Kept0 of 4 eligible · 0%"]);
     expect(within(row).getByText("No kept incident is in this group.")).toBeTruthy();
   });
 });
