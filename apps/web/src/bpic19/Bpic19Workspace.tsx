@@ -58,7 +58,7 @@ function downloadReport(text:string){
 /** The purchasing entry point uses the same population, evidence and saved revisions as the map. */
 export function Bpic19Workspace({ investigation, saving, session, active, onShowData }: Props) {
   const state = useSyncExternalStore(investigation.subscribe, investigation.getState);
-  const savingState = useSyncExternalStore(saving.subscribe, saving.getState);
+  useSyncExternalStore(saving.subscribe, saving.getState);
   const [profile, setProfile] = useState<Bpic19ProfileAnswer | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [rows, setRows] = useState<string[]>([]);
@@ -235,7 +235,7 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
     roles[role as keyof MeasureRoles] = matches.length === 1 ? matches[0].index : null;
   }
   const paused = state.selection.phase !== "ready" || state.replacement !== null;
-  const saved = savingState.save.phase === "saved" ? savingState.save.answer : null;
+  const saved = saving.verifiedExportReceipt();
   return <main className="bpic19-workspace">
     <div className="bpic19-toolbar"><h1>Purchasing analysis</h1><button onClick={onShowData}>Review source in Data</button><SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} waitingFor={paused || !session.readyForSave() ? "bpic19-save-wait" : undefined} /></div>
     <p>Source: {population.source.filename}. Selections keep complete PO-item histories across purchasing analysis, the process map and comparisons.</p>

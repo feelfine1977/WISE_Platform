@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Bpic19ProfileAnswer, Bpic19ProfileQuery } from "../generated/bpic19-profile";
+import type { Bpic19PipelineAction, Bpic19PipelineOutput } from "../generated/saving";
 import type { Bpic19ProfileProps } from "./Bpic19Profile";
 import type { Bpic19MeasuresProps } from "./Bpic19Measures";
 import type { Bpic19ScoringProps } from "./Bpic19Scoring";
@@ -12,7 +13,7 @@ import { ImportedInvestigationCoordinator, shownSelection } from "../imported/co
 import { SavingCoordinator } from "../saved/coordinator";
 import { scriptedComparisonClient } from "../test/comparisons";
 import { earlierPreparationId, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
-import { firstRevisionId, saveAnswer, savedContent, scriptedSavingClient } from "../test/saving";
+import { firstRevisionId, reopenAnswer, saveAnswer, savedContent, savedSummary, scriptedSavingClient } from "../test/saving";
 import { containingOpened, everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer, type Figures } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
 import { Bpic19Workspace } from "./Bpic19Workspace";
@@ -89,7 +90,7 @@ vi.mock("./Bpic19SavedScore", () => ({ Bpic19SavedScore: function NativeDraft(pr
 } }));
 
 const active: { stop(): void }[] = [];
-afterEach(() => { for (const coordinator of active.splice(0)) coordinator.stop(); });
+afterEach(() => { for (const coordinator of active.splice(0)) coordinator.stop(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 function fixture() {
   const imports = scriptedImportClient(), selecting = scriptedSelectionClient(), saves = scriptedSavingClient();
   const investigation = new ImportedInvestigationCoordinator(imports.client, selecting.client, scriptedViewClient().client);
@@ -131,6 +132,87 @@ async function opening() {
 
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("exports the same verified machine and readable receipts after unchanged reopen without another revision", async () => {
+    const app = await opening();
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    const current = app.investigation.getState();
+    if (current.population.phase !== "ready") throw new Error("The original source is ready");
+    const chosen = shownSelection(current.selection)!;
+    const pipeline = app.session.savedPipeline();
+    if (!pipeline) throw new Error("Both scripted definitions were reviewed");
+    // Freeze a valid previously declared order, not the default operation order.
+    app.session.restore(workspaceId, chosen.answer.identity, chosen.steps, [...pipeline.actions].reverse(), current.population.answer.identity);
+    await act(async () => { app.saving.save("Frozen purchasing receipt", "Saved note unchanged", "incidents"); await settle(); });
+    const call = app.saves.saves[0], saved = saveAnswer(call.request, firstRevisionId, true);
+    saved.revision.content.bpic19_pipeline = structuredClone(call.request.bpic19_pipeline);
+    const output = (action: Bpic19PipelineAction, index: number): Bpic19PipelineOutput => {
+      if (action.operation === "bpic19_method_gate") throw new Error("Only admitted source/measures actions occur in this fixture");
+      return { operation: action.operation, definition_id: action.definition_id, sha256: String(index + 1).repeat(64),
+        output: { identity: action.identity, query: action.query, population_case_count: 2, population_record_count: 3,
+          definition: { value_unit: "EUR" }, cases: [{ case_id: "A-1", record_row_ids: ["original-A1", "original-A2"] },
+            { case_id: "B-2", record_row_ids: ["original-B1"] }] } };
+    };
+    const [first, ...remaining] = call.request.bpic19_pipeline!.actions;
+    saved.bpic19_outputs = { schema_version: 1, outputs: [output(first, 0), ...remaining.map((action, index) => output(action, index + 1))] };
+    await act(async () => { call.reply({ ok: true, answer: saved }); await settle(); });
+    const blobs: Blob[] = [], filenames: string[] = [];
+    vi.stubGlobal("URL", class extends URL {
+      static createObjectURL(value: Blob | MediaSource) {
+        if (!(value instanceof Blob)) throw new Error("Expected a browser download Blob");
+        blobs.push(value); return `blob:verified-receipt-${blobs.length}`;
+      }
+      static revokeObjectURL() {}
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { filenames.push(this.download); });
+    const blobText = (value: Blob) => new Promise<string>((resolve, reject) => {
+      const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsText(value);
+    });
+    const downloadPair = async () => {
+      await app.user.click(await screen.findByRole("button", { name: "Export saved definitions, results and witnesses" }));
+      await app.user.click(screen.getByRole("button", { name: "Export readable purchasing analysis report" }));
+      return [await blobText(blobs.at(-2)!), await blobText(blobs.at(-1)!)] as const;
+    };
+    const before = await downloadPair();
+    expect(JSON.parse(before[0]).manifest).toEqual(saved.bpic19_outputs);
+    expect(JSON.parse(before[0]).revision).toEqual(saved.revision);
+    expect(before[1]).toContain(firstRevisionId);
+    expect(blobs[0].type).toBe("application/json");
+    expect(blobs[1].type).toBe("text/markdown;charset=utf-8");
+    await app.user.click(screen.getByRole("button", { name: /^Save$/ }));
+    expect(app.saving.getState().save.phase).toBe("idle");
+    expect(screen.getByRole("button", { name: "Export saved definitions, results and witnesses" })).toBeTruthy();
+    await app.user.click(screen.getByRole("button", { name: "Close" }));
+
+    let reopening: Promise<boolean> | undefined;
+    await act(async () => { reopening = app.saving.reopen({ ...savedSummary, latest_revision_id: firstRevisionId }, workspaceId); await settle(); });
+    expect(screen.queryByRole("button", { name: "Export saved definitions, results and witnesses" })).toBeNull();
+    const reopenCall = app.saves.reopens[0], reply = reopenAnswer(reopenCall.request);
+    reply.revision = structuredClone(saved.revision);
+    reply.bpic19_outputs = structuredClone(saved.bpic19_outputs);
+    reply.restored_selection = { identity: chosen.answer.identity, parent_identity: chosen.answer.parent_identity,
+      parent: chosen.answer.parent, kept: chosen.answer.kept, removed: chosen.answer.removed, unevaluable: chosen.answer.unevaluable,
+      predicate_results: chosen.answer.predicate_results };
+    await act(async () => { reopenCall.reply({ ok: true, answer: reply }); await settle(); });
+    expect(await reopening).toBe(true);
+    expect(screen.queryByRole("button", { name: "Export readable purchasing analysis report" })).toBeNull();
+    await answerPopulation(app, 1);
+    // Model completion of the real panels' unchanged saved-query reads, not a new run.
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    expect(app.saving.getState().save.phase).toBe("idle");
+    expect(app.session.savedPipeline()).toEqual(saved.revision.content.bpic19_pipeline);
+    expect(app.session.savedPipeline()?.actions.map(action => action.operation)).toEqual(["bpic19_measures", "bpic19_profile"]);
+    const after = await downloadPair();
+    expect(after).toEqual(before);
+    expect(filenames).toEqual(["purchasing-investigation.json", "purchasing-analysis-report.md", "purchasing-investigation.json", "purchasing-analysis-report.md"]);
+    expect(app.saves.saves).toHaveLength(1);
+    expect(app.saves.reopens).toHaveLength(1);
+    await app.user.click(screen.getByRole("button", { name: "Edit scripted source definition" }));
+    expect(screen.queryByRole("button", { name: "Export saved definitions, results and witnesses" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Export readable purchasing analysis report" })).toBeNull();
+  });
+
   it("keeps restored source-parent assessments separate without opening an unrequested current-selection draft", async () => {
     const app = fixture(); app.investigation.open({workspaceId, preparationId});
     await act(async () => {

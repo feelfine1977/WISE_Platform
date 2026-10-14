@@ -48,6 +48,10 @@ export interface SavingState {
   save: SaveState;
 }
 
+/** An immutable server-verified result, separate from the save form's status. */
+export type VerifiedSavedExportReceipt = Readonly<Pick<SaveInvestigationAnswer,
+  "workspace_id" | "revision" | "bpic19_outputs">>;
+
 /** The part of the comparison view that saving needs: the comparison shown on a reading, in its saved form. */
 export interface ComparisonSource {
   savedComparisonFor(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedComparison | null;
@@ -120,6 +124,7 @@ export class SavingCoordinator {
   /** Ends the wait for a reopened investigation to be shown, while such a wait is on. */
   private awaited: (() => void) | null = null;
   private nativeLabels: { revisionId: string; labels: Readonly<Record<string, string>> } | null = null;
+  private exportReceipt: VerifiedSavedExportReceipt | null = null;
 
   constructor(
     private readonly client: SavingClient,
@@ -137,6 +142,41 @@ export class SavingCoordinator {
   };
 
   getState = (): SavingState => this.state;
+
+  /** Export only the verified saved revision still shown on this exact reading. */
+  verifiedExportReceipt(): VerifiedSavedExportReceipt | null {
+    const receipt = this.exportReceipt;
+    if (!receipt?.bpic19_outputs) return null;
+    const state = this.investigation.getState();
+    const { population, selection, saved } = state;
+    const target = state.replacement?.asked.target ?? (population.phase === "idle" ? null : population.target);
+    if (target && (target.workspaceId !== receipt.workspace_id ||
+        target.preparationId !== receipt.revision.content.base_identity.preparation_id)) {
+      this.exportReceipt = null;
+      return null;
+    }
+    if (population.phase === "ready" &&
+        (population.answer.workspace_id !== receipt.workspace_id ||
+         !sameIdentity(population.answer.identity, receipt.revision.content.base_identity))) {
+      this.exportReceipt = null;
+      return null;
+    }
+    if (this.current.has("save") || this.current.has("reopen") || state.replacement !== null ||
+        population.phase !== "ready" || selection.phase !== "ready" || !saved ||
+        saved.revisionId !== receipt.revision.saved_revision_id ||
+        !sameJson(saved.content, receipt.revision.content)) return null;
+    const shown = shownSelection(selection);
+    if (!shown || !sameIdentity(shown.answer.identity, receipt.revision.content.selection_identity)) return null;
+    if (this.pipeline && (!this.pipeline.readyForSave() ||
+        !sameJson(this.pipeline.savedPipeline(), receipt.revision.content.bpic19_pipeline ?? null))) return null;
+    return receipt;
+  }
+
+  private rememberExportReceipt(answer: SaveInvestigationAnswer | ReopenInvestigationAnswer): void {
+    this.exportReceipt = answer.bpic19_outputs ? structuredClone({
+      workspace_id: answer.workspace_id, revision: answer.revision, bpic19_outputs: answer.bpic19_outputs,
+    }) : null;
+  }
 
   /** Presentation labels come only from a verified immutable save/reopen answer. */
   nativeRunLabels(revisionId?: string): Readonly<Record<string, string>> {
@@ -222,6 +262,7 @@ export class SavingCoordinator {
     const request: SaveInvestigationRequest = saved
       ? { ...question, investigation_id: saved.investigationId, expected_revision_id: saved.revisionId }
       : { ...question, investigation_id: null, expected_revision_id: null };
+    this.exportReceipt = null;
     this.publish({ ...this.state, save: { phase: "saving", name } });
     this.client.save(request, signal).then(
       (outcome) => this.receiveSave(request, outcome),
@@ -258,6 +299,7 @@ export class SavingCoordinator {
   reopen(summary: SavedInvestigationSummary, workspaceId: WorkspaceId): Promise<boolean> {
     this.forgetAwaited();
     const { requestId, revision, signal } = this.issue("reopen", "reopen");
+    this.exportReceipt = null;
     const request: ReopenInvestigationRequest = {
       schema_version: 1,
       message_type: "reopen_investigation_request",
@@ -277,6 +319,7 @@ export class SavingCoordinator {
   stop(): void {
     for (const kind of [...this.current.keys()]) this.cancel(kind);
     this.forgetAwaited();
+    this.exportReceipt = null;
   }
 
   /**
@@ -345,6 +388,7 @@ export class SavingCoordinator {
     }
     this.investigation.markSaved({ investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content: revision.content });
     this.rememberNativeLabels(revision.saved_revision_id, checked.answer.bpic19_outputs);
+    this.rememberExportReceipt(checked.answer);
     this.publish({ ...this.state, save: { phase: "saved", answer: checked.answer } });
   }
 
@@ -401,6 +445,7 @@ export class SavingCoordinator {
       view: recovery.presentation_state?.active_view === "process_map" ? "map" : "incidents",
     });
     this.restoreWhenAccepted(request.workspace_id, revision, shownBefore);
+    this.rememberExportReceipt(checked.answer);
     this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" } });
     return true;
   }
