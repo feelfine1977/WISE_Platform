@@ -39,10 +39,18 @@ function ordering() {
 }
 
 /** The evidence of every incident as the shared fixture A supplies it: three records, at 0, 1 and 5 hours; the first incident's order is not known. */
-function evidenceOf() {
+function evidenceOf(answering: (request: ImportedCaseEvidenceRequest, answer: ImportedCaseEvidenceAnswer) => ImportedCaseEvidenceAnswer = (_, answer) => answer) {
   return {
     caseEvidence: vi.fn(async (request: ImportedCaseEvidenceRequest) => {
-      const answer = { ...(fixture as unknown as ImportedCaseEvidenceAnswer), case_id: request.case_id };
+      // The fixture's history, answering exactly the question asked.
+      const answer = answering(request, {
+        ...(fixture as unknown as ImportedCaseEvidenceAnswer),
+        request_id: request.request_id,
+        query_revision: request.query_revision,
+        workspace_id: request.workspace_id,
+        identity: request.identity,
+        case_id: request.case_id,
+      });
       if (request.case_id === "I-000") {
         const { incident_time: _time, ...legacy } = answer;
         void _time;
@@ -53,9 +61,8 @@ function evidenceOf() {
   };
 }
 
-function setup(order: "observed_span_hours" | "maximum_adjacent_raw_gap_hours" = "observed_span_hours") {
+function setup(order: "observed_span_hours" | "maximum_adjacent_raw_gap_hours" = "observed_span_hours", evidence = evidenceOf()) {
   const caseLists = ordering();
-  const evidence = evidenceOf();
   const onOpen = vi.fn();
   render(
     <>
@@ -97,5 +104,21 @@ describe("the kept incidents in an order by time", () => {
     expect(evidence.caseEvidence.mock.calls.every(([request]) => request.identity.population_id === "kept")).toBe(true);
     // Only the incidents in view ask for their evidence, each once.
     expect(new Set(evidence.caseEvidence.mock.calls.map(([request]) => request.case_id)).size).toBe(evidence.caseEvidence.mock.calls.length);
+  });
+
+  it("draws no marks from an answer to another question, nor from diagnostics that do not belong to the records place by place", async () => {
+    const other = evidenceOf((request, answer) =>
+      request.case_id === "I-249"
+        ? { ...answer, identity: { ...answer.identity, preparation_id: "another-preparation" } }
+        : request.case_id === "I-248"
+          ? { ...answer, incident_time: { ...answer.incident_time!, records: [answer.incident_time!.records[0], answer.incident_time!.records[2], answer.incident_time!.records[1]] } as typeof answer.incident_time }
+          : answer,
+    );
+    setup("observed_span_hours", other);
+    const table = await screen.findByRole("table", { name: "Kept incidents" });
+    const [, first, second, third] = within(table).getAllByRole("row");
+    expect(await within(first).findByText("not read")).toBeTruthy();
+    expect(await within(second).findByText("times do not match")).toBeTruthy();
+    expect(await within(third).findByRole("img")).toBeTruthy();
   });
 });

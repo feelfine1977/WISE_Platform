@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { sameJson } from "../data/coordinator";
 import type { ImportClient } from "../data/client";
 import type { AnswerIdentity, CaseId, ImportedCaseEvidenceAnswer } from "../generated/imports";
 import { durationName } from "./periods";
@@ -10,14 +11,18 @@ export type IncidentMarks =
   | { kind: "known"; offsets: number[] }
   | { kind: "order_unknown"; records: number }
   | { kind: "not_supplied" }
+  /** The diagnostics do not belong to the records place by place, so nothing is placed. */
+  | { kind: "mismatch" }
   | { kind: "failed" };
 
 /** What an incident's evidence says of where its records lie in time, read from the diagnostics the local service supplies with it. */
 export function marksOf(answer: ImportedCaseEvidenceAnswer): IncidentMarks {
   const time = answer.incident_time;
   if (time === undefined) return { kind: "not_supplied" };
+  const rows: readonly { row_id: string; offset_from_first_record_microseconds: string | null }[] = time.records;
+  // The diagnostics belong to the records place by place, as on the timeline of the incident; otherwise nothing is placed.
+  if (rows.length !== answer.records.length || rows.some((row, place) => row.row_id !== answer.records[place].row_id)) return { kind: "mismatch" };
   if (time.observed_span_microseconds === null) return { kind: "order_unknown", records: answer.records.length };
-  const rows: readonly { offset_from_first_record_microseconds: string | null }[] = time.records;
   // Exact offsets become numbers here only to be placed on the axis.
   return { kind: "known", offsets: rows.map((row) => Number(BigInt(row.offset_from_first_record_microseconds ?? "0"))) };
 }
@@ -38,23 +43,26 @@ export class MarksLoader {
     const known = this.loaded.get(caseId);
     if (known) return known;
     const controller = new AbortController();
-    const loading = this.client
-      .caseEvidence(
-        {
-          schema_version: 1,
-          message_type: "imported_case_evidence_request",
-          request_id: `marks-${this.ask.revision}-${caseId}`,
-          query_revision: this.ask.revision,
-          workspace_id: this.ask.workspaceId,
-          identity: this.ask.identity,
-          case_id: caseId,
-        },
-        controller.signal,
-      )
-      .then(
-        (outcome): IncidentMarks => (outcome.ok && outcome.answer.case_id === caseId ? marksOf(outcome.answer) : { kind: "failed" }),
-        (): IncidentMarks => ({ kind: "failed" }),
-      );
+    const request = {
+      schema_version: 1 as const,
+      message_type: "imported_case_evidence_request" as const,
+      request_id: `marks-${this.ask.revision}-${caseId}`,
+      query_revision: this.ask.revision,
+      workspace_id: this.ask.workspaceId,
+      identity: this.ask.identity,
+      case_id: caseId,
+    };
+    // Only an answer to exactly this question is drawn: the same request, revision, workspace, incident and whole identity.
+    const answers = (answer: ImportedCaseEvidenceAnswer) =>
+      answer.request_id === request.request_id &&
+      answer.query_revision === request.query_revision &&
+      answer.workspace_id === request.workspace_id &&
+      answer.case_id === request.case_id &&
+      sameJson(answer.identity, request.identity);
+    const loading = this.client.caseEvidence(request, controller.signal).then(
+      (outcome): IncidentMarks => (outcome.ok && answers(outcome.answer) ? marksOf(outcome.answer) : { kind: "failed" }),
+      (): IncidentMarks => ({ kind: "failed" }),
+    );
     this.loaded.set(caseId, loading);
     return loading;
   }
@@ -79,7 +87,8 @@ export function RecordMarks({ caseId, loader, axisHours }: RecordMarksProps) {
   }, [caseId, loader]);
   if (marks === null) return <span className="record-marks-loading" aria-label="Reading the times of the records" />;
   if (marks.kind !== "known") {
-    const said = marks.kind === "order_unknown" ? "order not known" : marks.kind === "not_supplied" ? "times not supplied" : "not read";
+    const said =
+      marks.kind === "order_unknown" ? "order not known" : marks.kind === "not_supplied" ? "times not supplied" : marks.kind === "mismatch" ? "times do not match" : "not read";
     return <span className="muted record-marks-none">{said}</span>;
   }
   const width = axisHours > 0 ? axisHours * HOUR : 1;

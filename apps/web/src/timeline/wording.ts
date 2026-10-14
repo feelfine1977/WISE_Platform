@@ -117,6 +117,11 @@ export function withheldLine(): string {
   return "No gap is given for this incident: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which.";
 }
 
+/** The clock of the times of an incident where they are wall-clock times as recorded, and what the local service says of their durations. */
+export function wallClockLine(): string {
+  return "Wall clock: the times are wall-clock times as recorded; a duration between them may differ from the physical elapsed time.";
+}
+
 /** Where the numbers of the timeline come from, and what a recorded wall clock does not say. */
 export function basisLine(timeline: Pick<Timeline, "clock">): string {
   const basis = "The elapsed times here are supplied by the local service, exactly to the microsecond, from every record in the declared order.";

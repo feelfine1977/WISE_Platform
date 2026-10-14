@@ -282,6 +282,19 @@ describe("the timeline of one incident", () => {
     expect(within(timeline).getAllByRole("button").length).toBeGreaterThanOrEqual(3);
   });
 
+  it("says the wall clock of the times also where the order is not known and no gap is given", () => {
+    const recorded = incidentOf(
+      [
+        ["Eröffnet", "2026-03-29T01:30:00"],
+        ["Prüfung", "2026-03-29T03:30:00"],
+      ],
+      false,
+    );
+    const { timeline } = renderIncident(recorded);
+    expect(within(timeline).getByText(/^Wall clock: the times are wall-clock times as recorded/)).toBeTruthy();
+    expect(timeline.textContent).not.toContain("The elapsed times here");
+  });
+
   it("draws and computes nothing where the local service supplied no time diagnostics, and says so", () => {
     const { incident_time: _supplied, ...legacy } = ordered;
     void _supplied;

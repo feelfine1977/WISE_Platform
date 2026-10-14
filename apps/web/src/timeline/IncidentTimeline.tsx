@@ -14,6 +14,7 @@ import {
   UNTIMED_SHOWN,
   untimedLine,
   untimedRest,
+  wallClockLine,
   withheldLine,
 } from "./wording";
 import "./timeline.css";
@@ -55,6 +56,8 @@ export function IncidentTimeline({ caseId, records, timeline, onShowRecord }: In
       {/* One record has no record before it, so there is no gap to withhold. */}
       {withheld && records.length > 1 && <p className="timeline-note">{withheldLine()}</p>}
       {supplied && <p className="timeline-note">{basisLine(timeline)}</p>}
+      {/* Where no elapsed time is given, the clock of the times on the strip is still said, with what the service says of it. */}
+      {!supplied && timeline.clock === "wall_clock" && <p className="timeline-note">{wallClockLine()}</p>}
     </section>
   );
 }
