@@ -4,10 +4,11 @@ import { emptySelection, type Selection } from "wise-flow/react";
 import type { SuppliedGraph } from "../generated/selection";
 import "./canvas.css";
 import "./paths.css";
-import { OPENING_ORDER, orderBy, type PathColumn, type PathOrder, pathRows, type PathRow, sortedRows } from "./paths";
+import { lagTotalsOf, OPENING_ORDER, orderBy, type PathColumn, type PathOrder, pathRows, type PathRow, sortedRows } from "./paths";
 
 const whole = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 const oneDecimal = new Intl.NumberFormat("en", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 });
 
 /** Why a row of a flow from Start or to End has a dash in a column. */
 const FLOW_NOTE = "A flow has incidents only";
@@ -18,6 +19,7 @@ const COLUMNS: { column: PathColumn; label: string; number?: true; note?: string
   { column: "to", label: "To" },
   { column: "incidents", label: "Incidents", number: true },
   { column: "passages", label: "Passages", number: true, note: FLOW_NOTE },
+  { column: "total", label: "Total lag (days, all passages)", number: true, note: FLOW_NOTE },
   { column: "lag", label: "Median lag (h)", number: true, note: FLOW_NOTE },
   { column: "drawn", label: "On the map", note: "Drawn at the current detail" },
 ];
@@ -57,6 +59,12 @@ interface PathsTableProps {
 export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProps) {
   const [order, setOrder] = useState<PathOrder>(OPENING_ORDER);
   const rows = useMemo(() => sortedRows(pathRows(graph, drawn), order), [graph, drawn, order]);
+  // The supplied share of the paths with the largest total lag: said only in that order, where they are the first rows.
+  const totals = lagTotalsOf(graph);
+  const concentration =
+    totals !== undefined && totals.top_five_share !== null && totals.top_five_path_ids.length > 0 && order.column === "total" && order.descending
+      ? `The first ${totals.top_five_path_ids.length === 1 ? "path carries" : `${totals.top_five_path_ids.length} paths carry`} ${percent.format(totals.top_five_share)} of the total lag of all paths (${oneDecimal.format(totals.top_five_total_hours / 24)} of ${oneDecimal.format(totals.total_hours / 24)} days).`
+      : null;
   const [active, setActive] = useState<string | null>(null);
   const controls = useRef(new Map<string, HTMLButtonElement>()).current;
   const hint = useId();
@@ -99,6 +107,8 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
       {rows.length === 0 ? (
         <p className="working-text">The kept incidents have no path between two activities and no flow from Start or to End.</p>
       ) : (
+        <>
+        {concentration !== null && <p className="path-concentration">{concentration}</p>}
         <table className="path-table" aria-label="Paths of the kept incidents" aria-describedby={hint}>
           <thead>
             <tr>
@@ -157,6 +167,17 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
                   <td title={row.to}>{row.kind === "end" ? <span className="muted">{row.to}</span> : row.to}</td>
                   <td className="number">{whole.format(row.incidents)}</td>
                   <td className="number">{row.passages === undefined ? none : whole.format(row.passages)}</td>
+                  <td className="number">
+                    {row.totalLag === undefined ? (
+                      none
+                    ) : (
+                      <>
+                        {/* Hours as supplied, written in days for display only. */}
+                        {oneDecimal.format(row.totalLag.hours / 24)}
+                        {row.shareOfTotalLag != null && <span className="muted path-share"> {percent.format(row.shareOfTotalLag)}</span>}
+                      </>
+                    )}
+                  </td>
                   <td className="number">{row.medianLagHours === undefined ? none : oneDecimal.format(row.medianLagHours)}</td>
                   <td title={row.drawn ? "Drawn" : "Not drawn"}>
                     <span className="path-drawn" data-drawn={row.drawn} aria-hidden="true" />
@@ -167,6 +188,7 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
             })}
           </tbody>
         </table>
+        </>
       )}
     </div>
   );

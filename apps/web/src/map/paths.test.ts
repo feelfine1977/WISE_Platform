@@ -77,14 +77,15 @@ describe("the order of the list of every path", () => {
     return [take(sorted[0]), take(sorted[sorted.length - 1])];
   };
 
-  it("opens on the most incidents, and a column chosen first starts where it reads best", () => {
-    expect(OPENING_ORDER).toEqual({ column: "incidents", descending: true });
+  it("opens on the largest total lag, by incidents where none is supplied, and a column chosen first starts where it reads best", () => {
+    expect(OPENING_ORDER).toEqual({ column: "total", descending: true });
     expect(sortedRows(rows, OPENING_ORDER).slice(0, 3).map((row) => [row.from, row.to, row.incidents])).toEqual([
       [stepName(0), stepName(1), 105],
       ["Start", stepName(0), 100],
       [stepName(1), stepName(2), 95],
     ]);
-    expect(orderBy(OPENING_ORDER, "incidents")).toEqual({ column: "incidents", descending: false });
+    expect(orderBy(OPENING_ORDER, "incidents")).toEqual({ column: "incidents", descending: true });
+    expect(orderBy(OPENING_ORDER, "total")).toEqual({ column: "total", descending: false });
     expect(orderBy(OPENING_ORDER, "from")).toEqual({ column: "from", descending: false });
     expect(orderBy(OPENING_ORDER, "to")).toEqual({ column: "to", descending: false });
     expect(orderBy(OPENING_ORDER, "passages")).toEqual({ column: "passages", descending: true });
@@ -135,5 +136,26 @@ describe("the order of the list of every path", () => {
       [stepName(11), stepName(10)],
       [stepName(8), stepName(11)],
     ]);
+  });
+
+  it("reads the supplied total lag of a path and orders by its exact microseconds, which rounded hours would not keep apart", () => {
+    const graph = suppliedGraph(["A-1"]);
+    const [path] = graph.edges;
+    const withTotals = (id: string, microseconds: string, hours: number, share: number) => ({
+      ...path,
+      id,
+      metrics: { ...path.metrics, totalLagMicroseconds: microseconds, totalLagHours: hours, shareOfTotalLag: share },
+    });
+    // Two totals a microsecond apart round to the same hours; the larger stands first.
+    const several = {
+      ...graph,
+      edges: [withTotals("smaller", "90000000000000000000", 25000000000, 0.4), withTotals("larger", "90000000000000000001", 25000000000, 0.6)],
+    };
+    const listed = sortedRows(pathRows(several, toFlowGraph(several)), { column: "total", descending: true }).filter((row) => row.kind === "path");
+    expect(listed.map((row) => row.id)).toEqual(["larger", "smaller"]);
+    expect(listed[0].totalLag).toEqual({ exact: 90000000000000000001n, hours: 25000000000 });
+    expect(listed[0].shareOfTotalLag).toBe(0.6);
+    // Without the fields the path has no total, and the order falls back to the incidents.
+    expect(pathRows(graph, toFlowGraph(graph)).find((row) => row.kind === "path")?.totalLag).toBeUndefined();
   });
 });
