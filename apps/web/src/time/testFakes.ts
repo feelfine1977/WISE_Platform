@@ -16,14 +16,19 @@ export interface CaseListFilters {
   withoutFirstTime?: number;
   outside?: number;
   refuseTrend?: string;
+  /** The case list cannot be reached the first time it is asked. */
+  unreachableOnce?: boolean;
 }
 
 const support = (count: number) => ({ case_ids: Array.from({ length: count }, (_, place) => `C-${place}`), case_count: count, record_count: count * 2 });
 
 /** A case list that answers every question with spans in the asked bins, the parent ten times the kept, over 5 to 18 March 2025. */
 export function caseListsAnswering(filters: CaseListFilters) {
+  let asked = 0;
   return {
     list: vi.fn(async (request: CaseListRequest): Promise<CaseListOutcome> => {
+      asked += 1;
+      if (filters.unreachableOnce && asked === 1) return { ok: false, problem: { kind: "unreachable" } };
       const edges = request.query.distribution?.edges_hours ?? [];
       const answer = {
         schema_version: 1, message_type: "case_list_answer", request_id: request.request_id, query_revision: request.query_revision,

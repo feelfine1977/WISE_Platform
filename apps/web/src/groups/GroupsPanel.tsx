@@ -39,6 +39,8 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, c
   const [ruleValue, setRuleValue] = useState(choices[0].value);
   const rule = (choices.find((choice) => choice.value === ruleValue) ?? choices[0]).rule;
   const [offset, setOffset] = useState(0);
+  // A failed page of groups is asked again on request; the rule and the kept incidents stay as they are.
+  const [attempt, setAttempt] = useState(0);
   const [listed, setListed] = useState<Listed>({ phase: "loading" });
   const identityKey = JSON.stringify(identity);
   const ruleKey = JSON.stringify(rule);
@@ -48,7 +50,7 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, c
   useEffect(() => {
     const controller = new AbortController();
     const request: RuleGroupsRequest = {
-      schema_version: 1, message_type: "rule_groups_request", request_id: `groups-${asked}-${revision}-${offset}`, query_revision: revision,
+      schema_version: 1, message_type: "rule_groups_request", request_id: `groups-${asked}-${revision}-${offset}-${attempt}`, query_revision: revision,
       workspace_id: workspaceId, identity, query: { rule, distribution_edges_hours: SPAN_EDGES_HOURS, offset, limit: GROUP_PAGE },
     };
     if (offset === 0) setListed({ phase: "loading" });
@@ -66,12 +68,13 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, c
     );
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, workspaceId, revision, identityKey, ruleKey, offset, asked]);
+  }, [client, workspaceId, revision, identityKey, ruleKey, offset, asked, attempt]);
 
   const answer = listed.phase === "ready" ? listed.answer : null;
   const groups = listed.phase === "ready" ? listed.groups : [];
   const largest = Math.max(1, ...groups.map((group) => group.population.cases.case_count));
-  // Where groups do not overlap, the share of the largest ones adds up to how much of the kept incidents they cover.
+  // The groups stand in the order of the parent's catalogue. Where they do not overlap, the shares of the parent's largest
+  // groups add up to how much of the kept incidents those groups hold; the line names that ranking, which is not the kept one.
   const cover = answer !== null && !answer.group_membership_overlaps
     ? groups.slice(0, COVER_OF).reduce((sum, group) => sum + (group.population.share ?? 0), 0)
     : null;
@@ -96,12 +99,19 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, c
         </select>
       </label>
       {listed.phase === "loading" && <p className="working-text">Grouping the kept incidents…</p>}
-      {listed.phase === "failed" && <p className="inline-error" role="alert">{listed.message}</p>}
+      {listed.phase === "failed" && (
+        <div className="inline-error" role="alert">
+          <p>{listed.message}</p>
+          <button type="button" onClick={() => setAttempt((count) => count + 1)}>
+            Ask again
+          </button>
+        </div>
+      )}
       {answer !== null && (
         <>
           <p className="groups-summary">
             {countOf(answer.group_count, "group")}
-            {cover !== null && groups.length > 1 && ` · the largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)}`}
+            {cover !== null && groups.length > 1 && ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the kept incidents`}
           </p>
           {outside > 0 && <p className="groups-limit">{countOf(outside, "incident")} in no group</p>}
           <ol className="groups-list">

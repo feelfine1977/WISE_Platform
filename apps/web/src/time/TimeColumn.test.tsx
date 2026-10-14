@@ -79,4 +79,15 @@ describe("the column of time beside the map", () => {
     expect(await screen.findByText("Starts are not shown: The parent changed.")).toBeTruthy();
     await waitFor(() => expect(screen.getByRole("group", { name: "Incidents by recorded span" })).toBeTruthy());
   });
+
+  it("says why both charts are not shown when the spans cannot be read, never waits for the starts, and asks again on request", async () => {
+    const { user, trends } = setup({ filters: { unreachableOnce: true } });
+    expect(await screen.findByText("Spans are not shown: It could not be read from the local service.")).toBeTruthy();
+    expect(screen.getByText("Starts are not shown: the recorded range of the parent could not be read")).toBeTruthy();
+    expect(screen.queryByText("Counting starts…")).toBeNull();
+    expect(trends.trend).not.toHaveBeenCalled();
+    await user.click(screen.getAllByRole("button", { name: "Ask again" })[0]);
+    expect(await chart("Incident starts per week")).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Incidents by recorded span" })).toBeTruthy();
+  });
 });

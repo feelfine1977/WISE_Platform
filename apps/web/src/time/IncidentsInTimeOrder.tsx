@@ -51,6 +51,8 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   const asked = useId();
   const [listed, setListed] = useState<Listed>({ phase: "loading" });
   const [offset, setOffset] = useState(0);
+  // A failed page is asked again on request; the order and the kept incidents stay as they are.
+  const [attempt, setAttempt] = useState(0);
   const identityKey = JSON.stringify(identity);
 
   // Another order, another selection or another revision starts the list again from its first page.
@@ -59,7 +61,7 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   useEffect(() => {
     const controller = new AbortController();
     const request: CaseListRequest = {
-      schema_version: 1, message_type: "case_list_request", request_id: `order-${asked}-${revision}-${offset}`, query_revision: revision,
+      schema_version: 1, message_type: "case_list_request", request_id: `order-${asked}-${revision}-${offset}-${attempt}`, query_revision: revision,
       workspace_id: workspaceId, identity, query: { search_text: null, sort: { field: order, direction: "descending" }, offset, limit: PAGE },
     };
     if (offset === 0) setListed({ phase: "loading" });
@@ -82,7 +84,7 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
     );
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [caseLists, workspaceId, revision, identityKey, order, offset, asked]);
+  }, [caseLists, workspaceId, revision, identityKey, order, offset, asked, attempt]);
 
   const keptById = useMemo(() => new Map(kept.map((summary) => [summary.case_id, summary])), [kept]);
   const rows = listed.phase === "ready" ? listed.rows : [];
@@ -93,7 +95,23 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   const axisHours = useMemo(() => Math.max(0, ...rows.map((row) => timesOf(row).span ?? 0)), [rows]);
 
   if (listed.phase === "loading") return <p className="working-text">Ordering the kept incidents…</p>;
-  if (listed.phase === "failed") return <p className="inline-error" role="alert">The incidents could not be ordered by time: {listed.message}</p>;
+  if (listed.phase === "failed") {
+    return (
+      <div className="inline-error" role="alert">
+        <p>The incidents could not be ordered by time: {listed.message}</p>
+        <button
+          type="button"
+          onClick={() => {
+            // The list is read again from its first page, so that no page of it is missing.
+            setOffset(0);
+            setAttempt((count) => count + 1);
+          }}
+        >
+          Ask again
+        </button>
+      </div>
+    );
+  }
   const total = listed.answer.total_matching_case_count;
   return (
     <>

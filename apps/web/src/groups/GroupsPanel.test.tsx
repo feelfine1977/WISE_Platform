@@ -55,7 +55,7 @@ describe("the groups of the kept incidents", () => {
     setup();
     const first = await screen.findByRole("button", { name: /Eröffnet/ });
     expect(first.textContent).toContain("3");
-    expect(screen.getByText("2 groups · the largest 2 hold 100%")).toBeTruthy();
+    expect(screen.getByText("2 groups · the parent's largest 2 hold 100% of the kept incidents")).toBeTruthy();
   });
 
   it("hand the incidents of a chosen group to the table, and let it go when another rule is chosen", async () => {

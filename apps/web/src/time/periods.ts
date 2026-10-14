@@ -34,13 +34,11 @@ export function spanBinLabel(start: number, end: number | null): string {
 /** The most bins a trend may have: the service takes at most 65 edges. */
 export const MAX_PERIODS = 64;
 
-/** The unit of the periods of starts: a week from Monday, a calendar month, a quarter or a year. */
-export type PeriodUnit = "week" | "month" | "quarter" | "year";
-
 export interface Periods {
   /** The edges of the periods in the preparation's clock, each a midnight. */
   edges: string[];
-  unit: PeriodUnit;
+  /** What one period is, in words: "week", "month", "quarter", "year" or a number of years, such as "2 years". */
+  per: string;
 }
 
 const DAY = 86_400_000;
@@ -63,9 +61,9 @@ const monthStart = (months: number) => {
 
 /**
  * The periods of starts over the parent's recorded range: weeks from Monday while there are at most
- * 64 of them, otherwise calendar months, quarters or years, the first that keeps the count at 64 or
- * fewer. They run from the start of the period of the earliest record to the end of the period of
- * the latest one. A calendar day is read as written on either clock. Null when the range is not one
+ * 64 of them, otherwise calendar months, quarters, years or spans of whole years, the first that
+ * keeps the count at 64 or fewer, so that the service takes them. They run from the start of the
+ * period of the earliest record to the end of the period of the latest one. A calendar day is read as written on either clock. Null when the range is not one
  * the calendar can read.
  */
 export function startPeriods(range: { timestamp_kind: "utc_instant" | "wall_clock"; earliest_recorded_timestamp: string; latest_recorded_timestamp: string }): Periods | null {
@@ -77,17 +75,26 @@ export function startPeriods(range: { timestamp_kind: "utc_instant" | "wall_cloc
   const monday = new Date(earliest.getTime() - ((earliest.getUTCDay() + 6) % 7) * DAY);
   const weeks = Math.floor((latest.getTime() - monday.getTime()) / (7 * DAY)) + 1;
   if (weeks <= MAX_PERIODS) {
-    return { unit: "week", edges: Array.from({ length: weeks + 1 }, (_, place) => midnight(new Date(monday.getTime() + place * 7 * DAY), utc)) };
+    return { per: "week", edges: Array.from({ length: weeks + 1 }, (_, place) => midnight(new Date(monday.getTime() + place * 7 * DAY), utc)) };
   }
   const monthOf = (date: Date) => (date.getUTCFullYear() - 1) * 12 + date.getUTCMonth();
-  for (const [unit, months] of [["month", 1], ["quarter", 3], ["year", 12]] as const) {
+  const span = (months: number) => {
     const first = Math.floor(monthOf(earliest) / months) * months;
-    const count = Math.floor((monthOf(latest) - first) / months) + 1;
-    if (count <= MAX_PERIODS || unit === "year") {
-      return { unit, edges: Array.from({ length: count + 1 }, (_, place) => midnight(monthStart(first + place * months), utc)) };
-    }
+    return { first, count: Math.floor((monthOf(latest) - first) / months) + 1 };
+  };
+  for (const [per, months] of [["month", 1], ["quarter", 3], ["year", 12]] as const) {
+    const { first, count } = span(months);
+    if (count <= MAX_PERIODS) return { per, edges: Array.from({ length: count + 1 }, (_, place) => midnight(monthStart(first + place * months), utc)) };
   }
-  return null;
+  // A longer range is divided into spans of as many whole years as keep the periods at 64, counted from year 1.
+  // Their last edge must still be a day of the calendar, in the year 9999 at the latest; a range that needs a later one has no periods.
+  const lastWritable = 9999 * 12 - 1;
+  for (let each = Math.ceil((latest.getUTCFullYear() - earliest.getUTCFullYear() + 1) / MAX_PERIODS); ; each += 1) {
+    const { first, count } = span(each * 12);
+    if (count > MAX_PERIODS) continue;
+    if (first + count * each * 12 > lastWritable) return null;
+    return { per: `${each} years`, edges: Array.from({ length: count + 1 }, (_, place) => midnight(monthStart(first + place * each * 12), utc)) };
+  }
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

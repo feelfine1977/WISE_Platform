@@ -4,11 +4,19 @@
  */
 .time-column { display: grid; align-content: start; gap: var(--space-4); min-width: 0; padding: var(--space-3) var(--space-4); }
 .time-column-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+/*
+ * "About these charts" opens inside the column, which scrolls and clips what reaches past it: the
+ * panel hangs from the whole head row instead of from its button, and is as wide as the row.
+ */
+.time-column .time-column-head { position: relative; }
+.time-column .time-column-head > .popover { position: static; }
+.time-column .time-column-head .popover-panel { left: 0; right: 0; width: auto; max-width: none; }
 .time-column-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
 .time-chart { display: grid; gap: var(--space-1); min-width: 0; }
 .time-chart-title { margin: 0; color: var(--color-ink-muted); font-size: var(--font-size-small); font-weight: var(--font-weight-plain); }
 .time-chart-limit { margin: 0; color: var(--color-limit); font-size: var(--font-size-small); }
-.time-chart-problem { margin: 0; color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.time-chart-problem { display: grid; justify-items: start; gap: var(--space-1); color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.time-chart-problem > p { margin: 0; }
 
 .column-chart { display: grid; gap: var(--space-1); min-width: 0; }
 .column-chart-plot { height: var(--size-chart); cursor: crosshair; touch-action: none; border-radius: var(--radius); }

@@ -34,12 +34,15 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor
   const asked = useId();
   const [spans, setSpans] = useState<Loaded<CaseListAnswer>>({ phase: "loading" });
   const [starts, setStarts] = useState<Loaded<StartTrendAnswer>>({ phase: "loading" });
+  // A failed question is asked again on request, for the same kept incidents: nothing of the selection changes.
+  const [attempt, setAttempt] = useState(0);
+  const retry = () => setAttempt((count) => count + 1);
   const identityKey = JSON.stringify(identity);
 
   useEffect(() => {
     const controller = new AbortController();
     const request: CaseListRequest = {
-      schema_version: 1, message_type: "case_list_request", request_id: `spans-${asked}-${revision}`, query_revision: revision,
+      schema_version: 1, message_type: "case_list_request", request_id: `spans-${asked}-${revision}-${attempt}`, query_revision: revision,
       workspace_id: workspaceId, identity,
       query: { search_text: null, sort: { field: "case_id", direction: "ascending" }, offset: 0, limit: 1, distribution: { measure: "observed_span_hours", edges_hours: SPAN_EDGES_HOURS } },
     };
@@ -55,7 +58,7 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor
     return () => controller.abort();
     // The identity is compared by its contents, not by the object that carries it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [caseLists, workspaceId, revision, identityKey, asked]);
+  }, [caseLists, workspaceId, revision, identityKey, asked, attempt]);
 
   // The periods are fixed by the parent's recorded range, which stays the same through every step.
   const range = spans.phase === "ready" ? spans.answer.parent_time_range : null;
@@ -69,7 +72,7 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor
       ? { kind: "explicit_edges" as const, timestamp_kind: "utc_instant" as const, edges: periods.edges }
       : { kind: "explicit_edges" as const, timestamp_kind: "wall_clock" as const, edges: periods.edges };
     const request: StartTrendRequest = {
-      schema_version: 1, message_type: "start_trend_request", request_id: `starts-${asked}-${revision}`, query_revision: revision,
+      schema_version: 1, message_type: "start_trend_request", request_id: `starts-${asked}-${revision}-${attempt}`, query_revision: revision,
       workspace_id: workspaceId, identity, definition: { policy_id: "incident.start_trend.first_raw_declared_order_half_open.v1", binning },
     };
     setStarts({ phase: "loading" });
@@ -83,9 +86,9 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor
     );
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trends, workspaceId, revision, identityKey, periods, asked]);
+  }, [trends, workspaceId, revision, identityKey, periods, asked, attempt]);
 
-  const per = periods?.unit ?? "week";
+  const per = periods?.per ?? "week";
 
   return (
     <section className="time-column" aria-label="Time of the kept incidents">
@@ -116,13 +119,42 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor
           </section>
         </InfoPopover>
       </div>
-      <SpanChart state={spans} onStep={onStep} waitingFor={waitingFor} />
-      <StartsChart state={range === null && spans.phase === "ready" ? { phase: "failed", message: "No record of the parent has a usable time." } : starts} per={per} onStep={onStep} waitingFor={waitingFor} />
+      <SpanChart state={spans} onStep={onStep} waitingFor={waitingFor} onRetry={retry} />
+      <StartsChart state={startsState(spans, range, periods, starts)} per={per} onStep={onStep} waitingFor={waitingFor} onRetry={retry} />
     </section>
   );
 }
 
-function SpanChart({ state, onStep, waitingFor }: { state: Loaded<CaseListAnswer>; onStep: (step: SelectionPredicate) => void; waitingFor?: string }) {
+/**
+ * What the chart of starts can show: the periods come from the parent's range the spans answer
+ * reads, so without that answer, without a usable time or without periods there is nothing to ask,
+ * and the chart says why instead of waiting.
+ */
+function startsState(spans: Loaded<CaseListAnswer>, range: CaseListAnswer["parent_time_range"], periods: Periods | null, starts: Loaded<StartTrendAnswer>): Loaded<StartTrendAnswer> | { phase: "unasked"; message: string } {
+  if (spans.phase === "failed") return { phase: "failed", message: "the recorded range of the parent could not be read" };
+  if (spans.phase === "loading") return { phase: "loading" };
+  if (range === null) return { phase: "unasked", message: "no record of the parent has a usable time" };
+  if (periods === null) return { phase: "unasked", message: "the recorded range of the parent cannot be divided into periods of the calendar" };
+  return starts;
+}
+
+/** Why a chart is not shown, and the way to ask again where asking again can help. */
+function NotShown({ what, message, onRetry }: { what: string; message: string; onRetry?: () => void }) {
+  return (
+    <div className="time-chart-problem" role="status">
+      <p>
+        {what} are not shown: {message}
+      </p>
+      {onRetry && (
+        <button type="button" onClick={onRetry}>
+          Ask again
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SpanChart({ state, onStep, waitingFor, onRetry }: { state: Loaded<CaseListAnswer>; onStep: (step: SelectionPredicate) => void; waitingFor?: string; onRetry: () => void }) {
   const title = useId();
   const distribution = state.phase === "ready" ? state.answer.distribution : null;
   const bins: ChartBin[] = (distribution?.bins ?? []).map((bin) => ({
@@ -135,7 +167,7 @@ function SpanChart({ state, onStep, waitingFor }: { state: Loaded<CaseListAnswer
     <section className="time-chart" aria-labelledby={title}>
       <h5 id={title} className="time-chart-title">Recorded span</h5>
       {state.phase === "loading" && <p className="working-text">Counting spans…</p>}
-      {state.phase === "failed" && <p className="time-chart-problem">Spans are not shown: {state.message}</p>}
+      {state.phase === "failed" && <NotShown what="Spans" message={state.message} onRetry={onRetry} />}
       {distribution !== null && (
         <>
           <ColumnChart
@@ -158,7 +190,7 @@ function SpanChart({ state, onStep, waitingFor }: { state: Loaded<CaseListAnswer
   );
 }
 
-function StartsChart({ state, per, onStep, waitingFor }: { state: Loaded<StartTrendAnswer>; per: string; onStep: (step: SelectionPredicate) => void; waitingFor?: string }) {
+function StartsChart({ state, per, onStep, waitingFor, onRetry }: { state: Loaded<StartTrendAnswer> | { phase: "unasked"; message: string }; per: string; onStep: (step: SelectionPredicate) => void; waitingFor?: string; onRetry: () => void }) {
   const title = useId();
   const answer = state.phase === "ready" ? state.answer : null;
   const bins: ChartBin[] = (answer?.bins ?? []).map((bin) => ({
@@ -182,7 +214,8 @@ function StartsChart({ state, per, onStep, waitingFor }: { state: Loaded<StartTr
     <section className="time-chart" aria-labelledby={title}>
       <h5 id={title} className="time-chart-title">Starts per {per}</h5>
       {state.phase === "loading" && <p className="working-text">Counting starts…</p>}
-      {state.phase === "failed" && <p className="time-chart-problem">Starts are not shown: {state.message}</p>}
+      {state.phase === "failed" && <NotShown what="Starts" message={state.message} onRetry={onRetry} />}
+      {state.phase === "unasked" && <NotShown what="Starts" message={state.message} />}
       {answer !== null && (
         <>
           <ColumnChart
