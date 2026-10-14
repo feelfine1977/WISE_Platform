@@ -551,6 +551,21 @@ class SelectCasesRequest(BaseModel):
     identity: AnswerIdentity
     parent_case_ids: list[CaseId] | None
     predicates: list[SelectionPredicate]
+    active_step_count: conint(ge=0) | None = Field(
+        None,
+        description='Optional active prefix length, from zero through predicates.length. Omitted means every trail predicate. The complete predicates trail is still evaluated for step_results.',
+    )
+
+
+class StepResult(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    step_number: conint(ge=1)
+    predicate: SelectionPredicate
+    kept: PopulationSupport
+    removed: PopulationSupport
+    unevaluable: PopulationSupport
 
 
 class SelectionAnswer(BaseModel):
@@ -569,6 +584,14 @@ class SelectionAnswer(BaseModel):
     removed: PopulationSupport
     unevaluable: PopulationSupport
     predicate_results: list[PredicateResult]
+    active_step_count: conint(ge=0) = Field(
+        ...,
+        description='How many of the ordered trail predicates form the active selection. Future trail steps do not enter its population identity.',
+    )
+    step_results: list[StepResult] = Field(
+        ...,
+        description='One supplied kept-after-step result for every full-trail prefix, in requested order; separate from independent predicate_results.',
+    )
 
 
 class SelectionMessage(

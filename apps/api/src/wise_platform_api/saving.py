@@ -249,6 +249,8 @@ class Saving:
                     "removed": selected["removed"],
                     "unevaluable": selected["unevaluable"],
                     "predicate_results": selected["predicate_results"],
+                    "active_step_count": selected["active_step_count"],
+                    "step_results": selected["step_results"],
                 },
                 "restored_comparison_id": None
                 if question.comparison is None

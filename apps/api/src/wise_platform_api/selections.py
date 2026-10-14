@@ -109,7 +109,7 @@ class Selections:
         predicates = [package_predicate(item) for item in given["predicates"]]
         parent_ids = given["parent_case_ids"]
         try:
-            selection = select_cases(prepared, predicates, parent_ids)
+            selection = select_cases(prepared, predicates, parent_ids, active_step_count=given.get("active_step_count"))
             parent = selection if not predicates else select_cases(prepared, (), parent_ids)
         except SelectionError as error:
             return _package_error(SELECT_CASES, error, given)
@@ -127,6 +127,8 @@ class Selections:
                 "removed": answered["removed"],
                 "unevaluable": answered["unevaluable"],
                 "predicate_results": answered["predicate_results"],
+                "active_step_count": answered["active_step_count"],
+                "step_results": answered["step_results"],
             },
         )
 

@@ -71,6 +71,10 @@ export interface SelectCasesRequest {
   identity: AnswerIdentity;
   parent_case_ids: CaseId[] | null;
   predicates: SelectionPredicate[];
+  /**
+   * Optional active prefix length, from zero through predicates.length. Omitted means every trail predicate. The complete predicates trail is still evaluated for step_results.
+   */
+  active_step_count?: number;
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -173,6 +177,14 @@ export interface SelectionAnswer {
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
   predicate_results: PredicateResult[];
+  /**
+   * How many of the ordered trail predicates form the active selection. Future trail steps do not enter its population identity.
+   */
+  active_step_count: number;
+  /**
+   * One supplied kept-after-step result for every full-trail prefix, in requested order; separate from independent predicate_results.
+   */
+  step_results: StepResult[];
 }
 export interface PopulationSupport {
   case_ids: CaseId[];
@@ -180,6 +192,16 @@ export interface PopulationSupport {
   record_count: number;
 }
 export interface PredicateResult {
+  predicate: SelectionPredicate;
+  kept: PopulationSupport;
+  removed: PopulationSupport;
+  unevaluable: PopulationSupport;
+}
+/**
+ * Supplied kept-after-step partition for an ordered prefix, counted over the same frozen parent, including all raw records.
+ */
+export interface StepResult {
+  step_number: number;
   predicate: SelectionPredicate;
   kept: PopulationSupport;
   removed: PopulationSupport;

@@ -909,6 +909,11 @@
           "items": {
             "$ref": "#/$defs/SelectionPredicate"
           }
+        },
+        "active_step_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional active prefix length, from zero through predicates.length. Omitted means every trail predicate. The complete predicates trail is still evaluated for step_results."
         }
       },
       "required": [
@@ -967,6 +972,18 @@
           "items": {
             "$ref": "#/$defs/PredicateResult"
           }
+        },
+        "active_step_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many of the ordered trail predicates form the active selection. Future trail steps do not enter its population identity."
+        },
+        "step_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StepResult"
+          },
+          "description": "One supplied kept-after-step result for every full-trail prefix, in requested order; separate from independent predicate_results."
         }
       },
       "required": [
@@ -981,7 +998,9 @@
         "kept",
         "removed",
         "unevaluable",
-        "predicate_results"
+        "predicate_results",
+        "active_step_count",
+        "step_results"
       ]
     },
     "ProcessGraphRequest": {
@@ -1498,6 +1517,37 @@
       "not": {
         "pattern": "[^0-9]"
       }
+    },
+    "StepResult": {
+      "title": "StepResult",
+      "description": "Supplied kept-after-step partition for an ordered prefix, counted over the same frozen parent, including all raw records.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "step_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "predicate": {
+          "$ref": "#/$defs/SelectionPredicate"
+        },
+        "kept": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "removed": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/PopulationSupport"
+        }
+      },
+      "required": [
+        "step_number",
+        "predicate",
+        "kept",
+        "removed",
+        "unevaluable"
+      ]
     }
   }
 }

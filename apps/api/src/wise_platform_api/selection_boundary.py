@@ -135,6 +135,11 @@ def parse_selection_body(
         different = first_difference(message, written, integers_as_numbers=True)
         failures = [] if different is None else [(different, "the value has another JSON type than the contract requires")]
         failures += [(failure.path, failure.reason) for failure in predicate_wire_failures(message, (("predicates",),))]
+        if "active_step_count" in message:
+            count = message["active_step_count"]
+            predicates = message.get("predicates", [])
+            if type(count) is not int or not 0 <= count <= len(predicates):
+                failures.append((("active_step_count",), "must be a whole number from zero to the number of trail steps"))
         if not failures:
             return parsed, message
 
