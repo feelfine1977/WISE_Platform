@@ -10,23 +10,23 @@ const accepts=(p:unknown)=>selectionContract.selectCasesRequest({schema_version:
 
 describe('one-step whole incident range controls',()=>{
  it('offers span, longest gap then raw records and emits both inclusive bounds as one typed step',async()=>{
-  const user=userEvent.setup(),onStep=vi.fn();render(<IncidentRangeFilter onStep={onStep}/>);
+  const user=userEvent.setup(),onStep=vi.fn();render(<IncidentRangeFilter onStep={onStep} timestampKind="utc_instant"/>);
   expect(Array.from(screen.getByLabelText('Range measure').querySelectorAll('option'),o=>o.value)).toEqual(['observed_span_between','max_raw_gap_between','raw_record_count_between']);
   await user.type(screen.getByLabelText('Lower bound (included), hours'),'4');await user.type(screen.getByLabelText('Upper bound (included), hours'),'6');await user.click(screen.getByRole('button',{name:'Keep by this range'}));
   expect(onStep).toHaveBeenCalledExactlyOnceWith({kind:'observed_span_between',minimum_hours:4,maximum_hours:6,negate:false});expect(accepts(onStep.mock.calls[0][0])).toBe(true);expect(stepWording(onStep.mock.calls[0][0])).toContain('bounds included');
   expect(screen.getByText(/The range adds one step/)).toBeTruthy();
  });
  it('supports an unbounded upper and removing a raw count range, independent of chronology',async()=>{
-  const user=userEvent.setup(),onStep=vi.fn();render(<IncidentRangeFilter onStep={onStep}/>);
+  const user=userEvent.setup(),onStep=vi.fn();render(<IncidentRangeFilter onStep={onStep} timestampKind="utc_instant"/>);
   await user.selectOptions(screen.getByLabelText('Range measure'),'raw_record_count_between');await user.type(screen.getByLabelText('Lower bound (included), records'),'2');await user.selectOptions(screen.getByLabelText('Range action'),'remove');await user.click(screen.getByRole('button',{name:'Remove by this range'}));
   expect(onStep).toHaveBeenCalledExactlyOnceWith({kind:'raw_record_count_between',minimum_records:2,maximum_records:null,negate:true});expect(accepts(onStep.mock.calls[0][0])).toBe(true);expect(screen.getByText(/do not require known chronology/)).toBeTruthy();
  });
  it('requires a lower bound and refuses a reversed range without adding either bound',async()=>{
-  const user=userEvent.setup(),onStep=vi.fn();render(<IncidentRangeFilter onStep={onStep}/>);await user.click(screen.getByRole('button',{name:'Keep by this range'}));expect(screen.getByRole('alert')).toBeTruthy();
+  const user=userEvent.setup(),onStep=vi.fn();render(<IncidentRangeFilter onStep={onStep} timestampKind="utc_instant"/>);await user.click(screen.getByRole('button',{name:'Keep by this range'}));expect(screen.getByRole('alert')).toBeTruthy();
   await user.type(screen.getByLabelText('Lower bound (included), hours'),'9');await user.type(screen.getByLabelText('Upper bound (included), hours'),'4');await user.click(screen.getByRole('button',{name:'Keep by this range'}));expect(onStep).not.toHaveBeenCalled();
  });
  it('raw counts reject fractions and unsafe integers at the form boundary',()=>{
-  const onStep=vi.fn();render(<IncidentRangeFilter onStep={onStep}/>);fireEvent.change(screen.getByLabelText('Range measure'),{target:{value:'raw_record_count_between'}});
+  const onStep=vi.fn();render(<IncidentRangeFilter onStep={onStep} timestampKind="utc_instant"/>);fireEvent.change(screen.getByLabelText('Range measure'),{target:{value:'raw_record_count_between'}});
   for(const value of ['1.5','9007199254740992']){fireEvent.change(screen.getByLabelText('Lower bound (included), records'),{target:{value}});fireEvent.submit(screen.getByRole('button',{name:'Keep by this range'}).closest('form')!);}
   expect(onStep).not.toHaveBeenCalled();expect(screen.getByRole('alert').textContent).toContain('whole raw-record');
  });
@@ -46,3 +46,11 @@ describe('typed path lag range seam for the path card and row',()=>{
   const button=screen.getByRole('button',{name:'Keep by path lag'}) as HTMLButtonElement;expect(button.disabled).toBe(true);expect(button.getAttribute('aria-describedby')).toBe('range-pending');
  });
 });
+
+ it('names the recorded wall clock within a time range, while raw counts do not need a clock',async()=>{
+  const user=userEvent.setup();render(<IncidentRangeFilter onStep={vi.fn()} timestampKind="wall_clock"/>);
+  expect(screen.getByText(/Clock: recorded wall-clock hours/)).toBeTruthy();
+  expect(screen.getByText(/may differ from physical elapsed time/)).toBeTruthy();
+  await user.selectOptions(screen.getByLabelText('Range measure'),'raw_record_count_between');
+  expect(screen.queryByText(/Clock:/)).toBeNull();
+ });

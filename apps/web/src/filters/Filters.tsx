@@ -90,7 +90,7 @@ export function Filters({ population, parentIds, opening, onStep, range, rangePr
       </details>
       <details>
         <summary>A range of span, longest gap or raw records</summary>
-        <IncidentRangeFilter onStep={onStep} waitingFor={waitingFor} />
+        <IncidentRangeFilter onStep={onStep} waitingFor={waitingFor} timestampKind={clock === "UTC" ? "utc_instant" : "wall_clock"} />
       </details>
       <details>
         <summary>First record in a period</summary>

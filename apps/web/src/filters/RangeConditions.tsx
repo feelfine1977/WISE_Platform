@@ -15,7 +15,7 @@ function bounds(lower: string, upper: string, whole: boolean): [number, number |
 }
 
 /** One inclusive range is one analytical step; Undo removes both bounds together. */
-export function IncidentRangeFilter({ onStep, waitingFor }: RangeProps) {
+export function IncidentRangeFilter({ onStep, waitingFor, timestampKind }: RangeProps & { timestampKind: "utc_instant" | "wall_clock" }) {
   const [measure, setMeasure] = useState<IncidentMeasure>("observed_span_between");
   const [lower, setLower] = useState("");
   const [upper, setUpper] = useState("");
@@ -38,6 +38,7 @@ export function IncidentRangeFilter({ onStep, waitingFor }: RangeProps) {
         <option value="max_raw_gap_between">Longest adjacent raw-record gap</option>
         <option value="raw_record_count_between">Number of raw records</option>
       </select></label>
+      {!records && <p className="muted">Clock: {timestampKind === "utc_instant" ? "elapsed UTC hours" : "recorded wall-clock hours"}. {timestampKind === "wall_clock" && "Recorded wall-clock differences may differ from physical elapsed time across clock changes."}</p>}
       <label>Lower bound (included), {records ? "records" : "hours"}<input type="number" min="0" step={records ? "1" : "any"} value={lower} onChange={(event) => setLower(event.target.value)} /></label>
       <label>Upper bound (included), {records ? "records" : "hours"}<input type="number" min="0" step={records ? "1" : "any"} value={upper} onChange={(event) => setUpper(event.target.value)} /></label>
       <p className="muted">Both bounds include equality. A blank upper bound means no upper limit. The range adds one step; Undo takes both bounds back together.</p>
