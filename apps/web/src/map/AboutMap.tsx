@@ -30,6 +30,10 @@ interface AboutMapProps {
 export function AboutMap({ graph, statement, flowsNotDrawn }: AboutMapProps) {
   return (
     <>
+      <p className="popover-lead">
+        The map counts the kept incidents: an activity by the incidents and records that contain it, a path by the incidents that pass it and its
+        passages; a time is a median over passages.
+      </p>
       {(statement !== undefined || flowsNotDrawn !== null) && (
         <section className="popover-section map-not-drawn">
           <h4>{NOT_DRAWN}</h4>

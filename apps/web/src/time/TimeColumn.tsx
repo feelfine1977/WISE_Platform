@@ -95,6 +95,7 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor
       <div className="time-column-head">
         <h4 className="time-column-title">Time</h4>
         <InfoPopover label="About these charts">
+          <p className="popover-lead">Both charts count incidents, each once: by the time from its first to its last record, and by the period of its first record; the parent pale, the kept ones solid.</p>
           <section className="popover-section">
             <p>
               Recorded span: the time from the first to the last record of an incident, over its whole history. An incident with one record has a
@@ -165,7 +166,7 @@ function SpanChart({ state, onStep, waitingFor, onRetry }: { state: Loaded<CaseL
   const startOf = (place: number) => distribution?.bins[place]?.start_inclusive_hours ?? 0;
   return (
     <section className="time-chart" aria-labelledby={title}>
-      <h5 id={title} className="time-chart-title">Recorded span</h5>
+      <h5 id={title} className="time-chart-title">Incidents by recorded span</h5>
       {state.phase === "loading" && <p className="working-text">Counting spans…</p>}
       {state.phase === "failed" && <NotShown what="Spans" message={state.message} onRetry={onRetry} />}
       {distribution !== null && (
@@ -212,7 +213,7 @@ function StartsChart({ state, per, onStep, waitingFor, onRetry }: { state: Loade
   const outside = answer === null ? 0 : answer.before_range.kept_support.case_count + answer.after_range.kept_support.case_count;
   return (
     <section className="time-chart" aria-labelledby={title}>
-      <h5 id={title} className="time-chart-title">Starts per {per}</h5>
+      <h5 id={title} className="time-chart-title">Incident starts per {per}</h5>
       {state.phase === "loading" && <p className="working-text">Counting starts…</p>}
       {state.phase === "failed" && <NotShown what="Starts" message={state.message} onRetry={onRetry} />}
       {state.phase === "unasked" && <NotShown what="Starts" message={state.message} />}

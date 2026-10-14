@@ -215,8 +215,8 @@ function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: st
           </dd>
         </div>
       </dl>
-      <GroupDistribution title="Recorded span" name="Recorded spans of the group, parent and kept" distribution={spans} unavailable="without a span" />
-      <GroupDistribution title="Longest gap" name="Longest gaps of the group, parent and kept" distribution={gaps} unavailable="without a gap" />
+      <GroupDistribution title="Incidents by recorded span" name="Recorded spans of the group, parent and kept" distribution={spans} unavailable="without a span" />
+      <GroupDistribution title="Incidents by longest gap" name="Longest gaps of the group, parent and kept" distribution={gaps} unavailable="without a gap" />
       {exemplars.status === "available" ? (
         <p className="groups-exemplars">
           {(["shortest", "longest"] as const).map((which) => {

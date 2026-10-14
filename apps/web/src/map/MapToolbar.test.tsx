@@ -194,7 +194,9 @@ describe("what there is to know about the map", () => {
     expect(about().parentElement).toBe(tool("About this map").parentElement);
     expect(parts()).toEqual(["map-main", "map-element visually-hidden"]);
     expect(screen.getByLabelText("Process map of the kept incidents")).toBe(map);
-    expect(Array.from(about().children, (part) => part.className)).toEqual(["popover-section map-not-drawn", "popover-section map-coverage", "map-caption", "map-library"]);
+    // It opens with one line on what is counted, then the rest in its order.
+    expect(Array.from(about().children, (part) => part.className)).toEqual(["popover-lead", "popover-section map-not-drawn", "popover-section map-coverage", "map-caption", "map-library"]);
+    expect(about().firstElementChild?.textContent).toMatch(/^The map counts the kept incidents: an activity by the incidents and records that contain it/);
     expect(within(about()).getAllByRole("heading").map((heading) => heading.textContent)).toEqual(["Not drawn at this detail", "What the map counts"]);
 
     // First what the map leaves out: the two statements of the detail controls in full, then the flows from Start and to End.
