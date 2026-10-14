@@ -74,9 +74,8 @@ describe("the list of every path in the investigation", () => {
     // A-1 begins with "Eröffnet", goes on to "Geschlossen" 25.5 hours later and ends there; B-2 has no known order.
     // A flow has incidents only: where a path has its passages and its lag, a flow has a dash.
     expect(listed()).toEqual([
-      // This reply carries no total lag yet: the column holds a dash and the list stands by incidents.
+      [opened, closed, "1", "1", "1.1 100%", "25.5", "Drawn"],
       ["Start", opened, "1", "–", "–", "–", "Drawn"],
-      [opened, closed, "1", "1", "–", "25.5", "Drawn"],
       [closed, "End", "1", "–", "–", "–", "Drawn"],
     ]);
 
@@ -113,8 +112,8 @@ describe("the list of every path in the investigation", () => {
     await answer(app, 1, containingOpened);
     expect(pressed("Paths")).toBe("true");
     expect(listed().map((row) => row.slice(0, 2))).toEqual([
-      ["Start", opened],
       [opened, closed],
+      ["Start", opened],
       [closed, "End"],
     ]);
     // What was selected on the list of other incidents is not carried over.
@@ -180,9 +179,9 @@ describe("the list of every path beside the map", () => {
     const heading = (name: string) => within(list()).getByRole("columnheader", { name });
     const sort = (name: string) => fireEvent.click(within(heading(name)).getByRole("button"));
     const first = () => listed()[0].slice(0, 3);
-    // The list opens on the total lag; this reply has none, so the rows stand by their incidents.
+    // The list opens on the supplied total lag, including repeated passages.
     expect(heading("Total lag (days, all passages)").getAttribute("aria-sort")).toBe("descending");
-    expect(first()).toEqual([stepName(0), stepName(1), "105"]);
+    expect(first()).toEqual([stepName(3), stepName(3), "15"]);
 
     sort("Incidents");
     expect(heading("Incidents").getAttribute("aria-sort")).toBe("descending");
@@ -205,7 +204,7 @@ describe("the list of every path beside the map", () => {
     expect(listed()[0].slice(0, 4)).toEqual([stepName(0), stepName(1), "105", "105"]);
     sort("Median lag (h)");
     // The last path of the graph, the fourth activity to itself, takes the longest: 84 hours.
-    expect(listed()[0]).toEqual([stepName(3), stepName(3), "15", "17", "–", "84.0", "Drawn"]);
+    expect(listed()[0]).toEqual([stepName(3), stepName(3), "15", "17", "59.5 6.7%", "84.0", "Drawn"]);
     sort("On the map");
     expect(listed()[0][6]).toBe("Drawn");
     sort("On the map");
@@ -222,8 +221,8 @@ describe("the list of every path beside the map", () => {
         "“On the map” says whether the map draws it at the detail above. Select a row to keep or remove the incidents through it. " +
         "Tab enters the list; the arrow keys, Page Up, Page Down, Home and End move.",
     );
-    // Nothing else is printed above the rows.
-    expect(Array.from(list().parentElement!.children, (part) => part.tagName)).toEqual(["P", "TABLE"]);
+    // The supplied concentration accompanies the accessible description above the rows.
+    expect(Array.from(list().parentElement!.children, (part) => part.tagName)).toEqual(["P", "P", "TABLE"]);
     expect(within(list()).getAllByRole("columnheader").map((heading) => [heading.getAttribute("aria-label"), heading.getAttribute("title")])).toEqual([
       ["From", null],
       ["To", null],
@@ -260,8 +259,8 @@ describe("the list of every path beside the map", () => {
     }
     // A path has both, and no dash.
     const path = within(list()).getByRole("button", { name: `Path from “${stepName(0)}” to “${stepName(1)}”` }).closest("tr")!;
-    // This reply carries no total lag: a dash in its column.
-    expect(Array.from(path.children, (cell) => cell.textContent).slice(2, 6)).toEqual(["105", "105", "–", "2.0"]);
+    // Its constant two-hour passages supply a total of 210 hours, displayed in days.
+    expect(Array.from(path.children, (cell) => cell.textContent).slice(2, 6)).toEqual(["105", "105", "8.8 1%", "2.0"]);
   });
 
   it("has one row as its tab stop and moves between rows with the keyboard", async () => {
@@ -272,25 +271,25 @@ describe("the list of every path beside the map", () => {
     expect(rowButtons().filter((button) => button.tabIndex === 0)).toHaveLength(1);
 
     rowButtons()[0].focus();
-    expect(focused()).toBe(`Path from “${stepName(0)}” to “${stepName(1)}”`);
+    expect(focused()).toBe(`Path from “${stepName(3)}” to “${stepName(3)}”`);
     await user.keyboard("{ArrowDown}");
-    expect(focused()).toBe(`Flow from Start to “${stepName(0)}”`);
+    expect(focused()).toBe(`Path from “${stepName(3)}” to “${stepName(5)}”`);
     await user.keyboard("{End}");
-    expect(focused()).toBe(`Path from “${stepName(8)}” to “${stepName(11)}”`);
+    expect(focused()).toBe(`Flow from “${stepName(8)}” to End`);
     await user.keyboard("{PageUp}");
     expect(document.activeElement).toBe(rowButtons()[38]);
     await user.keyboard("{Home}");
     await user.keyboard("{ArrowUp}");
-    expect(focused()).toBe(`Path from “${stepName(0)}” to “${stepName(1)}”`);
+    expect(focused()).toBe(`Path from “${stepName(3)}” to “${stepName(3)}”`);
     // The row the keyboard is on stays the only tab stop, also once the list is sorted another way.
     await user.keyboard("{ArrowDown}");
     fireEvent.click(within(list()).getByRole("button", { name: "To: sort the list" }));
-    expect(rowButtons().filter((button) => button.tabIndex === 0).map((button) => button.getAttribute("aria-label"))).toEqual([`Flow from Start to “${stepName(0)}”`]);
+    expect(rowButtons().filter((button) => button.tabIndex === 0).map((button) => button.getAttribute("aria-label"))).toEqual([`Path from “${stepName(3)}” to “${stepName(5)}”`]);
 
     // Enter selects the row the keyboard is on.
     rowButtons().find((button) => button.tabIndex === 0)!.focus();
     await user.keyboard("{Enter}");
-    expect(screen.getByRole("heading", { name: `Flow from Start to “${stepName(0)}”` })).toBeTruthy();
-    expect(offered()).toEqual(["Keep incidents that begin with it", "Keep incidents that do not begin with it"]);
+    expect(screen.getByRole("heading", { name: `Path from “${stepName(3)}” to “${stepName(5)}”` })).toBeTruthy();
+    expect(offered()).toEqual([`Keep incidents where “${stepName(5)}” directly follows “${stepName(3)}”`, "Keep incidents where it never does"]);
   });
 });
