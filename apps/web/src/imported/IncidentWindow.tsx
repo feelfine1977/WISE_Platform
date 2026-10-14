@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CaseId, ImportedCaseSummary } from "../generated/imports";
 
 /** Height of one table row in CSS pixels; the stylesheet gives every row exactly this height. */
@@ -36,6 +36,8 @@ interface IncidentWindowProps {
   times?: ReadonlyMap<CaseId, IncidentTimes>;
   /** How a duration in hours is written in a cell. */
   duration?: (hours: number) => string;
+  /** One more column at the end, with its head and the cell of each incident in view. */
+  extra?: { head: string; cell: (caseId: CaseId) => ReactNode };
 }
 
 /**
@@ -43,8 +45,8 @@ interface IncidentWindowProps {
  * single tab stop: Tab enters the table at the current row, the arrow keys, Page Up, Page Down,
  * Home and End move between rows, and Enter opens the incident.
  */
-export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy, waitingFor, times, duration = String }: IncidentWindowProps) {
-  const columns = times === undefined ? COLUMNS : COLUMNS + 2;
+export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy, waitingFor, times, duration = String, extra }: IncidentWindowProps) {
+  const columns = (times === undefined ? COLUMNS : COLUMNS + 2) + (extra === undefined ? 0 : 1);
   const scroller = useRef<HTMLDivElement>(null);
   const controls = useRef(new Map<number, HTMLButtonElement>()).current;
   const [scrollTop, setScrollTop] = useState(0);
@@ -178,6 +180,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
             <td className="number">{durationCell(times.get(summary.case_id)?.gap ?? null)}</td>
           </>
         )}
+        {extra !== undefined && <td className="extra-cell">{extra.cell(summary.case_id)}</td>}
       </tr>
     );
   }
@@ -217,6 +220,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
                 <th scope="col" className="number">Longest gap</th>
               </>
             )}
+            {extra !== undefined && <th scope="col">{extra.head}</th>}
           </tr>
         </thead>
         <tbody>

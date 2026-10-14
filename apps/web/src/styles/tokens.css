@@ -230,6 +230,9 @@
   --size-time-label: 96px;
   --size-time-value: 56px;
   --size-row-compact: 28px;
+  /* The marks of the records of an incident in a cell of the list. */
+  --size-record-marks: 160px;
+  --size-bar-marks: 12px;
   /* A header row of one line, and the bar of the kept share in the data row. */
   --size-kept-share: 48px;
 

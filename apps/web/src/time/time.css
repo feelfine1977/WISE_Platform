@@ -29,3 +29,10 @@
 .incident-more { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; font-size: var(--font-size-small); }
 .incident-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
 .incident-tools > button[aria-pressed="true"] { background: var(--color-tint); font-weight: var(--font-weight-strong); }
+
+/* The records of an incident as marks on the common axis of its list, the first record at the left. */
+.record-marks { display: block; width: 100%; min-width: var(--size-record-marks); }
+.record-marks > svg { display: block; width: 100%; height: var(--size-bar-marks); }
+.record-marks-span { stroke: var(--color-line); stroke-width: var(--line-width); }
+.record-marks-mark { stroke: var(--color-line-strong); stroke-width: var(--line-width); }
+.record-marks-none { font-size: var(--font-size-small); }

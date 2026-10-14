@@ -5,7 +5,9 @@ import type { CaseId, ImportedCaseSummary } from "../generated/imports";
 import type { AnswerIdentity } from "../generated/selection";
 import { answersCaseList, type CaseListClient, httpCaseListClient } from "../filters/client";
 import { type FocusRequest, IncidentWindow, type IncidentTimes } from "../imported/IncidentWindow";
+import { type ImportClient, httpImportClient } from "../data/client";
 import { durationName } from "./periods";
+import { MarksLoader, RecordMarks } from "./RecordMarks";
 import "./time.css";
 
 /** The two orders by time the local service sorts the incidents in, the longest first. */
@@ -29,6 +31,8 @@ interface IncidentsInTimeOrderProps {
   describedBy?: string;
   waitingFor?: string;
   caseLists?: CaseListClient;
+  /** Where the evidence of an incident in view is read from, for the marks of its records. */
+  evidence?: Pick<ImportClient, "caseEvidence">;
 }
 
 type Listed = { phase: "loading" } | { phase: "ready"; rows: ExplorerCaseSummary[]; answer: CaseListAnswer; more: boolean } | { phase: "failed"; message: string };
@@ -43,7 +47,7 @@ const timesOf = (row: ExplorerCaseSummary): IncidentTimes =>
  * the longest first, a page at a time, with both times as columns. An incident without the time
  * stands where the service puts it, with a dash.
  */
-export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, order, caseLists = httpCaseListClient, ...table }: IncidentsInTimeOrderProps) {
+export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, order, caseLists = httpCaseListClient, evidence = httpImportClient, ...table }: IncidentsInTimeOrderProps) {
   const asked = useId();
   const [listed, setListed] = useState<Listed>({ phase: "loading" });
   const [offset, setOffset] = useState(0);
@@ -84,13 +88,22 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   const rows = listed.phase === "ready" ? listed.rows : [];
   const cases = useMemo(() => rows.flatMap((row) => keptById.get(row.case_id) ?? []), [rows, keptById]);
   const times = useMemo(() => new Map(rows.map((row) => [row.case_id, timesOf(row)])), [rows]);
+  // The marks of the records of each incident in view, on one axis as long as the longest span listed, aligned at the first record.
+  const loader = useMemo(() => new MarksLoader(evidence, { workspaceId, revision, identity }), [evidence, workspaceId, revision, identityKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const axisHours = useMemo(() => Math.max(0, ...rows.map((row) => timesOf(row).span ?? 0)), [rows]);
 
   if (listed.phase === "loading") return <p className="working-text">Ordering the kept incidents…</p>;
   if (listed.phase === "failed") return <p className="inline-error" role="alert">The incidents could not be ordered by time: {listed.message}</p>;
   const total = listed.answer.total_matching_case_count;
   return (
     <>
-      <IncidentWindow cases={cases} times={times} duration={durationName} {...table} />
+      <IncidentWindow
+        cases={cases}
+        times={times}
+        duration={durationName}
+        extra={{ head: `Records over time, 0 to ${durationName(axisHours)}`, cell: (caseId) => <RecordMarks caseId={caseId} loader={loader} axisHours={axisHours} /> }}
+        {...table}
+      />
       <div className="incident-more">
         <span className="muted">
           {countOf(cases.length, "incident")} of {total.toLocaleString("en")}

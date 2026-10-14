@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { CaseListAnswer, CaseListRequest, ExplorerCaseSummary } from "../generated/case-list";
 import type { ImportedCaseSummary } from "../generated/imports";
 import type { CaseListOutcome } from "../filters/client";
+import fixture from "../../../../tests/fixtures/incident-time/positive/utc_instant-A.json";
+import type { ImportedCaseEvidenceAnswer, ImportedCaseEvidenceRequest } from "../generated/imports";
 import { IncidentsInTimeOrder, PAGE } from "./IncidentsInTimeOrder";
 import { kept, parent } from "./testFakes";
 
@@ -36,16 +38,32 @@ function ordering() {
   };
 }
 
+/** The evidence of every incident as the shared fixture A supplies it: three records, at 0, 1 and 5 hours; the first incident's order is not known. */
+function evidenceOf() {
+  return {
+    caseEvidence: vi.fn(async (request: ImportedCaseEvidenceRequest) => {
+      const answer = { ...(fixture as unknown as ImportedCaseEvidenceAnswer), case_id: request.case_id };
+      if (request.case_id === "I-000") {
+        const { incident_time: _time, ...legacy } = answer;
+        void _time;
+        return { ok: true as const, answer: { ...legacy, sequence_evaluable: false } as ImportedCaseEvidenceAnswer };
+      }
+      return { ok: true as const, answer };
+    }),
+  };
+}
+
 function setup(order: "observed_span_hours" | "maximum_adjacent_raw_gap_hours" = "observed_span_hours") {
   const caseLists = ordering();
+  const evidence = evidenceOf();
   const onOpen = vi.fn();
   render(
     <>
       <h3 id="title">Kept incidents</h3>
-      <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={keptCases} order={order} openCaseId={null} onOpen={onOpen} focusRequest={null} labelledBy="title" caseLists={caseLists} />
+      <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={keptCases} order={order} openCaseId={null} onOpen={onOpen} focusRequest={null} labelledBy="title" caseLists={caseLists} evidence={evidence} />
     </>,
   );
-  return { caseLists, onOpen, user: userEvent.setup() };
+  return { caseLists, evidence, onOpen, user: userEvent.setup() };
 }
 
 describe("the kept incidents in an order by time", () => {
@@ -53,10 +71,10 @@ describe("the kept incidents in an order by time", () => {
     const { caseLists } = setup();
     const table = await screen.findByRole("table", { name: "Kept incidents" });
     expect(caseLists.list.mock.calls[0][0].query).toEqual({ search_text: null, sort: { field: "observed_span_hours", direction: "descending" }, offset: 0, limit: PAGE });
-    expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Incident", "Records", "Mapped records", "Without activity label", "Order of records", "Span", "Longest gap"]);
+    expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Incident", "Records", "Mapped records", "Without activity label", "Order of records", "Span", "Longest gap", "Records over time, 0 to 10.4 d"]);
     const first = within(table).getAllByRole("row")[1];
     expect(within(first).getByRole("button").textContent).toBe("I-249");
-    expect(within(first).getAllByRole("cell").map((cell) => cell.textContent).slice(-2)).toEqual(["10.4 d", "5.2 d"]);
+    expect(within(first).getAllByRole("cell").map((cell) => cell.textContent).slice(4, 6)).toEqual(["10.4 d", "5.2 d"]);
     expect(screen.getByText("200 incidents of 250")).toBeTruthy();
   });
 
@@ -66,5 +84,18 @@ describe("the kept incidents in an order by time", () => {
     expect(caseLists.list.mock.calls[1][0].query).toMatchObject({ sort: { field: "maximum_adjacent_raw_gap_hours", direction: "descending" }, offset: 200 });
     expect(await screen.findByText("250 incidents of 250")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /more$/ })).toBeNull();
+  });
+
+  it("draws the records of each incident in view as marks on one axis, aligned at its first record, from the supplied offsets", async () => {
+    const { evidence } = setup();
+    const table = await screen.findByRole("table", { name: "Kept incidents" });
+    const first = within(table).getAllByRole("row")[1];
+    const marks = await within(first).findByRole("img");
+    expect(marks.getAttribute("aria-label")).toBe("3 records over 5 h, from the first record");
+    // The axis is the longest span listed, 249 hours: the marks of 0, 1 and 5 hours lie at its very start.
+    expect(Array.from(marks.querySelectorAll(".record-marks-mark"), (mark) => Number(mark.getAttribute("x1")).toFixed(2))).toEqual(["0.00", "4.02", "20.08"]);
+    expect(evidence.caseEvidence.mock.calls.every(([request]) => request.identity.population_id === "kept")).toBe(true);
+    // Only the incidents in view ask for their evidence, each once.
+    expect(new Set(evidence.caseEvidence.mock.calls.map(([request]) => request.case_id)).size).toBe(evidence.caseEvidence.mock.calls.length);
   });
 });
