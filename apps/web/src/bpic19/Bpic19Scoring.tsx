@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { localBpic19Client, type Bpic19Client } from "./scoring-client";
+import { localBpic19Client, type Bpic19Client, type Bpic19Outcome } from "./scoring-client";
 import type { AnswerIdentity, Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, CaseAssessment, NativeRow, NamedPopulation, Roles, Settings } from "./scoring-types";
 import "./scoring.css";
 import reference from "./scoring-reference.json";
 import { Bpic19Associations } from "./Bpic19Associations";
 import { Bpic19Review } from "./Bpic19Review";
+import { sameJson } from "../data/coordinator";
 
 interface PreviewNorm {
   name: string;
@@ -72,9 +73,18 @@ function recipeText(norm: PreviewNorm, criterionId: string): string {
   const entries = values.params && typeof values.params === "object" && !Array.isArray(values.params) ? values.params as Record<string, unknown> : values;
   return Object.entries(entries).map(([key,value]) => `${key.replaceAll("_"," ")}: ${Array.isArray(value) ? value.join(" or ") : typeof value === "object" ? JSON.stringify(value) : key === "operator" || key === "normalization" ? String(value).replaceAll("_"," ") : String(value)}`).join("; ");
 }
-function Cases({ cases, onInspect }: { cases: CaseAssessment[]; onInspect?: Bpic19ScoringProps["onInspect"] }) {
+type FocusedExemplar = { caseId: string; requestId: string };
+function Cases({ cases, onInspect, focusedExemplar }: { cases: CaseAssessment[]; onInspect?: Bpic19ScoringProps["onInspect"]; focusedExemplar: FocusedExemplar | null }) {
   const [open, setOpen] = useState<string | null>(null);
-  return <div className="bpic19-table-wrap"><table><caption>Scored item evidence</caption><thead><tr>
+  const container = useRef<HTMLDivElement>(null);
+  useEffect(() => { setOpen(focusedExemplar?.caseId ?? null); }, [focusedExemplar?.requestId]);
+  useEffect(() => {
+    if (!focusedExemplar || open !== focusedExemplar.caseId) return;
+    const caption = Array.from(container.current?.querySelectorAll("caption") ?? [])
+      .find(element => element.textContent === `Criterion verdicts for ${focusedExemplar.caseId}`);
+    caption?.focus(); caption?.scrollIntoView?.({ block: "nearest" });
+  }, [focusedExemplar?.requestId, open]);
+  return <div ref={container} className="bpic19-table-wrap"><table><caption>Scored item evidence</caption><thead><tr>
     <th>PO item</th><th>Flow</th><th>Score</th><th>Evidence coverage</th><th>Document</th><th>Evidence</th>
   </tr></thead><tbody>{cases.map(item => <CaseRows key={item.case_id} item={item} open={open === item.case_id}
     toggle={() => setOpen(open === item.case_id ? null : item.case_id)} onInspect={onInspect} />)}</tbody></table></div>;
@@ -84,7 +94,7 @@ function CaseRows({ item, open, toggle, onInspect }: { item: CaseAssessment; ope
     <td>{item.flow ?? "Unknown"}</td><td>{number(item.score)}</td><td>{number(item.coverage)} ({number(item.evaluated_raw_weight)} / {number(item.in_scope_raw_weight)} raw weight)</td>
     <td>{item.document ?? "Missing"}</td><td>{onInspect && <button type="button" onClick={() => onInspect(item.case_id)}>Inspect records</button>}</td></tr>
     {open && <tr><td colSpan={6}><p>{item.scope_unknown_count} criteria have unknown scope. Unavailable criteria retain their own reasons.</p>
-      <table><caption>Criterion verdicts for {item.case_id}</caption><thead><tr><th>Criterion</th><th>Layer</th><th>Measurement</th><th>State</th><th>Deviation</th><th>Raw weight</th><th>Effective weight</th><th>Penalty</th><th>Witness</th></tr></thead>
+      <table><caption tabIndex={-1}>Criterion verdicts for {item.case_id}</caption><thead><tr><th>Criterion</th><th>Layer</th><th>Measurement</th><th>State</th><th>Deviation</th><th>Raw weight</th><th>Effective weight</th><th>Penalty</th><th>Witness</th></tr></thead>
         <tbody>{item.criteria.map(c => <tr key={c.criterion_id}><td>{c.criterion_id}</td><td>{c.layer}</td><td>{number(c.measurement)}</td>
           <td>{c.reason}{c.measurement_reason ? ` · ${c.measurement_reason}` : ""}</td><td>{number(c.deviation)}</td><td>{number(c.raw_weight)}</td><td>{number(c.effective_weight)}</td><td>{number(c.penalty)}</td>
           <td>{onInspect && c.row_ids.length > 0 ? <button type="button" onClick={() => onInspect(item.case_id, [...new Set([...c.row_ids,
@@ -110,6 +120,8 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
   const [resultSubject, setResultSubject] = useState<string | null>(initialRun &&
     (!initialRun.definition || sameRoles(initialRun.definition.roles, subject.roles)) ? JSON.stringify({subject, revision}) : null);
   const [caseFilter, setCaseFilter] = useState<Bpic19ReadRequest["case_filter"] | undefined>();
+  const [focusedExemplar, setFocusedExemplar] = useState<FocusedExemplar | null>(null);
+  const [pendingExemplar, setPendingExemplar] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -117,10 +129,12 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
   const callbacks = useRef({ onReviewed, onValidityChange }); callbacks.current = { onReviewed, onValidityChange };
   const subjectKey = JSON.stringify({subject, revision});
   const settingsKey = JSON.stringify(settings);
+  const requestScope = JSON.stringify([subjectKey, settingsKey]);
+  const activeScope = useRef(requestScope); activeScope.current = requestScope;
   useEffect(() => {
     generation.current += 1;
     controller.current?.abort();
-    setPending(false); setProblem(null);
+    setPending(false); setProblem(null); setFocusedExemplar(null); setPendingExemplar(null);
     setAnswer(previous => previous && sameIdentity(previous.base_identity, subject.base_identity) &&
       sameIdentity(previous.named_population.identity, subject.named_population.identity) ? previous : null);
     return () => { generation.current += 1; controller.current?.abort(); };
@@ -130,32 +144,48 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
     return () => callbacks.current.onValidityChange?.(false);
   }, [answer, resultSettings, settingsKey, resultSubject, subjectKey, pending, readOnly]);
   const update = (patch: Partial<Settings>) => setSettings(current => ({ ...current, ...patch }));
-  const run = async (offset: number | null = null, filter: Bpic19ReadRequest["case_filter"] | null = caseFilter, groupOffset?: number) => {
+  const run = async (offset: number | null = null, filter: Bpic19ReadRequest["case_filter"] | null = caseFilter, groupOffset?: number, exemplarCaseId?: string) => {
     const paging = offset !== null && answer && resultSettings === settingsKey && resultSubject === subjectKey;
     if (readOnly && !paging) return;
     controller.current?.abort();
     const abort = new AbortController(); controller.current = abort;
     const mine = ++generation.current;
-    setPending(true); setProblem(null);
+    setPending(true); setProblem(null); setFocusedExemplar(null); setPendingExemplar(exemplarCaseId ?? null);
     const envelope = { schema_version: 1 as const, request_id: crypto.randomUUID(), query_revision: revision ?? mine,
       workspace_id: subject.workspace_id, case_offset: offset ?? 0, case_limit: 50, group_offset: groupOffset ?? answer?.report.group_page.offset ?? 0, group_limit: 50 };
-    const outcome = paging ? await client.read({ ...envelope, message_type: "bpic19_read_request", run_id: answer.run_id, ...(filter ? {case_filter: filter} : {}) }, abort.signal) :
+    let outcome: Bpic19Outcome;
+    try { outcome = paging ? await client.read({ ...envelope, message_type: "bpic19_read_request", run_id: answer.run_id, ...(filter ? {case_filter: filter} : {}) }, abort.signal) :
       await client.score({ ...envelope, message_type: "bpic19_score_request", base_identity: subject.base_identity,
-        named_population: subject.named_population, roles: subject.roles, settings } satisfies Bpic19ScoreRequest, abort.signal);
-    if (mine !== generation.current || abort.signal.aborted) return;
-    setPending(false);
+        named_population: subject.named_population, roles: subject.roles, settings } satisfies Bpic19ScoreRequest, abort.signal); }
+    catch { outcome = { ok: false, message: "The assessment service could not be reached. Retry when it is available." }; }
+    if (mine !== generation.current || abort.signal.aborted || activeScope.current !== requestScope) return;
+    setPending(false); setPendingExemplar(null);
     if (!outcome.ok) { setProblem(outcome.message); return; }
     const next = outcome.answer;
     if (next.request_id !== envelope.request_id || next.query_revision !== envelope.query_revision || next.workspace_id !== subject.workspace_id ||
       !sameIdentity(next.base_identity, subject.base_identity) || !sameIdentity(next.named_population.identity, subject.named_population.identity)) {
       setProblem("The answer belongs to another source or population. Retry this analysis."); return;
     }
+    if (paging && (next.run_id !== answer.run_id || answer.definition_id !== undefined && next.definition_id !== answer.definition_id ||
+      answer.definition_version_id !== undefined && next.definition_version_id !== answer.definition_version_id)) {
+      setProblem("The member answer belongs to another frozen run or definition. No new assessment was substituted."); return;
+    }
+    if (exemplarCaseId && (next.report.case_page.offset !== offset || next.report.case_page.cases[0]?.case_id !== exemplarCaseId)) {
+      setProblem("The native exemplar page did not return the requested frozen item. Its verdicts were not opened."); return;
+    }
+    if (exemplarCaseId && answer && (next.report.profile_id !== answer.report.profile_id ||
+      next.report.norm_fingerprint !== answer.report.norm_fingerprint || next.report.assessment_log_fingerprint !== answer.report.assessment_log_fingerprint ||
+      !sameJson(next.report.settings, answer.report.settings))) {
+      setProblem("The native exemplar read changed the frozen assessment settings or reference. Its verdicts were not opened."); return;
+    }
     setAnswer(next); setResultSettings(settingsKey); setResultSubject(subjectKey); setCaseFilter(paging ? filter ?? undefined : undefined);
-    if (!readOnly) { onRun?.(next); callbacks.current.onReviewed?.(next); }
+    if (exemplarCaseId) setFocusedExemplar({ caseId: exemplarCaseId, requestId: envelope.request_id });
+    if (!readOnly && !exemplarCaseId) { onRun?.(next); callbacks.current.onReviewed?.(next); }
   };
   const current = answer && resultSettings === settingsKey && resultSubject === subjectKey && sameIdentity(answer.base_identity, subject.base_identity) &&
     sameIdentity(answer.named_population.identity, subject.named_population.identity);
   const report = current ? answer.report : null;
+  const exemplarPages = new Map(answer?.native_exemplar_pages?.map(page => [page.case_id, page] as const) ?? []);
   const preview: PreviewNorm = settings.profile === "paper" ? reference.paper[settings.criteria_family] : reference.historical;
   const previewView = preview.views.find(view => view.name === settings.view);
   const exportRun = async () => {
@@ -189,7 +219,7 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       <label>Priority multiplier<select value={settings.volume} onChange={e => update({ volume: e.target.value as Settings["volume"] })}><option value="cases">Scored item count</option><option value="exposure">Reviewed exposure</option></select></label>
       {settings.volume === "exposure" && <label>Exposure recipe<select value={settings.exposure_policy} onChange={e => update({ exposure_policy: e.target.value as Settings["exposure_policy"] })}><option value="max_absolute_p95">Maximum absolute value · frozen parent 95th percentile</option><option value="creation_unique_event">Unique creation event value</option><option value="creation_unique_value">Unique finite creation value</option></select></label>}
       <button type="submit" disabled={pending || !Number.isFinite(settings.gamma) || settings.gamma < 0 || !Number.isInteger(settings.min_cases) || settings.min_cases < 1 || !Number.isInteger(settings.association_min_support ?? 1) || (settings.association_min_support ?? 1) < 1}>{pending ? "Analysing…" : "Run analysis"}</button>
-      {pending && <button type="button" onClick={() => { generation.current += 1; controller.current?.abort(); setPending(false); setResultSettings(null); }}>Cancel</button>}
+      {pending && <button type="button" onClick={() => { generation.current += 1; controller.current?.abort(); setPending(false); setResultSettings(null); setPendingExemplar(null); setFocusedExemplar(null); }}>Cancel</button>}
     </form>}
     {!readOnly && <details className="bpic19-definition-preview"><summary>Review criterion definitions and stakeholder weights before running</summary>
       <p>{settings.profile === "paper" ? "WISE_12_10_2026.pdf · Table B2, PDF page 35; weights Table B3, PDF page 36." : "Historical notebook norm bpic19_norm_v1.json · version 1.0-paper-aligned, 7 March 2026."}
@@ -201,6 +231,9 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
     </details>}
     <p className="bpic19-muted">Gamma changes ranking stability. Priorities use the arithmetic mean of scored items; exposure changes the multiplier. Associations and effort measures describe proxies.</p>
     {problem && <p role="alert">{problem}</p>}
+    {pendingExemplar && <p role="status">Reading stored native verdicts for {pendingExemplar}… <button type="button" onClick={() => {
+      generation.current += 1; controller.current?.abort(); setPending(false); setPendingExemplar(null); setFocusedExemplar(null);
+    }}>Cancel native exemplar read</button></p>}
     {answer && !current && <p role="status">Settings changed. Run the analysis to produce a result for these settings.</p>}
     {report && <>
       <p role="status">{number(report.scored_case_count)} of {number(report.population_case_count)} items scored · mean score {number(report.mean_score)} · mean evidence coverage {number(report.mean_coverage)} · {report.settings.view}, {report.settings.mode}, gamma {number(report.settings.gamma)}.</p>
@@ -240,11 +273,20 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
           <tbody>{report.representation_scores![kind].map(group => <tr key={group.group_id}><td>{group.sequence.join(" → ")}</td><td>{number(group.member_count)}</td><td>{number(group.scored_case_count)}</td><td>{number(group.unscored_case_count)}</td><td>{number(group.mean_score)}</td><td>{number(group.mean_penalty)}</td><td>{number(group.summed_penalty_mass)}</td><td>{number(group.PI)}</td><td>{group.state}</td>
             <td><button type="button" disabled={pending} onClick={() => void run(0,{representation_group:{kind,group_id:group.group_id}})}>Inspect stored path members</button><details><summary>Native penalty mass</summary><pre>{JSON.stringify(group.native_penalty_mass,null,2)}</pre></details></td></tr>)}</tbody></table></div>)}
       </div>}
-      {!!report.exemplars?.length && <div><h3>Timing exemplars</h3>{report.exemplars.map((entry,i) => <p key={i}>{String(entry.case_id)} · all-evaluable median {number(entry.reference_median_days)} days · evaluated support {number(entry.evaluated_support)} · positive candidates {number(entry.positive_support)}.
-        {onInspect && typeof entry.case_id === "string" && <button type="button" onClick={() => onInspect(entry.case_id as string, Array.isArray(entry.row_ids) ? entry.row_ids.filter((v): v is string => typeof v === "string") : [])}>Inspect timing exemplar</button>}</p>)}</div>}
+      {!!report.exemplars?.length && <div><h3>Timing exemplars</h3>{report.exemplars.map((entry,i) => {
+        const caseId = typeof entry.case_id === "string" ? entry.case_id : null;
+        const page = caseId ? exemplarPages.get(caseId) : undefined;
+        const offset = page?.full_population_case_offset;
+        const available = page?.unavailable_reason === null && typeof offset === "number" && Number.isSafeInteger(offset) && offset >= 0 && offset < report.population_case_count;
+        return <p key={i}>{String(entry.case_id)} · all-evaluable median {number(entry.reference_median_days)} days · evaluated support {number(entry.evaluated_support)} · positive candidates {number(entry.positive_support)}.
+          {onInspect && caseId && <button type="button" onClick={() => onInspect(caseId, Array.isArray(entry.row_ids) ? entry.row_ids.filter((v): v is string => typeof v === "string") : [])}>Inspect timing exemplar</button>}
+          {caseId && <><button type="button" disabled={pending || !available} onClick={() => { if (available) void run(offset, null, undefined, caseId); }}>Read native exemplar verdicts</button>
+            {!available && <small>{page?.unavailable_reason === "not_in_frozen_membership" ? "This exemplar has no member in the stored native population." : "A direct native-verdict reference is unavailable in this answer. Raw source references remain separately inspectable."}</small>}</>}
+        </p>;
+      })}</div>}
       {report.selector_warnings?.map((warning,i) => <p key={i} role="status">{String(warning.message)}</p>)}
       {caseFilter && <p>Inspecting stored members; the parent scores and reference are unchanged. <button type="button" disabled={pending} onClick={() => void run(0,null)}>Show all assessed items</button></p>}
-      <Cases cases={report.case_page.cases} onInspect={onInspect} />
+      <Cases cases={report.case_page.cases} onInspect={onInspect} focusedExemplar={focusedExemplar} />
       {!readOnly && onKeepCases && <button type="button" disabled={pending || !report.case_page.cases.length} onClick={() => onKeepCases(report.case_page.cases.map(c => c.case_id), "Stored native result · current evidence page")}>Keep these complete items</button>}
       <div className="bpic19-pagination"><span>Items {report.case_page.offset + 1}–{report.case_page.offset + report.case_page.cases.length} of {report.case_page.total}</span>
         <button type="button" disabled={pending || report.case_page.offset === 0} onClick={() => void run(Math.max(0, report.case_page.offset - report.case_page.limit))}>Previous items</button>

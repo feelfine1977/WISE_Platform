@@ -25,6 +25,10 @@ export type RepresentationId = string;
 export type CaseDictionaryId = string;
 export type PopulationId = string;
 export type ImplementationVersion = string;
+/**
+ * Transient read presentation derived from the exact full frozen membership order; never part of the stored native report or canonical replay output.
+ */
+export type NativeExemplarPage = AvailableNativeExemplarPage | UnavailableNativeExemplarPage;
 export type AssociationSelection =
   | {
       kind: "case_ids";
@@ -161,6 +165,10 @@ export interface Bpic19ScoreAnswer {
   definition?: {
     [k: string]: unknown;
   };
+  /**
+   * Optional presentation-only exact page positions for declared timing exemplars. Legacy answers may omit this receipt.
+   */
+  native_exemplar_pages?: NativeExemplarPage[];
 }
 export interface Report {
   profile_id: string;
@@ -406,12 +414,25 @@ export interface FindingOutcome {
   note: string;
   evidence: ReviewEvidence;
 }
+export interface AvailableNativeExemplarPage {
+  case_id: string;
+  full_population_case_offset: number;
+  unavailable_reason: null;
+}
+export interface UnavailableNativeExemplarPage {
+  case_id: string;
+  full_population_case_offset: null;
+  unavailable_reason: "not_in_frozen_membership";
+}
 export interface Bpic19Refusal {
   schema_version: 1;
   request_id: RequestId | null;
   query_revision: QueryRevision | null;
   workspace_id: WorkspaceId | null;
   message_type: "bpic19_refusal";
+  /**
+   * Native artifact reads distinguish artifact_unavailable (missing/unreadable) from checksum_mismatch (recorded byte/digest/JSON integrity failed); neither recomputes or overwrites stored results.
+   */
   code: string;
   message: string;
   retryable: boolean;

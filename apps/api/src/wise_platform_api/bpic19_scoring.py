@@ -430,6 +430,18 @@ class Bpic19Scoring:
         report = _load_artifact(workspace, next(r for r in refs if r["kind"] == "report"))
         index = _load_artifact(workspace, next(r for r in refs if r["kind"] == "membership"))
         ids = index["case_ids"]
+        # Presentation positions are always in the original frozen run, never
+        # relative to a member filter or a reordered native assessment table.
+        # They are derived on read and never written into the report artifact.
+        positions = {cid: pos for pos, cid in enumerate(ids)}
+        exemplar_pages = []
+        for entry in report.get("exemplars", []):
+            cid = entry.get("case_id") if isinstance(entry, dict) else None
+            if not isinstance(cid, str) or not cid:
+                continue
+            position = positions.get(cid)
+            exemplar_pages.append({"case_id": cid, "full_population_case_offset": position,
+                                   "unavailable_reason": "not_in_frozen_membership" if position is None else None})
         filter_ = given.get("case_filter", {})
         if ("right_criterion_id" in filter_ or "criterion_state" in filter_) and "criterion_id" not in filter_:
             raise _Refused(Problem("invalid_parameter", "Criterion inspection needs its left criterion identity.", "case_filter.criterion_id"))
@@ -479,7 +491,6 @@ class Bpic19Scoring:
             ids=[cid for cid in ids if cid in selected]
         offset, limit = given["case_offset"], given["case_limit"]
         selected = ids[offset:offset + limit]
-        positions = {cid: pos for pos, cid in enumerate(index["case_ids"])}
         chunks = {}
         for cid in selected:
             chunk_offset = positions[cid] // _CHUNK_SIZE * _CHUNK_SIZE
@@ -508,7 +519,7 @@ class Bpic19Scoring:
                 "named_population": run["named_population"], "run_id": run["identity"]["run_id"],
                 "definition_version_id": run["identity"]["definition_version_id"],
                 "definition_id": run["identity"]["definition_version_id"], "definition": run["definition_version"],
-                "snapshot": run["snapshot"], "report": report}
+                "snapshot": run["snapshot"], "report": report, "native_exemplar_pages": exemplar_pages}
 
     def export(self, body: bytes) -> tuple[int, dict | bytes]:
         echo = read_object(body); given = echo if isinstance(echo, dict) else {}

@@ -41,7 +41,7 @@ def _request_model(operation):
 
 def canonical_output(answer: dict) -> dict:
     return {key: value for key, value in answer.items()
-            if key not in {"request_id", "query_revision", "workspace_id"}}
+            if key not in {"request_id", "query_revision", "workspace_id", "native_exemplar_pages"}}
 
 
 def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,

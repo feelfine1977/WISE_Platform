@@ -1112,6 +1112,33 @@
         "group_page"
       ]
     },
+    "NativeExemplarPage": {
+      "description": "Transient read presentation derived from the exact full frozen membership order; never part of the stored native report or canonical replay output.",
+      "oneOf": [
+        {
+          "title": "AvailableNativeExemplarPage",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "case_id": { "type": "string", "minLength": 1 },
+            "full_population_case_offset": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+            "unavailable_reason": { "type": "null" }
+          },
+          "required": ["case_id", "full_population_case_offset", "unavailable_reason"]
+        },
+        {
+          "title": "UnavailableNativeExemplarPage",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "case_id": { "type": "string", "minLength": 1 },
+            "full_population_case_offset": { "type": "null" },
+            "unavailable_reason": { "const": "not_in_frozen_membership" }
+          },
+          "required": ["case_id", "full_population_case_offset", "unavailable_reason"]
+        }
+      ]
+    },
     "Bpic19ScoreAnswer": {
       "type": "object",
       "additionalProperties": false,
@@ -1158,6 +1185,11 @@
         },
         "definition": {
           "type": "object"
+        },
+        "native_exemplar_pages": {
+          "description": "Optional presentation-only exact page positions for declared timing exemplars. Legacy answers may omit this receipt.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/NativeExemplarPage" }
         }
       },
       "required": [

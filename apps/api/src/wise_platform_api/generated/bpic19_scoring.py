@@ -283,6 +283,31 @@ class RepresentationPage(BaseModel):
     reference: str
 
 
+class NativeExemplarPage1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_id: constr(min_length=1)
+    full_population_case_offset: conint(ge=0, le=9007199254740991)
+    unavailable_reason: None
+
+
+class NativeExemplarPage2(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_id: constr(min_length=1)
+    full_population_case_offset: None
+    unavailable_reason: Literal['not_in_frozen_membership']
+
+
+class NativeExemplarPage(RootModel[NativeExemplarPage1 | NativeExemplarPage2]):
+    root: NativeExemplarPage1 | NativeExemplarPage2 = Field(
+        ...,
+        description='Transient read presentation derived from the exact full frozen membership order; never part of the stored native report or canonical replay output.',
+    )
+
+
 class Bpic19Refusal(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -692,6 +717,10 @@ class Bpic19ScoreAnswer(BaseModel):
     snapshot: dict[str, Any] | None = None
     definition_id: str | None = None
     definition: dict[str, Any] | None = None
+    native_exemplar_pages: list[NativeExemplarPage] | None = Field(
+        None,
+        description='Optional presentation-only exact page positions for declared timing exemplars. Legacy answers may omit this receipt.',
+    )
 
 
 class BPIC19ScoringMessage(
