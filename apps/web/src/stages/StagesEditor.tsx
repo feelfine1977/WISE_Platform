@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { InfoPopover } from "../components/InfoPopover";
 import { countOf } from "../data/wording";
 import type { SuppliedGraph } from "../generated/selection";
 import { moved, nameProblem, renamed, type Stage, type StageDefinitions, stageName, withActivity, withoutStage, withStage } from "./definitions";
@@ -37,8 +38,12 @@ const STAGES_ARE =
 const STAGES_KEPT =
   "The stages are kept in this browser for this reading. They are not yet part of a saved investigation, so another browser or another computer " +
   "does not show them.";
-/** That nothing can be kept. It limits what the editor is good for, so it is said in the editor itself. */
-const STAGES_NOT_KEPT = "This browser keeps nothing for this page, so the stages last only until the page is closed or loaded again.";
+/** That nothing can be kept, in full. */
+const STAGES_NOT_KEPT =
+  "This browser keeps nothing for this page, so the stages last only until the page is closed or loaded again. They are not part of a saved investigation either.";
+/** Where the stages stay and that saving the investigation does not keep them: in view in the editor, because both limit what it is good for. */
+export const STAGES_KEPT_LINE = "Stages stay in this browser and are not saved with the investigation";
+export const STAGES_NOT_KEPT_LINE = "Stages last until the page closes and are not saved with the investigation";
 
 /**
  * The stages of a log, defined by the analyst: the stages in their order with their names, and
@@ -122,16 +127,16 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
 
   return (
     <section className="stages-editor" aria-label="Stages of this log">
-      {/* One line says whose the stages are and where they stay; what a stage is and does on the map is its tooltip. */}
-      {kept ? (
-        <p className="stages-note" title={`${STAGES_KEPT} ${STAGES_ARE}`}>
-          Stages are yours and stay in this browser
-        </p>
-      ) : (
-        <p className="stages-note stages-not-kept" title={`${STAGES_NOT_KEPT} They are not part of a saved investigation. ${STAGES_ARE}`}>
-          {STAGES_NOT_KEPT}
-        </p>
-      )}
+      {/* One line says where the stages stay and that a saved investigation does not hold them; the rest is behind "About stages", which the keyboard reaches. */}
+      <div className="stages-head">
+        <p className={kept ? "stages-note" : "stages-note stages-not-kept"}>{kept ? STAGES_KEPT_LINE : STAGES_NOT_KEPT_LINE}</p>
+        <InfoPopover label="About stages">
+          <section className="popover-section">
+            <p>{kept ? STAGES_KEPT : STAGES_NOT_KEPT}</p>
+            <p>{STAGES_ARE}</p>
+          </section>
+        </InfoPopover>
+      </div>
       <div className="stages-parts">
         <div className="stages-part">
           <h4 id={stagesTitle} className="stages-title">
