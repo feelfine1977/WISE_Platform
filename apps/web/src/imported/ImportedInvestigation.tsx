@@ -19,6 +19,7 @@ import { SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
 import { FilterPanel } from "../filters/FilterPanel";
 import { IncidentsInTimeOrder, type TimeOrder } from "../time/IncidentsInTimeOrder";
 import { TimeColumn } from "../time/TimeColumn";
+import { GroupsPanel } from "../groups/GroupsPanel";
 import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
@@ -58,6 +59,9 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? initialView);
   // The kept incidents by number, as kept, or the longest first by recorded span or by longest gap, as the local service orders them.
   const [incidentOrder, setIncidentOrder] = useState<"case" | TimeOrder>("case");
+  // The groups of the kept incidents beside their table, and the group whose incidents the table shows.
+  const [groupsOpen, setGroupsOpen] = useState(false);
+  const [chosenGroup, setChosenGroup] = useState<{ id: string; label: string; caseIds: readonly string[] } | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [rail, setRail] = useState<Rail>("context");
   // Closed until it is asked for: the map and the table open on the whole width.
@@ -154,7 +158,29 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
     const members = new Set(ranked[rank].case_ids);
     return { rank: rank + 1, caseCount: ranked[rank].case_count, cases: kept.filter((item) => members.has(item.case_id)) };
   }, [chosenVariant, variants, answer, kept]);
-  const shownCases = variantView ? variantView.cases : kept;
+  const groupView = useMemo(() => {
+    if (chosenGroup === null || variantView) return null;
+    const members = new Set(chosenGroup.caseIds);
+    return { ...chosenGroup, cases: kept.filter((item) => members.has(item.case_id)) };
+  }, [chosenGroup, variantView, kept]);
+  // A group is chosen among the incidents kept when it was chosen: another selection lets it go.
+  const keptPopulation = shown?.answer.identity.population_id;
+  useEffect(() => setChosenGroup(null), [keptPopulation]);
+  const contextColumns = useMemo(() => {
+    const names = openingContext.phase === "ready" ? openingContext.answer.opening_context.columns : [];
+    return (answer?.preparation.mapping.context_columns ?? []).map((index) => ({
+      index,
+      name: names.find((column) => column.column_index === index)?.column_name || `column ${index}`,
+    }));
+  }, [answer, openingContext]);
+  const shownCases = variantView ? variantView.cases : groupView ? groupView.cases : kept;
+  /** Keeps or removes the incidents of the chosen group as a step; the table shows every kept incident again. */
+  const stepFromGroup = (negate: boolean) => {
+    if (groupView === null || groupView.caseIds.length === 0) return;
+    const [first, ...rest] = groupView.caseIds;
+    addStep({ kind: "case_id_in", case_ids: [first, ...rest], negate });
+    setChosenGroup(null);
+  };
   return (
     <main className="workbench explorer" aria-labelledby="imported-title">
       <div className="toolbar">
@@ -306,6 +332,23 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 </button>
               </div>
             )}
+            {groupView && (
+              <div className="view-note">
+                <p>
+                  The table lists the {countOf(groupView.cases.length, "incident")} of the group “{groupView.label}”. This is a view until a step is
+                  taken.
+                </p>
+                <button type="button" onClick={() => stepFromGroup(false)} disabled={waitingFor !== undefined} aria-describedby={waitingFor}>
+                  Keep these incidents
+                </button>
+                <button type="button" onClick={() => stepFromGroup(true)} disabled={waitingFor !== undefined} aria-describedby={waitingFor}>
+                  Remove these incidents
+                </button>
+                <button type="button" onClick={() => setChosenGroup(null)}>
+                  Show every incident
+                </button>
+              </div>
+            )}
             {population.phase === "loading" && <p className="working-text">Opening the incidents of this preparation…</p>}
             {population.phase === "failed" && (
               <ImportProblemNotice title="The incidents could not be opened" problem={population.problem} onRetry={() => coordinator.retryPopulation()} />
@@ -317,47 +360,73 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               <p className="working-text">The selection keeps no incident. Remove a step or undo it to keep incidents again.</p>
             )}
             {answer && kept.length > 0 && (
-              <>
-                <p className="muted pane-hint" id="imported-incidents-hint">
-                  {variantView ? `The kept incidents that follow variant ${variantView.rank}.` : "The incidents the selection keeps; with no step, every incident with an incident id."}{" "}
-                  Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every record of an incident.
-                </p>
-                {!variantView && shown && (
-                  <div className="incident-order" role="group" aria-label="Order of the incidents">
-                    {INCIDENT_ORDERS.map(([value, label]) => (
-                      <button key={value} type="button" aria-pressed={incidentOrder === value} onClick={() => setIncidentOrder(value)}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {!variantView && shown && incidentOrder !== "case" ? (
-                  <IncidentsInTimeOrder
+              <div className="incident-area" data-groups={groupsOpen && shown && !variantView ? "open" : "closed"}>
+                {groupsOpen && shown && !variantView && (
+                  <GroupsPanel
                     workspaceId={answer.workspace_id}
                     revision={revision}
                     identity={shown.answer.identity}
-                    kept={kept}
-                    order={incidentOrder}
-                    openCaseId={openCaseId}
-                    onOpen={openCase}
-                    focusRequest={focusRequest}
-                    labelledBy="imported-incidents-title"
-                    describedBy="imported-incidents-hint"
-                    waitingFor={waitingFor}
-                  />
-                ) : (
-                  <IncidentWindow
-                    key={variantView ? `variant-${chosenVariant}` : "every-incident"}
-                    cases={shownCases}
-                    openCaseId={openCaseId}
-                    onOpen={openCase}
-                    focusRequest={focusRequest}
-                    labelledBy="imported-incidents-title"
-                    describedBy="imported-incidents-hint"
-                    waitingFor={waitingFor}
+                    contextColumns={contextColumns}
+                    chosen={chosenGroup?.id ?? null}
+                    onChoose={setChosenGroup}
                   />
                 )}
-              </>
+                <div className="incident-table">
+                  <p className="muted pane-hint" id="imported-incidents-hint">
+                    {variantView ? `The kept incidents that follow variant ${variantView.rank}.` : "The incidents the selection keeps; with no step, every incident with an incident id."}{" "}
+                    Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every record of an incident.
+                  </p>
+                  {!variantView && shown && (
+                    <div className="incident-tools">
+                      <button
+                        type="button"
+                        aria-pressed={groupsOpen}
+                        onClick={() => {
+                          setGroupsOpen(!groupsOpen);
+                          setChosenGroup(null);
+                        }}
+                      >
+                        Groups
+                      </button>
+                      {!groupView && (
+                        <div className="incident-order" role="group" aria-label="Order of the incidents">
+                          {INCIDENT_ORDERS.map(([value, label]) => (
+                            <button key={value} type="button" aria-pressed={incidentOrder === value} onClick={() => setIncidentOrder(value)}>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!variantView && !groupView && shown && incidentOrder !== "case" ? (
+                    <IncidentsInTimeOrder
+                      workspaceId={answer.workspace_id}
+                      revision={revision}
+                      identity={shown.answer.identity}
+                      kept={kept}
+                      order={incidentOrder}
+                      openCaseId={openCaseId}
+                      onOpen={openCase}
+                      focusRequest={focusRequest}
+                      labelledBy="imported-incidents-title"
+                      describedBy="imported-incidents-hint"
+                      waitingFor={waitingFor}
+                    />
+                  ) : (
+                    <IncidentWindow
+                      key={variantView ? `variant-${chosenVariant}` : groupView ? `group-${groupView.id}` : "every-incident"}
+                      cases={shownCases}
+                      openCaseId={openCaseId}
+                      onOpen={openCase}
+                      focusRequest={focusRequest}
+                      labelledBy="imported-incidents-title"
+                      describedBy="imported-incidents-hint"
+                      waitingFor={waitingFor}
+                    />
+                  )}
+                </div>
+              </div>
             )}
           </section>
         </div>

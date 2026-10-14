@@ -1,0 +1,37 @@
+/*
+ * The groups of the kept incidents in a column at the left of their table: the rule, the groups
+ * ranked with their incidents and a bar of their size, the chosen one pressed. Every value refers to the token stylesheet.
+ */
+.groups-panel { display: grid; align-content: start; gap: var(--space-2); min-width: 0; }
+.groups-rule { display: grid; gap: var(--space-1); color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.groups-summary { margin: 0; color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.groups-limit { margin: 0; color: var(--color-limit); font-size: var(--font-size-small); }
+.groups-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.groups-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-half) var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  text-align: start;
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+}
+.groups-row[aria-pressed="true"] { background: var(--color-accent-tint); }
+.groups-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.groups-count { font-variant-numeric: tabular-nums; }
+.groups-bar { grid-column: 1 / -1; display: block; width: 100%; height: var(--size-bar); }
+.groups-bar-track { fill: var(--color-tint); }
+.groups-bar-share { fill: var(--color-line-strong); }
+.groups-row[aria-pressed="true"] .groups-bar-share { fill: var(--color-accent); }
+.groups-more { justify-self: start; }
+
+/* The groups and the table side by side; on a narrow window the groups stand above the table. */
+.incident-area { display: grid; gap: var(--space-2) var(--space-4); min-width: 0; min-height: 0; }
+.incident-area[data-groups="open"] { grid-template-columns: var(--size-groups) minmax(0, 1fr); }
+.incident-area > .incident-table { display: grid; align-content: start; gap: var(--space-2); min-width: 0; min-height: 0; }
+.incident-area > .groups-panel { overflow: auto; }
+@media (max-width: 900px) {
+  .incident-area[data-groups="open"] { grid-template-columns: minmax(0, 1fr); }
+}

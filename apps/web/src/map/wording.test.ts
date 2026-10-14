@@ -3,6 +3,14 @@ import { begins, contains, ends, follows, followingOpened, parent, suppliedGraph
 import { activityTimeLines, boundaryLine, coverageRows, flowsLine, lagLine, mapCaption, nameContextColumns, overlapLine, stepCounts, stepWording } from "./wording";
 
 describe("the words of a step", () => {
+  it("name up to five incident numbers each, and a longer list by its count and its first three", () => {
+    expect(stepWording({ kind: "case_id_in", case_ids: ["A-1", "B-2"], negate: false })).toBe("Keep incidents with these exact numbers: “A-1”, “B-2”");
+    const many = Array.from({ length: 1196 }, (_, place) => `I-${place}`);
+    expect(stepWording({ kind: "case_id_in", case_ids: [many[0], ...many.slice(1)], negate: true })).toBe(
+      "Keep incidents outside the 1,196 exact numbers: “I-0”, “I-1”, “I-2” and 1,193 more",
+    );
+  });
+
   it("says what each kind of step keeps", () => {
     expect(stepWording(contains("Eröffnet"))).toBe("Keep incidents that contain “Eröffnet”");
     expect(stepWording(contains("Eröffnet", true))).toBe("Keep incidents that do not contain “Eröffnet”");

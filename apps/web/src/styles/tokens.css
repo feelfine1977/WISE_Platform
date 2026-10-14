@@ -221,6 +221,9 @@
   --size-map-aside: 340px;
   --size-chart: 96px;
   --size-readout: 18px;
+  /* The column of groups at the left of the list of incidents, and the bar of the size of a group. */
+  --size-groups: 300px;
+  --size-bar: 3px;
   /* A header row of one line, and the bar of the kept share in the data row. */
   --size-kept-share: 48px;
 

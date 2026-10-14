@@ -22,6 +22,9 @@ function columnWording(index: number): string {
 }
 
 /** What a step keeps, in words. */
+/** Up to this many incident numbers a step names every one. */
+const NUMBERS_NAMED = 5;
+
 export function stepWording(step: SelectionPredicate): string {
   switch (step.kind) {
     case "contains_activity":
@@ -38,8 +41,14 @@ export function stepWording(step: SelectionPredicate): string {
         ? `Keep incidents whose first record does not have ${value} in ${columnWording(step.column_index)}`
         : `Keep incidents whose first record has ${value} in ${columnWording(step.column_index)}`;
     }
-    case "case_id_in":
-      return `Keep incidents ${step.negate ? "outside" : "with"} these exact numbers: ${step.case_ids.map(quoted).join(", ")}`;
+    case "case_id_in": {
+      // A long list, as a group hands over, is named by its count and its first numbers; the step holds every one.
+      const shown = step.case_ids.length > NUMBERS_NAMED ? step.case_ids.slice(0, 3) : step.case_ids;
+      const rest = step.case_ids.length - shown.length;
+      const numbers = `${shown.map(quoted).join(", ")}${rest > 0 ? ` and ${rest.toLocaleString("en")} more` : ""}`;
+      const these = step.case_ids.length > NUMBERS_NAMED ? `the ${step.case_ids.length.toLocaleString("en")} exact numbers` : "these exact numbers";
+      return `Keep incidents ${step.negate ? "outside" : "with"} ${these}: ${numbers}`;
+    }
     case "case_start_in_window":
       return `Keep incidents whose first record ${step.negate ? "is outside" : "is in"} ${step.window.start_inclusive} to ${step.window.end_exclusive} (end excluded; ${step.window.timestamp_kind === "utc_instant" ? "UTC" : "recorded wall clock"})`;
     case "opening_attribute_in":
