@@ -123,4 +123,4 @@
   border-bottom: var(--line-width) solid var(--color-line);
 }
 .saved-name { font-weight: var(--font-weight-strong); }
-.saved-notes { white-space: pre-wrap; }
+.saved-notes { white-space: pre-wrap; overflow-wrap: anywhere; }

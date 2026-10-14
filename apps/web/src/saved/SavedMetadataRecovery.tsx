@@ -63,14 +63,14 @@ export function SavedMetadataRecovery({ workspaceId, savedRevisionId, client = h
       <p><strong>Historical metadata only · outputs unverified and not restored</strong></p>
       <p>{metadata.name}{metadata.name_truncated && " [name preview shortened]"} · {answer.saved_revision_id}</p>
       <p>Declared saved source: {metadata.base_identity.source_id}. Declared preparation: {metadata.base_identity.preparation_id}. Saved selected population: {metadata.selection_identity.population_id}; its membership has not been restored here.</p>
-      <h4>Saved investigation notes</h4><p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{metadata.notes.text || "No note text on this page."}</p>
+      <h4>Saved investigation notes</h4><p className="saved-notes">{metadata.notes.text || "No note text on this page."}</p>
       <p>Note page starts at code-point {metadata.notes.offset} of {metadata.notes.total}.</p>
       <button type="button" disabled={metadata.notes.offset === 0} onClick={() => void read({ ...page, notes_offset: Math.max(0, metadata.notes.offset - 4000) })}>Previous note page</button>
       <button type="button" disabled={metadata.notes.next_offset === null} onClick={() => void read({ ...page, notes_offset: metadata.notes.next_offset ?? 0 })}>Next note page</button>
       <h4>Saved original-evidence references</h4>
       <p>These are declared bookmark references. A separate source read verifies an original item's rows; it does not verify the saved selected membership, score or native result.</p>
       {metadata.bookmarks.items.map((bookmark, index) => <details key={`${bookmark.case_id}-${metadata.bookmarks.offset + index}`}><summary>{bookmark.label}{bookmark.label_truncated && " [label preview shortened]"} · {bookmark.case_id}</summary>
-        <p style={{ whiteSpace: "pre-wrap" }}>{bookmark.note}{bookmark.note_truncated && " [annotation preview shortened; full annotation remains in the immutable revision]"}</p>
+        <p className="saved-notes">{bookmark.note}{bookmark.note_truncated && " [annotation preview shortened; full annotation remains in the immutable revision]"}</p>
         <p>{bookmark.row_ids.length} shown of {bookmark.row_count} declared original-row references{!bookmark.row_ids_complete && "; this is a bounded preview"}. Declared bookmark population: {bookmark.identity.population_id}.</p>
         <button type="button" onClick={() => { setLayout("side"); void lineage.open({ identity: metadata.base_identity, caseId: bookmark.case_id, rowIds: bookmark.row_ids,
           reason: "Independent original-source bookmark read; saved membership and computed outputs remain unverified" }); }}>Inspect independent source history {bookmark.case_id}</button>
