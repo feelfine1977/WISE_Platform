@@ -12,6 +12,13 @@
 .stages-editor p { margin: 0; }
 .stages-head { display: flex; align-items: center; gap: var(--space-2); }
 .stages-head > .stages-note { margin: 0; }
+/*
+ * "About stages" opens inside the column the editor stands in, which scrolls and clips what reaches
+ * past it: the panel hangs from the whole head row instead of from its button, and is as wide as the row.
+ */
+.stages-editor .stages-head { position: relative; }
+.stages-editor .stages-head > .popover { position: static; }
+.stages-editor .stages-head .popover-panel { left: 0; right: 0; width: auto; max-width: none; }
 .stages-note { max-width: var(--size-page); color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .stages-not-kept { padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); }
 
