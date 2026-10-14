@@ -51,6 +51,7 @@ from .generated.selection import (
     SelectionRefusal,
 )
 from .import_boundary import import_echo
+from .graph_lag_boundary import validate_graph_lag_totals
 from .imports import Imports
 from .selection_boundary import STATUS, parse_selection_body, selection_refusal
 from .workspace import Problem, Workspace
@@ -264,6 +265,8 @@ def _answer(model: type[BaseModel], body: dict) -> SelectionReply:
             f"A {body.get('message_type')} answer is outside the contract at "
             f"{'.'.join(str(part) for part in first['loc'])}: {first['msg']}"
         ) from None
+    if body.get("message_type") == "process_graph_answer":
+        validate_graph_lag_totals(body["graph"])
     return SelectionReply(200, body)
 
 

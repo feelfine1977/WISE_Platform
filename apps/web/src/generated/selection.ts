@@ -37,6 +37,11 @@ export type UtcInstant = string;
 export type LocalTimestamp = string;
 export type NodeMetrics = NodeMetrics1;
 export type ActivityNodeId = string;
+export type PathMetrics = PathMetrics1;
+/**
+ * Exact nonnegative integer microseconds, as canonical decimal text. This is a computational coordinate on the declared clock, not an assertion of physical recording resolution.
+ */
+export type LagMicroseconds = string;
 export type RowId = string;
 export type GraphCoverage = GraphCoverage1 & GraphCoverage2;
 export type GraphCoverage1 =
@@ -52,6 +57,10 @@ export type GraphCoverage1 =
       clock_limitation?: null;
       [k: string]: unknown;
     };
+/**
+ * Supplied totals over all usable actual paths of the selected graph, on lag_clock. Artificial boundary flows contribute no time. The top five are ranked by total lag descending, distinct incidents descending, then the supplied source/target activity order. A zero total has unavailable shares, not invented zero percentages.
+ */
+export type PathLagTotals = PathLagTotals1;
 
 export interface SelectCasesRequest {
   schema_version: 1;
@@ -236,11 +245,20 @@ export interface FollowsEdge {
   payload: PathWitnesses;
   tags?: "bridged_missing_activity"[];
 }
-export interface PathMetrics {
+export interface PathMetrics1 {
   count: number;
   cases: number;
   medianLagHours: number;
   usableLagCount: number;
+  /**
+   * Sum of the lags of every usable mapped passage of this path, including repeats and disclosed missing-label bridges, on lag_clock. Summed in integer microseconds then rendered once in hours. Present exactly when usableLagCount is positive.
+   */
+  totalLagHours?: number;
+  /**
+   * Share of the supplied path_lag_totals.total_hours of the kept graph, excluding artificial Start/End flows. Null when the denominator is zero or this path has no usable lag.
+   */
+  shareOfTotalLag: number | null;
+  totalLagMicroseconds?: LagMicroseconds;
 }
 export interface PathWitnesses {
   source_activity: string;
@@ -277,6 +295,26 @@ export interface GraphCoverage2 {
   timestamp_kind: "utc_instant" | "wall_clock";
   lag_clock: "recorded_wall_clock_hours" | "elapsed_utc_hours";
   clock_limitation: string | null;
+  path_lag_totals: PathLagTotals;
+}
+export interface PathLagTotals1 {
+  total_hours: number;
+  usable_passage_count: number;
+  usable_path_count: number;
+  /**
+   * @maxItems 5
+   */
+  top_five_path_ids:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string];
+  top_five_total_hours: number;
+  top_five_share: number | null;
+  total_microseconds: LagMicroseconds;
+  top_five_total_microseconds: LagMicroseconds;
 }
 export interface SelectionRefusal {
   schema_version: 1;

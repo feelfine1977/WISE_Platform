@@ -25,6 +25,12 @@ export function flowOf(id: string): { side: "start" | "end"; activityId: string 
 type Side = "starts" | "ends";
 type SuppliedNode = SuppliedGraph["nodes"][number];
 
+/** The drawing library accepts numeric metrics; exact coordinates remain in the supplied graph. */
+function drawnPath(edge: SuppliedGraph["edges"][number]): FlowEdge {
+  const { totalLagMicroseconds: _exact, shareOfTotalLag, ...numeric } = edge.metrics;
+  return { ...edge, metrics: { ...numeric, ...(shareOfTotalLag === null ? {} : { shareOfTotalLag }) } };
+}
+
 /**
  * The activities whose flow on this side is handed to the map: at least `least` incidents, always
  * the strongest of all, and always the strongest among the activities the detail shows (the first
@@ -44,7 +50,7 @@ function drawnFlows(nodes: SuppliedNode[], side: Side, least: number, shown?: Re
 function observed(graph: SuppliedGraph): FlowGraph {
   return {
     nodes: graph.nodes.map((node) => ({ ...node, metrics: { ...node.metrics } })),
-    edges: graph.edges.map((edge) => ({ ...edge, metrics: { ...edge.metrics } })),
+    edges: graph.edges.map(drawnPath),
     meta: { ...graph.meta },
   };
 }
@@ -107,9 +113,9 @@ export function flowCoverage(graph: SuppliedGraph, least: number, shown?: Readon
 /**
  * The supplied graph as the map library's graph, between a start and an end.
  *
- * Every node, path and coverage field of the contract's graph is passed on unchanged; each element
- * is spread into a plain object because the library reads its metrics and meta as open records,
- * which the contract's closed interfaces are not assignable to as they are.
+ * Nodes, path identity/support and coverage are passed on unchanged. Drawing metrics carry
+ * numbers only: exact integer-string coordinates and undefined shares stay in the supplied
+ * graph for its list consumer. Closed contract objects become the library's open records.
  *
  * Two events are added, Start and End, with a flow from Start to an activity incidents begin with
  * and from an activity incidents end with to End. Their counts are the supplied counts of starts
@@ -126,7 +132,7 @@ export function flowCoverage(graph: SuppliedGraph, least: number, shown?: Readon
  */
 export function toFlowGraph(graph: SuppliedGraph, least = 0, shown?: ReadonlySet<string>, stages?: StageDefinitions): FlowGraph {
   const activities: FlowNode[] = graph.nodes.map((node) => ({ ...node, metrics: { ...node.metrics } }));
-  const paths: FlowEdge[] = graph.edges.map((edge) => ({ ...edge, metrics: { ...edge.metrics } }));
+  const paths: FlowEdge[] = graph.edges.map(drawnPath);
   const everyBegun = graph.nodes.filter((node) => node.metrics.starts > 0);
   const everyEnded = graph.nodes.filter((node) => node.metrics.ends > 0);
   if (everyBegun.length === 0 && everyEnded.length === 0) return inStages({ nodes: activities, edges: paths, meta: { ...graph.meta } }, stages);

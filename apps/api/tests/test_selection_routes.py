@@ -412,10 +412,10 @@ def test_the_map_of_the_opened_population_is_the_map_of_every_incident(client, w
                                   "medianPreviousHours": 1.25, "usablePreviousCount": 2, "usableNextCount": 0}}
     paths = {(edge["payload"]["source_activity"], edge["payload"]["target_activity"]): edge["metrics"]
              for edge in graph["edges"]}
-    assert paths == {("Opened", "Assigned"): {"count": 2, "cases": 2, "medianLagHours": 1.5, "usableLagCount": 2},
-                     ("Opened", "Resolved"): {"count": 1, "cases": 1, "medianLagHours": 0.5, "usableLagCount": 1},
-                     ("Assigned", "Resolved"): {"count": 1, "cases": 1, "medianLagHours": 2, "usableLagCount": 1},
-                     ("Assigned", "Assigned"): {"count": 1, "cases": 1, "medianLagHours": 2, "usableLagCount": 1}}
+    assert paths == {("Opened", "Assigned"): {"count": 2, "cases": 2, "medianLagHours": 1.5, "usableLagCount": 2, "totalLagHours": 3, "totalLagMicroseconds": "10800000000", "shareOfTotalLag": 3 / 7.5},
+                     ("Opened", "Resolved"): {"count": 1, "cases": 1, "medianLagHours": 0.5, "usableLagCount": 1, "totalLagHours": 0.5, "totalLagMicroseconds": "1800000000", "shareOfTotalLag": 0.5 / 7.5},
+                     ("Assigned", "Resolved"): {"count": 1, "cases": 1, "medianLagHours": 2, "usableLagCount": 1, "totalLagHours": 2, "totalLagMicroseconds": "7200000000", "shareOfTotalLag": 2 / 7.5},
+                     ("Assigned", "Assigned"): {"count": 1, "cases": 1, "medianLagHours": 2, "usableLagCount": 1, "totalLagHours": 2, "totalLagMicroseconds": "7200000000", "shareOfTotalLag": 2 / 7.5}}
     meta = graph["meta"]
     assert (meta["selected_case_ids"], meta["sequence_unevaluable_case_ids"]) == (["A", "B", "C", "D"], ["D"])
     assert (meta["node_case_denominator"], meta["path_case_denominator"]) == (4, 3)

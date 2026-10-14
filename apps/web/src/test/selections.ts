@@ -150,7 +150,7 @@ export function suppliedGraph(caseIds: string[]): SuppliedGraph {
             kind: "follows",
             source: nodeIds[opened],
             target: nodeIds[closed],
-            metrics: { count: 1, cases: 1, medianLagHours: 25.5, usableLagCount: 1 },
+            metrics: { count: 1, cases: 1, medianLagHours: 25.5, usableLagCount: 1, totalLagHours: 25.5, totalLagMicroseconds: "91800000000", shareOfTotalLag: 1 },
             payload: { source_activity: opened, target_activity: closed, case_ids: ["A-1"], gap_case_ids: [], omitted_row_ids: [], bridged_passage_count: 0 },
           },
         ]
@@ -182,6 +182,9 @@ export function suppliedGraph(caseIds: string[]): SuppliedGraph {
       timestamp_kind: "utc_instant",
       lag_clock: "elapsed_utc_hours",
       clock_limitation: null,
+      path_lag_totals: withA
+        ? { total_hours: 25.5, total_microseconds: "91800000000", usable_passage_count: 1, usable_path_count: 1, top_five_path_ids: [pathId], top_five_total_hours: 25.5, top_five_total_microseconds: "91800000000", top_five_share: 1 }
+        : { total_hours: 0, total_microseconds: "0", usable_passage_count: 0, usable_path_count: 0, top_five_path_ids: [], top_five_total_hours: 0, top_five_total_microseconds: "0", top_five_share: null },
     },
   };
 }

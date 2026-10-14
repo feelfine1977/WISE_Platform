@@ -454,7 +454,7 @@ describe("the map of the kept incidents", () => {
           id: `path.v1:sha256:${String(index).padStart(64, "0")}`,
           source: id(index),
           target: id(index + 1),
-          metrics: { count: 39 - index, cases: 39 - index, medianLagHours: 1, usableLagCount: 39 - index },
+          metrics: { count: 39 - index, cases: 39 - index, medianLagHours: 1, usableLagCount: 39 - index, totalLagHours: 39 - index, totalLagMicroseconds: String((39 - index) * 3_600_000_000), shareOfTotalLag: (39 - index) / 780 },
           payload: { ...graph.edges[0].payload, source_activity: labels[index], target_activity: labels[index + 1] },
         })),
       };

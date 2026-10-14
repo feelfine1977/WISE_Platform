@@ -91,7 +91,7 @@ def test_an_activity_carries_its_counts_and_for_each_time_the_passages_it_rests_
                                       "usablePreviousCount", "usableNextCount"]
     assert definition["additionalProperties"] is False
     # Hours and their supports are named as those of a path are.
-    assert list(SCHEMA["$defs"]["PathMetrics"]["properties"]) == ["count", "cases", "medianLagHours", "usableLagCount"]
+    assert list(SCHEMA["$defs"]["PathMetrics"]["properties"]) == ["count", "cases", "medianLagHours", "usableLagCount", "totalLagHours", "shareOfTotalLag", "totalLagMicroseconds"]
 
 
 def test_an_activity_gives_a_time_exactly_where_it_names_passages_for_it():

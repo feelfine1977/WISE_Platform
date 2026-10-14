@@ -187,16 +187,6 @@ class ActivityNode(BaseModel):
     metrics: NodeMetrics
 
 
-class PathMetrics(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    count: conint(ge=0)
-    cases: conint(ge=0)
-    medianLagHours: confloat(ge=0.0)
-    usableLagCount: conint(ge=0)
-
-
 class PathWitnesses(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -211,82 +201,6 @@ class PathWitnesses(BaseModel):
 
 class ActivityNodeId(RootModel[constr(pattern=r'^activity\.v1:sha256:[0-9a-f]{64}$')]):
     root: constr(pattern=r'^activity\.v1:sha256:[0-9a-f]{64}$')
-
-
-class GraphCoverage1(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    representation_id: RepresentationId
-    case_dictionary_id: CaseDictionaryId
-    selected_case_ids: list[CaseId]
-    sequence_evaluable_case_ids: list[CaseId]
-    sequence_unevaluable_case_ids: list[CaseId]
-    selected_case_count: conint(ge=0)
-    cases: conint(ge=0)
-    events: conint(ge=0)
-    raw_record_count: conint(ge=0)
-    mapped_record_count: conint(ge=0)
-    omitted_activity_record_count: conint(ge=0)
-    sequence_evaluable_case_count: conint(ge=0)
-    sequence_unevaluable_case_count: conint(ge=0)
-    sequence_unevaluable_record_count: conint(ge=0)
-    node_case_denominator: conint(ge=0)
-    path_case_denominator: conint(ge=0)
-    node_support_basis: Literal['all_selected_raw_histories']
-    path_support_basis: Literal['sequence_evaluable_cases']
-    activity_projection_policy: Literal[
-        'incident.activity.omit_missing_retain_raw_gaps.v1'
-    ]
-    path_adjacency: Literal['mapped_sequence_with_disclosed_raw_gaps']
-    boundary_support_basis: Literal[
-        'sequence_evaluable_cases_with_labeled_raw_boundaries'
-    ]
-    lag_unit: Literal['hours']
-    boundary_policy: Literal['incident.boundary.raw_labeled_start_end.v1']
-    timestamp_kind: Literal['wall_clock']
-    lag_clock: Literal['recorded_wall_clock_hours']
-    clock_limitation: constr(min_length=1)
-
-
-class GraphCoverage2(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    representation_id: RepresentationId
-    case_dictionary_id: CaseDictionaryId
-    selected_case_ids: list[CaseId]
-    sequence_evaluable_case_ids: list[CaseId]
-    sequence_unevaluable_case_ids: list[CaseId]
-    selected_case_count: conint(ge=0)
-    cases: conint(ge=0)
-    events: conint(ge=0)
-    raw_record_count: conint(ge=0)
-    mapped_record_count: conint(ge=0)
-    omitted_activity_record_count: conint(ge=0)
-    sequence_evaluable_case_count: conint(ge=0)
-    sequence_unevaluable_case_count: conint(ge=0)
-    sequence_unevaluable_record_count: conint(ge=0)
-    node_case_denominator: conint(ge=0)
-    path_case_denominator: conint(ge=0)
-    node_support_basis: Literal['all_selected_raw_histories']
-    path_support_basis: Literal['sequence_evaluable_cases']
-    activity_projection_policy: Literal[
-        'incident.activity.omit_missing_retain_raw_gaps.v1'
-    ]
-    path_adjacency: Literal['mapped_sequence_with_disclosed_raw_gaps']
-    boundary_support_basis: Literal[
-        'sequence_evaluable_cases_with_labeled_raw_boundaries'
-    ]
-    lag_unit: Literal['hours']
-    boundary_policy: Literal['incident.boundary.raw_labeled_start_end.v1']
-    timestamp_kind: Literal['utc_instant']
-    lag_clock: Literal['elapsed_utc_hours']
-    clock_limitation: None
-
-
-class GraphCoverage(RootModel[GraphCoverage1 | GraphCoverage2]):
-    root: GraphCoverage1 | GraphCoverage2 = Field(..., title='GraphCoverage')
 
 
 class ProcessGraphRequest(BaseModel):
@@ -396,6 +310,37 @@ class MaxRawGapAtLeast(BaseModel):
     negate: bool
 
 
+class TopFivePathId(RootModel[constr(pattern=r'^path\.v1:sha256:[0-9a-f]{64}$')]):
+    root: constr(pattern=r'^path\.v1:sha256:[0-9a-f]{64}$')
+
+
+class LagMicroseconds(RootModel[constr(pattern=r'^(0|[1-9][0-9]*)$', max_length=64)]):
+    root: constr(pattern=r'^(0|[1-9][0-9]*)$', max_length=64) = Field(
+        ...,
+        description='Exact nonnegative integer microseconds, as canonical decimal text. This is a computational coordinate on the declared clock, not an assertion of physical recording resolution.',
+        title='LagMicroseconds',
+    )
+
+
+class PathMetrics(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    count: conint(ge=0)
+    cases: conint(ge=0)
+    medianLagHours: confloat(ge=0.0)
+    usableLagCount: conint(ge=0)
+    totalLagHours: confloat(ge=0.0) | None = Field(
+        None,
+        description='Sum of the lags of every usable mapped passage of this path, including repeats and disclosed missing-label bridges, on lag_clock. Summed in integer microseconds then rendered once in hours. Present exactly when usableLagCount is positive.',
+    )
+    shareOfTotalLag: confloat(ge=0.0, le=1.0) | None = Field(
+        ...,
+        description='Share of the supplied path_lag_totals.total_hours of the kept graph, excluding artificial Start/End flows. Null when the denominator is zero or this path has no usable lag.',
+    )
+    totalLagMicroseconds: LagMicroseconds | None = None
+
+
 class FollowsEdge(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -407,6 +352,116 @@ class FollowsEdge(BaseModel):
     metrics: PathMetrics
     payload: PathWitnesses
     tags: list[Literal['bridged_missing_activity']] | None = None
+
+
+class UtcCaseStartWindow(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    timestamp_kind: Literal['utc_instant']
+    start_inclusive: UtcInstant
+    end_exclusive: UtcInstant
+
+
+class WallCaseStartWindow(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    timestamp_kind: Literal['wall_clock']
+    start_inclusive: LocalTimestamp
+    end_exclusive: LocalTimestamp
+
+
+class PathLagTotals(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    total_hours: confloat(ge=0.0)
+    usable_passage_count: conint(ge=0)
+    usable_path_count: conint(ge=0)
+    top_five_path_ids: list[TopFivePathId] = Field(..., max_length=5)
+    top_five_total_hours: confloat(ge=0.0)
+    top_five_share: confloat(ge=0.0, le=1.0) | None
+    total_microseconds: LagMicroseconds
+    top_five_total_microseconds: LagMicroseconds
+
+
+class GraphCoverage1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    representation_id: RepresentationId
+    case_dictionary_id: CaseDictionaryId
+    selected_case_ids: list[CaseId]
+    sequence_evaluable_case_ids: list[CaseId]
+    sequence_unevaluable_case_ids: list[CaseId]
+    selected_case_count: conint(ge=0)
+    cases: conint(ge=0)
+    events: conint(ge=0)
+    raw_record_count: conint(ge=0)
+    mapped_record_count: conint(ge=0)
+    omitted_activity_record_count: conint(ge=0)
+    sequence_evaluable_case_count: conint(ge=0)
+    sequence_unevaluable_case_count: conint(ge=0)
+    sequence_unevaluable_record_count: conint(ge=0)
+    node_case_denominator: conint(ge=0)
+    path_case_denominator: conint(ge=0)
+    node_support_basis: Literal['all_selected_raw_histories']
+    path_support_basis: Literal['sequence_evaluable_cases']
+    activity_projection_policy: Literal[
+        'incident.activity.omit_missing_retain_raw_gaps.v1'
+    ]
+    path_adjacency: Literal['mapped_sequence_with_disclosed_raw_gaps']
+    boundary_support_basis: Literal[
+        'sequence_evaluable_cases_with_labeled_raw_boundaries'
+    ]
+    lag_unit: Literal['hours']
+    boundary_policy: Literal['incident.boundary.raw_labeled_start_end.v1']
+    timestamp_kind: Literal['wall_clock']
+    lag_clock: Literal['recorded_wall_clock_hours']
+    clock_limitation: constr(min_length=1)
+    path_lag_totals: PathLagTotals
+
+
+class GraphCoverage2(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    representation_id: RepresentationId
+    case_dictionary_id: CaseDictionaryId
+    selected_case_ids: list[CaseId]
+    sequence_evaluable_case_ids: list[CaseId]
+    sequence_unevaluable_case_ids: list[CaseId]
+    selected_case_count: conint(ge=0)
+    cases: conint(ge=0)
+    events: conint(ge=0)
+    raw_record_count: conint(ge=0)
+    mapped_record_count: conint(ge=0)
+    omitted_activity_record_count: conint(ge=0)
+    sequence_evaluable_case_count: conint(ge=0)
+    sequence_unevaluable_case_count: conint(ge=0)
+    sequence_unevaluable_record_count: conint(ge=0)
+    node_case_denominator: conint(ge=0)
+    path_case_denominator: conint(ge=0)
+    node_support_basis: Literal['all_selected_raw_histories']
+    path_support_basis: Literal['sequence_evaluable_cases']
+    activity_projection_policy: Literal[
+        'incident.activity.omit_missing_retain_raw_gaps.v1'
+    ]
+    path_adjacency: Literal['mapped_sequence_with_disclosed_raw_gaps']
+    boundary_support_basis: Literal[
+        'sequence_evaluable_cases_with_labeled_raw_boundaries'
+    ]
+    lag_unit: Literal['hours']
+    boundary_policy: Literal['incident.boundary.raw_labeled_start_end.v1']
+    timestamp_kind: Literal['utc_instant']
+    lag_clock: Literal['elapsed_utc_hours']
+    clock_limitation: None
+    path_lag_totals: PathLagTotals
+
+
+class GraphCoverage(RootModel[GraphCoverage1 | GraphCoverage2]):
+    root: GraphCoverage1 | GraphCoverage2 = Field(..., title='GraphCoverage')
 
 
 class SuppliedGraph(BaseModel):
@@ -429,24 +484,6 @@ class ProcessGraphAnswer(BaseModel):
     workspace_id: WorkspaceId
     identity: AnswerIdentity
     graph: SuppliedGraph
-
-
-class UtcCaseStartWindow(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    timestamp_kind: Literal['utc_instant']
-    start_inclusive: UtcInstant
-    end_exclusive: UtcInstant
-
-
-class WallCaseStartWindow(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    timestamp_kind: Literal['wall_clock']
-    start_inclusive: LocalTimestamp
-    end_exclusive: LocalTimestamp
 
 
 class CaseStartWindow(RootModel[UtcCaseStartWindow | WallCaseStartWindow]):

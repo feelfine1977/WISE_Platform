@@ -144,9 +144,9 @@ def test_b4_real_selection_chips_graph_and_complete_evidence_share_one_populatio
     assert set(nodes_by_label(supplied)) == {"Recorded", "Routed", "Reviewed"}
     paths = edges_by_labels(supplied)
     assert set(paths) == {("Recorded", "Routed"), ("Routed", "Reviewed")}
-    assert paths["Recorded", "Routed"]["metrics"] == {"count": 1, "cases": 1, "medianLagHours": 1, "usableLagCount": 1}
+    assert paths["Recorded", "Routed"]["metrics"] == {"count": 1, "cases": 1, "medianLagHours": 1, "usableLagCount": 1, "totalLagHours": 1, "totalLagMicroseconds": "3600000000", "shareOfTotalLag": 1}
     bridge = paths["Routed", "Reviewed"]
-    assert bridge["metrics"] == {"count": 1, "cases": 1, "medianLagHours": 0, "usableLagCount": 1}
+    assert bridge["metrics"] == {"count": 1, "cases": 1, "medianLagHours": 0, "usableLagCount": 1, "totalLagHours": 0, "totalLagMicroseconds": "0", "shareOfTotalLag": 0}
     assert bridge["payload"]["case_ids"] == bridge["payload"]["gap_case_ids"] == ["T-01"]
     assert bridge["payload"]["omitted_row_ids"] == [case["records"][2]["row_id"]]
     assert bridge["payload"]["bridged_passage_count"] == 1
@@ -261,9 +261,9 @@ def test_graph_repeated_passages_and_zero_lag_are_not_case_support_or_missing(cl
     nodes = nodes_by_label(supplied)
     assert nodes["A"]["metrics"]["events"] == nodes["B"]["metrics"]["events"] == 3
     assert nodes["A"]["metrics"]["cases"] == nodes["B"]["metrics"]["cases"] == 2
-    assert edges_by_labels(supplied)["A", "B"]["metrics"] == {"count": 3, "cases": 2, "medianLagHours": 1, "usableLagCount": 3}
+    assert edges_by_labels(supplied)["A", "B"]["metrics"] == {"count": 3, "cases": 2, "medianLagHours": 1, "usableLagCount": 3, "totalLagHours": 3, "totalLagMicroseconds": "10800000000", "shareOfTotalLag": 0.75}
     zero = select(client, workspace, base, parent=["Y"])
-    assert edges_by_labels(graph(client, workspace, zero))["A", "B"]["metrics"] == {"count": 1, "cases": 1, "medianLagHours": 0, "usableLagCount": 1}
+    assert edges_by_labels(graph(client, workspace, zero))["A", "B"]["metrics"] == {"count": 1, "cases": 1, "medianLagHours": 0, "usableLagCount": 1, "totalLagHours": 0, "totalLagMicroseconds": "0", "shareOfTotalLag": None}
 
 
 def test_missing_raw_boundaries_do_not_invent_start_or_end_labels(client, workspace):

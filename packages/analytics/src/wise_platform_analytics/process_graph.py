@@ -45,6 +45,9 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
     passages: Counter[tuple[str, str]] = Counter()
     path_cases: dict[tuple[str, str], set[str]] = defaultdict(set)
     lags: dict[tuple[str, str], list[float]] = defaultdict(list)
+    # Sum integer microseconds, then render the sum once in hours. Repeated passages
+    # and missing-label bridges have exactly the same domain as the medians below.
+    path_microseconds: Counter[tuple[str, str]] = Counter()
     hours_before: dict[str, list[float]] = defaultdict(list)
     hours_after: dict[str, list[float]] = defaultdict(list)
     gap_cases: dict[tuple[str, str], set[str]] = defaultdict(set)
@@ -76,12 +79,14 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
             key = (left.activity, right.activity)
             if left.time_value is None or right.time_value is None:
                 raise SelectionError("inconsistent_sequence", "An evaluable sequence contains an unavailable time.")
-            hours = (right.time_value - left.time_value).total_seconds() / 3600
+            delta = right.time_value - left.time_value
+            hours = delta.total_seconds() / 3600
             if hours < 0:
                 raise SelectionError("inconsistent_sequence", "An evaluable history is not in declared time order.")
             passages[key] += 1
             path_cases[key].add(case_id)
             lags[key].append(hours)
+            path_microseconds[key] += (delta.days * 86_400 + delta.seconds) * 1_000_000 + delta.microseconds
             hours_after[left.activity].append(hours)
             hours_before[right.activity].append(hours)
             omitted = records[left_index + 1:right_index]
@@ -108,13 +113,22 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
             metrics["medianNextHours"] = median(after)
         metrics["usableNextCount"] = len(after)
         nodes.append({"id": activity_node_id(activity), "kind": "activity", "label": activity, "metrics": metrics})
+    total_microseconds = sum(path_microseconds.values())
+    # The supplied default ranking shares the table's tie rule: total, incidents,
+    # then the existing supplied source/target order. Artificial boundary flows
+    # are presentation and have no passage time to contribute.
+    top_five = sorted(passages, key=lambda key: (-path_microseconds[key], -len(path_cases[key]), key))[:5]
+    top_microseconds = sum(path_microseconds[key] for key in top_five)
     edges = []
     for source, target in sorted(passages):
         key = (source, target)
         edge = {"id": path_edge_id(source, target), "kind": "follows",
                 "source": activity_node_id(source), "target": activity_node_id(target),
                 "metrics": {"count": passages[key], "cases": len(path_cases[key]),
-                            "medianLagHours": median(lags[key]), "usableLagCount": len(lags[key])},
+                            "medianLagHours": median(lags[key]), "usableLagCount": len(lags[key]),
+                            "totalLagHours": path_microseconds[key] / 3_600_000_000,
+                            "totalLagMicroseconds": str(path_microseconds[key]),
+                            "shareOfTotalLag": path_microseconds[key] / total_microseconds if total_microseconds else None},
                 "payload": {"source_activity": source, "target_activity": target,
                             "case_ids": sorted(path_cases[key]), "gap_case_ids": sorted(gap_cases[key]),
                             "omitted_row_ids": sorted(gap_rows[key]), "bridged_passage_count": gap_passages[key]}}
@@ -138,6 +152,16 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
         "boundary_policy": BOUNDARY_POLICY,
         "timestamp_kind": time_kind, "lag_unit": "hours",
         "lag_clock": "recorded_wall_clock_hours" if time_kind == "wall_clock" else "elapsed_utc_hours",
+        "path_lag_totals": {
+            "total_hours": total_microseconds / 3_600_000_000,
+            "total_microseconds": str(total_microseconds),
+            "usable_passage_count": sum(passages.values()),
+            "usable_path_count": len(passages),
+            "top_five_path_ids": [path_edge_id(*key) for key in top_five],
+            "top_five_total_hours": top_microseconds / 3_600_000_000,
+            "top_five_total_microseconds": str(top_microseconds),
+            "top_five_share": top_microseconds / total_microseconds if total_microseconds else None,
+        },
         "clock_limitation": "Recorded wall-clock differences may differ from physical elapsed time across clock changes."
                             if time_kind == "wall_clock" else None,
     }}

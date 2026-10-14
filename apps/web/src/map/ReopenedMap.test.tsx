@@ -84,7 +84,7 @@ function fixtureGraph(ids: string[]): SuppliedGraph {
     }),
     edges: template.edges.map((edge) => ({
       ...edge,
-      metrics: { count: passages, cases: a.length, medianLagHours: 25.5, usableLagCount: passages },
+      metrics: { count: passages, cases: a.length, medianLagHours: 25.5, usableLagCount: passages, totalLagHours: 25.5 * passages, totalLagMicroseconds: String(91_800_000_000 * passages), shareOfTotalLag: (25.5 * passages) / (25.5 * passages + (back ? 12 : 0)) },
       payload: { ...edge.payload, case_ids: a },
     })),
     meta: {
@@ -109,10 +109,14 @@ function fixtureGraph(ids: string[]): SuppliedGraph {
       ...graph.edges[0],
       id: `path.v1:sha256:${"e".repeat(64)}`,
       source: nodeIds[closed], target: nodeIds[opened],
-      metrics: { count: 1, cases: 1, medianLagHours: 12, usableLagCount: 1 },
+      metrics: { count: 1, cases: 1, medianLagHours: 12, usableLagCount: 1, totalLagHours: 12, totalLagMicroseconds: "43200000000", shareOfTotalLag: 12 / (25.5 * passages + 12) },
       payload: { ...graph.edges[0].payload, source_activity: closed, target_activity: opened, case_ids: ["A-8"] },
     });
   }
+  const exact = 91_800_000_000 * passages + (back ? 43_200_000_000 : 0);
+  const top = graph.edges.slice().sort((a, b) => (b.metrics.totalLagHours ?? 0) - (a.metrics.totalLagHours ?? 0));
+  graph.meta.path_lag_totals = { total_hours: exact / 3_600_000_000, total_microseconds: String(exact), usable_passage_count: passages + (back ? 1 : 0), usable_path_count: graph.edges.length,
+    top_five_path_ids: top.map((edge) => edge.id) as SuppliedGraph["meta"]["path_lag_totals"]["top_five_path_ids"], top_five_total_hours: exact / 3_600_000_000, top_five_total_microseconds: String(exact), top_five_share: exact === 0 ? null : 1 };
   return graph;
 }
 

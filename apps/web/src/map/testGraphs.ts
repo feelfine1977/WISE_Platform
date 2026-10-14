@@ -13,6 +13,31 @@ import { everyIncident, selectionAnswer, suppliedGraph } from "../test/selection
 const activityId = (index: number) => `activity.v1:sha256:${String(index).padStart(64, "0")}`;
 const pathIdOf = (source: number, target: number) => `path.v1:sha256:${String(source * 100 + target).padStart(64, "0")}`;
 
+/** Synthetic fixture rule: every passage of a path has its stated constant lag.
+ * Only test data is constructed here; production consumers read supplied totals.
+ */
+function constantLagFixture(edges: SuppliedGraph["edges"]): Pick<SuppliedGraph, "edges" | "meta"> {
+  const coordinates = edges.map((edge) => BigInt(edge.metrics.usableLagCount) * BigInt(edge.metrics.medianLagHours * 3_600_000_000));
+  const total = coordinates.reduce((sum, value) => sum + value, 0n);
+  const supplied = edges.map((edge, index) => ({ ...edge, metrics: { ...edge.metrics,
+    totalLagHours: Number(coordinates[index]) / 3_600_000_000,
+    totalLagMicroseconds: String(coordinates[index]),
+    shareOfTotalLag: total === 0n ? null : Number(coordinates[index]) / Number(total),
+  } }));
+  const ranked = supplied.slice().sort((a, b) => {
+    const left = BigInt(a.metrics.totalLagMicroseconds), right = BigInt(b.metrics.totalLagMicroseconds);
+    if (left !== right) return left > right ? -1 : 1;
+    return b.metrics.cases - a.metrics.cases || (a.payload.source_activity < b.payload.source_activity ? -1 : a.payload.source_activity > b.payload.source_activity ? 1 : a.payload.target_activity < b.payload.target_activity ? -1 : a.payload.target_activity > b.payload.target_activity ? 1 : 0);
+  }).slice(0, 5);
+  const top = ranked.reduce((sum, edge) => sum + BigInt(edge.metrics.totalLagMicroseconds), 0n);
+  return { edges: supplied, meta: { ...suppliedGraph(["A-1", "B-2"]).meta, path_lag_totals: {
+    total_hours: Number(total) / 3_600_000_000, total_microseconds: String(total),
+    usable_passage_count: edges.reduce((sum, edge) => sum + edge.metrics.usableLagCount, 0), usable_path_count: edges.length,
+    top_five_path_ids: ranked.map((edge) => edge.id) as SuppliedGraph["meta"]["path_lag_totals"]["top_five_path_ids"],
+    top_five_total_hours: Number(top) / 3_600_000_000, top_five_total_microseconds: String(top), top_five_share: total === 0n ? null : Number(top) / Number(total),
+  } } };
+}
+
 /** The name of the activity at a place of a graph below. */
 export const stepName = (index: number) => `Schritt ${String(index).padStart(2, "0")}`;
 
@@ -52,7 +77,7 @@ export function busyGraph(): SuppliedGraph {
     id: pathIdOf(source, target),
     source: activityId(source),
     target: activityId(target),
-    metrics: { count: cases + (place % 3), cases, medianLagHours: 2 * (place + 1), usableLagCount: cases + (place % 3) },
+    metrics: { count: cases + (place % 3), cases, medianLagHours: 2 * (place + 1), usableLagCount: cases + (place % 3), shareOfTotalLag: null },
     payload: { ...witnesses, source_activity: stepName(source), target_activity: stepName(target) },
   }));
   const passagesInto = (index: number) => edges.filter((edge) => edge.target === activityId(index)).reduce((sum, edge) => sum + edge.metrics.count, 0);
@@ -75,7 +100,7 @@ export function busyGraph(): SuppliedGraph {
         usableNextCount: passagesOutOf(index),
       },
     })),
-    edges,
+    ...constantLagFixture(edges),
   };
 }
 
@@ -100,7 +125,7 @@ export function crowdedGraph(): SuppliedGraph {
         id: pathIdOf(source, target),
         source: activityId(source),
         target: activityId(target),
-        metrics: { count: cases, cases, medianLagHours: 1, usableLagCount: cases },
+        metrics: { count: cases, cases, medianLagHours: 1, usableLagCount: cases, shareOfTotalLag: null },
         payload: { ...whole.edges[0].payload, source_activity: stepName(source), target_activity: stepName(target) },
       });
     }
@@ -113,7 +138,7 @@ export function crowdedGraph(): SuppliedGraph {
       label: stepName(index),
       metrics: { count: 100 - index, events: 100 - index, cases: 100 - index, starts: index === 0 ? 100 : 0, ends: index === count - 1 ? 51 : 0, medianPreviousHours: 1, usablePreviousCount: 1, medianNextHours: 1, usableNextCount: 1 },
     })),
-    edges,
+    ...constantLagFixture(edges),
   };
 }
 
