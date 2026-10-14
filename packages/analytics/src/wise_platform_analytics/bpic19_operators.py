@@ -30,6 +30,15 @@ _ISO = re.compile(
 )
 
 
+class _RecipeRefusal(ValueError):
+    """A named conflict in this operator query, separate from source preparation."""
+
+    def __init__(self, code: str, message: str, field: str):
+        super().__init__(message)
+        self.code = code
+        self.field = field
+
+
 def _stamp(value: datetime | None) -> str | None:
     return (
         None
@@ -38,12 +47,16 @@ def _stamp(value: datetime | None) -> str | None:
     )
 
 
-def _parse(text: str, kind: str) -> datetime:
+def _parse(text: str, kind: str, field: str = "query.recipe.horizon") -> datetime:
     if not isinstance(text, str) or _ISO.fullmatch(text) is None:
         raise ValueError("Horizon boundaries require ISO timestamps with seconds.")
     value = datetime.fromisoformat(text.replace("Z", "+00:00"))
     if (value.tzinfo is None) != (kind == "wall_clock"):
-        raise ValueError("Horizon boundaries must use the prepared clock kind.")
+        raise _RecipeRefusal(
+            "incompatible_clock",
+            "The operator horizon must use the frozen prepared clock kind; no naive/offset conversion was made.",
+            field,
+        )
     return value
 
 
@@ -208,11 +221,15 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
         enum("horizon_policy", {"refuse_outside", "clip"})
         enum("calendar", {"elapsed_segments", "daily_snapshots"})
         kind_clock = prepared.records[0].timestamp_kind
-        start, end = _parse(r["horizon_start"], kind_clock), _parse(
-            r["horizon_end"], kind_clock
-        )
+        start, end = _parse(
+            r["horizon_start"], kind_clock, "query.recipe.horizon_start"
+        ), _parse(r["horizon_end"], kind_clock, "query.recipe.horizon_end")
         if end <= start:
-            raise ValueError("The horizon end must be after its start.")
+            raise _RecipeRefusal(
+                "incompatible_horizon",
+                "The operator horizon end must be after its start.",
+                "query.recipe.horizon_end",
+            )
         params = prepared.policies.get("time", {}).get("parameters", {})
         cutoff_text = (
             params.get("snapshot_cutoff_local")
@@ -238,8 +255,10 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
                     "Right censoring requires the preparation's explicitly trusted snapshot cutoff."
                 )
             if end > _parse(cutoff_text, kind_clock):
-                raise ValueError(
-                    "The waiting horizon exceeds the trusted source snapshot cutoff."
+                raise _RecipeRefusal(
+                    "incompatible_horizon",
+                    "The waiting horizon exceeds the declared compatible source snapshot cutoff.",
+                    "query.recipe.horizon_end",
                 )
         if r["calendar"] == "daily_snapshots" and (end - start).days > 36600:
             raise ValueError(
@@ -1247,6 +1266,35 @@ def waiting_case(
         if known_b
         else None
     )
+    if recipe["horizon_policy"] == "refuse_outside":
+        # Required endpoints follow the selected finite reducer. An unrelated
+        # event, unselected later response or unknown possible first occurrence
+        # must not become a fictitious horizon constraint.
+        required = []
+        known_activation = anchor is not None and not any(
+            row.activity is None
+            or row.activity in recipe["activation_activities"]
+            and row.time_value is None
+            for row in records
+        )
+        if known_activation:
+            required.append(anchor)
+            if partner is not None and not any(
+                row.activity is None
+                or row.activity in recipe["response_activities"]
+                and row.time_value is None
+                for row in records
+            ):
+                required.append(partner)
+        outside = [row for row in required if row.time_value > horizon_end]
+        if outside:
+            raise _RecipeRefusal(
+                "incompatible_horizon",
+                f"Item {case_id} has required selected endpoint records beyond the declared horizon: "
+                + ", ".join(row.row_id for row in outside)
+                + ". Choose a compatible horizon or explicitly review the clip projection; no cutoff or clipping was substituted.",
+                "query.recipe.horizon_end",
+            )
     state = (
         "unknown"
         if unknown
@@ -1544,6 +1592,8 @@ def operator_population(
                 "Review a nonnegative page offset and a limit from 1 to 100."
             )
         r = None if recipe is None else checked_recipe(prepared, recipe, chosen)
+    except _RecipeRefusal as exc:
+        return ImportRefusal(exc.code, str(exc), exc.field)
     except (ValueError, SelectionError, TypeError, IndexError) as exc:
         return ImportRefusal("invalid_parameter", str(exc), "query")
     definition = {
@@ -1613,9 +1663,12 @@ def operator_population(
     total_records = 0
     if r is not None:
         for index, case_id in enumerate(ids):
-            feature = evaluate_operator_case(
-                prepared, case_id, r, chosen, definition_id
-            )
+            try:
+                feature = evaluate_operator_case(
+                    prepared, case_id, r, chosen, definition_id
+                )
+            except _RecipeRefusal as exc:
+                return ImportRefusal(exc.code, str(exc), exc.field)
             total_records += feature["record_count"]
             state_counts[feature["state"]] += 1
             groups[feature["state"]].append(case_id)

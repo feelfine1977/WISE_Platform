@@ -504,6 +504,7 @@
         },
         "horizon_policy": {
           "type": "string",
+          "description": "refuse_outside refuses the whole operator query with incompatible_horizon when a known required selected endpoint exceeds horizon_end; unselected or nonstage rows do not trigger that refusal. Intervals before horizon_start retain local exclusion. clip is an explicitly selected interval projection. Unknown endpoint selection remains unavailable rather than guessed.",
           "enum": [
             "refuse_outside",
             "clip"
@@ -1651,7 +1652,8 @@
           "const": "bpic19_operators"
         },
         "code": {
-          "type": "string"
+          "type": "string",
+          "description": "Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes."
         },
         "message": {
           "type": "string"

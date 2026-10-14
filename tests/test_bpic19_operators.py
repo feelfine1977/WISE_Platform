@@ -507,6 +507,29 @@ def test_cancellation_zero_negative_missing_time_and_equal_time_alternatives():
     )
 
 
+def test_default_hypothetical_cancellation_view_preserves_immediate_clearing_and_changes():
+    p = snapshot(
+        [
+            ("a", IR, 1),
+            ("a", IR, 2),
+            ("a", CANCEL, 3),
+            ("a", CI, 3),
+            ("a", CANCEL, 4),
+            ("a", "Change Price", 4.5),
+        ]
+    )
+    case = evaluate(p, cancellation())["cases"][0]
+    assert [obs["response_row_ids"] for obs in case["observations"]] == [["r2"], ["r1"]]
+    assert case["excluded_row_ids"] == ["r1", "r2"]
+    assert case["record_row_ids"] == ["r1", "r2", "r3", "r4", "r5", "r6"]
+    assert case["record_count"] == 6 and case["truth"] is None
+    assert "financial_breach" not in case
+    assert p.histories["a"][3].activity == CI
+    assert p.histories["a"][5].activity == "Change Price"
+    assert case["totals"]["raw_receipt_sum"]["value"] == 200
+    assert case["totals"]["retained_receipt_sum"]["value"] == 0
+
+
 def test_rule_some_every_direct_and_eventual_have_exact_raw_witnesses():
     p = snapshot([("a", "A", 0), ("a", "X", 0.5), ("a", "B", 1), ("a", "A", 2)])
     eventual = evaluate(p, rule())
@@ -674,7 +697,7 @@ def test_waiting_trusted_horizon_and_clipping_are_distinct_recipes():
                 horizon_provenance="Independent fixture cutoff",
             ),
         ).code
-        == "invalid_parameter"
+        == "incompatible_horizon"
     )
     assert (
         operator_population(p, ["a"], ROLES, waiting(completion="right_censored")).code
@@ -687,6 +710,83 @@ def test_waiting_trusted_horizon_and_clipping_are_distinct_recipes():
         operator_population(p, ["a"], {**ROLES, "event_id": True}, ordinal()).code
         == "invalid_parameter"
     )
+
+
+def test_waiting_named_clock_refusal_is_operator_only_and_does_not_convert_source():
+    p = snapshot([("a", "A", 0), ("a", "B", 2)])
+    original = p.records
+    for field in ["horizon_start", "horizon_end"]:
+        recipe = waiting(**{field: "2018-01-04T00:00:00Z"})
+        refused = operator_population(p, ["a"], ROLES, recipe)
+        assert refused.code == "incompatible_clock"
+        assert refused.field == "query.recipe." + field
+        assert "no naive/offset conversion" in refused.message
+    assert p.records == original and p.records[0].timestamp_kind == "wall_clock"
+    assert evaluate(p, waiting())["summary"]["occupancy"]["item_days"] == 2
+
+
+def test_waiting_required_endpoint_after_horizon_refuses_whole_query_or_explicit_clip():
+    p = snapshot([("a", "A", 0), ("a", "B", 8), ("b", "A", 0), ("b", "B", 1)])
+    original = p.records
+    refused = operator_population(p, ["a", "b"], ROLES, waiting())
+    assert refused.code == "incompatible_horizon"
+    assert refused.field == "query.recipe.horizon_end" and "r2" in refused.message
+    assert "Item a" in refused.message and "clip projection" in refused.message
+    assert p.records == original
+    clipped = evaluate(p, waiting(horizon_policy="clip"))
+    a = clipped["cases"][0]
+    assert a["observations"][0]["end"] == "2018-01-07T00:00:00"
+    assert a["observations"][0]["intervals"]["waiting_duration"]["value"] == 6
+    assert (
+        a["observations"][0]["intervals"]["waiting_duration"][
+            "recorded_difference_days"
+        ]
+        == 8
+    )
+    assert a["observations"][0]["response_row_ids"] == ["r2"]
+    assert clipped["summary"]["occupancy"]["item_days"] == 7
+    assert a["record_row_ids"] == ["r1", "r2"]
+    # An included, known first activation also cannot be placed after H merely
+    # because its eventual response is absent.
+    for completion in ["completed_only", "right_censored"]:
+        r = waiting(
+            completion=completion,
+            horizon_provenance=(
+                "Literal observation authority"
+                if completion == "right_censored"
+                else None
+            ),
+        )
+        refused = operator_population(snapshot([("a", "A", 8)]), ["a"], ROLES, r)
+        assert refused.code == "incompatible_horizon" and "r1" in refused.message
+
+
+def test_waiting_unselected_late_response_and_nonstage_record_do_not_trigger_horizon_refusal():
+    p = snapshot(
+        [("a", "A", 0), ("a", "B", 2), ("a", "B", 8), ("a", "Change Price", 9)]
+    )
+    case = evaluate(p, waiting())["cases"][0]
+    assert case["observations"][0]["response_row_ids"] == ["r2"]
+    assert case["observations"][0]["intervals"]["waiting_duration"]["value"] == 2
+    assert case["record_row_ids"] == ["r1", "r2", "r3", "r4"]
+    refused = operator_population(p, ["a"], ROLES, waiting(endpoints="first_last"))
+    assert refused.code == "incompatible_horizon" and "r3" in refused.message
+    p = snapshot([("a", "A", 0), ("a", "B", None), ("a", "Change Price", 9)])
+    case = evaluate(
+        p,
+        waiting(
+            completion="right_censored",
+            horizon_provenance="Literal observation authority",
+        ),
+    )["cases"][0]
+    assert case["reason"] == "unknown_response_time"
+    assert case["observations"][0]["state"] == "unknown"
+    assert case["unknown_row_ids"] == ["r2"]
+    p = snapshot([("a", "A", None), ("a", "A", 8), ("a", "B", 9)])
+    case = evaluate(p, waiting())["cases"][0]
+    assert case["reason"] == "unknown_activation_time" and case["unknown_row_ids"] == [
+        "r1"
+    ]
 
 
 def test_paging_catalogue_semantic_identity_and_authoritative_schema():

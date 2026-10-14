@@ -188,7 +188,10 @@ class WaitingRecipe(BaseModel):
     horizon_start: str
     horizon_end: str
     horizon_provenance: constr(min_length=1, max_length=1000) | None
-    horizon_policy: Literal['refuse_outside', 'clip']
+    horizon_policy: Literal['refuse_outside', 'clip'] = Field(
+        ...,
+        description='refuse_outside refuses the whole operator query with incompatible_horizon when a known required selected endpoint exceeds horizon_end; unselected or nonstage rows do not trigger that refusal. Intervals before horizon_start retain local exclusion. clip is an explicitly selected interval projection. Unknown endpoint selection remains unavailable rather than guessed.',
+    )
     calendar: Literal['elapsed_segments', 'daily_snapshots']
 
 
@@ -481,7 +484,10 @@ class Bpic19OperatorRefusal(BaseModel):
     query_revision: QueryRevision | None
     workspace_id: WorkspaceId | None
     operation: Literal['bpic19_operators']
-    code: str
+    code: str = Field(
+        ...,
+        description='Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes.',
+    )
     message: str
     field: str | None
     retryable: bool

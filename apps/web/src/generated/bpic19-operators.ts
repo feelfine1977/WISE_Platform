@@ -122,6 +122,9 @@ export interface WaitingRecipe {
   horizon_start: string;
   horizon_end: string;
   horizon_provenance: string | null;
+  /**
+   * refuse_outside refuses the whole operator query with incompatible_horizon when a known required selected endpoint exceeds horizon_end; unselected or nonstage rows do not trigger that refusal. Intervals before horizon_start retain local exclusion. clip is an explicitly selected interval projection. Unknown endpoint selection remains unavailable rather than guessed.
+   */
   horizon_policy: "refuse_outside" | "clip";
   calendar: "elapsed_segments" | "daily_snapshots";
 }
@@ -303,6 +306,9 @@ export interface Bpic19OperatorRefusal {
   query_revision: QueryRevision | null;
   workspace_id: WorkspaceId | null;
   operation: "bpic19_operators";
+  /**
+   * Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes.
+   */
   code: string;
   message: string;
   field: string | null;

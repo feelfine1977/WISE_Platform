@@ -95,6 +95,33 @@ describe("visible finite recorded-event operators", () => {
     expect(screen.getByRole("combobox", { name: "Episode stage sequence" })).toHaveProperty("value", "auto_flow");
     expect(screen.getByRole("combobox", { name: "FIFO parsed-time eligibility" })).toHaveProperty("value", "strict_time");
   });
+  it("labels cancellation exclusions hypothetical and inspects the complete original history", async () => {
+    const { user, props, client } = setup();
+    await waitFor(() => expect(vi.mocked(client.operators)).toHaveBeenCalledTimes(1));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Recorded-event operator" }), "cancellation");
+    expect(screen.getByText(/Receipt exclusion is a hypothetical analytical view/)).toBeTruthy();
+    expect(screen.getByText(/every clearing record is retained/)).toBeTruthy();
+    await run(user);
+    await user.click(screen.getByText(/Item b · evaluated · 5 original records/));
+    expect(screen.getByText(/Hypothetically excluded receipt targets:/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Inspect complete item b" }));
+    const answer = operatorAnswer(vi.mocked(client.operators).mock.calls.at(-1)![0]);
+    expect(props.onInspect).toHaveBeenLastCalledWith("b", answer.cases.find(value => value.case_id === "b")!.record_row_ids);
+  });
+  it.each(["incompatible_clock", "incompatible_horizon"])("shows named %s operator refusal without publishing a current answer", async code => {
+    const client: Bpic19OperatorClient = { operators: vi.fn(async (request): Promise<Bpic19OperatorOutcome> => request.query.recipe === null ? answering(request) : { ok: false, problem: { kind: "refusal", refusal: {
+      schema_version: 1, message_type: "bpic19_operator_refusal", request_id: request.request_id, query_revision: request.query_revision, workspace_id: request.workspace_id,
+      operation: "bpic19_operators", code, message: "Review the declared operator horizon; no conversion or clipping was substituted.", field: "query.recipe.horizon_end", retryable: false,
+    } } }) };
+    const { user, props } = setup(client);
+    await waitFor(() => expect(vi.mocked(client.operators)).toHaveBeenCalledTimes(1));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Recorded-event operator" }), "waiting");
+    await user.click(screen.getByRole("button", { name: "Review and run operator" }));
+    expect((await screen.findByRole("alert")).textContent).toContain(code);
+    expect(props.onReviewed).not.toHaveBeenCalled();
+    expect(props.onValidityChange).toHaveBeenLastCalledWith(false);
+    expect(screen.queryByRole("button", { name: "Download reviewed operator receipt" })).toBeNull();
+  });
   it("accepts a reviewed-query feedback without duplicate replay, then auto-replays a fresh saved revision", async () => {
     const { user, props, client, rerender } = setup();await run(user);
     const reviewed = props.onReviewed.mock.calls[0][0];

@@ -230,6 +230,157 @@ b,Change Price,2018-01-01T00:00:00,,"3-way match, invoice after GR",100
         assert "reviewed event_id column" in refused.json()["message"]
 
 
+def test_default_cancellation_keeps_immediately_following_clearing_and_full_raw_evidence(
+    tmp_path,
+):
+    raw = b"""case,activity,time,eventID,category,value
+a,Record Invoice Receipt,2018-01-02T00:00:00,1,2-way match,100
+a,Record Invoice Receipt,2018-01-03T00:00:00,2,2-way match,100
+a,Cancel Invoice Receipt,2018-01-04T00:00:00,3,2-way match,100
+a,Clear Invoice,2018-01-04T00:00:00,4,2-way match,100
+a,Cancel Invoice Receipt,2018-01-05T00:00:00,5,2-way match,100
+a,Change Price,2018-01-05T12:00:00,6,2-way match,100
+"""
+    workspace = tmp_path / "hypothetical-cancellation"
+    workspace.mkdir()
+    rows = original_ids(raw, 6)
+    with TestClient(create_app()) as client:
+        wid, identity = prepare(client, workspace, raw)
+        response = client.post(ROUTE, json=request(wid, identity, CANCELLATION))
+        assert response.status_code == 200, response.text
+        answer = response.json()
+        VALIDATOR.validate(answer)
+        case = answer["cases"][0]
+        assert case["record_row_ids"] == [rows[n] for n in range(1, 7)]
+        assert case["excluded_row_ids"] == [rows[1], rows[2]]
+        assert [o["response_row_ids"] for o in case["observations"]] == [
+            [rows[2]],
+            [rows[1]],
+        ]
+        assert case["truth"] is None and "financial_breach" not in case
+        assert (
+            answer["population_case_count"] == 1
+            and answer["population_record_count"] == 6
+        )
+        assert answer["definition"]["recipe"]["max_window_days"] is None
+        evidence = client.post(
+            "/api/investigations/case-evidence",
+            json=envelope(
+                "imported_case_evidence_request",
+                workspace_id=wid,
+                identity=identity,
+                case_id="a",
+            ),
+        )
+        assert evidence.status_code == 200, evidence.text
+        records = evidence.json()["records"]
+        assert len(records) == 6
+        assert (
+            records[3]["row_id"] == rows[4]
+            and records[3]["activity"] == "Clear Invoice"
+        )
+        assert records[5]["activity"] == "Change Price"
+        assert [r["original_cells"][1] for r in records] == [
+            "Record Invoice Receipt",
+            "Record Invoice Receipt",
+            "Cancel Invoice Receipt",
+            "Clear Invoice",
+            "Cancel Invoice Receipt",
+            "Change Price",
+        ]
+
+
+def test_named_waiting_clock_horizon_and_explicit_clip_through_registered_http(
+    tmp_path,
+):
+    raw = b"""case,activity,time,eventID,category,value
+a,A,2018-01-01T00:00:00,1,2-way match,0
+a,B,2018-01-09T00:00:00,2,2-way match,0
+a,Change Price,2018-01-10T00:00:00,3,2-way match,0
+b,A,2018-01-01T00:00:00,4,2-way match,0
+b,B,2018-01-03T00:00:00,5,2-way match,0
+b,B,2018-01-09T00:00:00,6,2-way match,0
+b,Change Price,2018-01-10T00:00:00,7,2-way match,0
+c,A,2018-01-01T00:00:00,8,2-way match,0
+c,B,bad-time,9,2-way match,0
+c,Change Price,2018-01-10T00:00:00,10,2-way match,0
+"""
+    workspace = tmp_path / "strict-waiting"
+    workspace.mkdir()
+    rows = original_ids(raw, 10)
+    with TestClient(create_app()) as client:
+        wid, identity = prepare(client, workspace, raw)
+        for field in ["horizon_start", "horizon_end"]:
+            response = client.post(
+                ROUTE,
+                json=request(wid, identity, {**WAITING, field: "2018-01-04T00:00:00Z"}),
+            )
+            assert response.status_code == 409, response.text
+            assert response.json()["code"] == "incompatible_clock"
+            assert response.json()["field"] == "query.recipe." + field
+            VALIDATOR.validate(response.json())
+        response = client.post(ROUTE, json=request(wid, identity, WAITING))
+        assert response.status_code == 409, response.text
+        assert response.json()["code"] == "incompatible_horizon"
+        assert (
+            response.json()["field"] == "query.recipe.horizon_end"
+            and rows[2] in response.json()["message"]
+        )
+        VALIDATOR.validate(response.json())
+        clipped = client.post(
+            ROUTE, json=request(wid, identity, {**WAITING, "horizon_policy": "clip"})
+        )
+        assert clipped.status_code == 200, clipped.text
+        answer = clipped.json()
+        VALIDATOR.validate(answer)
+        a, b, c = answer["cases"]
+        assert a["observations"][0]["intervals"]["waiting_duration"]["value"] == 6
+        assert (
+            a["observations"][0]["intervals"]["waiting_duration"][
+                "recorded_difference_days"
+            ]
+            == 8
+        )
+        assert a["observations"][0]["response_row_ids"] == [rows[2]]
+        assert b["observations"][0]["response_row_ids"] == [rows[5]]
+        assert c["reason"] == "unknown_response_time" and c["unknown_row_ids"] == [
+            rows[9]
+        ]
+        assert answer["summary"]["occupancy"]["item_days"] == 8
+        selected = client.post(
+            "/api/investigations/select-cases",
+            json=envelope(
+                "select_cases_request",
+                workspace_id=wid,
+                identity=identity,
+                parent_case_ids=None,
+                predicates=[{"kind": "case_id_in", "case_ids": ["b"], "negate": False}],
+            ),
+        )
+        assert selected.status_code == 200, selected.text
+        child = client.post(
+            ROUTE, json=request(wid, selected.json()["identity"], WAITING)
+        )
+        assert child.status_code == 200, child.text
+        VALIDATOR.validate(child.json())
+        assert child.json()["cases"][0]["record_row_ids"] == [
+            rows[n] for n in range(4, 8)
+        ]
+        assert child.json()["summary"]["occupancy"]["item_days"] == 2
+        # Selecting the last response makes the previously unselected late row
+        # a required endpoint; no raw-row deletion or cutoff substitution occurs.
+        last = client.post(
+            ROUTE,
+            json=request(
+                wid, selected.json()["identity"], {**WAITING, "endpoints": "first_last"}
+            ),
+        )
+        assert (
+            last.status_code == 409 and last.json()["code"] == "incompatible_horizon"
+        ), last.text
+        assert rows[6] in last.json()["message"]
+
+
 def test_five_real_http_operators_witnesses_and_frozen_paging(tmp_path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -390,8 +541,8 @@ def test_strict_contracts_missing_cutoff_and_foreign_populations(tmp_path):
         bad = request(wid, identity, {**WAITING, "horizon_end": "2018-02-01T00:00:00"})
         response = client.post(ROUTE, json=bad)
         assert (
-            response.status_code == 400
-            and response.json()["code"] == "invalid_parameter"
+            response.status_code == 409
+            and response.json()["code"] == "incompatible_horizon"
         )
         response = client.post(
             ROUTE,
