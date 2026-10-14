@@ -86,11 +86,17 @@ describe("the data row of an investigation", () => {
 
   it("writes large numbers as the rest of the application does", async () => {
     const app = await renderInvestigation();
-    await select(app, 0, everyIncident, (answer) => ({
-      ...answer,
-      parent: { ...answer.parent, case_count: 12063, record_count: 74077 },
-      kept: { ...answer.kept, case_count: 803, record_count: 4398 },
-    }));
+    app.coordinator.addStep(contains(opened));
+    // A formatting actor, with its supplied active-prefix support matching its displayed total.
+    await select(app, 1, containingOpened, (answer) => {
+      const kept = { ...answer.kept, case_count: 803, record_count: 4398 };
+      return {
+        ...answer,
+        parent: { ...answer.parent, case_count: 12063, record_count: 74077 },
+        kept,
+        step_results: answer.step_results.map((step) => ({ ...step, kept })),
+      };
+    });
     expect(figures().slice(0, 2)).toEqual(["803 of 12,063 incidents", "4,398 of 74,077 records"]);
     expect(Array.from(population().querySelectorAll("strong"), (kept) => kept.textContent)).toEqual(["803", "4,398"]);
   });

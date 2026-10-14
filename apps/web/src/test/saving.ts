@@ -133,6 +133,8 @@ export function reopenAnswer(request: ReopenInvestigationRequest, view: "inciden
       removed: support(["B-2"], 1),
       unevaluable: none,
       predicate_results: [{ predicate: contains(opened), kept: support(["A-1"], 2), removed: support(["B-2"], 1), unevaluable: none }],
+      active_step_count: 1,
+      step_results: [{ step_number: 1, predicate: contains(opened), kept: support(["A-1"], 2), removed: support(["B-2"], 1), unevaluable: none }],
     },
     restored_comparison_id: savedComparison.comparison_id,
     recovery: {

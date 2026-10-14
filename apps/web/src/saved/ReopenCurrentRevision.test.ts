@@ -37,8 +37,8 @@ it.each(["stay", "retry"] as const)("retains an unsaved score on same-bound fail
  const requested=saving.reopen(savedSummary,workspaceId);
  const call=saved.reopens[0];const answer=reopenAnswer(call.request);
  answer.revision.content=sameContent;
- const {identity: keptIdentity,parent_identity,parent,kept,removed,unevaluable,predicate_results}=selected.shown.answer;
- answer.restored_selection={identity:keptIdentity,parent_identity,parent,kept,removed,unevaluable,predicate_results};
+ const {identity: keptIdentity,parent_identity,parent,kept,removed,unevaluable,predicate_results,active_step_count,step_results}=selected.shown.answer;
+ answer.restored_selection={identity:keptIdentity,parent_identity,parent,kept,removed,unevaluable,predicate_results,active_step_count,step_results};
  answer.restored_comparison_id=null;
  expect(savingContract.reopenAnswer(answer)).toBe(true);
  call.reply({ok:true,answer});await requested;await tick();

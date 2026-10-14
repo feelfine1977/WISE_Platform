@@ -238,6 +238,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onClear={() => coordinator.clearSteps()}
             onUndo={() => coordinator.undo()}
             onRedo={() => coordinator.redo()}
+            onChoose={(count) => coordinator.chooseStep(count)}
             onRetry={() => coordinator.retrySelection()}
             onStay={() => coordinator.staySelection()}
             waitingFor={waitingFor}

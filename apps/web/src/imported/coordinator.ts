@@ -20,7 +20,7 @@ import type {
 } from "../generated/selection";
 import type { SavedInvestigationContent } from "../generated/saving";
 import type { SelectionClient, SelectionOutcome, SelectionProblem } from "../map/client";
-import { noSteps, redone, type StepHistory, type Steps, undone, withoutStep, withoutSteps, withStep } from "../map/steps";
+import { afterStep, noSteps, redone, stepTrail, type StepHistory, type Steps, undone, withoutStep, withoutSteps, withStep } from "../map/steps";
 import { AwaitedRequest, type Replacement } from "../replacement/replacement";
 import { httpPopulationViewClient, type PopulationViewClient, type ViewOutcome, type ViewProblem } from "../views/client";
 import type { OpeningContextAnswer, OpeningContextRequest, VariantId, VariantsAnswer, VariantsRequest } from "../views/messages";
@@ -345,6 +345,11 @@ export class ImportedInvestigationCoordinator {
     this.changeSteps(redone);
   }
 
+  /** Shows an answered ordered prefix, retaining its later steps as session redo state. */
+  chooseStep(count: number): void {
+    if (this.state.selection.phase === "ready") this.changeSteps((history) => afterStep(history, count));
+  }
+
   /** Gives up steps that could not be selected: the selection shown stays, with the steps and undo it was answered under. */
   staySelection(): void {
     const selection = this.state.selection;
@@ -409,7 +414,8 @@ export class ImportedInvestigationCoordinator {
       workspace_id: population.answer.workspace_id,
       identity: population.answer.identity,
       parent_case_ids: this.state.parentCaseIds === null ? null : [...this.state.parentCaseIds],
-      predicates: [...history.present],
+      predicates: [...stepTrail(history)],
+      active_step_count: history.present.length,
     };
     this.publish({ ...this.state, selection: { phase: "loading", revision, history, shown: shownSelection(this.state.selection) } });
     const controller = new AbortController();
@@ -763,6 +769,17 @@ function checkSelection(
   }
   if (!sameJson(answer.predicate_results.map((result) => result.predicate), request.predicates)) {
     return mismatch("The reply answers different steps.");
+  }
+  const active = request.active_step_count ?? request.predicates.length;
+  if (answer.active_step_count !== active || !Array.isArray(answer.step_results) || answer.step_results.length !== request.predicates.length ||
+      answer.step_results.some((result, index) => result.step_number !== index + 1 || !sameJson(result.predicate, request.predicates[index]))) {
+    return mismatch("The reply answers a different ordered trail or active prefix.");
+  }
+  const partition = active === 0
+    ? { kept: answer.parent, removed: { case_ids: [], case_count: 0, record_count: 0 }, unevaluable: { case_ids: [], case_count: 0, record_count: 0 } }
+    : answer.step_results[active - 1];
+  if (!sameJson(answer.kept, partition.kept) || !sameJson(answer.removed, partition.removed) || !sameJson(answer.unevaluable, partition.unevaluable)) {
+    return mismatch("The selection does not match the supplied active-prefix partition.");
   }
   if (!sameParent(answer.parent.case_ids, request.parent_case_ids, population.population.case_ids)) {
     return mismatch("The reply selects from a different population.");

@@ -16,6 +16,24 @@ export interface StepHistory {
 
 export const noSteps: StepHistory = { past: [], present: [], future: [] };
 
+/** The full ordered trail: later prefix states stay available while an earlier one is shown. */
+export function stepTrail(history: StepHistory): Steps {
+  return history.future.reduce((trail, candidate) =>
+    candidate.length > trail.length && history.present.every((step, index) => sameJson(step, candidate[index])) ? candidate : trail,
+  history.present);
+}
+
+/** Selects a prefix immediately; later prefixes remain redoable until a new step changes the trail. */
+export function afterStep(history: StepHistory, count: number): StepHistory {
+  const trail = stepTrail(history);
+  if (!Number.isInteger(count) || count < 0 || count > trail.length || count === history.present.length) return history;
+  return {
+    past: Array.from({ length: count }, (_, index) => trail.slice(0, index)),
+    present: trail.slice(0, count),
+    future: Array.from({ length: trail.length - count }, (_, index) => trail.slice(0, count + index + 1)),
+  };
+}
+
 function changedTo(history: StepHistory, present: Steps): StepHistory {
   return { past: [...history.past, history.present], present, future: [] };
 }

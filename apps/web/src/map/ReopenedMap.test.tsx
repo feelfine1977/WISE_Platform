@@ -142,6 +142,8 @@ async function restored(parentIds: string[], hasStep: boolean) {
         identity: request.predicates.length ? selectedIdentity : parentIdentity,
         parent_identity: parentIdentity, parent: support(parentIds, records(parentIds)), ...result,
         predicate_results: request.predicates.map((predicate) => ({ predicate, ...result })),
+        active_step_count: request.active_step_count ?? request.predicates.length,
+        step_results: request.predicates.map((predicate, index) => ({ predicate, ...result, step_number: index + 1 })),
       };
       expect(selectionContract.selectionAnswer(answer)).toBe(true);
       return { ok: true, answer };

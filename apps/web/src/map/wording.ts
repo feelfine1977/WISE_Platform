@@ -236,3 +236,10 @@ export function describeSelectionProblem(problem: SelectionProblem): SelectionPr
       return { message: "The local service sent a reply this screen cannot use.", remedy: problem.detail };
   }
 }
+
+/** A short trail label; full operational wording remains in the chip’s accessible disclosure. */
+export function shortStepWording(step: SelectionPredicate): string {
+  if (step.kind === "case_id_in") return `${step.negate ? "Exclude" : "Keep"} ${countOf(step.case_ids.length, "incident number")}`;
+  const wording = stepWording(step).replace(/^Keep incidents /, "");
+  return wording.length > 64 ? `${wording.slice(0, 61)}…` : wording;
+}

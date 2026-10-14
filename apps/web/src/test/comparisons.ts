@@ -76,6 +76,8 @@ export function comparedSelection(request: SelectCasesRequest): SelectionAnswer 
     removed,
     unevaluable: none,
     predicate_results: request.predicates.map((predicate) => ({ predicate, kept, removed, unevaluable: none })),
+    active_step_count: request.active_step_count ?? request.predicates.length,
+    step_results: (request.predicates.map((predicate) => ({ predicate, kept, removed, unevaluable: none }))).map((result, index) => ({ ...result, step_number: index + 1 })),
   };
 }
 

@@ -57,6 +57,8 @@ export interface Figures {
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
   results: Omit<PredicateResult, "predicate">[];
+  /** Literal cumulative supports where this actor is asked for a full trail. */
+  prefixes?: Omit<PredicateResult, "predicate">[];
 }
 
 /** The parent of every selection here: both incidents with their three records. */
@@ -64,6 +66,12 @@ export const parent = support(["A-1", "B-2"], 3);
 export const parentPopulation = `population.v1:sha256:${hex("f")}`;
 
 export function selectionAnswer(request: SelectCasesRequest, figures: Figures): SelectionAnswer {
+  const active = request.active_step_count ?? request.predicates.length;
+  const independent = request.predicates.map((predicate, index) => {
+    const known = predicate.kind === "contains_activity" && predicate.activity === opened ? (predicate.negate ? withoutOpened : containingOpened)
+      : predicate.kind === "directly_follows" ? followingOpened : everyIncident;
+    return { predicate, ...(figures.results[index] ?? known.results[0] ?? { kept: parent, removed: support([], 0), unevaluable: support([], 0) }) };
+  });
   return {
     schema_version: 1,
     message_type: "selection_answer",
@@ -76,7 +84,9 @@ export function selectionAnswer(request: SelectCasesRequest, figures: Figures): 
     kept: figures.kept,
     removed: figures.removed,
     unevaluable: figures.unevaluable,
-    predicate_results: request.predicates.map((predicate, index) => ({ predicate, ...figures.results[index] })),
+    predicate_results: independent,
+    active_step_count: active,
+    step_results: independent.map((result, index) => ({ ...result, ...(figures.prefixes?.[index] ?? (index === active - 1 ? {kept: figures.kept, removed: figures.removed, unevaluable: figures.unevaluable} : {})), step_number: index + 1 })),
   };
 }
 
