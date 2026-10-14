@@ -244,15 +244,6 @@ class MixedFlowDocumentExample(BaseModel):
     case_ids: list[CaseId]
 
 
-class Grain(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    mixed_flow_document_count: conint(ge=0, le=9007199254740991)
-    mixed_flow_document_examples: list[MixedFlowDocumentExample]
-    identity_issues: list[Bpic19StateSupport]
-
-
 class Bpic19ProfileRefusal(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -310,17 +301,6 @@ class Bpic19SourceDiscrepancy(BaseModel):
     reference: constr(min_length=1, max_length=2000)
     reported_total: conint(ge=0, le=9007199254740991)
     reported_subtotal: conint(ge=0, le=9007199254740991)
-
-
-class Bpic19SourceInterpretation(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    profile_name: constr(min_length=1, max_length=256)
-    policy_id: Literal['bpic19.raw_source_interpretation.v1']
-    inclusion: Bpic19SourceInclusion
-    horizon: Bpic19SourceHorizon
-    discrepancies: list[Bpic19SourceDiscrepancy] = Field(..., max_length=20)
 
 
 class Bpic19SourceSupport(BaseModel):
@@ -394,6 +374,140 @@ class Discrepancy(BaseModel):
     measured_parent_case_count: conint(ge=0, le=9007199254740991)
 
 
+class Bpic19AttributeViewQuery(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    column_index: conint(ge=0, le=9007199254740991)
+    offset: conint(ge=0, le=9007199254740991)
+    limit: conint(ge=1, le=100)
+    select_value: bool
+    value: str | None
+
+
+class Bpic19AttributeSelection(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    column_index: conint(ge=0, le=9007199254740991)
+    value: str | None
+    policy_id: Literal['bpic19.any_original_record_exact_value.v1']
+
+
+class Witness1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_id: CaseId
+    row_ids: list[str]
+
+
+class Bpic19AttributeValueSelection(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_ids: list[CaseId]
+    case_count: conint(ge=0, le=9007199254740991)
+    record_count: conint(ge=0, le=9007199254740991)
+    document_count: conint(ge=0, le=9007199254740991)
+    share: confloat(ge=0.0, le=1.0) | None
+    example_case_ids: list[CaseId]
+    value: str | None
+    witnesses: list[Witness1]
+    omitted_witness_case_count: conint(ge=0, le=9007199254740991)
+
+
+class Bpic19AttributeView(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    column_index: conint(ge=0, le=9007199254740991)
+    column_name: str
+    policy_id: Literal['bpic19.any_original_record_exact_value.v1']
+    offset: conint(ge=0, le=9007199254740991)
+    limit: conint(ge=0, le=9007199254740991)
+    total_value_count: conint(ge=0, le=9007199254740991)
+    distinct_nonmissing_value_count: conint(ge=0, le=9007199254740991)
+    next_offset: conint(ge=0, le=9007199254740991) | None
+    values: list[Bpic19AttributeValue]
+    selection: Bpic19AttributeValueSelection | None
+
+
+class Bpic19ItemTypeTotal(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_ids: list[CaseId]
+    case_count: conint(ge=0, le=9007199254740991)
+    record_count: conint(ge=0, le=9007199254740991)
+    document_count: conint(ge=0, le=9007199254740991)
+    share: confloat(ge=0.0, le=1.0) | None
+    example_case_ids: list[CaseId]
+    item_type_value: str
+
+
+class Bpic19ReportedPopulation(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    label: constr(min_length=1, max_length=256)
+    count: conint(ge=0, le=9007199254740991)
+    grain: Literal['po_item', 'purchasing_document', 'original_record']
+    reference: constr(min_length=1, max_length=1024)
+    denominator: constr(min_length=1, max_length=512)
+    parent_label: constr(min_length=1, max_length=256) | None
+
+
+class Bpic19ReportedPopulationClaim(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    label: constr(min_length=1, max_length=256)
+    count: conint(ge=0, le=9007199254740991)
+    grain: Literal['po_item', 'purchasing_document', 'original_record']
+    reference: constr(min_length=1, max_length=1024)
+    denominator: constr(min_length=1, max_length=512)
+    parent_label: constr(min_length=1, max_length=256) | None
+    claim_status: Literal['reported_source_claim']
+
+
+class AnswerIdentity(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    source_id: SourceId
+    preparation_id: PreparationId
+    representation_id: RepresentationId
+    case_dictionary_id: CaseDictionaryId
+    population_id: PopulationId
+    implementation_version: ImplementationVersion
+
+
+class Grain(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    mixed_flow_document_count: conint(ge=0, le=9007199254740991)
+    mixed_flow_document_examples: list[MixedFlowDocumentExample]
+    identity_issues: list[Bpic19StateSupport]
+    outside_parent_siblings: Bpic19SourceSupport | None = None
+    possible_sibling_conflict_case_ids: list[CaseId] | None = None
+
+
+class Bpic19SourceInterpretation(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    profile_name: constr(min_length=1, max_length=256)
+    policy_id: Literal['bpic19.raw_source_interpretation.v1']
+    inclusion: Bpic19SourceInclusion
+    horizon: Bpic19SourceHorizon
+    discrepancies: list[Bpic19SourceDiscrepancy] = Field(..., max_length=20)
+    reported_populations: list[Bpic19ReportedPopulation] | None = Field(
+        None, max_length=20
+    )
+
+
 class Bpic19SourceReview(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -420,18 +534,7 @@ class Bpic19SourceReview(BaseModel):
     omitted_inclusion_evidence_count: conint(ge=0, le=9007199254740991)
     anomalies: list[Anomaly]
     discrepancies: list[Discrepancy]
-
-
-class AnswerIdentity(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    source_id: SourceId
-    preparation_id: PreparationId
-    representation_id: RepresentationId
-    case_dictionary_id: CaseDictionaryId
-    population_id: PopulationId
-    implementation_version: ImplementationVersion
+    reported_populations: list[Bpic19ReportedPopulationClaim] | None = None
 
 
 class Bpic19ProfileQuery(BaseModel):
@@ -442,6 +545,9 @@ class Bpic19ProfileQuery(BaseModel):
     profile_columns: list[conint(ge=0, le=9007199254740991)] | None
     policy_id: Literal['bpic19.all_raw_case_attributes.v1']
     source_interpretation: Bpic19SourceInterpretation | None = None
+    attribute_view: Bpic19AttributeViewQuery | None = None
+    include_zero_cells: bool | None = None
+    include_document_siblings: bool | None = None
 
 
 class Bpic19Definition(BaseModel):
@@ -456,6 +562,7 @@ class Bpic19Definition(BaseModel):
     flag_policy: Literal['bpic19.category_flags_and_consignment_type.v1']
     grain_policy: Literal['bpic19.document_item_underscore.v1']
     source_interpretation: Bpic19SourceInterpretation | None = None
+    attribute_selection: Bpic19AttributeSelection | None = None
 
 
 class Bpic19Profile(BaseModel):
@@ -473,6 +580,8 @@ class Bpic19Profile(BaseModel):
     attributes: list[Bpic19Attribute]
     flow_item_types: list[Bpic19TypeCell]
     source_review: Bpic19SourceReview | None = None
+    attribute_view: Bpic19AttributeView | None = None
+    item_type_totals: list[Bpic19ItemTypeTotal] | None = None
 
 
 class Bpic19ProfileRequest(BaseModel):

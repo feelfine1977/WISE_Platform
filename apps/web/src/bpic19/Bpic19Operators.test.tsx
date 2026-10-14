@@ -6,8 +6,8 @@ import type { Bpic19OperatorRequest, OperatorQuery } from "../generated/bpic19-o
 import type { Bpic19OperatorClient, Bpic19OperatorOutcome } from "./operators-client";
 import { operatorAnswer, operatorColumns, operatorIdentity, operatorRecipe, operatorRoles } from "./operators-test-fixture";
 const answering = (request: Bpic19OperatorRequest): Bpic19OperatorOutcome => ({ ok: true, answer: operatorAnswer(request) });
-function setup(client: Bpic19OperatorClient = { operators: vi.fn(async request => answering(request)) }, query?: OperatorQuery) {
-  const props = { workspaceId: "workspace.v1:literal-fixture", identity: operatorIdentity, revision: 2, roles: operatorRoles, columns: operatorColumns, query, client, onInspect: vi.fn(), onKeepCases: vi.fn(), onReviewed: vi.fn(), onValidityChange: vi.fn() };
+function setup(client: Bpic19OperatorClient = { operators: vi.fn(async request => answering(request)) }, query?: OperatorQuery, retainedQueries?: OperatorQuery[]) {
+  const props = { workspaceId: "workspace.v1:literal-fixture", identity: operatorIdentity, revision: 2, roles: operatorRoles, columns: operatorColumns, query, retainedQueries, client, onInspect: vi.fn(), onKeepCases: vi.fn(), onReviewed: vi.fn(), onRetain: vi.fn(), onValidityChange: vi.fn() };
   return { ...render(<Bpic19Operators {...props} />), props, client, user: userEvent.setup() };
 }
 async function run(user: ReturnType<typeof userEvent.setup>) { await waitFor(() => expect(screen.getByRole("button", { name: "Review and run operator" }).hasAttribute("disabled")).toBe(false));await user.click(screen.getByRole("button", { name: "Review and run operator" }));await screen.findByRole("table", { name: "Complete-item cohorts · observation groups can overlap" }); }
@@ -107,5 +107,59 @@ describe("visible finite recorded-event operators", () => {
     const input = screen.getByRole("textbox", { name: /Left activity labels/ });await user.clear(input);await user.type(input,"A{enter}A");
     expect(screen.getByRole("button", { name: "Review and run operator" }).hasAttribute("disabled")).toBe(true);
     expect(props.onValidityChange).toHaveBeenLastCalledWith(false);
+  });
+});
+
+function retainedQuery(kind: "ordinal" | "fifo"): OperatorQuery { return { policy_id: "bpic19.declared_operators.v1", roles: operatorRoles, recipe: operatorRecipe(kind), offset: 0, limit: 20 }; }
+
+describe("explicit retained operator restoration and comparison", () => {
+  it("selects an exact saved nondefault recipe and retains only on explicit request", async () => {
+    const original = retainedQuery("ordinal");
+    if (original.recipe?.kind !== "ordinal") throw new Error("Literal ordinal recipe missing");
+    const saved: OperatorQuery = { ...original, recipe: { ...original.recipe, order: "timestamp_source_position", stages: "ir_ci", cancellation: "exclude_item" } };
+    const { user, client, props } = setup(undefined, undefined, [saved]);
+    await waitFor(() => expect(vi.mocked(client.operators)).toHaveBeenCalledTimes(1));
+    const selector = screen.getByRole("combobox", { name: "Retained reviewed operator definition" });
+    await user.selectOptions(selector, within(selector).getAllByRole("option")[1].getAttribute("value")!);
+    await waitFor(() => expect(props.onReviewed).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(client.operators).mock.calls[1][0].query).toEqual(saved);
+    expect(screen.getByRole("combobox", { name: "Ordinal ordering" })).toHaveProperty("value", "timestamp_source_position");
+    expect(screen.getByRole("combobox", { name: "Episode stage sequence" })).toHaveProperty("value", "ir_ci");
+    expect(props.onRetain).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Retain reviewed result for comparison and saving" }));
+    expect(props.onRetain).toHaveBeenCalledTimes(1);expect(props.onRetain.mock.calls[0][0].query).toEqual(saved);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Recorded-event operator" }), "fifo");
+    expect(props.onRetain).toHaveBeenCalledTimes(1);
+  });
+  it("reads both verified retained recipes, shows supplied whole-population counts and opens original evidence", async () => {
+    const { user, props, client } = setup(undefined, undefined, [retainedQuery("ordinal"), retainedQuery("fifo")]);
+    await waitFor(() => expect(vi.mocked(client.operators)).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByText("Compare explicitly retained ordinal and FIFO definitions"));
+    for (const label of ["Retained ordinal definition", "Retained FIFO definition"]) {
+      const control = screen.getByRole("combobox", { name: label });await user.selectOptions(control, within(control).getAllByRole("option")[1].getAttribute("value")!);
+    }
+    await user.click(screen.getByRole("button", { name: "Read retained ordinal/FIFO comparison" }));
+    const left = await screen.findByRole("table", { name: "bpic19_ordinal whole-population known matching counts" });
+    const right = screen.getByRole("table", { name: "bpic19_fifo whole-population known matching counts" });
+    expect(within(left).getByRole("row", { name: /paired episode count/ }).textContent).toContain("inferred episodes1");
+    expect(within(right).getByRole("row", { name: /paired endpoint event count/ }).textContent).toContain("original events3");
+    expect(vi.mocked(client.operators).mock.calls.slice(1).map(([request]) => request.query.recipe?.kind)).toEqual(["ordinal","fifo"]);
+    expect(props.onReviewed).not.toHaveBeenCalled();expect(props.onRetain).not.toHaveBeenCalled();
+    const article = screen.getByRole("heading", { name: "Retained ordinal result" }).closest("article");if (!article) throw new Error("Ordinal comparison article missing");
+    await user.click(within(article).getByText("Item a · evaluated · 4 original records"));await user.click(within(article).getByRole("button", { name: "Inspect complete item a" }));
+    expect(props.onInspect).toHaveBeenLastCalledWith("a", operatorAnswer(vi.mocked(client.operators).mock.calls[1][0]).cases[0].record_row_ids);
+  });
+  it("publishes no partial pair and fences a cancelled/delayed comparison", async () => {
+    let release: ((outcome: Bpic19OperatorOutcome) => void) | undefined;
+    const client: Bpic19OperatorClient = { operators: vi.fn((request): Promise<Bpic19OperatorOutcome> => request.request_id.startsWith("bpic19-compare") && request.query.recipe?.kind === "fifo" ? new Promise(resolve => { release = resolve; }) : Promise.resolve(answering(request))) };
+    const { user, props } = setup(client, undefined, [retainedQuery("ordinal"), retainedQuery("fifo")]);
+    await waitFor(() => expect(vi.mocked(client.operators)).toHaveBeenCalledTimes(1));await user.click(screen.getByText("Compare explicitly retained ordinal and FIFO definitions"));
+    for (const label of ["Retained ordinal definition", "Retained FIFO definition"]) {
+      const control = screen.getByRole("combobox", { name: label });await user.selectOptions(control, within(control).getAllByRole("option")[1].getAttribute("value")!);
+    }
+    await user.click(screen.getByRole("button", { name: "Read retained ordinal/FIFO comparison" }));expect(screen.queryByRole("heading", { name: "Retained ordinal result" })).toBeNull();
+    const pending = vi.mocked(client.operators).mock.calls[2];await user.click(screen.getByRole("button", { name: "Cancel comparison request" }));expect(pending[1].aborted).toBe(true);
+    await act(async () => release?.(answering(pending[0])));expect(screen.queryByRole("heading", { name: "Retained FIFO result" })).toBeNull();
+    expect(props.onReviewed).not.toHaveBeenCalled();expect(props.onRetain).not.toHaveBeenCalled();
   });
 });

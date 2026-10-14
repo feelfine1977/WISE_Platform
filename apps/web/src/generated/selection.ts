@@ -31,13 +31,14 @@ export type SelectionPredicate =
   | OpeningAttributeIn
   | RecordAttributeIn
   | ObservedSpanAtLeast
-  | MaxRawGapAtLeast;
+  | MaxRawGapAtLeast
+  | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
 export type LocalTimestamp = string;
+export type RowId = string;
 export type NodeMetrics = NodeMetrics1;
 export type ActivityNodeId = string;
-export type RowId = string;
 export type GraphCoverage = GraphCoverage1 & GraphCoverage2;
 export type GraphCoverage1 =
   | {
@@ -151,6 +152,25 @@ export interface MaxRawGapAtLeast {
   hours: number;
   negate: boolean;
 }
+/**
+ * OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.
+ */
+export interface RecordAttributesAll {
+  kind: "record_attributes_all";
+  policy_id: "incident.raw.same_record_all.v1";
+  /**
+   * @minItems 1
+   */
+  conditions: [RecordAttributeCondition, ...RecordAttributeCondition[]];
+  negate: boolean;
+}
+export interface RecordAttributeCondition {
+  column_index: number;
+  /**
+   * @minItems 1
+   */
+  values: [string | null, ...(string | null)[]];
+}
 export interface SelectionAnswer {
   schema_version: 1;
   message_type: "selection_answer";
@@ -175,6 +195,19 @@ export interface PredicateResult {
   kept: PopulationSupport;
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
+  record_evidence?: RecordAttributeEvidence;
+}
+/**
+ * Nonempty matching or unknown original-row support before optional negation, ordered by case ID then original source position. Absence is evaluated over the complete history; not-matching rows are never deleted.
+ */
+export interface RecordAttributeEvidence {
+  policy_id: "incident.raw.same_record_all.v1";
+  cases: RecordAttributeCaseEvidence[];
+}
+export interface RecordAttributeCaseEvidence {
+  case_id: CaseId;
+  matching_row_ids: RowId[];
+  unevaluable_row_ids: RowId[];
 }
 export interface ProcessGraphRequest {
   schema_version: 1;

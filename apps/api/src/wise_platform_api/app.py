@@ -13,6 +13,8 @@ from .bpic19_profiles import Bpic19Profiles
 from .bpic19_cohorts import register_bpic19_cohort_routes
 from .bpic19_scoring import register_bpic19_scoring_routes
 from .bpic19_operators import register_bpic19_operator_routes
+from .bpic19_flow_comparison import register_bpic19_flow_comparison_routes
+from .bpic19_interval_comparison import register_bpic19_interval_comparison_routes
 from .bpic19_measures import Bpic19Measures
 from .case_lists import CaseLists
 from .comparisons import ComparisonReply, Comparisons
@@ -68,6 +70,8 @@ def create_app(
     register_bpic19_cohort_routes(application, imports)
     register_bpic19_scoring_routes(application, imports)
     register_bpic19_operator_routes(application, imports)
+    register_bpic19_flow_comparison_routes(application, imports)
+    register_bpic19_interval_comparison_routes(application, imports)
     saving = Saving(imports)
     application.state.selections = imports.selections
 

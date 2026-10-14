@@ -51,7 +51,8 @@ export type SelectionPredicate =
   | OpeningAttributeIn
   | RecordAttributeIn
   | ObservedSpanAtLeast
-  | MaxRawGapAtLeast;
+  | MaxRawGapAtLeast
+  | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
 export type LocalTimestamp = string;
@@ -181,6 +182,25 @@ export interface MaxRawGapAtLeast {
   hours: number;
   negate: boolean;
 }
+/**
+ * OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.
+ */
+export interface RecordAttributesAll {
+  kind: "record_attributes_all";
+  policy_id: "incident.raw.same_record_all.v1";
+  /**
+   * @minItems 1
+   */
+  conditions: [RecordAttributeCondition, ...RecordAttributeCondition[]];
+  negate: boolean;
+}
+export interface RecordAttributeCondition {
+  column_index: number;
+  /**
+   * @minItems 1
+   */
+  values: [string | null, ...(string | null)[]];
+}
 export interface SavedGroupComparison {
   kind: "group";
   comparison_id: ComparisonId;
@@ -302,6 +322,10 @@ export interface Bpic19Pipeline {
    * @maxItems 32
    */
   actions: [Bpic19PipelineAction, ...Bpic19PipelineAction[]];
+  /**
+   * Explicit partial mode omits only registered unresolved source-method gates; it never omits a failed admitted operation.
+   */
+  replay_mode?: "require_all" | "partial";
 }
 export interface Bpic19PipelineAction {
   operation:
@@ -313,7 +337,10 @@ export interface Bpic19PipelineAction {
     | "bpic19_fifo"
     | "bpic19_cancellation"
     | "bpic19_rule"
-    | "bpic19_waiting";
+    | "bpic19_waiting"
+    | "bpic19_flow_comparison"
+    | "bpic19_method_gate"
+    | "bpic19_interval_comparison";
   identity: AnswerIdentity;
   /**
    * Validated against the registered operation request before save or replay.
@@ -372,6 +399,12 @@ export interface Bpic19PipelineManifest {
    * @maxItems 32
    */
   outputs: [Bpic19PipelineOutput, ...Bpic19PipelineOutput[]];
+  claim_level?: "complete_registered_pipeline" | "partial";
+  run_id?: string;
+  /**
+   * @maxItems 32
+   */
+  omissions?: Bpic19PipelineOmission[];
 }
 export interface Bpic19PipelineOutput {
   operation:
@@ -383,12 +416,23 @@ export interface Bpic19PipelineOutput {
     | "bpic19_fifo"
     | "bpic19_cancellation"
     | "bpic19_rule"
-    | "bpic19_waiting";
+    | "bpic19_waiting"
+    | "bpic19_flow_comparison"
+    | "bpic19_interval_comparison";
   definition_id: string;
   sha256: string;
   output: {
     [k: string]: unknown;
   };
+}
+export interface Bpic19PipelineOmission {
+  step: number;
+  operation: "bpic19_method_gate";
+  definition_id: string;
+  method_id: string;
+  source_locator: string;
+  gate_reason: string;
+  identity: AnswerIdentity;
 }
 export interface ListSavedRequest {
   schema_version: 1;
@@ -456,6 +500,19 @@ export interface PredicateResult {
   kept: PopulationSupport;
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
+  record_evidence?: RecordAttributeEvidence;
+}
+/**
+ * Nonempty matching or unknown original-row support before optional negation, ordered by case ID then original source position. Absence is evaluated over the complete history; not-matching rows are never deleted.
+ */
+export interface RecordAttributeEvidence {
+  policy_id: "incident.raw.same_record_all.v1";
+  cases: RecordAttributeCaseEvidence[];
+}
+export interface RecordAttributeCaseEvidence {
+  case_id: CaseId;
+  matching_row_ids: RowId[];
+  unevaluable_row_ids: RowId[];
 }
 export interface SavingRefusal1 {
   schema_version: 1;

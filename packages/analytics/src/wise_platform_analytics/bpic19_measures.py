@@ -186,6 +186,24 @@ def _interval(activation: dict, response: dict, first: datetime | None, last: da
     return _measure(difference, ids, interval_state="available", **evidence)
 
 
+def derive_interval_evidence(prepared: PreparedData, case_id: str,
+                             source: Iterable[str], target: Iterable[str]) -> dict:
+    """The admitted independent-minimum interval without actor/value prerequisites.
+
+    Every endpoint and witness comes from the complete retained item history.
+    The independent minima are selected before the paper's range/direction gate;
+    later usable candidates never replace an out-of-range minimum.
+    """
+    recipe = checked_measure_definition({"interval_source": list(source), "interval_target": list(target)})
+    records = prepared.histories[case_id]
+    activation, first = _minimum(records, frozenset(recipe["interval_source"]))
+    response, last = _minimum(records, frozenset(recipe["interval_target"]))
+    return {"case_id": case_id, "record_count": len(records),
+            "record_row_ids": [row.row_id for row in records],
+            "source": activation, "target": response,
+            "interval": _interval(activation, response, first, last)}
+
+
 def _actor_evidence(records: tuple[PreparedRecord, ...], column: int | None) -> tuple[list[dict], dict, dict, dict]:
     actors = []
     for row in records:

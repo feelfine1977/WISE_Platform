@@ -238,6 +238,7 @@ def _activity_witness(feature: dict, binding: dict) -> dict:
     available = feature.get("activity_counts_available") is not False
     return {"value": sum(feature.get("activity_counts", {}).get(label, 0) for label in labels) if available else None,
             "available": available, "reason": None if available else "missing_activity_label", "row_ids": rows,
+            "unit": "event_occurrences",
             "selector": binding["activities"], "selector_policy": binding["selector_policy"],
             "unknown_row_ids": feature.get("missing_activity_row_ids", [])}
 
@@ -250,14 +251,14 @@ def _presence_witness(feature: dict, attribute: str) -> dict:
     if feature.get("activity_counts_available") is not False:
         value = _number(exact.get("value")) if exact.get("available") is True else None
         return {**exact, "value": int(value > 0) if value is not None else None,
-                "available": value is not None, "operator": "witnessed_binary_presence"}
+                "available": value is not None, "operator": "witnessed_binary_presence", "unit":"case_presence_boolean"}
     known = sum(feature.get("activity_counts", {}).get(label, 0) for label in labels)
     rows = [row for label in labels for row in feature.get("activity_row_ids", {}).get(label, [])]
     return {"value": 1 if known else None, "available": bool(known),
             "reason": None if known else "missing_activity_label", "row_ids": rows,
             "known_matching_lower_bound": known, "exact_count": None,
             "unknown_row_ids": feature.get("missing_activity_row_ids", []),
-            "operator": "witnessed_binary_presence"}
+            "operator": "witnessed_binary_presence", "unit":"case_presence_boolean"}
 
 
 def representation_key(feature: dict, kind: str) -> str | None:
@@ -421,6 +422,7 @@ class Bpic19Assessment:
             "company": feature.get("company"),
             "spend_area": feature.get("spend_area"),
             "score": _json(native["scores"][position, list(result.scores.columns).index(self.view)]),
+            "native_penalty": _json(sum(penalties)) if _number(native["scores"][position, list(result.scores.columns).index(self.view)].item()) is not None else None,
             "scores": {view: _json(native["scores"][position, i]) for i, view in enumerate(result.scores.columns)},
             "coverage": numerator / denominator if denominator and not scope_unknown else None,
             "in_scope_raw_weight": denominator,
@@ -433,6 +435,7 @@ class Bpic19Assessment:
             "criteria": criteria,
             "record_row_ids": feature.get("record_row_ids", []),
             "context_evidence": _json(feature.get("context", {})),
+            "historical_artifacts": _json(feature.get("historical_artifacts")),
             "value_evidence": _json({key: feature.get("measures", {}).get(key, {}) for key in
                                      ("creation_value", "creation_unique_event", "exposure")}),
         }
@@ -658,6 +661,9 @@ class Bpic19Assessment:
         grouping = self.result.cases[attribute]
         mass = self.penalties.groupby(grouping,sort=False).sum(min_count=1).to_dict(orient="index")
         scored_counts = self.result.scores[self.view].groupby(grouping,sort=False).count().to_dict()
+        native_mass = ({row[attribute]: row for row in _records(method._wise().penalty_mass(
+            self.result, self.view, by=[attribute], as_index=False))}
+            if self.result.scores[self.view].notna().any() else {})
         ranked = {}
         if self.result.scores[self.view].notna().any():
             backlog = method._wise().prioritize(self.result,by=[attribute],view=self.view,gamma=self.gamma,
@@ -678,6 +684,8 @@ class Bpic19Assessment:
                 "volume": native.get("volume") if native is not None else None,
                 "global_mean": native.get("global_mean") if native is not None else None,
                 "native_penalty_mass": _json(mass.get(key,{})),
+                "mean_penalty": native_mass.get(key,{}).get("mean_penalty"),
+                "summed_penalty_mass": native_mass.get(key,{}).get("penalty_mass"),
                 "reference": "same native scored-item reference; representation join never rescores"}
             rows.append(row)
         return sorted(rows,key=lambda row:(-(row["stable_PI"] or 0),-row["scored_case_count"],row["group_id"]))

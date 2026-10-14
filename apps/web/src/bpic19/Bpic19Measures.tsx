@@ -50,6 +50,8 @@ export interface Bpic19MeasuresProps {
   onInspect: (caseId: string, rowIds?: string[]) => void;
   onKeepCases?: (caseIds: string[], label: string) => void;
   onReviewed?: (answer: Bpic19MeasuresAnswer) => void;
+  onRetain?: (answer: Bpic19MeasuresAnswer) => void;
+  retainedQueries?: readonly { definition_id: string; label: string; query: MeasureQuery }[];
   onValidityChange?: (current: boolean) => void;
 }
 
@@ -88,13 +90,14 @@ function RepresentationSupport({ representation, groups, reviewed, disabled, onI
   </div>;
 }
 
-function ItemEvidence({ feature, disabled, onInspect }: { feature: CaseFeatures; disabled: boolean; onInspect: Bpic19MeasuresProps["onInspect"] }) {
+function ItemEvidence({ feature, disabled, onInspect, onKeepCases }: { feature: CaseFeatures; disabled: boolean; onInspect: Bpic19MeasuresProps["onInspect"]; onKeepCases: Bpic19MeasuresProps["onKeepCases"] }) {
   const [open, setOpen] = useState(false);
   const inspect = (ids: string[]) => onInspect(feature.case_id, ids);
   const actors = feature.actor_summary;
   return <details className="bpic19-measure-case" onToggle={event => setOpen(event.currentTarget.open)}><summary>Item {feature.case_id} · {feature.flow ?? "unresolved flow"} · {number.format(feature.record_count)} records</summary>
     {open && <>
       <button type="button" disabled={disabled} onClick={() => onInspect(feature.case_id, feature.record_row_ids)}>Inspect complete history of {feature.case_id}</button>
+      {onKeepCases && <button type="button" disabled={disabled} onClick={() => onKeepCases([feature.case_id], `Reviewed evidence: ${feature.case_id}`)}>Keep complete item {feature.case_id}</button>}
       <p>Document {feature.document ?? "unavailable"} · Company {feature.company ?? "unavailable"} · Spend area {feature.spend_area ?? "unavailable"}</p>
       <h4>Exact activities and known absence</h4>
       <p>Known matches {number.format(feature.activity_measure.lower_bound)} · unknown activity records {number.format(feature.activity_measure.unknown_label_count)}. A lower bound is separate from an exact quantity.</p>
@@ -135,13 +138,14 @@ function ItemEvidence({ feature, disabled, onInspect }: { feature: CaseFeatures;
 }
 
 /** The service owns membership, measurement, classification and lineage. Drafts only describe requested definitions. */
-export function Bpic19Measures({ workspaceId, identity, revision, roles, columns, query, client = httpBpic19MeasuresClient, onInspect, onKeepCases, onReviewed, onValidityChange }: Bpic19MeasuresProps) {
+export function Bpic19Measures({ workspaceId, identity, revision, roles, columns, query, client = httpBpic19MeasuresClient, onInspect, onKeepCases, onReviewed, onRetain, retainedQueries, onValidityChange }: Bpic19MeasuresProps) {
   const heading = useId();
   const [answer, setAnswer] = useState<Bpic19MeasuresAnswer | null>(null);
   const [draft, setDraft] = useState<MeasureQuery>(() => normalized(query ?? defaults(roles), roles));
   const [bandText, setBandText] = useState(query?.value_band_edges?.join(", ") ?? "");
   const [selectorText, setSelectorText] = useState(() => ({ activity: draft.activity_selector?.join("\n") ?? "", source: draft.interval_source?.join("\n") ?? "", target: draft.interval_target?.join("\n") ?? "" }));
   const [busy, setBusy] = useState(false), [problem, setProblem] = useState<string | null>(null), [cancelled, setCancelled] = useState(false);
+  const [retainedDefinition, setRetainedDefinition] = useState("");
   const serial = useRef(0), controller = useRef<AbortController | null>(null), retry = useRef<MeasureQuery | null>(null);
   const callbacks = useRef({ onReviewed, onValidityChange }); callbacks.current = { onReviewed, onValidityChange };
   const identityKey = JSON.stringify(identity), rolesKey = JSON.stringify(roles), queryKey = JSON.stringify(query ?? null);
@@ -202,6 +206,14 @@ export function Bpic19Measures({ workspaceId, identity, revision, roles, columns
     ++serial.current; controller.current?.abort(); setBusy(false); setDraft(prior); setBandText(prior.value_band_edges?.join(", ") ?? ""); setSelectorText({ activity: prior.activity_selector?.join("\n") ?? "", source: prior.interval_source?.join("\n") ?? "", target: prior.interval_target?.join("\n") ?? "" }); setProblem(null); setCancelled(false);
     if (!answer.roles_proposed_from_headers) callbacks.current.onReviewed?.(answer);
   }
+  function readRetained() {
+    const retained = retainedQueries?.find(item => item.definition_id === retainedDefinition);
+    if (!retained) return;
+    const next = normalized({ ...retained.query, offset: 0 }, roles);
+    setDraft(next); setBandText(next.value_band_edges?.join(", ") ?? "");
+    setSelectorText({ activity: next.activity_selector?.join("\n") ?? "", source: next.interval_source?.join("\n") ?? "", target: next.interval_target?.join("\n") ?? "" });
+    void load(next);
+  }
   const roleField = (role: "resource" | "value", label: string) => <label>{label}{columns?.length ? <select value={draft.roles?.[role] ?? ""} onChange={event => editRole(role, event.target.value)}><option value="">No source field · local result unavailable</option>{columns.map(column => <option key={column.index} value={column.index}>{column.name || `Column ${column.index}`}</option>)}</select>
     : <input type="number" min="0" step="1" value={draft.roles?.[role] ?? ""} onChange={event => editRole(role, event.target.value)} />}</label>;
   const historical = answer?.definition.measure_profile === "historical_v1", cohorts = answer?.activity_cohorts;
@@ -230,6 +242,7 @@ export function Bpic19Measures({ workspaceId, identity, revision, roles, columns
       </div>
       <div className="bpic19-measures-controls"><button type="button" className="primary" disabled={busy || !validSelectors || !validBands || !draft.value_unit?.trim()} onClick={() => void load({ ...draft, value_band_edges: bandEdges, offset: 0 })}>Review and read measures</button>
         {busy && <button type="button" onClick={cancel}>Cancel measure request</button>}{answer && (dirty || problem || cancelled) && <button type="button" onClick={restore}>Restore reviewed definition</button>}</div>
+      {!!retainedQueries?.length && <div className="bpic19-measures-controls"><label>Previously retained measures<select disabled={busy} value={retainedDefinition} onChange={event => setRetainedDefinition(event.target.value)}><option value="">Choose a retained definition</option>{retainedQueries.map(item => <option key={item.definition_id} value={item.definition_id}>{item.label}</option>)}</select></label><button type="button" disabled={busy || !retainedQueries.some(item => item.definition_id === retainedDefinition)} onClick={readRetained}>Read retained measures</button></div>}
       {!validSelectors && <p role="alert">Each activity selector needs 1–100 exact labels before it can be reviewed.</p>}{!validBands && <p role="alert">Use at most 100 band boundaries, as finite numbers in strictly increasing order.</p>}{!draft.value_unit?.trim() && <p role="alert">Declare the source amount unit, or use source_units while the currency meaning remains unconfirmed.</p>}
     </details>
     {busy && <p role="status">Reading the measures… Earlier evidence is shown with its actions paused.</p>}
@@ -237,6 +250,7 @@ export function Bpic19Measures({ workspaceId, identity, revision, roles, columns
     {cancelled && <p role="status">Measure request cancelled. Review the draft or restore the earlier reviewed definition.</p>}
     {problem && <div role="alert"><p>{problem}</p><button type="button" disabled={busy} onClick={() => { if (retry.current) void load(retry.current); }}>Retry measures</button></div>}
     {answer && <div data-stale={paused ? "true" : undefined}>
+      {onRetain && <button type="button" disabled={paused} onClick={() => onRetain(answer)}>Retain reviewed measures</button>}
       <p><strong>{number.format(answer.population_case_count)} PO items</strong> · {number.format(answer.population_record_count)} original records · {historical ? "corrected definitions plus separately named historical measures" : "corrected paper definitions"}</p>
       {answer.roles_proposed_from_headers && <p role="alert">The field roles were proposed from headers. Review the actor and amount bindings before using this answer.</p>}
       <p>Reviewed selector: {answer.definition.activity_selector.join(" + ")} · {reason(answer.definition.activity_operator)}. Clock: {reason(answer.definition.clock_kind)} · {answer.definition.clock_policy_id}. Recorded elapsed days are separate from active work, contractual lateness and severity.</p>
@@ -256,7 +270,7 @@ export function Bpic19Measures({ workspaceId, identity, revision, roles, columns
       {!!answer.representation_unavailable_case_ids.length && <button type="button" disabled={paused} onClick={() => onInspect(answer.representation_unavailable_case_ids[0])}>Inspect unavailable representation</button>}
       <h3>Source witnesses and complete item histories</h3>
       {answer.population_case_count === 0 && <p>No PO items in this population. Distribution values and rates are unavailable where their denominator is empty.</p>}
-      {answer.cases.map(feature => <ItemEvidence key={`${answer.result_id}-${feature.case_id}`} feature={feature} disabled={paused} onInspect={onInspect} />)}
+      {answer.cases.map(feature => <ItemEvidence key={`${answer.result_id}-${feature.case_id}`} feature={feature} disabled={paused} onInspect={onInspect} onKeepCases={onKeepCases} />)}
       <div className="bpic19-measures-controls"><p>Showing {answer.cases.length ? number.format(answer.offset + 1) : "0"}–{number.format(answer.offset + answer.cases.length)} of {number.format(answer.population_case_count)} items.</p>
         <button type="button" disabled={paused || answer.offset === 0} onClick={() => void load({ ...answer.query, offset: Math.max(0, answer.offset - answer.limit) })}>Previous items</button>
         <button type="button" disabled={paused || answer.next_offset === null} onClick={() => { if (answer.next_offset !== null) void load({ ...answer.query, offset: answer.next_offset }); }}>Next items</button>

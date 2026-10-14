@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { sameJson } from "../data/coordinator";
 import type { AnswerIdentity, Bpic19OperatorAnswer, Bpic19OperatorRequest, CancellationRecipe, FifoRecipe, OperatorCase, OperatorCatalogue, OperatorQuery, OperatorRecipe, OperatorRoles, OrdinalRecipe, RuleRecipe, WaitingRecipe } from "../generated/bpic19-operators";
 import { answersBpic19Operators, bpic19OperatorContract, httpBpic19OperatorsClient, type Bpic19OperatorClient, type Bpic19OperatorOutcome } from "./operators-client";
 import "./operators.css";
@@ -19,7 +20,16 @@ function defaults(kind: OperatorRecipe["kind"]): OperatorRecipe {
 }
 const roleBindings = (roles: OperatorRoles): OperatorRoles => ({ event_id: roles.event_id ?? null, item_category: roles.item_category ?? null, net_worth: roles.net_worth ?? null });
 function initial(roles: OperatorRoles, query?: OperatorQuery): OperatorQuery { return query ?? { policy_id: policy, roles: roleBindings(roles), recipe: defaults("ordinal"), offset: 0, limit: 20 }; }
-function meaning(query: OperatorQuery) { const { offset: _offset, limit: _limit, ...definition } = query; return JSON.stringify(definition); }
+function meaning(query: OperatorQuery) { return JSON.stringify({ policy_id: query.policy_id, roles: roleBindings(query.roles), recipe: query.recipe === null ? null : Object.fromEntries(Object.entries(query.recipe).sort(([left], [right]) => left.localeCompare(right))) }); }
+function recipeLabel(query: OperatorQuery) {
+  const recipe = query.recipe; if (!recipe) return "Activity catalogue";
+  const policies = recipe.kind === "ordinal" || recipe.kind === "fifo" ? `${plain(recipe.order)} · ${plain(recipe.stages)} · ${plain(recipe.ties)} · ${plain(recipe.receipt)} · ${plain(recipe.cancellation)}`
+    : recipe.kind === "rule" ? `${recipe.quantifier} ${recipe.relation} · ${recipe.position} · ${recipe.reuse} · ${recipe.flow_scope} · ${recipe.left_activities.join("+")} → ${recipe.right_activities.join("+")}`
+    : recipe.kind === "waiting" ? `${plain(recipe.endpoints)} · ${plain(recipe.completion)} · ${recipe.horizon_start} / ${recipe.horizon_end}`
+    : `${recipe.reuse} · ${recipe.ties} · ${recipe.amount_filter} tolerance ${recipe.tolerance} · window ${recipe.max_window_days ?? "unbounded"}`;
+  return `${kindLabels[recipe.kind]} · ${policies}`;
+}
+function downloadJson(value: unknown, filename: string) { const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 0); }
 
 function Choice<K extends string>({ label, value, options, names, change }: { label: string; value: K; options: readonly K[]; names?: Partial<Record<K, string>>; change: (value: K) => void }) {
   return <label>{label}<select value={value} onChange={event => { const selected = options.find(option => option === event.target.value); if (selected !== undefined) change(selected); }}>{options.map(option => <option key={option} value={option}>{names?.[option] ?? plain(option)}</option>)}</select></label>;
@@ -82,19 +92,32 @@ function CaseEvidence({ feature, disabled, inspect }: { feature: OperatorCase; d
 
 export interface Bpic19OperatorsProps {
   workspaceId: string; identity: AnswerIdentity; revision: number; roles: OperatorRoles; query?: OperatorQuery;
+  retainedQueries?: OperatorQuery[]; onRetain?: (answer: Bpic19OperatorAnswer) => void;
   columns?: { index: number; name: string }[]; client?: Bpic19OperatorClient;
   onInspect: (caseId: string, rowIds?: string[]) => void; onKeepCases?: (caseIds: string[], label: string) => void;
   onReviewed?: (answer: Bpic19OperatorAnswer) => void; onValidityChange?: (current: boolean) => void;
 }
 
-export function Bpic19Operators({ workspaceId, identity, revision, roles, query, columns, client = httpBpic19OperatorsClient, onInspect, onKeepCases, onReviewed, onValidityChange }: Bpic19OperatorsProps) {
+export function Bpic19Operators({ workspaceId, identity, revision, roles, query, retainedQueries = [], onRetain, columns, client = httpBpic19OperatorsClient, onInspect, onKeepCases, onReviewed, onValidityChange }: Bpic19OperatorsProps) {
   const heading = useId();
   const [draft, setDraft] = useState<OperatorQuery>(() => initial(roles, query));
   const [answer, setAnswer] = useState<Bpic19OperatorAnswer | null>(null), [catalogue, setCatalogue] = useState<OperatorCatalogue | null>(null);
   const [busy, setBusy] = useState(false), [problem, setProblem] = useState<string | null>(null), [cancelled, setCancelled] = useState(false);
+  const [retainedAnswers, setRetainedAnswers] = useState<Record<string, Bpic19OperatorAnswer>>({});
+  const [retainedSelection, setRetainedSelection] = useState("");
+  const [leftChoice, setLeftChoice] = useState(""), [rightChoice, setRightChoice] = useState("");
+  const [comparison, setComparison] = useState<[Bpic19OperatorAnswer, Bpic19OperatorAnswer] | null>(null);
+  const [compareBusy, setCompareBusy] = useState(false), [compareProblem, setCompareProblem] = useState<string | null>(null);
+  const compareController = useRef<AbortController | null>(null), compareSerial = useRef(0);
   const controller = useRef<AbortController | null>(null), serial = useRef(0), retry = useRef<OperatorQuery | null>(null);
   const callbacks = useRef({ onReviewed, onValidityChange }); callbacks.current = { onReviewed, onValidityChange };
   const identityKey = JSON.stringify(identity), roleKey = JSON.stringify(roleBindings(roles)), queryKey = JSON.stringify(query ?? null);
+  const envelope = (next: OperatorQuery, requestId: string): Bpic19OperatorRequest => ({ schema_version: 1, message_type: "bpic19_operator_request", request_id: requestId, query_revision: revision, workspace_id: workspaceId, identity, query: next });
+  const choices = new Map<string, OperatorQuery>();
+  for (const candidate of [...retainedQueries, ...Object.values(retainedAnswers).filter(value => value.workspace_id === workspaceId && sameJson(value.identity, identity) && value.query_revision === revision).map(value => value.query)]) {
+    if (candidate.recipe !== null && bpic19OperatorContract.request(envelope(candidate, "retained-admission"))) choices.set(meaning(candidate), candidate);
+  }
+  const retainedChoices = [...choices.entries()];
   async function load(next: OperatorQuery) {
     const token = ++serial.current; controller.current?.abort(); const abort = new AbortController(); controller.current = abort;
     setBusy(true); setProblem(null); setCancelled(false); retry.current = next; callbacks.current.onValidityChange?.(false);
@@ -123,6 +146,10 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
     // Source, frozen population and revision changes invalidate old answers and requests.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, identityKey, roleKey, revision, queryKey, client]);
+  useEffect(() => {
+    ++compareSerial.current; compareController.current?.abort(); setRetainedAnswers({}); setRetainedSelection(""); setComparison(null); setCompareBusy(false); setCompareProblem(null); setLeftChoice(""); setRightChoice("");
+    return () => { ++compareSerial.current; compareController.current?.abort(); };
+  }, [workspaceId, identityKey, revision]);
   const recipe = draft.recipe ?? defaults("ordinal");
   const dirty = answer !== null && meaning(draft) !== meaning(answer.query);
   const paused = busy || !!problem || cancelled || dirty;
@@ -131,16 +158,41 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
   const change = (recipe: OperatorRecipe) => edit({ recipe });
   function cancel() { ++serial.current; controller.current?.abort(); setBusy(false); setCancelled(true); callbacks.current.onValidityChange?.(false); }
   function restore() { if (!answer) return; ++serial.current; controller.current?.abort(); setDraft(answer.query); setBusy(false); setProblem(null); setCancelled(false); callbacks.current.onReviewed?.(answer); }
-  function download() { if (!answer || paused) return; const url = URL.createObjectURL(new Blob([JSON.stringify(answer, null, 2)], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = `${answer.operation}-${answer.result_id.split(":").at(-1)?.slice(0, 12)}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 0); }
+  function download() { if (!answer || paused) return; downloadJson(answer, `${answer.operation}-${answer.result_id.split(":").at(-1)?.slice(0, 12)}.json`); }
+  function retain() { if (!answer || paused || answer.query.recipe === null) return; const key = meaning(answer.query); if (choices.size >= 32 && !choices.has(key)) return; setRetainedAnswers(current => ({ ...current, [key]: answer })); onRetain?.(answer); }
+  function selectRetained(key: string) { const selected = choices.get(key); if (!selected) return; setRetainedSelection(key); setDraft(selected); void load(selected); }
+  function changeComparison(side: "left" | "right", value: string) { ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); setCompareProblem(null); setComparison(null); (side === "left" ? setLeftChoice : setRightChoice)(value); }
+  async function compare() {
+    const left = choices.get(leftChoice), right = choices.get(rightChoice);
+    if (!left || !right || left.recipe?.kind !== "ordinal" || right.recipe?.kind !== "fifo") return;
+    const token = ++compareSerial.current; compareController.current?.abort(); const abort = new AbortController(); compareController.current = abort; setCompareBusy(true); setCompareProblem(null);
+    const requests = [left, right].map((value, index) => envelope({ ...value, offset: 0, limit: 20 }, `bpic19-compare-${revision}-${token}-${index}`));
+    let outcomes: Bpic19OperatorOutcome[];
+    try { outcomes = await Promise.all(requests.map(request => client.operators(request, abort.signal))); }
+    catch { outcomes = [{ ok: false, problem: { kind: "unreachable" } }]; }
+    if (token !== compareSerial.current || abort.signal.aborted) return;
+    setCompareBusy(false);
+    const supplied: Bpic19OperatorAnswer[] = [];
+    for (const [index, outcome] of outcomes.entries()) {
+      if (!outcome.ok) { setCompareProblem(outcome.problem.kind === "refusal" ? outcome.problem.refusal.message : outcome.problem.kind === "unreachable" ? "The retained comparison could not be read. Retry both definitions." : outcome.problem.detail); return; }
+      if (!answersBpic19Operators(requests[index], outcome.answer)) { setCompareProblem("A comparison answer differs from its retained source, population or definition."); return; }
+      supplied.push(outcome.answer);
+    }
+    if (supplied.length === 2 && supplied[0].population_case_count === supplied[1].population_case_count && supplied[0].population_record_count === supplied[1].population_record_count && sameJson(supplied[0].parent_identity, supplied[1].parent_identity)) setComparison([supplied[0], supplied[1]]);
+    else setCompareProblem("The comparison does not have two complete answers for the same population.");
+  }
   const request: Bpic19OperatorRequest = { schema_version: 1, message_type: "bpic19_operator_request", request_id: "review", query_revision: revision, workspace_id: workspaceId, identity, query: { ...draft, recipe } };
   const needsAuthority = recipe.kind === "waiting" && recipe.completion === "right_censored" && !recipe.horizon_provenance?.trim();
   const valid = bpic19OperatorContract.request(request) && !needsAuthority;
   const bindings = columns ?? catalogue?.columns ?? [];
+  const comparisonCurrent = comparison?.every(value => value.workspace_id === workspaceId && sameJson(value.identity, identity) && value.query_revision === revision);
+  const comparisonPaused = paused || compareBusy || !!compareProblem;
   return <section className="bpic19-operators" aria-labelledby={heading} aria-busy={busy}>
     <h2 id={heading}>Review recorded-event matching and waiting</h2>
     <p>Choose a finite descriptive recipe on the current complete PO items, inspect original witnesses, and retain complete histories. Alternative policies receive distinct definition identities.</p>
     <details open><summary>Review the declared operator definition</summary><div className="bpic19-operator-controls">
       <fieldset><legend>Recipe and original fields</legend><Choice label="Recorded-event operator" value={recipe.kind} options={kinds} names={kindLabels} change={kind => change(defaults(kind))} />
+        {!!retainedChoices.length && <><label>Retained reviewed operator definition<select aria-label="Retained reviewed operator definition" value={retainedSelection} onChange={event => selectRetained(event.target.value)}><option value="">Choose an exact retained definition</option>{retainedChoices.map(([key, value], index) => <option key={key} value={key}>{index + 1}: {recipeLabel(value)}</option>)}</select><small>These recipes were explicitly retained or restored from the verified saved investigation. Selecting one reads its exact fields and policies.</small></label><details><summary>Retained recipe identities and exact fields</summary>{retainedChoices.map(([key,value],index) => <div key={key}><h4>Retained {index+1}: {kindLabels[value.recipe!.kind]}</h4><small>Meaning key: {key}</small>{retainedAnswers[key] && <small>Definition identity: {retainedAnswers[key].definition_id}</small>}<pre>{JSON.stringify(value,null,2)}</pre></div>)}</details></>}
         {(["event_id", "item_category", "net_worth"] as const).map(role => <label key={role}>{role === "event_id" ? "Original eventID field" : role === "item_category" ? "Invariant item category field" : "Original source-EUR amount field"}<select value={draft.roles[role] ?? ""} onChange={event => edit({ roles: { ...draft.roles, [role]: event.target.value === "" ? null : Number(event.target.value) } })}><option value="">Unmapped · dependent recipe unavailable</option>{bindings.map(column => <option key={column.index} value={column.index}>{column.index}: {column.name || "unnamed column"}</option>)}</select></label>)}
         <details><summary>Exact activity catalogue for this population</summary><ul>{catalogue?.activities.map(activity => <li key={activity}><code>{activity}</code></li>)}</ul></details>
         <p>Mapping a role is an explicit review of original source cells. Timestamp and case bindings use the frozen preparation. Numeric-eventID ordering never falls back to another field.</p>
@@ -160,6 +212,8 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
       <p>Known activation records: {format.format(answer.summary.known_activation_count)} / exact total: {display(answer.summary.activation_count)}. Observation support, distinct item support and original record support have different units.</p>
       <details><summary>Declared recipe, source qualification and frozen identity</summary><pre>{JSON.stringify(answer.definition, null, 2)}</pre><small>Result: {answer.result_id}</small><small>Population: {answer.identity.population_id}</small><small>Preparation: {answer.identity.preparation_id}</small></details>
       <button type="button" disabled={paused} onClick={download}>Download reviewed operator receipt</button>
+      <button type="button" disabled={paused || (choices.size >= 32 && !choices.has(meaning(answer.query)))} onClick={retain}>Retain reviewed result for comparison and saving</button>
+      <small>{choices.has(meaning(answer.query)) ? `This definition is retained · ${answer.definition_id}` : "This answer is current; it is not automatically appended to the retained comparison."}</small>
       <div className="bpic19-operator-scroll"><table className="plain-table"><caption>Complete-item cohorts · observation groups can overlap</caption><thead><tr><th>Recorded state</th><th>PO items</th><th>Original records</th><th>Complete-history actions</th></tr></thead><tbody>{answer.selection_groups.map(group => <tr key={group.key}><th scope="row">{group.label}</th><td>{format.format(group.case_count)}</td><td>{format.format(group.record_count)}</td><td>{onKeepCases && <button type="button" disabled={paused || !group.case_count} onClick={() => onKeepCases(group.case_ids, `${answer.operation}: ${group.label}`)}>Keep {group.label} items</button>}{group.case_ids[0] && <button type="button" disabled={paused} onClick={() => onInspect(group.case_ids[0])}>Inspect {group.label} member</button>}</td></tr>)}</tbody></table></div>
       <div className="bpic19-operator-scroll"><table className="plain-table"><caption>Interval distributions · episode weighting versus distinct item weighting</caption><thead><tr><th>Interval / support grain</th><th>Available / unavailable</th><th>Mean days</th><th>Median days</th><th>Zero intervals</th></tr></thead><tbody>{Object.entries(answer.summary.interval_distributions).flatMap(([name, groups]) => Object.entries(groups).map(([grain, distribution]) => <tr key={`${name}-${grain}`}><th scope="row">{plain(name)} / {plain(grain)}</th><td>{format.format(distribution.available_count)} / {format.format(distribution.unavailable_count)}</td><td>{display(distribution.mean)}</td><td>{display(distribution.median)}</td><td>{format.format(distribution.zero_count)}</td></tr>))}</tbody></table></div>
       {answer.summary.occupancy && <div><h3>Half-open waiting inventory</h3><p>{format.format(answer.summary.occupancy.available_interval_count)} available intervals · {format.format(answer.summary.occupancy.positive_duration_count)} positive · {format.format(answer.summary.occupancy.zero_duration_count)} zero. Peak {format.format(answer.summary.occupancy.peak)} PO items at [{answer.summary.occupancy.peak_start ?? "no positive interval"}, {answer.summary.occupancy.peak_end ?? "none"}).</p><p>{display(answer.summary.occupancy.item_days)} item-days over {display(answer.summary.occupancy.horizon_days)} horizon days · duration-weighted mean {display(answer.summary.occupancy.duration_weighted_mean)} items · lower median {display(answer.summary.occupancy.duration_weighted_lower_median)} items. Known censored intervals remain separately counted in the cohorts.</p>
@@ -169,5 +223,27 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
       <h3>Original item evidence</h3>{!answer.cases.length && <p>No items on this page. Empty retained populations remain explicit.</p>}{answer.cases.map(feature => <CaseEvidence key={`${answer.result_id}-${feature.case_id}`} feature={feature} disabled={paused} inspect={onInspect} />)}
       <div className="bpic19-operator-actions"><p>Items {answer.cases.length ? answer.offset + 1 : 0}–{answer.offset + answer.cases.length} of {format.format(answer.population_case_count)}.</p><button type="button" disabled={paused || answer.offset === 0} onClick={() => void load({ ...answer.query, offset: Math.max(0, answer.offset - answer.limit) })}>Previous item page</button><button type="button" disabled={paused || answer.next_offset === null} onClick={() => { if (answer.next_offset !== null) void load({ ...answer.query, offset: answer.next_offset }); }}>Next item page</button></div>
     </div>}
+    <details className="bpic19-operator-comparison"><summary>Compare explicitly retained ordinal and FIFO definitions</summary>
+      <p>Choose two retained recipes on this same frozen population. Each keeps its matching scope, raw histories, support and interval eligibility. Differences in the matched population are descriptive.</p>
+      <div className="bpic19-operator-actions"><label>Retained ordinal definition<select value={leftChoice} onChange={event => changeComparison("left", event.target.value)}><option value="">Choose retained ordinal</option>{retainedChoices.filter(([,value]) => value.recipe?.kind === "ordinal").map(([key,value],index) => <option key={key} value={key}>{index+1}: {recipeLabel(value)}</option>)}</select></label>
+        <label>Retained FIFO definition<select value={rightChoice} onChange={event => changeComparison("right", event.target.value)}><option value="">Choose retained FIFO</option>{retainedChoices.filter(([,value]) => value.recipe?.kind === "fifo").map(([key,value],index) => <option key={key} value={key}>{index+1}: {recipeLabel(value)}</option>)}</select></label>
+        <button type="button" disabled={busy || compareBusy || !leftChoice || !rightChoice} onClick={() => void compare()}>Read retained ordinal/FIFO comparison</button>
+        {compareBusy && <button type="button" onClick={() => { ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); setCompareProblem("Comparison request cancelled; retain or select the definitions before retrying."); }}>Cancel comparison request</button>}
+      </div>
+      {compareBusy && <p role="status">Reading both retained definitions… No partial pair is published.</p>}{compareProblem && <p role="alert">{compareProblem}</p>}
+      {comparison && comparisonCurrent && <div data-stale={comparisonPaused ? "true" : undefined}>
+        <button type="button" disabled={comparisonPaused} onClick={() => downloadJson({ format: "bpic19.operator-comparison.v1", identity, results: comparison }, "bpic19-ordinal-fifo-comparison.json")}>Download retained comparison receipt</button>
+        <div className="bpic19-operator-controls">{comparison.map(result => <article key={result.definition_id}>
+          <h3>{result.operation === "bpic19_ordinal" ? "Retained ordinal result" : "Retained FIFO result"}</h3>
+          <p>{format.format(result.population_case_count)} complete PO items / {format.format(result.population_record_count)} original records · {format.format(result.summary.observation_count)} inferred observations.</p>
+          <small>Definition {result.definition_id}</small><small>Result {result.result_id}</small><details><summary>Exact matching scope and policies</summary><pre>{JSON.stringify(result.definition, null, 2)}</pre></details>
+          <div className="bpic19-operator-scroll"><table className="plain-table"><caption>{result.operation} whole-population known matching counts</caption><thead><tr><th>Quantity</th><th>Known event/episode sum</th><th>Available / unavailable item support</th></tr></thead><tbody>{Object.entries(result.summary.total_distributions).filter(([name]) => name === "paired_episode_count" || name === "paired_endpoint_event_count" || name === "unmatched_event_count" || /^stage_[0-9]+_(?:unmatched_)?event_count$/.test(name)).map(([name,value]) => <tr key={name}><th scope="row">{plain(name)}{name === "paired_episode_count" ? " · inferred episodes" : " · original events"}</th><td>{display(value.known_sum)}{value.known_sum_reason && <small>{plain(value.known_sum_reason)}</small>}</td><td>{format.format(value.available_count)} / {format.format(value.unavailable_count)}</td></tr>)}</tbody></table></div>
+          <div className="bpic19-operator-scroll"><table className="plain-table"><caption>{result.operation} available interval distributions</caption><thead><tr><th>Interval / weighting</th><th>Available / unavailable</th><th>Mean days</th><th>Median days</th></tr></thead><tbody>{Object.entries(result.summary.interval_distributions).flatMap(([name,groups]) => Object.entries(groups).map(([grain,value]) => <tr key={`${name}-${grain}`}><th scope="row">{plain(name)} / {plain(grain)}</th><td>{format.format(value.available_count)} / {format.format(value.unavailable_count)}</td><td>{display(value.mean)}</td><td>{display(value.median)}</td></tr>))}</tbody></table></div>
+          <p>Observation states: {Object.entries(result.summary.observation_state_counts).map(([state,count]) => `${plain(state)} ${format.format(count)}`).join(" · ") || "none"}. Signed reversed diagnostics remain in the original evidence below.</p>
+          {result.cases.map(feature => <CaseEvidence key={`${result.result_id}-${feature.case_id}`} feature={feature} disabled={comparisonPaused} inspect={onInspect} />)}
+          <small>Evidence preview: first {result.cases.length} items; counts and distributions cover the whole named population. Original endpoint witnesses remain original rows, and inferred episodes have no native invoice identifiers.</small>
+        </article>)}</div>
+      </div>}
+    </details>
   </section>;
 }

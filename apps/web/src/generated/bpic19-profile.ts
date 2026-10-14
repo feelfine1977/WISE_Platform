@@ -42,6 +42,9 @@ export interface Bpic19ProfileQuery {
   profile_columns: number[] | null;
   policy_id: "bpic19.all_raw_case_attributes.v1";
   source_interpretation?: Bpic19SourceInterpretation | null;
+  attribute_view?: Bpic19AttributeViewQuery | null;
+  include_zero_cells?: boolean;
+  include_document_siblings?: boolean;
 }
 export interface Bpic19Roles {
   item_category: number;
@@ -61,6 +64,10 @@ export interface Bpic19SourceInterpretation {
    * @maxItems 20
    */
   discrepancies: Bpic19SourceDiscrepancy[];
+  /**
+   * @maxItems 20
+   */
+  reported_populations?: Bpic19ReportedPopulation[];
 }
 export interface Bpic19SourceInclusion {
   kind: "all_source" | "item_start" | "document_start" | "record_projection";
@@ -77,6 +84,21 @@ export interface Bpic19SourceDiscrepancy {
   reference: string;
   reported_total: number;
   reported_subtotal: number;
+}
+export interface Bpic19ReportedPopulation {
+  label: string;
+  count: number;
+  grain: "po_item" | "purchasing_document" | "original_record";
+  reference: string;
+  denominator: string;
+  parent_label: string | null;
+}
+export interface Bpic19AttributeViewQuery {
+  column_index: number;
+  offset: number;
+  limit: number;
+  select_value: boolean;
+  value: string | null;
 }
 export interface Bpic19ProfileAnswer {
   schema_version: 1;
@@ -118,6 +140,8 @@ export interface Bpic19Profile {
   attributes: Bpic19Attribute[];
   flow_item_types: Bpic19TypeCell[];
   source_review?: Bpic19SourceReview;
+  attribute_view?: Bpic19AttributeView;
+  item_type_totals?: Bpic19ItemTypeTotal[];
 }
 export interface Bpic19Definition {
   policy_id: "bpic19.all_raw_case_attributes.v1";
@@ -128,12 +152,18 @@ export interface Bpic19Definition {
   flag_policy: "bpic19.category_flags_and_consignment_type.v1";
   grain_policy: "bpic19.document_item_underscore.v1";
   source_interpretation?: Bpic19SourceInterpretation;
+  attribute_selection?: Bpic19AttributeSelection;
 }
 export interface CategoryLabels {
   after_gr: string;
   before_gr: string;
   two_way: string;
   consignment: string;
+}
+export interface Bpic19AttributeSelection {
+  column_index: number;
+  value: string | null;
+  policy_id: "bpic19.any_original_record_exact_value.v1";
 }
 export interface Bpic19Population {
   case_count: number;
@@ -171,11 +201,21 @@ export interface Bpic19Grain {
   mixed_flow_document_count: number;
   mixed_flow_document_examples: MixedDocument[];
   identity_issues: Bpic19StateSupport[];
+  outside_parent_siblings?: Bpic19SourceSupport;
+  possible_sibling_conflict_case_ids?: CaseId[];
 }
 export interface MixedDocument {
   document: string;
   flow_ids: string[];
   case_ids: CaseId[];
+}
+export interface Bpic19SourceSupport {
+  case_ids: CaseId[];
+  case_count: number;
+  record_count: number;
+  document_count: number;
+  share: number | null;
+  example_case_ids: CaseId[];
 }
 export interface Bpic19Attribute {
   column_index: number;
@@ -248,14 +288,7 @@ export interface Bpic19SourceReview {
   omitted_inclusion_evidence_count: number;
   anomalies: Bpic19SourceAnomaly[];
   discrepancies: Bpic19MeasuredSourceDiscrepancy[];
-}
-export interface Bpic19SourceSupport {
-  case_ids: CaseId[];
-  case_count: number;
-  record_count: number;
-  document_count: number;
-  share: number | null;
-  example_case_ids: CaseId[];
+  reported_populations?: Bpic19ReportedPopulationClaim[];
 }
 export interface Bpic19RecordProjection {
   row_ids: string[];
@@ -291,6 +324,51 @@ export interface Bpic19MeasuredSourceDiscrepancy {
   reported_subtotal: number;
   difference: number;
   measured_parent_case_count: number;
+}
+export interface Bpic19ReportedPopulationClaim {
+  label: string;
+  count: number;
+  grain: "po_item" | "purchasing_document" | "original_record";
+  reference: string;
+  denominator: string;
+  parent_label: string | null;
+  claim_status: "reported_source_claim";
+}
+export interface Bpic19AttributeView {
+  column_index: number;
+  column_name: string;
+  policy_id: "bpic19.any_original_record_exact_value.v1";
+  offset: number;
+  limit: number;
+  total_value_count: number;
+  distinct_nonmissing_value_count: number;
+  next_offset: number | null;
+  values: Bpic19AttributeValue[];
+  selection: Bpic19AttributeValueSelection | null;
+}
+export interface Bpic19AttributeValueSelection {
+  case_ids: CaseId[];
+  case_count: number;
+  record_count: number;
+  document_count: number;
+  share: number | null;
+  example_case_ids: CaseId[];
+  value: string | null;
+  witnesses: Bpic19AttributeWitness1[];
+  omitted_witness_case_count: number;
+}
+export interface Bpic19AttributeWitness1 {
+  case_id: CaseId;
+  row_ids: string[];
+}
+export interface Bpic19ItemTypeTotal {
+  case_ids: CaseId[];
+  case_count: number;
+  record_count: number;
+  document_count: number;
+  share: number | null;
+  example_case_ids: CaseId[];
+  item_type_value: string;
 }
 export interface Bpic19ProfileRefusal {
   schema_version: 1;

@@ -3,7 +3,7 @@ import type { PipelineSource } from "../saved/coordinator";
 import { sameJson } from "../data/coordinator";
 
 const operations = ["bpic19_profile", "bpic19_measures", "bpic19_cohorts", "bpic19_score",
-  "bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"] as const;
+  "bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting", "bpic19_flow_comparison", "bpic19_interval_comparison", "bpic19_method_gate"] as const;
 type Reviewed = { action: Bpic19PipelineAction; path: readonly unknown[] };
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -25,6 +25,7 @@ export class Bpic19Session implements PipelineSource {
   private path: readonly unknown[] | undefined;
   private binding = "";
   private baseIdentity: AnswerIdentity | undefined;
+  private replayMode: "require_all" | "partial" | undefined;
 
   basis(workspaceId: string, identity: AnswerIdentity, predicates?: readonly unknown[], baseIdentity?: AnswerIdentity): void {
     const next = JSON.stringify([workspaceId, identity]);
@@ -40,7 +41,7 @@ export class Bpic19Session implements PipelineSource {
           if (this.validity.get(operation) === true) this.ancestors.push({ action: structuredClone(action), path: structuredClone(this.path) });
         }
       }
-    } else this.ancestors = [];
+    } else { this.ancestors = []; this.replayMode = undefined; }
     this.key = next;
     this.binding = nextBinding;
     this.baseIdentity = baseIdentity === undefined ? undefined : structuredClone(baseIdentity);
@@ -50,7 +51,7 @@ export class Bpic19Session implements PipelineSource {
     // Definitions reviewed at the restored ancestor become current again on Undo.
     this.ancestors = this.ancestors.filter(entry => {
       if (sameJson(entry.action.identity, identity) && sameJson(entry.path, this.path)) {
-        this.actions.set(entry.action.operation, entry.action); this.validity.set(entry.action.operation, true); return false;
+        this.actions.set(entry.action.operation, entry.action); this.validity.set(entry.action.operation, true); return true;
       }
       return true;
     });
@@ -64,14 +65,45 @@ export class Bpic19Session implements PipelineSource {
     this.validity.set(action.operation, true);
   }
 
+  /** Explicitly retain a reviewed definition before choosing another recipe. */
+  retain(action: Bpic19PipelineAction): void {
+    const currentIdentity = JSON.parse(this.key || "[]")[1];
+    if (!sameJson(currentIdentity, action.identity) || this.path === undefined) return;
+    this.reviewed(action);
+    const tagged = this.actions.get(action.operation);
+    if (tagged) this.ancestors.push({ action: structuredClone(tagged), path: structuredClone(this.path) });
+  }
+
+  /** Saved or explicitly retained recipes, bound to the exact current population. */
+  retainedActions(): Bpic19PipelineAction[] {
+    const identity = JSON.parse(this.key || "[]")[1];
+    const unique = new Map<string, Bpic19PipelineAction>();
+    for (const entry of this.ancestors) {
+      if (sameJson(entry.action.identity, identity)) unique.set(actionKey(entry.action), entry.action);
+    }
+    return structuredClone([...unique.values()]);
+  }
+
+  declarations(): Bpic19PipelineAction[] { return structuredClone(this.orderedActions()); }
+
+  setReplayMode(mode: "require_all" | "partial"): void { this.replayMode = mode; }
+
+  replayModeForDisplay(): "require_all" | "partial" { return this.replayMode ?? "require_all"; }
+
+  removeMethodGate(): void {
+    this.ancestors = this.ancestors.filter(entry => entry.action.operation !== "bpic19_method_gate");
+    this.actions.delete("bpic19_method_gate"); this.validity.delete("bpic19_method_gate");
+  }
+
   valid(operation: Bpic19PipelineAction["operation"], value: boolean, scope?: string): void {
     if (scope !== undefined && scope !== this.key) return;
     this.validity.set(operation, value);
   }
 
   /** Called once with a successful server-reopened manifest, never unverified local storage. */
-  restore(workspaceId: string, identity: AnswerIdentity, predicates: readonly unknown[], actions: readonly Bpic19PipelineAction[], baseIdentity?: AnswerIdentity): boolean {
+  restore(workspaceId: string, identity: AnswerIdentity, predicates: readonly unknown[], actions: readonly Bpic19PipelineAction[], baseIdentity?: AnswerIdentity, replayMode?: "require_all" | "partial"): boolean {
     this.basis(workspaceId, identity, predicates, baseIdentity);
+    this.replayMode = replayMode;
     const accepted: Reviewed[] = [];
     for (const action of actions) {
       if (binding(workspaceId, action.identity) !== this.binding) return false;
@@ -91,12 +123,13 @@ export class Bpic19Session implements PipelineSource {
     }
     this.actions.clear(); this.ancestors = [];
     for (const entry of accepted) {
+      // Every declaration in a server-reopened pipeline is retained. Choosing
+      // an older one must not discard the previously displayed saved recipe.
+      this.ancestors.push(entry);
       if (sameJson(entry.action.identity, identity)) {
-        const previous = this.actions.get(entry.action.operation);
-        if (previous) this.ancestors.push({ action: previous, path: structuredClone(predicates) });
         this.actions.set(entry.action.operation, entry.action);
         if (!this.validity.has(entry.action.operation)) this.validity.set(entry.action.operation, true);
-      } else this.ancestors.push(entry);
+      }
     }
     return true;
   }
@@ -104,6 +137,7 @@ export class Bpic19Session implements PipelineSource {
   readyForSave(): boolean {
     if (this.actions.size === 0 && this.ancestors.length === 0) return true;
     if (this.orderedActions().length > 32) return false;
+    if (this.orderedActions().some(action => action.operation === "bpic19_method_gate") && this.replayMode !== "partial") return false;
     return [...this.validity.values()].every(Boolean);
   }
 
@@ -119,6 +153,7 @@ export class Bpic19Session implements PipelineSource {
   savedPipeline(): Bpic19Pipeline | null {
     if (!this.readyForSave()) return null;
     const ordered = this.orderedActions(); if (ordered.length === 0) return null;
-    return { schema_version: 1, actions: structuredClone(ordered) as Bpic19Pipeline["actions"] };
+    return { schema_version: 1, actions: structuredClone(ordered) as Bpic19Pipeline["actions"],
+      ...(this.replayMode === undefined ? {} : { replay_mode: this.replayMode }) };
   }
 }

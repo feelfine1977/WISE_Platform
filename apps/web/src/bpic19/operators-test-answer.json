@@ -4,7 +4,7 @@
     "message_type": "bpic19_operator_answer",
     "request_id": "operator-literal-0",
     "query_revision": 2,
-    "workspace_id": "workspace.v1:e65d5b9be3b248348c5f60f52d21ffb6",
+    "workspace_id": "workspace.v1:a3166436ec2145ef979ea12c68bc4770",
     "identity": {
       "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
       "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
@@ -118,8 +118,8 @@
         "unmatched": 2
       },
       "truth_case_counts": {},
-      "activation_count": 0,
-      "known_activation_count": 0,
+      "activation_count": 1,
+      "known_activation_count": 1,
       "observation_count": 3,
       "interval_distributions": {
         "stage_1_to_2": {
@@ -130,7 +130,9 @@
             "minimum": 1.0,
             "maximum": 1.0,
             "mean": 1.0,
-            "median": 1.0
+            "median": 1.0,
+            "known_sum": 1.0,
+            "known_sum_reason": null
           },
           "per_item_mean": {
             "available_count": 1,
@@ -139,7 +141,9 @@
             "minimum": 1.0,
             "maximum": 1.0,
             "mean": 1.0,
-            "median": 1.0
+            "median": 1.0,
+            "known_sum": 1.0,
+            "known_sum_reason": null
           }
         },
         "stage_2_to_3": {
@@ -150,7 +154,9 @@
             "minimum": 2.0,
             "maximum": 2.0,
             "mean": 2.0,
-            "median": 2.0
+            "median": 2.0,
+            "known_sum": 2.0,
+            "known_sum_reason": null
           },
           "per_item_mean": {
             "available_count": 1,
@@ -159,7 +165,9 @@
             "minimum": 2.0,
             "maximum": 2.0,
             "mean": 2.0,
-            "median": 2.0
+            "median": 2.0,
+            "known_sum": 2.0,
+            "known_sum_reason": null
           }
         }
       },
@@ -171,7 +179,20 @@
           "minimum": 0,
           "maximum": 3,
           "mean": 0.42857142857142855,
-          "median": 0
+          "median": 0,
+          "known_sum": 3.0,
+          "known_sum_reason": null
+        },
+        "paired_endpoint_event_count": {
+          "available_count": 7,
+          "unavailable_count": 0,
+          "zero_count": 6,
+          "minimum": 0,
+          "maximum": 3,
+          "mean": 0.42857142857142855,
+          "median": 0,
+          "known_sum": 3.0,
+          "known_sum_reason": null
         },
         "paired_episode_count": {
           "available_count": 7,
@@ -180,7 +201,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.14285714285714285,
-          "median": 0
+          "median": 0,
+          "known_sum": 1.0,
+          "known_sum_reason": null
         },
         "stage_1_event_count": {
           "available_count": 7,
@@ -189,7 +212,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.14285714285714285,
-          "median": 0
+          "median": 0,
+          "known_sum": 1.0,
+          "known_sum_reason": null
         },
         "stage_1_unmatched_event_count": {
           "available_count": 7,
@@ -198,7 +223,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "stage_2_event_count": {
           "available_count": 7,
@@ -207,7 +234,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.42857142857142855,
-          "median": 0
+          "median": 0,
+          "known_sum": 3.0,
+          "known_sum_reason": null
         },
         "stage_2_unmatched_event_count": {
           "available_count": 7,
@@ -216,7 +245,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.2857142857142857,
-          "median": 0
+          "median": 0,
+          "known_sum": 2.0,
+          "known_sum_reason": null
         },
         "stage_3_event_count": {
           "available_count": 7,
@@ -225,7 +256,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.14285714285714285,
-          "median": 0
+          "median": 0,
+          "known_sum": 1.0,
+          "known_sum_reason": null
         },
         "stage_3_unmatched_event_count": {
           "available_count": 7,
@@ -234,7 +267,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "unmatched_event_count": {
           "available_count": 7,
@@ -243,7 +278,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.2857142857142857,
-          "median": 0
+          "median": 0,
+          "known_sum": 2.0,
+          "known_sum_reason": null
         }
       },
       "occupancy": null
@@ -376,6 +413,17 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 3,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": [
+              "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+              "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+              "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+            ]
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -433,8 +481,8 @@
           }
         },
         "truth": null,
-        "activation_count": 0,
-        "known_activation_count": 0
+        "activation_count": 1,
+        "known_activation_count": 1
       },
       {
         "case_id": "b",
@@ -563,6 +611,13 @@
               "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
             ]
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 3,
             "available": true,
@@ -658,6 +713,13 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -742,6 +804,13 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -818,6 +887,13 @@
             "row_ids": []
           },
           "unmatched_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
+          "paired_endpoint_event_count": {
             "value": 0,
             "available": true,
             "reason": null,
@@ -907,6 +983,13 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -990,6 +1073,13 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -1054,7 +1144,7 @@
     "message_type": "bpic19_operator_answer",
     "request_id": "operator-literal-0",
     "query_revision": 2,
-    "workspace_id": "workspace.v1:e65d5b9be3b248348c5f60f52d21ffb6",
+    "workspace_id": "workspace.v1:a3166436ec2145ef979ea12c68bc4770",
     "identity": {
       "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
       "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
@@ -1166,8 +1256,8 @@
         "matched": 1
       },
       "truth_case_counts": {},
-      "activation_count": 0,
-      "known_activation_count": 0,
+      "activation_count": 1,
+      "known_activation_count": 1,
       "observation_count": 1,
       "interval_distributions": {
         "stage_1_to_2": {
@@ -1178,7 +1268,9 @@
             "minimum": 1.0,
             "maximum": 1.0,
             "mean": 1.0,
-            "median": 1.0
+            "median": 1.0,
+            "known_sum": 1.0,
+            "known_sum_reason": null
           },
           "per_item_mean": {
             "available_count": 1,
@@ -1187,7 +1279,9 @@
             "minimum": 1.0,
             "maximum": 1.0,
             "mean": 1.0,
-            "median": 1.0
+            "median": 1.0,
+            "known_sum": 1.0,
+            "known_sum_reason": null
           }
         },
         "stage_2_to_3": {
@@ -1198,7 +1292,9 @@
             "minimum": 2.0,
             "maximum": 2.0,
             "mean": 2.0,
-            "median": 2.0
+            "median": 2.0,
+            "known_sum": 2.0,
+            "known_sum_reason": null
           },
           "per_item_mean": {
             "available_count": 1,
@@ -1207,7 +1303,9 @@
             "minimum": 2.0,
             "maximum": 2.0,
             "mean": 2.0,
-            "median": 2.0
+            "median": 2.0,
+            "known_sum": 2.0,
+            "known_sum_reason": null
           }
         }
       },
@@ -1219,7 +1317,20 @@
           "minimum": 0,
           "maximum": 3,
           "mean": 0.42857142857142855,
-          "median": 0
+          "median": 0,
+          "known_sum": 3.0,
+          "known_sum_reason": null
+        },
+        "paired_endpoint_event_count": {
+          "available_count": 7,
+          "unavailable_count": 0,
+          "zero_count": 6,
+          "minimum": 0,
+          "maximum": 3,
+          "mean": 0.42857142857142855,
+          "median": 0,
+          "known_sum": 3.0,
+          "known_sum_reason": null
         },
         "paired_episode_count": {
           "available_count": 7,
@@ -1228,7 +1339,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.14285714285714285,
-          "median": 0
+          "median": 0,
+          "known_sum": 1.0,
+          "known_sum_reason": null
         },
         "stage_1_event_count": {
           "available_count": 7,
@@ -1237,7 +1350,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.14285714285714285,
-          "median": 0
+          "median": 0,
+          "known_sum": 1.0,
+          "known_sum_reason": null
         },
         "stage_1_unmatched_event_count": {
           "available_count": 7,
@@ -1246,7 +1361,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "stage_2_event_count": {
           "available_count": 7,
@@ -1255,7 +1372,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.42857142857142855,
-          "median": 0
+          "median": 0,
+          "known_sum": 3.0,
+          "known_sum_reason": null
         },
         "stage_2_unmatched_event_count": {
           "available_count": 7,
@@ -1264,7 +1383,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.2857142857142857,
-          "median": 0
+          "median": 0,
+          "known_sum": 2.0,
+          "known_sum_reason": null
         },
         "stage_3_event_count": {
           "available_count": 7,
@@ -1273,7 +1394,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.14285714285714285,
-          "median": 0
+          "median": 0,
+          "known_sum": 1.0,
+          "known_sum_reason": null
         },
         "stage_3_unmatched_event_count": {
           "available_count": 7,
@@ -1282,7 +1405,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "unmatched_event_count": {
           "available_count": 7,
@@ -1291,7 +1416,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.2857142857142857,
-          "median": 0
+          "median": 0,
+          "known_sum": 2.0,
+          "known_sum_reason": null
         }
       },
       "occupancy": null
@@ -1415,6 +1542,17 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 3,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": [
+              "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+              "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+              "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+            ]
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -1472,8 +1610,8 @@
           }
         },
         "truth": null,
-        "activation_count": 0,
-        "known_activation_count": 0
+        "activation_count": 1,
+        "known_activation_count": 1
       },
       {
         "case_id": "b",
@@ -1512,6 +1650,13 @@
               "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
               "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
             ]
+          },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
           },
           "cancellation_count": {
             "value": 3,
@@ -1608,6 +1753,13 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -1692,6 +1844,13 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -1768,6 +1927,13 @@
             "row_ids": []
           },
           "unmatched_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
+          "paired_endpoint_event_count": {
             "value": 0,
             "available": true,
             "reason": null,
@@ -1857,6 +2023,13 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -1940,6 +2113,13 @@
             "unit": "original_events",
             "row_ids": []
           },
+          "paired_endpoint_event_count": {
+            "value": 0,
+            "available": true,
+            "reason": null,
+            "unit": "original_events",
+            "row_ids": []
+          },
           "cancellation_count": {
             "value": 0,
             "available": true,
@@ -2004,7 +2184,7 @@
     "message_type": "bpic19_operator_answer",
     "request_id": "operator-literal-0",
     "query_revision": 2,
-    "workspace_id": "workspace.v1:e65d5b9be3b248348c5f60f52d21ffb6",
+    "workspace_id": "workspace.v1:a3166436ec2145ef979ea12c68bc4770",
     "identity": {
       "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
       "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
@@ -2143,7 +2323,9 @@
             "minimum": 1.0,
             "maximum": 3.0,
             "mean": 2.0,
-            "median": 2.0
+            "median": 2.0,
+            "known_sum": 4.0,
+            "known_sum_reason": null
           },
           "per_item_mean": {
             "available_count": 1,
@@ -2152,7 +2334,9 @@
             "minimum": 2.0,
             "maximum": 2.0,
             "mean": 2.0,
-            "median": 2.0
+            "median": 2.0,
+            "known_sum": 2.0,
+            "known_sum_reason": null
           }
         }
       },
@@ -2164,7 +2348,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "consumed_target_count": {
           "available_count": 7,
@@ -2173,7 +2359,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.2857142857142857,
-          "median": 0
+          "median": 0,
+          "known_sum": 2.0,
+          "known_sum_reason": null
         },
         "matched_cancellation_count": {
           "available_count": 7,
@@ -2182,7 +2370,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.2857142857142857,
-          "median": 0
+          "median": 0,
+          "known_sum": 2.0,
+          "known_sum_reason": null
         },
         "raw_receipt_maximum_absolute": {
           "available_count": 2,
@@ -2191,7 +2381,9 @@
           "minimum": 100.0,
           "maximum": 100.0,
           "mean": 100.0,
-          "median": 100.0
+          "median": 100.0,
+          "known_sum": 200.0,
+          "known_sum_reason": null
         },
         "raw_receipt_mean": {
           "available_count": 2,
@@ -2200,7 +2392,9 @@
           "minimum": 100.0,
           "maximum": 100.0,
           "mean": 100.0,
-          "median": 100.0
+          "median": 100.0,
+          "known_sum": 200.0,
+          "known_sum_reason": null
         },
         "raw_receipt_negative_count": {
           "available_count": 7,
@@ -2209,7 +2403,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "raw_receipt_sum": {
           "available_count": 7,
@@ -2218,7 +2414,9 @@
           "minimum": 0.0,
           "maximum": 200.0,
           "mean": 42.85714285714286,
-          "median": 0.0
+          "median": 0.0,
+          "known_sum": 300.0,
+          "known_sum_reason": null
         },
         "raw_receipt_zero_count": {
           "available_count": 7,
@@ -2227,7 +2425,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "retained_receipt_maximum_absolute": {
           "available_count": 1,
@@ -2236,7 +2436,9 @@
           "minimum": 100.0,
           "maximum": 100.0,
           "mean": 100.0,
-          "median": 100.0
+          "median": 100.0,
+          "known_sum": 100.0,
+          "known_sum_reason": null
         },
         "retained_receipt_mean": {
           "available_count": 1,
@@ -2245,7 +2447,9 @@
           "minimum": 100.0,
           "maximum": 100.0,
           "mean": 100.0,
-          "median": 100.0
+          "median": 100.0,
+          "known_sum": 100.0,
+          "known_sum_reason": null
         },
         "retained_receipt_negative_count": {
           "available_count": 7,
@@ -2254,7 +2458,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "retained_receipt_sum": {
           "available_count": 7,
@@ -2263,7 +2469,9 @@
           "minimum": 0.0,
           "maximum": 100.0,
           "mean": 14.285714285714286,
-          "median": 0.0
+          "median": 0.0,
+          "known_sum": 100.0,
+          "known_sum_reason": null
         },
         "retained_receipt_zero_count": {
           "available_count": 7,
@@ -2272,7 +2480,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "retained_target_count": {
           "available_count": 7,
@@ -2281,7 +2491,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.14285714285714285,
-          "median": 0
+          "median": 0,
+          "known_sum": 1.0,
+          "known_sum_reason": null
         },
         "unique_creation_value": {
           "available_count": 0,
@@ -2290,7 +2502,9 @@
           "minimum": null,
           "maximum": null,
           "mean": null,
-          "median": null
+          "median": null,
+          "known_sum": null,
+          "known_sum_reason": "no_available_values"
         },
         "unknown_cancellation_count": {
           "available_count": 7,
@@ -2299,7 +2513,9 @@
           "minimum": 0,
           "maximum": 0,
           "mean": 0.0,
-          "median": 0
+          "median": 0,
+          "known_sum": 0.0,
+          "known_sum_reason": null
         },
         "unmatched_cancellation_count": {
           "available_count": 7,
@@ -2308,7 +2524,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.14285714285714285,
-          "median": 0
+          "median": 0,
+          "known_sum": 1.0,
+          "known_sum_reason": null
         }
       },
       "occupancy": null
@@ -3503,7 +3721,7 @@
     "message_type": "bpic19_operator_answer",
     "request_id": "operator-literal-0",
     "query_revision": 2,
-    "workspace_id": "workspace.v1:e65d5b9be3b248348c5f60f52d21ffb6",
+    "workspace_id": "workspace.v1:a3166436ec2145ef979ea12c68bc4770",
     "identity": {
       "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
       "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
@@ -3652,7 +3870,9 @@
             "minimum": 1.0,
             "maximum": 1.0,
             "mean": 1.0,
-            "median": 1.0
+            "median": 1.0,
+            "known_sum": 2.0,
+            "known_sum_reason": null
           },
           "per_item_mean": {
             "available_count": 2,
@@ -3661,7 +3881,9 @@
             "minimum": 1.0,
             "maximum": 1.0,
             "mean": 1.0,
-            "median": 1.0
+            "median": 1.0,
+            "known_sum": 2.0,
+            "known_sum_reason": null
           }
         }
       },
@@ -3673,7 +3895,9 @@
           "minimum": 0,
           "maximum": 2,
           "mean": 0.8571428571428571,
-          "median": 1
+          "median": 1,
+          "known_sum": 6.0,
+          "known_sum_reason": null
         },
         "matched_activation_count": {
           "available_count": 7,
@@ -3682,7 +3906,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.2857142857142857,
-          "median": 0
+          "median": 0,
+          "known_sum": 2.0,
+          "known_sum_reason": null
         },
         "nonmatching_activation_count": {
           "available_count": 7,
@@ -3691,7 +3917,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.42857142857142855,
-          "median": 0
+          "median": 0,
+          "known_sum": 3.0,
+          "known_sum_reason": null
         },
         "partner_use_count": {
           "available_count": 7,
@@ -3700,7 +3928,9 @@
           "minimum": 0,
           "maximum": 1,
           "mean": 0.2857142857142857,
-          "median": 0
+          "median": 0,
+          "known_sum": 2.0,
+          "known_sum_reason": null
         }
       },
       "occupancy": null
@@ -4397,7 +4627,7 @@
     "message_type": "bpic19_operator_answer",
     "request_id": "operator-literal-0",
     "query_revision": 2,
-    "workspace_id": "workspace.v1:e65d5b9be3b248348c5f60f52d21ffb6",
+    "workspace_id": "workspace.v1:a3166436ec2145ef979ea12c68bc4770",
     "identity": {
       "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
       "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
@@ -4544,7 +4774,9 @@
             "minimum": 1.0,
             "maximum": 5.0,
             "mean": 3.0,
-            "median": 3.0
+            "median": 3.0,
+            "known_sum": 6.0,
+            "known_sum_reason": null
           },
           "per_item_mean": {
             "available_count": 2,
@@ -4553,7 +4785,9 @@
             "minimum": 1.0,
             "maximum": 5.0,
             "mean": 3.0,
-            "median": 3.0
+            "median": 3.0,
+            "known_sum": 6.0,
+            "known_sum_reason": null
           }
         }
       },
@@ -5088,7 +5322,7 @@
     "message_type": "bpic19_operator_answer",
     "request_id": "operator-literal-0",
     "query_revision": 2,
-    "workspace_id": "workspace.v1:e65d5b9be3b248348c5f60f52d21ffb6",
+    "workspace_id": "workspace.v1:a3166436ec2145ef979ea12c68bc4770",
     "identity": {
       "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
       "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",

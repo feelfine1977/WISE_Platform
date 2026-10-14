@@ -595,6 +595,74 @@ class MaxRawGapAtLeast(BaseModel):
     negate: bool
 
 
+class RecordAttributeCondition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+
+
+class PeriodComparisonDefinition(
+    RootModel[UtcPeriodComparisonDefinition | WallPeriodComparisonDefinition]
+):
+    root: UtcPeriodComparisonDefinition | WallPeriodComparisonDefinition = Field(
+        ..., title='PeriodComparisonDefinition'
+    )
+
+
+class PeriodComparisonRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    message_type: Literal['compare_periods_request']
+    identity: AnswerIdentity
+    parent_case_ids: CaseIds | None
+    context_column_index: conint(ge=0, le=9007199254740991)
+    context_policy: ContextPolicy
+    definition: PeriodComparisonDefinition
+
+
+class PeriodComparisonAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    message_type: Literal['period_comparison_answer']
+    identity: AnswerIdentity
+    parent_identity: AnswerIdentity
+    parent: PopulationSupport
+    comparison_id: ComparisonId
+    context_column_index: conint(ge=0, le=9007199254740991)
+    context_policy: ContextPolicy
+    pair_support: PairSupport
+    context_profile: ContextProfile
+    definition: PeriodComparisonDefinition
+    target: PeriodCohort
+    reference: PeriodCohort
+    case_start_basis: Literal[
+        'first_record_in_declared_order_of_sequence_evaluable_case'
+    ]
+    followup_clock: FollowupClock
+
+
+class RecordAttributesAll(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['record_attributes_all']
+    policy_id: Literal['incident.raw.same_record_all.v1']
+    conditions: list[RecordAttributeCondition] = Field(..., max_length=32, min_length=1)
+    negate: bool
+
+
 class SelectionPredicate(
     RootModel[
         ContainsActivity
@@ -608,6 +676,7 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | RecordAttributesAll
     ]
 ):
     root: (
@@ -622,6 +691,7 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | RecordAttributesAll
     ) = Field(..., title='SelectionPredicate')
 
 
@@ -675,14 +745,6 @@ class GroupComparisonDefinition(RootModel[TwoNamedGroups | SelectionPartition]):
     )
 
 
-class PeriodComparisonDefinition(
-    RootModel[UtcPeriodComparisonDefinition | WallPeriodComparisonDefinition]
-):
-    root: UtcPeriodComparisonDefinition | WallPeriodComparisonDefinition = Field(
-        ..., title='PeriodComparisonDefinition'
-    )
-
-
 class GroupComparisonRequest(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -719,48 +781,6 @@ class GroupComparisonAnswer(BaseModel):
     definition: GroupComparisonDefinition
     target: GroupCohort
     reference: GroupCohort
-
-
-class PeriodComparisonRequest(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    message_type: Literal['compare_periods_request']
-    identity: AnswerIdentity
-    parent_case_ids: CaseIds | None
-    context_column_index: conint(ge=0, le=9007199254740991)
-    context_policy: ContextPolicy
-    definition: PeriodComparisonDefinition
-
-
-class PeriodComparisonAnswer(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    message_type: Literal['period_comparison_answer']
-    identity: AnswerIdentity
-    parent_identity: AnswerIdentity
-    parent: PopulationSupport
-    comparison_id: ComparisonId
-    context_column_index: conint(ge=0, le=9007199254740991)
-    context_policy: ContextPolicy
-    pair_support: PairSupport
-    context_profile: ContextProfile
-    definition: PeriodComparisonDefinition
-    target: PeriodCohort
-    reference: PeriodCohort
-    case_start_basis: Literal[
-        'first_record_in_declared_order_of_sequence_evaluable_case'
-    ]
-    followup_clock: FollowupClock
 
 
 class ComparisonMessage(

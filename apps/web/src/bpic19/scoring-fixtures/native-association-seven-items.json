@@ -1,0 +1,1961 @@
+{
+  "schema_version": 1,
+  "message_type": "bpic19_score_answer",
+  "request_id": "request-1",
+  "query_revision": 1,
+  "workspace_id": "workspace.v1:association-fixture",
+  "base_identity": {
+    "source_id": "source.v1:sha256:bdcbf18339ea8f7e37c339e682e1bdfade5d13953c7decd441c5f1a95a69dfbe",
+    "preparation_id": "preparation.v1:sha256:726dccfe7346f55f8f00af9967d2abd1d5c8f195c27ac9559d1ff721a2962996",
+    "representation_id": "representation.v1:sha256:9d6d86d6df419638bf3ca8bc597698ed62ca2f3d6ab6eeec6acee49962d1d8b3",
+    "case_dictionary_id": "case-dictionary.v1:sha256:167f25f48bd53f6c7e3feb1b6294b5a44a86195fd87626fd8cd5fe147a233a33",
+    "population_id": "population.v1:sha256:bb0557ed7a2954b537d0c82602aa4af28ac8636df9962da5caf9f1905b16398f",
+    "implementation_version": "0.1.0"
+  },
+  "parent_identity": {
+    "source_id": "source.v1:sha256:bdcbf18339ea8f7e37c339e682e1bdfade5d13953c7decd441c5f1a95a69dfbe",
+    "preparation_id": "preparation.v1:sha256:726dccfe7346f55f8f00af9967d2abd1d5c8f195c27ac9559d1ff721a2962996",
+    "representation_id": "representation.v1:sha256:9d6d86d6df419638bf3ca8bc597698ed62ca2f3d6ab6eeec6acee49962d1d8b3",
+    "case_dictionary_id": "case-dictionary.v1:sha256:167f25f48bd53f6c7e3feb1b6294b5a44a86195fd87626fd8cd5fe147a233a33",
+    "population_id": "population.v1:sha256:bb0557ed7a2954b537d0c82602aa4af28ac8636df9962da5caf9f1905b16398f",
+    "implementation_version": "0.1.0"
+  },
+  "named_population": {
+    "name": "Literal seven original items",
+    "identity": {
+      "source_id": "source.v1:sha256:bdcbf18339ea8f7e37c339e682e1bdfade5d13953c7decd441c5f1a95a69dfbe",
+      "preparation_id": "preparation.v1:sha256:726dccfe7346f55f8f00af9967d2abd1d5c8f195c27ac9559d1ff721a2962996",
+      "representation_id": "representation.v1:sha256:9d6d86d6df419638bf3ca8bc597698ed62ca2f3d6ab6eeec6acee49962d1d8b3",
+      "case_dictionary_id": "case-dictionary.v1:sha256:167f25f48bd53f6c7e3feb1b6294b5a44a86195fd87626fd8cd5fe147a233a33",
+      "population_id": "population.v1:sha256:bb0557ed7a2954b537d0c82602aa4af28ac8636df9962da5caf9f1905b16398f",
+      "implementation_version": "0.1.0"
+    }
+  },
+  "run_id": "score-run.v1:sha256:e909a97761ee3027d62c337fcfffbeaac1ba9297e3fd0c9702b6f9116e21649f",
+  "definition_version_id": "definition-version.v1:sha256:e8589f39a3464042b6a14df743520310aefd218ac3cec2d72fb95019ff241ee8",
+  "definition_id": "definition-version.v1:sha256:e8589f39a3464042b6a14df743520310aefd218ac3cec2d72fb95019ff241ee8",
+  "definition": {
+    "kind": "bpic19.native-snapshot.v3",
+    "norm": {
+      "schema_version": 3,
+      "missing_values": "three_valued",
+      "name": "independent.association.raw-numeric-fields.v1",
+      "version": "1",
+      "scoring_mode": "flat",
+      "layers": [
+        {
+          "id": "Measurements"
+        }
+      ],
+      "views": [
+        {
+          "name": "Balanced",
+          "constraint_weights": {
+            "A": 0.75,
+            "B": 0.25
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "id": "A",
+          "layer": "Measurements",
+          "type": "metric",
+          "params": {
+            "attribute": "A",
+            "threshold": 0,
+            "width": 1,
+            "direction": "high"
+          }
+        },
+        {
+          "id": "B",
+          "layer": "Measurements",
+          "type": "metric",
+          "params": {
+            "attribute": "B",
+            "threshold": 0,
+            "width": 1,
+            "direction": "high"
+          }
+        }
+      ]
+    },
+    "settings": {
+      "profile": "paper",
+      "criteria_family": "full",
+      "view": "Balanced",
+      "mode": "flat",
+      "gamma": 0,
+      "group_by": [
+        "company",
+        "spend_area"
+      ],
+      "min_cases": 1,
+      "volume": "cases",
+      "exposure_policy": "max_absolute_p95"
+    },
+    "roles": {},
+    "base_identity": {
+      "source_id": "source.v1:sha256:bdcbf18339ea8f7e37c339e682e1bdfade5d13953c7decd441c5f1a95a69dfbe",
+      "preparation_id": "preparation.v1:sha256:726dccfe7346f55f8f00af9967d2abd1d5c8f195c27ac9559d1ff721a2962996",
+      "representation_id": "representation.v1:sha256:9d6d86d6df419638bf3ca8bc597698ed62ca2f3d6ab6eeec6acee49962d1d8b3",
+      "case_dictionary_id": "case-dictionary.v1:sha256:167f25f48bd53f6c7e3feb1b6294b5a44a86195fd87626fd8cd5fe147a233a33",
+      "population_id": "population.v1:sha256:bb0557ed7a2954b537d0c82602aa4af28ac8636df9962da5caf9f1905b16398f",
+      "implementation_version": "0.1.0"
+    },
+    "source_recipe": "literal original raw numeric columns 13/14; native metrics only",
+    "parent_definition_id": "definition-version.v1:sha256:16a836fb687830a0e6b34593f9d473263af401beb40d2ca0cf69ef6b8e777fe1",
+    "derived_operation": "bpic19_associations",
+    "derived_recipe": {
+      "query": {
+        "policy_id": "bpic19.frozen_native_associations.v1",
+        "target": {
+          "name": "Target T",
+          "selector": {
+            "kind": "case_ids",
+            "case_ids": [
+              "t1",
+              "t2",
+              "t3",
+              "t4",
+              "t5"
+            ]
+          }
+        },
+        "comparator": {
+          "name": "Comparator C",
+          "selector": {
+            "kind": "case_ids",
+            "case_ids": [
+              "c1",
+              "c2"
+            ]
+          }
+        },
+        "criteria": [
+          "A",
+          "B"
+        ],
+        "positive_threshold": 0,
+        "min_support": 1,
+        "pair_mode": "jointly_eligible",
+        "pooled_sd": true
+      },
+      "target_membership_sha256": "03981c56e03e8300152543d55b130f9503a1f1e384bb9c8e29c577bbf774f50a",
+      "target_case_count": 5,
+      "comparator_membership_sha256": "176c18e9b689f171e852ac97f7560417d35a48307214217efa18b5a024faf4d7",
+      "comparator_case_count": 2,
+      "association_artifact_sha256": "92507827bfd9a99994025d3d23632e757c7d25297aa3e304b9efdd1ed132f9ab"
+    },
+    "definition_version_id": "definition-version.v1:sha256:e8589f39a3464042b6a14df743520310aefd218ac3cec2d72fb95019ff241ee8"
+  },
+  "snapshot": {
+    "format": "bpic19.native-snapshot.v3",
+    "artifacts": [
+      {
+        "kind": "report",
+        "sha256": "627b46568a674e0fdcb51b5291a79341500094fbaa3b714660630ab4e846c3b3",
+        "byte_count": 4776,
+        "json_byte_count": 18481,
+        "format": "json-gzip.v1",
+        "filename": "627b46568a674e0fdcb51b5291a79341500094fbaa3b714660630ab4e846c3b3.json.gz"
+      },
+      {
+        "kind": "membership",
+        "sha256": "69bb7d3e155939da7e57064b1e79d4abc4e76f02c31aba3ec2d13c2264bf3f34",
+        "byte_count": 247,
+        "json_byte_count": 795,
+        "format": "json-gzip.v1",
+        "filename": "69bb7d3e155939da7e57064b1e79d4abc4e76f02c31aba3ec2d13c2264bf3f34.json.gz"
+      },
+      {
+        "kind": "cases",
+        "sha256": "c7b50b0ee696261c6cfb6ff4fa0fce0ed2c4a6538caefb05e38eaacb91e1a0d9",
+        "byte_count": 1538,
+        "json_byte_count": 11057,
+        "format": "json-gzip.v1",
+        "filename": "c7b50b0ee696261c6cfb6ff4fa0fce0ed2c4a6538caefb05e38eaacb91e1a0d9.json.gz",
+        "offset": 0,
+        "count": 7
+      }
+    ],
+    "case_count": 7,
+    "chunk_size": 500,
+    "parent_native_run_id": "score-run.v1:sha256:160b94085f0acf72e226319d071533c30aaeba35982894270b86b42f78d10b9d",
+    "derived_operation": "bpic19_associations",
+    "derived_recipe": {
+      "query": {
+        "policy_id": "bpic19.frozen_native_associations.v1",
+        "target": {
+          "name": "Target T",
+          "selector": {
+            "kind": "case_ids",
+            "case_ids": [
+              "t1",
+              "t2",
+              "t3",
+              "t4",
+              "t5"
+            ]
+          }
+        },
+        "comparator": {
+          "name": "Comparator C",
+          "selector": {
+            "kind": "case_ids",
+            "case_ids": [
+              "c1",
+              "c2"
+            ]
+          }
+        },
+        "criteria": [
+          "A",
+          "B"
+        ],
+        "positive_threshold": 0,
+        "min_support": 1,
+        "pair_mode": "jointly_eligible",
+        "pooled_sd": true
+      },
+      "target_membership_sha256": "03981c56e03e8300152543d55b130f9503a1f1e384bb9c8e29c577bbf774f50a",
+      "target_case_count": 5,
+      "comparator_membership_sha256": "176c18e9b689f171e852ac97f7560417d35a48307214217efa18b5a024faf4d7",
+      "comparator_case_count": 2,
+      "association_artifact_sha256": "92507827bfd9a99994025d3d23632e757c7d25297aa3e304b9efdd1ed132f9ab"
+    }
+  },
+  "report": {
+    "admitted_criterion_count": 2,
+    "assessment_log_fingerprint": "ae54f0d9439444c9d25346a8d766dafd62337aa0110ec599c9d9f7423f1ba82e",
+    "association_analysis": {
+      "accepted_pairs": [
+        {
+          "dependency": {
+            "flag": "not_established",
+            "interpretation": "Shared deterministic input is not evidence of an independent cause.",
+            "left_attribute": "A",
+            "left_recipe": null,
+            "right_attribute": "B",
+            "right_recipe": null
+          },
+          "intersection_case_ids": [
+            "t1"
+          ],
+          "intersection_case_ids_receipt": {
+            "count": 1,
+            "sha256": "b813212912f4d0c4cc7c9dceba3fb8e0b088946be058e149461ec5f82d00c817",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "jaccard": 0.5,
+          "jaccard_reason": null,
+          "jointly_eligible_case_ids": [
+            "t1",
+            "t4",
+            "t5"
+          ],
+          "jointly_eligible_case_ids_receipt": {
+            "count": 3,
+            "sha256": "ef5557b6b1c5041c86a7fd3788172f99c682782cee1ceb74715f788a594d22a4",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "left": "A",
+          "left_positive_case_ids": [
+            "t1",
+            "t4"
+          ],
+          "left_positive_case_ids_receipt": {
+            "count": 2,
+            "sha256": "8714b5d77ad5afe5377ac8d7dd53b8a4dca210b69a780aa3399a5e7e0d7b4968",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "lift": 1.5,
+          "lift_reason": null,
+          "right": "B",
+          "right_positive_case_ids": [
+            "t1"
+          ],
+          "right_positive_case_ids_receipt": {
+            "count": 1,
+            "sha256": "b813212912f4d0c4cc7c9dceba3fb8e0b088946be058e149461ec5f82d00c817",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "support": 1,
+          "suppression_reason": null,
+          "union_case_ids": [
+            "t1",
+            "t4"
+          ],
+          "union_case_ids_receipt": {
+            "count": 2,
+            "sha256": "8714b5d77ad5afe5377ac8d7dd53b8a4dca210b69a780aa3399a5e7e0d7b4968",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "universe_case_count": 3,
+          "universe_case_ids": [
+            "t1",
+            "t4",
+            "t5"
+          ],
+          "universe_case_ids_receipt": {
+            "count": 3,
+            "sha256": "ef5557b6b1c5041c86a7fd3788172f99c682782cee1ceb74715f788a594d22a4",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          }
+        }
+      ],
+      "contrasts": [
+        {
+          "comparator_eligible_count": 2,
+          "comparator_total_count": 2,
+          "criterion_id": "A",
+          "eligible_firing_difference": 0.0,
+          "mean_difference": 0.25,
+          "pooled_sample_sd_magnitude": {
+            "pooled_sample_sd": 0.42389562394532926,
+            "reason": null,
+            "value": 0.5897678246195885
+          },
+          "raw_mean_difference": 0.25,
+          "raw_unit": "normalized_fixture_measurement",
+          "raw_unit_reason": null,
+          "target_eligible_count": 4,
+          "target_total_count": 5,
+          "total_prevalence_difference": -0.09999999999999998
+        },
+        {
+          "comparator_eligible_count": 2,
+          "comparator_total_count": 2,
+          "criterion_id": "B",
+          "eligible_firing_difference": 0.5,
+          "mean_difference": 0.375,
+          "pooled_sample_sd_magnitude": {
+            "pooled_sample_sd": 0.414578098794425,
+            "reason": null,
+            "value": 0.9045340337332909
+          },
+          "raw_mean_difference": 0.375,
+          "raw_unit": "normalized_fixture_measurement",
+          "raw_unit_reason": null,
+          "target_eligible_count": 4,
+          "target_total_count": 5,
+          "total_prevalence_difference": 0.4
+        }
+      ],
+      "formulas": {
+        "cohen_d": "mean difference / pooled sample SD, ddof=1; unavailable below two values per set or at zero pooled variance",
+        "eligible_firing": "positive / native evaluated positive-weight cases",
+        "jaccard": "intersection / union within the named pair universe",
+        "lift": "intersection * N / (left_positive * right_positive)",
+        "mean_difference": "target eligible mean severity - comparator eligible mean severity",
+        "prevalence": "positive / total selected cases"
+      },
+      "interpretation": "Descriptive finite-population comparison; no p-values, confidence intervals, independence, causality or savings are inferred.",
+      "legacy_convention": null,
+      "minimum_support": 1,
+      "overlapping_case_ids": [],
+      "overlapping_case_ids_receipt": {
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "complete": true,
+        "limit": 200,
+        "next_offset": null
+      },
+      "policy_id": "bpic19.frozen_native_associations.v1",
+      "populations": {
+        "comparator": {
+          "case_count": 2,
+          "case_ids": [
+            "c1",
+            "c2"
+          ],
+          "case_ids_receipt": {
+            "count": 2,
+            "sha256": "176c18e9b689f171e852ac97f7560417d35a48307214217efa18b5a024faf4d7",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "criteria": {
+            "A": {
+              "conditional_positive_severity": 0.25,
+              "criterion_id": "A",
+              "eligible_case_count": 2,
+              "eligible_case_ids": [
+                "c1",
+                "c2"
+              ],
+              "eligible_case_ids_receipt": {
+                "count": 2,
+                "sha256": "176c18e9b689f171e852ac97f7560417d35a48307214217efa18b5a024faf4d7",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "eligible_firing_rate": 0.5,
+              "eligible_mean_severity": 0.125,
+              "known_in_scope_case_count": 2,
+              "native_contribution_sum": 0.1875,
+              "out_of_scope_case_count": 0,
+              "positive_case_count": 1,
+              "positive_case_ids": [
+                "c1"
+              ],
+              "positive_case_ids_receipt": {
+                "count": 1,
+                "sha256": "bc56b594c5cc4e2dac04fa978d45acafe7a78e5c16c84167faf3704d01e052d9",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "raw_measurement_statistics": {
+                "count": 2,
+                "eligibility": "native evaluated positive-weight criterion cases",
+                "mean": 0.125,
+                "sample_sd": 0.1767766952966369,
+                "sample_sd_reason": null,
+                "sum": 0.25,
+                "unit": "normalized_fixture_measurement",
+                "unit_reason": null
+              },
+              "scope_unknown_case_count": 0,
+              "total_case_count": 2,
+              "total_case_prevalence": 0.5,
+              "unavailable_case_count": 0,
+              "unavailable_case_ids": [],
+              "unavailable_case_ids_receipt": {
+                "count": 0,
+                "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "unweighted_severity_sum": 0.25
+            },
+            "B": {
+              "conditional_positive_severity": null,
+              "criterion_id": "B",
+              "eligible_case_count": 2,
+              "eligible_case_ids": [
+                "c1",
+                "c2"
+              ],
+              "eligible_case_ids_receipt": {
+                "count": 2,
+                "sha256": "176c18e9b689f171e852ac97f7560417d35a48307214217efa18b5a024faf4d7",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "eligible_firing_rate": 0.0,
+              "eligible_mean_severity": 0.0,
+              "known_in_scope_case_count": 2,
+              "native_contribution_sum": 0.0,
+              "out_of_scope_case_count": 0,
+              "positive_case_count": 0,
+              "positive_case_ids": [],
+              "positive_case_ids_receipt": {
+                "count": 0,
+                "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "raw_measurement_statistics": {
+                "count": 2,
+                "eligibility": "native evaluated positive-weight criterion cases",
+                "mean": 0.0,
+                "sample_sd": 0.0,
+                "sample_sd_reason": null,
+                "sum": 0.0,
+                "unit": "normalized_fixture_measurement",
+                "unit_reason": null
+              },
+              "scope_unknown_case_count": 0,
+              "total_case_count": 2,
+              "total_case_prevalence": 0.0,
+              "unavailable_case_count": 0,
+              "unavailable_case_ids": [],
+              "unavailable_case_ids_receipt": {
+                "count": 0,
+                "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "unweighted_severity_sum": 0.0
+            }
+          },
+          "name": "Comparator C",
+          "native_item_penalties": [
+            {
+              "case_id": "c1",
+              "native_penalty": 0.1875,
+              "native_score": 0.8125
+            },
+            {
+              "case_id": "c2",
+              "native_penalty": 0.0,
+              "native_score": 1.0
+            }
+          ],
+          "native_item_penalties_receipt": {
+            "count": 2,
+            "sha256": "46161b8121192e94aff4fa5371addd4f3dc6db0b7e3d30df9f71cfcb21f4f1e7",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "native_mean_penalty": 0.09375,
+          "native_penalty_mass": 0.1875,
+          "scored_case_count": 2,
+          "unscored_case_count": 0
+        },
+        "target": {
+          "case_count": 5,
+          "case_ids": [
+            "t1",
+            "t2",
+            "t3",
+            "t4",
+            "t5"
+          ],
+          "case_ids_receipt": {
+            "count": 5,
+            "sha256": "03981c56e03e8300152543d55b130f9503a1f1e384bb9c8e29c577bbf774f50a",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "criteria": {
+            "A": {
+              "conditional_positive_severity": 0.75,
+              "criterion_id": "A",
+              "eligible_case_count": 4,
+              "eligible_case_ids": [
+                "t1",
+                "t2",
+                "t4",
+                "t5"
+              ],
+              "eligible_case_ids_receipt": {
+                "count": 4,
+                "sha256": "424ae4728160473e16af3440e5b1ba3887f795534fbe38d856f821835c6080a3",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "eligible_firing_rate": 0.5,
+              "eligible_mean_severity": 0.375,
+              "known_in_scope_case_count": 5,
+              "native_contribution_sum": 1.125,
+              "out_of_scope_case_count": 0,
+              "positive_case_count": 2,
+              "positive_case_ids": [
+                "t1",
+                "t4"
+              ],
+              "positive_case_ids_receipt": {
+                "count": 2,
+                "sha256": "8714b5d77ad5afe5377ac8d7dd53b8a4dca210b69a780aa3399a5e7e0d7b4968",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "raw_measurement_statistics": {
+                "count": 4,
+                "eligibility": "native evaluated positive-weight criterion cases",
+                "mean": 0.375,
+                "sample_sd": 0.47871355387816905,
+                "sample_sd_reason": null,
+                "sum": 1.5,
+                "unit": "normalized_fixture_measurement",
+                "unit_reason": null
+              },
+              "scope_unknown_case_count": 0,
+              "total_case_count": 5,
+              "total_case_prevalence": 0.4,
+              "unavailable_case_count": 1,
+              "unavailable_case_ids": [
+                "t3"
+              ],
+              "unavailable_case_ids_receipt": {
+                "count": 1,
+                "sha256": "978e1962bb2d447458cbe7d022e2d672080496cc5f2ddc40b5bf20dd8c1a255f",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "unweighted_severity_sum": 1.5
+            },
+            "B": {
+              "conditional_positive_severity": 0.75,
+              "criterion_id": "B",
+              "eligible_case_count": 4,
+              "eligible_case_ids": [
+                "t1",
+                "t3",
+                "t4",
+                "t5"
+              ],
+              "eligible_case_ids_receipt": {
+                "count": 4,
+                "sha256": "0c4cba23bb74171399c5d86851464ce1219a3d9338c2ede355be125f844cbc72",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "eligible_firing_rate": 0.5,
+              "eligible_mean_severity": 0.375,
+              "known_in_scope_case_count": 5,
+              "native_contribution_sum": 0.75,
+              "out_of_scope_case_count": 0,
+              "positive_case_count": 2,
+              "positive_case_ids": [
+                "t1",
+                "t3"
+              ],
+              "positive_case_ids_receipt": {
+                "count": 2,
+                "sha256": "dd85e29b43a502b683f2075fbf70f815e5d63ec6613a8a0e8e947651e96ba9b0",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "raw_measurement_statistics": {
+                "count": 4,
+                "eligibility": "native evaluated positive-weight criterion cases",
+                "mean": 0.375,
+                "sample_sd": 0.47871355387816905,
+                "sample_sd_reason": null,
+                "sum": 1.5,
+                "unit": "normalized_fixture_measurement",
+                "unit_reason": null
+              },
+              "scope_unknown_case_count": 0,
+              "total_case_count": 5,
+              "total_case_prevalence": 0.4,
+              "unavailable_case_count": 1,
+              "unavailable_case_ids": [
+                "t2"
+              ],
+              "unavailable_case_ids_receipt": {
+                "count": 1,
+                "sha256": "89cef8644c5d34dd6eefec0588b510b8e18ff3037a6a48fdb5f2f30bed67cbe5",
+                "complete": true,
+                "limit": 200,
+                "next_offset": null
+              },
+              "unweighted_severity_sum": 1.5
+            }
+          },
+          "name": "Target T",
+          "native_item_penalties": [
+            {
+              "case_id": "t1",
+              "native_penalty": 0.625,
+              "native_score": 0.375
+            },
+            {
+              "case_id": "t2",
+              "native_penalty": 0.0,
+              "native_score": 1.0
+            },
+            {
+              "case_id": "t3",
+              "native_penalty": 0.5,
+              "native_score": 0.5
+            },
+            {
+              "case_id": "t4",
+              "native_penalty": 0.75,
+              "native_score": 0.25
+            },
+            {
+              "case_id": "t5",
+              "native_penalty": 0.0,
+              "native_score": 1.0
+            }
+          ],
+          "native_item_penalties_receipt": {
+            "count": 5,
+            "sha256": "84ba0e6239f920f3567509ca045482da902693169445cf653866ffa7ee232fa4",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "native_mean_penalty": 0.375,
+          "native_penalty_mass": 1.875,
+          "scored_case_count": 5,
+          "unscored_case_count": 0
+        }
+      },
+      "query": {
+        "comparator": {
+          "case_ids": [
+            "c1",
+            "c2"
+          ],
+          "case_ids_receipt": {
+            "count": 2,
+            "sha256": "176c18e9b689f171e852ac97f7560417d35a48307214217efa18b5a024faf4d7",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "name": "Comparator C"
+        },
+        "criteria": [
+          "A",
+          "B"
+        ],
+        "min_support": 1,
+        "pair_mode": "jointly_eligible",
+        "policy_id": "bpic19.frozen_native_associations.v1",
+        "pooled_sd": true,
+        "positive_threshold": 0,
+        "target": {
+          "case_ids": [
+            "t1",
+            "t2",
+            "t3",
+            "t4",
+            "t5"
+          ],
+          "case_ids_receipt": {
+            "count": 5,
+            "sha256": "03981c56e03e8300152543d55b130f9503a1f1e384bb9c8e29c577bbf774f50a",
+            "complete": true,
+            "limit": 200,
+            "next_offset": null
+          },
+          "name": "Target T"
+        }
+      },
+      "recipe_id": "bpic19.frozen_native_associations.v1.jointly_eligible",
+      "reviewed_query": {
+        "comparator": {
+          "name": "Comparator C",
+          "selector": {
+            "case_ids": [
+              "c1",
+              "c2"
+            ],
+            "kind": "case_ids"
+          }
+        },
+        "criteria": [
+          "A",
+          "B"
+        ],
+        "min_support": 1,
+        "pair_mode": "jointly_eligible",
+        "policy_id": "bpic19.frozen_native_associations.v1",
+        "pooled_sd": true,
+        "positive_threshold": 0,
+        "target": {
+          "name": "Target T",
+          "selector": {
+            "case_ids": [
+              "t1",
+              "t2",
+              "t3",
+              "t4",
+              "t5"
+            ],
+            "kind": "case_ids"
+          }
+        }
+      },
+      "source_native_definition_id": "definition-version.v1:sha256:16a836fb687830a0e6b34593f9d473263af401beb40d2ca0cf69ef6b8e777fe1",
+      "source_native_run_id": "score-run.v1:sha256:160b94085f0acf72e226319d071533c30aaeba35982894270b86b42f78d10b9d",
+      "source_population_identity": {
+        "case_dictionary_id": "case-dictionary.v1:sha256:167f25f48bd53f6c7e3feb1b6294b5a44a86195fd87626fd8cd5fe147a233a33",
+        "implementation_version": "0.1.0",
+        "population_id": "population.v1:sha256:bb0557ed7a2954b537d0c82602aa4af28ac8636df9962da5caf9f1905b16398f",
+        "preparation_id": "preparation.v1:sha256:726dccfe7346f55f8f00af9967d2abd1d5c8f195c27ac9559d1ff721a2962996",
+        "representation_id": "representation.v1:sha256:9d6d86d6df419638bf3ca8bc597698ed62ca2f3d6ab6eeec6acee49962d1d8b3",
+        "source_id": "source.v1:sha256:bdcbf18339ea8f7e37c339e682e1bdfade5d13953c7decd441c5f1a95a69dfbe"
+      },
+      "suppressed_pairs": []
+    },
+    "associations": [
+      {
+        "dependency": "not_established",
+        "eligible_case_count": 5,
+        "feature_lineage": "criterion recipes in frozen norm metadata",
+        "interpretation": "descriptive association, not causal or independent evidence",
+        "jaccard": 0.3333333333333333,
+        "jaccard_reason": null,
+        "left": "A",
+        "left_positive": 3,
+        "lift": 1.6666666666666667,
+        "lift_reason": null,
+        "minimum_support": 1,
+        "right": "B",
+        "right_positive": 1,
+        "support": 1,
+        "suppression_reason": null
+      }
+    ],
+    "backlog_spec": {
+      "baseline": null,
+      "by": [
+        "company",
+        "spend_area"
+      ],
+      "gamma": 0.0,
+      "global_mean": 0.7053571428571429,
+      "min_cases": 1,
+      "mode": "flat",
+      "norm_fingerprint": "de56aaf2882d685d1fefe2377ddb0b72b4b23e857a8a7f6fbeb2fe89a99bf00f",
+      "score_col": "score",
+      "view": "Balanced",
+      "volume": "cases",
+      "z": null
+    },
+    "case_page": {
+      "offset": 0,
+      "limit": 100,
+      "total": 7,
+      "cases": [
+        {
+          "case_id": "c1",
+          "company": "comparator",
+          "context_evidence": {},
+          "coverage": 1.0,
+          "criteria": [
+            {
+              "criterion_id": "A",
+              "deviation": 0.25,
+              "effective_weight": 0.75,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.25,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0.25",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:94460ca6d068106cd34b993582434e5f2c7b6b366b73bbba4795f1b021dc4bba"
+                ],
+                "source_column": 13,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.25
+              },
+              "measurement_reason": null,
+              "penalty": 0.1875,
+              "raw_weight": 0.75,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:94460ca6d068106cd34b993582434e5f2c7b6b366b73bbba4795f1b021dc4bba"
+              ]
+            },
+            {
+              "criterion_id": "B",
+              "deviation": 0.0,
+              "effective_weight": 0.25,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:94460ca6d068106cd34b993582434e5f2c7b6b366b73bbba4795f1b021dc4bba"
+                ],
+                "source_column": 14,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.0,
+              "raw_weight": 0.25,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:94460ca6d068106cd34b993582434e5f2c7b6b366b73bbba4795f1b021dc4bba"
+              ]
+            }
+          ],
+          "document": "c1",
+          "evaluated_raw_weight": 1.0,
+          "flow": "DF1",
+          "historical_artifacts": null,
+          "in_scope_raw_weight": 1.0,
+          "layers": {
+            "Measurements": 0.1875
+          },
+          "native_penalty": 0.1875,
+          "record_row_ids": [
+            "row.v1:sha256:94460ca6d068106cd34b993582434e5f2c7b6b366b73bbba4795f1b021dc4bba"
+          ],
+          "scope_unknown_count": 0,
+          "score": 0.8125,
+          "scores": {
+            "Balanced": 0.8125
+          },
+          "spend_area": "Literal",
+          "value_evidence": {
+            "creation_unique_event": {},
+            "creation_value": {},
+            "exposure": {}
+          }
+        },
+        {
+          "case_id": "c2",
+          "company": "comparator",
+          "context_evidence": {},
+          "coverage": 1.0,
+          "criteria": [
+            {
+              "criterion_id": "A",
+              "deviation": 0.0,
+              "effective_weight": 0.75,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:9ebb68aac1be63ecdd5aab9b8a459917195665a85891148ffedaa2437d434cf0"
+                ],
+                "source_column": 13,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.0,
+              "raw_weight": 0.75,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:9ebb68aac1be63ecdd5aab9b8a459917195665a85891148ffedaa2437d434cf0"
+              ]
+            },
+            {
+              "criterion_id": "B",
+              "deviation": 0.0,
+              "effective_weight": 0.25,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:9ebb68aac1be63ecdd5aab9b8a459917195665a85891148ffedaa2437d434cf0"
+                ],
+                "source_column": 14,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.0,
+              "raw_weight": 0.25,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:9ebb68aac1be63ecdd5aab9b8a459917195665a85891148ffedaa2437d434cf0"
+              ]
+            }
+          ],
+          "document": "c2",
+          "evaluated_raw_weight": 1.0,
+          "flow": "DF1",
+          "historical_artifacts": null,
+          "in_scope_raw_weight": 1.0,
+          "layers": {
+            "Measurements": 0.0
+          },
+          "native_penalty": 0.0,
+          "record_row_ids": [
+            "row.v1:sha256:9ebb68aac1be63ecdd5aab9b8a459917195665a85891148ffedaa2437d434cf0"
+          ],
+          "scope_unknown_count": 0,
+          "score": 1.0,
+          "scores": {
+            "Balanced": 1.0
+          },
+          "spend_area": "Literal",
+          "value_evidence": {
+            "creation_unique_event": {},
+            "creation_value": {},
+            "exposure": {}
+          }
+        },
+        {
+          "case_id": "t1",
+          "company": "target",
+          "context_evidence": {},
+          "coverage": 1.0,
+          "criteria": [
+            {
+              "criterion_id": "A",
+              "deviation": 0.5,
+              "effective_weight": 0.75,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.5,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0.5",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:22f4aff506093036045ae2c56d200a3ea2ed7ef3a68f2fc715b49e8264874d27"
+                ],
+                "source_column": 13,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.5
+              },
+              "measurement_reason": null,
+              "penalty": 0.375,
+              "raw_weight": 0.75,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:22f4aff506093036045ae2c56d200a3ea2ed7ef3a68f2fc715b49e8264874d27"
+              ]
+            },
+            {
+              "criterion_id": "B",
+              "deviation": 1.0,
+              "effective_weight": 0.25,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 1.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "1",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:22f4aff506093036045ae2c56d200a3ea2ed7ef3a68f2fc715b49e8264874d27"
+                ],
+                "source_column": 14,
+                "unit": "normalized_fixture_measurement",
+                "value": 1.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.25,
+              "raw_weight": 0.25,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:22f4aff506093036045ae2c56d200a3ea2ed7ef3a68f2fc715b49e8264874d27"
+              ]
+            }
+          ],
+          "document": "t1",
+          "evaluated_raw_weight": 1.0,
+          "flow": "DF1",
+          "historical_artifacts": null,
+          "in_scope_raw_weight": 1.0,
+          "layers": {
+            "Measurements": 0.625
+          },
+          "native_penalty": 0.625,
+          "record_row_ids": [
+            "row.v1:sha256:22f4aff506093036045ae2c56d200a3ea2ed7ef3a68f2fc715b49e8264874d27"
+          ],
+          "scope_unknown_count": 0,
+          "score": 0.375,
+          "scores": {
+            "Balanced": 0.375
+          },
+          "spend_area": "Literal",
+          "value_evidence": {
+            "creation_unique_event": {},
+            "creation_value": {},
+            "exposure": {}
+          }
+        },
+        {
+          "case_id": "t2",
+          "company": "target",
+          "context_evidence": {},
+          "coverage": 0.75,
+          "criteria": [
+            {
+              "criterion_id": "A",
+              "deviation": 0.0,
+              "effective_weight": 1.0,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:49b127b0a1ab6db09eff8cb667b9d381e0ea3dd67174299e7c64841d71577824"
+                ],
+                "source_column": 13,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.0,
+              "raw_weight": 0.75,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:49b127b0a1ab6db09eff8cb667b9d381e0ea3dd67174299e7c64841d71577824"
+              ]
+            },
+            {
+              "criterion_id": "B",
+              "deviation": null,
+              "effective_weight": 0.0,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": null,
+              "measurement_evidence": {
+                "available": false,
+                "raw": "",
+                "reason": "empty_original_numeric_cell",
+                "row_ids": [
+                  "row.v1:sha256:49b127b0a1ab6db09eff8cb667b9d381e0ea3dd67174299e7c64841d71577824"
+                ],
+                "source_column": 14,
+                "unit": "normalized_fixture_measurement",
+                "value": null
+              },
+              "measurement_reason": "empty_original_numeric_cell",
+              "penalty": 0.0,
+              "raw_weight": 0.25,
+              "reason": "missing_attribute",
+              "row_ids": [
+                "row.v1:sha256:49b127b0a1ab6db09eff8cb667b9d381e0ea3dd67174299e7c64841d71577824"
+              ]
+            }
+          ],
+          "document": "t2",
+          "evaluated_raw_weight": 0.75,
+          "flow": "DF1",
+          "historical_artifacts": null,
+          "in_scope_raw_weight": 1.0,
+          "layers": {
+            "Measurements": 0.0
+          },
+          "native_penalty": 0.0,
+          "record_row_ids": [
+            "row.v1:sha256:49b127b0a1ab6db09eff8cb667b9d381e0ea3dd67174299e7c64841d71577824"
+          ],
+          "scope_unknown_count": 0,
+          "score": 1.0,
+          "scores": {
+            "Balanced": 1.0
+          },
+          "spend_area": "Literal",
+          "value_evidence": {
+            "creation_unique_event": {},
+            "creation_value": {},
+            "exposure": {}
+          }
+        },
+        {
+          "case_id": "t3",
+          "company": "target",
+          "context_evidence": {},
+          "coverage": 0.25,
+          "criteria": [
+            {
+              "criterion_id": "A",
+              "deviation": null,
+              "effective_weight": 0.0,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": null,
+              "measurement_evidence": {
+                "available": false,
+                "raw": "",
+                "reason": "empty_original_numeric_cell",
+                "row_ids": [
+                  "row.v1:sha256:f589ece4486a98c46b3d38cbe16cc5e6457d179715d1650c7f93f8aea609db9b"
+                ],
+                "source_column": 13,
+                "unit": "normalized_fixture_measurement",
+                "value": null
+              },
+              "measurement_reason": "empty_original_numeric_cell",
+              "penalty": 0.0,
+              "raw_weight": 0.75,
+              "reason": "missing_attribute",
+              "row_ids": [
+                "row.v1:sha256:f589ece4486a98c46b3d38cbe16cc5e6457d179715d1650c7f93f8aea609db9b"
+              ]
+            },
+            {
+              "criterion_id": "B",
+              "deviation": 0.5,
+              "effective_weight": 1.0,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.5,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0.5",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:f589ece4486a98c46b3d38cbe16cc5e6457d179715d1650c7f93f8aea609db9b"
+                ],
+                "source_column": 14,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.5
+              },
+              "measurement_reason": null,
+              "penalty": 0.5,
+              "raw_weight": 0.25,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:f589ece4486a98c46b3d38cbe16cc5e6457d179715d1650c7f93f8aea609db9b"
+              ]
+            }
+          ],
+          "document": "t3",
+          "evaluated_raw_weight": 0.25,
+          "flow": "DF1",
+          "historical_artifacts": null,
+          "in_scope_raw_weight": 1.0,
+          "layers": {
+            "Measurements": 0.5
+          },
+          "native_penalty": 0.5,
+          "record_row_ids": [
+            "row.v1:sha256:f589ece4486a98c46b3d38cbe16cc5e6457d179715d1650c7f93f8aea609db9b"
+          ],
+          "scope_unknown_count": 0,
+          "score": 0.5,
+          "scores": {
+            "Balanced": 0.5
+          },
+          "spend_area": "Literal",
+          "value_evidence": {
+            "creation_unique_event": {},
+            "creation_value": {},
+            "exposure": {}
+          }
+        },
+        {
+          "case_id": "t4",
+          "company": "target",
+          "context_evidence": {},
+          "coverage": 1.0,
+          "criteria": [
+            {
+              "criterion_id": "A",
+              "deviation": 1.0,
+              "effective_weight": 0.75,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 1.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "1",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:bc434162e7904d0cdc752225776dee3b1d18d505379234a8af69491504ead6ca"
+                ],
+                "source_column": 13,
+                "unit": "normalized_fixture_measurement",
+                "value": 1.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.75,
+              "raw_weight": 0.75,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:bc434162e7904d0cdc752225776dee3b1d18d505379234a8af69491504ead6ca"
+              ]
+            },
+            {
+              "criterion_id": "B",
+              "deviation": 0.0,
+              "effective_weight": 0.25,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:bc434162e7904d0cdc752225776dee3b1d18d505379234a8af69491504ead6ca"
+                ],
+                "source_column": 14,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.0,
+              "raw_weight": 0.25,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:bc434162e7904d0cdc752225776dee3b1d18d505379234a8af69491504ead6ca"
+              ]
+            }
+          ],
+          "document": "t4",
+          "evaluated_raw_weight": 1.0,
+          "flow": "DF1",
+          "historical_artifacts": null,
+          "in_scope_raw_weight": 1.0,
+          "layers": {
+            "Measurements": 0.75
+          },
+          "native_penalty": 0.75,
+          "record_row_ids": [
+            "row.v1:sha256:bc434162e7904d0cdc752225776dee3b1d18d505379234a8af69491504ead6ca"
+          ],
+          "scope_unknown_count": 0,
+          "score": 0.25,
+          "scores": {
+            "Balanced": 0.25
+          },
+          "spend_area": "Literal",
+          "value_evidence": {
+            "creation_unique_event": {},
+            "creation_value": {},
+            "exposure": {}
+          }
+        },
+        {
+          "case_id": "t5",
+          "company": "target",
+          "context_evidence": {},
+          "coverage": 1.0,
+          "criteria": [
+            {
+              "criterion_id": "A",
+              "deviation": 0.0,
+              "effective_weight": 0.75,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:cf26e0b22dd6f794b7d94809f0e59f0c61d7a9e448fb5cbbf86fdfb162006fd6"
+                ],
+                "source_column": 13,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.0,
+              "raw_weight": 0.75,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:cf26e0b22dd6f794b7d94809f0e59f0c61d7a9e448fb5cbbf86fdfb162006fd6"
+              ]
+            },
+            {
+              "criterion_id": "B",
+              "deviation": 0.0,
+              "effective_weight": 0.25,
+              "in_scope": true,
+              "layer": "Measurements",
+              "measurement": 0.0,
+              "measurement_evidence": {
+                "available": true,
+                "raw": "0",
+                "reason": null,
+                "row_ids": [
+                  "row.v1:sha256:cf26e0b22dd6f794b7d94809f0e59f0c61d7a9e448fb5cbbf86fdfb162006fd6"
+                ],
+                "source_column": 14,
+                "unit": "normalized_fixture_measurement",
+                "value": 0.0
+              },
+              "measurement_reason": null,
+              "penalty": 0.0,
+              "raw_weight": 0.25,
+              "reason": "evaluated",
+              "row_ids": [
+                "row.v1:sha256:cf26e0b22dd6f794b7d94809f0e59f0c61d7a9e448fb5cbbf86fdfb162006fd6"
+              ]
+            }
+          ],
+          "document": "t5",
+          "evaluated_raw_weight": 1.0,
+          "flow": "DF1",
+          "historical_artifacts": null,
+          "in_scope_raw_weight": 1.0,
+          "layers": {
+            "Measurements": 0.0
+          },
+          "native_penalty": 0.0,
+          "record_row_ids": [
+            "row.v1:sha256:cf26e0b22dd6f794b7d94809f0e59f0c61d7a9e448fb5cbbf86fdfb162006fd6"
+          ],
+          "scope_unknown_count": 0,
+          "score": 1.0,
+          "scores": {
+            "Balanced": 1.0
+          },
+          "spend_area": "Literal",
+          "value_evidence": {
+            "creation_unique_event": {},
+            "creation_value": {},
+            "exposure": {}
+          }
+        }
+      ]
+    },
+    "coverage_available_case_count": 7,
+    "criterion_statistics": [
+      {
+        "conditional_positive_severity": 0.5833333333333334,
+        "criterion_id": "A",
+        "eligible_case_count": 6,
+        "eligible_firing_rate": 0.5,
+        "eligible_mean_severity": 0.2916666666666667,
+        "in_scope_unavailable_case_count": 1,
+        "known_in_scope_case_count": 7,
+        "native_penalty_sum": 1.3125,
+        "out_of_scope_case_count": 0,
+        "positive_case_count": 3,
+        "scope_unknown_case_count": 0,
+        "total_case_count": 7,
+        "total_case_positive_fraction": 0.42857142857142855,
+        "unavailable_case_count": 1,
+        "unweighted_severity_sum": 1.75
+      },
+      {
+        "conditional_positive_severity": 0.75,
+        "criterion_id": "B",
+        "eligible_case_count": 6,
+        "eligible_firing_rate": 0.3333333333333333,
+        "eligible_mean_severity": 0.25,
+        "in_scope_unavailable_case_count": 1,
+        "known_in_scope_case_count": 7,
+        "native_penalty_sum": 0.75,
+        "out_of_scope_case_count": 0,
+        "positive_case_count": 2,
+        "scope_unknown_case_count": 0,
+        "total_case_count": 7,
+        "total_case_positive_fraction": 0.2857142857142857,
+        "unavailable_case_count": 1,
+        "unweighted_severity_sum": 1.5
+      }
+    ],
+    "criterion_summary": [
+      {
+        "constraint": "A",
+        "description": "",
+        "layer": "Measurements",
+        "mean_penalty": 0.1875,
+        "mean_violation": 0.2916666666666667,
+        "share_evaluated": 0.8571428571428571,
+        "share_in_scope": 1.0,
+        "share_violated": 0.5,
+        "type": "metric"
+      },
+      {
+        "constraint": "B",
+        "description": "",
+        "layer": "Measurements",
+        "mean_penalty": 0.10714285714285714,
+        "mean_violation": 0.25,
+        "share_evaluated": 0.8571428571428571,
+        "share_in_scope": 1.0,
+        "share_violated": 0.3333333333333333,
+        "type": "metric"
+      }
+    ],
+    "document_grain": "scored PO items within each purchasing document",
+    "documents": [
+      {
+        "PI": 0.4553571428571429,
+        "document": "t4",
+        "gap": 0.4553571428571429,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 0.25,
+        "member_count": 1,
+        "n_cases": 1,
+        "positive_PI_share": 0.45945945945945943,
+        "stable_PI": 0.4553571428571429,
+        "stable_gap": 0.4553571428571429,
+        "stable_mean": 0.25,
+        "unscored_member_count": 0,
+        "volume": 1.0
+      },
+      {
+        "PI": 0.3303571428571429,
+        "document": "t1",
+        "gap": 0.3303571428571429,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 0.375,
+        "member_count": 1,
+        "n_cases": 1,
+        "positive_PI_share": 0.3333333333333333,
+        "stable_PI": 0.3303571428571429,
+        "stable_gap": 0.3303571428571429,
+        "stable_mean": 0.375,
+        "unscored_member_count": 0,
+        "volume": 1.0
+      },
+      {
+        "PI": 0.2053571428571429,
+        "document": "t3",
+        "gap": 0.2053571428571429,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 0.5,
+        "member_count": 1,
+        "n_cases": 1,
+        "positive_PI_share": 0.20720720720720723,
+        "stable_PI": 0.2053571428571429,
+        "stable_gap": 0.2053571428571429,
+        "stable_mean": 0.5,
+        "unscored_member_count": 0,
+        "volume": 1.0
+      },
+      {
+        "PI": 0.0,
+        "document": "c1",
+        "gap": 0.0,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 0.8125,
+        "member_count": 1,
+        "n_cases": 1,
+        "positive_PI_share": 0.0,
+        "stable_PI": 0.0,
+        "stable_gap": 0.0,
+        "stable_mean": 0.8125,
+        "unscored_member_count": 0,
+        "volume": 1.0
+      },
+      {
+        "PI": 0.0,
+        "document": "c2",
+        "gap": 0.0,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 1.0,
+        "member_count": 1,
+        "n_cases": 1,
+        "positive_PI_share": 0.0,
+        "stable_PI": 0.0,
+        "stable_gap": 0.0,
+        "stable_mean": 1.0,
+        "unscored_member_count": 0,
+        "volume": 1.0
+      },
+      {
+        "PI": 0.0,
+        "document": "t2",
+        "gap": 0.0,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 1.0,
+        "member_count": 1,
+        "n_cases": 1,
+        "positive_PI_share": 0.0,
+        "stable_PI": 0.0,
+        "stable_gap": 0.0,
+        "stable_mean": 1.0,
+        "unscored_member_count": 0,
+        "volume": 1.0
+      },
+      {
+        "PI": 0.0,
+        "document": "t5",
+        "gap": 0.0,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 1.0,
+        "member_count": 1,
+        "n_cases": 1,
+        "positive_PI_share": 0.0,
+        "stable_PI": 0.0,
+        "stable_gap": 0.0,
+        "stable_mean": 1.0,
+        "unscored_member_count": 0,
+        "volume": 1.0
+      }
+    ],
+    "driver_units": "native mean penalty deltas; signed PI terms use native volume before positive-gap truncation",
+    "exemplars": [],
+    "exposure_calibration": null,
+    "group_page": {
+      "document_total": 7,
+      "limit": 50,
+      "offset": 0,
+      "total": 2
+    },
+    "groups": [
+      {
+        "PI": 0.4017857142857145,
+        "company": "target",
+        "gap": 0.0803571428571429,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 0.625,
+        "n_cases": 5,
+        "spend_area": "Literal",
+        "stable_PI": 0.4017857142857145,
+        "stable_gap": 0.0803571428571429,
+        "stable_mean": 0.625,
+        "volume": 5.0
+      },
+      {
+        "PI": 0.0,
+        "company": "comparator",
+        "gap": 0.0,
+        "global_mean": 0.7053571428571429,
+        "mean_score": 0.90625,
+        "n_cases": 2,
+        "spend_area": "Literal",
+        "stable_PI": 0.0,
+        "stable_gap": 0.0,
+        "stable_mean": 0.90625,
+        "volume": 2.0
+      }
+    ],
+    "layer_drivers": [
+      {
+        "Measurements": 0.375,
+        "Measurements__delta": 0.08035714285714285,
+        "Measurements__signed_PI": 0.40178571428571425,
+        "Measurements__signed_stable_PI": 0.40178571428571425,
+        "company": "target",
+        "dominant_layer": "Measurements",
+        "n_cases": 5,
+        "spend_area": "Literal",
+        "volume": 5.0
+      },
+      {
+        "Measurements": 0.09375,
+        "Measurements__delta": -0.20089285714285715,
+        "Measurements__signed_PI": -0.4017857142857143,
+        "Measurements__signed_stable_PI": -0.4017857142857143,
+        "company": "comparator",
+        "dominant_layer": null,
+        "n_cases": 2,
+        "spend_area": "Literal",
+        "volume": 2.0
+      }
+    ],
+    "mean_coverage": 0.8571428571428571,
+    "mean_score": 0.7053571428571429,
+    "method_artifact": {
+      "distribution": "wise-pm",
+      "eligible_release": false,
+      "qualification": "candidate_component_checked_release_pending",
+      "source_commit": "6883db5269e622d9ce5274d207e831d12ab134fe",
+      "version": "0.2.0",
+      "wheel_sha256": "7329b7929bb8a3e40c596b359f352aace23cc233d8f29322ee063612733aecc3"
+    },
+    "norm": {
+      "constraints": [
+        {
+          "id": "A",
+          "layer": "Measurements",
+          "params": {
+            "attribute": "A",
+            "direction": "high",
+            "threshold": 0,
+            "width": 1
+          },
+          "type": "metric"
+        },
+        {
+          "id": "B",
+          "layer": "Measurements",
+          "params": {
+            "attribute": "B",
+            "direction": "high",
+            "threshold": 0,
+            "width": 1
+          },
+          "type": "metric"
+        }
+      ],
+      "layers": [
+        {
+          "id": "Measurements"
+        }
+      ],
+      "missing_values": "three_valued",
+      "name": "independent.association.raw-numeric-fields.v1",
+      "schema_version": 3,
+      "scoring_mode": "flat",
+      "version": "1",
+      "views": [
+        {
+          "constraint_weights": {
+            "A": 0.75,
+            "B": 0.25
+          },
+          "name": "Balanced"
+        }
+      ]
+    },
+    "norm_fingerprint": "de56aaf2882d685d1fefe2377ddb0b72b4b23e857a8a7f6fbeb2fe89a99bf00f",
+    "omissions": [],
+    "population_case_count": 7,
+    "profile_complete": true,
+    "profile_id": "independent.association.raw-numeric-fields.v1",
+    "ranking_comparisons": {
+      "document_overlaps": [],
+      "group_policies": {
+        "PI_gamma_0": [
+          {
+            "PI": 0.4017857142857145,
+            "company": "target",
+            "gap": 0.0803571428571429,
+            "global_mean": 0.7053571428571429,
+            "mean_score": 0.625,
+            "n_cases": 5,
+            "spend_area": "Literal",
+            "stable_PI": 0.4017857142857145,
+            "stable_gap": 0.0803571428571429,
+            "stable_mean": 0.625,
+            "volume": 5.0
+          },
+          {
+            "PI": 0.0,
+            "company": "comparator",
+            "gap": 0.0,
+            "global_mean": 0.7053571428571429,
+            "mean_score": 0.90625,
+            "n_cases": 2,
+            "spend_area": "Literal",
+            "stable_PI": 0.0,
+            "stable_gap": 0.0,
+            "stable_mean": 0.90625,
+            "volume": 2.0
+          }
+        ],
+        "PI_gamma_20": [
+          {
+            "PI": 0.4017857142857145,
+            "company": "target",
+            "gap": 0.0803571428571429,
+            "global_mean": 0.7053571428571429,
+            "mean_score": 0.625,
+            "n_cases": 5,
+            "spend_area": "Literal",
+            "stable_PI": 0.08035714285714257,
+            "stable_gap": 0.016071428571428514,
+            "stable_mean": 0.6892857142857144,
+            "volume": 5.0
+          },
+          {
+            "PI": 0.0,
+            "company": "comparator",
+            "gap": 0.0,
+            "global_mean": 0.7053571428571429,
+            "mean_score": 0.90625,
+            "n_cases": 2,
+            "spend_area": "Literal",
+            "stable_PI": 0.0,
+            "stable_gap": 0.0,
+            "stable_mean": 0.7236201298701299,
+            "volume": 2.0
+          }
+        ],
+        "mean_penalty": [
+          {
+            "company": "target",
+            "cum_share": 0.9090909090909091,
+            "mean_penalty": 0.375,
+            "n_cases": 5,
+            "penalty_mass": 1.875,
+            "rank": 1,
+            "share": 0.9090909090909091,
+            "spend_area": "Literal"
+          },
+          {
+            "company": "comparator",
+            "cum_share": 1.0,
+            "mean_penalty": 0.09375,
+            "n_cases": 2,
+            "penalty_mass": 0.1875,
+            "rank": 2,
+            "share": 0.09090909090909091,
+            "spend_area": "Literal"
+          }
+        ],
+        "total_penalty": [
+          {
+            "company": "target",
+            "cum_share": 0.9090909090909091,
+            "mean_penalty": 0.375,
+            "n_cases": 5,
+            "penalty_mass": 1.875,
+            "rank": 1,
+            "share": 0.9090909090909091,
+            "spend_area": "Literal"
+          },
+          {
+            "company": "comparator",
+            "cum_share": 1.0,
+            "mean_penalty": 0.09375,
+            "n_cases": 2,
+            "penalty_mass": 0.1875,
+            "rank": 2,
+            "share": 0.09090909090909091,
+            "spend_area": "Literal"
+          }
+        ]
+      },
+      "interpretation": "descriptive ranking comparisons on one frozen evaluation; each view has its own arithmetic item reference",
+      "tie_policy": "native descending priority, descending scored count, ascending grouping keys with missing last",
+      "top_document_limit": 20,
+      "top_group_limit": 10,
+      "views": {
+        "Balanced": {
+          "document_reference": {
+            "baseline": null,
+            "by": [
+              "document"
+            ],
+            "gamma": 0.0,
+            "global_mean": 0.7053571428571429,
+            "min_cases": 1,
+            "mode": "flat",
+            "norm_fingerprint": "de56aaf2882d685d1fefe2377ddb0b72b4b23e857a8a7f6fbeb2fe89a99bf00f",
+            "score_col": "score",
+            "view": "Balanced",
+            "volume": "cases",
+            "z": null
+          },
+          "documents": [
+            {
+              "PI": 0.4553571428571429,
+              "document": "t4",
+              "gap": 0.4553571428571429,
+              "global_mean": 0.7053571428571429,
+              "mean_score": 0.25,
+              "n_cases": 1,
+              "stable_PI": 0.4553571428571429,
+              "stable_gap": 0.4553571428571429,
+              "stable_mean": 0.25,
+              "volume": 1.0
+            },
+            {
+              "PI": 0.3303571428571429,
+              "document": "t1",
+              "gap": 0.3303571428571429,
+              "global_mean": 0.7053571428571429,
+              "mean_score": 0.375,
+              "n_cases": 1,
+              "stable_PI": 0.3303571428571429,
+              "stable_gap": 0.3303571428571429,
+              "stable_mean": 0.375,
+              "volume": 1.0
+            },
+            {
+              "PI": 0.2053571428571429,
+              "document": "t3",
+              "gap": 0.2053571428571429,
+              "global_mean": 0.7053571428571429,
+              "mean_score": 0.5,
+              "n_cases": 1,
+              "stable_PI": 0.2053571428571429,
+              "stable_gap": 0.2053571428571429,
+              "stable_mean": 0.5,
+              "volume": 1.0
+            }
+          ],
+          "group_reference": {
+            "baseline": null,
+            "by": [
+              "company",
+              "spend_area"
+            ],
+            "gamma": 0.0,
+            "global_mean": 0.7053571428571429,
+            "min_cases": 1,
+            "mode": "flat",
+            "norm_fingerprint": "de56aaf2882d685d1fefe2377ddb0b72b4b23e857a8a7f6fbeb2fe89a99bf00f",
+            "score_col": "score",
+            "view": "Balanced",
+            "volume": "cases",
+            "z": null
+          },
+          "groups": [
+            {
+              "PI": 0.4017857142857145,
+              "company": "target",
+              "gap": 0.0803571428571429,
+              "global_mean": 0.7053571428571429,
+              "mean_score": 0.625,
+              "n_cases": 5,
+              "spend_area": "Literal",
+              "stable_PI": 0.4017857142857145,
+              "stable_gap": 0.0803571428571429,
+              "stable_mean": 0.625,
+              "volume": 5.0
+            }
+          ],
+          "state": "evaluated"
+        }
+      }
+    },
+    "representation_page": {
+      "exact_total": 0,
+      "limit": 50,
+      "offset": 0,
+      "reference": "same frozen item assessment, native arithmetic scored-item reference; no refit",
+      "signature_total": 0,
+      "unavailable_case_count": 7
+    },
+    "representation_scores": {
+      "exact": [],
+      "signature": []
+    },
+    "requested_criterion_count": 2,
+    "scored_case_count": 7,
+    "selector_warnings": [],
+    "settings": {
+      "association_min_support": 1,
+      "criteria_family": "full",
+      "gamma": 0,
+      "group_by": [
+        "company",
+        "spend_area"
+      ],
+      "min_cases": 1,
+      "mode": "flat",
+      "view": "Balanced",
+      "volume": "cases"
+    },
+    "suppressed_associations": [],
+    "transport": "prepared measurements; assessment rows are not source events",
+    "unscored_case_count": 0,
+    "view_summaries": [
+      {
+        "contrib__Measurements": 0.29464285714285715,
+        "mean_score": 0.7053571428571429,
+        "n_scored": 7,
+        "view": "Balanced"
+      }
+    ],
+    "evidence_page": {
+      "filter": {},
+      "reference_run_id": "score-run.v1:sha256:e909a97761ee3027d62c337fcfffbeaac1ba9297e3fd0c9702b6f9116e21649f",
+      "reference_population_identity": {
+        "source_id": "source.v1:sha256:bdcbf18339ea8f7e37c339e682e1bdfade5d13953c7decd441c5f1a95a69dfbe",
+        "preparation_id": "preparation.v1:sha256:726dccfe7346f55f8f00af9967d2abd1d5c8f195c27ac9559d1ff721a2962996",
+        "representation_id": "representation.v1:sha256:9d6d86d6df419638bf3ca8bc597698ed62ca2f3d6ab6eeec6acee49962d1d8b3",
+        "case_dictionary_id": "case-dictionary.v1:sha256:167f25f48bd53f6c7e3feb1b6294b5a44a86195fd87626fd8cd5fe147a233a33",
+        "population_id": "population.v1:sha256:bb0557ed7a2954b537d0c82602aa4af28ac8636df9962da5caf9f1905b16398f",
+        "implementation_version": "0.1.0"
+      },
+      "selected_membership_sha256": "398cc71fcacedbf3ed63599316f9e1eb42ebb192034c7a041baa36b9b242bd9f",
+      "selected_case_count": 7,
+      "interpretation": "stored item inspection; scores, calibration and arithmetic reference unchanged"
+    }
+  }
+}

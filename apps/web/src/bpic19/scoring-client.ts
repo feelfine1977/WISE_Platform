@@ -1,11 +1,13 @@
 import Ajv2020 from "ajv/dist/2020.js";
 import schema from "../../../../contracts/bpic19-scoring.schema.json";
-import type { Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, Bpic19Refusal, Bpic19ExportRequest } from "./scoring-types";
+import type { Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, Bpic19Refusal, Bpic19ExportRequest, Bpic19AssociationRequest, AssociationQuery, Bpic19ReviewRequest, AnalysisReview } from "./scoring-types";
 
 export type Bpic19Outcome = { ok: true; answer: Bpic19ScoreAnswer } | { ok: false; message: string };
 export interface Bpic19Client {
   score(request: Bpic19ScoreRequest, signal: AbortSignal): Promise<Bpic19Outcome>;
   read(request: Bpic19ReadRequest, signal: AbortSignal): Promise<Bpic19Outcome>;
+  associate?(request: Bpic19AssociationRequest, signal: AbortSignal): Promise<Bpic19Outcome>;
+  review?(request: Bpic19ReviewRequest, signal: AbortSignal): Promise<Bpic19Outcome>;
   export?(request: Bpic19ExportRequest, signal: AbortSignal): Promise<{ ok: true; blob: Blob } | { ok: false; message: string }>;
 }
 const ajv = new Ajv2020({ allErrors: true, strictTypes: false, allowUnionTypes: true });
@@ -18,10 +20,14 @@ export const bpic19Contract = {
   request: ajv.getSchema<Bpic19ScoreRequest>(`${schema.$id}#/$defs/Bpic19ScoreRequest`)!,
   read: ajv.getSchema<Bpic19ReadRequest>(`${schema.$id}#/$defs/Bpic19ReadRequest`)!,
   export: ajv.getSchema<Bpic19ExportRequest>(`${schema.$id}#/$defs/Bpic19ExportRequest`)!,
+  associate: ajv.getSchema<Bpic19AssociationRequest>(`${schema.$id}#/$defs/Bpic19AssociationRequest`)!,
+  associationQuery: ajv.getSchema<AssociationQuery>(`${schema.$id}#/$defs/AssociationQuery`)!,
+  review: ajv.getSchema<Bpic19ReviewRequest>(`${schema.$id}#/$defs/Bpic19ReviewRequest`)!,
+  interpretation: ajv.getSchema<AnalysisReview>(`${schema.$id}#/$defs/AnalysisReview`)!,
   answer: isAnswer,
 };
-async function post(route: string, request: Bpic19ScoreRequest | Bpic19ReadRequest, signal: AbortSignal): Promise<Bpic19Outcome> {
-  const check = request.message_type === "bpic19_score_request" ? bpic19Contract.request : bpic19Contract.read;
+async function post(route: string, request: Bpic19ScoreRequest | Bpic19ReadRequest | Bpic19AssociationRequest | Bpic19ReviewRequest, signal: AbortSignal): Promise<Bpic19Outcome> {
+  const check = request.message_type === "bpic19_score_request" ? bpic19Contract.request : request.message_type === "bpic19_association_request" ? bpic19Contract.associate : request.message_type === "bpic19_review_request" ? bpic19Contract.review : bpic19Contract.read;
   if (check(request) !== true) return { ok: false, message: "The request does not match the BPIC19 analysis contract." };
   let response: Response;
   try {
@@ -39,6 +45,8 @@ async function post(route: string, request: Bpic19ScoreRequest | Bpic19ReadReque
     return { ok: false, message: "The service answered another analysis request. Retry this analysis." };
   if (request.message_type === "bpic19_read_request" && payload.run_id !== request.run_id)
     return { ok: false, message: "The service returned another stored analysis run." };
+  if ((request.message_type === "bpic19_association_request" || request.message_type === "bpic19_review_request") && payload.snapshot?.parent_native_run_id !== request.run_id)
+    return { ok: false, message: "The comparison was derived from another native run." };
   if (request.message_type === "bpic19_score_request" &&
     (payload.report.settings.view !== request.settings.view || payload.report.settings.mode !== request.settings.mode ||
      payload.report.settings.criteria_family !== request.settings.criteria_family ||
@@ -63,6 +71,8 @@ async function post(route: string, request: Bpic19ScoreRequest | Bpic19ReadReque
 export const localBpic19Client: Bpic19Client = {
   score: (request, signal) => post("/api/investigations/bpic19-score", request, signal),
   read: (request, signal) => post("/api/investigations/bpic19-read", request, signal),
+  associate: (request,signal) => post("/api/investigations/bpic19-associate",request,signal),
+  review: (request,signal) => post("/api/investigations/bpic19-review",request,signal),
   export: async (request, signal) => {
     if (!bpic19Contract.export(request)) return { ok: false, message: "The export request does not match the BPIC19 contract." };
     try {

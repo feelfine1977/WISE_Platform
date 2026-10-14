@@ -10,7 +10,7 @@ The failing place decides the code. Another whole schema version is
 ``unsupported_schema``; the anchor policy of an opening predicate is
 ``unsupported_policy``; anything else inside a predicate is
 ``invalid_predicate``; everything else is ``invalid_request``. A predicate is
-one of eleven kinds told apart by its ``kind``; a failure is named within the
+one of twelve kinds told apart by its ``kind``; a failure is named within the
 kind the request chose, and a kind the contract does not know is named at the
 kind itself.
 """
@@ -73,6 +73,7 @@ _KINDS = {
     "CaseStartInWindow": "case_start_in_window",
     "OpeningAttributeIn": "opening_attribute_in",
     "RecordAttributeIn": "record_attribute_in",
+    "RecordAttributesAll": "record_attributes_all",
     "ObservedSpanAtLeast": "observed_span_at_least",
     "MaxRawGapAtLeast": "max_raw_gap_at_least",
 }
@@ -238,4 +239,5 @@ def restored_window_echo(message: Mapping, written: dict, paths: tuple[Location,
 def predicate_wire_failures(message: Mapping, predicate_paths: tuple[Location, ...]) -> list[Failure]:
     """Source-only set uniqueness and UTC spelling checks at every predicate-bearing seam."""
     unique = [(*prefix, "*", member) for prefix in predicate_paths for member in ("case_ids", "values")]
+    unique.extend((*prefix, "*", "conditions", "*", "values") for prefix in predicate_paths)
     return repeated_failures(message, unique) + instant_failures(message, predicate_window_paths(message, predicate_paths))

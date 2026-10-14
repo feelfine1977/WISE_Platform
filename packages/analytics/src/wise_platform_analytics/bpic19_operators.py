@@ -432,6 +432,15 @@ def episode_case(
     relevant = [
         row for row in records if any(row.activity in stage for stage in stages)
     ]
+    if stages:
+        result["known_activation_count"] = sum(
+            row.activity in stages[0] for row in records
+        )
+        result["activation_count"] = (
+            None if missing_labels else result["known_activation_count"]
+        )
+    elif problem and not problem.startswith("consignment_"):
+        result["activation_count"] = None
     if problem:
         result.update(
             state="outside_scope" if problem.startswith("consignment_") else "unknown",
@@ -606,6 +615,9 @@ def episode_case(
             len(result["unmatched_row_ids"]),
             result["unmatched_row_ids"],
             "original_events",
+        ),
+        "paired_endpoint_event_count": _raw(
+            len(paired), result["included_row_ids"], "original_events"
         ),
         "cancellation_count": _raw(
             len(cancellations), (row.row_id for row in cancellations), "original_events"
@@ -855,6 +867,18 @@ def rule_case(
     """Three-valued finite recorded-event relations; unknown support is never a false match."""
     result = _case(prepared, case_id)
     records = prepared.histories[case_id]
+    response = recipe["relation"] == "response"
+    activation_labels = (
+        recipe["left_activities"] if response else recipe["right_activities"]
+    )
+    result["known_activation_count"] = sum(
+        row.activity in activation_labels for row in records
+    )
+    result["activation_count"] = (
+        None
+        if any(row.activity is None for row in records)
+        else result["known_activation_count"]
+    )
     if recipe["flow_scope"] != "all":
         flow, problem = _category(records, roles["item_category"])
         if problem or flow != recipe["flow_scope"]:
@@ -864,7 +888,6 @@ def rule_case(
                 truth="unknown" if problem else None,
             )
             return result
-    response = recipe["relation"] == "response"
     activation_labels = (
         recipe["left_activities"] if response else recipe["right_activities"]
     )
@@ -1364,6 +1387,10 @@ SOURCES = {
 
 def _distribution(values: list[float], total: int) -> dict:
     count = len(values)
+    try:
+        known_sum = math.fsum(values) if values else None
+    except OverflowError:
+        known_sum = None
     ordered = sorted(values)
     middle = (
         None
@@ -1382,6 +1409,12 @@ def _distribution(values: list[float], total: int) -> dict:
         "maximum": max(values) if values else None,
         "mean": math.fsum(value / count for value in values) if values else None,
         "median": middle,
+        "known_sum": known_sum,
+        "known_sum_reason": (
+            "no_available_values"
+            if not values
+            else "nonfinite_aggregate" if known_sum is None else None
+        ),
     }
 
 

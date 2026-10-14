@@ -3,6 +3,8 @@ import { localBpic19Client, type Bpic19Client } from "./scoring-client";
 import type { AnswerIdentity, Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, CaseAssessment, NativeRow, NamedPopulation, Roles, Settings } from "./scoring-types";
 import "./scoring.css";
 import reference from "./scoring-reference.json";
+import { Bpic19Associations } from "./Bpic19Associations";
+import { Bpic19Review } from "./Bpic19Review";
 
 interface PreviewNorm {
   name: string;
@@ -88,7 +90,9 @@ function CaseRows({ item, open, toggle, onInspect }: { item: CaseAssessment; ope
             ...(Array.isArray(c.measurement_evidence?.unknown_row_ids) ? c.measurement_evidence.unknown_row_ids.filter((v):v is string => typeof v === "string") : [])])])}>{c.row_ids.length} source records</button> : `${c.row_ids.length} source records`}
             {c.measurement_evidence?.known_matching_lower_bound !== undefined && <small>Known matching lower bound {number(c.measurement_evidence.known_matching_lower_bound)}; exact count unavailable; unknown label records remain in the witness.</small>}
             {onInspect && c.row_ids.length === 0 && Array.isArray(c.measurement_evidence?.unknown_row_ids) && <button type="button" onClick={() => onInspect(item.case_id,c.measurement_evidence!.unknown_row_ids as string[])}>Inspect unknown labels</button>}
-            {onInspect && Array.isArray(c.measurement_evidence?.absence_row_ids) && c.measurement_evidence.absence_row_ids.length > 0 && <button type="button" onClick={() => onInspect(item.case_id,c.measurement_evidence!.absence_row_ids as string[])}>Inspect complete-label absence evidence</button>}</td></tr>)}</tbody></table></td></tr>}</>;
+            {onInspect && Array.isArray(c.measurement_evidence?.absence_row_ids) && c.measurement_evidence.absence_row_ids.length > 0 && <button type="button" onClick={() => onInspect(item.case_id,c.measurement_evidence!.absence_row_ids as string[])}>Inspect complete-label absence evidence</button>}</td></tr>)}</tbody></table>
+      {item.historical_artifacts && <details><summary>Historical quarter, paths and replication proxy</summary><p>Quarter {String(item.historical_artifacts.start_quarter ?? "Unavailable")}. Original events divided by distinct parsed timestamps is a replication proxy, not a verified duplicate count. Historical timestamps retain their source range policy.</p><pre>{JSON.stringify(item.historical_artifacts,null,2)}</pre></details>}
+      </td></tr>}</>;
 }
 function NativeTable({ caption, rows, columns, onDocument, onMembers }: { caption: string; rows: NativeRow[]; columns: string[]; onDocument?: Bpic19ScoringProps["onInspectDocument"]; onMembers?: (row: NativeRow) => void }) {
   return <div className="bpic19-table-wrap"><table><caption>{caption}</caption><thead><tr>{columns.map(c => <th key={c}>{c.replaceAll("_", " ")}</th>)}</tr></thead>
@@ -186,9 +190,9 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
     <details className="bpic19-definition-preview"><summary>Review criterion definitions and stakeholder weights before running</summary>
       <p>{settings.profile === "paper" ? "WISE_12_10_2026.pdf · Table B2, PDF page 35; weights Table B3, PDF page 36." : "Historical notebook norm bpic19_norm_v1.json · version 1.0-paper-aligned, 7 March 2026."}
         {` ${preview.constraints.length} criteria compiled for ${settings.view}. Thresholds are researcher screening choices.`}</p>
-      <div className="bpic19-table-wrap"><table><caption>Selected native definitions</caption><thead><tr><th>Criterion</th><th>Meaning</th><th>Raw measurement</th><th>Scope</th><th>Direction</th><th>Threshold</th><th>Width</th><th>Raw weight</th></tr></thead>
+      <div className="bpic19-table-wrap"><table><caption>Selected native definitions</caption><thead><tr><th>Criterion</th><th>Meaning</th><th>Raw measurement</th><th>Scope</th><th>Direction</th><th>Threshold</th><th>Width</th><th>Raw weight</th><th>Supplied mandatory control</th></tr></thead>
         <tbody>{preview.constraints.map(c => <tr key={c.id}><td>{c.id}</td><td>{c.description}</td><td>{c.params.attribute}<small>{recipeText(preview,c.id)}</small></td><td>{c.applicability.flow?.join(", ") ?? "All flows"}</td>
-          <td>{c.params.direction}</td><td>{c.params.threshold}</td><td>{c.params.width}</td><td>{previewView?.constraint_weights ? number(previewView.constraint_weights[c.id]) : `${number(c.weight)} within layer; ${number(previewView?.layer_weights?.[c.layer])} layer weight`}</td></tr>)}</tbody></table></div>
+          <td>{c.params.direction}</td><td>{c.params.threshold}</td><td>{c.params.width}</td><td>{previewView?.constraint_weights ? number(previewView.constraint_weights[c.id]) : `${number(c.weight)} within layer; ${number(previewView?.layer_weights?.[c.layer])} layer weight`}</td><td>{answer?.report.analysis_review?.mandatory_controls.find(control=>control.criterion_id===c.id)?.mandatory === undefined ? "No flag supplied" : answer.report.analysis_review.mandatory_controls.find(control=>control.criterion_id===c.id)?.mandatory ? "Mandatory" : "Not mandatory"}</td></tr>)}</tbody></table></div>
       <p>Paper timing selects independent parsed minima in 2017–2019. Paper resource measures require every record to match a user or batch identity. Historical recipes retain their separate invoice union, timestamp, attribution and frozen exposure rules.</p>
     </details>
     <p className="bpic19-muted">Gamma changes ranking stability. Priorities use the arithmetic mean of scored items; exposure changes the multiplier. Associations and effort measures describe proxies.</p>
@@ -220,10 +224,16 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
         onMembers={row => void run(0,{criterion_id:String(row.left),right_criterion_id:String(row.right),criterion_state:"positive"})} />
       {!!report.suppressed_associations?.length && <details><summary>Suppressed pairs and zero-support statistics</summary><NativeTable caption="Pairs below reviewed minimum support" rows={report.suppressed_associations} columns={["left","right","eligible_case_count","support","suppression_reason","jaccard","jaccard_reason","lift","lift_reason"]}
         onMembers={row => void run(0,{criterion_id:String(row.left),right_criterion_id:String(row.right),criterion_state:"positive"})} /></details>}
+      {client.associate && answer && <Bpic19Associations key={answer.run_id} answer={answer} client={client} revision={revision}
+        onReviewed={next=>{setAnswer(next);setResultSettings(settingsKey);setResultSubject(subjectKey);onRun?.(next);callbacks.current.onReviewed?.(next);}}
+        onValidityChange={valid=>callbacks.current.onValidityChange?.(valid)} onMembers={filter=>void run(0,filter)} />}
+      {client.review && answer && <Bpic19Review key={answer.run_id+":review"} answer={answer} client={client} revision={revision}
+        onReviewed={next=>{setAnswer(next);setResultSettings(settingsKey);setResultSubject(subjectKey);onRun?.(next);callbacks.current.onReviewed?.(next);}}
+        onValidityChange={valid=>callbacks.current.onValidityChange?.(valid)} />}
       {report.representation_scores && <div><h3>Scored paths and signatures</h3><p>These joins use this frozen run. Exact paths retain repetitions; first-occurrence signatures keep only the first occurrence of each activity. {number(report.representation_page?.unavailable_case_count)} items have unavailable sequence evidence.</p>
         {(["exact","signature"] as const).map(kind => <div key={kind} className="bpic19-table-wrap"><table><caption>{kind === "exact" ? "Exact path baseline" : "First-occurrence signature comparison"}</caption>
-          <thead><tr><th>Recorded path</th><th>All items</th><th>Scored items</th><th>Unscored items</th><th>Native mean score</th><th>Native priority</th><th>State</th><th>Evidence</th></tr></thead>
-          <tbody>{report.representation_scores![kind].map(group => <tr key={group.group_id}><td>{group.sequence.join(" → ")}</td><td>{number(group.member_count)}</td><td>{number(group.scored_case_count)}</td><td>{number(group.unscored_case_count)}</td><td>{number(group.mean_score)}</td><td>{number(group.PI)}</td><td>{group.state}</td>
+          <thead><tr><th>Recorded path</th><th>All items</th><th>Scored items</th><th>Unscored items</th><th>Native mean score</th><th>Native mean penalty</th><th>Native summed penalty mass</th><th>Native priority</th><th>State</th><th>Evidence</th></tr></thead>
+          <tbody>{report.representation_scores![kind].map(group => <tr key={group.group_id}><td>{group.sequence.join(" → ")}</td><td>{number(group.member_count)}</td><td>{number(group.scored_case_count)}</td><td>{number(group.unscored_case_count)}</td><td>{number(group.mean_score)}</td><td>{number(group.mean_penalty)}</td><td>{number(group.summed_penalty_mass)}</td><td>{number(group.PI)}</td><td>{group.state}</td>
             <td><button type="button" disabled={pending} onClick={() => void run(0,{representation_group:{kind,group_id:group.group_id}})}>Inspect stored path members</button><details><summary>Native penalty mass</summary><pre>{JSON.stringify(group.native_penalty_mass,null,2)}</pre></details></td></tr>)}</tbody></table></div>)}
       </div>}
       {!!report.exemplars?.length && <div><h3>Timing exemplars</h3>{report.exemplars.map((entry,i) => <p key={i}>{String(entry.case_id)} · all-evaluable median {number(entry.reference_median_days)} days · evaluated support {number(entry.evaluated_support)} · positive candidates {number(entry.positive_support)}.

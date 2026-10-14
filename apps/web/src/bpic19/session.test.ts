@@ -84,3 +84,20 @@ it("blocks an over-limit pipeline without truncating accepted lineage and become
   session.basis(workspaceId,child(31),steps.slice(0,31),identity);
   expect(session.readyForSave()).toBe(true);expect(session.savedPipeline()!.actions).toHaveLength(32);
 });
+
+it("preserves every explicitly retained or saved definition when an older same-kind recipe is viewed", () => {
+  const session = new Bpic19Session();session.basis(workspaceId,identity,[],identity);
+  session.reviewed(action(identity,"first-reviewed"));
+  expect(session.retainedActions()).toEqual([]);
+  session.retain(action(identity,"first-reviewed"));
+  session.retain(action(identity,"second-reviewed"));
+  session.reviewed(action(identity,"first-reviewed"));
+  expect(session.savedPipeline()!.actions.map(a=>a.definition_id)).toEqual(["first-reviewed","second-reviewed"]);
+  const saved=session.savedPipeline()!.actions;
+  const fresh=new Bpic19Session();expect(fresh.restore(workspaceId,identity,[],saved,identity)).toBe(true);
+  fresh.reviewed(action(identity,"first-reviewed"));
+  expect(fresh.retainedActions().map(a=>a.definition_id)).toEqual(["first-reviewed","second-reviewed"]);
+  expect(fresh.savedPipeline()!.actions.map(a=>a.definition_id)).toEqual(["first-reviewed","second-reviewed"]);
+  fresh.retainedActions()[0].query.policy_id="caller mutation";
+  expect(fresh.retainedActions()[0].query.policy_id).toBe("literal");
+});

@@ -483,18 +483,29 @@ class Bpic19PipelineOutput(BaseModel):
         'bpic19_cancellation',
         'bpic19_rule',
         'bpic19_waiting',
+        'bpic19_flow_comparison',
+        'bpic19_interval_comparison',
     ]
     definition_id: constr(min_length=1)
     sha256: constr(pattern=r'^[a-f0-9]{64}$')
     output: dict[str, Any]
 
 
-class Bpic19PipelineManifest(BaseModel):
+class RecordAttributeCondition(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    schema_version: Literal[1]
-    outputs: list[Bpic19PipelineOutput] = Field(..., max_length=32, min_length=1)
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+
+
+class RecordAttributeCaseEvidence(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_id: CaseId
+    matching_row_ids: list[RowId]
+    unevaluable_row_ids: list[RowId]
 
 
 class AnswerIdentity(BaseModel):
@@ -518,69 +529,12 @@ class PopulationSupport(BaseModel):
     record_count: conint(ge=0)
 
 
-class SelectionPredicate(
-    RootModel[
-        ContainsActivity
-        | DirectlyFollows
-        | OpeningAttributeEquals
-        | StartsWithActivity
-        | EndsWithActivity
-        | CaseIdIn
-        | CaseStartInWindow
-        | OpeningAttributeIn
-        | RecordAttributeIn
-        | ObservedSpanAtLeast
-        | MaxRawGapAtLeast
-    ]
-):
-    root: (
-        ContainsActivity
-        | DirectlyFollows
-        | OpeningAttributeEquals
-        | StartsWithActivity
-        | EndsWithActivity
-        | CaseIdIn
-        | CaseStartInWindow
-        | OpeningAttributeIn
-        | RecordAttributeIn
-        | ObservedSpanAtLeast
-        | MaxRawGapAtLeast
-    ) = Field(..., title='SelectionPredicate')
-
-
-class FrozenSelectionRecipe(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    parent_case_ids: list[CaseId]
-    predicates: list[SelectionPredicate]
-
-
-class PredicateGroupDefinition(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    kind: Literal['predicates']
-    predicates: list[SelectionPredicate]
-
-
 class ExplicitCaseGroupDefinition(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
     kind: Literal['explicit_case_ids']
     case_ids: CaseIds
-
-
-class SelectionPartition(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    mode: Literal['selection_partition']
-    target_name: Name
-    reference_name: Name
-    predicates: list[SelectionPredicate]
-    target_side: Literal['kept', 'removed']
 
 
 class NamedUtcPeriod(BaseModel):
@@ -633,6 +587,9 @@ class Bpic19PipelineAction(BaseModel):
         'bpic19_cancellation',
         'bpic19_rule',
         'bpic19_waiting',
+        'bpic19_flow_comparison',
+        'bpic19_method_gate',
+        'bpic19_interval_comparison',
     ]
     identity: AnswerIdentity
     query: dict[str, Any] = Field(
@@ -652,24 +609,100 @@ class Bpic19Pipeline(BaseModel):
     )
     schema_version: Literal[1]
     actions: list[Bpic19PipelineAction] = Field(..., max_length=32, min_length=1)
+    replay_mode: Literal['require_all', 'partial'] | None = Field(
+        None,
+        description='Explicit partial mode omits only registered unresolved source-method gates; it never omits a failed admitted operation.',
+    )
 
 
-class PredicateResult(BaseModel):
+class Bpic19PipelineOmission(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    predicate: SelectionPredicate
-    kept: PopulationSupport
-    removed: PopulationSupport
-    unevaluable: PopulationSupport
+    step: conint(ge=1, le=32)
+    operation: Literal['bpic19_method_gate']
+    definition_id: str
+    method_id: str
+    source_locator: str
+    gate_reason: str
+    identity: AnswerIdentity
 
 
-class NamedGroupDefinition(
-    RootModel[PredicateGroupDefinition | ExplicitCaseGroupDefinition]
-):
-    root: PredicateGroupDefinition | ExplicitCaseGroupDefinition = Field(
-        ..., title='NamedGroupDefinition'
+class RecordAttributesAll(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
     )
+    kind: Literal['record_attributes_all']
+    policy_id: Literal['incident.raw.same_record_all.v1']
+    conditions: list[RecordAttributeCondition] = Field(..., max_length=32, min_length=1)
+    negate: bool
+
+
+class RecordAttributeEvidence(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.raw.same_record_all.v1']
+    cases: list[RecordAttributeCaseEvidence]
+
+
+class SelectionPredicate(
+    RootModel[
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
+        | RecordAttributesAll
+    ]
+):
+    root: (
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
+        | RecordAttributesAll
+    ) = Field(..., title='SelectionPredicate')
+
+
+class FrozenSelectionRecipe(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    parent_case_ids: list[CaseId]
+    predicates: list[SelectionPredicate]
+
+
+class PredicateGroupDefinition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['predicates']
+    predicates: list[SelectionPredicate]
+
+
+class SelectionPartition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    mode: Literal['selection_partition']
+    target_name: Name
+    reference_name: Name
+    predicates: list[SelectionPredicate]
+    target_side: Literal['kept', 'removed']
 
 
 class UtcPeriodComparisonDefinition(BaseModel):
@@ -692,25 +725,34 @@ class WallPeriodComparisonDefinition(BaseModel):
     endpoint_activity: constr(min_length=1) | None
 
 
-class RestoredSelection(BaseModel):
+class Bpic19PipelineManifest(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    identity: AnswerIdentity
-    parent_identity: AnswerIdentity
-    parent: PopulationSupport
+    schema_version: Literal[1]
+    outputs: list[Bpic19PipelineOutput] = Field(..., max_length=32, min_length=1)
+    claim_level: Literal['complete_registered_pipeline', 'partial'] | None = None
+    run_id: constr(pattern=r'^bpic19-pipeline\.v1:sha256:[a-f0-9]{64}$') | None = None
+    omissions: list[Bpic19PipelineOmission] | None = Field(None, max_length=32)
+
+
+class PredicateResult(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    predicate: SelectionPredicate
     kept: PopulationSupport
     removed: PopulationSupport
     unevaluable: PopulationSupport
-    predicate_results: list[PredicateResult]
+    record_evidence: RecordAttributeEvidence | None = None
 
 
-class NamedGroup(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
+class NamedGroupDefinition(
+    RootModel[PredicateGroupDefinition | ExplicitCaseGroupDefinition]
+):
+    root: PredicateGroupDefinition | ExplicitCaseGroupDefinition = Field(
+        ..., title='NamedGroupDefinition'
     )
-    name: Name
-    definition: NamedGroupDefinition
 
 
 class PeriodComparisonDefinition(
@@ -731,6 +773,27 @@ class SavedPeriodComparison(BaseModel):
     context_column_index: ColumnIndex
     context_policy: ContextPolicy
     definition: PeriodComparisonDefinition
+
+
+class RestoredSelection(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    identity: AnswerIdentity
+    parent_identity: AnswerIdentity
+    parent: PopulationSupport
+    kept: PopulationSupport
+    removed: PopulationSupport
+    unevaluable: PopulationSupport
+    predicate_results: list[PredicateResult]
+
+
+class NamedGroup(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: Name
+    definition: NamedGroupDefinition
 
 
 class TwoNamedGroups(BaseModel):

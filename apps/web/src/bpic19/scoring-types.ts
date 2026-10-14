@@ -9,7 +9,13 @@
  * Source-witnessed BPIC19 profiles executed by actual Method; bounded case pages and frozen run identity.
  */
 export type BPIC19ScoringMessage =
-  Bpic19ScoreRequest | Bpic19ReadRequest | Bpic19ScoreAnswer | Bpic19Refusal | Bpic19ExportRequest;
+  | Bpic19ScoreRequest
+  | Bpic19ReadRequest
+  | Bpic19ScoreAnswer
+  | Bpic19Refusal
+  | Bpic19ExportRequest
+  | Bpic19AssociationRequest
+  | Bpic19ReviewRequest;
 export type RequestId = string;
 export type QueryRevision = number;
 export type WorkspaceId = string;
@@ -19,6 +25,29 @@ export type RepresentationId = string;
 export type CaseDictionaryId = string;
 export type PopulationId = string;
 export type ImplementationVersion = string;
+export type AssociationSelection =
+  | {
+      kind: "case_ids";
+      /**
+       * @maxItems 200
+       */
+      case_ids: string[];
+    }
+  | {
+      kind: "group";
+      group_values: {
+        [k: string]: string | null;
+      };
+      exclude_group_values?: {
+        [k: string]: string | null;
+      };
+    }
+  | {
+      kind: "all";
+    }
+  | {
+      kind: "outside_target";
+    };
 
 export interface Bpic19ScoreRequest {
   schema_version: 1;
@@ -100,6 +129,16 @@ export interface Bpic19ReadRequest {
     representation_group?: {
       kind: "exact" | "signature";
       group_id: string;
+    };
+    association_set?: {
+      population: "target" | "comparator";
+      state: "all" | "eligible" | "positive" | "unavailable";
+      criterion_id?: string;
+      pair?: {
+        left: string;
+        right: string;
+        set: "intersection" | "union" | "jointly_eligible";
+      };
     };
   };
 }
@@ -204,6 +243,10 @@ export interface Report {
   };
   ranking_comparisons?: RankingComparisons;
   suppressed_associations?: NativeRow[];
+  association_analysis?: {
+    [k: string]: unknown;
+  };
+  analysis_review?: AnalysisReview;
 }
 export interface MethodArtifact {
   distribution: "wise-pm";
@@ -237,6 +280,10 @@ export interface CaseAssessment {
   value_evidence?: {
     [k: string]: unknown;
   };
+  native_penalty?: number | null;
+  historical_artifacts?: {
+    [k: string]: unknown;
+  } | null;
 }
 export interface NumericMap {
   [k: string]: number | null;
@@ -273,6 +320,8 @@ export interface RepresentationScoreGroup {
   state: "ranked" | "unscored" | "support_below_minimum";
   native_penalty_mass: NumericMap;
   reference: string;
+  mean_penalty?: number | null;
+  summed_penalty_mass?: number | null;
 }
 export interface RankingComparisons {
   views: {
@@ -297,6 +346,65 @@ export interface ViewComparison {
   group_reference: {
     [k: string]: unknown;
   } | null;
+}
+export interface AnalysisReview {
+  policy_id: "bpic19.user_entered_interpretation.v1";
+  /**
+   * @maxItems 29
+   */
+  mandatory_controls: MandatoryControl[];
+  /**
+   * @maxItems 100
+   */
+  findings: ReviewFinding[];
+}
+export interface MandatoryControl {
+  criterion_id: string;
+  mandatory: boolean;
+  rationale: string;
+  evidence: ReviewEvidence;
+}
+export interface ReviewEvidence {
+  /**
+   * @maxItems 200
+   */
+  case_ids: string[];
+  /**
+   * @maxItems 200
+   */
+  row_ids: string[];
+  /**
+   * @maxItems 200
+   */
+  criterion_ids: string[];
+}
+export interface ReviewFinding {
+  id: string;
+  title: string;
+  observation: FindingObservation;
+  proposed_change: FindingChange;
+  adoption: FindingAdoption;
+  tested_outcome: FindingOutcome;
+}
+export interface FindingObservation {
+  status: "observed" | "unconfirmed";
+  note: string;
+  evidence: ReviewEvidence;
+}
+export interface FindingChange {
+  status: "not_proposed" | "proposed";
+  note: string;
+  evidence: ReviewEvidence;
+}
+export interface FindingAdoption {
+  status: "unknown" | "not_adopted" | "adopted";
+  note: string;
+  evidence: ReviewEvidence;
+}
+export interface FindingOutcome {
+  status: "untested" | "tested" | "unknown";
+  note: string;
+  evidence: ReviewEvidence;
 }
 export interface Bpic19Refusal {
   schema_version: 1;
@@ -331,5 +439,59 @@ export interface Bpic19ExportRequest {
       kind: "exact" | "signature";
       group_id: string;
     };
+    association_set?: {
+      population: "target" | "comparator";
+      state: "all" | "eligible" | "positive" | "unavailable";
+      criterion_id?: string;
+      pair?: {
+        left: string;
+        right: string;
+        set: "intersection" | "union" | "jointly_eligible";
+      };
+    };
   };
+}
+export interface Bpic19AssociationRequest {
+  schema_version: 1;
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  message_type: "bpic19_association_request";
+  run_id: string;
+  case_offset: number;
+  case_limit: number;
+  group_offset?: number;
+  group_limit?: number;
+  query: AssociationQuery;
+}
+export interface AssociationQuery {
+  policy_id: "bpic19.frozen_native_associations.v1";
+  target: AssociationCohort;
+  comparator: AssociationCohort;
+  /**
+   * @minItems 1
+   * @maxItems 29
+   */
+  criteria: [string, ...string[]];
+  positive_threshold: 0;
+  min_support: number | null;
+  pair_mode: "jointly_eligible" | "legacy_total_case";
+  pooled_sd: boolean;
+}
+export interface AssociationCohort {
+  name: string;
+  selector: AssociationSelection;
+}
+export interface Bpic19ReviewRequest {
+  schema_version: 1;
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  message_type: "bpic19_review_request";
+  run_id: string;
+  case_offset: number;
+  case_limit: number;
+  group_offset?: number;
+  group_limit?: number;
+  review: AnalysisReview;
 }

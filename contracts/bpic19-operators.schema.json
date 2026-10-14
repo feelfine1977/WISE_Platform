@@ -1109,6 +1109,26 @@
               "type": "null"
             }
           ]
+        },
+        "known_sum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "known_sum_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1118,7 +1138,9 @@
         "minimum",
         "maximum",
         "mean",
-        "median"
+        "median",
+        "known_sum",
+        "known_sum_reason"
       ]
     },
     "OccupancySegment": {

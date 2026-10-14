@@ -31,6 +31,7 @@ CATEGORY_LABELS = {
     "consignment": "Consignment",
 }
 FLOW_IDS = tuple(CATEGORY_LABELS)
+KNOWN_ITEM_TYPES = ("Standard", "Service", "Subcontracting", "Third-party", "Limit", "Consignment")
 FLOW_LABELS = {
     "after_gr": "Three-way: invoice after goods receipt",
     "before_gr": "Three-way: invoice may precede goods receipt",
@@ -90,7 +91,10 @@ def _support(prepared, ids, documents, denominator):
 def profile_bpic19(prepared: PreparedData, roles: Mapping[str, int | None],
                    population_case_ids: Iterable[str] | None = None,
                    profile_columns: Iterable[int] | None = None,
-                   source_interpretation: Mapping | None = None) -> dict | ImportRefusal:
+                   source_interpretation: Mapping | None = None,
+                   attribute_view: Mapping | None = None,
+                   include_zero_cells: bool = False,
+                   include_document_siblings: bool = False) -> dict | ImportRefusal:
     checked = validate_roles(prepared, roles)
     if isinstance(checked, ImportRefusal):
         return checked
@@ -203,11 +207,22 @@ def profile_bpic19(prepared: PreparedData, roles: Mapping[str, int | None],
                   "category_labels": CATEGORY_LABELS, "category_assignment": "supplied_exact_invariant_category",
                   "flag_policy": "bpic19.category_flags_and_consignment_type.v1", "grain_policy": "bpic19.document_item_underscore.v1",
                   "source_interpretation": source_review["interpretation"]}
+    viewed = None
+    if attribute_view is not None:
+        viewed = attribute_values(prepared, parent, documents, attribute_view)
+        if isinstance(viewed, ImportRefusal): return viewed
+        if attribute_view["select_value"]:
+            definition["attribute_selection"] = {"column_index": attribute_view["column_index"],
+                "value": attribute_view["value"], "policy_id": "bpic19.any_original_record_exact_value.v1"}
     identity = content_identity("bpic19-profile", {"preparation_id": prepared.preparation_id,
                                 "parent_case_ids": list(parent), "definition": definition})
     mixed = sorted(doc for doc, flows in doc_flows.items() if len(flows) > 1)
     assigned_count = sum(len(ids) for ids in groups.values())
-    return {"definition_id": identity, "definition": definition,
+    if include_zero_cells:
+        for flow in FLOW_IDS:
+            for value in KNOWN_ITEM_TYPES:
+                cells.setdefault((flow, "invariant", value), [])
+    result = {"definition_id": identity, "definition": definition,
         "population": {"case_count": len(parent), "record_count": sum(len(prepared.histories[c]) for c in parent),
                        "document_count": len(doc_members), "document_unknown_case_count": sum(v is None for v in documents.values())},
         "flows": [{"flow_id": flow, "label": FLOW_LABELS[flow], "category_value": CATEGORY_LABELS[flow],
@@ -224,6 +239,71 @@ def profile_bpic19(prepared: PreparedData, roles: Mapping[str, int | None],
         "flow_item_types": [{"flow_id": flow, "item_type_state": state, "item_type_value": value,
                              **_support(prepared, ids, documents, len(parent))}
                             for (flow,state,value),ids in sorted(cells.items(), key=lambda pair: (FLOW_IDS.index(pair[0][0]), pair[0][1], pair[0][2] or ""))]}
+    if include_zero_cells:
+        result["item_type_totals"] = [{"item_type_value": value,
+            **_support(prepared, [cid for (flow,state,v),ids in cells.items() if state == "invariant" and v == value for cid in ids], documents, len(parent))}
+            for value in sorted({value for flow,state,value in cells if state == "invariant"})]
+    if viewed is not None: result["attribute_view"] = viewed
+    if include_document_siblings:
+        known_docs = {doc for doc in documents.values() if doc is not None}
+        inside = set(parent); outside, outside_docs, possible = [], {}, []
+        for cid, records in prepared.histories.items():
+            if cid in inside: continue
+            state, doc = invariant_value(records,checked["purchasing_document"])
+            if state == "invariant" and doc in known_docs:
+                outside.append(cid); outside_docs[cid] = doc
+            elif state != "invariant" and any(_value(row,checked["purchasing_document"]) in known_docs for row in records):
+                possible.append(cid)
+        result["grain"]["outside_parent_siblings"] = _support(prepared,outside,outside_docs,len(prepared.histories))
+        result["grain"]["possible_sibling_conflict_case_ids"] = sorted(possible)
+    return result
+
+
+def attribute_values(prepared: PreparedData, parent: Iterable[str], documents: Mapping, query: Mapping) -> dict | ImportRefusal:
+    """Bounded value pages and one explicitly requested complete-item membership.
+
+    This is any-original-record support, not an invariant static-field admission.
+    Pagination changes neither global counts nor membership/definition meaning.
+    """
+    parent = tuple(parent)
+    required = {"column_index", "offset", "limit", "select_value", "value"}
+    if not isinstance(query, Mapping) or set(query) != required:
+        return ImportRefusal("invalid_parameter", "Declare a source column and bounded value page.", "query.attribute_view")
+    index = query["column_index"]
+    if type(index) is not int or not 0 <= index < len(prepared.columns):
+        return ImportRefusal("invalid_parameter", "Choose an existing source column.", "query.attribute_view.column_index")
+    if type(query["offset"]) is not int or query["offset"] < 0 or type(query["limit"]) is not int or not 1 <= query["limit"] <= 100:
+        return ImportRefusal("invalid_parameter", "Use a nonnegative value offset and limit 1–100.", "query.attribute_view")
+    if type(query["select_value"]) is not bool or (query["value"] is not None and not isinstance(query["value"], str)):
+        return ImportRefusal("invalid_parameter", "Select one exact raw value or explicit missing.", "query.attribute_view.value")
+    events, cases, docs, examples = Counter(), Counter(), defaultdict(set), defaultdict(list)
+    selected, witnesses = [], []
+    for cid in parent:
+        records = prepared.histories[cid]
+        values = Counter(_value(row, index) for row in records)
+        events.update(values)
+        for value in values:
+            cases[value] += 1
+        if query["select_value"] and query["value"] in values:
+            selected.append(cid)
+            if len(witnesses) < 20:
+                witnesses.append({"case_id": cid, "row_ids": [row.row_id for row in records if _value(row,index) == query["value"]]})
+    ranked = sorted(events, key=lambda value: (-cases[value], value is not None, value or ""))
+    page_values = ranked[query["offset"]:query["offset"] + query["limit"]]
+    visible = set(page_values)
+    for cid in parent:
+        for value in {_value(row,index) for row in prepared.histories[cid]} & visible:
+            if documents[cid] is not None: docs[value].add(documents[cid])
+            if len(examples[value]) < 3: examples[value].append(cid)
+    return {"column_index": index, "column_name": prepared.columns[index],
+        "policy_id": "bpic19.any_original_record_exact_value.v1", "offset": query["offset"], "limit": query["limit"],
+        "total_value_count": len(ranked), "distinct_nonmissing_value_count": sum(value is not None for value in ranked),
+        "next_offset": query["offset"] + query["limit"] if query["offset"] + query["limit"] < len(ranked) else None,
+        "values": [{"value": value, "case_count": cases[value], "record_count": events[value],
+            "document_count": len(docs[value]), "example_case_ids": examples[value]} for value in page_values],
+        "selection": None if not query["select_value"] else {"value": query["value"],
+            **_support(prepared, selected, documents, len(parent)), "witnesses": witnesses,
+            "omitted_witness_case_count": max(0,len(selected) - len(witnesses))}}
 
 
 SOURCE_POLICY_ID = "bpic19.raw_source_interpretation.v1"
@@ -269,7 +349,8 @@ def review_source(prepared: PreparedData, roles: Mapping[str, int | None], paren
     parent = tuple(parent)
     definition = default_source_interpretation(prepared) if interpretation is None else plain_json(interpretation)
     base = "query.source_interpretation"
-    if not isinstance(definition, dict) or set(definition) != {"profile_name", "policy_id", "inclusion", "horizon", "discrepancies"}:
+    required = {"profile_name", "policy_id", "inclusion", "horizon", "discrepancies"}
+    if not isinstance(definition, dict) or not required <= set(definition) or set(definition) - required - {"reported_populations"}:
         return ImportRefusal("invalid_parameter", "Review a named source interpretation, horizon and discrepancy list.", base)
     if definition["policy_id"] != SOURCE_POLICY_ID:
         return ImportRefusal("unsupported_policy", "This source interpretation policy is not supported.", base + ".policy_id")
@@ -314,6 +395,19 @@ def review_source(prepared: PreparedData, roles: Mapping[str, int | None], paren
         or not isinstance(d["reference"], str) or not d["reference"].strip()
         or any(type(d[k]) is not int or not 0 <= d[k] <= 9_007_199_254_740_991 for k in ("reported_total", "reported_subtotal")) for d in discrepancies):
         return ImportRefusal("invalid_parameter", "Source discrepancies require a reference and two exact nonnegative reported counts.", base + ".discrepancies")
+    reported = definition.get("reported_populations", [])
+    if not isinstance(reported, list) or len(reported) > 20 or any(
+        not isinstance(figure, dict) or set(figure) != {"label", "count", "grain", "reference", "denominator", "parent_label"}
+        or any(not isinstance(figure[key], str) or not figure[key].strip() for key in ("label", "reference", "denominator"))
+        or figure["grain"] not in {"po_item", "purchasing_document", "original_record"}
+        or type(figure["count"]) is not int or not 0 <= figure["count"] <= 9_007_199_254_740_991
+        or (figure["parent_label"] is not None and not isinstance(figure["parent_label"], str)) for figure in reported):
+        return ImportRefusal("invalid_parameter", "Reported populations need a label, exact count, grain, source reference and denominator.", base + ".reported_populations")
+    if len({figure["label"] for figure in reported}) != len(reported):
+        return ImportRefusal("invalid_parameter", "Use distinct labels for reported populations.", base + ".reported_populations")
+    labels = {figure["label"] for figure in reported}
+    if any(figure["parent_label"] is not None and (figure["parent_label"] not in labels or figure["parent_label"] == figure["label"]) for figure in reported):
+        return ImportRefusal("invalid_parameter", "A reported subset must name a separately declared reported parent.", base + ".reported_populations")
     documents = {}
     for cid in parent:
         state, value = invariant_value(prepared.histories[cid], roles["purchasing_document"])
@@ -378,7 +472,7 @@ def review_source(prepared: PreparedData, roles: Mapping[str, int | None], paren
                 for cid in sorted(reasons)[:50]]
     time_policy = plain_json(prepared.policies["time"])
     parameters = time_policy["parameters"]
-    return {"interpretation": definition,
+    result = {"interpretation": definition,
             "source_id": prepared.source_id, "preparation_id": prepared.preparation_id,
             "parser_time_policy": time_policy["id"], "parser_cutoff": parameters.get("snapshot_cutoff_utc", parameters.get("snapshot_cutoff_local")),
             "clock_kind": source_clock, "observed_raw_minimum": _time_text(min(parsed)) if parsed else None,
@@ -398,3 +492,6 @@ def review_source(prepared: PreparedData, roles: Mapping[str, int | None], paren
                 "omitted_witness_count": max(0, len(anomalies) - 20)} for state, anomalies in sorted(anomaly_rows.items())],
             "discrepancies": [{**d, "difference": d["reported_total"] - d["reported_subtotal"],
                 "measured_parent_case_count": len(parent)} for d in discrepancies]}
+    if "reported_populations" in definition:
+        result["reported_populations"] = [{**figure, "claim_status": "reported_source_claim"} for figure in reported]
+    return result

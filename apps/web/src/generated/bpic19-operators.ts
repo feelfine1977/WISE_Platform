@@ -202,6 +202,8 @@ export interface OperatorDistribution {
   maximum: number | null;
   mean: number | null;
   median: number | null;
+  known_sum: number | null;
+  known_sum_reason: string | null;
 }
 export interface OccupancySummary {
   unit: "PO_items";

@@ -27,6 +27,7 @@ from wise_platform_analytics import bpic19_measures as measures_module
 from wise_platform_analytics.preparation import content_identity
 
 from . import method, bpic19_method
+from . import bpic19_associations
 from .boundary import read_object
 from .bpic19_method import evaluate_features, paper_norm_document, representation_key, _historical_binding
 from .generated import bpic19_scoring as generated
@@ -101,7 +102,9 @@ def _read(body: bytes, model) -> dict:
 
 def _store_artifact(workspace: Workspace, payload: object, kind: str) -> dict:
     raw = _canonical(payload)
-    compressed = gzip.compress(raw, mtime=0)
+    # Native verdicts repeat keys and witness IDs heavily. Level 1 preserves
+    # identical JSON while keeping full-source snapshot writing linear in bytes.
+    compressed = gzip.compress(raw, compresslevel=1, mtime=0)
     digest = _digest(compressed)
     folder = workspace.path / "score-run-artifacts"
     folder.mkdir(exist_ok=True)
@@ -136,6 +139,24 @@ def _load_artifact(workspace: Workspace, receipt: dict):
         raise _Refused(Problem("artifact_unavailable", "A native result artifact is not the recorded JSON snapshot.")) from None
 
 
+def _bounded_analysis(value, limit=200):
+    """Keep large population witnesses in the artifact, with bounded public receipts."""
+    if isinstance(value,dict):
+        output={}
+        for key,item in value.items():
+            if key == "reviewed_query":
+                output[key] = item
+                continue
+            if isinstance(item,list) and (key=="case_ids" or key.endswith("_case_ids") or key=="native_item_penalties"):
+                output[key]=item[:limit]
+                output[key+"_receipt"]={"count":len(item),"sha256":_digest(_canonical(item)),"complete":len(item)<=limit,
+                                       "limit":limit,"next_offset":limit if len(item)>limit else None}
+            else:output[key]=_bounded_analysis(item,limit)
+        return output
+    if isinstance(value,list):return [_bounded_analysis(item,limit) for item in value]
+    return value
+
+
 class Bpic19Scoring:
     """The public scoring boundary, owning no alternate evaluator or mutable run cache."""
     def __init__(self, imports: Imports) -> None:
@@ -147,6 +168,12 @@ class Bpic19Scoring:
 
     def read(self, body: bytes) -> Bpic19ScoringReply:
         return self._answer(body, generated.Bpic19ReadRequest, self._read_run)
+
+    def associate(self, body: bytes) -> Bpic19ScoringReply:
+        return self._answer(body, generated.Bpic19AssociationRequest, self._associate)
+
+    def review(self, body: bytes) -> Bpic19ScoringReply:
+        return self._answer(body, generated.Bpic19ReviewRequest, self._review)
 
     def _answer(self, body: bytes, model, action) -> Bpic19ScoringReply:
         echo = read_object(body)
@@ -202,6 +229,22 @@ class Bpic19Scoring:
             if stored is None:
                 if settings["profile"] == "historical":
                     features = build_historical_features(prepared, population.case_ids, given["roles"], calibration_case_ids=population.parent_ids)
+                    for feature in features:
+                        records = prepared.histories[feature["case_id"]]
+                        timed = [record for record in records if record.time_value is not None]
+                        first = min((record.time_value for record in timed), default=None)
+                        feature["historical_artifacts"] = {
+                            "policy_id": "bpic19.historical_compatibility_artifacts.v1",
+                            "start_quarter": f"{first.year}Q{(first.month - 1) // 3 + 1}" if first else None,
+                            "start_timestamp": first.isoformat() if first else None,
+                            "start_row_ids": [record.row_id for record in timed if record.time_value == first],
+                            "unparsed_time_row_ids": [record.row_id for record in records if record.time_value is None],
+                            "representations": feature.get("representations", {}),
+                            "replication_proxy": {**feature["historical_measures"]["event_replication_ratio"],
+                                "row_ids": feature.get("record_row_ids", []),
+                                "interpretation": "original events divided by distinct parsed timestamps; not a verified duplicate count"},
+                            "timestamp_policy": "historical parsed minimum without a range filter; no deduplication",
+                        }
                 else:
                     features = build_paper_features(prepared, population.case_ids, given["roles"])
                 if settings["exposure_policy"] == "creation_unique_event":
@@ -223,12 +266,16 @@ class Bpic19Scoring:
                 assessment = evaluate_features(features, **settings, exposure_calibration=calibration)
                 report = assessment.report(case_limit=1, group_limit=100000)
                 report["case_page"]["cases"] = []
-                index = {"case_ids": list(population.case_ids), "parent_case_ids": list(population.parent_ids),
+                stored_case_ids = list(assessment.features)
+                membership_positions = {cid: position for position, cid in enumerate(stored_case_ids)}
+                def positions(mask):
+                    return [membership_positions[cid] for cid in assessment.result.violations.index[mask]]
+                index = {"format": "bpic19.membership.positions.v1", "case_ids": stored_case_ids, "parent_case_ids": list(population.parent_ids),
                          "contexts": {f["case_id"]: {key: f.get(key) if key != "item_type" else f.get("context", {}).get(key, {}).get("value")
-                                      for key in set(settings["group_by"]) | {"document"}} for f in features},
-                         "criterion_members": {key: {"evaluated": assessment.result.violations.index[assessment.result.violations[key].notna()].tolist(),
-                            "positive": assessment.result.violations.index[assessment.result.violations[key].gt(0)].tolist(),
-                            "unavailable": assessment.result.violations.index[assessment.result.violations[key].isna()].tolist()}
+                                      for key in set(settings["group_by"]) | {"document", "flow", "company", "spend_area", "item_type"}} for f in features},
+                         "criterion_members": {key: {"evaluated": positions(assessment.result.violations[key].notna()),
+                            "positive": positions(assessment.result.violations[key].gt(0)),
+                            "unavailable": positions(assessment.result.violations[key].isna())}
                             for key in assessment.result.violations}}
                 for feature in features:
                     index["contexts"][feature["case_id"]].update(
@@ -262,6 +309,106 @@ class Bpic19Scoring:
         workspace, run = self._stored(given)
         return self._page(workspace, run, given)
 
+    def _variant(self, workspace: Workspace, parent: dict, report: dict, operation: str, recipe: dict) -> dict:
+        """Freeze a derived interpretation beside the original native run, reusing native chunks."""
+        definition={**parent["definition_version"], "parent_definition_id":parent["identity"]["definition_version_id"],
+                    "derived_operation":operation,"derived_recipe":recipe}
+        definition.pop("definition_version_id",None)
+        definition_id=content_identity("definition-version",definition)
+        definition["definition_version_id"]=definition_id
+        definition=_checked(workspace.store_definition(definition))
+        identity={**parent["identity"],"definition_version_id":definition_id,"parent_native_run_id":parent["identity"]["run_id"]}
+        identity.pop("run_id",None)
+        run_id=content_identity("score-run",identity)
+        existing=_checked(workspace.run(run_id))
+        if existing is not None: return dict(existing)
+        artifacts=[_store_artifact(workspace,report,"report"),*[ref for ref in parent["snapshot"]["artifacts"] if ref["kind"]!="report"]]
+        return dict(_checked(workspace.store_run({**parent,"identity":{"run_id":run_id,**identity},"definition_version":definition,
+            "snapshot":{**parent["snapshot"],"artifacts":artifacts,"parent_native_run_id":parent["identity"]["run_id"],
+                        "derived_operation":operation,"derived_recipe":recipe}})))
+
+    def _associate(self,given: dict) -> dict:
+        with self._lock:
+            workspace,parent=self._stored(given)
+            refs=parent["snapshot"]["artifacts"]
+            index=_load_artifact(workspace,next(ref for ref in refs if ref["kind"]=="membership"))
+            query=json.loads(json.dumps(given["query"]))
+            for name in ("target","comparator"):
+                if query[name]["selector"]["kind"]=="case_ids":
+                    query[name]["selector"]["case_ids"]=sorted(query[name]["selector"]["case_ids"])
+            order={constraint["id"]:i for i,constraint in enumerate(parent["definition_version"]["norm"]["constraints"])}
+            query["criteria"]=sorted(query["criteria"],key=lambda key:order.get(key,len(order)))
+            def resolve(selector: dict,target_ids=None):
+                kind=selector["kind"]
+                if kind=="outside_target":
+                    if target_ids is None: raise ValueError("The target cannot be defined as outside itself.")
+                    kept=set(target_ids);return [cid for cid in index["case_ids"] if cid not in kept]
+                if kind=="all":return list(index["case_ids"])
+                if kind=="case_ids":
+                    ids=selector["case_ids"]
+                    if len(set(ids))!=len(ids) or set(ids)-set(index["case_ids"]):
+                        raise ValueError("Association items must belong once to the selected frozen run.")
+                    return sorted(ids)
+                keys=selector["group_values"]
+                excluded = selector.get("exclude_group_values", {})
+                admitted = set(next(iter(index["contexts"].values()), {})) & {"document", "flow", "company", "spend_area", "item_type"}
+                if (set(keys) | set(excluded)) - admitted:
+                    raise ValueError("That context field was not recorded in this frozen run. Evaluate a new identified run with that context receipt.")
+                def matches(cid, values):
+                    return all(index["contexts"][cid].get(key)==value or
+                        (value=="(missing)" and index["contexts"][cid].get(key) is None) for key,value in values.items())
+                return [cid for cid in index["case_ids"] if matches(cid, keys) and (not excluded or not matches(cid, excluded))]
+            target=resolve(query["target"]["selector"])
+            comparator=resolve(query["comparator"]["selector"],target)
+            selected=set(target)|set(comparator)
+            cases={}
+            for ref in refs:
+                if ref["kind"]=="cases" and any(cid in selected for cid in index["case_ids"][ref["offset"]:ref["offset"]+ref["count"]]):
+                    for case in _load_artifact(workspace,ref)["cases"]:
+                        if case["case_id"] in selected:cases[case["case_id"]]=case
+            resolved={**query,"target":{"name":query["target"]["name"],"case_ids":target},
+                      "comparator":{"name":query["comparator"]["name"],"case_ids":comparator}}
+            analysis=bpic19_associations.analyse_associations(cases,parent["definition_version"]["norm"],resolved)
+            analysis["reviewed_query"]=query
+            analysis["source_native_run_id"]=parent["identity"]["run_id"]
+            analysis["source_native_definition_id"]=parent["identity"]["definition_version_id"]
+            analysis["source_population_identity"]=parent["identity"]["population_identity"]
+            report=_load_artifact(workspace,next(ref for ref in refs if ref["kind"]=="report"))
+            report["association_analysis"]=analysis
+            recipe={"query":query,"target_membership_sha256":_digest(_canonical(target)),"target_case_count":len(target),
+                    "comparator_membership_sha256":_digest(_canonical(comparator)),"comparator_case_count":len(comparator),
+                    "association_artifact_sha256":_digest(Path(bpic19_associations.__file__).read_bytes())}
+            derived=self._variant(workspace,parent,report,"bpic19_associations",recipe)
+            return self._page(workspace,derived,given)
+
+    def _review(self, given: dict) -> dict:
+        """Record explicitly supplied interpretations; native numbers remain frozen."""
+        with self._lock:
+            workspace, parent = self._stored(given)
+            review = given["review"]
+            criteria = {item["id"] for item in parent["definition_version"]["norm"]["constraints"]}
+            controls = [item["criterion_id"] for item in review["mandatory_controls"]]
+            if len(set(controls)) != len(controls) or set(controls) - criteria:
+                raise ValueError("Mandatory-control flags must reference each admitted criterion at most once.")
+            finding_ids = [item["id"] for item in review["findings"]]
+            if len(set(finding_ids)) != len(finding_ids):
+                raise ValueError("Each recorded finding needs a distinct identity.")
+            index = _load_artifact(workspace, next(ref for ref in parent["snapshot"]["artifacts"] if ref["kind"] == "membership"))
+            members = set(index["case_ids"])
+            prepared = _checked(self.imports.prepared(given["workspace_id"], parent["identity"]["base_identity"]["preparation_id"]))[0]
+            references = [item["evidence"] for item in review["mandatory_controls"]]
+            references += [item[stage]["evidence"] for item in review["findings"] for stage in ("observation", "proposed_change", "adoption", "tested_outcome")]
+            for evidence in references:
+                if set(evidence["case_ids"]) - members or set(evidence["criterion_ids"]) - criteria:
+                    raise ValueError("Finding evidence must belong to this frozen population and admitted native profile.")
+                rows = {record.row_id for cid in evidence["case_ids"] for record in prepared.histories[cid]}
+                if set(evidence["row_ids"]) - rows:
+                    raise ValueError("Source-row evidence must belong to the explicitly referenced complete items.")
+            report = _load_artifact(workspace, next(ref for ref in parent["snapshot"]["artifacts"] if ref["kind"] == "report"))
+            report["analysis_review"] = review
+            child = self._variant(workspace, parent, report, "bpic19_interpretation_review", {"review": review})
+            return self._page(workspace, child, given)
+
     def _page(self, workspace: Workspace, run: dict, given: dict) -> dict:
         refs = run["snapshot"]["artifacts"]
         report = _load_artifact(workspace, next(r for r in refs if r["kind"] == "report"))
@@ -280,11 +427,15 @@ class Bpic19Scoring:
             state = filter_.get("criterion_state", "positive")
             criterion = index["criterion_members"].get(filter_["criterion_id"])
             if criterion is None: raise _Refused(Problem("invalid_parameter", "That criterion is not in this compiled profile."))
-            selected = set(criterion[state])
+            def members(values):
+                if index.get("format") == "bpic19.membership.positions.v1":
+                    return {index["case_ids"][position] for position in values}
+                return set(values)
+            selected = members(criterion[state])
             if "right_criterion_id" in filter_:
                 right = index["criterion_members"].get(filter_["right_criterion_id"])
                 if right is None: raise _Refused(Problem("invalid_parameter", "The second criterion is not in this profile."))
-                selected.intersection_update(right[state])
+                selected.intersection_update(members(right[state]))
             ids = [cid for cid in ids if cid in selected]
         if "representation_group" in filter_:
             group = filter_["representation_group"]
@@ -292,6 +443,24 @@ class Bpic19Scoring:
             if not any(context.get(key) == group["group_id"] for context in index["contexts"].values()):
                 raise _Refused(Problem("invalid_parameter", "That representation group is not in this frozen run.", "case_filter.representation_group"))
             ids = [cid for cid in ids if index["contexts"][cid].get(key) == group["group_id"]]
+        if "association_set" in filter_:
+            analysis=report.get("association_analysis")
+            if not analysis:raise _Refused(Problem("invalid_parameter","This frozen run has no reviewed association comparison."))
+            selection=filter_["association_set"]
+            if selection.get("pair"):
+                pair=selection["pair"]
+                row=next((row for row in analysis["accepted_pairs"]+analysis["suppressed_pairs"] if
+                    row["left"]==pair["left"] and row["right"]==pair["right"]),None)
+                if row is None:raise _Refused(Problem("invalid_parameter","That pair is not in this association definition."))
+                selected=set(row[pair["set"]+"_case_ids"])
+            else:
+                population=analysis["populations"][selection["population"]]
+                if selection["state"]=="all":selected=set(population["case_ids"])
+                else:
+                    criterion=population["criteria"].get(selection.get("criterion_id"))
+                    if criterion is None:raise _Refused(Problem("invalid_parameter","That criterion is not in this association definition."))
+                    selected=set(criterion[selection["state"]+"_case_ids"])
+            ids=[cid for cid in ids if cid in selected]
         offset, limit = given["case_offset"], given["case_limit"]
         selected = ids[offset:offset + limit]
         positions = {cid: pos for pos, cid in enumerate(index["case_ids"])}
@@ -315,6 +484,8 @@ class Bpic19Scoring:
                 report["representation_scores"][kind] = report["representation_scores"][kind][group_offset:group_offset+group_limit]
             report["representation_page"].update(offset=group_offset,limit=group_limit)
         report["group_page"].update(offset=group_offset, limit=group_limit)
+        if "association_analysis" in report:
+            report["association_analysis"]=_bounded_analysis(report["association_analysis"])
         return {"schema_version": 1, "message_type": "bpic19_score_answer",
                 **{name: given[name] for name in ("request_id", "query_revision", "workspace_id")},
                 "base_identity": run["identity"]["base_identity"], "parent_identity": run["identity"]["parent_identity"],
@@ -341,7 +512,7 @@ class Bpic19Scoring:
 def register_bpic19_scoring_routes(application: FastAPI, imports: Imports) -> Bpic19Scoring:
     """Root application integration seam; no existing routing module is modified."""
     service = Bpic19Scoring(imports)
-    for path, action in (("bpic19-score", service.score), ("bpic19-read", service.read)):
+    for path, action in (("bpic19-score", service.score), ("bpic19-read", service.read),("bpic19-associate",service.associate),("bpic19-review",service.review)):
         def endpoint_for(operation):
             async def endpoint(request: Request):
                 reply = await run_in_threadpool(operation, await request.body())

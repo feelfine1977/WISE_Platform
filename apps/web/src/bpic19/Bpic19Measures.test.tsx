@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { Bpic19MeasuresRequest } from "../generated/bpic19-measures";
+import type { Bpic19MeasuresRequest, MeasureQuery } from "../generated/bpic19-measures";
 import { Bpic19Measures } from "./Bpic19Measures";
 import type { Bpic19MeasuresClient, Bpic19MeasuresOutcome } from "./measures-client";
 import { measuresAnswer, measuresColumns, measuresIdentity, measuresRoles } from "./measures-test-fixture";
@@ -15,6 +15,26 @@ function setup(client: Bpic19MeasuresClient = { measures: vi.fn(async request =>
 const distributions = () => screen.findByRole("table", { name: "Raw-measure distributions over the complete named population" });
 
 describe("source-witnessed BPIC19 measures", () => {
+  it("retains only reviewed current measures and reads an explicit previously retained actor recipe", async () => {
+    const client: Bpic19MeasuresClient = { measures: vi.fn(async request => answering(request)) };
+    const onRetain = vi.fn(), user = userEvent.setup();
+    const historical: MeasureQuery = { policy_id: "bpic19.source_witnessed_measures.v1", measure_profile: "historical_v1", roles: measuresRoles, offset: 0, limit: 20 };
+    render(<Bpic19Measures workspaceId="workspace.v1:literal-fixture" identity={measuresIdentity} revision={2} roles={measuresRoles} columns={measuresColumns} client={client}
+      onInspect={vi.fn()} onRetain={onRetain} retainedQueries={[{definition_id:"retained-historical",label:"Historical actor definition",query:historical}]} />);
+    await distributions();
+    await user.click(screen.getByRole("button", {name:"Retain reviewed measures"}));
+    expect(onRetain.mock.calls[0][0].definition.measure_profile).toBe("paper_v1");
+    await user.selectOptions(screen.getByRole("combobox", {name:"Actor source field"}), "5");
+    expect(screen.getByRole("button", {name:"Retain reviewed measures"}).hasAttribute("disabled")).toBe(true);
+    await user.click(screen.getByRole("button", {name:"Restore reviewed definition"}));
+    await user.selectOptions(screen.getByRole("combobox", {name:"Previously retained measures"}), "retained-historical");
+    await user.click(screen.getByRole("button", {name:"Read retained measures"}));
+    await screen.findByText(/raw P95 38 source_units/);
+    expect(vi.mocked(client.measures).mock.calls[1][0].query).toMatchObject({measure_profile:"historical_v1",roles:measuresRoles});
+    await user.click(screen.getByRole("button", {name:"Retain reviewed measures"}));
+    expect(onRetain).toHaveBeenCalledTimes(2);
+    expect(onRetain.mock.calls[1][0].definition.measure_profile).toBe("historical_v1");
+  });
   it("separates known zero, unavailable and lower bounds while retaining complete-history and suppressed-row evidence", async () => {
     const { user, props } = setup();
     const table = await distributions();
@@ -41,11 +61,15 @@ describe("source-witnessed BPIC19 measures", () => {
     expect(props.onInspect).toHaveBeenLastCalledWith("A_1", ["row-5"]);
     await user.click(screen.getByRole("button", { name: "Inspect complete history of A_1" }));
     expect(props.onInspect).toHaveBeenLastCalledWith("A_1", ["row-1", "row-2", "row-5", "row-3", "row-4", "row-6"]);
+    await user.click(screen.getByRole("button", { name: "Keep complete item A_1" }));
+    expect(props.onKeepCases).toHaveBeenLastCalledWith(["A_1"], "Reviewed evidence: A_1");
     await user.click(screen.getByText("Item D_1 · unresolved flow · 2 records"));
     const partial = await screen.findByRole("table", { name: "Item D_1 activity operators" });
     expect(within(partial).getByRole("row", { name: /^presence / }).textContent).toContain("1 case presence boolean");
     expect(within(partial).getByRole("row", { name: /^count / }).textContent).toContain("unavailable");
     expect(within(partial).getAllByText("Known matching lower bound: 1 · unknown labels: 1")).toHaveLength(4);
+    await user.click(screen.getByRole("button", { name: "Keep complete item D_1" }));
+    expect(props.onKeepCases).toHaveBeenLastCalledWith(["D_1"], "Reviewed evidence: D_1");
     await user.click(screen.getByText("Item B_1 · unresolved flow · 1 records"));
     const zero = await screen.findByRole("table", { name: "Item B_1 activity operators" });
     expect(within(zero).getByRole("row", { name: /^count / }).textContent).toContain("Recorded absence checked against all records: b-1");

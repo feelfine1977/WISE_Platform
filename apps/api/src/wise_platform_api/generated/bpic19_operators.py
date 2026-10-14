@@ -329,6 +329,8 @@ class OperatorDistribution(BaseModel):
     maximum: float | None
     mean: float | None
     median: float | None
+    known_sum: float | None
+    known_sum_reason: str | None
 
 
 class OccupancySegment(BaseModel):

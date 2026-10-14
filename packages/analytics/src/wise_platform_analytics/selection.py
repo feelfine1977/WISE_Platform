@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 OPENING_CONTEXT_POLICY = "incident.context.first_record_in_declared_order.v1"
 BOUNDARY_POLICY = "incident.boundary.raw_labeled_start_end.v1"
+SAME_RECORD_POLICY = "incident.raw.same_record_all.v1"
 
 
 class ContextRecord(Protocol):
@@ -36,12 +37,14 @@ class PreparedRecordLike(Protocol):
     local_timestamp: str | None
     time_value: datetime | None
     context: tuple[ContextRecord, ...]
+    original_cells: tuple[str, ...]
 
 
 class PreparedDataLike(Protocol):
     histories: Mapping[str, tuple[PreparedRecordLike, ...]]
     mapping: Mapping[str, object]
     policies: Mapping[str, object]
+    columns: tuple[str, ...]
 
     def sequence_evaluable(self, case_id: str) -> bool: ...
     def identity_dict(self) -> dict[str, str]: ...
@@ -120,6 +123,27 @@ class RecordAttributeIn:
 
 
 @dataclass(frozen=True)
+class RecordAttributeCondition:
+    column_index: int
+    values: tuple[str | None, ...]
+
+    def __post_init__(self) -> None:
+        if isinstance(self.values, (list, tuple)):
+            object.__setattr__(self, "values", tuple(self.values))
+
+
+@dataclass(frozen=True)
+class RecordAttributesAll:
+    conditions: tuple[RecordAttributeCondition, ...]
+    negate: bool = False
+    policy_id: str = SAME_RECORD_POLICY
+
+    def __post_init__(self) -> None:
+        if isinstance(self.conditions, (list, tuple)):
+            object.__setattr__(self, "conditions", tuple(self.conditions))
+
+
+@dataclass(frozen=True)
 class ObservedSpanAtLeast:
     hours: float
     negate: bool = False
@@ -133,7 +157,7 @@ class MaxRawGapAtLeast:
 
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
                         | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
-                        | OpeningAttributeIn | RecordAttributeIn | ObservedSpanAtLeast | MaxRawGapAtLeast)
+                        | OpeningAttributeIn | RecordAttributeIn | RecordAttributesAll | ObservedSpanAtLeast | MaxRawGapAtLeast)
 
 
 class SelectionError(ValueError):
@@ -160,15 +184,38 @@ class PopulationSupport:
 
 
 @dataclass(frozen=True)
+class RecordAttributeCaseEvidence:
+    case_id: str
+    matching_row_ids: tuple[str, ...]
+    unevaluable_row_ids: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        return {"case_id": self.case_id, "matching_row_ids": list(self.matching_row_ids),
+                "unevaluable_row_ids": list(self.unevaluable_row_ids)}
+
+
+@dataclass(frozen=True)
+class RecordAttributeEvidence:
+    cases: tuple[RecordAttributeCaseEvidence, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        return {"policy_id": SAME_RECORD_POLICY, "cases": [case.to_dict() for case in self.cases]}
+
+
+@dataclass(frozen=True)
 class PredicateResult:
     predicate: Predicate
     kept: PopulationSupport
     removed: PopulationSupport
     unevaluable: PopulationSupport
+    record_evidence: RecordAttributeEvidence | None = None
 
     def to_dict(self) -> dict[str, object]:
-        return {"predicate": predicate_descriptor(self.predicate), "kept": self.kept.to_dict(),
-                "removed": self.removed.to_dict(), "unevaluable": self.unevaluable.to_dict()}
+        result = {"predicate": predicate_descriptor(self.predicate), "kept": self.kept.to_dict(),
+                  "removed": self.removed.to_dict(), "unevaluable": self.unevaluable.to_dict()}
+        if self.record_evidence is not None:
+            result["record_evidence"] = self.record_evidence.to_dict()
+        return result
 
 
 @dataclass(frozen=True)
@@ -206,6 +253,21 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
         return {"kind": "case_start_in_window", "window": {
             "timestamp_kind": predicate.timestamp_kind, "start_inclusive": predicate.start_inclusive,
             "end_exclusive": predicate.end_exclusive}, "negate": predicate.negate}
+    if isinstance(predicate, RecordAttributesAll):
+        if predicate.policy_id != SAME_RECORD_POLICY:
+            raise SelectionError("invalid_predicate", "The same-record policy is not supported.")
+        if not isinstance(predicate.conditions, tuple) or not 1 <= len(predicate.conditions) <= 32:
+            raise SelectionError("invalid_predicate", "Use between one and 32 same-record conditions.")
+        conditions = []
+        for condition in predicate.conditions:
+            if not isinstance(condition, RecordAttributeCondition) or type(condition.column_index) is not int or condition.column_index < 0:
+                raise SelectionError("invalid_predicate", "A raw attribute needs a nonnegative original column index.")
+            _set_values(condition.values)
+            conditions.append({"column_index": condition.column_index, "values": list(condition.values)})
+        if len({condition.column_index for condition in predicate.conditions}) != len(predicate.conditions):
+            raise SelectionError("invalid_predicate", "Declare each original column once; combine alternatives in its values.")
+        return {"kind": "record_attributes_all", "policy_id": predicate.policy_id,
+                "conditions": conditions, "negate": predicate.negate}
     if isinstance(predicate, (OpeningAttributeIn, RecordAttributeIn)):
         if type(predicate.column_index) is not int or predicate.column_index < 0:
             raise SelectionError("invalid_predicate", "Context needs a nonnegative column index.")
@@ -295,6 +357,10 @@ def semantic_predicate(descriptor: Mapping[str, object]) -> dict[str, object]:
         result["case_ids"] = sorted(result["case_ids"])
     elif kind in ("opening_attribute_in", "record_attribute_in"):
         result["values"] = sorted(result["values"], key=lambda value: (value is not None, value or ""))
+    elif kind == "record_attributes_all":
+        result["conditions"] = sorted(({"column_index": condition["column_index"],
+            "values": sorted(condition["values"], key=lambda value: (value is not None, value or ""))}
+            for condition in result["conditions"]), key=lambda condition: condition["column_index"])
     elif kind in ("observed_span_at_least", "max_raw_gap_at_least"):
         hours = result["hours"]
         if isinstance(hours, float) and hours.is_integer():
@@ -356,6 +422,11 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
             if predicate.column_index not in prepared.mapping["context_columns"]:
                 raise SelectionError("unmapped_context_column", "Context must use a mapped context column.",
                                      None if isinstance(predicate, OpeningAttributeEquals) else f"predicates.{index}.column_index")
+        if isinstance(predicate, RecordAttributesAll):
+            for condition_index, condition in enumerate(predicate.conditions):
+                if condition.column_index >= len(prepared.columns):
+                    raise SelectionError("invalid_predicate", "The original column is outside the prepared source.",
+                                         f"predicates.{index}.conditions.{condition_index}.column_index")
         if isinstance(predicate, CaseIdIn):
             requested = set(predicate.case_ids)
             if requested.difference(prepared.histories):
@@ -371,23 +442,31 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
         from .case_time import case_time_summary
         summaries = {case: case_time_summary(prepared, case) for case in parent}
     evaluations = []
+    evidence = []
     for predicate in predicates:
-        if isinstance(predicate, CaseIdIn):
+        if isinstance(predicate, RecordAttributesAll):
+            measured = {case_id: _same_record(prepared.histories[case_id], predicate) for case_id in parent}
+            evaluations.append({case_id: result[0] for case_id, result in measured.items()})
+            evidence.append(RecordAttributeEvidence(tuple(RecordAttributeCaseEvidence(case_id, result[1], result[2])
+                for case_id, result in measured.items() if result[1] or result[2])))
+        elif isinstance(predicate, CaseIdIn):
             # The declared tuple stays unchanged in the receipt and identity.
             # Build one index for the frozen parent instead of scanning a large
             # ID tuple for every item (the before-GR flow contains 221,010).
             members = frozenset(predicate.case_ids)
             evaluations.append({case_id: (case_id not in members if predicate.negate else case_id in members)
                                 for case_id in parent})
+            evidence.append(None)
         else:
             evaluations.append({case_id: _evaluate(prepared, case_id, predicate, summaries) for case_id in parent})
+            evidence.append(None)
     combined: dict[str, bool | None] = {}
     for case_id in parent:
         values = [evaluation[case_id] for evaluation in evaluations]
         combined[case_id] = False if False in values else None if None in values else True
     kept, removed, unevaluable = _partition(prepared, combined)
-    individual = tuple(PredicateResult(predicate, *_partition(prepared, evaluation))
-                       for predicate, evaluation in zip(predicates, evaluations))
+    individual = tuple(PredicateResult(predicate, *_partition(prepared, evaluation), record_evidence=rows)
+                       for predicate, evaluation, rows in zip(predicates, evaluations, evidence))
     source_identity = prepared.identity_dict()
     meaning = {
         "kind": "complete_case_selection.v1", "source_id": source_identity["source_id"],
@@ -401,6 +480,32 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
     identity = {**source_identity, "population_id": "population.v1:sha256:" + hashlib.sha256(_canonical(meaning).encode("utf-8")).hexdigest()}
     return SelectionResult(_support(prepared, parent), kept, removed, unevaluable,
                            individual, MappingProxyType(identity))
+
+
+def _same_record(records: Sequence[PreparedRecordLike], predicate: RecordAttributesAll) -> tuple[bool | None, tuple[str, ...], tuple[str, ...]]:
+    """OR values, AND cells, existential raw rows; F dominates row U, T dominates case U.
+
+    Empty original cells are the explicitly selectable missing value; whitespace and
+    literal Unknown are untouched text. A structurally absent cell is unknown, never
+    fabricated as a blank. Chronology is irrelevant. Witness IDs follow source order.
+    """
+    matching, unknown = [], []
+    for record in sorted(records, key=lambda record: record.source_position):
+        values = []
+        for condition in predicate.conditions:
+            if condition.column_index >= len(record.original_cells):
+                values.append(None)
+            else:
+                cell = record.original_cells[condition.column_index]
+                values.append((None if cell == "" else cell) in condition.values)
+        state = False if False in values else None if None in values else True
+        if state is True:
+            matching.append(record.row_id)
+        elif state is None:
+            unknown.append(record.row_id)
+    value = True if matching else None if unknown else False
+    return (None if value is None else not value if predicate.negate else value,
+            tuple(matching), tuple(unknown))
 
 
 def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, summaries: Mapping[str, Mapping] | None = None) -> bool | None:

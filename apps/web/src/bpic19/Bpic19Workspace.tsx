@@ -16,6 +16,16 @@ import { Bpic19Cohorts } from "./Bpic19Cohorts";
 import { Bpic19SavedScore } from "./Bpic19SavedScore";
 import type { Bpic19ScoreAnswer } from "./scoring-types";
 import { Bpic19Operators } from "./Bpic19Operators";
+import { Bpic19Admission } from "./Bpic19Admission";
+import { Bpic19FlowComparison, flowComparisonQuery } from "./Bpic19FlowComparison";
+import type { Bpic19FlowComparisonAnswer, FlowComparisonQuery } from "../generated/bpic19-flow-comparison";
+import type { AnswerIdentity } from "../generated/saving";
+import { Bpic19RetainedCohorts } from "./Bpic19RetainedCohorts";
+import { useLineageEvidence } from "./useLineageEvidence";
+import { Bpic19RecordFilter } from "./Bpic19RecordFilter";
+import type { RecordAttributesAll } from "../generated/selection";
+import { Bpic19IntervalComparison, intervalComparisonQuery } from "./Bpic19IntervalComparison";
+import type { Bpic19IntervalComparisonAnswer, IntervalComparisonQuery, IntervalSide } from "../generated/bpic19-interval-comparison";
 import type { Bpic19Session } from "./session";
 import "./workspace.css";
 
@@ -36,7 +46,7 @@ function download(value: unknown) {
 }
 
 /** The purchasing entry point uses the same population, evidence and saved revisions as the map. */
-export function Bpic19Workspace({ investigation, comparison, saving, session, active, onShowData, onShowComparison }: Props) {
+export function Bpic19Workspace({ investigation, saving, session, active, onShowData }: Props) {
   const state = useSyncExternalStore(investigation.subscribe, investigation.getState);
   const savingState = useSyncExternalStore(saving.subscribe, saving.getState);
   const [profile, setProfile] = useState<Bpic19ProfileAnswer | null>(null);
@@ -46,6 +56,10 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
   const [cohortEnabled, setCohortEnabled] = useState(false);
   const [scoreEnabled, setScoreEnabled] = useState(false);
   const [operatorsEnabled, setOperatorsEnabled] = useState(false);
+  const [flowComparison, setFlowComparison] = useState<{ identity: AnswerIdentity; query: FlowComparisonQuery } | null>(null);
+  const [intervalComparison, setIntervalComparison] = useState<{ identity: AnswerIdentity; query: IntervalComparisonQuery } | null>(null);
+  const flowIntervalSides = useRef<{identity:AnswerIdentity;target:IntervalSide;reference:IntervalSide}|undefined>(undefined);
+  const recordPredicate = useRef<RecordAttributesAll | undefined>(undefined);
   const operatorName = useRef<"bpic19_ordinal" | "bpic19_fifo" | "bpic19_cancellation" | "bpic19_rule" | "bpic19_waiting">("bpic19_ordinal");
   const heading = useRef<HTMLHeadingElement>(null);
   const activated = useRef("");
@@ -58,6 +72,7 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
   const revision = shown?.revision ?? (state.population.phase === "ready" ? state.population.revision : 0);
   const key = JSON.stringify([population?.workspace_id, identity]);
   const preparation = JSON.stringify([population?.workspace_id, identity?.preparation_id]);
+  const lineage = useLineageEvidence(population?.workspace_id,population?.identity,revision);
   if (active) activated.current = preparation;
   const engaged = active || activated.current === preparation;
   const savedRevision = state.saved?.revisionId;
@@ -65,6 +80,9 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
     const allActions = state.saved?.content.bpic19_pipeline?.actions ?? [];
     const actions = allActions.filter(action => sameJson(action.identity, identity));
     const scoredAction = actions.find(action => action.operation === "bpic19_score");
+    if (queries.current.preparation !== preparation) recordPredicate.current = undefined;
+    const savedRecordPredicate = state.saved?.content.selection_recipe.predicates.filter(predicate=>predicate.kind==='record_attributes_all').at(-1);
+    if(savedRecordPredicate?.kind==='record_attributes_all') recordPredicate.current = savedRecordPredicate;
     queries.current = { preparation, revision: savedRevision,
       profile: actions.find(action => action.operation === "bpic19_profile")?.query as Bpic19ProfileQuery | undefined,
       measures: actions.find(action => action.operation === "bpic19_measures")?.query as MeasureQuery | undefined,
@@ -75,7 +93,7 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
   }
 
   useLayoutEffect(() => {
-    setProfile(null); setRows([]);
+    setProfile(null); setRows([]); setFlowComparison(null);setIntervalComparison(null);flowIntervalSides.current=undefined;
     if (population && identity) session.basis(population.workspace_id, identity, shown?.steps ?? [], population.identity);
   }, [key, session]);
 
@@ -83,8 +101,12 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
     if (!population || !identity || !state.saved || restoredRevision.current === savedRevision ||
         !sameJson(state.saved.content.selection_identity, identity)) return;
     session.restore(population.workspace_id, identity, shown?.steps ?? [],
-      state.saved.content.bpic19_pipeline?.actions ?? [], population.identity);
+      state.saved.content.bpic19_pipeline?.actions ?? [], population.identity, state.saved.content.bpic19_pipeline?.replay_mode);
     restoredRevision.current = savedRevision;
+    const comparisonAction = state.saved.content.bpic19_pipeline?.actions.find(action=>action.operation==='bpic19_flow_comparison' && sameJson(action.identity,identity));
+    if(comparisonAction) setFlowComparison({identity:comparisonAction.identity, query:comparisonAction.query as unknown as FlowComparisonQuery});
+    const intervalAction=state.saved.content.bpic19_pipeline?.actions.find(action=>action.operation==='bpic19_interval_comparison' && sameJson(action.identity,identity));
+    if(intervalAction)setIntervalComparison({identity:intervalAction.identity,query:intervalAction.query as unknown as IntervalComparisonQuery});
     refresh(value => value + 1);
   }, [key, savedRevision, session]);
 
@@ -101,6 +123,10 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
     session.reviewed({ operation: "bpic19_measures", identity: answer.identity, query: { ...answer.query }, definition_id: answer.definition_id });
     refresh(value => value + 1);
   }, [session]);
+  const retainMeasures = useCallback((answer:Bpic19MeasuresAnswer)=>{
+    session.retain({operation:'bpic19_measures',identity:answer.identity,query:{...answer.query},definition_id:answer.definition_id});
+    refresh(value=>value+1);
+  },[session]);
   const profileValid = useCallback((current: boolean) => {
     // Counts can be reviewed before a purchasing partition is declared.
     // An accepted partition still fences its later edits and replacement.
@@ -134,10 +160,30 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
     session.reviewed({ operation: answer.operation, identity: answer.identity, query: { ...answer.query }, definition_id: answer.definition_id });
     refresh(value => value + 1);
   }, [session, key]);
+  const retainOperator = useCallback((answer: Bpic19OperatorAnswer) => {
+    if (answer.operation === "bpic19_catalogue") return;
+    session.retain({ operation: answer.operation, identity: answer.identity, query: { ...answer.query }, definition_id: answer.definition_id });
+    refresh(value => value + 1);
+  }, [session]);
+  const reviewedFlowComparison = useCallback((answer: Bpic19FlowComparisonAnswer) => {
+    session.reviewed({operation:'bpic19_flow_comparison',identity:answer.identity,query:{...answer.query},definition_id:answer.definition_id});
+    flowIntervalSides.current={identity:answer.identity,
+      target:{label:`${answer.query.target.flow_id} × ${answer.query.target.item_type_value ?? answer.query.target.item_type_state}`,recipe:{kind:'complete_case_ids',case_ids:[...answer.comparison.target.case_ids]}},
+      reference:{label:`${answer.query.reference.flow_id} × ${answer.query.reference.item_type_value ?? answer.query.reference.item_type_state}`,recipe:{kind:'complete_case_ids',case_ids:[...answer.comparison.reference.case_ids]}}};
+    refresh(value=>value+1);
+  },[session]);
+  const flowComparisonValid = useCallback((valid:boolean)=>{
+    session.valid('bpic19_flow_comparison',valid,key);refresh(value=>value+1);
+  },[session,key]);
+  const reviewedIntervalComparison = useCallback((answer:Bpic19IntervalComparisonAnswer)=>{
+    session.reviewed({operation:'bpic19_interval_comparison',identity:answer.identity,query:{...answer.query},definition_id:answer.definition_id});
+    refresh(value=>value+1);
+  },[session]);
+  const intervalComparisonValid=useCallback((valid:boolean)=>{session.valid('bpic19_interval_comparison',valid,key);refresh(value=>value+1);},[session,key]);
   const inspect = useCallback((caseId: string, rowIds: string[] = []) => {
-    setRows(rowIds); setLayout("side"); investigation.openCase(caseId);
+    lineage.close();setRows(rowIds); setLayout("side"); investigation.openCase(caseId);
     setTimeout(() => heading.current?.focus(), 0);
-  }, [investigation]);
+  }, [investigation,lineage.close]);
 
   if (!engaged) return null;
   if (!population || !identity) return <main className="bpic19-workspace"><h1>Purchasing analysis</h1><p>Open a reviewed source to inspect its purchasing flows and recorded measures.</p><button onClick={onShowData}>Open Data</button></main>;
@@ -155,24 +201,39 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
   return <main className="bpic19-workspace">
     <div className="bpic19-toolbar"><h1>Purchasing analysis</h1><button onClick={onShowData}>Review source in Data</button><SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} waitingFor={paused || !session.readyForSave() ? "bpic19-save-wait" : undefined} /></div>
     <p>Source: {population.source.filename}. Selections keep complete PO-item histories across purchasing analysis, the process map and comparisons.</p>
+    <Bpic19Admission session={session} identity={identity} onChange={() => refresh(value=>value+1)} />
     {(paused || !session.readyForSave()) && <p id="bpic19-save-wait" role="status">Review the current definitions and wait for the current population before saving or exporting.</p>}
-    {shown && <SelectionSteps selection={state.selection} onRemove={step => investigation.removeStep(step)} onClear={() => investigation.clearSteps()} onUndo={() => investigation.undo()} onRedo={() => investigation.redo()} onRetry={() => investigation.retrySelection()} onStay={() => investigation.staySelection()} waitingFor={state.replacement ? "bpic19-save-wait" : undefined} />}
+    {state.selection.phase !== "idle" && <SelectionSteps selection={state.selection} onRemove={step => investigation.removeStep(step)} onClear={() => investigation.clearSteps()} onUndo={() => investigation.undo()} onRedo={() => investigation.redo()} onRetry={() => investigation.retrySelection()} onStay={() => investigation.staySelection()} waitingFor={state.replacement ? "bpic19-save-wait" : undefined} />}
     {saveOpen && <SaveForm saving={saving} investigation={state} view="incidents" onClose={() => setSaveOpen(false)} />}
     {saved?.bpic19_outputs && !paused && session.readyForSave() && saved.revision.saved_revision_id === state.saved?.revisionId && sameJson(session.savedPipeline(), saved.revision.content.bpic19_pipeline) && <button onClick={() => download({ format: "wise-purchasing-investigation", format_version: 1, revision: saved.revision, source: population.source, preparation: population.preparation, manifest: saved.bpic19_outputs })}>Export saved definitions, results and witnesses</button>}
     <div className="bpic19-content">
       <div inert={paused || undefined}>
         <Bpic19Profile key={key} workspaceId={population.workspace_id} identity={identity} revision={revision} query={profileQuery} onReviewed={reviewedProfile} onColumns={availableColumns} onValidityChange={profileValid} onInspect={inspect}
           onKeep={predicate => investigation.addStep(predicate)}
+          onKeepRecordPredicate={predicate => { recordPredicate.current = predicate; investigation.addStep(predicate); }}
           onCompare={(target, comparator) => {
-            comparison.useBasis({ workspaceId: population.workspace_id, identity: population.identity,
-              clock: population.preparation.policies.time.id === "incident.time.wall_clock_as_recorded.v1" ? "wall_clock" : "utc_instant", contextColumns: population.preparation.mapping.context_columns });
-            comparison.takeIds("target", target.caseIds); comparison.rename("target", target.name);
-            comparison.takeIds("reference", comparator.caseIds); comparison.rename("reference", comparator.name);
-            onShowComparison();
+            setFlowComparison({ identity: target.recipe.source_identity, query: flowComparisonQuery(target,comparator) });
           }} />
+        {flowComparison && sameJson(flowComparison.identity,identity) && <Bpic19FlowComparison key={JSON.stringify(flowComparison)} workspaceId={population.workspace_id}
+          identity={flowComparison.identity} revision={revision} query={flowComparison.query} onReviewed={reviewedFlowComparison} onValidityChange={flowComparisonValid}
+          onInspect={inspect} onKeepCases={caseIds=>{if(caseIds.length) investigation.addStep({kind:'case_id_in',case_ids:[caseIds[0],...caseIds.slice(1)],negate:false});}} />}
         {currentProfile && <Bpic19Measures workspaceId={population.workspace_id} identity={identity} revision={revision} roles={roles} columns={currentProfile.columns} query={measuresQuery} onReviewed={reviewedMeasures} onValidityChange={measuresValid} onInspect={inspect}
+          onRetain={retainMeasures} retainedQueries={session.retainedActions().filter(action=>action.operation==='bpic19_measures').map(action=>({definition_id:action.definition_id,label:`${String(action.query.measure_profile)} · ${action.definition_id}`,query:action.query as unknown as MeasureQuery}))}
           onKeepCases={(caseIds) => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }} />}
+        {currentProfile && !intervalComparison && <button onClick={()=>{
+          const sides=flowIntervalSides.current && sameJson(flowIntervalSides.current.identity,identity) ? flowIntervalSides.current :
+            {target:{label:'Target complete PO items',recipe:{kind:'complete_case_ids' as const,case_ids:[]}},reference:{label:'Comparator complete PO items',recipe:{kind:'complete_case_ids' as const,case_ids:[]}}};
+          setIntervalComparison({identity,query:intervalComparisonQuery(sides.target,sides.reference,measuresQuery?.interval_source,measuresQuery?.interval_target)});
+        }}>Compare recorded intervals on two named item sides</button>}
+        {intervalComparison && sameJson(intervalComparison.identity,identity) && <Bpic19IntervalComparison workspaceId={population.workspace_id} identity={intervalComparison.identity}
+          revision={revision} query={intervalComparison.query} onReviewed={reviewedIntervalComparison} onValidityChange={intervalComparisonValid} onInspect={inspect}
+          onKeepCases={caseIds=>{if(caseIds.length)investigation.addStep({kind:'case_id_in',case_ids:[caseIds[0],...caseIds.slice(1)],negate:false});}} />}
         {currentProfile?.profile && <>
+          <Bpic19RecordFilter columns={currentProfile.columns} initialColumns={[currentProfile.profile.definition.roles.goods_receipt,currentProfile.profile.definition.roles.gr_based_iv]}
+            initialPredicate={recordPredicate.current} disabled={paused}
+            result={shown?.answer.predicate_results.filter(result=>result.predicate.kind==='record_attributes_all').at(-1)}
+            onKeep={predicate=>{if(predicate.kind==='record_attributes_all')recordPredicate.current=predicate;investigation.addStep(predicate);}}
+            onInspect={(caseId,rowIds=[])=>{investigation.closeCase();setLayout('side');void lineage.open({identity:shown?.answer.parent_identity ?? population.identity,caseId,rowIds,reason:'Same-original-record matches or structurally unavailable fields, before optional inversion'});}} />
           {!cohortEnabled && !queries.current.cohorts && <button onClick={() => setCohortEnabled(true)}>Review completion and inclusion cohorts</button>}
           {(cohortEnabled || queries.current.cohorts) && <Bpic19Cohorts key={key} workspaceId={population.workspace_id} identity={identity} revision={revision}
             roles={{ item_category: currentProfile.profile.definition.roles.item_category,
@@ -181,13 +242,16 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
             query={queries.current.cohorts} onReviewed={reviewedCohorts} onValidityChange={cohortsValid} onInspect={inspect}
             onKeepCases={caseIds => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }} />}
         </>}
+        <Bpic19RetainedCohorts workspaceId={population.workspace_id} currentIdentity={identity} actions={session.declarations()} revision={revision}
+          onInspect={(parentIdentity,caseId,rowIds,reason)=>{investigation.closeCase();setLayout('side');void lineage.open({identity:parentIdentity,caseId,rowIds,reason});}} />
         {currentProfile?.profile && <>
           {!operatorsEnabled && !queries.current.operators && <button onClick={() => setOperatorsEnabled(true)}>Review invoice matches, recorded rules and waiting intervals</button>}
           {(operatorsEnabled || queries.current.operators) && <Bpic19Operators key={key} workspaceId={population.workspace_id} identity={identity} revision={revision}
             roles={{ event_id: currentProfile.columns.filter(column => column.name === "eventID" || column.name === "source__eventID").length === 1
                 ? currentProfile.columns.find(column => column.name === "eventID" || column.name === "source__eventID")!.index : null,
               item_category: currentProfile.profile.definition.roles.item_category, net_worth: roles.net_worth ?? null }}
-            query={queries.current.operators} columns={currentProfile.columns} onReviewed={reviewedOperators} onValidityChange={operatorsValid} onInspect={inspect}
+            query={queries.current.operators} retainedQueries={session.retainedActions().filter(action=>["bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"].includes(action.operation)).map(action=>action.query as unknown as OperatorQuery)}
+            columns={currentProfile.columns} onReviewed={reviewedOperators} onRetain={retainOperator} onValidityChange={operatorsValid} onInspect={inspect}
             onKeepCases={caseIds => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }} />}
         </>}
         {currentProfile?.profile && <>
@@ -200,6 +264,8 @@ export function Bpic19Workspace({ investigation, comparison, saving, session, ac
         </>}
       </div>
       {state.inspected.phase !== "closed" && <ImportedInspector inspected={state.inspected} summary={undefined} layout={layout} onLayout={setLayout} onReturn={() => investigation.closeCase()} onRetry={() => investigation.retryCase()} headingRef={heading} highlightedRowIds={rows} />}
+      {lineage.state.phase !== 'closed' && <div><p>Retained parent evidence: {lineage.context?.reason}. Population: {lineage.context?.identity.population_id}. The current analysis selection remains fixed.</p>
+        <ImportedInspector inspected={lineage.state} summary={undefined} layout={layout} onLayout={setLayout} onReturn={lineage.close} onRetry={lineage.retry} headingRef={heading} highlightedRowIds={lineage.context?.rowIds} /></div>}
     </div>
   </main>;
 }

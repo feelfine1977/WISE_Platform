@@ -1,0 +1,1215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/bpic19-flow-comparison.v1.schema.json",
+  "title": "Bpic19FlowComparisonBoundary",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Bpic19FlowComparisonRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19FlowComparisonAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19FlowComparisonRefusal"
+    }
+  ],
+  "$defs": {
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "Bpic19ProfileQuery": {
+      "title": "Bpic19ProfileQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "roles": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19Roles"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "profile_columns": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.all_raw_case_attributes.v1"
+        },
+        "source_interpretation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19SourceInterpretation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attribute_view": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19AttributeViewQuery"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "include_zero_cells": {
+          "type": "boolean"
+        },
+        "include_document_siblings": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "roles",
+        "profile_columns",
+        "policy_id"
+      ]
+    },
+    "Bpic19Roles": {
+      "title": "Bpic19Roles",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_category": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "item_type": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "goods_receipt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "gr_based_iv": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "purchasing_document": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "item": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "source_case": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "item_category",
+        "item_type",
+        "goods_receipt",
+        "gr_based_iv",
+        "purchasing_document",
+        "item",
+        "source_case"
+      ]
+    },
+    "Bpic19SourceInterpretation": {
+      "title": "Bpic19SourceInterpretation",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.raw_source_interpretation.v1"
+        },
+        "inclusion": {
+          "$ref": "#/$defs/Bpic19SourceInclusion"
+        },
+        "horizon": {
+          "$ref": "#/$defs/Bpic19SourceHorizon"
+        },
+        "discrepancies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19SourceDiscrepancy"
+          },
+          "maxItems": 20
+        },
+        "reported_populations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19ReportedPopulation"
+          },
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "profile_name",
+        "policy_id",
+        "inclusion",
+        "horizon",
+        "discrepancies"
+      ]
+    },
+    "Bpic19SourceInclusion": {
+      "title": "Bpic19SourceInclusion",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "all_source",
+            "item_start",
+            "document_start",
+            "record_projection"
+          ]
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "start_inclusive": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end_exclusive": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "timestamp_kind",
+        "start_inclusive",
+        "end_exclusive"
+      ]
+    },
+    "Bpic19SourceHorizon": {
+      "title": "Bpic19SourceHorizon",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "value",
+        "provenance"
+      ]
+    },
+    "Bpic19SourceDiscrepancy": {
+      "title": "Bpic19SourceDiscrepancy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "reported_total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "reported_subtotal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "reference",
+        "reported_total",
+        "reported_subtotal"
+      ]
+    },
+    "Bpic19ReportedPopulation": {
+      "title": "Bpic19ReportedPopulation",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "grain": {
+          "type": "string",
+          "enum": [
+            "po_item",
+            "purchasing_document",
+            "original_record"
+          ]
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "denominator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "parent_label": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "count",
+        "grain",
+        "reference",
+        "denominator",
+        "parent_label"
+      ]
+    },
+    "Bpic19AttributeViewQuery": {
+      "title": "Bpic19AttributeViewQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "select_value": {
+          "type": "boolean"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "column_index",
+        "offset",
+        "limit",
+        "select_value",
+        "value"
+      ]
+    },
+    "Bpic19SourceSupport": {
+      "title": "Bpic19SourceSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "share": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "example_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count",
+        "document_count",
+        "share",
+        "example_case_ids"
+      ]
+    },
+    "FlowSubtypeRule": {
+      "title": "FlowSubtypeRule",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "flow_id": {
+          "type": "string",
+          "enum": [
+            "after_gr",
+            "before_gr",
+            "two_way",
+            "consignment"
+          ]
+        },
+        "item_type_state": {
+          "type": "string",
+          "enum": [
+            "invariant",
+            "missing",
+            "conflicting"
+          ]
+        },
+        "item_type_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "flow_id",
+        "item_type_state",
+        "item_type_value"
+      ]
+    },
+    "FlowComparisonPageQuery": {
+      "title": "FlowComparisonPageQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "target",
+            "reference",
+            "outside",
+            "unavailable"
+          ]
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "role",
+        "offset",
+        "limit"
+      ]
+    },
+    "FlowComparisonQuery": {
+      "title": "FlowComparisonQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.flow_item_type_comparison.v1"
+        },
+        "profile_definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-profile\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "profile_query": {
+          "$ref": "#/$defs/Bpic19ProfileQuery"
+        },
+        "target": {
+          "$ref": "#/$defs/FlowSubtypeRule"
+        },
+        "reference": {
+          "$ref": "#/$defs/FlowSubtypeRule"
+        },
+        "page": {
+          "$ref": "#/$defs/FlowComparisonPageQuery"
+        }
+      },
+      "required": [
+        "policy_id",
+        "profile_definition_id",
+        "profile_query",
+        "target",
+        "reference",
+        "page"
+      ]
+    },
+    "FlowComparisonDefinition": {
+      "title": "FlowComparisonDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.flow_item_type_comparison.v1"
+        },
+        "profile_definition_id": {
+          "type": "string"
+        },
+        "profile_query": {
+          "$ref": "#/$defs/Bpic19ProfileQuery"
+        },
+        "target": {
+          "$ref": "#/$defs/FlowSubtypeRule"
+        },
+        "reference": {
+          "$ref": "#/$defs/FlowSubtypeRule"
+        },
+        "membership_policy": {
+          "type": "string",
+          "const": "exact_invariant_category_and_reviewed_item_type_state"
+        },
+        "document_policy": {
+          "type": "string",
+          "const": "all_record_invariant_document_overlap_preserved"
+        }
+      },
+      "required": [
+        "policy_id",
+        "profile_definition_id",
+        "profile_query",
+        "target",
+        "reference",
+        "membership_policy",
+        "document_policy"
+      ]
+    },
+    "FlowComparisonShares": {
+      "title": "FlowComparisonShares",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_denominator": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_denominator": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "target_item_share": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_item_share": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target_record_share": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_record_share": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "item_denominator",
+        "record_denominator",
+        "target_item_share",
+        "reference_item_share",
+        "target_record_share",
+        "reference_record_share",
+        "reason"
+      ]
+    },
+    "FlowComparisonDocuments": {
+      "title": "FlowComparisonDocuments",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "union_document_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overlap_document_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "union_document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "overlap_document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "target_document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "reference_document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unknown_document_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        },
+        "supports_overlap": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "union_document_ids",
+        "overlap_document_ids",
+        "union_document_count",
+        "overlap_document_count",
+        "target_document_count",
+        "reference_document_count",
+        "unknown_document_case_ids",
+        "supports_overlap"
+      ]
+    },
+    "FlowComparisonItem": {
+      "title": "FlowComparisonItem",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "target",
+            "reference",
+            "outside",
+            "unavailable"
+          ]
+        },
+        "document": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "item_type_state": {
+          "type": "string",
+          "enum": [
+            "invariant",
+            "missing",
+            "conflicting"
+          ]
+        },
+        "item_type_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "witness_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "role",
+        "document",
+        "item_type_state",
+        "item_type_value",
+        "record_count",
+        "witness_row_ids",
+        "reason"
+      ]
+    },
+    "FlowComparisonPage": {
+      "title": "FlowComparisonPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "target",
+            "reference",
+            "outside",
+            "unavailable"
+          ]
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FlowComparisonItem"
+          }
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "role",
+        "offset",
+        "limit",
+        "total",
+        "items",
+        "next_offset"
+      ]
+    },
+    "FlowComparison": {
+      "title": "FlowComparison",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-flow-comparison\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "definition": {
+          "$ref": "#/$defs/FlowComparisonDefinition"
+        },
+        "parent": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "flow_parent": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "comparison_parent": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "target": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "reference": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "outside": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "outside_flow": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "unavailable": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "scope_unavailable": {
+          "$ref": "#/$defs/Bpic19SourceSupport"
+        },
+        "shares": {
+          "$ref": "#/$defs/FlowComparisonShares"
+        },
+        "documents": {
+          "$ref": "#/$defs/FlowComparisonDocuments"
+        },
+        "page": {
+          "$ref": "#/$defs/FlowComparisonPage"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "definition_id",
+        "definition",
+        "parent",
+        "flow_parent",
+        "comparison_parent",
+        "target",
+        "reference",
+        "outside",
+        "outside_flow",
+        "unavailable",
+        "scope_unavailable",
+        "shares",
+        "documents",
+        "page",
+        "limitations"
+      ]
+    },
+    "Bpic19FlowComparisonRequest": {
+      "title": "Bpic19FlowComparisonRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_flow_comparison_request"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/FlowComparisonQuery"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "query"
+      ]
+    },
+    "Bpic19FlowComparisonAnswer": {
+      "title": "Bpic19FlowComparisonAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_flow_comparison_answer"
+        },
+        "operation": {
+          "type": "string",
+          "const": "bpic19_flow_comparison"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/FlowComparisonQuery"
+        },
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-flow-comparison\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "definition": {
+          "$ref": "#/$defs/FlowComparisonDefinition"
+        },
+        "comparison": {
+          "$ref": "#/$defs/FlowComparison"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "operation",
+        "identity",
+        "parent_identity",
+        "query",
+        "definition_id",
+        "definition",
+        "comparison"
+      ]
+    },
+    "Bpic19FlowComparisonRefusal": {
+      "title": "Bpic19FlowComparisonRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_flow_comparison_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "bpic19_flow_comparison"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_parent",
+            "unknown_case",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

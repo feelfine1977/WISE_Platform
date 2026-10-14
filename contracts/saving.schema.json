@@ -155,6 +155,9 @@
         },
         "unevaluable": {
           "$ref": "#/$defs/PopulationSupport"
+        },
+        "record_evidence": {
+          "$ref": "#/$defs/RecordAttributeEvidence"
         }
       },
       "required": [
@@ -199,6 +202,9 @@
         },
         {
           "$ref": "#/$defs/MaxRawGapAtLeast"
+        },
+        {
+          "$ref": "#/$defs/RecordAttributesAll"
         }
       ]
     },
@@ -2068,7 +2074,10 @@
             "bpic19_fifo",
             "bpic19_cancellation",
             "bpic19_rule",
-            "bpic19_waiting"
+            "bpic19_waiting",
+            "bpic19_flow_comparison",
+            "bpic19_method_gate",
+            "bpic19_interval_comparison"
           ]
         },
         "identity": {
@@ -2115,6 +2124,14 @@
           "items": {
             "$ref": "#/$defs/Bpic19PipelineAction"
           }
+        },
+        "replay_mode": {
+          "type": "string",
+          "enum": [
+            "require_all",
+            "partial"
+          ],
+          "description": "Explicit partial mode omits only registered unresolved source-method gates; it never omits a failed admitted operation."
         }
       },
       "required": [
@@ -2138,7 +2155,9 @@
             "bpic19_fifo",
             "bpic19_cancellation",
             "bpic19_rule",
-            "bpic19_waiting"
+            "bpic19_waiting",
+            "bpic19_flow_comparison",
+            "bpic19_interval_comparison"
           ]
         },
         "definition_id": {
@@ -2176,11 +2195,184 @@
           "items": {
             "$ref": "#/$defs/Bpic19PipelineOutput"
           }
+        },
+        "claim_level": {
+          "type": "string",
+          "enum": [
+            "complete_registered_pipeline",
+            "partial"
+          ]
+        },
+        "run_id": {
+          "type": "string",
+          "pattern": "^bpic19-pipeline\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "omissions": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/Bpic19PipelineOmission"
+          }
         }
       },
       "required": [
         "schema_version",
         "outputs"
+      ]
+    },
+    "Bpic19PipelineOmission": {
+      "title": "Bpic19PipelineOmission",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "operation": {
+          "type": "string",
+          "const": "bpic19_method_gate"
+        },
+        "definition_id": {
+          "type": "string"
+        },
+        "method_id": {
+          "type": "string"
+        },
+        "source_locator": {
+          "type": "string"
+        },
+        "gate_reason": {
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        }
+      },
+      "required": [
+        "step",
+        "operation",
+        "definition_id",
+        "method_id",
+        "source_locator",
+        "gate_reason",
+        "identity"
+      ]
+    },
+    "RecordAttributesAll": {
+      "title": "RecordAttributesAll",
+      "description": "OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "record_attributes_all"
+        },
+        "policy_id": {
+          "type": "string",
+          "const": "incident.raw.same_record_all.v1"
+        },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/RecordAttributeCondition"
+          }
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "policy_id",
+        "conditions",
+        "negate"
+      ]
+    },
+    "RecordAttributeCondition": {
+      "title": "RecordAttributeCondition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "column_index",
+        "values"
+      ]
+    },
+    "RecordAttributeEvidence": {
+      "title": "RecordAttributeEvidence",
+      "description": "Nonempty matching or unknown original-row support before optional negation, ordered by case ID then original source position. Absence is evaluated over the complete history; not-matching rows are never deleted.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.raw.same_record_all.v1"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecordAttributeCaseEvidence"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "cases"
+      ]
+    },
+    "RecordAttributeCaseEvidence": {
+      "title": "RecordAttributeCaseEvidence",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "matching_row_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RowId"
+          }
+        },
+        "unevaluable_row_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RowId"
+          }
+        }
+      },
+      "required": [
+        "case_id",
+        "matching_row_ids",
+        "unevaluable_row_ids"
       ]
     }
   }

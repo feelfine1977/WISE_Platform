@@ -632,3 +632,67 @@ def test_paging_catalogue_semantic_identity_and_authoritative_schema():
                 **result,
             }
         )
+
+
+def test_retained_comparison_counts_cover_population_not_only_case_page():
+    events = [
+        (case, label, day)
+        for case in ["a", "b"]
+        for label, day in [
+            (CI, 0),
+            (GR, 1),
+            (IR, 2),
+            (CI, 3),
+            (GR, 4),
+            (IR, 5),
+            (CI, 6),
+        ]
+    ]
+    p = snapshot(events)
+    left = evaluate(p, ordinal(), limit=1)
+    right = evaluate(p, fifo(), limit=1)
+    assert len(left["cases"]) == len(right["cases"]) == 1
+    assert left["population_case_count"] == right["population_case_count"] == 2
+    for result in [left, right]:
+        sums = result["summary"]["total_distributions"]
+        assert sums["paired_episode_count"]["known_sum"] == 4
+        assert sums["paired_endpoint_event_count"]["known_sum"] == 12
+        assert sums["unmatched_event_count"]["known_sum"] == 2
+        assert sums["stage_3_unmatched_event_count"]["known_sum"] == 2
+        assert sums["paired_episode_count"]["available_count"] == 2
+    assert left["summary"]["observation_state_counts"] == {
+        "reversed": 4,
+        "unmatched": 2,
+    }
+    assert right["summary"]["observation_state_counts"] == {"matched": 4}
+    assert (
+        left["summary"]["interval_distributions"]["stage_2_to_3"]["per_episode"]["mean"]
+        is None
+    )
+    assert (
+        right["summary"]["interval_distributions"]["stage_2_to_3"]["per_episode"][
+            "mean"
+        ]
+        == 1
+    )
+    assert (
+        left["cases"][0]["observations"][0]["intervals"]["stage_2_to_3"][
+            "recorded_difference_days"
+        ]
+        == -2
+    )
+
+
+def test_raw_known_activation_counts_survive_interval_and_scope_unavailability():
+    p = snapshot([("a", GR, 0), ("a", IR, None), ("a", CI, 2)])
+    result = evaluate(p, ordinal())
+    assert (
+        result["cases"][0]["known_activation_count"]
+        == result["cases"][0]["activation_count"]
+        == 1
+    )
+    assert result["summary"]["known_activation_count"] == 1
+    p = snapshot([("a", "A", 0, "1", ""), ("a", "B", 1, "2", "")])
+    a = evaluate(p, rule(flow_scope="after_gr"))["cases"][0]
+    assert a["state"] == "unknown" and a["truth"] == "unknown"
+    assert a["known_activation_count"] == a["activation_count"] == 1

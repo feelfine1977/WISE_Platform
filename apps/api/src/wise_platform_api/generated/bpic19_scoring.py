@@ -137,6 +137,25 @@ class RepresentationGroup(BaseModel):
     group_id: str
 
 
+class Pair(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    left: str
+    right: str
+    set: Literal['intersection', 'union', 'jointly_eligible']
+
+
+class AssociationSet(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    population: Literal['target', 'comparator']
+    state: Literal['all', 'eligible', 'positive', 'unavailable']
+    criterion_id: str | None = None
+    pair: Pair | None = None
+
+
 class CaseFilter(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -146,6 +165,7 @@ class CaseFilter(BaseModel):
     criterion_state: Literal['positive', 'evaluated', 'unavailable'] | None = None
     right_criterion_id: str | None = None
     representation_group: RepresentationGroup | None = None
+    association_set: AssociationSet | None = None
 
 
 class Bpic19ReadRequest(BaseModel):
@@ -207,6 +227,8 @@ class CaseAssessment(BaseModel):
     record_row_ids: list[str] | None = None
     context_evidence: dict[str, Any] | None = None
     value_evidence: dict[str, Any] | None = None
+    native_penalty: float | None = None
+    historical_artifacts: dict[str, Any] | None = None
 
 
 class NativeRow(RootModel[dict[str, str | float | bool | None]]):
@@ -276,6 +298,16 @@ class Bpic19Refusal(BaseModel):
     field: str | None = None
 
 
+class AssociationSet1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    population: Literal['target', 'comparator']
+    state: Literal['all', 'eligible', 'positive', 'unavailable']
+    criterion_id: str | None = None
+    pair: Pair | None = None
+
+
 class CaseFilter1(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -285,6 +317,7 @@ class CaseFilter1(BaseModel):
     criterion_state: Literal['positive', 'evaluated', 'unavailable'] | None = None
     right_criterion_id: str | None = None
     representation_group: RepresentationGroup | None = None
+    association_set: AssociationSet1 | None = None
 
 
 class Bpic19ExportRequest(BaseModel):
@@ -323,6 +356,8 @@ class RepresentationScoreGroup(BaseModel):
     state: Literal['ranked', 'unscored', 'support_below_minimum']
     native_penalty_mass: NumericMap
     reference: str
+    mean_penalty: float | None = None
+    summed_penalty_mass: float | None = None
 
 
 class ViewComparison(BaseModel):
@@ -347,6 +382,201 @@ class RankingComparisons(BaseModel):
     top_group_limit: conint(ge=1)
     tie_policy: str
     interpretation: str
+
+
+class CaseId(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class AssociationSelection1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['case_ids']
+    case_ids: list[CaseId] = Field(..., max_length=200)
+
+
+class AssociationSelection2(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['group']
+    group_values: dict[str, str | None] = Field(..., min_length=1)
+    exclude_group_values: dict[str, str | None] | None = Field(None, min_length=1)
+
+
+class AssociationSelection3(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['all']
+
+
+class AssociationSelection4(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['outside_target']
+
+
+class AssociationSelection(
+    RootModel[
+        AssociationSelection1
+        | AssociationSelection2
+        | AssociationSelection3
+        | AssociationSelection4
+    ]
+):
+    root: (
+        AssociationSelection1
+        | AssociationSelection2
+        | AssociationSelection3
+        | AssociationSelection4
+    )
+
+
+class AssociationCohort(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: constr(min_length=1)
+    selector: AssociationSelection
+
+
+class Criterion(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class AssociationQuery(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.frozen_native_associations.v1']
+    target: AssociationCohort
+    comparator: AssociationCohort
+    criteria: list[Criterion] = Field(..., max_length=29, min_length=1)
+    positive_threshold: Literal[0]
+    min_support: conint(ge=1) | None
+    pair_mode: Literal['jointly_eligible', 'legacy_total_case']
+    pooled_sd: bool
+
+
+class Bpic19AssociationRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    message_type: Literal['bpic19_association_request']
+    run_id: constr(min_length=1)
+    case_offset: conint(ge=0)
+    case_limit: conint(ge=1, le=200)
+    group_offset: conint(ge=0) | None = None
+    group_limit: conint(ge=1, le=200) | None = None
+    query: AssociationQuery
+
+
+class RowId(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class CriterionId(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class ReviewEvidence(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_ids: list[CaseId] = Field(..., max_length=200)
+    row_ids: list[RowId] = Field(..., max_length=200)
+    criterion_ids: list[CriterionId] = Field(..., max_length=200)
+
+
+class FindingObservation(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['observed', 'unconfirmed']
+    note: constr(max_length=6000)
+    evidence: ReviewEvidence
+
+
+class FindingChange(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['not_proposed', 'proposed']
+    note: constr(max_length=6000)
+    evidence: ReviewEvidence
+
+
+class FindingAdoption(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['unknown', 'not_adopted', 'adopted']
+    note: constr(max_length=6000)
+    evidence: ReviewEvidence
+
+
+class FindingOutcome(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Literal['untested', 'tested', 'unknown']
+    note: constr(max_length=6000)
+    evidence: ReviewEvidence
+
+
+class ReviewFinding(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: constr(min_length=1, max_length=128)
+    title: constr(min_length=1, max_length=300)
+    observation: FindingObservation
+    proposed_change: FindingChange
+    adoption: FindingAdoption
+    tested_outcome: FindingOutcome
+
+
+class MandatoryControl(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    criterion_id: constr(min_length=1)
+    mandatory: bool
+    rationale: constr(max_length=6000)
+    evidence: ReviewEvidence
+
+
+class AnalysisReview(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.user_entered_interpretation.v1']
+    mandatory_controls: list[MandatoryControl] = Field(..., max_length=29)
+    findings: list[ReviewFinding] = Field(..., max_length=100)
+
+
+class Bpic19ReviewRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    message_type: Literal['bpic19_review_request']
+    run_id: constr(min_length=1)
+    case_offset: conint(ge=0)
+    case_limit: conint(ge=1, le=200)
+    group_offset: conint(ge=0) | None = None
+    group_limit: conint(ge=1, le=200) | None = None
+    review: AnalysisReview
 
 
 class AnswerIdentity(BaseModel):
@@ -437,6 +667,8 @@ class Report(BaseModel):
     representation_page: RepresentationPage | None = None
     ranking_comparisons: RankingComparisons | None = None
     suppressed_associations: list[NativeRow] | None = None
+    association_analysis: dict[str, Any] | None = None
+    analysis_review: AnalysisReview | None = None
 
 
 class Bpic19ScoreAnswer(BaseModel):
@@ -466,6 +698,8 @@ class BPIC19ScoringMessage(
         | Bpic19ScoreAnswer
         | Bpic19Refusal
         | Bpic19ExportRequest
+        | Bpic19AssociationRequest
+        | Bpic19ReviewRequest
     ]
 ):
     root: (
@@ -474,6 +708,8 @@ class BPIC19ScoringMessage(
         | Bpic19ScoreAnswer
         | Bpic19Refusal
         | Bpic19ExportRequest
+        | Bpic19AssociationRequest
+        | Bpic19ReviewRequest
     ) = Field(
         ...,
         description='Source-witnessed BPIC19 profiles executed by actual Method; bounded case pages and frozen run identity.',

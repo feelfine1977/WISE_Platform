@@ -18,6 +18,12 @@
     },
     {
       "$ref": "#/$defs/Bpic19ExportRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19AssociationRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19ReviewRequest"
     }
   ],
   "$defs": {
@@ -483,6 +489,57 @@
                 "kind",
                 "group_id"
               ]
+            },
+            "association_set": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "population": {
+                  "enum": [
+                    "target",
+                    "comparator"
+                  ]
+                },
+                "state": {
+                  "enum": [
+                    "all",
+                    "eligible",
+                    "positive",
+                    "unavailable"
+                  ]
+                },
+                "criterion_id": {
+                  "type": "string"
+                },
+                "pair": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "left": {
+                      "type": "string"
+                    },
+                    "right": {
+                      "type": "string"
+                    },
+                    "set": {
+                      "enum": [
+                        "intersection",
+                        "union",
+                        "jointly_eligible"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "left",
+                    "right",
+                    "set"
+                  ]
+                }
+              },
+              "required": [
+                "population",
+                "state"
+              ]
             }
           },
           "minProperties": 1
@@ -658,6 +715,18 @@
         },
         "value_evidence": {
           "type": "object"
+        },
+        "native_penalty": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "historical_artifacts": {
+          "type": [
+            "object",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1003,6 +1072,12 @@
           "items": {
             "$ref": "#/$defs/NativeRow"
           }
+        },
+        "association_analysis": {
+          "type": "object"
+        },
+        "analysis_review": {
+          "$ref": "#/$defs/AnalysisReview"
         }
       },
       "required": [
@@ -1249,6 +1324,57 @@
                 "kind",
                 "group_id"
               ]
+            },
+            "association_set": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "population": {
+                  "enum": [
+                    "target",
+                    "comparator"
+                  ]
+                },
+                "state": {
+                  "enum": [
+                    "all",
+                    "eligible",
+                    "positive",
+                    "unavailable"
+                  ]
+                },
+                "criterion_id": {
+                  "type": "string"
+                },
+                "pair": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "left": {
+                      "type": "string"
+                    },
+                    "right": {
+                      "type": "string"
+                    },
+                    "set": {
+                      "enum": [
+                        "intersection",
+                        "union",
+                        "jointly_eligible"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "left",
+                    "right",
+                    "set"
+                  ]
+                }
+              },
+              "required": [
+                "population",
+                "state"
+              ]
             }
           },
           "minProperties": 1
@@ -1342,6 +1468,18 @@
         },
         "reference": {
           "type": "string"
+        },
+        "mean_penalty": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "summed_penalty_mass": {
+          "type": [
+            "number",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1453,6 +1591,500 @@
         "top_group_limit",
         "tie_policy",
         "interpretation"
+      ]
+    },
+    "AssociationSelection": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "case_ids"
+            },
+            "case_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true,
+              "maxItems": 200
+            }
+          },
+          "required": [
+            "kind",
+            "case_ids"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "group"
+            },
+            "group_values": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "exclude_group_values": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "group_values"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "all"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "outside_target"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        }
+      ]
+    },
+    "AssociationCohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selector": {
+          "$ref": "#/$defs/AssociationSelection"
+        }
+      },
+      "required": [
+        "name",
+        "selector"
+      ]
+    },
+    "AssociationQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "const": "bpic19.frozen_native_associations.v1"
+        },
+        "target": {
+          "$ref": "#/$defs/AssociationCohort"
+        },
+        "comparator": {
+          "$ref": "#/$defs/AssociationCohort"
+        },
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 29,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "positive_threshold": {
+          "const": 0
+        },
+        "min_support": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "pair_mode": {
+          "enum": [
+            "jointly_eligible",
+            "legacy_total_case"
+          ]
+        },
+        "pooled_sd": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "policy_id",
+        "target",
+        "comparator",
+        "criteria",
+        "positive_threshold",
+        "min_support",
+        "pair_mode",
+        "pooled_sd"
+      ]
+    },
+    "Bpic19AssociationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "const": "bpic19_association_request"
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "case_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "group_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "group_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "query": {
+          "$ref": "#/$defs/AssociationQuery"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "run_id",
+        "case_offset",
+        "case_limit",
+        "query"
+      ]
+    },
+    "ReviewEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "maxItems": 200,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "row_ids": {
+          "type": "array",
+          "maxItems": 200,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "criterion_ids": {
+          "type": "array",
+          "maxItems": 200,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "case_ids",
+        "row_ids",
+        "criterion_ids"
+      ]
+    },
+    "FindingObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "observed",
+            "unconfirmed"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "evidence": {
+          "$ref": "#/$defs/ReviewEvidence"
+        }
+      },
+      "required": [
+        "status",
+        "note",
+        "evidence"
+      ]
+    },
+    "FindingChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "not_proposed",
+            "proposed"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "evidence": {
+          "$ref": "#/$defs/ReviewEvidence"
+        }
+      },
+      "required": [
+        "status",
+        "note",
+        "evidence"
+      ]
+    },
+    "FindingAdoption": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "not_adopted",
+            "adopted"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "evidence": {
+          "$ref": "#/$defs/ReviewEvidence"
+        }
+      },
+      "required": [
+        "status",
+        "note",
+        "evidence"
+      ]
+    },
+    "FindingOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "untested",
+            "tested",
+            "unknown"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "evidence": {
+          "$ref": "#/$defs/ReviewEvidence"
+        }
+      },
+      "required": [
+        "status",
+        "note",
+        "evidence"
+      ]
+    },
+    "ReviewFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "observation": {
+          "$ref": "#/$defs/FindingObservation"
+        },
+        "proposed_change": {
+          "$ref": "#/$defs/FindingChange"
+        },
+        "adoption": {
+          "$ref": "#/$defs/FindingAdoption"
+        },
+        "tested_outcome": {
+          "$ref": "#/$defs/FindingOutcome"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "observation",
+        "proposed_change",
+        "adoption",
+        "tested_outcome"
+      ]
+    },
+    "MandatoryControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "criterion_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mandatory": {
+          "type": "boolean"
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "evidence": {
+          "$ref": "#/$defs/ReviewEvidence"
+        }
+      },
+      "required": [
+        "criterion_id",
+        "mandatory",
+        "rationale",
+        "evidence"
+      ]
+    },
+    "AnalysisReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "const": "bpic19.user_entered_interpretation.v1"
+        },
+        "mandatory_controls": {
+          "type": "array",
+          "maxItems": 29,
+          "items": {
+            "$ref": "#/$defs/MandatoryControl"
+          }
+        },
+        "findings": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/ReviewFinding"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "mandatory_controls",
+        "findings"
+      ]
+    },
+    "Bpic19ReviewRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "const": "bpic19_review_request"
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "case_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "group_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "group_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "review": {
+          "$ref": "#/$defs/AnalysisReview"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "run_id",
+        "case_offset",
+        "case_limit",
+        "review"
       ]
     }
   }

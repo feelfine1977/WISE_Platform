@@ -1,0 +1,9 @@
+{
+  "query": {
+    "policy_id": "bpic19.report_method_gate.v1",
+    "method_id": "R13.weighted_many_to_many",
+    "source_locator": "Merged BPIC19 reports, PDF pages 296\u2013299; source-method activation X04",
+    "gate_reason": "The source does not specify the exact weights, normalization and aggregation formula. This step cannot claim full R13 reproduction."
+  },
+  "definition_id": "bpic19-method-gate.v1:sha256:cb3565e8769c7e92c8160a37cfa897cd3aa49cb770c52d98060f920ea3e10270"
+}

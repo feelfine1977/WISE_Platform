@@ -357,3 +357,48 @@ def test_exact_creation_exposure_recipes_and_parent_linear_p95_are_distinct_thro
         receipt=normalized.json()["report"]["exposure_calibration"]
         assert receipt["cutoff"] == 118.5 and receipt["quantile_method"] == "linear"
         assert receipt["population_case_ids"] == ["X","Y"]
+
+
+def test_historical_quarter_paths_replication_proxy_and_native_representation_mass(tmp_path):
+    workspace=tmp_path/"workspace";workspace.mkdir()
+    extra=[]
+    for label in ("A","B","A"):
+        extra.append(["S","G","S","3-way match, invoice after GR","true","true","Standard","0000","Sentinel path",label,"1948-01-02T00:00:00Z","batch_1",10])
+    with TestClient(app()) as client:
+        wid,identity=prepare(client,workspace,raw_source(extra))
+        settings={**SETTINGS,"profile":"historical","mode":"layer_balanced","view":"Finance"}
+        response=client.post("/api/investigations/bpic19-score",json=given(wid,identity,**settings))
+        assert response.status_code==200,response.text
+        result=response.json();case=next(item for item in result["report"]["case_page"]["cases"] if item["case_id"]=="S")
+        artifact=case["historical_artifacts"]
+        assert artifact["start_quarter"]=="1948Q1"
+        assert artifact["representations"]["exact_sequence"]==["A","B","A"]
+        assert artifact["representations"]["first_occurrence_signature"]==["A","B"]
+        assert artifact["replication_proxy"]["value"]==3
+        assert "not a verified duplicate count" in artifact["replication_proxy"]["interpretation"]
+        group=next(group for group in result["report"]["representation_scores"]["exact"] if group["sequence"]==["A","B","A"])
+        assert group["mean_penalty"]==pytest.approx(case["native_penalty"])
+        assert group["summed_penalty_mass"]==pytest.approx(case["native_penalty"])
+        assert group["scored_case_count"]==1
+
+
+def test_compact_memberships_use_original_case_identity_across_reordered_assessment_tables(tmp_path,monkeypatch):
+    """Reorder prepared assessment input only; original CSV bytes stay unchanged."""
+    from wise_platform_api import bpic19_scoring
+    real=bpic19_scoring.evaluate_features
+    monkeypatch.setattr(bpic19_scoring,"evaluate_features",lambda features,**settings:real(list(reversed(features)),**settings))
+    workspace=tmp_path/"workspace";workspace.mkdir()
+    extra=[["Z","G","Z","3-way match, invoice after GR","true","true","Standard","0000","Cancelled","Cancel Invoice Receipt","2018-01-01T00:00:00Z","batch_1",100]]
+    with TestClient(app()) as client:
+        wid,identity=prepare(client,workspace,raw_source(extra))
+        response=client.post("/api/investigations/bpic19-score",json=given(wid,identity))
+        assert response.status_code==200,response.text
+        answer=response.json()
+        # Native EventLog tables and streamed feature pages may have different
+        # orders. The public witness must remain exactly Z in either order.
+        selected=client.post("/api/investigations/bpic19-read",json=read(wid,answer["run_id"],case_filter={"criterion_id":"C06","criterion_state":"positive"}))
+        assert selected.status_code==200,selected.text
+        cases=selected.json()["report"]["case_page"]["cases"]
+        assert [case["case_id"] for case in cases]==["Z"]
+        assert criterion(cases[0],"C06")["deviation"]==1
+        assert criterion(cases[0],"C06")["row_ids"]

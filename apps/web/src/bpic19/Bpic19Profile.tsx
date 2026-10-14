@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AnswerIdentity, Bpic19ProfileAnswer, Bpic19ProfileQuery, Bpic19Roles, Bpic19SuggestedRoles, Bpic19TypeCell, Bpic19SourceInterpretation } from "../generated/bpic19-profile";
-import type { SelectionPredicate } from "../generated/selection";
+import type { RecordAttributesAll, SelectionPredicate } from "../generated/selection";
 import { httpBpic19ProfileClient, type Bpic19ProfileClient } from "./profile-client";
 import type { Bpic19ComparisonSide, Bpic19GroupRecipe } from "./profile-types";
 import "./profile.css";
@@ -20,6 +20,7 @@ export interface Bpic19ProfileProps {
   query?: Bpic19ProfileQuery;
   client?: Bpic19ProfileClient;
   onKeep: (predicate: SelectionPredicate, recipe: Bpic19GroupRecipe) => void;
+  onKeepRecordPredicate?: (predicate: RecordAttributesAll) => void;
   onInspect: (caseId: string, rowIds?: string[]) => void;
   onCompare?: (target: Bpic19ComparisonSide, comparator: Bpic19ComparisonSide) => void;
   onReviewed?: (answer: Bpic19ProfileAnswer) => void;
@@ -28,7 +29,7 @@ export interface Bpic19ProfileProps {
 }
 
 /** Source-derived answers lead this view; local state chooses reviewed bindings and navigation only. */
-export function Bpic19Profile({ workspaceId, identity, revision, query, client = httpBpic19ProfileClient, onKeep, onInspect, onCompare, onReviewed, onColumns, onValidityChange }: Bpic19ProfileProps) {
+export function Bpic19Profile({ workspaceId, identity, revision, query, client = httpBpic19ProfileClient, onKeep, onKeepRecordPredicate, onInspect, onCompare, onReviewed, onColumns, onValidityChange }: Bpic19ProfileProps) {
   const [answer, setAnswer] = useState<Bpic19ProfileAnswer | null>(null);
   const [roles, setRoles] = useState<Bpic19SuggestedRoles>(emptyRoles);
   const [columns, setColumns] = useState<number[] | null>(null);
@@ -82,12 +83,24 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
     if (!ids.length || actionsPaused) return;
     onKeep({ kind: "case_id_in", case_ids: [ids[0], ...ids.slice(1)], negate: false }, recipe(group, ids));
   }
+  function keepFlagView(requireGoodsReceipt: boolean) {
+    if (!profile || actionsPaused || !onKeepRecordPredicate) return;
+    const reviewed = profile.definition.roles;
+    onKeepRecordPredicate({ kind: "record_attributes_all", policy_id: "incident.raw.same_record_all.v1", negate: false,
+      conditions: requireGoodsReceipt
+        ? [{ column_index: reviewed.goods_receipt, values: ["true"] }, { column_index: reviewed.gr_based_iv, values: ["false"] }]
+        : [{ column_index: reviewed.gr_based_iv, values: ["false"] }] });
+  }
+  function values(column: number, offset: number, selectValue = false, value: string | null = null) {
+    if (!answer || !profile || actionsPaused) return;
+    void load({ ...answer.query, attribute_view: { column_index: column, offset, limit: 12, select_value: selectValue, value } });
+  }
   const cells = profile?.flow_item_types.filter(cell => cell.flow_id === flow) ?? [];
   const cellName = (cell: Bpic19TypeCell) => cell.item_type_state === "invariant" ? cell.item_type_value ?? "not recorded" : stateName(cell.item_type_state);
   function compare() {
     if (!onCompare || !profile || !answer || actionsPaused || target === comparator) return;
     const left = cells[Number(target)], right = cells[Number(comparator)];
-    if (!left || !right || !left.case_count || !right.case_count) return;
+    if (!left || !right) return;
     const side = (cell: Bpic19TypeCell): Bpic19ComparisonSide => ({ name: `${profile.flows.find(f => f.flow_id === cell.flow_id)?.label}: ${cellName(cell)}`, caseIds: cell.case_ids,
       recipe: recipe({ kind: "flow_item_type", flow_id: cell.flow_id, state: cell.item_type_state, item_type_value: cell.item_type_value }, cell.case_ids) });
     onCompare(side(left), side(right));
@@ -103,7 +116,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
       <p>Header matches are suggestions. Check the category, flags and business identifiers. Blank source cells stay missing; changing values are never filled from a first row.</p>
       <div className="bpic19-role-grid">{(Object.keys(labels) as (keyof Bpic19Roles)[]).map(role => <label key={role}>{labels[role]}<select value={roles[role] ?? ""} disabled={busy} onChange={event => setRoles({ ...roles, [role]: event.target.value === "" ? null : Number(event.target.value) })}>
         <option value="">{role === "source_case" ? "No original source case column" : "Choose a source field"}</option>
-        {answer.columns.map(column => <option key={column.index} value={column.index}>{column.name || `Column ${column.index}`}</option>)}
+        {answer.columns.map(column => <option key={column.index} value={column.index}>{column.index}: {column.name || "Unnamed source field"}</option>)}
       </select></label>)}</div>
       <details><summary>Additional attributes to profile</summary><p>With no custom selection, all supplied case attributes are profiled. Event-varying fields can be selected explicitly.</p>
         {answer.columns.map(column => <label className="bpic19-column-check" key={column.index}><input type="checkbox" disabled={busy} checked={columns === null ? column.name.startsWith("case ") || column.name.startsWith("source__case ") : columns.includes(column.index)} onChange={event => {
@@ -112,16 +125,24 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
         }} />{column.name || `Column ${column.index}`}</label>)}
       </details>
       {source && <SourceDefinition value={source} disabled={busy} onChange={setSource} />}
-      <button type="button" className="primary" disabled={busy || !ready} onClick={() => { const chosen = reviewedRoles(); if (chosen) void load({ roles: chosen, profile_columns: columns, policy_id: policy, ...(source ? { source_interpretation: source } : {}) }); }}>Review these field roles</button>
+      <button type="button" className="primary" disabled={busy || !ready} onClick={() => { const chosen = reviewedRoles(); if (chosen) void load({ roles: chosen, profile_columns: columns, policy_id: policy, include_zero_cells: true, ...(source ? { source_interpretation: source } : {}) }); }}>Review these field roles</button>
     </details>}
     {profile && <div className="bpic19-answers" data-stale={actionsPaused ? "true" : undefined}>
       <p className="bpic19-population"><strong>{number.format(profile.population.case_count)} PO items</strong> · {number.format(profile.population.record_count)} original records · {number.format(profile.population.document_count)} purchasing documents</p>
       {profile.source_review && <SourceReview review={profile.source_review} disabled={actionsPaused} onInspect={onInspect} onKeep={ids => keep(ids, { kind: "source_inclusion" })} />}
       <p>Four supplied categories partition these items; unknown or changing categories remain separate. Before-GR permits either observed receipt order. Flag checks do not change the category.</p>
+      <details><summary>Historical flag-only views · overlapping purchasing flows</summary>
+        <p>These views use exact lowercase raw flag strings on at least one same original record. Every retained item keeps its complete history. GR=true AND IV=false includes before-GR and Consignment in the original BPIC19 source; IV=false alone additionally includes two-way items. These are overlapping flag views, separate from the four category partitions.</p>
+        <p>Goods Receipt field: {profile.definition.roles.goods_receipt}. GR-Based Invoice Verification field: {profile.definition.roles.gr_based_iv}. Missing cells are not the string false, and changing case attributes are not filled from a first row. Source category conflicts can remain in a raw flag view; review the typed partition separately.</p>
+        <button type="button" disabled={actionsPaused || !onKeepRecordPredicate} onClick={() => keepFlagView(true)}>Keep overlapping GR=true AND IV=false items</button>
+        <button type="button" disabled={actionsPaused || !onKeepRecordPredicate} onClick={() => keepFlagView(false)}>Keep overlapping IV=false items</button>
+        <p>The selection service supplies the membership, denominator and original-record witnesses. Use the same-record filter below to review AND across fields, OR among exact alternatives and its explicit missing-value branch.</p>
+      </details>
       <div className="bpic19-table-scroll"><table className="plain-table"><caption>Purchasing flow at PO-item grain</caption><thead><tr><th>Purchasing flow</th><th>PO items</th><th>Share of parent</th><th>Records</th><th>Documents</th><th>Full-history action</th></tr></thead><tbody>
         {profile.flows.map(group => <tr key={group.flow_id}><th scope="row">{group.label}<small>{group.category_value}</small></th><td>{number.format(group.case_count)}</td><td>{group.share === null ? "unavailable" : percent.format(group.share)}</td><td>{number.format(group.record_count)}</td><td>{number.format(group.document_count)}</td><td><button type="button" disabled={actionsPaused || !group.case_count} onClick={() => keep(group.case_ids, { kind: "flow", flow_id: group.flow_id })}>Keep {group.label}</button>{group.example_case_ids[0] && <button type="button" disabled={actionsPaused} onClick={() => onInspect(group.example_case_ids[0])}>Inspect an item</button>}</td></tr>)}
       </tbody></table></div>
       <p>Document memberships can overlap: {number.format(profile.grain.mixed_flow_document_count)} documents contain items in several flows. Their row counts must not be added as distinct documents.</p>
+      <details><summary>Document siblings outside the reviewed parent</summary><p>Current profile totals include only the reviewed parent. Siblings elsewhere in the original source are separate scope evidence and never enter those totals.</p>{profile.grain.outside_parent_siblings ? <><p>Outside this parent, the same verified documents contain {number.format(profile.grain.outside_parent_siblings.case_count)} other items / {number.format(profile.grain.outside_parent_siblings.record_count)} original records / {number.format(profile.grain.outside_parent_siblings.document_count)} documents.</p><p>Outside-scope item examples: {profile.grain.outside_parent_siblings.example_case_ids.join(", ") || "none"}.</p><p>{number.format(profile.grain.possible_sibling_conflict_case_ids?.length ?? 0)} outside items have changing document cells that mention these documents; they are not asserted as verified siblings.</p></> : <button type="button" disabled={actionsPaused} onClick={() => { if (answer) void load({...answer.query,include_document_siblings:true}); }}>Review outside-parent document siblings</button>}</details>
       <div className="bpic19-quality"><h3>Unresolved categories and cross-checks</h3>
         {[...profile.unresolved, ...profile.cross_checks, ...profile.grain.identity_issues].map((group, index) => <p key={`${index}-${group.state}`}><strong>{stateName(group.state)}</strong>: {number.format(group.case_count)} items{group.case_count > 0 && <> <button disabled={actionsPaused} type="button" onClick={() => onInspect(group.example_case_ids[0])}>Inspect {stateName(group.state)}</button></>}</p>)}
         <p>Partition: {profile.partition.is_disjoint && profile.partition.covers_parent ? "each parent item appears exactly once among the four flows and unresolved categories" : "the partition is incomplete; review the source"}.</p>
@@ -129,6 +150,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
       </div>
       <h3>Compare item types within one flow</h3><label>Purchasing flow<select value={flow} disabled={busy} onChange={event => { setFlow(event.target.value); setTarget(""); setComparator(""); }}>{profile.flows.map(f => <option key={f.flow_id} value={f.flow_id}>{f.label}</option>)}</select></label>
       <div className="bpic19-table-scroll"><table className="plain-table"><caption>Item Type subgroups · complete PO items</caption><thead><tr><th>Item Type</th><th>PO items</th><th>Records</th><th>Documents</th><th>Action</th></tr></thead><tbody>{cells.map((cell,index) => <tr key={index}><th scope="row">{cellName(cell)}</th><td>{number.format(cell.case_count)}</td><td>{number.format(cell.record_count)}</td><td>{number.format(cell.document_count)}</td><td><button type="button" disabled={actionsPaused || !cell.case_count} onClick={() => keep(cell.case_ids, { kind: "flow_item_type", flow_id: cell.flow_id, state: cell.item_type_state, item_type_value: cell.item_type_value })}>Keep {cellName(cell)}</button></td></tr>)}</tbody></table></div>
+      {profile.item_type_totals && <details><summary>Item Type column totals across the four flows</summary><p>Invariant subtype totals are distinct from unresolved category and missing/changing subtype support. Known empty cells above remain zero; Service is an Item Type, not an extra flow.</p><table className="plain-table"><caption>Invariant Item Type totals</caption><thead><tr><th>Item Type</th><th>Items</th><th>Records</th><th>Documents</th></tr></thead><tbody>{profile.item_type_totals.map(total => <tr key={total.item_type_value}><th scope="row">{total.item_type_value}</th><td>{number.format(total.case_count)}</td><td>{number.format(total.record_count)}</td><td>{number.format(total.document_count)}</td></tr>)}</tbody></table></details>}
       {onCompare && <div className="bpic19-compare"><label>Target subtype<select value={target} onChange={event => setTarget(event.target.value)} disabled={busy}><option value="">Choose a subtype</option>{cells.map((cell,index) => <option key={index} value={index}>{cellName(cell)}</option>)}</select></label><label>Comparator subtype<select value={comparator} onChange={event => setComparator(event.target.value)} disabled={busy}><option value="">Choose a subtype</option>{cells.map((cell,index) => <option key={index} value={index}>{cellName(cell)}</option>)}</select></label><button type="button" disabled={actionsPaused || target === "" || comparator === "" || target === comparator} onClick={compare}>Compare these subgroups</button></div>}
       <details><summary>Case attributes and source grain</summary><p>Every raw record is checked, regardless of timestamp availability. A field may vary intentionally at event grain; review its role before using it as a case attribute. Value supports can overlap for changing fields.</p>
         {profile.attributes.map(attribute => <details key={attribute.column_index}><summary>{attribute.column_name}: {number.format(attribute.distinct_nonmissing_value_count)} values · {number.format(attribute.conflicting_case_count)} changing items · {number.format(attribute.missing_case_count)} missing items</summary>
@@ -138,7 +160,13 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
           {attribute.conflicting_witnesses?.map(witness => <details key={witness.case_id}><summary>Conflicting original rows: {witness.case_id}</summary>{witness.rows.map(row => <p key={row.row_id}>Original record {row.source_position + 1}: <code>{row.value === null ? "[missing]" : row.value}</code></p>)}<button type="button" disabled={actionsPaused} onClick={() => onInspect(witness.case_id, witness.rows.map(row => row.row_id))}>Inspect conflicting rows {witness.case_id}</button></details>)}
           {attribute.conflicting_example_case_ids.map(id => <button key={id} disabled={actionsPaused} type="button" onClick={() => onInspect(id)}>Inspect changing item {id}</button>)}
           {attribute.missing_example_case_ids.map(id => <button key={id} disabled={actionsPaused} type="button" onClick={() => onInspect(id)}>Inspect missing item {id}</button>)}
-          <ul>{attribute.values.map((value,index) => <li key={index}>{value.value === null ? "not recorded" : value.value.trim() === "" ? JSON.stringify(value.value) : value.value}: {number.format(value.case_count)} items, {number.format(value.record_count)} records, {number.format(value.document_count)} documents{value.example_case_ids[0] && <button disabled={actionsPaused} type="button" onClick={() => onInspect(value.example_case_ids[0])}>Inspect source item</button>}</li>)}</ul>
+          <ul>{(profile.attribute_view?.column_index === attribute.column_index ? profile.attribute_view.values : attribute.values).map((value,index) => <li key={index}>{value.value === null ? "not recorded" : value.value.trim() === "" ? JSON.stringify(value.value) : value.value}: {number.format(value.case_count)} items, {number.format(value.record_count)} records, {number.format(value.document_count)} documents{value.example_case_ids[0] && <button disabled={actionsPaused} type="button" onClick={() => onInspect(value.example_case_ids[0])}>Inspect source item</button>}<button type="button" disabled={actionsPaused} onClick={() => values(attribute.column_index, profile.attribute_view?.column_index === attribute.column_index ? profile.attribute_view.offset : 0, true, value.value)}>Review complete-item membership for {value.value === null ? "missing" : value.value}</button></li>)}</ul>
+          {profile.attribute_view?.column_index === attribute.column_index ? <>
+            <p>Value page {profile.attribute_view.offset + 1}–{Math.min(profile.attribute_view.offset + profile.attribute_view.values.length,profile.attribute_view.total_value_count)} of {profile.attribute_view.total_value_count}. Global value/support totals are unchanged.</p>
+            <button type="button" aria-label={`Previous values for column ${attribute.column_index}: ${attribute.column_name}`} disabled={actionsPaused || profile.attribute_view.offset === 0} onClick={() => values(attribute.column_index, Math.max(0,profile.attribute_view!.offset - profile.attribute_view!.limit))}>Previous attribute values</button>
+            <button type="button" aria-label={`Next values for column ${attribute.column_index}: ${attribute.column_name}`} disabled={actionsPaused || profile.attribute_view.next_offset === null} onClick={() => values(attribute.column_index, profile.attribute_view!.next_offset ?? 0)}>Next attribute values</button>
+            {profile.attribute_view.selection && <div><p>Reviewed exact raw value {profile.attribute_view.selection.value === null ? "[missing]" : JSON.stringify(profile.attribute_view.selection.value)}: {number.format(profile.attribute_view.selection.case_count)} complete items. Any original record may witness this value; this membership can overlap other values and is separate from invariant case admission.</p><button type="button" disabled={actionsPaused || !profile.attribute_view.selection.case_count} onClick={() => keep(profile.attribute_view!.selection!.case_ids, { kind: "attribute_value", column_index: attribute.column_index, value: profile.attribute_view!.selection!.value })}>Keep reviewed attribute-value items</button>{profile.attribute_view.selection.witnesses.map(witness => <button key={witness.case_id} type="button" disabled={actionsPaused} onClick={() => onInspect(witness.case_id,witness.row_ids)}>Inspect attribute witness {witness.case_id}</button>)}</div>}
+          </> : attribute.omitted_distinct_value_count > 0 && <button type="button" aria-label={`Next values for column ${attribute.column_index}: ${attribute.column_name}`} disabled={actionsPaused} onClick={() => values(attribute.column_index,12)}>Next attribute values</button>}
         </details>)}
       </details>
     </div>}

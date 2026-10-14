@@ -71,7 +71,9 @@ class Bpic19Profiles:
             query = given["query"]
             if query["policy_id"] != POLICY_ID:
                 return _refused(given, "unsupported_policy", "Review the supported all-record case attribute policy.", "query.policy_id")
-            profile = None if query["roles"] is None else profile_bpic19(prepared, query["roles"], population.case_ids, query["profile_columns"], query.get("source_interpretation"))
+            profile = None if query["roles"] is None else profile_bpic19(prepared, query["roles"], population.case_ids,
+                query["profile_columns"], query.get("source_interpretation"), query.get("attribute_view"),
+                query.get("include_zero_cells", False), query.get("include_document_siblings", False))
             if isinstance(profile, ImportRefusal): return _refused(given, profile.code, profile.message, profile.field)
             answer = {"schema_version": 1, "message_type": "bpic19_profile_answer",
                 "request_id": given["request_id"], "query_revision": given["query_revision"], "workspace_id": given["workspace_id"],
