@@ -25,7 +25,13 @@ function ordering() {
         const hours = ids.indexOf(case_id);
         const time_summary = hours === 0
           ? { status: "unavailable", reason: "order_unknown" }
-          : { status: "available", timestamp_kind: "utc_instant", observed_span_hours: hours, maximum_adjacent_raw_gap_hours: hours / 2 };
+          : {
+              status: "available",
+              timestamp_kind: "utc_instant",
+              observed_span_hours: hours,
+              maximum_adjacent_raw_gap_hours: hours / 2,
+              maximum_gap_witness: { from_row_id: "r1", to_row_id: "r2", from_activity: "Eröffnet", to_activity: null, from_offset_hours: 2, share_of_observed_span: 0.5, share_unavailable_reason: null },
+            };
         return { case_id, record_count: 3, mapped_record_count: 3, omitted_activity_record_count: 0, sequence_evaluable: hours !== 0, time_summary, maximum_gap_context: null } as unknown as ExplorerCaseSummary;
       });
       const next = request.query.offset + rows.length;
@@ -120,5 +126,26 @@ describe("the kept incidents in an order by time", () => {
     expect(await within(first).findByText("not read")).toBeTruthy();
     expect(await within(second).findByText("times do not match")).toBeTruthy();
     expect(await within(third).findByRole("img")).toBeTruthy();
+  });
+
+  it("says on the longest gap where it lies, as supplied, and marks it on the record marks", async () => {
+    setup();
+    const table = await screen.findByRole("table", { name: "Kept incidents" });
+    const first = within(table).getAllByRole("row")[1];
+    expect(within(first).getAllByRole("cell")[5].getAttribute("title")).toBe("Between “Eröffnet” and a record without activity label, 2 h after the first record; 50% of the span");
+    const marks = await within(first).findByRole("img");
+    // The fixture's longest gap lies between its second and third record, at 1 and 5 hours.
+    const longest = marks.querySelector(".record-marks-longest")!;
+    expect([Number(longest.getAttribute("x1")).toFixed(2), Number(longest.getAttribute("x2")).toFixed(2)]).toEqual(["4.02", "20.08"]);
+  });
+
+  it("asks the local service for the incidents whose number matches what is typed, from the first page, and back for all", async () => {
+    const { caseLists, user } = setup();
+    await screen.findByRole("table", { name: "Kept incidents" });
+    await user.type(screen.getByRole("searchbox", { name: "Find incidents by number" }), "I-24");
+    await user.click(screen.getByRole("button", { name: "Find" }));
+    expect(caseLists.list.mock.calls.at(-1)?.[0].query).toMatchObject({ search_text: "I-24", offset: 0 });
+    await user.click(await screen.findByRole("button", { name: "Show all" }));
+    expect(caseLists.list.mock.calls.at(-1)?.[0].query).toMatchObject({ search_text: null, offset: 0 });
   });
 });

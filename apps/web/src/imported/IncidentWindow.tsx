@@ -10,6 +10,8 @@ const COLUMNS = 5;
 export interface IncidentTimes {
   span: number | null;
   gap: number | null;
+  /** Where the longest gap lies, in words: between which records and how far after the first; said on its cell. */
+  gapAt?: string;
 }
 /** Rows rendered above and below the visible ones, so that scrolling does not show empty space. */
 const OVERSCAN = 8;
@@ -177,7 +179,9 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
         {times !== undefined && (
           <>
             <td className="number">{durationCell(times.get(summary.case_id)?.span ?? null)}</td>
-            <td className="number">{durationCell(times.get(summary.case_id)?.gap ?? null)}</td>
+            <td className="number" title={times.get(summary.case_id)?.gapAt}>
+              {durationCell(times.get(summary.case_id)?.gap ?? null)}
+            </td>
           </>
         )}
         {extra !== undefined && <td className="extra-cell">{extra.cell(summary.case_id)}</td>}

@@ -44,3 +44,5 @@
 .record-marks-span { stroke: var(--color-line); stroke-width: var(--line-width); }
 .record-marks-mark { stroke: var(--color-line-strong); stroke-width: var(--line-width); }
 .record-marks-none { font-size: var(--font-size-small); }
+.record-marks-longest { stroke: var(--color-accent); stroke-width: var(--size-swatch-height); }
+.incident-search { display: flex; align-items: center; gap: var(--space-2); }
