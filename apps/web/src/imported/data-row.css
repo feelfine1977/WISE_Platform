@@ -1,0 +1,31 @@
+/*
+ * The data row of an investigation: how much of the parent is kept and what the numbers leave out,
+ * in one line beside the breadcrumb.
+ * Every value refers to the token stylesheet.
+ *
+ * This stylesheet is loaded before the application's own, so each rule here that sets what one of
+ * those sets is written with more classes than theirs.
+ */
+
+/* One line as high as a header row: the row is no higher than its one button needs. */
+.workbench.explorer > .toolbar { min-height: var(--size-header-row); padding-top: var(--space-1); padding-bottom: var(--space-1); }
+
+/* The figures and, right after them, the button of what there is to know about the data. */
+.data-facts { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+/* No labels above the figures and no rules between them: a figure with its few words, the groups a step apart. */
+.population { display: flex; align-items: baseline; margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.population > div { display: flex; align-items: baseline; }
+.population dd { margin: 0; }
+.population > div + div,
+.population-kept > dd + dd { margin-left: var(--space-4); }
+
+/* The kept share of the incidents as a thin bar on the line of its numbers. */
+.kept-share { display: inline-block; width: var(--size-kept-share); height: var(--size-swatch-height); margin-left: var(--space-2); vertical-align: middle; }
+.kept-share-track { fill: var(--color-line-row); }
+.kept-share-bar { fill: var(--color-ink-muted); }
+
+/* What the numbers leave out: quiet at zero, in the amber of a limit above it; the two stand together, a dot between them. */
+.population-limit { color: var(--color-ink-muted); }
+.population-limit[data-some] { color: var(--color-limit); }
+.population > .population-limit + .population-limit { margin-left: 0; }
+.population-limit + .population-limit::before { content: "·"; margin: 0 var(--space-1); color: var(--color-ink-muted); }

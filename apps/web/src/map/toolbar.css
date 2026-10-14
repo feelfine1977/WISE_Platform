@@ -1,0 +1,79 @@
+/*
+ * The row above the map with its tools, what "About this map" says, and the editor of the stages
+ * in the column beside the map.
+ * Every value refers to the token stylesheet.
+ *
+ * This stylesheet is loaded before the application's own, so each rule here that sets what one of
+ * those sets is written with more classes than theirs.
+ */
+
+/* Positioned, so that what the view keeps only for assistive technology while nothing is selected stays inside it. */
+.map-view { position: relative; }
+
+/*
+ * The row above the map is one box joined to the top of the frame: the detail controls, which are
+ * no box of their own in it, and at its right end the tools. The controls give way and wrap inside
+ * themselves, so the tools stay in the row at any width.
+ */
+.map-main > .map-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0 var(--space-3);
+  padding-right: var(--space-2);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.map-main > .map-detail > .wf-controls { flex: 1 1 0; min-width: 0; background: none; border: 0; border-radius: 0; }
+/* Without the detail controls, which the map then holds itself, the row is as high as a control. */
+.map-toolbar { min-height: var(--size-control); }
+
+/* What the map counts, as two parts of one switch at the start of the row; the part chosen stands out on a pale track. */
+.measure-switch { display: inline-flex; flex: none; gap: var(--space-half); padding: var(--space-half); background: var(--color-tint); border-radius: var(--radius); }
+.measure-switch > button { min-height: var(--size-switch); padding: 0 var(--space-3); background: none; border: 0; border-radius: var(--radius); }
+.measure-switch > button[aria-pressed="true"] { background: var(--color-surface); font-weight: var(--font-weight-strong); }
+.map-main > .map-detail > .measure-switch { margin-left: var(--space-2); }
+
+/* A limit of the picture is said in one line of its own at the top of the row, in the amber of a limit. */
+.map-main > .map-detail > .map-limit { flex: 1 1 100%; order: -1; padding: var(--space-1) var(--space-3) 0; color: var(--color-limit); font-size: var(--font-size-small); }
+
+/* What limits every path and the clock of every lag stay in the row, quiet but in view: the count in the amber of a limit, the clock as a tag. */
+.map-basis { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--font-size-small); white-space: nowrap; }
+.map-basis-limit { color: var(--color-limit); }
+.map-basis-tag { padding: 0 var(--space-2); color: var(--color-ink-muted); background: var(--color-tint); border-radius: var(--radius-pill); }
+
+/* "About this map": the coverage as names and figures side by side, the definitions and the state of the library as the small print. */
+.workbench .map-coverage .pairs > div { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.map-library { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+
+/*
+ * The editor of the stages stands where the steps of a selected element stand: under the map on a
+ * narrow or low window, beside it on a wide and tall one, so that the map stays in view while its
+ * stages are changed. Positioned, so that anything kept only for assistive technology inside it is
+ * clipped with it.
+ */
+.map-stages-panel {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+}
+.map-stages-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+/* The title takes the keyboard only when the editor opens, to say where the work moved; it is no control. */
+.map-stages-head > .pane-title:focus { outline: none; }
+
+@media (width > 1100px) and (min-height: 560px) {
+  /* What selects by time stands in a column of its own beside the map, a hairline between them, while nothing else stands there. */
+  .explorer .map-view[data-element][data-beside="aside"] { grid-template-columns: minmax(0, 1fr) var(--size-map-aside); }
+  .explorer .map-view > .map-aside { grid-column: 2; grid-row: 1; min-height: 0; overflow: auto; border-left: var(--line-width) solid var(--color-line); }
+  .explorer .map-view[data-element][data-beside="stages"] { grid-template-columns: minmax(0, 1fr) var(--size-map-stages); }
+  .explorer .map-view > .map-stages-panel { grid-column: 2; grid-row: 1; min-height: 0; overflow: auto; }
+}

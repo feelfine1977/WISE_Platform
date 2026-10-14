@@ -1,0 +1,60 @@
+/*
+ * The timeline of one incident above its history: the strip of its recorded times and the words on
+ * its gaps. Every value refers to the token stylesheet. Where a mark lies on the strip is an
+ * attribute of the drawing and never a rule here.
+ */
+.timeline { display: grid; gap: var(--space-2); min-width: 0; }
+.timeline-elapsed { font-variant-numeric: tabular-nums; }
+.timeline-note { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+
+/* The marks at both ends reach over the drawing by half their hit area; the frame leaves that room. */
+.timeline-frame,
+.timeline-ends { padding: 0 var(--size-timeline-hit); }
+.timeline-strip { display: block; width: 100%; height: var(--size-timeline-strip); overflow: visible; }
+.timeline-axis { stroke: var(--color-mark); stroke-width: var(--line-width); }
+.timeline-longest-span { stroke: var(--color-accent); stroke-width: var(--size-swatch-height); }
+
+/* A mark: a node as in the history below, larger where several records carry its time, with their count above it. */
+.timeline-hit { r: var(--size-timeline-hit); fill: transparent; cursor: pointer; }
+.timeline-mark { cursor: pointer; }
+.timeline-dot { r: var(--size-timeline-mark); fill: var(--color-ink); stroke: var(--color-surface); stroke-width: var(--line-width); }
+.timeline-mark.several .timeline-dot { r: var(--size-timeline-mark-several); }
+.timeline-mark:hover .timeline-dot { fill: var(--color-accent); }
+.timeline-count {
+  fill: var(--color-ink);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+}
+/* The ring of the focused mark is drawn around its hit area, in place of an outline around the group. */
+.timeline-ring { r: var(--size-timeline-hit); fill: none; stroke: transparent; stroke-width: var(--focus-width); pointer-events: none; }
+.timeline .timeline-mark:focus-visible { outline: none; }
+.timeline-mark:focus-visible .timeline-ring { stroke: var(--color-accent); }
+
+/* The two ends of the axis in words, under them. */
+.timeline-ends {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+}
+/* The latest time stays at the right end also where the two do not fit one line. */
+.timeline-ends > :last-child { margin-left: auto; }
+.timeline-longest .swatch,
+.history-gap .swatch { margin-right: var(--space-1); vertical-align: middle; }
+
+/* In the list: the gap before a record under its time. */
+.history-gap { color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
+.history-gap.longest { color: var(--color-ink); }
+/*
+ * The record the strip or the longest gap led to has the focus, by pointer as by keyboard. Its ring
+ * is drawn around what is written of it, so that it does not reach into the record below.
+ */
+.history .history-entry:focus { outline: none; }
+.history-entry:focus > .history-body { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--space-1); }
+
+/* The records without a readable time: one line, each a way to its place in the list. */
+.timeline-untimed { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }

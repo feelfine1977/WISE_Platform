@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "message_type": "imported_case_evidence_answer",
+  "request_id": "oracle-wall_clock-MaximumSingleton",
+  "query_revision": 11,
+  "workspace_id": "workspace.v1:dffd73dbb782449c9a480ff9fc25d3d7",
+  "identity": {
+    "source_id": "source.v1:sha256:c62fa1316c3404b83a62b306344e52575efd4aea574ef54d16b54e9f6ffcd78d",
+    "preparation_id": "preparation.v1:sha256:44307ca8a7885b7c924650a4c930e3c0a0735c353c4c52ec1f7c6412e7cede02",
+    "representation_id": "representation.v1:sha256:d934eebd0204d05d9e7a9bdd8c2d2e370ab18171aab534ecad093b80263901c0",
+    "case_dictionary_id": "case-dictionary.v1:sha256:285a14f9744d2c40e50cb8703deb3f69a7d028cbde4ba0e719084ef4c65a1894",
+    "population_id": "population.v1:sha256:e312b25012169ea52476073e3f8ba7dceceb75f0cacfb54e8de2e2af025f7145",
+    "implementation_version": "0.1.0"
+  },
+  "case_id": "MaximumSingleton",
+  "coverage": {
+    "raw_record_count": 1,
+    "mapped_record_count": 0,
+    "omitted_activity_record_count": 1
+  },
+  "columns": [
+    {
+      "index": 0,
+      "name": "case_id"
+    },
+    {
+      "index": 1,
+      "name": "activity"
+    },
+    {
+      "index": 2,
+      "name": "timestamp"
+    },
+    {
+      "index": 3,
+      "name": "source_sequence"
+    }
+  ],
+  "sequence_evaluable": true,
+  "records": [
+    {
+      "row_id": "row.v1:sha256:bcb495d4ea42eb456548aa5338ced57b94e80c3683fcfd60012fd5eda5a606d0",
+      "source_position": 21,
+      "source_sequence": 1,
+      "activity": null,
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "9999-12-31T23:59:59.999999",
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "MaximumSingleton",
+        "",
+        "9999-12-31T23:59:59.999999",
+        "1"
+      ]
+    }
+  ],
+  "mapped_row_ids": [],
+  "omitted_activity_row_ids": [
+    "row.v1:sha256:bcb495d4ea42eb456548aa5338ced57b94e80c3683fcfd60012fd5eda5a606d0"
+  ],
+  "incident_time": {
+    "policy_id": "incident.time_diagnostics.full_raw_declared_order.v1",
+    "timestamp_kind": "wall_clock",
+    "duration_basis": "recorded_wall_clock",
+    "clock_limitation": "recorded_wall_duration_may_differ_from_physical_elapsed",
+    "summary": {
+      "status": "available",
+      "timestamp_kind": "wall_clock",
+      "first_recorded_timestamp": "9999-12-31T23:59:59.999999",
+      "last_recorded_timestamp": "9999-12-31T23:59:59.999999",
+      "first_recorded_activity": null,
+      "last_recorded_activity": null,
+      "observed_span_hours": 0.0,
+      "observed_span_unavailable_reason": null,
+      "maximum_adjacent_raw_gap_hours": null,
+      "maximum_adjacent_raw_gap_unavailable_reason": "fewer_than_two_records",
+      "maximum_gap_witness": null,
+      "usable_gap_count": 0,
+      "tied_timestamp_group_count": 0
+    },
+    "observed_span_microseconds": "0",
+    "maximum_adjacent_raw_gap_microseconds": null,
+    "maximum_gap_equal_count": null,
+    "records": [
+      {
+        "row_id": "row.v1:sha256:bcb495d4ea42eb456548aa5338ced57b94e80c3683fcfd60012fd5eda5a606d0",
+        "timestamp_key": "9999-12-31T23:59:59.999999",
+        "clock_microseconds": "253402300799999999",
+        "offset_from_first_record_microseconds": "0",
+        "gap_before": {
+          "status": "unavailable",
+          "reason": "first_record",
+          "from_row_id": null,
+          "microseconds": null,
+          "hours": null
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+/*
+ * The icons, the buttons that carry them, and a row of such buttons.
+ * Every value refers to the token stylesheet.
+ *
+ * This stylesheet is loaded before the application's own, so each rule here that sets what one of
+ * those sets is written with more classes than theirs.
+ */
+
+/* One grammar for every icon: a line of one width with round caps and joins, no fill, in the colour of the text. */
+.icon {
+  display: block;
+  flex: none;
+  width: var(--size-icon);
+  height: var(--size-icon);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--stroke-icon);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon-filled { fill: currentColor; }
+
+/* A button of one icon: a square without a border, tinted under the pointer. */
+:is(.data-area, .workbench) .icon-button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-icon-button);
+  height: var(--size-icon-button);
+  min-height: 0;
+  padding: 0;
+  color: var(--color-ink);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+}
+/* The square is the whole hit area: a larger one would cover the neighbours in a row of them. */
+:is(.data-area, .workbench) .icon-button::before,
+:is(.data-area, .workbench) .icon-button::after { content: none; }
+:is(.data-area, .workbench) .icon-button:hover { background: var(--color-hover); }
+/* A switch that is on, and a button whose panel is open. */
+:is(.data-area, .workbench) .icon-button:is([aria-pressed="true"], [aria-expanded="true"]) { color: var(--color-accent-strong); background: var(--color-accent-tint); }
+
+/* The mark that there is something to read behind the button: a dot in its upper right corner, ringed so that it stands clear of the icon. */
+.icon-button-mark {
+  position: absolute;
+  top: var(--space-half);
+  right: var(--space-half);
+  width: var(--size-mark);
+  height: var(--size-mark);
+  background: var(--color-limit);
+  border-radius: var(--radius-round);
+  box-shadow: 0 0 0 var(--line-width) var(--color-surface);
+}
+
+/* A row of icon buttons, one for each pane; a short line parts what belongs together from the rest. */
+.icon-toolbar { display: flex; flex: none; align-items: center; gap: var(--space-half); }
+.icon-toolbar-separator { flex: none; width: var(--line-width); height: var(--size-icon); margin: 0 var(--space-1); background: var(--color-line); }

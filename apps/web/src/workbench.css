@@ -1,0 +1,570 @@
+/*
+ * The Data area and the investigation of an imported preparation.
+ * Every value refers to the token stylesheet.
+ */
+.data-area,
+.workbench {
+
+  display: block;
+  min-height: calc(var(--size-viewport-height) - var(--size-app-bar));
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+.data-area p,
+.workbench p { margin: 0; }
+.data-area .muted,
+.workbench .muted { color: var(--color-ink-muted); }
+
+/*
+ * Controls: 32 px high with a 40 px hit area, one blue for action, focus and selection.
+ * A plain button has no outline and no ground: its ground shows under the pointer, and the tint
+ * while it is pressed. A primary action keeps its blue, an input its strong line.
+ */
+.data-area button,
+.workbench button:where(:not(.map-frame *)),
+.data-area select,
+.data-area input[type="text"],
+.data-area input[type="datetime-local"] {
+  min-height: var(--size-control);
+  padding: 0 var(--space-3);
+  font: inherit;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line-strong);
+  border-radius: var(--radius);
+}
+.data-area button,
+.workbench button:where(:not(.map-frame *)) { position: relative; background: transparent; border-color: transparent; cursor: pointer; }
+.data-area button::after,
+.workbench button:where(:not(.map-frame *))::after { content: ""; position: absolute; inset: var(--hit-overhang) 0; }
+.data-area button[aria-pressed="true"],
+.workbench button:where(:not(.map-frame *))[aria-pressed="true"] { background: var(--color-tint); }
+.data-area button:where(:not(:disabled)):hover,
+.workbench button:where(:not(.map-frame *)):where(:not(:disabled)):hover { background: var(--color-hover); }
+.data-area button.primary,
+.workbench button.primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-surface); }
+.data-area button.primary:hover,
+.workbench button.primary:hover { background: var(--color-accent-strong); }
+.data-area button:disabled,
+.workbench button:where(:not(.map-frame *)):disabled { opacity: 0.55; cursor: not-allowed; }
+.data-area :focus-visible,
+.workbench :focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--line-width); }
+.data-area .link-button,
+.workbench .link-button { min-height: 0; padding: 0; border: 0; background: none; color: var(--color-accent); text-decoration: underline; }
+.data-area .link-button:hover,
+.workbench .link-button:hover { background: none; }
+
+/* A label: the small size in the muted ink, regular, as written. The heading of a group of choices is text of the base size. */
+.label-text {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-label);
+  letter-spacing: var(--letter-spacing-label);
+  color: var(--color-ink-muted);
+}
+.label-text-strong { font-weight: var(--font-weight-label); }
+/* An identifier: the small size in the muted ink, in the fixed-width face. */
+:is(.data-area, .workbench) .identifier { font-family: var(--font-mono); font-size: var(--font-size-small); color: var(--color-ink-muted); overflow-wrap: anywhere; }
+.identifier-cut {
+  display: inline-block;
+  max-width: var(--size-fact-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  color: var(--color-ink-muted);
+}
+.missing-text { color: var(--color-ink-muted); font-style: italic; }
+.flag { color: var(--color-attention-ink); }
+
+/* Toolbar under the app bar: breadcrumb and facts. */
+:is(.data-area, .workbench) .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+  min-height: var(--size-header-row);
+  padding: var(--space-1) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: var(--line-width) solid var(--color-line);
+}
+:is(.data-area, .workbench) .breadcrumb { display: flex; align-items: baseline; gap: var(--space-1); }
+:is(.data-area, .workbench) .breadcrumb-current { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+:is(.data-area, .workbench) .facts { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-6); margin: 0; clip-path: none; }
+:is(.data-area, .workbench) .fact { padding: 0; }
+:is(.data-area, .workbench) .fact dt { font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+:is(.data-area, .workbench) .fact dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-weight: var(--font-weight-strong); font-variant-numeric: tabular-nums; }
+
+/* Pending work: a thin blue line, what is being done, and a way to stop waiting. */
+.progress-line { position: relative; height: var(--size-progress); overflow: hidden; background: var(--color-accent-tint); }
+.progress-line::after { content: ""; position: absolute; inset: 0; width: 30%; background: var(--color-accent); }
+.working { display: grid; gap: var(--space-2); justify-items: start; margin-top: var(--space-2); }
+.working .progress-line { justify-self: stretch; }
+.working-text { color: var(--color-ink-muted); padding: var(--space-2) 0; }
+
+/* An error: inline, a red bar on the left, the message, what to do and a retry. */
+.inline-error {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border-left: var(--bar-width) solid var(--color-error);
+}
+.inline-error-title { font-weight: var(--font-weight-strong); color: var(--color-error); }
+.inline-error button { margin-top: var(--space-1); }
+
+/* A replacement beside the answer still shown: a quiet line while it runs, an inline error when it fails. */
+.replacement { margin: var(--space-2) 0; }
+.replacement-line {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent-tint);
+  border-left: var(--bar-width) solid var(--color-accent);
+  border-radius: var(--radius);
+}
+.replacement-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* Data area: the workspace in use as one line, another folder behind it. */
+.workspace-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-4); min-width: 0; }
+.workspace-line > details { flex-basis: 100%; }
+.workspace-line > details > summary { cursor: pointer; color: var(--color-ink-muted); }
+.workspace-line > details[open] { display: grid; gap: var(--space-2); }
+.other-folder { display: grid; gap: var(--space-2); }
+
+/* Data area: steps one under the other on the paper, each under its title and without a frame. */
+.data-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); padding: var(--space-6); max-width: var(--size-page); }
+.step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  min-width: 0;
+  background: var(--color-surface);
+}
+.step-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+.inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.example-select { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.path-input { flex: 1 1 var(--size-path-input); min-width: 0; font-family: var(--font-mono); }
+.settled { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
+.choice-row { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-6); align-items: flex-start; }
+.choice { display: grid; gap: var(--space-1); min-width: 0; max-width: 100%; }
+.choice select,
+.choice input { max-width: 100%; min-width: 0; }
+.choice.nested { margin-left: var(--space-6); }
+.figure-inline { font-variant-numeric: tabular-nums; }
+.checks { display: grid; gap: var(--space-1); margin: 0; padding: 0; border: 0; min-width: 0; }
+.checks legend { padding: 0; margin-bottom: var(--space-1); }
+.check { display: flex; align-items: center; gap: var(--space-2); min-height: var(--size-control); }
+.check-long { align-items: flex-start; }
+.check-title { font-weight: var(--font-weight-plain); }
+.question { font-weight: var(--font-weight-plain); }
+.proposal { margin: 0; }
+.example-reading { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--color-canvas); border-left: var(--bar-width) solid var(--color-accent); }
+.example-reading p { margin: 0; }
+.limitation { margin-left: var(--space-6); padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); color: var(--color-ink-muted); }
+.notes { margin: 0; padding-left: var(--space-4); color: var(--color-ink-muted); }
+.stored-list { display: grid; gap: var(--space-2); min-width: 0; overflow-x: auto; }
+.stored-list h4 { margin: 0; }
+
+.table-scroll { overflow-x: auto; }
+.plain-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-base); }
+.plain-table th,
+.plain-table td { height: var(--size-row); padding: 0 var(--space-2); text-align: left; border-bottom: var(--line-width) solid var(--color-line-row); white-space: nowrap; }
+.plain-table thead th { border-bottom-color: var(--color-line); font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+.plain-table tbody th { font-weight: var(--font-weight-plain); }
+.plain-table tr.selected { background: var(--color-accent-tint); }
+.plain-table .number,
+.window-table .number { text-align: right; font-variant-numeric: tabular-nums; }
+.compact-table { width: auto; }
+.caption { caption-side: top; text-align: left; padding-bottom: var(--space-1); color: var(--color-ink-muted); }
+.column-index { font-weight: var(--font-weight-plain); text-transform: none; letter-spacing: 0; }
+
+/* Interpretation report */
+.report { display: grid; gap: var(--space-4); min-width: 0; }
+.report-more { overflow-x: auto; }
+.state-line { padding: var(--space-2) var(--space-4); border-left: var(--bar-width) solid var(--color-mark); background: var(--color-canvas); }
+.state-ready { border-left-color: var(--color-accent); }
+.state-confirm { border-left-color: var(--color-attention); }
+.state-blocked { border-left-color: var(--color-error); }
+.report-figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--size-figure-column), 1fr)); gap: var(--space-4) var(--space-6); margin: 0; }
+.report-figures dt { font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
+.report-figures dd { margin: 0; font-size: var(--font-size-figure); line-height: var(--line-height-figure); font-variant-numeric: tabular-nums; font-weight: var(--font-weight-strong); }
+.issues ul { display: grid; gap: var(--space-2); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+.issue { display: grid; gap: var(--space-half); padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-line); }
+.issue-confirmation { border-left-color: var(--color-attention); }
+.issue-blocking { border-left-color: var(--color-error); }
+.issue-reason { font-weight: var(--font-weight-plain); }
+.issue-severity,
+.issue-positions { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.report-more > summary { cursor: pointer; min-height: var(--size-control); display: flex; align-items: center; }
+/* Records outside every incident: their original text as written, scrolling inside its cell. */
+.excluded { display: grid; gap: var(--space-2); min-width: 0; }
+.excluded > button { justify-self: start; }
+.excluded-table td { white-space: normal; vertical-align: top; }
+.original-text { margin: 0; max-height: var(--size-popover); overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--font-size-mono); }
+.confirm { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+
+/* Imported investigation: table left, inspector right. */
+.workbench-body { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.workbench-body[data-inspector="side"] { grid-template-columns: minmax(0, 1fr) var(--size-inspector); }
+.workbench-body[data-inspector="full"] .main-column { display: none; }
+.workbench-body[data-inspector="collapsed"] .imported-inspector { order: -1; }
+.main-column { display: grid; align-content: start; min-width: 0; }
+.table-pane { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-4) var(--space-6); }
+/* A pane gives its title and its hint their inset: they have none of their own. */
+:is(.data-area, .workbench) .pane-title { margin: 0; padding: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+:is(.data-area, .workbench) .pane-hint { padding: 0; font-size: var(--font-size-small); }
+
+.window-scroll {
+  max-height: max(var(--size-table-least), calc(var(--size-viewport-height) - var(--size-table-surround)));
+  overflow: auto;
+  background: var(--color-surface);
+}
+.window-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--font-size-base); }
+.window-table th,
+.window-table td {
+  height: var(--size-row);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-bottom: var(--line-width) solid var(--color-line-row);
+  text-align: left;
+}
+.window-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  border-bottom-color: var(--color-line);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-label);
+  letter-spacing: var(--letter-spacing-label);
+  color: var(--color-ink-muted);
+}
+.window-table thead th:first-child { width: 34%; }
+.window-table tbody tr { height: var(--size-row); cursor: pointer; }
+.window-table tbody tr:hover { background: var(--color-hover); }
+.window-table tbody tr.selected { background: var(--color-accent-tint); }
+.window-table tbody tr.selected th { box-shadow: inset var(--bar-width) 0 var(--color-accent); }
+.window-table tbody th { font-weight: var(--font-weight-plain); }
+.window-table .window-spacer,
+.window-table .window-spacer:hover { cursor: default; background: none; }
+/* A spacer stands for the rows that are not rendered: its one cell holds an empty drawing of their height and nothing else. */
+.window-table .window-spacer td { height: auto; padding: 0; border: 0; }
+.window-table .window-spacer svg { display: block; }
+.workbench .row-open {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  height: calc(var(--size-row) - var(--size-row-inset));
+  padding: 0 var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  border-color: transparent;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  color: var(--color-ink-muted);
+}
+.workbench .row-open::after { inset: var(--row-overhang) 0; }
+.workbench .row-open:hover { background: transparent; text-decoration: underline; }
+.workbench tr.selected .row-open { color: var(--color-accent-strong); font-weight: var(--font-weight-strong); }
+
+.data-area .pairs,
+.workbench .pairs { display: grid; gap: var(--space-1); margin: 0; }
+.data-area .pairs > div,
+.workbench .pairs > div { display: grid; grid-template-columns: minmax(var(--size-column-label), 30%) minmax(0, 1fr); gap: var(--space-2); }
+.data-area .pairs dd { margin: 0; }
+.data-area .pairs dt,
+.workbench .pairs dt { color: var(--color-ink-muted); }
+.workbench .pairs dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.workbench code { font-family: var(--font-mono); font-size: var(--font-size-small); }
+
+.imported-inspector {
+  min-width: 0;
+  min-height: calc(var(--size-viewport-height) - var(--size-inspector-surround));
+  background: var(--color-surface);
+  border-left: var(--line-width) solid var(--color-line);
+}
+/* The head is a header row across the whole pane, over its hairline; the body under it has the inset. */
+.imported-inspector .inspector-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.imported-inspector h2 { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+/* In the title the identifier of the open incident is part of the title. */
+.imported-inspector h2 .identifier { font-size: inherit; color: inherit; }
+.imported-inspector .inspector-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.imported-inspector #imported-inspector-body { display: grid; gap: var(--space-4); padding: var(--space-4); }
+.order-note { padding-left: var(--space-2); border-left: var(--bar-width) solid var(--color-attention); color: var(--color-ink-muted); }
+
+/* The history as a vertical sequence: a node per record on a thin line. */
+.history { position: relative; margin: 0; padding: 0 0 0 var(--space-6); list-style: none; }
+.history::before { content: ""; position: absolute; top: var(--history-line-inset); bottom: var(--history-line-inset); left: var(--history-line-left); width: var(--line-width); background: var(--color-mark); }
+.history-entry { position: relative; padding-bottom: var(--space-4); }
+.history-marker {
+  position: absolute;
+  top: var(--history-marker-top);
+  left: calc(var(--history-marker-pull) - var(--space-6));
+  width: var(--size-history-marker);
+  height: var(--size-history-marker);
+  border: var(--line-width) solid var(--color-ink);
+  border-radius: var(--radius-round);
+  background: var(--color-ink);
+}
+.no-label .history-marker { background: var(--color-surface); }
+.history-body { display: grid; gap: var(--space-half); min-width: 0; }
+.history-activity { font-weight: var(--font-weight-strong); overflow-wrap: anywhere; }
+.history-meta { color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
+.history-context { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; font-size: var(--font-size-small); }
+.history-context > div { display: flex; gap: var(--space-1); }
+.history-context dt { color: var(--color-ink-muted); }
+.history-context dd { margin: 0; overflow-wrap: anywhere; }
+.history-cells > summary { cursor: pointer; color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.history-cells .pairs { margin-top: var(--space-1); font-size: var(--font-size-small); }
+
+/* The selection of whole incidents and the switch between the table and the map, under the toolbar. */
+.selection-bar {
+  display: grid;
+  gap: var(--space-2);
+  min-height: var(--size-header-row);
+  padding: var(--space-1) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: var(--line-width) solid var(--color-line);
+}
+.view-switch { display: flex; gap: var(--space-1); }
+.workbench .view-switch button[aria-pressed="true"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
+.selection-steps { display: grid; gap: var(--space-2); min-width: 0; }
+.selection-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.selection-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.selection-status { color: var(--color-ink-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.chip {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  max-width: var(--size-chip);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-tint);
+  border-radius: var(--radius);
+}
+.chip-wording { overflow-wrap: anywhere; }
+.chip-counts { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
+.chip-counts > div { display: flex; gap: var(--space-1); }
+.chip-counts dt { color: var(--color-ink-muted); }
+.chip-counts dd { margin: 0; }
+.chip-remove { justify-self: start; }
+.overlap-line { font-size: var(--font-size-small); }
+
+/*
+ * The map of the kept incidents: the library draws inside the frame, which gives it its height.
+ * The pane has no padding and the frame no outline, so the map reaches the edges of its area;
+ * what is written under the map keeps the inset of the header rows.
+ */
+.map-pane { display: grid; gap: var(--space-2); min-width: 0; padding: 0; }
+.map-view { display: grid; gap: var(--space-2) 0; min-width: 0; }
+.map-view > .map-element { padding: 0 var(--space-4); }
+.map-pane > .working-text { padding: var(--space-2) var(--space-4); }
+.map-frame {
+  height: max(var(--size-map-least), calc(var(--size-viewport-height) - var(--size-map-surround)));
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+/* A view of the table that is not a selection: what it lists, and the way back to every incident. */
+.view-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent-tint);
+  border-left: var(--bar-width) solid var(--color-accent);
+}
+
+/* The views of the population under the table: how the incidents were opened, and their variants. */
+.views {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--size-view-panel)), 1fr));
+  align-items: start;
+  gap: var(--space-4);
+  padding: 0 var(--space-6) var(--space-6);
+}
+.view-panel {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--color-surface);
+}
+.map-arranging { padding: var(--space-4); }
+.map-element { display: grid; gap: var(--space-2); }
+.map-choices { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* A button that keeps or removes incidents rests on the tint, so that it is seen as a button before the pointer is over it. */
+.workbench .map-choices button { background: var(--color-tint); }
+.workbench .map-choices button:hover:not(:disabled) { background: var(--color-hover); }
+.map-caption { display: grid; gap: var(--space-1); font-size: var(--font-size-small); color: var(--color-ink-muted); }
+
+.view-panel > button { justify-self: start; }
+.view-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+.view-hint { font-size: var(--font-size-small); }
+
+/* Opened as: per value two thin bars, these incidents above the parent population. */
+.share-legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.share-legend li { display: flex; align-items: center; gap: var(--space-1); }
+.swatch { display: inline-block; width: var(--size-swatch); height: var(--size-swatch-height); }
+.swatch-population { background: var(--color-accent); }
+.swatch-parent { background: var(--color-mark); }
+.opening-column { display: grid; gap: var(--space-2); min-width: 0; }
+.opening-column-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-plain); overflow-wrap: anywhere; }
+.opening-column-title .muted { font-weight: var(--font-weight-plain); }
+/* Every row of a list shares its columns, so that all bars of a column are drawn on one scale. */
+.opening-values {
+  display: grid;
+  grid-template-columns: minmax(0, var(--size-value-label)) minmax(var(--size-share-least), 1fr) minmax(var(--size-share-figures), auto);
+  column-gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.opening-value {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  min-height: var(--size-row);
+  border-bottom: var(--line-width) solid var(--color-line-row);
+}
+.opening-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opening-figures { font-size: var(--font-size-small); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.share-bars { display: block; width: 100%; height: var(--size-share-bars); }
+.share-track { fill: var(--color-tint); }
+.share-bar-population { fill: var(--color-accent); }
+.share-bar-parent { fill: var(--color-mark); }
+
+/* Variants: a ranked list under row lines, each a small chain of its steps as chips. */
+.variant-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.variant { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-2); border-bottom: var(--line-width) solid var(--color-line-row); }
+.variant.chosen { background: var(--color-accent-tint); box-shadow: inset var(--bar-width) 0 var(--color-accent); }
+.variant-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.variant-rank { font-weight: var(--font-weight-plain); }
+.variant-figures { color: var(--color-ink-muted); font-variant-numeric: tabular-nums; }
+.variant-head button { margin-left: auto; }
+.workbench .variant-head button[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
+.workbench .variant-head button[aria-pressed="true"]:hover { background: var(--color-accent-strong); }
+.variant-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) 0; margin: 0; padding: 0; list-style: none; font-size: var(--font-size-small); }
+.variant-steps li { display: flex; align-items: center; min-width: 0; }
+.variant-step { padding: 0 var(--space-1); background: var(--color-tint); border-radius: var(--radius); overflow-wrap: anywhere; }
+.variant.chosen .variant-step { background: var(--color-surface); }
+.variant-arrow { padding: 0 var(--space-1); color: var(--color-ink-muted); }
+
+@media (max-width: 1100px) {
+  .workbench-body[data-inspector="side"] { grid-template-columns: minmax(0, 1fr); }
+  .workbench-body[data-inspector="side"] .main-column { display: none; }
+  .imported-inspector { border-left: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .progress-line::after { animation: wb-progress 1.2s ease-in-out infinite; }
+}
+@keyframes wb-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(340%); }
+}
+.step > button,
+.step > .choice,
+.checks > .choice,
+.report > button { justify-self: start; }
+
+/*
+ * The investigation in one screen. A side panel holds how the incidents were opened and their
+ * variants; the map or the table takes the centre; the steps of a selected map element stand
+ * beside the map; the history of one incident stands at the right. On a wide and tall window the
+ * parts scroll on their own and the page does not; on a narrow or low one they follow each other
+ * down the page as before.
+ */
+.explorer { display: flex; flex-direction: column; }
+/* The header rows of the investigation share one inset, which the side panel, the table pane and the inspector keep. Each keeps the height of what it holds: the column does not shrink it. */
+.explorer > .toolbar { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); padding: var(--space-1) var(--space-4); }
+.explorer .facts { flex: 1 1 auto; row-gap: var(--space-1); }
+.explorer .fact dd { font-size: var(--font-size-base); line-height: var(--line-height-base); font-weight: var(--font-weight-plain); }
+/* Of the facts of an investigation only the kept count is semibold: it is the second fact, after the parent. */
+.explorer .fact:nth-child(2) dd { font-weight: var(--font-weight-strong); }
+.explorer > .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); }
+.explorer .workbench-body { flex: 1 1 auto; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; }
+.explorer .workbench-body[data-inspector="side"] { grid-template-columns: auto minmax(0, 1fr) var(--size-inspector); }
+.explorer-rail { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; width: var(--size-rail); min-width: 0; background: var(--color-surface); border-right: var(--line-width) solid var(--color-line); }
+.rail-head { display: flex; flex: none; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: var(--size-header-row); padding: var(--space-1) var(--space-4); border-bottom: var(--line-width) solid var(--color-line); }
+.rail-body { flex: 1 1 auto; min-height: 0; padding: var(--space-4); }
+.explorer-rail .view-panel { padding: 0; background: none; border: 0; border-radius: 0; }
+.explorer .main-column { grid-column: 2; grid-row: 2; }
+.explorer .imported-inspector { grid-column: 3; grid-row: 1 / span 2; min-height: 0; }
+.explorer .workbench-body[data-inspector="collapsed"] .imported-inspector { grid-column: 1 / -1; grid-row: 1; order: 0; }
+.explorer .workbench-body[data-inspector="full"] .imported-inspector { grid-column: 1 / -1; grid-row: 1 / span 2; }
+.explorer .workbench-body[data-inspector="full"] .explorer-rail { display: none; }
+.explorer .selection-bar { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-1) var(--space-4); }
+.explorer .table-pane { padding: var(--space-4); }
+.explorer .selection-steps { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.workbench .rail-toggle[aria-expanded="true"] { background: var(--color-tint); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
+/* In the row of the steps the heading names the row and is a label: it is not the title of a pane. */
+.workbench .selection-head .pane-title { color: var(--color-ink-muted); font-size: var(--font-size-label); font-weight: var(--font-weight-label); }
+.workbench .rail-toggle[aria-expanded="true"]:hover { background: var(--color-hover); }
+/* The view switch names the map: the heading stays for assistive technology. */
+.explorer .map-pane > .pane-title {
+  position: absolute;
+  width: var(--line-width);
+  height: var(--line-width);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.explorer .map-view[data-element="selected"] .map-element {
+  align-content: start;
+  padding: var(--space-4);
+  background: var(--color-surface);
+}
+
+@media (width > 1100px) and (min-height: 560px) {
+  /* Positioned, so that text kept only for assistive technology inside a scrolling part is clipped with it and does not lengthen the page. */
+  .explorer { position: relative; height: calc(var(--size-viewport-height) - var(--size-app-bar)); min-height: 0; overflow: hidden; }
+  .explorer .rail-body,
+  .explorer .table-pane,
+  .explorer .imported-inspector { position: relative; }
+  .explorer .workbench-body { min-height: 0; }
+  /* A long list in the side panel scrolls in the panel and does not stretch the row. */
+  .explorer-rail { min-height: 0; }
+  .explorer .rail-body,
+  .explorer .table-pane,
+  .explorer .imported-inspector { overflow: auto; }
+  .explorer .main-column { grid-template-rows: minmax(0, 1fr); align-content: stretch; min-height: 0; }
+  .explorer .table-pane { align-content: start; }
+  /* The heading of the pane is out of the flow, so the map view is the pane's only row. */
+  .explorer .map-pane { grid-template-rows: minmax(0, 1fr); min-height: 0; }
+  .explorer .map-view { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; }
+  .explorer .map-frame { height: auto; min-height: 0; }
+  .explorer .map-view[data-element="selected"] { grid-template-columns: minmax(0, 1fr) var(--size-map-drawer); grid-template-rows: minmax(0, 1fr) auto; }
+  /* Beside the map the panel of a selected element is a pane of its own: one hairline between the two. */
+  .explorer .map-view[data-element="selected"] .map-element { grid-column: 2; grid-row: 1; overflow: auto; border-left: var(--line-width) solid var(--color-line); }
+  .explorer .map-view[data-element="selected"] { grid-template-columns: minmax(0, 1fr) var(--size-map-drawer); }
+  .explorer .map-view[data-element="selected"] .map-element { grid-column: 2; grid-row: 1; overflow: auto; }
+}
+@media (max-width: 1100px) {
+  .explorer .workbench-body,
+  .explorer .workbench-body[data-inspector="side"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .explorer-rail,
+  .explorer .main-column,
+  .explorer .imported-inspector { grid-column: 1; grid-row: auto; }
+  .explorer-rail { border-right: 0; border-bottom: var(--line-width) solid var(--color-line); }
+  .explorer-rail { width: auto; }
+  .explorer .rail-body { max-height: var(--size-map-notes); overflow: auto; }
+  .explorer .workbench-body[data-inspector="side"] .explorer-rail { display: none; }
+}
+.workbench .rail-head button[data-failed] { color: var(--color-error); }
+/* In the side panel a value takes two lines: its name in full width, then its bars and figures. */
+.explorer-rail .opening-values { grid-template-columns: minmax(var(--size-share-least), 1fr) auto; }
+.explorer-rail .opening-label { grid-column: 1 / -1; }

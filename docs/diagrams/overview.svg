@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+<title id="title">WISE Platform target architecture</title><desc id="desc">One local Python host and browser workspace, canonical descriptive analytics, optional goal authoring, external Method scoring and Flow rendering, with external local runtime data.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#627988"/></marker></defs>
+<rect width="1400" height="900" fill="#f5f8fa"/>
+<g font-family="system-ui,Segoe UI,sans-serif" fill="#17364a">
+<text x="60" y="64" font-size="32" font-weight="700">WISE Platform</text><text x="60" y="100" font-size="18" fill="#587182">Target design · local incident investigation first</text>
+<rect x="50" y="135" width="920" height="600" rx="18" fill="#eaf1f5" stroke="#c7d7e1"/>
+<text x="76" y="172" font-size="19" font-weight="650">One application home</text>
+<rect x="78" y="200" width="864" height="104" rx="12" fill="#fff" stroke="#b6cbd8"/>
+<text x="100" y="235" font-size="21" font-weight="650">Browser investigation workspace · TypeScript / React</text>
+<text x="100" y="268" font-size="17">Charts · process map · matrix · variants · paired context · evidence</text>
+<path d="M510 304 V350" stroke="#627988" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="78" y="352" width="864" height="102" rx="12" fill="#fff" stroke="#b6cbd8"/>
+<text x="100" y="388" font-size="21" font-weight="650">Local Python host · FastAPI and application use cases</text>
+<text x="100" y="421" font-size="17">Import / prepare · query revisions · jobs · save / reopen · publication</text>
+<path d="M290 454 V498 M726 454 V498" stroke="#627988" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="78" y="500" width="415" height="129" rx="12" fill="#fff" stroke="#82b5a0"/>
+<text x="100" y="538" font-size="20" font-weight="650">Pure descriptive analytics</text>
+<text x="100" y="571" font-size="16">Complete cases · representations · support</text>
+<text x="100" y="599" font-size="16">Context / contrast · graph / variant answers</text>
+<rect x="520" y="500" width="422" height="129" rx="12" fill="#fff" stroke="#c3a477"/>
+<text x="542" y="538" font-size="20" font-weight="650">Optional goal authoring</text>
+<text x="542" y="571" font-size="16">Intent → bindings → reviewed norm</text>
+<text x="542" y="599" font-size="16">Version / freshness · supported compilation</text>
+<rect x="78" y="653" width="864" height="54" rx="10" fill="#dce8ef"/>
+<text x="100" y="687" font-size="17">One platform schema source → generated Python models + TypeScript types</text>
+<rect x="1010" y="200" width="338" height="120" rx="12" fill="#fff" stroke="#b6cbd8"/>
+<text x="1032" y="237" font-size="21" font-weight="650">External Flow</text>
+<text x="1032" y="270" font-size="16">Supplied-scene rendering and intents</text>
+<text x="1032" y="296" font-size="16">Qualified exact release / owned schema</text>
+<path d="M1010 251 H942" stroke="#627988" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="1010" y="500" width="338" height="129" rx="12" fill="#fff" stroke="#c3a477"/>
+<text x="1032" y="538" font-size="21" font-weight="650">External Method</text>
+<text x="1032" y="571" font-size="16">Validation · measurement · WISE scoring</text>
+<text x="1032" y="599" font-size="16">Actual coverage and endpoint witnesses</text>
+<path d="M942 560 H1010" stroke="#627988" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="50" y="768" width="1298" height="83" rx="14" fill="#fff" stroke="#82b5a0"/>
+<text x="76" y="801" font-size="21" font-weight="650">External local runtime workspace</text>
+<text x="76" y="831" font-size="17">Private snapshots · prepared records · SQLite metadata · immutable answers · saved findings</text>
+<text x="1008" y="697" font-size="16" fill="#587182">Build assets once; serve with Python.</text>
+<text x="1008" y="723" font-size="16" fill="#587182">Node is for source development.</text>
+</g></svg>

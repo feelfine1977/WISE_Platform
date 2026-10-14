@@ -1,0 +1,46 @@
+/*
+ * The column beside the map with what selects by time: two charts of columns, the parent pale and
+ * the kept incidents solid, what is under the hand blue. Every value refers to the token stylesheet.
+ */
+.time-column { display: grid; align-content: start; gap: var(--space-4); min-width: 0; padding: var(--space-3) var(--space-4); }
+.time-column-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+/*
+ * "About these charts" opens inside the column, which scrolls and clips what reaches past it: the
+ * panel hangs from the whole head row instead of from its button, and is as wide as the row.
+ */
+.time-column .time-column-head { position: relative; }
+.time-column .time-column-head > .popover { position: static; }
+.time-column .time-column-head .popover-panel { left: 0; right: 0; width: auto; max-width: none; }
+.time-column-title { margin: 0; font-size: var(--font-size-title); font-weight: var(--font-weight-strong); }
+.time-chart { display: grid; gap: var(--space-1); min-width: 0; }
+.time-chart-title { margin: 0; color: var(--color-ink-muted); font-size: var(--font-size-small); font-weight: var(--font-weight-plain); }
+.time-chart-limit { margin: 0; color: var(--color-limit); font-size: var(--font-size-small); }
+.time-chart-problem { display: grid; justify-items: start; gap: var(--space-1); color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.time-chart-problem > p { margin: 0; }
+
+.column-chart { display: grid; gap: var(--space-1); min-width: 0; }
+.column-chart-plot { height: var(--size-chart); cursor: crosshair; touch-action: none; border-radius: var(--radius); }
+.column-chart-plot:focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--space-half); }
+.column-chart-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.column-chart-parent { fill: var(--color-line); }
+.column-chart-kept { fill: var(--color-line-strong); }
+.column-chart-kept.column-chart-chosen { fill: var(--color-accent); }
+.column-chart-band { fill: var(--color-accent-tint); }
+.column-chart-base { stroke: var(--color-line-strong); stroke-width: var(--line-width); }
+.column-chart-ticks { display: flex; justify-content: space-between; gap: var(--space-2); color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.column-chart-readout { min-height: var(--size-readout); margin: 0; font-size: var(--font-size-small); }
+.column-chart-chosen-name { font-weight: var(--font-weight-strong); }
+
+/* The order of the list of kept incidents, as a switch of three buttons above it, and the line under the list that loads more. */
+.incident-order { display: flex; gap: var(--space-1); }
+.incident-order > button[aria-pressed="true"] { background: var(--color-tint); font-weight: var(--font-weight-strong); }
+.incident-more { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; font-size: var(--font-size-small); }
+.incident-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
+.incident-tools > button[aria-pressed="true"] { background: var(--color-tint); font-weight: var(--font-weight-strong); }
+
+/* The records of an incident as marks on the common axis of its list, the first record at the left. */
+.record-marks { display: block; width: 100%; min-width: var(--size-record-marks); }
+.record-marks > svg { display: block; width: 100%; height: var(--size-bar-marks); }
+.record-marks-span { stroke: var(--color-line); stroke-width: var(--line-width); }
+.record-marks-mark { stroke: var(--color-line-strong); stroke-width: var(--line-width); }
+.record-marks-none { font-size: var(--font-size-small); }

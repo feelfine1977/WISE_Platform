@@ -8,5 +8,7 @@
     "types": [],
     "skipLibCheck": true
   },
-  "include": ["health-types.test.ts"]
+  "include": [
+    "*.test.ts"
+  ]
 }

@@ -1,63 +1,164 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { fetchHealth } from "./api";
+import { httpComparisonClient, type ComparisonClient } from "./compare/client";
+import { CompareCoordinator } from "./compare/coordinator";
+import { CompareView } from "./compare/CompareView";
+import { AreaTabs, type AreaTab } from "./components/AreaTabs";
+import { ServiceStatus } from "./components/ServiceStatus";
+import { httpImportClient, type ImportClient } from "./data/client";
+import { DataCoordinator } from "./data/coordinator";
+import { DataArea } from "./data/DataArea";
+import { ImportedInvestigationCoordinator, type PreparationTarget, shownSelection } from "./imported/coordinator";
+import { ImportedInvestigation } from "./imported/ImportedInvestigation";
 import type { HealthResponse } from "./generated/health";
+import { httpSelectionClient, type SelectionClient } from "./map/client";
+import { nameContextColumns } from "./map/wording";
+import { httpSavingClient, type SavingClient } from "./saved/client";
+import { SavingCoordinator } from "./saved/coordinator";
+import { SavedInvestigations } from "./saved/SavedInvestigations";
+import { browserReadingMemory, FirstOpen, type ReadingMemory } from "./start/firstOpen";
+import { StartNotice } from "./start/StartNotice";
+import { httpPopulationViewClient, type PopulationViewClient } from "./views/client";
+import { httpScoringClient, type ScoringClient } from "./expectation/client";
+import { ExpectationCoordinator } from "./expectation/coordinator";
+import { ExpectationView } from "./expectation/ExpectationView";
 
-type Connection =
-  | { state: "checking" }
-  | { state: "ready"; health: HealthResponse }
-  | { state: "unavailable"; message: string };
+interface AppProps {
+  importClient?: ImportClient;
+  selectionClient?: SelectionClient;
+  viewClient?: PopulationViewClient;
+  comparisonClient?: ComparisonClient;
+  scoringClient?: ScoringClient;
+  savingClient?: SavingClient;
+  checkHealth?: (signal: AbortSignal) => Promise<HealthResponse>;
+  /** Which reading of a workspace was opened last on this computer. */
+  readingMemory?: ReadingMemory;
+}
 
-export default function App() {
-  const [connection, setConnection] = useState<Connection>({ state: "checking" });
-  const [revision, setRevision] = useState(0);
+/** The areas of the application, in the order of the work. */
+type Area = "data" | "investigations" | "compare" | "expectation" | "saved";
+
+/** Every area can be entered at any time; an area that needs incidents says so and offers the step. */
+const areaTabs: AreaTab<Area>[] = [
+  { id: "data", label: "Data", unavailable: null },
+  { id: "investigations", label: "Investigations", unavailable: null },
+  { id: "compare", label: "Compare", unavailable: null },
+  { id: "expectation", label: "Expectation", unavailable: null },
+  { id: "saved", label: "Saved", unavailable: null },
+];
+
+export default function App({
+  importClient = httpImportClient,
+  selectionClient = httpSelectionClient,
+  viewClient = httpPopulationViewClient,
+  comparisonClient = httpComparisonClient,
+  scoringClient = httpScoringClient,
+  savingClient = httpSavingClient,
+  checkHealth = fetchHealth,
+  readingMemory = browserReadingMemory,
+}: AppProps) {
+  const [dataCoordinator] = useState(() => new DataCoordinator(importClient));
+  const [importedCoordinator] = useState(() => new ImportedInvestigationCoordinator(importClient, selectionClient, viewClient));
+  const [compareCoordinator] = useState(() => new CompareCoordinator(comparisonClient));
+  // Lives above the areas, so that the expectation, its check and its run stay while another area is shown.
+  const [expectationCoordinator] = useState(() => new ExpectationCoordinator(scoringClient, importedCoordinator));
+  const [savingCoordinator] = useState(
+    () => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator, expectationCoordinator),
+  );
+  // The start opens a reading by itself and leaves the area the analyst is in as it is.
+  const [firstOpen] = useState(
+    () =>
+      new FirstOpen(
+        dataCoordinator,
+        (target, steps) => {
+          readingMemory.remember(target, steps);
+          importedCoordinator.open(target, steps);
+        },
+        readingMemory,
+      ),
+  );
+  const [area, setArea] = useState<Area>("investigations");
+  const incidentsOpen = useSyncExternalStore(importedCoordinator.subscribe, () => importedCoordinator.getState().population.phase !== "idle");
 
   useEffect(() => {
-    const controller = new AbortController();
-    setConnection({ state: "checking" });
-    fetchHealth(controller.signal).then(
-      (health) => {
-        if (!controller.signal.aborted) setConnection({ state: "ready", health });
-      },
-      (error: unknown) => {
-        if (!controller.signal.aborted) {
-          setConnection({ state: "unavailable", message: error instanceof Error ? error.message : "The local service is unavailable." });
-        }
-      },
-    );
-    return () => controller.abort();
-  }, [revision]);
+    firstOpen.start();
+    return () => firstOpen.stop();
+  }, [firstOpen]);
+
+  // The steps the incidents shown were selected by are kept with the reading, so that a refresh and a
+  // restart show the same selection. A saved investigation on a parent of its own is not kept this way.
+  useEffect(() => {
+    let kept = "";
+    return importedCoordinator.subscribe(() => {
+      const { population, selection, parentCaseIds } = importedCoordinator.getState();
+      const shown = shownSelection(selection);
+      if (population.phase !== "ready" || shown === null || parentCaseIds !== null) return;
+      const key = JSON.stringify([population.target.workspaceId, population.target.preparationId, shown.steps]);
+      if (key === kept) return;
+      kept = key;
+      readingMemory.remember(population.target, shown.steps);
+    });
+  }, [importedCoordinator, readingMemory]);
+
+  useEffect(() => {
+    return () => {
+      dataCoordinator.stop();
+      importedCoordinator.stop();
+      savingCoordinator.stop();
+    };
+  }, [dataCoordinator, importedCoordinator, savingCoordinator]);
+
+  // A step that names a context column says its name; the names are those of the reading shown.
+  useEffect(() => {
+    let named: unknown = null;
+    return importedCoordinator.subscribe(() => {
+      const { openingContext } = importedCoordinator.getState();
+      const columns = openingContext.phase === "ready" ? openingContext.answer.opening_context.columns : null;
+      if (columns === named) return;
+      named = columns;
+      nameContextColumns(new Map((columns ?? []).map((column) => [column.column_index, column.column_name])));
+    });
+  }, [importedCoordinator]);
+
+  useEffect(() => () => compareCoordinator.stop(), [compareCoordinator]);
+  useEffect(() => {
+    expectationCoordinator.start();
+    return () => expectationCoordinator.stop();
+  }, [expectationCoordinator]);
+
+  const openIncidents = useCallback(
+    (target: PreparationTarget) => {
+      readingMemory.remember(target);
+      importedCoordinator.open(target);
+      setArea("investigations");
+    },
+    [importedCoordinator, readingMemory],
+  );
+  const showData = useCallback(() => setArea("data"), []);
+  const showInvestigations = useCallback(() => setArea("investigations"), []);
 
   return (
-    <main className="workspace">
-      <header className="brand">
-        <span className="brand-mark" aria-hidden="true">W</span>
-        <div><p className="eyebrow">Local process analysis</p><h1>WISE Platform</h1></div>
+    <div className="app">
+      <header className="app-bar">
+        <span className="app-name">WISE Platform</span>
+        <AreaTabs tabs={areaTabs} current={area} onChoose={setArea} />
+        <span className="app-source" />
+        <ServiceStatus checkHealth={checkHealth} />
       </header>
-      <section className="introduction" aria-labelledby="foundation-title">
-        <p className="stage">Foundation</p>
-        <h2 id="foundation-title">A clean home for your investigations</h2>
-        <p>The local application host and browser connection are the first foundation. Event-log analysis is being built next.</p>
-      </section>
-      <section className="connection panel" aria-labelledby="connection-title">
-        <div><h3 id="connection-title">Local service</h3>
-          <div role="status" aria-live="polite">
-            {connection.state === "checking" && <p>Checking the connection…</p>}
-            {connection.state === "ready" && <><p className="success">Connected to this computer</p><p className="detail">Version {connection.health.version} · {connection.health.stage}</p></>}
-            {connection.state === "unavailable" && <><p className="failure">Connection unavailable</p><p className="detail">{connection.message} Check that the Python application is running, then retry.</p></>}
-          </div>
-        </div>
-        <button type="button" disabled={connection.state === "checking"} onClick={() => setRevision((value) => value + 1)}>Check connection</button>
-      </section>
-      <section className="panel" aria-labelledby="next-title">
-        <h3 id="next-title">What comes next</h3>
-        <p>This foundation does not yet import CSVs, show process maps or charts, calculate WISE scores, or save investigations.</p>
-        <ol className="journey">
-          <li><strong>Data</strong><span>Import locally and review the event-log interpretation.</span></li>
-          <li><strong>Investigations</strong><span>Explore linked views, compare groups and inspect complete histories.</span></li>
-          <li><strong>Expectations</strong><span>Add reviewed local targets and scoring when useful.</span></li>
-        </ol>
-      </section>
-      <footer>No event log has been loaded. This page checks only the local foundation service.</footer>
-    </main>
+      {area === "data" && <DataArea coordinator={dataCoordinator} onOpenIncidents={openIncidents} />}
+      {area === "investigations" &&
+        (incidentsOpen ? (
+          <ImportedInvestigation coordinator={importedCoordinator} saving={savingCoordinator} onShowData={showData} />
+        ) : (
+          <StartNotice start={firstOpen} onShowData={showData} />
+        ))}
+      {area === "compare" && (
+        <CompareView coordinator={compareCoordinator} investigation={importedCoordinator} onShowData={showData} onShowInvestigation={showInvestigations} />
+      )}
+      {area === "expectation" && <ExpectationView investigation={importedCoordinator} coordinator={expectationCoordinator} />}
+      {area === "saved" && (
+        <SavedInvestigations saving={savingCoordinator} data={dataCoordinator} onReopened={showInvestigations} onShowData={showData} />
+      )}
+    </div>
   );
 }

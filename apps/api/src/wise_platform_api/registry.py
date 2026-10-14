@@ -1,0 +1,46 @@
+"""The selections answered in this run, each kept under the population identity it was given.
+
+A selected population is named by its population identity alone. To answer
+for it later (its map, or the complete history of one of its incidents) the
+application looks the selection up here; the analytics package then checks
+the whole identity against it. A population identity is meaningful only in
+the workspace it was answered in, so the workspace is part of the key.
+
+Only the selections answered last are kept. A population identity that is no
+longer kept is unavailable and is selected again from its preparation.
+"""
+
+from __future__ import annotations
+
+from collections import OrderedDict
+from threading import Lock
+
+from wise_platform_analytics.selection import SelectionResult
+
+_KEPT = 128
+
+
+class SelectionRegistry:
+    def __init__(self, limit: int = _KEPT) -> None:
+        self._limit = limit
+        self._selections: OrderedDict[tuple[str, str], SelectionResult] = OrderedDict()
+        self._lock = Lock()
+
+    def keep(self, workspace_id: str, selection: SelectionResult) -> None:
+        key = (workspace_id, selection.population_id)
+        with self._lock:
+            self._selections[key] = selection
+            self._selections.move_to_end(key)
+            while len(self._selections) > self._limit:
+                self._selections.popitem(last=False)
+
+    def find(self, workspace_id: str, population_id: object) -> SelectionResult | None:
+        """The selection answered in this workspace under this population identity, if it is still kept."""
+        if not isinstance(population_id, str):
+            return None
+        key = (workspace_id, population_id)
+        with self._lock:
+            selection = self._selections.get(key)
+            if selection is not None:
+                self._selections.move_to_end(key)
+        return selection

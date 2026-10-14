@@ -1,0 +1,386 @@
+{
+  "fixture_format_version": 1,
+  "provenance": "All incident identifiers, labels, notes and times are fictional. No company records are included.",
+  "record_ordinal": "One-based logical CSV data record, excluding the header; not a physical line number.",
+  "status": "Literal acceptance inputs; fixture consistency is separate from actual API qualification.",
+  "fixtures": {
+    "B1": {
+      "file": "B1-windows1252-semicolon.csv",
+      "encoding": "windows-1252",
+      "delimiter": ";",
+      "raw_headers": [
+        " Vorgang ",
+        " Aktivität ",
+        " Zeitpunkt ",
+        " Reihenfolge ",
+        " Bearbeitergruppe "
+      ],
+      "mapping_positions": {
+        "incident": 0,
+        "activity": 1,
+        "timestamp": 2,
+        "sequence": 3,
+        "context": [
+          4
+        ]
+      },
+      "timestamp_format": "%d.%m.%Y %H:%M",
+      "explicit_timezone": "fixed offset +02:00",
+      "records": 4,
+      "case_ids": [
+        "AR-01",
+        "AR-02"
+      ],
+      "cases": 2,
+      "refused_record_ordinals": [],
+      "missing_activity_records": 0,
+      "missing_context_records": 1,
+      "normalized_utc_by_record": [
+        "2026-10-09T06:00:00Z",
+        "2026-10-09T06:30:00Z",
+        "2026-10-09T08:00:00Z",
+        "2026-10-11T10:15:00Z"
+      ],
+      "ordered_record_ordinals": {
+        "AR-01": [
+          1,
+          2,
+          3
+        ],
+        "AR-02": [
+          4
+        ]
+      },
+      "literal_checks": {
+        "activity_record_2": "Prüfung",
+        "context_record_4": "Größe & Maß"
+      },
+      "initial_population": "All valid incidents; no activity/service eligibility predicate.",
+      "missing_cells_by_mapped_column": {
+        "incident": 0,
+        "activity": 0,
+        "timestamp": 0,
+        "sequence": 0,
+        "context:Bearbeitergruppe": 1
+      }
+    },
+    "B2": {
+      "file": "B2-utf8-bom-quoted.csv",
+      "encoding": "utf-8 with BOM",
+      "delimiter": ",",
+      "raw_headers": [
+        " Case ID ",
+        " Activity ",
+        " Recorded at ",
+        " Comment "
+      ],
+      "mapping_positions": {
+        "incident": 0,
+        "activity": 1,
+        "timestamp": 2,
+        "sequence": null,
+        "context": []
+      },
+      "timestamp_format": "ISO 8601 with explicit Z",
+      "records": 4,
+      "cases": 2,
+      "case_ids": [
+        "Q-01",
+        "Q-02"
+      ],
+      "refused_record_ordinals": [],
+      "missing_activity_records": 1,
+      "mapped_context_columns": 0,
+      "normalized_utc_by_record": [
+        "2026-10-09T08:00:00Z",
+        "2026-10-09T08:05:00Z",
+        "2026-10-09T08:15:00Z",
+        "2026-10-09T09:00:00Z"
+      ],
+      "ordered_record_ordinals": {
+        "Q-01": [
+          1,
+          2
+        ],
+        "Q-02": [
+          3,
+          4
+        ]
+      },
+      "physical_line_spans": {
+        "1": [
+          2,
+          2
+        ],
+        "2": [
+          3,
+          4
+        ],
+        "3": [
+          5,
+          5
+        ],
+        "4": [
+          6,
+          6
+        ]
+      },
+      "literal_checks": {
+        "activity_record_1": "Customer, called",
+        "activity_record_2": "Hand-off\nreview",
+        "comment_record_1": "He said \"retry\", please.",
+        "comment_record_3": "Unknown",
+        "comment_record_4": "Queue, Süd"
+      },
+      "initial_population": "All valid incidents; missing activity does not remove a raw source record.",
+      "missing_cells_by_mapped_column": {
+        "incident": 0,
+        "activity": 1,
+        "timestamp": 0
+      }
+    },
+    "B3": {
+      "file": "B3-ambiguous-dotted.csv",
+      "encoding": "utf-8",
+      "delimiter": ";",
+      "raw_headers": [
+        "Ticket",
+        "Activity",
+        "At"
+      ],
+      "mapping_positions": {
+        "incident": 0,
+        "activity": 1,
+        "timestamp": 2,
+        "sequence": null,
+        "context": []
+      },
+      "records": 3,
+      "cases": 2,
+      "case_ids": [
+        "A-01",
+        "A-02"
+      ],
+      "refused_record_ordinals": [],
+      "confirmation": "Must ask for an explicit day-first/month-first format and timezone; do not publish an inferred preparation.",
+      "chosen_day_first": {
+        "format": "%d.%m.%Y %H:%M",
+        "explicit_timezone": "UTC",
+        "normalized_utc_by_record": [
+          "2026-04-03T09:10:00Z",
+          "2026-05-04T09:10:00Z",
+          "2026-12-11T09:10:00Z"
+        ]
+      },
+      "chosen_month_first": {
+        "format": "%m.%d.%Y %H:%M",
+        "explicit_timezone": "UTC",
+        "normalized_utc_by_record": [
+          "2026-03-04T09:10:00Z",
+          "2026-04-05T09:10:00Z",
+          "2026-11-12T09:10:00Z"
+        ]
+      },
+      "ordered_record_ordinals": {
+        "A-01": [
+          1,
+          2
+        ],
+        "A-02": [
+          3
+        ]
+      },
+      "missing_cells_by_mapped_column": {
+        "incident": 0,
+        "activity": 0,
+        "timestamp": 0
+      }
+    },
+    "B4": {
+      "file": "B4-ties-out-of-order.csv",
+      "encoding": "utf-8",
+      "delimiter": ";",
+      "raw_headers": [
+        "Ticket",
+        "Event",
+        "At",
+        "Seq",
+        "Desk"
+      ],
+      "mapping_positions": {
+        "incident": 0,
+        "activity": 1,
+        "timestamp": 2,
+        "sequence": 3,
+        "context": [
+          4
+        ]
+      },
+      "timestamp_format": "ISO 8601 with explicit Z",
+      "records": 5,
+      "cases": 2,
+      "case_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "refused_record_ordinals": [],
+      "missing_activity_records": 1,
+      "missing_context_records": 1,
+      "tied_timestamp_records": 3,
+      "tied_timestamp_groups": 1,
+      "ordering": "Timestamp ascending, then mapped integer sequence, then original logical source-record position.",
+      "ordered_record_ordinals": {
+        "T-01": [
+          2,
+          3,
+          4,
+          1
+        ],
+        "T-02": [
+          5
+        ]
+      },
+      "ordered_activities": {
+        "T-01": [
+          "Recorded",
+          "Routed",
+          null,
+          "Reviewed"
+        ],
+        "T-02": [
+          "Observed"
+        ]
+      },
+      "no_sequence_alternative_order": {
+        "T-01": [
+          2,
+          1,
+          3,
+          4
+        ],
+        "T-02": [
+          5
+        ]
+      },
+      "literal_checks": {
+        "context_record_3": null,
+        "context_record_4": "Unknown"
+      },
+      "initial_population": "All valid incidents; no assumed opening activity.",
+      "missing_cells_by_mapped_column": {
+        "incident": 0,
+        "activity": 1,
+        "timestamp": 0,
+        "sequence": 0,
+        "context:Desk": 1
+      }
+    },
+    "B5": {
+      "file": "B5-invalid-records.csv",
+      "encoding": "utf-8",
+      "delimiter": ",",
+      "raw_headers": [
+        "Ticket",
+        "Event",
+        "At",
+        "Seq",
+        "Desk"
+      ],
+      "mapping_positions": {
+        "incident": 0,
+        "activity": 1,
+        "timestamp": 2,
+        "sequence": 3,
+        "context": [
+          4
+        ]
+      },
+      "timestamp_format": "ISO 8601 with explicit Z",
+      "source_records": 6,
+      "invalid_case_id_rule": "Empty or whitespace-only ID is missing; preserve original raw cell. Never fabricate a case ID.",
+      "population_cases": 3,
+      "population_case_ids": [
+        "M-01",
+        "M-02",
+        "M-03"
+      ],
+      "population_raw_records": 4,
+      "retained_raw_record_ordinals": [
+        1,
+        2,
+        5,
+        6
+      ],
+      "usable_timestamp_record_ordinals": [
+        1,
+        6
+      ],
+      "outside_population_records": [
+        {
+          "record_ordinal": 3,
+          "field": "Ticket",
+          "raw_value": "",
+          "reason": "missing_incident_id"
+        },
+        {
+          "record_ordinal": 4,
+          "field": "Ticket",
+          "raw_value": "   ",
+          "reason": "missing_incident_id"
+        }
+      ],
+      "flagged_time_records": [
+        {
+          "record_ordinal": 2,
+          "field": "At",
+          "raw_value": "2026-02-30T09:00:00Z",
+          "reason": "invalid_timestamp"
+        },
+        {
+          "record_ordinal": 5,
+          "field": "At",
+          "raw_value": "not-a-time",
+          "reason": "invalid_timestamp"
+        }
+      ],
+      "evidence_ordered_record_ordinals": {
+        "M-01": [
+          1,
+          2
+        ],
+        "M-02": [
+          5
+        ],
+        "M-03": [
+          6
+        ]
+      },
+      "ordering_complete_by_case": {
+        "M-01": false,
+        "M-02": false,
+        "M-03": true
+      },
+      "ordering_complete": false,
+      "fallback_order": "Timed records in declared time/sequence/source-position order, followed by unreadable-time records in original source position; flagged placement is not observed temporal adjacency.",
+      "observed_period_from_usable_timestamps_utc": [
+        "2026-10-09T08:00:00Z",
+        "2026-10-09T11:00:00Z"
+      ],
+      "publication_semantics": "Preserve all original source rows. Rows without an incident ID remain outside every population with diagnostics. Known-case unreadable timestamps stay in complete raw evidence, flagged; incomplete chronological order and fallback must be explicit. No inferred measured interval or observed direct-follows relation crosses an uncertain order.",
+      "missing_cells_by_mapped_column": {
+        "incident": 2,
+        "activity": 0,
+        "timestamp": 0,
+        "sequence": 0,
+        "context:Desk": 1
+      }
+    }
+  },
+  "file_sha256": {
+    "B1-windows1252-semicolon.csv": "c55ba11bcd800862a8408cf49d68f951cb71288ebb3f3d2d41899aec53f8c7ff",
+    "B2-utf8-bom-quoted.csv": "47e7f707c0057524e67c5fc129566d4a2de9e0c49dc07fa9380e1afa4450a4d8",
+    "B3-ambiguous-dotted.csv": "1403cef12d6690e7da008316c22e217aff80640bf9a43b210b7c3943055d7061",
+    "B4-ties-out-of-order.csv": "46d7a88dd6544d8f5c8242b9a0cfc579e214c9c3f69130708f23769469adbc14",
+    "B5-invalid-records.csv": "8cce37a92b05aa584a19574ed7b5fbcc149de6ba7c9045fd3f1f9219141bbedf"
+  }
+}

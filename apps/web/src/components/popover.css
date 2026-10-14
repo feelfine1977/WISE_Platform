@@ -1,0 +1,46 @@
+/*
+ * The panel behind an info button: what explains a pane, floating under the button.
+ * Every value refers to the token stylesheet.
+ */
+
+/* Positioned, so that the panel hangs from its button. */
+.popover { position: relative; display: inline-flex; flex: none; }
+/*
+ * The panel floats over the page: it has the radius and the shadow of what floats, is never wider
+ * than the window, and scrolls by itself when it is long. Positioned, so that anything kept only
+ * for assistive technology inside it is clipped with it.
+ */
+.popover-panel {
+  position: absolute;
+  top: var(--offset-below);
+  z-index: var(--z-float);
+  display: grid;
+  gap: var(--space-3);
+  width: var(--size-about);
+  max-width: calc(var(--size-viewport-width) - var(--space-6));
+  max-height: var(--size-floating-max-height);
+  margin-top: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  overflow: auto;
+  color: var(--color-ink);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-plain);
+  text-align: left;
+  white-space: normal;
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius-float);
+  box-shadow: var(--shadow-float);
+}
+.popover-panel[data-side="end"] { right: 0; }
+.popover-panel[data-side="start"] { left: 0; }
+
+/* One part of a panel under a quiet heading. */
+.popover-section { display: grid; gap: var(--space-1); min-width: 0; }
+.popover-panel :is(h3, h4) { margin: 0; color: var(--color-ink-muted); font-size: var(--font-size-small); font-weight: var(--font-weight-plain); }
+.popover-panel p,
+.popover-panel dl { margin: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .popover-panel { animation: open var(--motion-open); }
+}

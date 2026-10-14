@@ -20,6 +20,10 @@ flowchart LR
   Browser --> Flow[Supplied-scene map renderer]
 ```
 
+![Target module architecture](diagrams/overview.svg)
+
+The complete [design perspectives](design.md), [requirements](requirements.md), [domain glossary](../GLOSSARY.md) and [decision records](adr/README.md) expand this overview. These distinguish target design from implemented foundation.
+
 ## Ownership and dependencies
 
 - **Application API:** workflow, task orchestration, source identity, local persistence, revision publication and recovery. HTTP handlers remain thin.

@@ -7,6 +7,8 @@ These four CSV files contain fictional incidents only. Empty activity/context ce
 - S2: missing activity labels remain in raw evidence but are omitted from mapped sequences; equal timestamps use sequence and original row position, without artificial ends.
 - S3: a literal category named Unknown remains distinct from missing context.
 
-The independent reference counter is test support, never application analytics. Its passing tests establish fixture consistency only. The companion acceptance tests remain explicitly pending until `tests/product_analytics_adapter.py` calls an actual implementation. An adapter must not return these expected values or call the reference counter as a substitute for the product.
+The independent reference counter is test support, never application analytics. Its passing tests establish fixture consistency only. Population/evidence acceptance invokes the actual HTTP operations. Graph, profile, measured-query and score operations remain explicitly pending until their separate implementations; none may return these expected values or call the reference counter as a substitute for product logic.
 
-The current inputs do not qualify conflicting timestamp/sequence precedence, the strict four-hour boundary, Windows locking/restart, browser selection behavior or production capacity. Those require separate implementation/release evidence. Health tests qualify only the foundation HTTP/schema behavior.
+The independent exact-four-hour input adds 3-hour, exactly 4-hour, 5-hour and missing-resolution histories. threshold_expected.json distinguishes strict >4 from inclusive >=4, with missing endpoints unevaluable. Fixture consistency is separate from product measured-query acceptance, which remains pending.
+
+The current inputs do not qualify conflicting timestamp/sequence precedence, Windows locking/restart, browser selection behavior or production capacity. Those require separate implementation/release evidence. Health tests qualify only the foundation HTTP/schema behavior.

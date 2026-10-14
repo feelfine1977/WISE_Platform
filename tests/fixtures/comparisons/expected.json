@@ -1,0 +1,136 @@
+{
+  "synthetic": true,
+  "snapshot_cutoff_utc": "2026-10-10T12:00:00Z",
+  "context_policy": "first_record_in_declared_order.v1",
+  "parent": {
+    "case_ids": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "G07",
+      "G08"
+    ],
+    "case_count": 8,
+    "record_count": 18
+  },
+  "explicit_groups": {
+    "target": {
+      "name": "Group A",
+      "case_ids": [
+        "G01",
+        "G02",
+        "G05",
+        "G08"
+      ],
+      "case_count": 4,
+      "record_count": 10,
+      "service_counts": [
+        {
+          "value": "ERP",
+          "case_count": 3
+        },
+        {
+          "value": null,
+          "case_count": 1
+        }
+      ]
+    },
+    "reference": {
+      "name": "Group B",
+      "case_ids": [
+        "G02",
+        "G03",
+        "G04",
+        "G06"
+      ],
+      "case_count": 4,
+      "record_count": 9,
+      "service_counts": [
+        {
+          "value": "ERP",
+          "case_count": 1
+        },
+        {
+          "value": "CRM",
+          "case_count": 2
+        },
+        {
+          "value": null,
+          "case_count": 1
+        }
+      ]
+    },
+    "overlap_case_ids": [
+      "G02"
+    ],
+    "neither_case_ids": [
+      "G07"
+    ]
+  },
+  "periods": {
+    "early": {
+      "start_inclusive": "2026-10-01T00:00:00Z",
+      "end_exclusive": "2026-10-03T00:00:00Z",
+      "case_ids": [
+        "G01",
+        "G02",
+        "G03",
+        "G04",
+        "G08"
+      ],
+      "case_count": 5,
+      "record_count": 12,
+      "recorded_resolution_count": 4,
+      "no_recorded_resolution_count": 1,
+      "inadequate_four_hour_followup_case_ids": []
+    },
+    "recent": {
+      "start_inclusive": "2026-10-09T00:00:00Z",
+      "end_exclusive": "2026-10-10T00:00:00Z",
+      "case_ids": [
+        "G05",
+        "G07"
+      ],
+      "case_count": 2,
+      "record_count": 4,
+      "recorded_resolution_count": 2,
+      "no_recorded_resolution_count": 0,
+      "inadequate_four_hour_followup_case_ids": []
+    },
+    "including_latest": {
+      "start_inclusive": "2026-10-09T00:00:00Z",
+      "end_exclusive": "2026-10-11T00:00:00Z",
+      "case_ids": [
+        "G05",
+        "G06",
+        "G07"
+      ],
+      "case_count": 3,
+      "record_count": 6,
+      "recorded_resolution_count": 2,
+      "no_recorded_resolution_count": 1,
+      "inadequate_four_hour_followup_case_ids": [
+        "G06"
+      ]
+    }
+  },
+  "resolution_hours": {
+    "G01": 3,
+    "G02": 4,
+    "G03": 5,
+    "G04": null,
+    "G05": 7,
+    "G06": null,
+    "G07": 3,
+    "G08": 1
+  },
+  "witnesses": {
+    "G07": "Start is inside recent period; its resolution is after that period boundary and remains in complete evidence.",
+    "G04": "Opening Service is missing despite later ERP; no recorded resolution is not a business-open verdict.",
+    "G08": "Opening Team and Service remain missing despite later A/ERP.",
+    "G06": "One hour follow-up at cutoff; absence of resolution is not fully observed failure."
+  }
+}

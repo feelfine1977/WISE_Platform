@@ -19,15 +19,16 @@ dev = [
   "datamodel-code-generator==0.83.0",
   "httpx>=0.27,<1",
   "jsonschema>=4.23,<5",
-  "pytest>=8,<10"
+  "pytest>=8,<10",
+  "rfc3339-validator>=0.1.4,<1"
 ]
 
 [tool.setuptools.packages.find]
-where = ["apps/api/src"]
+where = ["apps/api/src", "packages/analytics/src"]
 
 [tool.setuptools.package-data]
-wise_platform_api = ["static/*", "static/**/*"]
+wise_platform_api = ["static/*", "static/**/*", "examples/*.csv", "examples/README.md"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "packages/analytics/tests", "apps/api/tests"]
 addopts = "-ra"

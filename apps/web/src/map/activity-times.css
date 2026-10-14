@@ -1,0 +1,31 @@
+/*
+ * The times of a selected activity: two rows of figures, then the paths into and out of it as rows
+ * of buttons with their passages and lag in columns. Every value refers to the token stylesheet.
+ */
+.activity-times { display: grid; gap: var(--space-3); }
+.activity-times-rows { display: grid; gap: var(--space-1); margin: 0; }
+.activity-times-rows > div { display: grid; grid-template-columns: var(--size-time-label) minmax(0, 1fr); gap: var(--space-2); }
+.activity-times-rows dt { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.activity-times-rows dd { margin: 0; }
+.activity-paths { display: grid; gap: var(--space-1); }
+.activity-paths-title { margin: 0; color: var(--color-ink-muted); font-size: var(--font-size-small); font-weight: var(--font-weight-plain); }
+.activity-paths-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.activity-path {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto var(--size-time-value);
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--size-row-compact);
+  padding: 0 var(--space-1);
+  text-align: start;
+  background: none;
+  border: 0;
+  border-bottom: var(--line-width) solid var(--color-line-row);
+  border-radius: 0;
+}
+.activity-path:hover { background: var(--color-tint); }
+.activity-path-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-path-count,
+.activity-path-lag { font-variant-numeric: tabular-nums; text-align: end; }
+.activity-paths-more { justify-self: start; }
+.activity-times-note { margin: 0; font-size: var(--font-size-small); }

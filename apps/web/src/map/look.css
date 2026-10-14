@@ -1,0 +1,35 @@
+/*
+ * The look of the map where only a stylesheet can set it: these rules reach the map the library
+ * draws as elements of the page, not its Canvas and not its exports. What reaches all of them is
+ * the theme in look.ts. The parts of the map are selected by the attributes the library names them
+ * with. Every value refers to the token stylesheet.
+ *
+ * The library's own rules are loaded without a layer, so each rule here that sets what one of
+ * those sets is written with more classes and attributes than theirs.
+ */
+
+/*
+ * Start and End keep their names at every zoom. The library drops the name of an event once it
+ * would be smaller than the smallest text of the screen; here it is scaled up to that size from
+ * where it begins, as the library scales the names on its cards.
+ */
+.map-frame [data-wf-part="map"] [data-wf-kind="event"] > [data-wf-part="node-label"] {
+  display: block;
+  transform-origin: 50% 0;
+  transform: translateX(-50%) scale(max(1, calc(var(--wf-text-floor) / var(--size-map-event-name))));
+}
+/* In a map that runs from top to bottom the names stand beside the circles: under Start lies the way its flow takes. */
+.map-frame[data-direction="DOWN"] [data-wf-part="map"] [data-wf-kind="event"] > [data-wf-part="node-label"] {
+  top: 0;
+  bottom: 0;
+  left: var(--offset-map-event-name);
+  display: flex;
+  align-items: center;
+  transform-origin: 0 50%;
+  transform: scale(max(1, calc(var(--wf-text-floor) / var(--size-map-event-name))));
+}
+
+/* A card keeps what it draws inside its rounded corners: the bar of its share along the bottom edge ends with the corner. */
+.map-frame [data-wf-part="map"] [data-wf-part="node"]:is([data-wf-kind="activity"], [data-wf-kind="stage"]) { overflow: hidden; }
+/* The band of a card says its stage. While no activity of the map is in a stage it says nothing and is left out. */
+.map-frame[data-stages="none"] [data-wf-part="map"] [data-wf-part="node-band"] { display: none; }

@@ -1,0 +1,31 @@
+{
+  "fixture_format_version": 1,
+  "provenance": "All incidents, activities, groups and timestamps in this fixture are fictional. No company or public event-log records are included.",
+  "fixture": "exact-four-hour.csv",
+  "case_ids": ["BOUNDARY3", "BOUNDARY4", "BOUNDARY5", "BOUNDARYMISSING"],
+  "cases": 4,
+  "records": 7,
+  "interval": "first_recorded_opened_to_first_recorded_resolved",
+  "unit": "elapsed_utc_hours",
+  "measured_hours": {
+    "BOUNDARY3": 3,
+    "BOUNDARY4": 4,
+    "BOUNDARY5": 5,
+    "BOUNDARYMISSING": null
+  },
+  "strict": {
+    "operator": "gt",
+    "hours": 4,
+    "true_ids": ["BOUNDARY5"],
+    "false_ids": ["BOUNDARY3", "BOUNDARY4"],
+    "unevaluable_ids": ["BOUNDARYMISSING"]
+  },
+  "inclusive": {
+    "operator": "ge",
+    "hours": 4,
+    "true_ids": ["BOUNDARY4", "BOUNDARY5"],
+    "false_ids": ["BOUNDARY3"],
+    "unevaluable_ids": ["BOUNDARYMISSING"]
+  },
+  "unevaluable_reason": "missing_resolution_endpoint"
+}

@@ -1,0 +1,268 @@
+/*
+ * The only place where colours, radii, type sizes, spacing and sizes are written as values.
+ * Every other stylesheet refers to these custom properties.
+ *
+ * The shell takes its colours, shapes and type scale from the process map library, so a panel of
+ * the application and a panel on the map look the same. Its tokens are read from the library
+ * rather than repeated; the values below are the application's own additions. The page pins the
+ * light scheme of the library (data-theme="light" on the document), because the contrast of every
+ * pair below is checked against the light values.
+ *
+ * One token of the library is set here for the whole page: its line. The map reads it where it
+ * stands, so the outlines of its panels and of its stages are the hairline of the application.
+ */
+@import "wise-flow/tokens.css";
+
+:root {
+  color-scheme: light;
+
+  /* The hairline, for the map library as for the application. */
+  --wf-line: #e2e5ea;
+
+  /* Colour: one white paper for the page, the map, the tables and the inspector; the data carries the colour. */
+  --color-canvas: var(--wf-paper);
+  --color-surface: var(--wf-paper);
+  /* The only grey ground: chips, pressed states and the tracks of sliders and bars. */
+  --color-tint: #f5f6f8;
+  --color-ink: var(--wf-ink);
+  --color-ink-muted: var(--wf-ink-muted);
+  /*
+   * Lines. The hairline stands under a header row, between the side panel, the centre and the
+   * inspector, and under a table head; the row line between the rows of a table or a list; the
+   * strong line only around an input.
+   */
+  --color-line: var(--wf-line);
+  --color-line-row: #eef0f3;
+  --color-line-strong: var(--wf-line-strong);
+  /* The neutral grey of what a view draws: an axis, the thread of a history, the bar of the parent population. */
+  --color-mark: var(--wf-line-strong);
+  --color-hover: #f0f2f5;
+
+  /* The one interaction colour: focus ring, selected row, primary action. */
+  --color-accent: var(--wf-focus);
+  --color-accent-strong: #005a8c;
+  --color-accent-tint: var(--wf-selection);
+  --color-on-accent: var(--wf-on-pressed);
+
+  /* Red only for errors. */
+  --color-error: var(--wf-fail);
+
+  /* Orange only for what needs the analyst's attention before it is confirmed. */
+  --color-attention: var(--wf-warn);
+  --color-attention-ink: #8a5a00;
+
+  /* The app bar is the map's dark surface. */
+  --color-bar: #1f2229;
+  --color-bar-ink: #ececec;
+  --color-bar-ink-muted: #a7adb8;
+  --color-bar-hover: rgba(255, 255, 255, 0.07);
+  /* The map's selection blue on its dark surface: focus ring and ready state on the bar. */
+  --color-accent-on-bar: #56b4e9;
+  --color-focus-on-bar: var(--color-accent-on-bar);
+  /* The area tabs on the bar: text in the bar's ink, the current one marked by the accent line. */
+  --color-tab-ink: var(--color-bar-ink);
+  --color-tab-mark: var(--color-accent-on-bar);
+  --color-tab-ink-unavailable: var(--color-bar-ink-muted);
+  --color-status-ready: var(--color-accent-on-bar);
+  --color-status-checking: var(--color-bar-ink-muted);
+  --color-status-unavailable: var(--wf-fail);
+
+  /*
+   * Type: three sizes. The base size, regular, for everything that is read or pressed; the small
+   * size in the muted ink for labels, table heads, units, times and identifiers; the title size,
+   * semibold, for the one title of a pane and for the large figures of the Data area. Semibold
+   * otherwise only marks the kept count, the current view of a switch, the open row and the
+   * activity of a record. Nothing is set in capitals and nothing is letter-spaced.
+   */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: var(--wf-font-mono);
+  --font-size-base: var(--wf-text-panel);
+  --font-size-small: 12px;
+  --font-size-label: var(--font-size-small);
+  --font-size-mono: var(--font-size-small);
+  --font-size-title: var(--wf-text-panel-symbol);
+  --font-size-figure: var(--font-size-title);
+  --line-height-base: 1.45;
+  --line-height-figure: 1.2;
+  --letter-spacing-label: 0;
+  --letter-spacing-name: 0;
+  --font-weight-plain: var(--wf-weight-panel-plain);
+  --font-weight-strong: var(--wf-weight-panel-heading);
+  --font-weight-label: var(--font-weight-plain);
+
+  /* Shape: the small radius for controls and chips, the large one for what floats; a shadow only on what floats (menus, popovers). */
+  --radius: var(--wf-radius);
+  --radius-float: var(--wf-radius-lg);
+  --radius-pill: var(--wf-radius-pill);
+  --radius-round: 50%;
+  --line-width: 1px;
+  --bar-width: 2px;
+  /* A bar drawn inside the lower edge of the current area's button. */
+  --bar-rise: calc(var(--bar-width) * -1);
+  --focus-width: var(--wf-stroke-focus);
+  --focus-offset: 2px;
+  --focus-offset-inside: calc(var(--focus-width) * -1);
+  --shadow-float: var(--wf-shadow-menu);
+
+  /*
+   * Spacing on a 4 px grid. Between things the steps are 8 inside a group, 16 between groups and
+   * 24 between regions; 4 and 12 stand only inside a control, a chip, a cell or a header row, and
+   * the half step only between a label and its own value.
+   */
+  --space-half: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+
+  /* Sizes: a row of a table or a list is 32 px high, a header row under the app bar 40 px. */
+  --size-app-bar: 44px;
+  --size-header-row: 40px;
+  --size-row: 32px;
+  --size-control: 32px;
+  --size-hit: 40px;
+  --hit-overhang: calc((var(--size-control) - var(--size-hit)) / 2);
+  --size-dot: 8px;
+  --size-marker: 10px;
+  --size-sequence-gutter: 24px;
+  /* The vertical line of a history starts and ends at the centre of the first and last marker. */
+  --sequence-line-inset: calc(var(--font-size-base) * var(--line-height-base) / 2);
+  --size-progress: 2px;
+  --size-inspector: 440px;
+  --size-column-number: 128px;
+  --size-column-label: 120px;
+  --size-column-id-least: 120px;
+  --size-source-select: 240px;
+  --size-popover: 340px;
+  --size-details-column: 300px;
+  --size-value-label: 136px;
+  --size-floating-max-height: 60vh;
+  /* A floating panel starts just below the bar it belongs to. */
+  --offset-below: 100%;
+  /* Facts that begin a wrapped line stand at the left edge: the facts bar is pulled left by their inset and clipped. */
+  --facts-separator: var(--space-4);
+  --facts-pull: calc(var(--facts-separator) * -1);
+  --size-viewport-height: 100dvh;
+
+  /* The Data area and the investigation of an imported preparation. */
+  --size-page: 1280px;
+  --size-fact-text: 28ch;
+  --size-path-input: 360px;
+  --size-figure-column: 220px;
+  --size-table-least: 320px;
+  --size-table-surround: 280px;
+  --size-map-least: 420px;
+  --size-map-surround: 360px;
+  --size-chip: 420px;
+  --size-inspector-surround: 160px;
+  --size-row-inset: 6px;
+  --row-overhang: -3px;
+  /* The vertical line of a record history and the marker of each record on it. */
+  --size-history-marker: 9px;
+  --history-line-inset: 6px;
+  --history-line-left: 7px;
+  --history-marker-top: 5px;
+  --history-marker-pull: 3px;
+  /* The views of the population: panels side by side when they fit, and the thin share bars. */
+  --size-view-panel: 380px;
+  /* The investigation in one screen: its side panel, the panel of a selected map element, and the most the notes under the map take. */
+  --size-rail: 320px;
+  --size-map-drawer: 300px;
+  --size-map-notes: 38vh;
+  --size-share-bars: 10px;
+  --size-share-least: 80px;
+  --size-share-figures: 22ch;
+  --size-swatch: 12px;
+  --size-swatch-height: 4px;
+  /* The Compare view: the column of what to compare beside the table of how it differs. */
+  --size-compare-setup: 400px;
+
+  /* The Expectation view: fields of the definition, the rationale's text box and the state buttons. */
+  --size-expectation-field: 220px;
+  --size-expectation-text: 72px;
+  --size-expectation-state: 128px;
+
+  /* Layers */
+  --z-sticky: var(--wf-z-comparison-header);
+  --z-float: var(--wf-z-menu);
+
+  /* Motion: only on open and close, and none when reduced motion is asked. */
+  --motion-open: 120ms ease-out;
+  --opacity-disabled: var(--wf-opacity-disabled);
+
+  /* The timeline of one incident: the height of its strip, the radius of a mark, of a mark of several records and of the area that takes the pointer. */
+  --size-timeline-strip: 44px;
+  --size-timeline-mark: 5px;
+  --size-timeline-mark-several: 7px;
+  --size-timeline-hit: 12px;
+  /* The stages of a log: the least width of the list of stages and of the list of activities, which stand side by side where both fit, and of the field of a stage's name. */
+  --size-stages-part: 320px;
+  --size-stage-name: 160px;
+  /* Around the canvas of the map. The detail strip: the least width of one slider with its statement, and of its range alone. */
+  --size-detail-slider: 320px;
+  --size-detail-range: 120px;
+  /* The list of every path: the height its sticky headings take, kept clear above a row the keyboard moves to. */
+  --size-path-headings: 48px;
+
+  /* Amber for a limit: a count above zero of what the numbers beside it leave out, and the mark that something is left to read. */
+  --color-limit: #8a5a00;
+  /* An icon: its box and the width of its line. The button that carries one is its whole hit area; the mark sits in its corner. */
+  --size-icon: 16px;
+  --stroke-icon: 1.5;
+  --size-icon-button: 28px;
+  --size-mark: 6px;
+  /* What floats under an info button: its width, and the window it is never wider than. */
+  --size-about: 420px;
+  --size-viewport-width: 100vw;
+  /* The editor of the stages in the column beside the map. */
+  --size-map-stages: 360px;
+  /* The column beside the map with what selects by time, its plots and the line that reads out what is under the hand. */
+  --size-map-aside: 340px;
+  --size-chart: 96px;
+  --size-readout: 18px;
+  /* The column of groups at the left of the list of incidents, and the bar of the size of a group. */
+  --size-groups: 300px;
+  --size-bar: 3px;
+  /* A part of a switch of two in a row of controls. */
+  --size-switch: 24px;
+  /* The times of a selected activity: the column of their names, of a duration, and a row of a path. */
+  --size-time-label: 96px;
+  --size-time-value: 56px;
+  --size-row-compact: 28px;
+  /* The marks of the records of an incident in a cell of the list. */
+  --size-record-marks: 160px;
+  --size-bar-marks: 12px;
+  /* A header row of one line, and the bar of the kept share in the data row. */
+  --size-kept-share: 48px;
+
+  /*
+   * The process map. Its library draws from a theme, which takes a value and never a custom
+   * property: the theme of the map reads these values from the text of this stylesheet (map/look.ts).
+   */
+  /* Start is a ring in its green on the paper, End a disc in its purple: ring against disc tells them apart without the colours. */
+  --color-map-start: #205840;
+  --color-map-end: #803068;
+  /* A selected card: the tint of a selection as it looks on the paper, opaque, so that no path shows through the card. */
+  --color-map-selected: #dbebf4;
+  /* The circle of Start and End, the size of their names in units of the map, and where a name begins beside its circle. */
+  --size-map-event: 40px;
+  --size-map-event-name: 15;
+  --offset-map-event-name: calc(100% + var(--space-2));
+  /* The smallest text of the screen in units of the map. The map library sets it on a map that is zoomed out; anywhere else there is none. */
+  --wf-text-floor: 0;
+}
+
+/*
+ * The detail strip above the map is the library's panel. The track of its sliders is drawn in the
+ * library's line; in the strip, which has no outline of its own, that is the tint.
+ */
+.map-detail {
+  --wf-line: var(--color-tint);
+}
+
+/* The map library reads the size of an event's circle from its own tokens: on the frame of the map they are the application's. */
+.map-frame {
+  --wf-event-width: var(--size-map-event);
+  --wf-event-height: var(--size-map-event);
+}

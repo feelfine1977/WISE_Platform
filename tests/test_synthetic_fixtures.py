@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import json
 import pytest
+import re
 from fixture_reference import (raw_rows, case_rows, parent_cases, partition,
                                graph_and_variants, opening_category, opening_profile,
                                resolution_partition)
@@ -116,3 +117,14 @@ def test_literal_unknown_category_is_not_a_missing_value():
     profile = {opening_category(history): [case] for case, history in cases.items()}
     assert profile == EXPECTED['fixtures']['S3']['opening_profile']
     assert len(profile) == 2
+
+
+def test_named_policy_registry_is_machine_readable_and_versioned():
+    registry = json.loads((FIXTURES / 'policy_ids.json').read_text(encoding='utf-8'))
+    assert registry.pop('schema_version') == 1
+    assert set(registry) == {'order', 'activity_projection', 'context_projection',
+                             'parent', 'predicate', 'comparison', 'nullable_measure', 'missing_values', 'clock'}
+    assert len(set(registry.values())) == len(registry)
+    assert all(re.fullmatch(r'incident\.[a-z0-9_.]+\.v1', value) for value in registry.values())
+    assert registry['comparison'] == 'incident.comparison.target_removed_reference_kept.v1'
+    assert registry['nullable_measure'] == 'incident.measure.unevaluable_separate_from_true_false.v1'

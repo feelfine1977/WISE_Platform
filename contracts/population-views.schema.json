@@ -1,0 +1,765 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/population-views.v1.schema.json",
+  "title": "PopulationViewMessage",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/OpeningContextRequest"
+    },
+    {
+      "$ref": "#/$defs/VariantsRequest"
+    },
+    {
+      "$ref": "#/$defs/OpeningContextAnswer"
+    },
+    {
+      "$ref": "#/$defs/VariantsAnswer"
+    },
+    {
+      "$ref": "#/$defs/PopulationViewRefusal"
+    }
+  ],
+  "$defs": {
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "Count": {
+      "title": "Count",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "PositiveCount": {
+      "title": "PositiveCount",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "Share": {
+      "title": "Share",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "Difference": {
+      "title": "Difference",
+      "type": "number",
+      "minimum": -100,
+      "maximum": 100
+    },
+    "VariantId": {
+      "title": "VariantId",
+      "type": "string",
+      "pattern": "^variant\\.v1:sha256:[0-9a-f]{64}$"
+    },
+    "CategoryShare": {
+      "title": "CategoryShare",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "$ref": "#/$defs/Count"
+        },
+        "share": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Share"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "denominator": {
+          "$ref": "#/$defs/Count"
+        }
+      },
+      "required": [
+        "count",
+        "share",
+        "denominator"
+      ]
+    },
+    "ValueContextCategory": {
+      "title": "ValueContextCategory",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "value"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "population": {
+          "$ref": "#/$defs/CategoryShare"
+        },
+        "parent": {
+          "$ref": "#/$defs/CategoryShare"
+        },
+        "difference_percentage_points": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Difference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "value",
+        "population",
+        "parent",
+        "difference_percentage_points"
+      ]
+    },
+    "MissingContextCategory": {
+      "title": "MissingContextCategory",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "missing"
+        },
+        "value": {
+          "type": "null"
+        },
+        "population": {
+          "$ref": "#/$defs/CategoryShare"
+        },
+        "parent": {
+          "$ref": "#/$defs/CategoryShare"
+        },
+        "difference_percentage_points": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Difference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "value",
+        "population",
+        "parent",
+        "difference_percentage_points"
+      ]
+    },
+    "ContextCategory": {
+      "title": "ContextCategory",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ValueContextCategory"
+        },
+        {
+          "$ref": "#/$defs/MissingContextCategory"
+        }
+      ]
+    },
+    "ContextRemainder": {
+      "title": "ContextRemainder",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "distinct_value_count": {
+          "$ref": "#/$defs/PositiveCount"
+        },
+        "population": {
+          "$ref": "#/$defs/CategoryShare"
+        },
+        "parent": {
+          "$ref": "#/$defs/CategoryShare"
+        },
+        "difference_percentage_points": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Difference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "distinct_value_count",
+        "population",
+        "parent",
+        "difference_percentage_points"
+      ]
+    },
+    "ContextColumn": {
+      "title": "ContextColumn",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "$ref": "#/$defs/Count"
+        },
+        "column_name": {
+          "type": "string"
+        },
+        "distinct_value_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ContextCategory"
+          }
+        },
+        "remainder": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContextRemainder"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "column_index",
+        "column_name",
+        "distinct_value_count",
+        "categories",
+        "remainder"
+      ]
+    },
+    "GroupCoverage": {
+      "title": "GroupCoverage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "evaluable_case_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "unevaluable_case_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "unevaluable_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "case_count",
+        "evaluable_case_count",
+        "unevaluable_case_count",
+        "unevaluable_case_ids"
+      ]
+    },
+    "OpeningContext": {
+      "title": "OpeningContext",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "anchor_policy": {
+          "type": "string",
+          "const": "incident.context.first_record_in_declared_order.v1"
+        },
+        "category_limit": {
+          "$ref": "#/$defs/PositiveCount"
+        },
+        "population": {
+          "$ref": "#/$defs/GroupCoverage"
+        },
+        "parent": {
+          "$ref": "#/$defs/GroupCoverage"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ContextColumn"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "anchor_policy",
+        "category_limit",
+        "population",
+        "parent",
+        "columns"
+      ]
+    },
+    "Variant": {
+      "title": "Variant",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/VariantId"
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "case_count": {
+          "$ref": "#/$defs/PositiveCount"
+        },
+        "share": {
+          "$ref": "#/$defs/Share"
+        },
+        "denominator": {
+          "$ref": "#/$defs/PositiveCount"
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "record_count": {
+          "$ref": "#/$defs/PositiveCount"
+        },
+        "omitted_activity_record_count": {
+          "$ref": "#/$defs/Count"
+        }
+      },
+      "required": [
+        "id",
+        "activities",
+        "case_count",
+        "share",
+        "denominator",
+        "case_ids",
+        "record_count",
+        "omitted_activity_record_count"
+      ]
+    },
+    "UnevaluableSupport": {
+      "title": "UnevaluableSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "record_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "omitted_activity_record_count": {
+          "$ref": "#/$defs/Count"
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count",
+        "omitted_activity_record_count"
+      ]
+    },
+    "VariantSummary": {
+      "title": "VariantSummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activity_projection_policy": {
+          "type": "string",
+          "const": "incident.activity.omit_missing_retain_raw_gaps.v1"
+        },
+        "case_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "record_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "omitted_activity_record_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "sequence_evaluable_case_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "variant_count": {
+          "$ref": "#/$defs/Count"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Variant"
+          }
+        },
+        "unevaluable": {
+          "$ref": "#/$defs/UnevaluableSupport"
+        }
+      },
+      "required": [
+        "activity_projection_policy",
+        "case_count",
+        "record_count",
+        "omitted_activity_record_count",
+        "sequence_evaluable_case_count",
+        "variant_count",
+        "variants",
+        "unevaluable"
+      ]
+    },
+    "OpeningContextRequest": {
+      "title": "OpeningContextRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "opening_context_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity"
+      ]
+    },
+    "VariantsRequest": {
+      "title": "VariantsRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "variants_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity"
+      ]
+    },
+    "OpeningContextAnswer": {
+      "title": "OpeningContextAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "opening_context_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "opening_context": {
+          "$ref": "#/$defs/OpeningContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "parent_identity",
+        "opening_context"
+      ]
+    },
+    "VariantsAnswer": {
+      "title": "VariantsAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "variants_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "variants": {
+          "$ref": "#/$defs/VariantSummary"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "variants"
+      ]
+    },
+    "PopulationViewOperation": {
+      "title": "PopulationViewOperation",
+      "type": "string",
+      "enum": [
+        "opening_context",
+        "variants"
+      ]
+    },
+    "RefusalCode": {
+      "title": "RefusalCode",
+      "type": "string",
+      "enum": [
+        "invalid_request",
+        "unsupported_schema",
+        "workspace_unavailable",
+        "workspace_not_writable",
+        "workspace_incompatible",
+        "source_unavailable",
+        "preparation_unavailable",
+        "identity_mismatch",
+        "population_unavailable",
+        "invalid_parent",
+        "unknown_case",
+        "no_context_columns",
+        "computation_failed"
+      ]
+    },
+    "PopulationViewRefusal": {
+      "title": "PopulationViewRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "population_view_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "$ref": "#/$defs/PopulationViewOperation"
+        },
+        "code": {
+          "$ref": "#/$defs/RefusalCode"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

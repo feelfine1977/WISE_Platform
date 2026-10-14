@@ -1,0 +1,4473 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/import.v1.schema.json",
+  "title": "ImportMessage",
+  "description": "Version 1 local workspace, CSV interpretation, population and complete evidence boundary; UTC and recorded-wall time are distinct.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/OpenWorkspaceRequest"
+    },
+    {
+      "$ref": "#/$defs/OpenDefaultWorkspaceRequest"
+    },
+    {
+      "$ref": "#/$defs/WorkspaceAnswer"
+    },
+    {
+      "$ref": "#/$defs/UploadSourceMetadata"
+    },
+    {
+      "$ref": "#/$defs/SourceAnswer"
+    },
+    {
+      "$ref": "#/$defs/InspectCsvRequest"
+    },
+    {
+      "$ref": "#/$defs/CsvInspectionAnswer"
+    },
+    {
+      "$ref": "#/$defs/ConfirmMappingRequest"
+    },
+    {
+      "$ref": "#/$defs/InterpretationAnswer"
+    },
+    {
+      "$ref": "#/$defs/OpenPopulationRequest"
+    },
+    {
+      "$ref": "#/$defs/ImportedPopulationAnswer"
+    },
+    {
+      "$ref": "#/$defs/ImportedCaseEvidenceRequest"
+    },
+    {
+      "$ref": "#/$defs/ImportedCaseEvidenceAnswer"
+    },
+    {
+      "$ref": "#/$defs/ImportRefusal"
+    },
+    {
+      "$ref": "#/$defs/CutoffProposalAnswer"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RowId": {
+      "title": "RowId",
+      "type": "string",
+      "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "UtcInstant": {
+      "title": "UtcInstant",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "PopulationSupport": {
+      "title": "PopulationSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count"
+      ]
+    },
+    "Coverage": {
+      "title": "Coverage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "raw_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mapped_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_activity_record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "raw_record_count",
+        "mapped_record_count",
+        "omitted_activity_record_count"
+      ]
+    },
+    "ActivityProjectionPolicy": {
+      "title": "ActivityProjectionPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.activity.omit_missing_retain_raw_gaps.v1"
+        },
+        "parameters": {
+          "title": "ActivityProjectionPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "missing_activity": {
+              "type": "string",
+              "const": "omit_from_mapped_sequence"
+            },
+            "raw_records": {
+              "type": "string",
+              "const": "retain_all"
+            },
+            "gap_evidence": {
+              "type": "string",
+              "const": "omitted_row_ids"
+            }
+          },
+          "required": [
+            "missing_activity",
+            "raw_records",
+            "gap_evidence"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "ColumnIndex": {
+      "title": "ColumnIndex",
+      "type": "integer",
+      "minimum": 0
+    },
+    "TimestampFormat": {
+      "title": "TimestampFormat",
+      "type": "string",
+      "enum": [
+        "iso8601",
+        "dmy_dot_minute",
+        "dmy_slash_minute",
+        "mdy_slash_minute",
+        "mdy_dot_minute",
+        "dmy_dot_second",
+        "mdy_dot_second",
+        "dmy_slash_second",
+        "mdy_slash_second",
+        "mdy_slash_12h_minute",
+        "mdy_slash_12h_second"
+      ]
+    },
+    "LocalTimestamp": {
+      "title": "LocalTimestamp",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?$"
+    },
+    "Encoding": {
+      "title": "Encoding",
+      "type": "string",
+      "enum": [
+        "utf-8",
+        "utf-8-sig",
+        "windows-1252"
+      ]
+    },
+    "Delimiter": {
+      "title": "Delimiter",
+      "type": "string",
+      "enum": [
+        ",",
+        ";",
+        "\t",
+        "|"
+      ]
+    },
+    "Column": {
+      "title": "Column",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "index",
+        "name"
+      ]
+    },
+    "SampleRow": {
+      "title": "SampleRow",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_position": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "source_position",
+        "cells"
+      ]
+    },
+    "Dialect": {
+      "title": "Dialect",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "encoding": {
+          "$ref": "#/$defs/Encoding"
+        },
+        "delimiter": {
+          "$ref": "#/$defs/Delimiter"
+        },
+        "quotechar": {
+          "type": "string",
+          "const": "\""
+        },
+        "header": {
+          "type": "string",
+          "const": "first_record"
+        }
+      },
+      "required": [
+        "encoding",
+        "delimiter",
+        "quotechar",
+        "header"
+      ]
+    },
+    "DialectHints": {
+      "title": "DialectHints",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "encoding": {
+          "$ref": "#/$defs/Encoding"
+        },
+        "delimiter": {
+          "$ref": "#/$defs/Delimiter"
+        }
+      },
+      "required": []
+    },
+    "Mapping": {
+      "title": "Mapping",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_column": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "activity_column": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "timestamp_column": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "sequence_column": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ColumnIndex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "context_columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ColumnIndex"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "case_column",
+        "activity_column",
+        "timestamp_column",
+        "sequence_column",
+        "context_columns"
+      ]
+    },
+    "RecordedTimezone": {
+      "title": "RecordedTimezone",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "from_values"
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "FixedOffsetTimezone": {
+      "title": "FixedOffsetTimezone",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "fixed_offset"
+        },
+        "offset_minutes": {
+          "type": "integer",
+          "minimum": -840,
+          "maximum": 840
+        }
+      },
+      "required": [
+        "mode",
+        "offset_minutes"
+      ]
+    },
+    "Timezone": {
+      "title": "Timezone",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RecordedTimezone"
+        },
+        {
+          "$ref": "#/$defs/FixedOffsetTimezone"
+        }
+      ]
+    },
+    "UtcTimePolicy": {
+      "title": "UtcTimePolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.time.explicit_format_timezone_utc.v1"
+        },
+        "parameters": {
+          "title": "UtcTimePolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "format": {
+              "$ref": "#/$defs/TimestampFormat"
+            },
+            "timezone": {
+              "$ref": "#/$defs/Timezone"
+            },
+            "snapshot_cutoff_utc": {
+              "$ref": "#/$defs/UtcInstant"
+            }
+          },
+          "required": [
+            "format",
+            "timezone",
+            "snapshot_cutoff_utc"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "WallTimePolicy": {
+      "title": "WallTimePolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.time.wall_clock_as_recorded.v1"
+        },
+        "parameters": {
+          "title": "WallTimePolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "format": {
+              "$ref": "#/$defs/TimestampFormat"
+            },
+            "timezone": {
+              "type": "string",
+              "const": "none_as_recorded"
+            },
+            "snapshot_cutoff_local": {
+              "$ref": "#/$defs/LocalTimestamp"
+            }
+          },
+          "required": [
+            "format",
+            "timezone",
+            "snapshot_cutoff_local"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "TimePolicy": {
+      "title": "TimePolicy",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcTimePolicy"
+        },
+        {
+          "$ref": "#/$defs/WallTimePolicy"
+        }
+      ]
+    },
+    "ImportOrderPolicy": {
+      "title": "ImportOrderPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.order.declared_time_optional_sequence_source_position.v1"
+        },
+        "parameters": {
+          "title": "ImportOrderPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "primary": {
+              "type": "string",
+              "const": "usable_declared_time_ascending"
+            },
+            "secondary": {
+              "type": "string",
+              "const": "mapped_sequence_or_source_position"
+            },
+            "tie_breaker": {
+              "type": "string",
+              "const": "source_position_ascending"
+            },
+            "unavailable_timestamp": {
+              "type": "string",
+              "const": "presentation_tail_source_position"
+            },
+            "unavailable_timestamp_case_sequence": {
+              "type": "string",
+              "const": "unevaluable"
+            }
+          },
+          "required": [
+            "primary",
+            "secondary",
+            "tie_breaker",
+            "unavailable_timestamp",
+            "unavailable_timestamp_case_sequence"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ImportRowPolicy": {
+      "title": "ImportRowPolicy",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/StrictImportRowPolicy"
+        },
+        {
+          "$ref": "#/$defs/TolerantImportRowPolicy"
+        }
+      ]
+    },
+    "ImportMissingPolicy": {
+      "title": "ImportMissingPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.missing.empty_mapped_activity_context.v1"
+        },
+        "parameters": {
+          "title": "ImportMissingPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "empty_activity_context": {
+              "type": "string",
+              "const": "missing"
+            },
+            "literal_values": {
+              "type": "string",
+              "const": "preserve"
+            }
+          },
+          "required": [
+            "empty_activity_context",
+            "literal_values"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "IdentifierPolicy": {
+      "title": "IdentifierPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.identifier.trim_outer_whitespace.v1"
+        },
+        "parameters": {
+          "title": "IdentifierPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "normalization": {
+              "type": "string",
+              "const": "trim_outer_whitespace_preserve_raw"
+            }
+          },
+          "required": [
+            "normalization"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ImportParentPolicy": {
+      "title": "ImportParentPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.parent.all_identified_cases.v1"
+        },
+        "parameters": {
+          "title": "ImportParentPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "eligibility": {
+              "type": "string",
+              "const": "nonempty_normalized_case_identifier"
+            }
+          },
+          "required": [
+            "eligibility"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ImportPolicies": {
+      "title": "ImportPolicies",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "time": {
+          "$ref": "#/$defs/TimePolicy"
+        },
+        "order": {
+          "$ref": "#/$defs/ImportOrderPolicy"
+        },
+        "rows": {
+          "$ref": "#/$defs/ImportRowPolicy"
+        },
+        "missing_values": {
+          "$ref": "#/$defs/ImportMissingPolicy"
+        },
+        "identifier": {
+          "$ref": "#/$defs/IdentifierPolicy"
+        },
+        "activity_projection": {
+          "$ref": "#/$defs/ActivityProjectionPolicy"
+        },
+        "parent": {
+          "$ref": "#/$defs/ImportParentPolicy"
+        }
+      },
+      "required": [
+        "time",
+        "order",
+        "rows",
+        "missing_values",
+        "identifier",
+        "activity_projection",
+        "parent"
+      ]
+    },
+    "StoredSource": {
+      "title": "StoredSource",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "filename": {
+          "type": "string",
+          "minLength": 1
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "source_id",
+        "filename",
+        "byte_count"
+      ]
+    },
+    "StoredPreparation": {
+      "title": "StoredPreparation",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        }
+      },
+      "required": [
+        "preparation_id",
+        "source_id"
+      ]
+    },
+    "RoleSuggestion": {
+      "title": "RoleSuggestion",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "case_id",
+              "activity",
+              "timestamp",
+              "source_sequence",
+              "context"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "nonempty_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "distinct_nonempty_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timestamp_matches": {
+          "type": "array",
+          "items": {
+            "title": "TimestampMatch",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "format": {
+                "$ref": "#/$defs/TimestampFormat"
+              },
+              "parsed_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "format",
+              "parsed_count"
+            ]
+          }
+        }
+      },
+      "required": [
+        "column_index",
+        "roles",
+        "nonempty_count",
+        "distinct_nonempty_count",
+        "timestamp_matches"
+      ]
+    },
+    "RowIssue": {
+      "title": "RowIssue",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_position": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "column_index": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ColumnIndex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "case_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaseId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "missing_case_id",
+            "missing_timestamp",
+            "invalid_timestamp",
+            "missing_activity",
+            "invalid_sequence",
+            "duplicate_candidate",
+            "timestamp_sequence_disagreement",
+            "ragged_record"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "warning",
+            "confirmation",
+            "blocking"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "source_position",
+        "column_index",
+        "case_id",
+        "code",
+        "severity",
+        "message"
+      ]
+    },
+    "InterpretationReport": {
+      "title": "InterpretationReport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "raw_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Support over all parsed source records, including unassigned records."
+        },
+        "identified_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unassigned_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "usable_timestamp_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Support over all parsed source records, including unassigned records."
+        },
+        "unavailable_timestamp_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Support over all parsed source records, including unassigned records."
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence_evaluable_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence_unevaluable_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mapped_activity_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Support over records with valid incident identifiers; reconciles with population coverage."
+        },
+        "omitted_activity_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Support over records with valid incident identifiers; reconciles with population coverage."
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "first_usable_utc_instant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UtcInstant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_usable_utc_instant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UtcInstant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "first_usable_local_timestamp": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_usable_local_timestamp": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "snapshot_cutoff_utc": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UtcInstant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "snapshot_cutoff_local": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "missing_cells": {
+          "type": "array",
+          "items": {
+            "title": "MissingCells",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "column_index": {
+                "$ref": "#/$defs/ColumnIndex"
+              },
+              "record_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "column_index",
+              "record_count"
+            ]
+          },
+          "description": "Missing cells over all parsed source records for each mapped column."
+        },
+        "tied_timestamp_groups": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tied_timestamp_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_candidate_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "title": "ActivitySupport",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "activity": {
+                "type": "string",
+                "minLength": 1
+              },
+              "record_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "case_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "activity",
+              "record_count",
+              "case_count"
+            ]
+          },
+          "description": "Activity record/distinct incident supports over identified population records; no unassigned row contributes."
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowIssue"
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "blank_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ragged_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "excluded_source_records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedSourceRecord"
+          }
+        }
+      },
+      "required": [
+        "raw_record_count",
+        "identified_record_count",
+        "unassigned_record_count",
+        "usable_timestamp_record_count",
+        "unavailable_timestamp_record_count",
+        "case_count",
+        "sequence_evaluable_case_count",
+        "sequence_unevaluable_case_count",
+        "mapped_activity_record_count",
+        "omitted_activity_record_count",
+        "timestamp_kind",
+        "first_usable_utc_instant",
+        "last_usable_utc_instant",
+        "first_usable_local_timestamp",
+        "last_usable_local_timestamp",
+        "snapshot_cutoff_utc",
+        "snapshot_cutoff_local",
+        "missing_cells",
+        "tied_timestamp_groups",
+        "tied_timestamp_record_count",
+        "duplicate_candidate_record_count",
+        "activities",
+        "issues",
+        "assumptions"
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "timestamp_kind": {
+              "type": "string",
+              "const": "utc_instant"
+            },
+            "first_usable_local_timestamp": {
+              "type": "null"
+            },
+            "last_usable_local_timestamp": {
+              "type": "null"
+            },
+            "snapshot_cutoff_local": {
+              "type": "null"
+            },
+            "snapshot_cutoff_utc": {
+              "$ref": "#/$defs/UtcInstant"
+            }
+          }
+        },
+        {
+          "properties": {
+            "timestamp_kind": {
+              "type": "string",
+              "const": "wall_clock"
+            },
+            "first_usable_utc_instant": {
+              "type": "null"
+            },
+            "last_usable_utc_instant": {
+              "type": "null"
+            },
+            "snapshot_cutoff_utc": {
+              "type": "null"
+            },
+            "snapshot_cutoff_local": {
+              "$ref": "#/$defs/LocalTimestamp"
+            }
+          }
+        }
+      ]
+    },
+    "ImportPreparation": {
+      "title": "ImportPreparation",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "dialect": {
+          "$ref": "#/$defs/Dialect"
+        },
+        "mapping": {
+          "$ref": "#/$defs/Mapping"
+        },
+        "policies": {
+          "$ref": "#/$defs/ImportPolicies"
+        }
+      },
+      "required": [
+        "preparation_id",
+        "source_id",
+        "dialect",
+        "mapping",
+        "policies"
+      ]
+    },
+    "ImportedCaseSummary": {
+      "title": "ImportedCaseSummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mapped_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_activity_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence_evaluable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "case_id",
+        "record_count",
+        "mapped_record_count",
+        "omitted_activity_record_count",
+        "sequence_evaluable"
+      ]
+    },
+    "ContextValue": {
+      "title": "ContextValue",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "column_index",
+        "value"
+      ]
+    },
+    "ImportedSourceRecord": {
+      "title": "ImportedSourceRecord",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "source_position": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_sequence": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "utc_instant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UtcInstant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "local_timestamp": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "timestamp_status": {
+          "type": "string",
+          "enum": [
+            "usable",
+            "missing",
+            "invalid"
+          ]
+        },
+        "context": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ContextValue"
+          }
+        },
+        "original_cells": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "row_id",
+        "source_position",
+        "source_sequence",
+        "activity",
+        "timestamp_kind",
+        "utc_instant",
+        "local_timestamp",
+        "timestamp_status",
+        "context",
+        "original_cells"
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "timestamp_kind": {
+              "type": "string",
+              "const": "utc_instant"
+            },
+            "timestamp_status": {
+              "type": "string",
+              "const": "usable"
+            },
+            "utc_instant": {
+              "$ref": "#/$defs/UtcInstant"
+            },
+            "local_timestamp": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "timestamp_kind": {
+              "type": "string",
+              "const": "wall_clock"
+            },
+            "timestamp_status": {
+              "type": "string",
+              "const": "usable"
+            },
+            "utc_instant": {
+              "type": "null"
+            },
+            "local_timestamp": {
+              "$ref": "#/$defs/LocalTimestamp"
+            }
+          }
+        },
+        {
+          "properties": {
+            "timestamp_status": {
+              "type": "string",
+              "enum": [
+                "missing",
+                "invalid"
+              ]
+            },
+            "utc_instant": {
+              "type": "null"
+            },
+            "local_timestamp": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "OpenWorkspaceRequest": {
+      "title": "OpenWorkspaceRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "open_workspace_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "path"
+      ]
+    },
+    "WorkspaceAnswer": {
+      "title": "WorkspaceAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "workspace_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "writable": {
+          "type": "boolean",
+          "const": true
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StoredSource"
+          }
+        },
+        "preparations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StoredPreparation"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "path",
+        "writable",
+        "sources",
+        "preparations"
+      ]
+    },
+    "UploadSourceMetadata": {
+      "title": "UploadSourceMetadata",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "upload_source_metadata"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "filename": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "filename"
+      ]
+    },
+    "SourceAnswer": {
+      "title": "SourceAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "source_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source": {
+          "$ref": "#/$defs/StoredSource"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source"
+      ]
+    },
+    "InspectCsvRequest": {
+      "title": "InspectCsvRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "inspect_csv_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "hints": {
+          "$ref": "#/$defs/DialectHints"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id"
+      ]
+    },
+    "CsvInspectionAnswer": {
+      "title": "CsvInspectionAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "csv_inspection_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "dialect_candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Dialect"
+          }
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Column"
+          }
+        },
+        "record_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sample_rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SampleRow"
+          }
+        },
+        "role_suggestions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RoleSuggestion"
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "blank_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ragged_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "dialect_candidates",
+        "columns",
+        "record_count",
+        "sample_rows",
+        "role_suggestions",
+        "unresolved"
+      ]
+    },
+    "ConfirmMappingRequest": {
+      "title": "ConfirmMappingRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "confirm_mapping_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "dialect": {
+          "$ref": "#/$defs/Dialect"
+        },
+        "mapping": {
+          "$ref": "#/$defs/Mapping"
+        },
+        "policies": {
+          "$ref": "#/$defs/ImportPolicies"
+        },
+        "accept_report_issues": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "dialect",
+        "mapping",
+        "policies",
+        "accept_report_issues"
+      ]
+    },
+    "InterpretationAnswer": {
+      "title": "InterpretationAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "interpretation_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "ready",
+            "needs_confirmation",
+            "blocked"
+          ]
+        },
+        "preparation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImportPreparation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "report": {
+          "$ref": "#/$defs/InterpretationReport"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "state",
+        "preparation",
+        "report"
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "type": "string",
+              "const": "ready"
+            },
+            "preparation": {
+              "$ref": "#/$defs/ImportPreparation"
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": [
+                "needs_confirmation",
+                "blocked"
+              ]
+            },
+            "preparation": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "OpenPopulationRequest": {
+      "title": "OpenPopulationRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "open_population_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "preparation_id"
+      ]
+    },
+    "ImportedPopulationAnswer": {
+      "title": "ImportedPopulationAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "imported_population_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "preparation": {
+          "$ref": "#/$defs/ImportPreparation"
+        },
+        "source": {
+          "$ref": "#/$defs/StoredSource"
+        },
+        "population": {
+          "$ref": "#/$defs/PopulationSupport"
+        },
+        "coverage": {
+          "$ref": "#/$defs/Coverage"
+        },
+        "unassigned_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ImportedCaseSummary"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "preparation",
+        "source",
+        "population",
+        "coverage",
+        "unassigned_record_count",
+        "cases"
+      ]
+    },
+    "ImportedCaseEvidenceRequest": {
+      "title": "ImportedCaseEvidenceRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "imported_case_evidence_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "case_id"
+      ]
+    },
+    "ImportedCaseEvidenceAnswer": {
+      "title": "ImportedCaseEvidenceAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "imported_case_evidence_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "coverage": {
+          "$ref": "#/$defs/Coverage"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Column"
+          }
+        },
+        "sequence_evaluable": {
+          "type": "boolean"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ImportedSourceRecord"
+          },
+          "minItems": 1
+        },
+        "mapped_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          },
+          "uniqueItems": true
+        },
+        "omitted_activity_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          },
+          "uniqueItems": true
+        },
+        "incident_time": {
+          "$ref": "#/$defs/IncidentTimeDiagnostics"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "case_id",
+        "coverage",
+        "columns",
+        "sequence_evaluable",
+        "records",
+        "mapped_row_ids",
+        "omitted_activity_row_ids"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "incident_time": {}
+            },
+            "required": [
+              "incident_time"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "allOf": [
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "sequence_evaluable": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "sequence_evaluable"
+                  ]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": {
+                    "incident_time": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/$defs/KnownUtcIncidentTime"
+                        },
+                        {
+                          "$ref": "#/$defs/KnownWallIncidentTime"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "else": {
+                  "type": "object",
+                  "properties": {
+                    "incident_time": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/$defs/UnknownUtcIncidentTime"
+                        },
+                        {
+                          "$ref": "#/$defs/UnknownWallIncidentTime"
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "records": {
+                      "type": "array",
+                      "maxItems": 1
+                    }
+                  },
+                  "required": [
+                    "records"
+                  ]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": {
+                    "incident_time": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "maxItems": 1
+                        }
+                      }
+                    }
+                  }
+                },
+                "else": {
+                  "type": "object",
+                  "properties": {
+                    "incident_time": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "minItems": 2
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "ImportRefusal": {
+      "title": "ImportRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "import_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "open_workspace",
+            "open_default_workspace",
+            "upload_source",
+            "inspect_csv",
+            "confirm_mapping",
+            "open_population",
+            "case_evidence"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "invalid_dialect",
+            "invalid_mapping",
+            "unsupported_timezone",
+            "timezone_required",
+            "malformed_source",
+            "mixed_timezone_values",
+            "cutoff_before_records",
+            "preparation_unavailable",
+            "interpretation_not_ready",
+            "case_not_found",
+            "identity_mismatch",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    },
+    "StrictImportRowPolicy": {
+      "title": "StrictImportRowPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.rows.missing_id_outside_invalid_time_retained.v1"
+        },
+        "parameters": {
+          "title": "StrictImportRowPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "missing_case_id": {
+              "type": "string",
+              "const": "outside_population_preserve_source"
+            },
+            "unavailable_timestamp": {
+              "type": "string",
+              "const": "retain_case_raw_flag_order_unknown"
+            },
+            "invalid_mapped_sequence": {
+              "type": "string",
+              "const": "block_preparation"
+            },
+            "duplicate_candidates": {
+              "type": "string",
+              "const": "retain_all"
+            }
+          },
+          "required": [
+            "missing_case_id",
+            "unavailable_timestamp",
+            "invalid_mapped_sequence",
+            "duplicate_candidates"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "TolerantImportRowPolicy": {
+      "title": "TolerantImportRowPolicy",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "incident.rows.missing_id_outside_invalid_time_retained.v2"
+        },
+        "parameters": {
+          "title": "TolerantImportRowPolicyParameters",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "missing_case_id": {
+              "type": "string",
+              "const": "outside_population_preserve_source"
+            },
+            "unavailable_timestamp": {
+              "type": "string",
+              "const": "retain_case_raw_flag_order_unknown"
+            },
+            "invalid_mapped_sequence": {
+              "type": "string",
+              "const": "block_preparation"
+            },
+            "duplicate_candidates": {
+              "type": "string",
+              "const": "retain_all"
+            },
+            "blank_records": {
+              "type": "string",
+              "const": "skip_count_preserve_source_ordinal"
+            },
+            "ragged_records": {
+              "type": "string",
+              "const": "outside_population_preserve_raw"
+            },
+            "maximum_ragged_fraction": {
+              "type": "number",
+              "const": 0.05
+            },
+            "field_character_limit": {
+              "type": "integer",
+              "const": 10485760
+            }
+          },
+          "required": [
+            "missing_case_id",
+            "unavailable_timestamp",
+            "invalid_mapped_sequence",
+            "duplicate_candidates",
+            "blank_records",
+            "ragged_records",
+            "maximum_ragged_fraction",
+            "field_character_limit"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "parameters"
+      ]
+    },
+    "ExcludedSourceRecord": {
+      "title": "ExcludedSourceRecord",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A complete nonblank source record outside every incident. Original decoded CSV text includes its original line endings and quoting.",
+      "properties": {
+        "source_position": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "physical_line_start": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "physical_line_end": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "cell_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "missing_case_id",
+            "ragged_record"
+          ]
+        },
+        "original_cells": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "original_text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_position",
+        "physical_line_start",
+        "physical_line_end",
+        "cell_count",
+        "reason",
+        "original_cells",
+        "original_text"
+      ]
+    },
+    "UtcEmptyCutoffProposal": {
+      "title": "UtcEmptyCutoffProposal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "cutoff_proposal_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "last_usable_time": {
+          "type": "null"
+        },
+        "proposed_cutoff": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "timestamp_kind",
+        "last_usable_time",
+        "proposed_cutoff"
+      ]
+    },
+    "UtcKnownCutoffProposal": {
+      "title": "UtcKnownCutoffProposal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "cutoff_proposal_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "last_usable_time": {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        "proposed_cutoff": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UtcInstant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "timestamp_kind",
+        "last_usable_time",
+        "proposed_cutoff"
+      ]
+    },
+    "WallEmptyCutoffProposal": {
+      "title": "WallEmptyCutoffProposal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "cutoff_proposal_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "last_usable_time": {
+          "type": "null"
+        },
+        "proposed_cutoff": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "timestamp_kind",
+        "last_usable_time",
+        "proposed_cutoff"
+      ]
+    },
+    "WallKnownCutoffProposal": {
+      "title": "WallKnownCutoffProposal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "cutoff_proposal_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "last_usable_time": {
+          "$ref": "#/$defs/LocalTimestamp"
+        },
+        "proposed_cutoff": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "source_id",
+        "timestamp_kind",
+        "last_usable_time",
+        "proposed_cutoff"
+      ]
+    },
+    "CutoffProposalAnswer": {
+      "title": "CutoffProposalAnswer",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UtcEmptyCutoffProposal"
+        },
+        {
+          "$ref": "#/$defs/UtcKnownCutoffProposal"
+        },
+        {
+          "$ref": "#/$defs/WallEmptyCutoffProposal"
+        },
+        {
+          "$ref": "#/$defs/WallKnownCutoffProposal"
+        }
+      ]
+    },
+    "OpenDefaultWorkspaceRequest": {
+      "title": "OpenDefaultWorkspaceRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "open_default_workspace_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision"
+      ]
+    },
+    "CaseTimeSummary": {
+      "title": "CaseTimeSummary",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AvailableUtcCaseTimeSummary"
+        },
+        {
+          "$ref": "#/$defs/AvailableWallCaseTimeSummary"
+        },
+        {
+          "$ref": "#/$defs/UnavailableCaseTimeSummary"
+        }
+      ]
+    },
+    "AvailableUtcCaseTimeSummary": {
+      "title": "AvailableUtcCaseTimeSummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "available"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "first_recorded_timestamp": {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        "last_recorded_timestamp": {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        "first_recorded_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_recorded_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_span_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "observed_span_unavailable_reason": {
+          "type": "null"
+        },
+        "maximum_adjacent_raw_gap_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maximum_adjacent_raw_gap_unavailable_reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "fewer_than_two_records"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maximum_gap_witness": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MaximumRawGapWitness"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "usable_gap_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "tied_timestamp_group_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "status",
+        "timestamp_kind",
+        "first_recorded_timestamp",
+        "last_recorded_timestamp",
+        "first_recorded_activity",
+        "last_recorded_activity",
+        "observed_span_hours",
+        "observed_span_unavailable_reason",
+        "maximum_adjacent_raw_gap_hours",
+        "maximum_adjacent_raw_gap_unavailable_reason",
+        "maximum_gap_witness",
+        "usable_gap_count",
+        "tied_timestamp_group_count"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "maximum_adjacent_raw_gap_hours": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "maximum_adjacent_raw_gap_hours"
+            ]
+          },
+          "then": {
+            "properties": {
+              "maximum_adjacent_raw_gap_unavailable_reason": {
+                "type": "string",
+                "const": "fewer_than_two_records"
+              },
+              "maximum_gap_witness": {
+                "type": "null"
+              },
+              "usable_gap_count": {
+                "const": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "maximum_adjacent_raw_gap_unavailable_reason": {
+                "type": "null"
+              },
+              "maximum_gap_witness": {
+                "$ref": "#/$defs/MaximumRawGapWitness"
+              },
+              "usable_gap_count": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "MaximumRawGapWitness": {
+      "title": "MaximumRawGapWitness",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from_row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "to_row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "from_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "to_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "from_offset_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "share_of_observed_span": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "share_unavailable_reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "zero_observed_span"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "from_row_id",
+        "to_row_id",
+        "from_activity",
+        "to_activity",
+        "from_offset_hours",
+        "share_of_observed_span",
+        "share_unavailable_reason"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "share_of_observed_span": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "share_of_observed_span"
+            ]
+          },
+          "then": {
+            "properties": {
+              "share_unavailable_reason": {
+                "type": "string",
+                "const": "zero_observed_span"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "share_unavailable_reason": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AvailableWallCaseTimeSummary": {
+      "title": "AvailableWallCaseTimeSummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "available"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "first_recorded_timestamp": {
+          "$ref": "#/$defs/LocalTimestamp"
+        },
+        "last_recorded_timestamp": {
+          "$ref": "#/$defs/LocalTimestamp"
+        },
+        "first_recorded_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_recorded_activity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_span_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "observed_span_unavailable_reason": {
+          "type": "null"
+        },
+        "maximum_adjacent_raw_gap_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maximum_adjacent_raw_gap_unavailable_reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "fewer_than_two_records"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maximum_gap_witness": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MaximumRawGapWitness"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "usable_gap_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "tied_timestamp_group_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "status",
+        "timestamp_kind",
+        "first_recorded_timestamp",
+        "last_recorded_timestamp",
+        "first_recorded_activity",
+        "last_recorded_activity",
+        "observed_span_hours",
+        "observed_span_unavailable_reason",
+        "maximum_adjacent_raw_gap_hours",
+        "maximum_adjacent_raw_gap_unavailable_reason",
+        "maximum_gap_witness",
+        "usable_gap_count",
+        "tied_timestamp_group_count"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "maximum_adjacent_raw_gap_hours": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "maximum_adjacent_raw_gap_hours"
+            ]
+          },
+          "then": {
+            "properties": {
+              "maximum_adjacent_raw_gap_unavailable_reason": {
+                "type": "string",
+                "const": "fewer_than_two_records"
+              },
+              "maximum_gap_witness": {
+                "type": "null"
+              },
+              "usable_gap_count": {
+                "const": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "maximum_adjacent_raw_gap_unavailable_reason": {
+                "type": "null"
+              },
+              "maximum_gap_witness": {
+                "$ref": "#/$defs/MaximumRawGapWitness"
+              },
+              "usable_gap_count": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "UnavailableCaseTimeSummary": {
+      "title": "UnavailableCaseTimeSummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "const": "order_unknown"
+        },
+        "unavailable_timestamp_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "first_recorded_timestamp": {
+          "type": "null"
+        },
+        "last_recorded_timestamp": {
+          "type": "null"
+        },
+        "first_recorded_activity": {
+          "type": "null"
+        },
+        "last_recorded_activity": {
+          "type": "null"
+        },
+        "observed_span_hours": {
+          "type": "null"
+        },
+        "observed_span_unavailable_reason": {
+          "type": "string",
+          "const": "order_unknown"
+        },
+        "maximum_adjacent_raw_gap_hours": {
+          "type": "null"
+        },
+        "maximum_adjacent_raw_gap_unavailable_reason": {
+          "type": "string",
+          "const": "order_unknown"
+        },
+        "maximum_gap_witness": {
+          "type": "null"
+        },
+        "usable_gap_count": {
+          "type": "integer",
+          "const": 0
+        },
+        "tied_timestamp_group_count": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "unavailable_timestamp_record_count",
+        "first_recorded_timestamp",
+        "last_recorded_timestamp",
+        "first_recorded_activity",
+        "last_recorded_activity",
+        "observed_span_hours",
+        "observed_span_unavailable_reason",
+        "maximum_adjacent_raw_gap_hours",
+        "maximum_adjacent_raw_gap_unavailable_reason",
+        "maximum_gap_witness",
+        "usable_gap_count",
+        "tied_timestamp_group_count"
+      ]
+    },
+    "ExactDurationMicroseconds": {
+      "title": "ExactDurationMicroseconds",
+      "type": "string",
+      "pattern": "^(?:0|(?:[1-9][0-9]{0,16}|[1-2][0-9]{17}|30[0-9]{16}|31[0-4][0-9]{15}|315[0-4][0-9]{14}|3155[0-2][0-9]{13}|31553[0-6][0-9]{12}|315537[0-7][0-9]{11}|3155378[0-8][0-9]{10}|31553789[0-6][0-9]{9}|315537897[0-4][0-9]{8}|3155378975[0-8][0-9]{7}|31553789759[0-8][0-9]{6}|315537897599[0-8][0-9]{5}|3155378975999[0-8][0-9]{4}|31553789759999[0-8][0-9]{3}|315537897599999[0-8][0-9]{2}|3155378975999999[0-8][0-9]{1}|31553789759999999[0-8]|315537897599999999))$",
+      "not": {
+        "pattern": "[^0-9]"
+      },
+      "description": "Canonical ASCII decimal whole string in the inclusive range 0..315537897599999999 microseconds. The alphabet rejection also closes end-anchor trailing-linefeed differences across regex engines."
+    },
+    "ExactClockMicroseconds": {
+      "title": "ExactClockMicroseconds",
+      "type": "string",
+      "pattern": "^(?:0|(?:[1-9][0-9]{0,16}|1[0-9]{17}|2[0-4][0-9]{16}|25[0-2][0-9]{15}|253[0-3][0-9]{14}|25340[0-1][0-9]{12}|253402[0-2][0-9]{11}|253402300[0-6][0-9]{8}|2534023007[0-8][0-9]{7}|25340230079[0-8][0-9]{6}|253402300799[0-8][0-9]{5}|2534023007999[0-8][0-9]{4}|25340230079999[0-8][0-9]{3}|253402300799999[0-8][0-9]{2}|2534023007999999[0-8][0-9]{1}|25340230079999999[0-8]|253402300799999999)|-(?:[1-9][0-9]{0,15}|[1-5][0-9]{16}|6[0-1][0-9]{15}|620[0-9]{14}|621[0-2][0-9]{13}|6213[0-4][0-9]{12}|62135[0-4][0-9]{11}|621355[0-8][0-9]{10}|6213559[0-5][0-9]{9}|62135596[0-7][0-9]{8}|62135596800000000))$",
+      "not": {
+        "pattern": "[^0-9-]"
+      },
+      "description": "Canonical ASCII signed decimal whole string in the inclusive range -62135596800000000..253402300799999999; native microseconds since 1970-01-01 on the declared UTC or wall clock. Calendar validity and correspondence to the timestamp key remain semantic requirements."
+    },
+    "AvailableRawRecordGap": {
+      "title": "AvailableRawRecordGap",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "available"
+        },
+        "from_row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "microseconds": {
+          "$ref": "#/$defs/ExactDurationMicroseconds"
+        },
+        "hours": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "status",
+        "from_row_id",
+        "microseconds",
+        "hours"
+      ]
+    },
+    "FirstRawRecordGap": {
+      "title": "FirstRawRecordGap",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "const": "first_record"
+        },
+        "from_row_id": {
+          "type": "null"
+        },
+        "microseconds": {
+          "type": "null"
+        },
+        "hours": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "from_row_id",
+        "microseconds",
+        "hours"
+      ]
+    },
+    "UnknownOrderRawRecordGap": {
+      "title": "UnknownOrderRawRecordGap",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "const": "order_unknown"
+        },
+        "from_row_id": {
+          "type": "null"
+        },
+        "microseconds": {
+          "type": "null"
+        },
+        "hours": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "from_row_id",
+        "microseconds",
+        "hours"
+      ]
+    },
+    "KnownOrderRawGap": {
+      "title": "KnownOrderRawGap",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AvailableRawRecordGap"
+        },
+        {
+          "$ref": "#/$defs/FirstRawRecordGap"
+        }
+      ]
+    },
+    "KnownUtcRecordTime": {
+      "title": "KnownUtcRecordTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "timestamp_key": {
+          "$ref": "#/$defs/IncidentUtcTimestampKey"
+        },
+        "clock_microseconds": {
+          "$ref": "#/$defs/ExactClockMicroseconds"
+        },
+        "offset_from_first_record_microseconds": {
+          "$ref": "#/$defs/ExactDurationMicroseconds"
+        },
+        "gap_before": {
+          "$ref": "#/$defs/KnownOrderRawGap"
+        }
+      },
+      "required": [
+        "row_id",
+        "timestamp_key",
+        "clock_microseconds",
+        "offset_from_first_record_microseconds",
+        "gap_before"
+      ]
+    },
+    "UnknownOrderUsableUtcRecordTime": {
+      "title": "UnknownOrderUsableUtcRecordTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "timestamp_key": {
+          "$ref": "#/$defs/IncidentUtcTimestampKey"
+        },
+        "clock_microseconds": {
+          "$ref": "#/$defs/ExactClockMicroseconds"
+        },
+        "offset_from_first_record_microseconds": {
+          "type": "null"
+        },
+        "gap_before": {
+          "$ref": "#/$defs/UnknownOrderRawRecordGap"
+        }
+      },
+      "required": [
+        "row_id",
+        "timestamp_key",
+        "clock_microseconds",
+        "offset_from_first_record_microseconds",
+        "gap_before"
+      ]
+    },
+    "KnownWallRecordTime": {
+      "title": "KnownWallRecordTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "timestamp_key": {
+          "$ref": "#/$defs/IncidentWallTimestampKey"
+        },
+        "clock_microseconds": {
+          "$ref": "#/$defs/ExactClockMicroseconds"
+        },
+        "offset_from_first_record_microseconds": {
+          "$ref": "#/$defs/ExactDurationMicroseconds"
+        },
+        "gap_before": {
+          "$ref": "#/$defs/KnownOrderRawGap"
+        }
+      },
+      "required": [
+        "row_id",
+        "timestamp_key",
+        "clock_microseconds",
+        "offset_from_first_record_microseconds",
+        "gap_before"
+      ]
+    },
+    "UnknownOrderUsableWallRecordTime": {
+      "title": "UnknownOrderUsableWallRecordTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "timestamp_key": {
+          "$ref": "#/$defs/IncidentWallTimestampKey"
+        },
+        "clock_microseconds": {
+          "$ref": "#/$defs/ExactClockMicroseconds"
+        },
+        "offset_from_first_record_microseconds": {
+          "type": "null"
+        },
+        "gap_before": {
+          "$ref": "#/$defs/UnknownOrderRawRecordGap"
+        }
+      },
+      "required": [
+        "row_id",
+        "timestamp_key",
+        "clock_microseconds",
+        "offset_from_first_record_microseconds",
+        "gap_before"
+      ]
+    },
+    "UnknownOrderUnusableRecordTime": {
+      "title": "UnknownOrderUnusableRecordTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "timestamp_key": {
+          "type": "null"
+        },
+        "clock_microseconds": {
+          "type": "null"
+        },
+        "offset_from_first_record_microseconds": {
+          "type": "null"
+        },
+        "gap_before": {
+          "$ref": "#/$defs/UnknownOrderRawRecordGap"
+        }
+      },
+      "required": [
+        "row_id",
+        "timestamp_key",
+        "clock_microseconds",
+        "offset_from_first_record_microseconds",
+        "gap_before"
+      ]
+    },
+    "UnknownOrderUtcRecordTime": {
+      "title": "UnknownOrderUtcRecordTime",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UnknownOrderUsableUtcRecordTime"
+        },
+        {
+          "$ref": "#/$defs/UnknownOrderUnusableRecordTime"
+        }
+      ]
+    },
+    "KnownUtcIncidentTime": {
+      "title": "KnownUtcIncidentTime",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/KnownUtcSingletonIncidentTime"
+        },
+        {
+          "$ref": "#/$defs/KnownUtcMultirowIncidentTime"
+        }
+      ]
+    },
+    "UnknownUtcIncidentTime": {
+      "title": "UnknownUtcIncidentTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.time_diagnostics.full_raw_declared_order.v1"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "duration_basis": {
+          "type": "string",
+          "const": "elapsed_utc"
+        },
+        "clock_limitation": {
+          "type": "null"
+        },
+        "summary": {
+          "$ref": "#/$defs/UnavailableCaseTimeSummary"
+        },
+        "observed_span_microseconds": {
+          "type": "null"
+        },
+        "maximum_adjacent_raw_gap_microseconds": {
+          "type": "null"
+        },
+        "maximum_gap_equal_count": {
+          "type": "null"
+        },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/UnknownOrderUtcRecordTime"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "timestamp_kind",
+        "duration_basis",
+        "clock_limitation",
+        "summary",
+        "observed_span_microseconds",
+        "maximum_adjacent_raw_gap_microseconds",
+        "maximum_gap_equal_count",
+        "records"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "records": {
+                "type": "array",
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "timestamp_key": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "timestamp_key"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "records"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "unavailable_timestamp_record_count": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "unavailable_timestamp_record_count": {
+                    "type": "integer",
+                    "const": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "UnknownOrderWallRecordTime": {
+      "title": "UnknownOrderWallRecordTime",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UnknownOrderUsableWallRecordTime"
+        },
+        {
+          "$ref": "#/$defs/UnknownOrderUnusableRecordTime"
+        }
+      ]
+    },
+    "KnownWallIncidentTime": {
+      "title": "KnownWallIncidentTime",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/KnownWallSingletonIncidentTime"
+        },
+        {
+          "$ref": "#/$defs/KnownWallMultirowIncidentTime"
+        }
+      ]
+    },
+    "UnknownWallIncidentTime": {
+      "title": "UnknownWallIncidentTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.time_diagnostics.full_raw_declared_order.v1"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "duration_basis": {
+          "type": "string",
+          "const": "recorded_wall_clock"
+        },
+        "clock_limitation": {
+          "type": "string",
+          "const": "recorded_wall_duration_may_differ_from_physical_elapsed"
+        },
+        "summary": {
+          "$ref": "#/$defs/UnavailableCaseTimeSummary"
+        },
+        "observed_span_microseconds": {
+          "type": "null"
+        },
+        "maximum_adjacent_raw_gap_microseconds": {
+          "type": "null"
+        },
+        "maximum_gap_equal_count": {
+          "type": "null"
+        },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/UnknownOrderWallRecordTime"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "timestamp_kind",
+        "duration_basis",
+        "clock_limitation",
+        "summary",
+        "observed_span_microseconds",
+        "maximum_adjacent_raw_gap_microseconds",
+        "maximum_gap_equal_count",
+        "records"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "records": {
+                "type": "array",
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "timestamp_key": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "timestamp_key"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "records"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "unavailable_timestamp_record_count": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "unavailable_timestamp_record_count": {
+                    "type": "integer",
+                    "const": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "IncidentTimeDiagnostics": {
+      "title": "IncidentTimeDiagnostics",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/KnownUtcIncidentTime"
+        },
+        {
+          "$ref": "#/$defs/KnownWallIncidentTime"
+        },
+        {
+          "$ref": "#/$defs/UnknownUtcIncidentTime"
+        },
+        {
+          "$ref": "#/$defs/UnknownWallIncidentTime"
+        }
+      ]
+    },
+    "ExactPositiveDurationMicroseconds": {
+      "title": "ExactPositiveDurationMicroseconds",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ExactDurationMicroseconds"
+        },
+        {
+          "not": {
+            "const": "0"
+          }
+        }
+      ]
+    },
+    "IncidentUtcTimestampKey": {
+      "title": "IncidentUtcTimestampKey",
+      "allOf": [
+        {
+          "$ref": "#/$defs/UtcInstant"
+        },
+        {
+          "type": "string",
+          "not": {
+            "pattern": "[^0-9T:.Z-]"
+          }
+        }
+      ],
+      "description": "Canonical ASCII timestamp in normalized calendar years 0001..9999. A calendar-aware producer guard rejects invalid dates, invalid times, trailing data, and a clock inconsistent with this branch."
+    },
+    "FirstUtcRecordTime": {
+      "title": "FirstUtcRecordTime",
+      "allOf": [
+        {
+          "$ref": "#/$defs/KnownUtcRecordTime"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "gap_before": {
+              "$ref": "#/$defs/FirstRawRecordGap"
+            },
+            "offset_from_first_record_microseconds": {
+              "type": "string",
+              "const": "0"
+            }
+          }
+        }
+      ]
+    },
+    "FollowingUtcRecordTime": {
+      "title": "FollowingUtcRecordTime",
+      "allOf": [
+        {
+          "$ref": "#/$defs/KnownUtcRecordTime"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "gap_before": {
+              "$ref": "#/$defs/AvailableRawRecordGap"
+            }
+          }
+        }
+      ]
+    },
+    "KnownUtcSingletonIncidentTime": {
+      "title": "KnownUtcSingletonIncidentTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.time_diagnostics.full_raw_declared_order.v1"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "duration_basis": {
+          "type": "string",
+          "const": "elapsed_utc"
+        },
+        "clock_limitation": {
+          "type": "null"
+        },
+        "summary": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/AvailableUtcCaseTimeSummary"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "maximum_adjacent_raw_gap_hours": {
+                  "type": "null"
+                },
+                "maximum_adjacent_raw_gap_unavailable_reason": {
+                  "type": "string",
+                  "const": "fewer_than_two_records"
+                },
+                "maximum_gap_witness": {
+                  "type": "null"
+                },
+                "usable_gap_count": {
+                  "type": "integer",
+                  "const": 0
+                },
+                "observed_span_hours": {
+                  "type": "number",
+                  "const": 0
+                },
+                "tied_timestamp_group_count": {
+                  "type": "integer",
+                  "const": 0
+                }
+              }
+            }
+          ]
+        },
+        "observed_span_microseconds": {
+          "type": "string",
+          "const": "0"
+        },
+        "maximum_adjacent_raw_gap_microseconds": {
+          "type": "null"
+        },
+        "maximum_gap_equal_count": {
+          "type": "null"
+        },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/FirstUtcRecordTime"
+            }
+          ],
+          "items": false
+        }
+      },
+      "required": [
+        "policy_id",
+        "timestamp_kind",
+        "duration_basis",
+        "clock_limitation",
+        "summary",
+        "observed_span_microseconds",
+        "maximum_adjacent_raw_gap_microseconds",
+        "maximum_gap_equal_count",
+        "records"
+      ]
+    },
+    "KnownUtcMultirowIncidentTime": {
+      "title": "KnownUtcMultirowIncidentTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.time_diagnostics.full_raw_declared_order.v1"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "utc_instant"
+        },
+        "duration_basis": {
+          "type": "string",
+          "const": "elapsed_utc"
+        },
+        "clock_limitation": {
+          "type": "null"
+        },
+        "summary": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/AvailableUtcCaseTimeSummary"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "maximum_adjacent_raw_gap_hours": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "maximum_adjacent_raw_gap_unavailable_reason": {
+                  "type": "null"
+                },
+                "maximum_gap_witness": {
+                  "$ref": "#/$defs/MaximumRawGapWitness"
+                },
+                "usable_gap_count": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          ]
+        },
+        "observed_span_microseconds": {
+          "$ref": "#/$defs/ExactDurationMicroseconds"
+        },
+        "maximum_adjacent_raw_gap_microseconds": {
+          "$ref": "#/$defs/ExactDurationMicroseconds"
+        },
+        "maximum_gap_equal_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "records": {
+          "type": "array",
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/FirstUtcRecordTime"
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/FollowingUtcRecordTime"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "timestamp_kind",
+        "duration_basis",
+        "clock_limitation",
+        "summary",
+        "observed_span_microseconds",
+        "maximum_adjacent_raw_gap_microseconds",
+        "maximum_gap_equal_count",
+        "records"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "observed_span_microseconds": {
+                "type": "string",
+                "const": "0"
+              }
+            },
+            "required": [
+              "observed_span_microseconds"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "maximum_adjacent_raw_gap_microseconds": {
+                "type": "string",
+                "const": "0"
+              },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "observed_span_hours": {
+                    "type": "number",
+                    "const": 0
+                  },
+                  "maximum_adjacent_raw_gap_hours": {
+                    "type": "number",
+                    "const": 0
+                  },
+                  "tied_timestamp_group_count": {
+                    "type": "integer",
+                    "const": 1
+                  },
+                  "maximum_gap_witness": {
+                    "type": "object",
+                    "properties": {
+                      "share_of_observed_span": {
+                        "type": "null"
+                      },
+                      "share_unavailable_reason": {
+                        "type": "string",
+                        "const": "zero_observed_span"
+                      }
+                    }
+                  }
+                }
+              },
+              "records": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "offset_from_first_record_microseconds": {
+                      "type": "string",
+                      "const": "0"
+                    },
+                    "gap_before": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/$defs/FirstRawRecordGap"
+                        },
+                        {
+                          "allOf": [
+                            {
+                              "$ref": "#/$defs/AvailableRawRecordGap"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "microseconds": {
+                                  "type": "string",
+                                  "const": "0"
+                                },
+                                "hours": {
+                                  "type": "number",
+                                  "const": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "type": "object",
+            "properties": {
+              "maximum_adjacent_raw_gap_microseconds": {
+                "$ref": "#/$defs/ExactPositiveDurationMicroseconds"
+              },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "observed_span_hours": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "maximum_adjacent_raw_gap_hours": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "maximum_gap_witness": {
+                    "type": "object",
+                    "properties": {
+                      "share_of_observed_span": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "share_unavailable_reason": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "records": {
+                "type": "array",
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "records"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "maximum_gap_equal_count": {
+                "type": "integer",
+                "const": 1
+              },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "usable_gap_count": {
+                    "type": "integer",
+                    "const": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "IncidentWallTimestampKey": {
+      "title": "IncidentWallTimestampKey",
+      "allOf": [
+        {
+          "$ref": "#/$defs/LocalTimestamp"
+        },
+        {
+          "type": "string",
+          "not": {
+            "pattern": "[^0-9T:.-]"
+          }
+        }
+      ],
+      "description": "Canonical ASCII timestamp in normalized calendar years 0001..9999. A calendar-aware producer guard rejects invalid dates, invalid times, trailing data, and a clock inconsistent with this branch."
+    },
+    "FirstWallRecordTime": {
+      "title": "FirstWallRecordTime",
+      "allOf": [
+        {
+          "$ref": "#/$defs/KnownWallRecordTime"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "gap_before": {
+              "$ref": "#/$defs/FirstRawRecordGap"
+            },
+            "offset_from_first_record_microseconds": {
+              "type": "string",
+              "const": "0"
+            }
+          }
+        }
+      ]
+    },
+    "FollowingWallRecordTime": {
+      "title": "FollowingWallRecordTime",
+      "allOf": [
+        {
+          "$ref": "#/$defs/KnownWallRecordTime"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "gap_before": {
+              "$ref": "#/$defs/AvailableRawRecordGap"
+            }
+          }
+        }
+      ]
+    },
+    "KnownWallSingletonIncidentTime": {
+      "title": "KnownWallSingletonIncidentTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.time_diagnostics.full_raw_declared_order.v1"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "duration_basis": {
+          "type": "string",
+          "const": "recorded_wall_clock"
+        },
+        "clock_limitation": {
+          "type": "string",
+          "const": "recorded_wall_duration_may_differ_from_physical_elapsed"
+        },
+        "summary": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/AvailableWallCaseTimeSummary"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "maximum_adjacent_raw_gap_hours": {
+                  "type": "null"
+                },
+                "maximum_adjacent_raw_gap_unavailable_reason": {
+                  "type": "string",
+                  "const": "fewer_than_two_records"
+                },
+                "maximum_gap_witness": {
+                  "type": "null"
+                },
+                "usable_gap_count": {
+                  "type": "integer",
+                  "const": 0
+                },
+                "observed_span_hours": {
+                  "type": "number",
+                  "const": 0
+                },
+                "tied_timestamp_group_count": {
+                  "type": "integer",
+                  "const": 0
+                }
+              }
+            }
+          ]
+        },
+        "observed_span_microseconds": {
+          "type": "string",
+          "const": "0"
+        },
+        "maximum_adjacent_raw_gap_microseconds": {
+          "type": "null"
+        },
+        "maximum_gap_equal_count": {
+          "type": "null"
+        },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/FirstWallRecordTime"
+            }
+          ],
+          "items": false
+        }
+      },
+      "required": [
+        "policy_id",
+        "timestamp_kind",
+        "duration_basis",
+        "clock_limitation",
+        "summary",
+        "observed_span_microseconds",
+        "maximum_adjacent_raw_gap_microseconds",
+        "maximum_gap_equal_count",
+        "records"
+      ]
+    },
+    "KnownWallMultirowIncidentTime": {
+      "title": "KnownWallMultirowIncidentTime",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.time_diagnostics.full_raw_declared_order.v1"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "const": "wall_clock"
+        },
+        "duration_basis": {
+          "type": "string",
+          "const": "recorded_wall_clock"
+        },
+        "clock_limitation": {
+          "type": "string",
+          "const": "recorded_wall_duration_may_differ_from_physical_elapsed"
+        },
+        "summary": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/AvailableWallCaseTimeSummary"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "maximum_adjacent_raw_gap_hours": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "maximum_adjacent_raw_gap_unavailable_reason": {
+                  "type": "null"
+                },
+                "maximum_gap_witness": {
+                  "$ref": "#/$defs/MaximumRawGapWitness"
+                },
+                "usable_gap_count": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          ]
+        },
+        "observed_span_microseconds": {
+          "$ref": "#/$defs/ExactDurationMicroseconds"
+        },
+        "maximum_adjacent_raw_gap_microseconds": {
+          "$ref": "#/$defs/ExactDurationMicroseconds"
+        },
+        "maximum_gap_equal_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "records": {
+          "type": "array",
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/FirstWallRecordTime"
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/FollowingWallRecordTime"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "timestamp_kind",
+        "duration_basis",
+        "clock_limitation",
+        "summary",
+        "observed_span_microseconds",
+        "maximum_adjacent_raw_gap_microseconds",
+        "maximum_gap_equal_count",
+        "records"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "observed_span_microseconds": {
+                "type": "string",
+                "const": "0"
+              }
+            },
+            "required": [
+              "observed_span_microseconds"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "maximum_adjacent_raw_gap_microseconds": {
+                "type": "string",
+                "const": "0"
+              },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "observed_span_hours": {
+                    "type": "number",
+                    "const": 0
+                  },
+                  "maximum_adjacent_raw_gap_hours": {
+                    "type": "number",
+                    "const": 0
+                  },
+                  "tied_timestamp_group_count": {
+                    "type": "integer",
+                    "const": 1
+                  },
+                  "maximum_gap_witness": {
+                    "type": "object",
+                    "properties": {
+                      "share_of_observed_span": {
+                        "type": "null"
+                      },
+                      "share_unavailable_reason": {
+                        "type": "string",
+                        "const": "zero_observed_span"
+                      }
+                    }
+                  }
+                }
+              },
+              "records": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "offset_from_first_record_microseconds": {
+                      "type": "string",
+                      "const": "0"
+                    },
+                    "gap_before": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/$defs/FirstRawRecordGap"
+                        },
+                        {
+                          "allOf": [
+                            {
+                              "$ref": "#/$defs/AvailableRawRecordGap"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "microseconds": {
+                                  "type": "string",
+                                  "const": "0"
+                                },
+                                "hours": {
+                                  "type": "number",
+                                  "const": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "type": "object",
+            "properties": {
+              "maximum_adjacent_raw_gap_microseconds": {
+                "$ref": "#/$defs/ExactPositiveDurationMicroseconds"
+              },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "observed_span_hours": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "maximum_adjacent_raw_gap_hours": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "maximum_gap_witness": {
+                    "type": "object",
+                    "properties": {
+                      "share_of_observed_span": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "share_unavailable_reason": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "records": {
+                "type": "array",
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "records"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "maximum_gap_equal_count": {
+                "type": "integer",
+                "const": 1
+              },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "usable_gap_count": {
+                    "type": "integer",
+                    "const": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
