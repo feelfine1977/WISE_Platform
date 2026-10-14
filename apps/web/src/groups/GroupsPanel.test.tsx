@@ -10,9 +10,14 @@ import { groupLabel } from "./rules";
 const support = (ids: string[]) => ({ case_ids: ids, case_count: ids.length, record_count: ids.length * 3, omitted_activity_record_count: 0 });
 
 /** Groups by first activity: "Eröffnet" with three incidents, "Rückfrage" with one; 60 groups in all where asked for the sequence. */
-function grouping(unassigned = 0) {
+function grouping(unassigned = 0, failAtOffsetOnce: number | null = null) {
+  let failed = false;
   return {
     groups: vi.fn(async (request: RuleGroupsRequest): Promise<RuleGroupsOutcome> => {
+      if (request.query.offset === failAtOffsetOnce && !failed) {
+        failed = true;
+        return { ok: false, problem: { kind: "unreachable" } };
+      }
       const many = request.query.rule.kind === "exact_mapped_sequence";
       const names = many ? Array.from({ length: 60 }, (_, place) => `A${place}`) : ["Eröffnet", "Rückfrage"];
       const all: RuleGroup[] = names.map((name, place) => ({
@@ -105,6 +110,23 @@ describe("the groups of the kept incidents", () => {
     expect(client.groups.mock.calls.at(-1)?.[0].query).toMatchObject({ rule: { kind: "exact_mapped_sequence" }, offset: 50 });
     expect(await screen.findByText("A59 → Ende")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Show more groups" })).toBeNull();
+  });
+});
+
+describe("a failed page of groups", () => {
+  it("is asked again from the first page, so that no page of the catalogue goes missing", async () => {
+    const client = grouping(0, 50);
+    const user = userEvent.setup();
+    render(<GroupsPanel workspaceId="workspace-1" revision={4} identity={kept} contextColumns={[]} chosen={null} onChoose={vi.fn()} client={client} />);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Exact sequence of activities");
+    await screen.findByText("A0 → Ende");
+    await user.click(screen.getByRole("button", { name: "Show more groups" }));
+    await user.click(await screen.findByRole("button", { name: "Ask again" }));
+    expect(client.groups.mock.calls.map(([request]) => request.query.offset).slice(-3)).toEqual([0, 50, 0]);
+    expect(await screen.findByText("A0 → Ende")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Show more groups" }));
+    expect(await screen.findByText("A59 → Ende")).toBeTruthy();
+    expect(screen.getByText("A0 → Ende")).toBeTruthy();
   });
 });
 

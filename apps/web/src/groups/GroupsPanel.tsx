@@ -120,7 +120,14 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
       {listed.phase === "failed" && (
         <div className="inline-error" role="alert">
           <p>{listed.message}</p>
-          <button type="button" onClick={() => setAttempt((count) => count + 1)}>
+          <button
+            type="button"
+            onClick={() => {
+              // The groups are read again from their first page, so that no page of the catalogue is missing.
+              setOffset(0);
+              setAttempt((count) => count + 1);
+            }}
+          >
             Ask again
           </button>
         </div>
