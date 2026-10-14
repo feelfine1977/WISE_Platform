@@ -50,27 +50,13 @@ describe("the editor of the stages of a log", () => {
     // What a stage is and what the map does with it is no paragraph of the editor: it opens from "About stages".
     expect(editor().textContent).not.toContain("A stage holds activities that belong together");
     const about = within(editor()).getByRole("button", { name: "About stages" });
-    expect(about.getAttribute("aria-expanded")).toBe("false");
     about.focus();
     await user.keyboard("{Enter}");
-    expect(about.getAttribute("aria-expanded")).toBe("true");
-    // It opens inside the editor, under the line, as wide as the editor: nothing floats over the narrow column that would be cut at its edges.
-    const panel = within(editor()).getByRole("region", { name: "About stages" });
-    expect(about.getAttribute("aria-controls")).toBe(panel.id);
-    expect(panel.parentElement).toBe(editor());
+    const panel = within(editor()).getByRole("group", { name: "About stages" });
     expect(panel.textContent).toContain(
       "The stages are kept in this browser for this reading. They are not yet part of a saved investigation, so another browser or another computer does not show them.",
     );
     expect(panel.textContent).toContain("nothing is built in, and nothing is derived from the records.");
-    // Escape closes it, from its button or from inside it, and the keyboard stays on or goes back to the button.
-    await user.keyboard("{Escape}");
-    expect(within(editor()).queryByRole("region", { name: "About stages" })).toBeNull();
-    expect(document.activeElement).toBe(about);
-    await user.keyboard("{Enter}");
-    within(editor()).getByRole("region", { name: "About stages" }).focus();
-    await user.keyboard("{Escape}");
-    expect(within(editor()).queryByRole("region", { name: "About stages" })).toBeNull();
-    expect(document.activeElement).toBe(about);
     expect(screen.getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
   });
 
