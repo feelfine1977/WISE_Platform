@@ -19,11 +19,11 @@ function grouping(unassigned = 0, failAtOffsetOnce: number | null = null) {
         return { ok: false, problem: { kind: "unreachable" } };
       }
       const many = request.query.rule.kind === "exact_mapped_sequence";
-      const names = many ? Array.from({ length: 60 }, (_, place) => `A${place}`) : ["Eröffnet", "Rückfrage"];
+      const names = many ? Array.from({ length: 60 }, (_, place) => `A${place}`) : ["Eröffnet", "Rückfrage", "Leer"];
       const all: RuleGroup[] = names.map((name, place) => ({
         id: `group-${name}`,
         key: many ? { kind: "exact_sequence", activities: [name, "Ende"], variant_id: `v${place}` } : { kind: "activity", activity: name },
-        population: { cases: support(place === 0 ? ["A-1", "A-2", "A-3"] : [`B-${place}`]), share: place === 0 ? 0.75 : 0.25, denominator: 4 },
+        population: { cases: support(place === 0 ? ["A-1", "A-2", "A-3"] : name === "Leer" ? [] : [`B-${place}`]), share: place === 0 ? 0.75 : name === "Leer" ? 0 : 0.25, denominator: 4 },
         parent: { cases: support(["A-1", "A-2", "A-3", "A-4", "A-5", "A-6"]), share: 0.5, denominator: 12 },
         span_distribution: {
           edges_hours: [0, 24],
@@ -33,14 +33,26 @@ function grouping(unassigned = 0, failAtOffsetOnce: number | null = null) {
           ],
           unavailable: { kept_case_count: 0 },
         },
-        exemplars: { status: "available", shortest: { case_id: "A-2", record_count: 2, observed_span_hours: 3 }, longest: { case_id: "A-3", record_count: 5, observed_span_hours: 50 } },
+        gap_distribution: {
+          edges_hours: [0, 24],
+          bins: [
+            { start_inclusive_hours: 0, end_exclusive_hours: 24, parent_case_count: 5, kept_case_count: 2 },
+            { start_inclusive_hours: 24, end_exclusive_hours: null, parent_case_count: 1, kept_case_count: 0 },
+          ],
+          unavailable: { kept_case_count: 1 },
+        },
+        exemplars:
+          name === "Leer"
+            ? { status: "unavailable", reason: "empty_current_group", shortest: null, longest: null }
+            : { status: "available", shortest: { case_id: "A-2", record_count: 2, observed_span_hours: 3 }, longest: { case_id: "A-3", record_count: 5, observed_span_hours: 50 } },
       }) as unknown as RuleGroup);
       const page = all.slice(request.query.offset, request.query.offset + request.query.limit);
       const next = request.query.offset + page.length;
       const coverage = { total: support([]), eligible: support([]), unevaluable: support([]), assigned: support([]), unassigned: support(Array.from({ length: unassigned }, (_, place) => `U-${place}`)), membership_incidence: support([]) };
+      const parentCoverage = { ...coverage, unevaluable: support(["P-1", "P-2"]), unassigned: support(Array.from({ length: unassigned * 2 }, (_, place) => `PU-${place}`)) };
       const answer = {
         request_id: request.request_id, query_revision: request.query_revision, workspace_id: request.workspace_id, identity: request.identity, parent_identity: parent,
-        query: request.query, group_membership_overlaps: false, population_coverage: coverage, parent_coverage: coverage, group_count: all.length,
+        query: request.query, group_membership_overlaps: false, population_coverage: coverage, parent_coverage: parentCoverage, group_count: all.length,
         next_offset: next < all.length ? next : null, groups: page,
       } as unknown as RuleGroupsAnswer;
       return { ok: true, answer };
@@ -90,7 +102,7 @@ describe("the groups of the kept incidents", () => {
     setup();
     const first = await screen.findByRole("button", { name: /Eröffnet/ });
     expect(first.textContent).toContain("3");
-    expect(screen.getByText("2 groups · the parent's largest 2 hold 100% of the kept incidents")).toBeTruthy();
+    expect(screen.getByText("3 groups · the parent's largest 3 hold 100% of the kept incidents")).toBeTruthy();
   });
 
   it("hand the incidents of a chosen group to the table, and let it go when another rule is chosen", async () => {
@@ -103,7 +115,9 @@ describe("the groups of the kept incidents", () => {
 
   it("load more groups a page at a time, and say in the amber of a limit how many incidents are in no group", async () => {
     const { client, user } = setup(5);
-    expect(await screen.findByText("5 incidents in no group")).toBeTruthy();
+    // Who the rule cannot place is said apart, among the kept incidents and in the parent.
+    expect(await screen.findByText("5 incidents in no group (parent 10)")).toBeTruthy();
+    expect(screen.getByText("0 incidents the rule cannot evaluate (parent 2)")).toBeTruthy();
     await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Exact sequence of activities");
     await screen.findByText("A0 → Ende");
     await user.click(screen.getByRole("button", { name: "Show more groups" }));
@@ -144,6 +158,8 @@ describe("a chosen group", () => {
     const figures = Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent);
     expect(figures).toEqual(["In the parent6 · 50%", "Kept3 · 75%"]);
     expect(within(row).getByRole("group", { name: "Recorded spans of the group, parent and kept" })).toBeTruthy();
+    expect(within(row).getByRole("group", { name: "Longest gaps of the group, parent and kept" })).toBeTruthy();
+    expect(within(row).getByText("1 incident without a gap")).toBeTruthy();
     await user.click(within(row).getByRole("button", { name: "Longest: A-3, 2.1 d" }));
     expect(onOpen).toHaveBeenCalledWith("A-3");
     expect(within(row).getByRole("button", { name: "Shortest: A-2, 3 h" })).toBeTruthy();
@@ -157,5 +173,18 @@ describe("the words of a group", () => {
     expect(groupLabel({ kind: "raw_record_count_band", start_inclusive: 50, end_exclusive: null })).toBe("50 or more records");
     expect(groupLabel({ kind: "missing_reference", column_index: 2, value: null })).toBe("Not recorded");
     expect(groupLabel({ kind: "activity_presence", activity: "Erinnerung", present: false })).toBe("Without Erinnerung");
+  });
+});
+
+describe("a group that keeps no incident", () => {
+  it("can still be chosen, to read what it rests on in the parent and why it has no exemplars", async () => {
+    const { user, onChoose } = setup(0, "group-Leer");
+    const empty = await screen.findByRole("button", { name: /Leer/ });
+    expect(empty.hasAttribute("disabled")).toBe(false);
+    await user.click(empty);
+    expect(onChoose).toHaveBeenLastCalledWith(null);
+    const row = empty.closest("li")!;
+    expect(Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent)).toEqual(["In the parent6 · 50%", "Kept0 · 0%"]);
+    expect(within(row).getByText("No kept incident is in this group.")).toBeTruthy();
   });
 });

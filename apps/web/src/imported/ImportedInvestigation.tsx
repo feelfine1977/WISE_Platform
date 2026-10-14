@@ -343,10 +343,10 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   The table lists the {countOf(groupView.cases.length, "incident")} of the group “{groupView.label}”. This is a view until a step is
                   taken.
                 </p>
-                <button type="button" onClick={() => stepFromGroup(false)} disabled={waitingFor !== undefined} aria-describedby={waitingFor}>
+                <button type="button" onClick={() => stepFromGroup(false)} disabled={waitingFor !== undefined || groupView.caseIds.length === 0} aria-describedby={waitingFor}>
                   Keep these incidents
                 </button>
-                <button type="button" onClick={() => stepFromGroup(true)} disabled={waitingFor !== undefined} aria-describedby={waitingFor}>
+                <button type="button" onClick={() => stepFromGroup(true)} disabled={waitingFor !== undefined || groupView.caseIds.length === 0} aria-describedby={waitingFor}>
                   Remove these incidents
                 </button>
                 <button type="button" onClick={() => setChosenGroup(null)}>

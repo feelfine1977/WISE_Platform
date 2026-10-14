@@ -64,5 +64,7 @@ describe("the periods of starts", () => {
   it("name a period by its first and its last day, its end excluded", () => {
     expect(dayName("2025-03-03T00:00:00Z")).toBe("3 Mar 2025");
     expect(periodName("2025-03-03T00:00:00Z", "2025-03-17T00:00:00Z")).toBe("3 Mar 2025 to 16 Mar 2025");
+    // The last period of the year 9999 ends at its last microsecond, which still belongs to 31 December.
+    expect(periodName("9999-12-27T00:00:00", "9999-12-31T23:59:59.999999")).toBe("27 Dec 9999 to 31 Dec 9999");
   });
 });

@@ -83,7 +83,8 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
   const cover = answer !== null && !answer.group_membership_overlaps
     ? groups.slice(0, COVER_OF).reduce((sum, group) => sum + (group.population.share ?? 0), 0)
     : null;
-  const outside = answer === null ? 0 : answer.population_coverage.unevaluable.case_count + answer.population_coverage.unassigned.case_count;
+  // Who the rule cannot place, said apart: incidents it cannot evaluate, and evaluated incidents it puts in no group, among the kept and in the parent.
+  const coverage = answer === null ? null : { kept: answer.population_coverage, parent: answer.parent_coverage };
 
   return (
     <section className="groups-panel" aria-label="Groups of the kept incidents">
@@ -138,7 +139,16 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
             {countOf(answer.group_count, "group")}
             {cover !== null && groups.length > 1 && ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the kept incidents`}
           </p>
-          {outside > 0 && <p className="groups-limit">{countOf(outside, "incident")} in no group</p>}
+          {coverage !== null && (coverage.kept.unevaluable.case_count > 0 || coverage.parent.unevaluable.case_count > 0) && (
+            <p className="groups-limit">
+              {countOf(coverage.kept.unevaluable.case_count, "incident")} the rule cannot evaluate (parent {coverage.parent.unevaluable.case_count.toLocaleString("en")})
+            </p>
+          )}
+          {coverage !== null && (coverage.kept.unassigned.case_count > 0 || coverage.parent.unassigned.case_count > 0) && (
+            <p className="groups-limit">
+              {countOf(coverage.kept.unassigned.case_count, "incident")} in no group (parent {coverage.parent.unassigned.case_count.toLocaleString("en")})
+            </p>
+          )}
           <ol className="groups-list">
             {groups.map((group) => {
               const label = groupLabel(group.key);
@@ -150,7 +160,6 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
                     className="groups-row"
                     aria-pressed={chosen === group.id}
                     title={label}
-                    disabled={count === 0}
                     onClick={() => onChoose(chosen === group.id ? null : { id: group.id, label, caseIds: group.population.cases.case_ids })}
                   >
                     <span className="groups-name">{label}</span>
@@ -184,7 +193,7 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
 function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: string) => void }) {
   const share = (value: number | null) => (value === null ? "–" : percent.format(value));
   const spans = group.span_distribution;
-  const bins = spans.bins.map((bin) => ({ label: spanBinLabel(bin.start_inclusive_hours, bin.end_exclusive_hours), parent: bin.parent_case_count, kept: bin.kept_case_count }));
+  const gaps = group.gap_distribution;
   const exemplars = group.exemplars;
   return (
     <div className="groups-detail">
@@ -202,19 +211,8 @@ function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: st
           </dd>
         </div>
       </dl>
-      {bins.length > 0 && (
-        <ColumnChart
-          name={`Recorded spans of the group, parent and kept`}
-          bins={bins}
-          band={false}
-          applicable={() => false}
-          chosenName={(from) => bins[from].label}
-          stepName={() => ""}
-          onApply={() => undefined}
-          ticks={[bins[0].label, bins[bins.length - 1].label]}
-        />
-      )}
-      {spans.unavailable.kept_case_count > 0 && <p className="groups-limit">{countOf(spans.unavailable.kept_case_count, "incident")} without a span</p>}
+      <GroupDistribution title="Recorded span" name="Recorded spans of the group, parent and kept" distribution={spans} unavailable="without a span" />
+      <GroupDistribution title="Longest gap" name="Longest gaps of the group, parent and kept" distribution={gaps} unavailable="without a gap" />
       {exemplars.status === "available" ? (
         <p className="groups-exemplars">
           {(["shortest", "longest"] as const).map((which) => {
@@ -229,6 +227,28 @@ function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: st
       ) : (
         <p className="muted groups-exemplars">{exemplars.reason === "empty_current_group" ? "No kept incident is in this group." : "No incident of this group has a known order."}</p>
       )}
+    </div>
+  );
+}
+
+/** One supplied distribution of a group, the parent pale and the kept incidents solid, read only, with the kept incidents it cannot place. */
+function GroupDistribution({ title, name, distribution, unavailable }: { title: string; name: string; distribution: RuleGroup["span_distribution"]; unavailable: string }) {
+  const bins = distribution.bins.map((bin) => ({ label: spanBinLabel(bin.start_inclusive_hours, bin.end_exclusive_hours), parent: bin.parent_case_count, kept: bin.kept_case_count }));
+  if (bins.length === 0) return null;
+  return (
+    <div className="groups-distribution">
+      <p className="groups-distribution-title">{title}</p>
+      <ColumnChart
+        name={name}
+        bins={bins}
+        band={false}
+        applicable={() => false}
+        chosenName={(from) => bins[from].label}
+        stepName={() => ""}
+        onApply={() => undefined}
+        ticks={[bins[0].label, bins[bins.length - 1].label]}
+      />
+      {distribution.unavailable.kept_case_count > 0 && <p className="groups-limit">{countOf(distribution.unavailable.kept_case_count, "incident")} {unavailable}</p>}
     </div>
   );
 }

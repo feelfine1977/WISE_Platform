@@ -118,6 +118,8 @@ export function dayName(timestamp: string): string {
 /** The days a band of periods covers, its end excluded: "3 Mar 2025 to 17 Mar 2025". */
 export function periodName(startInclusive: string, endExclusive: string): string {
   const end = dateOf(endExclusive);
-  const last = end === null ? endExclusive : midnight(new Date(end.getTime() - DAY), true);
+  // An end at midnight excludes its own day; an end later in a day, as the last microsecond of the year 9999, still belongs to that day.
+  const atMidnight = /T00:00:00(?:\.0+)?Z?$/.test(endExclusive);
+  const last = end === null ? endExclusive : atMidnight ? midnight(new Date(end.getTime() - DAY), true) : endExclusive;
   return `${dayName(startInclusive)} to ${dayName(last)}`;
 }

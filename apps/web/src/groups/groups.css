@@ -42,3 +42,5 @@
 .groups-figures dt { color: var(--color-ink-muted); font-size: var(--font-size-small); }
 .groups-figures dd { margin: 0; font-variant-numeric: tabular-nums; }
 .groups-exemplars { display: grid; justify-items: start; gap: var(--space-1); margin: 0; font-size: var(--font-size-small); }
+.groups-distribution { display: grid; gap: var(--space-1); }
+.groups-distribution-title { margin: 0; color: var(--color-ink-muted); font-size: var(--font-size-small); }
