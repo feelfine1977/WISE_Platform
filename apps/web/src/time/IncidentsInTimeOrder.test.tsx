@@ -87,7 +87,8 @@ describe("the kept incidents in an order by time", () => {
     expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Incident", "Records", "Mapped records", "Without activity label", "Order of records", "Span", "Longest gap", "Records over time, 0 to 10.4 d"]);
     const first = within(table).getAllByRole("row")[1];
     expect(within(first).getByRole("button").textContent).toBe("I-249");
-    expect(within(first).getAllByRole("cell").map((cell) => cell.textContent).slice(4, 6)).toEqual(["10.4 d", "5.2 d"]);
+    // The visible duration of each cell; the gap cell also holds its description for assistive technology.
+    expect(within(first).getAllByRole("cell").map((cell) => cell.childNodes[0]?.textContent).slice(4, 6)).toEqual(["10.4 d", "5.2 d"]);
     expect(screen.getByText("200 incidents of 250")).toBeTruthy();
   });
 
@@ -133,6 +134,10 @@ describe("the kept incidents in an order by time", () => {
     const table = await screen.findByRole("table", { name: "Kept incidents" });
     const first = within(table).getAllByRole("row")[1];
     expect(within(first).getAllByRole("cell")[5].getAttribute("title")).toBe("Between “Eröffnet” and a record without activity label, 2 h after the first record; 50% of the span");
+    // The keyboard reaches the row's button, not the cell: the button is described by the same words.
+    const button = within(first).getByRole("button", { name: "I-249" });
+    const described = (button.getAttribute("aria-describedby") ?? "").split(" ").map((id) => document.getElementById(id)?.textContent ?? "");
+    expect(described).toContain("Longest gap: Between “Eröffnet” and a record without activity label, 2 h after the first record; 50% of the span.");
     const marks = await within(first).findByRole("img");
     // The fixture's longest gap lies between its second and third record, at 1 and 5 hours.
     const longest = marks.querySelector(".record-marks-longest")!;
