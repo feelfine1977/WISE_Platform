@@ -111,6 +111,21 @@ export const MEASURES_LINE =
   "the time since the event before is said under the map for a selected activity. " +
   "Shortfall has no values here: no expectation results are supplied to the map.";
 
+/**
+ * The count of incidents whose order of records cannot be evaluated for paths, as it stands in the
+ * row above the map while it is above zero; null at zero. It limits every path, so it is never only
+ * in "About this map".
+ */
+export function unevaluableLine(meta: GraphCoverage): string | null {
+  const count = meta.sequence_unevaluable_case_count;
+  return count === 0 ? null : `${countOf(count, "incident")} not evaluable for paths`;
+}
+
+/** The tag of times read as recorded, without a time zone; null for UTC instants. It changes what every lag means, so it stays in view. */
+export function clockTag(meta: GraphCoverage): string | null {
+  return meta.timestamp_kind === "wall_clock" ? "Wall clock" : null;
+}
+
 /** The sentences under the map that say what its numbers count, from the map's own coverage. */
 export function mapCaption(meta: GraphCoverage): string[] {
   return [

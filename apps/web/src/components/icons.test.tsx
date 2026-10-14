@@ -14,7 +14,7 @@ describe("the icons", () => {
   it("are drawn in a 16 px box as pictures that assistive technology passes over, with size, line and colour left to the stylesheet", () => {
     expect(ICON_NAMES).toEqual([
       "undo", "redo", "clearAll", "save", "sidePanel", "info", "table", "map", "paths", "stages", "show", "hide", "sort",
-      "pin", "overview", "editStages", "close", "collapse", "fullWidth",
+      "pin", "overview", "editStages", "orientation", "close", "collapse", "fullWidth",
     ]);
     for (const name of ICON_NAMES) {
       const { container, unmount } = render(<Icon name={name} />);

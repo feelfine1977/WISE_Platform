@@ -41,8 +41,10 @@ describe("the tools of the map", () => {
     await renderMap();
     // In the row of the detail controls, after them, and no part of their form.
     expect(tools().parentElement?.className).toBe("map-detail");
-    expect(tools().previousElementSibling).toBe(screen.getByRole("form", { name: "Detail" }));
-    expect(toolNames()).toEqual(["Keep activities in place", "Overview of the whole map", "Edit stages", "About this map"]);
+    // Between them, in view, how many incidents are not evaluable for paths: the busy graph has some.
+    expect(tools().previousElementSibling?.className).toBe("map-basis");
+    expect(tools().previousElementSibling?.previousElementSibling).toBe(screen.getByRole("form", { name: "Detail" }));
+    expect(toolNames()).toEqual(["Run the map left to right", "Keep activities in place", "Overview of the whole map", "Edit stages", "About this map"]);
     for (const button of within(tools()).getAllByRole("button")) {
       expect(button.className).toBe("icon-button");
       expect(button.getAttribute("title")).toContain(button.getAttribute("aria-label"));
@@ -79,7 +81,7 @@ describe("the tools of the map", () => {
     expect(Array.from(view().querySelector(".map-main")!.children, (part) => part.className)).toEqual(["map-detail", "path-list"]);
     again("map");
     await screen.findByLabelText("Process map of the kept incidents");
-    expect(toolNames()).toEqual(["Keep activities in place", "Overview of the whole map", "Edit stages", "About this map"]);
+    expect(toolNames()).toEqual(["Run the map left to right", "Keep activities in place", "Overview of the whole map", "Edit stages", "About this map"]);
   });
 
   it("show the overview of the whole map only when it is asked for", async () => {
@@ -118,7 +120,7 @@ describe("the editor of the stages beside the map", () => {
     const panel = view().querySelector<HTMLElement>(".map-stages-panel")!;
     expect(document.activeElement).toBe(within(panel).getByRole("heading", { name: "Stages of this log" }));
     expect(within(panel).getByRole("region", { name: "Stages of this log" })).toBeTruthy();
-    expect(within(panel).getByText("Stages are yours and stay in this browser")).toBeTruthy();
+    expect(within(panel).getByText("Stages stay in this browser and are not saved with the investigation")).toBeTruthy();
     expect(within(panel).getByRole("table", { name: "Activities and their stage" })).toBeTruthy();
 
     await user.click(within(panel).getByRole("button", { name: "Close the editor of the stages" }));

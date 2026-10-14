@@ -35,6 +35,8 @@ const ICONS = {
   overview: { line: "M2.5 3h11v10h-11z", filled: "M9 9h4.5v4H9z" },
   // Three squares on a line: the stages in their order.
   editStages: { line: "M1.5 6.5h3v3h-3zM6.5 6.5h3v3h-3zM11.5 6.5h3v3h-3zM4.5 8h2M9.5 8h2" },
+  // Which way the map runs: an arrow down and an arrow to the right.
+  orientation: { line: "M4 2.5v7M2 7.5l2 2 2-2M6.5 13h7M11.5 11l2 2-2 2" },
   close: { line: "M4 4l8 8M12 4l-8 8" },
   collapse: { line: "M6 3.5 10.5 8 6 12.5" },
   fullWidth: { line: "M2.5 8h11M5 5.5 2.5 8 5 10.5M11 5.5 13.5 8 11 10.5" },

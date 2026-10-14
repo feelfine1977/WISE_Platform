@@ -68,9 +68,12 @@ describe("the place of the detail controls", () => {
     move("Paths", 1946);
     expect(asked().controls).toBe(true);
     expect(controls()).toBeNull();
-    // The row above the map is then the tools' alone, and they do what they do.
+    // The row above the map then holds no detail controls: only what stays in view of the incidents not evaluable for paths, and the tools, which do what they do.
     expect(screen.getByRole("group", { name: "Map tools" }).parentElement?.className).toBe("map-detail");
-    expect(screen.getByRole("group", { name: "Map tools" }).parentElement?.children).toHaveLength(1);
+    expect(Array.from(screen.getByRole("group", { name: "Map tools" }).parentElement!.children, (part) => part.className)).toEqual([
+      "map-basis",
+      "icon-toolbar map-toolbar",
+    ]);
     fireEvent.click(tools().getByRole("button", { name: "Overview of the whole map" }));
     expect(asked().minimap).toBe(true);
     fireEvent.click(tools().getByRole("button", { name: "Overview of the whole map" }));

@@ -34,6 +34,11 @@
 /* A limit of the picture is said in one line of its own at the top of the row, in the amber of a limit. */
 .map-main > .map-detail > .map-limit { flex: 1 1 100%; order: -1; padding: var(--space-1) var(--space-3) 0; color: var(--color-limit); font-size: var(--font-size-small); }
 
+/* What limits every path and the clock of every lag stay in the row, quiet but in view: the count in the amber of a limit, the clock as a tag. */
+.map-basis { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--font-size-small); white-space: nowrap; }
+.map-basis-limit { color: var(--color-limit); }
+.map-basis-tag { padding: 0 var(--space-2); color: var(--color-ink-muted); background: var(--color-tint); border-radius: var(--radius-pill); }
+
 /* "About this map": the coverage as names and figures side by side, the definitions and the state of the library as the small print. */
 .workbench .map-coverage .pairs > div { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
 .map-library { color: var(--color-ink-muted); font-size: var(--font-size-small); }

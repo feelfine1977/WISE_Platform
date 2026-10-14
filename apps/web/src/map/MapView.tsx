@@ -24,7 +24,7 @@ import "./look.css";
 import { MapToolbar } from "./MapToolbar";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { PathsTable } from "./PathsTable";
-import { activityTimeLines, boundaryLine, flowsLine } from "./wording";
+import { activityTimeLines, boundaryLine, clockTag, flowsLine, unevaluableLine } from "./wording";
 
 /** Above this many activities the map opens on the most frequent ones; its detail controls show the rest. */
 export const MANY_ACTIVITIES = 20;
@@ -177,7 +177,7 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
    */
   const detailShown = useMemo(() => mapDetail(graph, ranked), [graph, ranked]);
   // The way the map runs is held here, so that the map and the arrangement of the whole parent run the same way.
-  const [direction] = useState<MapDirection>(OPENING_DIRECTION);
+  const [direction, setDirection] = useState<MapDirection>(OPENING_DIRECTION);
   // Start stands first and End last on what the map draws, as they do in the arrangement of the whole parent, and every node has the size it has there.
   const mapLayout = useMemo(() => ({ ...mapArrangement(detailShown.drawn, direction), nodeSize }), [detailShown.drawn, direction]);
   const listed = showing === "paths";
@@ -257,9 +257,13 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
     [shown.graph, onStep, waitingFor],
   );
 
+  // What limits every path and what every lag is measured on are never only behind "About this map".
+  const unevaluable = unevaluableLine(shown.graph.meta);
+  const clock = clockTag(shown.graph.meta);
   /**
    * What stands in the row above the map after the detail controls: the limit of an arrangement
-   * that could not be computed, which is never left unsaid, and the tools of the map.
+   * that could not be computed, which is never left unsaid, the incidents not evaluable for paths
+   * and the wall clock while there are any, and the tools of the map.
    */
   const tools = (
     <>
@@ -268,8 +272,20 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
           {NOT_ARRANGED}
         </p>
       )}
+      {(unevaluable !== null || clock !== null) && (
+        <p className="map-basis">
+          {unevaluable !== null && <span className="map-basis-limit">{unevaluable}</span>}
+          {clock !== null && (
+            <span className="map-basis-tag" title={shown.graph.meta.clock_limitation ?? undefined}>
+              {clock}
+            </span>
+          )}
+        </p>
+      )}
       <MapToolbar
         picture={!listed}
+        direction={direction}
+        onDirection={setDirection}
         inPlace={inPlace}
         onInPlace={setInPlace}
         overview={overview}

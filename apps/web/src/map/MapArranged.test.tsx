@@ -1,4 +1,5 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as flow from "wise-flow";
@@ -6,7 +7,7 @@ import type { ProcessMap } from "wise-flow/react";
 import type { SelectCasesRequest } from "../generated/selection";
 import { identity, workspaceId } from "../test/imports";
 import { everyIncident, nodeIds, opened, selectionAnswer, suppliedGraph } from "../test/selections";
-import { FIRST_ACTIVITY, OPENING_DIRECTION, TOP_TO_BOTTOM } from "./arrange";
+import { FIRST_ACTIVITY, LEFT_TO_RIGHT, OPENING_DIRECTION, TOP_TO_BOTTOM } from "./arrange";
 import { MapView } from "./MapView";
 
 type MapProps = ComponentProps<typeof ProcessMap>;
@@ -79,5 +80,48 @@ describe("the arrangement the map is asked for", () => {
     expect(parentLayout?.elk).not.toBe(asked()?.layout?.elk);
     expect(asked()?.positions).toMatchObject({ engine: "elk", direction: TOP_TO_BOTTOM });
     expect(asked()?.layout).toMatchObject(fromTopToBottom);
+  });
+
+  it("runs left to right from the switch in the map's tools, the map and the whole parent alike, and back again", async () => {
+    const user = userEvent.setup();
+    render(<MapView shown={shown} parentGraph={graph} onStep={() => undefined} initiallyInPlace />);
+    const toggle = screen.getByRole("button", { name: "Run the map left to right" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    await user.click(toggle);
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    // The whole parent is arranged anew the other way, and the map waits for its places.
+    await waitFor(() => expect(vi.mocked(flow.layoutUnion).mock.calls.at(-1)?.[1]).toMatchObject({ direction: LEFT_TO_RIGHT }));
+    await waitFor(() => expect(asked()?.layout).toMatchObject({ ...fromTopToBottom, direction: LEFT_TO_RIGHT }));
+    expect(document.querySelector(".map-frame")?.getAttribute("data-direction")).toBe(LEFT_TO_RIGHT);
+    await user.click(toggle);
+    await waitFor(() => expect(asked()?.layout).toMatchObject(fromTopToBottom));
+  });
+});
+
+describe("what stays in view above the map", () => {
+  const limit = () => document.querySelector(".map-basis-limit");
+  const tag = () => document.querySelector(".map-basis-tag");
+
+  it("says how many incidents are not evaluable for paths while there are any, without opening About this map", () => {
+    const graph = suppliedGraph(["A-1", "B-2"]);
+    render(<MapView shown={{ revision: 1, steps: [], answer: selectionAnswer(request, everyIncident), graph }} parentGraph={graph} onStep={() => undefined} />);
+    expect(limit()?.textContent).toBe("1 incident not evaluable for paths");
+    expect(tag()).toBeNull();
+  });
+
+  it("says nothing there when every incident is evaluable and times are UTC instants", () => {
+    const graph = suppliedGraph(["A-1"]);
+    render(<MapView shown={{ revision: 1, steps: [], answer: selectionAnswer(request, everyIncident), graph }} parentGraph={graph} onStep={() => undefined} />);
+    expect(document.querySelector(".map-basis")).toBeNull();
+  });
+
+  it("tags times read as recorded as the wall clock, with its limitation as the tooltip", () => {
+    const utc = suppliedGraph(["A-1"]);
+    const limitation = "Recorded local times without a time zone; hours across a clock change may be off by one.";
+    const graph = { ...utc, meta: { ...utc.meta, timestamp_kind: "wall_clock" as const, lag_clock: "recorded_wall_clock_hours" as const, clock_limitation: limitation } };
+    render(<MapView shown={{ revision: 1, steps: [], answer: selectionAnswer(request, everyIncident), graph }} parentGraph={graph} onStep={() => undefined} />);
+    expect(tag()?.textContent).toBe("Wall clock");
+    expect(tag()?.getAttribute("title")).toBe(limitation);
+    expect(limit()).toBeNull();
   });
 });
