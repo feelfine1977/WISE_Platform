@@ -1,10 +1,10 @@
-.bpic19-record-filter { padding: 1rem; border: 1px solid var(--line, #cbd0d5); border-radius: .4rem; margin-block: 1rem; }
+.bpic19-record-filter { padding: var(--space-4); border: var(--line-width) solid var(--color-line); border-radius: var(--radius); margin-block: var(--space-4); }
 .bpic19-record-filter h3 { margin-top: 0; }
-.bpic19-record-filter p { max-width: 90ch; overflow-wrap: anywhere; }
-.bpic19-record-filter fieldset { display: grid; gap: .75rem; }
-.bpic19-record-filter label { display: grid; gap: .3rem; }
-.bpic19-record-filter label:has(input[type="checkbox"]) { display: flex; align-items: start; gap: .4rem; }
-.bpic19-record-condition { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .75rem; padding: .75rem; border: 1px solid var(--line, #cbd0d5); }
+.bpic19-record-filter p { max-width: 100%; overflow-wrap: anywhere; }
+.bpic19-record-filter fieldset { display: grid; gap: var(--space-3); }
+.bpic19-record-filter label { display: grid; gap: var(--space-1); }
+.bpic19-record-filter label:has(input[type="checkbox"]) { display: flex; align-items: start; gap: var(--space-2); }
+.bpic19-record-condition { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--size-source-select)), 1fr)); gap: var(--space-3); padding: var(--space-3); border: var(--line-width) solid var(--color-line); }
 .bpic19-record-condition textarea, .bpic19-record-condition select { width: 100%; min-width: 0; font: inherit; }
 .bpic19-record-filter button { width: fit-content; max-width: 100%; white-space: normal; }
-.bpic19-record-filter details { margin-block: .5rem; }
+.bpic19-record-filter details { margin-block: var(--space-2); }
