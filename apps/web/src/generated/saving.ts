@@ -190,6 +190,7 @@ export interface RecordAttributesAll {
   policy_id: "incident.raw.same_record_all.v1";
   /**
    * @minItems 1
+   * @maxItems 32
    */
   conditions: [RecordAttributeCondition, ...RecordAttributeCondition[]];
   negate: boolean;
