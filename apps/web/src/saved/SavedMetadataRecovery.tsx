@@ -55,7 +55,7 @@ export function SavedMetadataRecovery({ workspaceId, savedRevisionId, client = h
   const failed = problem ? describeSavingProblem(problem) : null;
   return <section className="saved-panel" aria-label="Read-only saved metadata recovery">
     <h3>Read saved notes and original evidence</h3>
-    <p>This view can read integrity-checked saved content while a native result is unavailable. It does not restore the saved selection or any computed output, and it leaves the current investigation unchanged.</p>
+    <p>This view can read integrity-checked saved content while a saved source or analytical reference is unavailable or damaged. It does not restore the saved selection or any computed output, and it leaves the current investigation unchanged.</p>
     <button type="button" disabled={busy} onClick={() => void read(initialPage())}>Read historical notes and references</button>
     {busy && <p role="status">Reading saved metadata… <button type="button" onClick={() => { ++serial.current; abort.current?.abort(); setBusy(false); setAnswer(null); }}>Cancel metadata read</button></p>}
     {failed && <div role="alert"><p>{failed.message}</p><p>{failed.remedy}</p><button type="button" onClick={() => void read(lastPage.current)}>Retry metadata read</button></div>}

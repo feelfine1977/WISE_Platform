@@ -98,7 +98,7 @@ def test_metadata_integrity_source_failures_and_malformed_page_remain_distinct(t
         wid, identity, native, save, saved, recover, source_request, evidence, artifact=seed(client,folder)
         (folder/'sources'/f"{identity['source_id'].split(':')[-1]}.csv").unlink()
         reopened=client.post('/api/investigations/reopen',json=envelope('reopen_investigation_request',workspace_id=wid,saved_revision_id=saved['revision']['saved_revision_id']))
-        assert reopened.status_code==404 and reopened.json()['code']=='source_unavailable',reopened.text
+        assert reopened.status_code==409 and reopened.json()['code']=='artifact_unavailable',reopened.text
         metadata=client.post(ROUTE,json=recover);assert metadata.status_code==200
         raw=client.post('/api/investigations/case-evidence',json=source_request)
         assert raw.status_code==404 and raw.json()['code']=='source_unavailable',raw.text

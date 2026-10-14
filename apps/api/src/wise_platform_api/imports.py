@@ -385,6 +385,8 @@ class Imports:
             if prepared is not None:
                 self._prepared.move_to_end(preparation_id)
         if prepared is not None:
+            if prepared.descriptor() != record.descriptor:
+                return Problem("preparation_unavailable", "The kept preparation descriptor differs from its confirmed cached recipe. Nothing was rebound or repaired.", field)
             changed = workspace.source_unchanged(record.source_id)
             if changed is not None:
                 with self._lock:

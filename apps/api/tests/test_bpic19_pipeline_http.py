@@ -72,7 +72,7 @@ def test_pipeline_persists_definitions_witness_outputs_and_refuses_changed_or_un
         revision.write_text(json.dumps(artifact))
         reopened = client.post("/api/investigations/reopen", json=envelope("reopen_investigation_request",
             workspace_id=given["workspace_id"], saved_revision_id=answer["revision"]["saved_revision_id"]))
-        assert reopened.status_code == 409 and reopened.json()["code"] == "identity_mismatch"
+        assert reopened.status_code == 409 and reopened.json()["code"] == "checksum_mismatch"
 
 
 class RealHttp:

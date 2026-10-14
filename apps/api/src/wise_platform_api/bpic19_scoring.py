@@ -301,12 +301,16 @@ class Bpic19Scoring:
                                  "calibration_population": population.parent_identity}}))
             return self._page(workspace, stored, given)
 
-    def _stored(self, given: dict) -> tuple[Workspace, dict]:
+    def _stored(self, given: dict, *, saved_reference: bool = False) -> tuple[Workspace, dict]:
         workspace = _checked(self.imports.opened_workspace(given["workspace_id"]))
+        if saved_reference:
+            self._require_reference(workspace, "run", given["run_id"], "run_id")
         run = _checked(workspace.run(given["run_id"]))
         if run is None or run.get("identity", {}).get("format") not in _READ_VERSIONS:
             raise _Refused(Problem("run_unavailable", "This workspace has no BPIC19 native snapshot with that identity.", "run_id"))
         base = run["identity"]["base_identity"]
+        if saved_reference:
+            self._require_reference(workspace, "definition", run["identity"]["definition_version_id"], "definition_id")
         prepared = _checked(self.imports.prepared(given["workspace_id"], base["preparation_id"]))
         if not isinstance(prepared, tuple) or prepared[0].identity_dict() != base:
             raise _Refused(Problem("identity_mismatch", "The recorded source preparation is no longer reproducible."))
@@ -315,12 +319,21 @@ class Bpic19Scoring:
             raise _Refused(Problem("definition_unavailable", "The frozen definition is missing or differs from the saved run."))
         return workspace, dict(run)
 
+    @staticmethod
+    def _require_reference(workspace, kind, reference_id, field):
+        integrity = workspace.reference_integrity(kind, reference_id)
+        if integrity.state == "available": return
+        if integrity.state == "invalid_reference":
+            raise _Refused(Problem("invalid_parameter", "The saved native reference has an unsupported identity.", field))
+        code = "checksum_mismatch" if integrity.state == "checksum_invalid" else "artifact_unavailable"
+        raise _Refused(Problem(code, f"The saved native {kind} reference {reference_id} is {integrity.state}. Nothing was rebound or computed again.", field))
+
     def _read_run(self, given: dict) -> dict:
         workspace, run = self._stored(given)
         return self._page(workspace, run, given)
 
     def _read_saved_snapshot(self, given: dict) -> dict:
-        workspace, run = self._stored(given)
+        workspace, run = self._stored(given, saved_reference=True)
         for ref in run["snapshot"]["artifacts"]:
             _artifact_bytes(workspace, ref)
         return self._page(workspace, run, given)

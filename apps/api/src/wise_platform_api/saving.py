@@ -27,12 +27,15 @@ module compares what it computes with what was saved.
 from __future__ import annotations
 
 import logging
+import hashlib
+import json
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from pydantic import BaseModel, ValidationError
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
-from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare
+from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare, content_identity, PARSER_VERSION
 from wise_platform_analytics.selection import SelectionError, SelectionResult, select_cases
 from wise_platform_analytics.version import IMPLEMENTATION_VERSION
 
@@ -166,6 +169,16 @@ class Saving:
         workspace = self._imports.opened_workspace(given["workspace_id"])
         if isinstance(workspace, Problem):
             return _problem(SAVE, workspace, given)
+        if given.get("bpic19_pipeline") is not None and given.get("expected_revision_id") is not None:
+            store = SavedInvestigations(workspace)
+            head = store.head(given["investigation_id"])
+            # Publication still decides stale/foreign expected revisions using
+            # the established conflict contract. Inspect only the actual head.
+            if not isinstance(head, Problem) and head.latest_revision_id == given["expected_revision_id"]:
+                prior = store.revision(given["expected_revision_id"])
+                if isinstance(prior, Problem): return _problem(SAVE, prior, given)
+                integrity = _retained_pipeline_integrity(prior)
+                if integrity is not None: return _problem(SAVE, integrity, given)
         reference = given.get("score_run_ref")
         unreferable = _score_reference_problem(workspace, reference, given["base_identity"])
         if unreferable is not None:
@@ -273,6 +286,8 @@ class Saving:
                 given,
                 "saved_revision_id",
             )
+        integrity = _retained_pipeline_integrity(revision)
+        if integrity is not None: return _problem(REOPEN, integrity, given)
         unreferable = _score_reference_problem(
             workspace, revision.content.get("score_run_ref"), revision.content["base_identity"]
         )
@@ -280,7 +295,13 @@ class Saving:
             return _problem(REOPEN, Problem(unreferable.code, unreferable.message, "saved_revision_id"), given)
         question = self._question(workspace, revision.content, revision)
         if isinstance(question, Problem):
-            return _problem(REOPEN, Problem(question.code, question.message, "saved_revision_id"), given)
+            # Preserve the actual source reference for scoped BPIC integrity
+            # failures; generic import/Resolution reopen fields stay unchanged.
+            source_integrity = (revision.content.get("bpic19_pipeline") is not None
+                                and question.field == "base_identity.source_id"
+                                and question.code in {"artifact_unavailable", "checksum_mismatch"})
+            return _problem(REOPEN, Problem(question.code, question.message,
+                                           question.field if source_integrity else "saved_revision_id"), given)
         differs = _differing_results(revision, question)
         if differs is not None:
             return _problem(REOPEN, Problem(differs.code, differs.message, "saved_revision_id"), given)
@@ -334,10 +355,11 @@ class Saving:
                     f"({named[name]} instead of {base[name]}). Select the incidents of this preparation again.",
                     f"selection_identity.{name}",
                 )
-        source = self._source(workspace, str(base["source_id"]), saved)
+        bpic = content.get("bpic19_pipeline") is not None
+        source = self._source(workspace, str(base["source_id"]), saved, bpic=bpic)
         if isinstance(source, Problem):
             return source
-        preparation = self._preparation(workspace, base, saved)
+        preparation = self._preparation(workspace, base, saved, bpic=bpic)
         if isinstance(preparation, Problem):
             return preparation
         found = self._imports.prepared_snapshot(workspace, str(base["preparation_id"]), "base_identity.preparation_id")
@@ -423,8 +445,15 @@ class Saving:
                                [question.prepared.identity_dict(), *[selection.identity_dict() for selection in prefixes]])
 
     def _source(
-        self, workspace: Workspace, source_id: str, saved: StoredRevision | None
+        self, workspace: Workspace, source_id: str, saved: StoredRevision | None, *, bpic: bool = False
     ) -> Mapping[str, object] | Problem:
+        if bpic:
+            integrity = workspace.reference_integrity("source", source_id)
+            if integrity.state != "available":
+                code = "checksum_mismatch" if integrity.state == "checksum_invalid" else "artifact_unavailable"
+                return Problem(code, f"The saved BPIC source reference {source_id} is {integrity.state}. Original import/source-history refusals are unchanged; nothing was rebound or repaired.", "base_identity.source_id")
+            assert integrity.record is not None
+            return integrity.record
         state = workspace.source_bytes_state(source_id)
         name = f"the file {saved.source.get('filename')!s} " if saved is not None else "the source file "
         if state == "missing":
@@ -447,15 +476,32 @@ class Saving:
         return record.to_dict()
 
     def _preparation(
-        self, workspace: Workspace, base: Mapping[str, object], saved: StoredRevision | None
+        self, workspace: Workspace, base: Mapping[str, object], saved: StoredRevision | None, *, bpic: bool = False
     ) -> StoredPreparation | Problem:
         """The kept preparation of the base identity; when reopening, prepared again from the saved recipe if gone."""
         preparation_id = str(base["preparation_id"])
         record = workspace.preparation(preparation_id)
+        if bpic and isinstance(record, Problem) and record.code == "preparation_unavailable":
+            path = workspace.path / "preparations" / (preparation_id.rsplit(":", 1)[-1] + ".json")
+            if path.exists():
+                try: path.read_bytes()
+                except OSError:
+                    return Problem("artifact_unavailable", "The saved BPIC preparation record cannot be read. Nothing was repaired.", "base_identity.preparation_id")
+                return Problem("checksum_mismatch", "The saved BPIC preparation record is malformed. Its recipe was not replaced from defaults or metadata.", "base_identity.preparation_id")
         if isinstance(record, Problem) and record.code == "preparation_unavailable" and saved is not None:
             record = _prepared_again(workspace, base, saved)
         if isinstance(record, Problem):
             return Problem(record.code, record.message, "base_identity.preparation_id")
+        if bpic:
+            descriptor = record.descriptor
+            try:
+                expected = content_identity("preparation", {"format_version": 1, "source_id": descriptor["source_id"],
+                    "parser_version": PARSER_VERSION, "dialect": descriptor.get("dialect"), "mapping": descriptor.get("mapping"),
+                    "policies": descriptor.get("policies"), "implementation_version": IMPLEMENTATION_VERSION})
+            except (KeyError, ValueError, TypeError):
+                expected = None
+            if expected != preparation_id:
+                return Problem("checksum_mismatch", "The saved BPIC preparation descriptor no longer matches its content identity. Nothing was rebound, cached or repaired.", "base_identity.preparation_id")
         if record.source_id != base["source_id"]:
             return Problem(
                 "identity_mismatch",
@@ -748,6 +794,32 @@ def _answer(model: type[BaseModel], body: dict) -> SavingReply:
             f"{'.'.join(str(part) for part in first['loc'])}: {first['msg']}"
         ) from None
     return SavingReply(200, body)
+
+
+def _retained_pipeline_integrity(revision: StoredRevision) -> Problem | None:
+    """Verify recorded canonical output receipts before any operator replay."""
+    pipeline = revision.content.get("bpic19_pipeline")
+    if pipeline is None: return None
+    manifest = revision.results.get("bpic19_pipeline")
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("outputs"), list):
+        return Problem("artifact_unavailable", "The saved BPIC output manifest is missing. Nothing was computed again.", "saved_revision_id")
+    expected = [(action["operation"], action["definition_id"]) for action in pipeline["actions"] if action["operation"] != "bpic19_method_gate"]
+    present = []
+    for index, entry in enumerate(manifest["outputs"]):
+        field = f"results.bpic19_pipeline.outputs.{index}"
+        if not isinstance(entry, dict) or not isinstance(entry.get("output"), dict):
+            return Problem("artifact_unavailable", "A saved BPIC output reference is missing.", field)
+        digest = entry.get("sha256")
+        try:
+            raw = json.dumps(entry["output"], ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+        except (ValueError, TypeError):
+            return Problem("checksum_mismatch", "A saved BPIC output is not its recorded canonical payload.", field)
+        if not isinstance(digest, str) or not re.fullmatch("[a-f0-9]{64}", digest) or hashlib.sha256(raw).hexdigest() != digest:
+            return Problem("checksum_mismatch", "A saved BPIC output failed its recorded canonical checksum. Notes remain historical metadata only.", field)
+        present.append((entry.get("operation"), entry.get("definition_id")))
+    if present != expected:
+        return Problem("artifact_unavailable", "The saved BPIC manifest is missing an ordered output reference or names another definition.", "results.bpic19_pipeline.outputs")
+    return None
 
 
 def _score_reference_problem(

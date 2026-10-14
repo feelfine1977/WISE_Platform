@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from wise_platform_analytics.preparation import content_identity
@@ -44,6 +45,57 @@ def canonical_output(answer: dict) -> dict:
             if key not in {"request_id", "query_revision", "workspace_id", "native_exemplar_pages"}}
 
 
+def _registered_bindings(imports: Imports, actions: list[dict]) -> dict | Problem:
+    """Resolve only finite shipped bindings, before replaying any action.
+
+    A previously supported operation whose local binding is disabled is an
+    unavailable saved reference. Unknown operations remain admission failures.
+    Neither state accepts a caller-supplied module or replacement interpreter.
+    """
+    registry = {}
+    operator_names = {"bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"}
+    for index, action in enumerate(actions):
+        name = action["operation"]
+        field = f"bpic19_pipeline.actions.{index}.operation"
+        if name == "bpic19_method_gate":
+            continue
+        try:
+            if name == "bpic19_profile":
+                binding, message = getattr(Bpic19Profiles(imports), "profile", None), "bpic19_profile_request"
+            elif name == "bpic19_measures":
+                binding, message = getattr(Bpic19Measures(imports), "measures", None), "bpic19_measures_request"
+            elif name == "bpic19_cohorts":
+                from .bpic19_cohorts import Bpic19Cohorts
+                binding, message = getattr(Bpic19Cohorts(imports), "cohorts", None), "bpic19_cohorts_request"
+            elif name in operator_names:
+                from .bpic19_operators import Bpic19Operators
+                binding, message = getattr(Bpic19Operators(imports), "operators", None), "bpic19_operator_request"
+            elif name == "bpic19_score":
+                from .bpic19_scoring import Bpic19Scoring
+                binding, message = getattr(Bpic19Scoring(imports), "read_saved_snapshot", None), "bpic19_read_request"
+            elif name == "bpic19_flow_comparison":
+                from .bpic19_flow_comparison import Bpic19FlowComparisons
+                binding, message = getattr(Bpic19FlowComparisons(imports), "compare", None), "bpic19_flow_comparison_request"
+            elif name == "bpic19_interval_comparison":
+                from .bpic19_interval_comparison import Bpic19IntervalComparisons
+                binding, message = getattr(Bpic19IntervalComparisons(imports), "compare", None), "bpic19_interval_comparison_request"
+            elif name in {"bpic19_operator_comparison", "bpic19_cohort_comparison"}:
+                from .bpic19_recipe_comparison import Bpic19RecipeComparisons
+                service = Bpic19RecipeComparisons(imports)
+                dependency = getattr(service.operators, "operators", None) if name == "bpic19_operator_comparison" else getattr(service.cohorts, "cohorts", None)
+                binding, message = getattr(service, "compare", None), "bpic19_recipe_comparison_request"
+                if not callable(dependency):
+                    return Problem("artifact_unavailable", "A declared recipe comparison's registered inner binding is unavailable. No replacement recipe was used.", field)
+            else:
+                return Problem("unsupported_action", "This pipeline action is not registered.", field)
+        except ImportError:
+            return Problem("artifact_unavailable", "The saved action's finite registered local binding cannot be loaded. Nothing was computed again.", field)
+        if not callable(binding):
+            return Problem("artifact_unavailable", "The saved action's finite registered local binding is unavailable. Nothing was computed again.", field)
+        registry[name] = (binding, message)
+    return registry
+
+
 def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
                     allowed_identities: list[dict]) -> dict | None | Problem:
     if pipeline is None:
@@ -57,7 +109,27 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
             return Problem("identity_mismatch", "A literature comparison may reference only an explicitly retained native score run.", f"bpic19_pipeline.literature_claims.{index}.compared_run_id")
     # Admission gates are finite data from the reviewed source-method ledger.
     # A partial run may omit these gates; it cannot hide a failed supported step.
-    gate = json.loads((Path(__file__).parent / "bpic19_reference" / "source-method-gate.json").read_text())
+    gate = None
+    declared_gate = next((index for index, action in enumerate(pipeline["actions"])
+                          if action["operation"] == "bpic19_method_gate"), None)
+    if declared_gate is not None:
+        field = f"bpic19_pipeline.actions.{declared_gate}.query"
+        try:
+            gate = json.loads((Path(__file__).parent / "bpic19_reference" / "source-method-gate.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError, UnicodeError, RecursionError):
+            return Problem("artifact_unavailable", "The declared source-method admission ledger cannot be read. No omission definition was substituted and no source method was admitted.", field)
+        # This local ledger has no recorded descriptor checksum. Malformed
+        # admission data is unavailable, never a claimed checksum mismatch.
+        query = gate.get("query") if isinstance(gate, dict) else None
+        if (not isinstance(gate, dict) or set(gate) != {"query", "definition_id"}
+                or not isinstance(gate.get("definition_id"), str)
+                or re.fullmatch(r"bpic19-method-gate\.v1:sha256:[a-f0-9]{64}", gate["definition_id"]) is None
+                or not isinstance(query, dict)
+                or set(query) != {"policy_id", "method_id", "source_locator", "gate_reason"}
+                or any(not isinstance(value, str) or not value.strip() for value in query.values())
+                or query["policy_id"] != "bpic19.report_method_gate.v1"
+                or query["method_id"] != "R13.weighted_many_to_many"):
+            return Problem("artifact_unavailable", "The declared source-method admission ledger has no usable registered omission definition. Nothing was substituted or admitted.", field)
     omissions = []
     for index, action in enumerate(pipeline["actions"]):
         if action["identity"] not in allowed_identities:
@@ -73,35 +145,11 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
         first = omissions[0]
         return Problem("unsupported_policy", f"Step {first['step']} is not admitted: {first['source_locator']}. {first['gate_reason']}",
                        f"bpic19_pipeline.actions.{first['step'] - 1}.query")
-    registry = {"bpic19_profile": (Bpic19Profiles(imports).profile, "bpic19_profile_request"),
-                "bpic19_measures": (Bpic19Measures(imports).measures, "bpic19_measures_request")}
-    # Imports are local to an explicitly selected, registered operation. Supplied
-    # queries never name a module, callable, command or external output folder.
-    operations = {action["operation"] for action in pipeline["actions"]}
-    if "bpic19_cohorts" in operations:
-        from .bpic19_cohorts import Bpic19Cohorts
-        registry["bpic19_cohorts"] = (Bpic19Cohorts(imports).cohorts, "bpic19_cohorts_request")
+    registry = _registered_bindings(imports, pipeline["actions"])
+    if isinstance(registry, Problem):
+        return registry
     operator_names = {"bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"}
-    if operations & operator_names:
-        from .bpic19_operators import Bpic19Operators
-        operator = Bpic19Operators(imports).operators
-        for name in operator_names:
-            registry[name] = (operator, "bpic19_operator_request")
-    if "bpic19_score" in operations:
-        from .bpic19_scoring import Bpic19Scoring
-        registry["bpic19_score"] = (Bpic19Scoring(imports).read_saved_snapshot, "bpic19_read_request")
-    if "bpic19_flow_comparison" in operations:
-        from .bpic19_flow_comparison import Bpic19FlowComparisons
-        registry["bpic19_flow_comparison"] = (Bpic19FlowComparisons(imports).compare, "bpic19_flow_comparison_request")
-    if "bpic19_interval_comparison" in operations:
-        from .bpic19_interval_comparison import Bpic19IntervalComparisons
-        registry["bpic19_interval_comparison"] = (Bpic19IntervalComparisons(imports).compare, "bpic19_interval_comparison_request")
     comparison_names = {"bpic19_operator_comparison", "bpic19_cohort_comparison"}
-    if operations & comparison_names:
-        from .bpic19_recipe_comparison import Bpic19RecipeComparisons
-        service = Bpic19RecipeComparisons(imports)
-        for name in comparison_names:
-            registry[name] = (service.compare, "bpic19_recipe_comparison_request")
     keys = [(action["operation"], action["definition_id"], json.dumps(action["identity"], sort_keys=True, separators=(",", ":"))) for action in pipeline["actions"]]
     if len(set(keys)) != len(keys):
         return Problem("invalid_parameter", "A reviewed action definition may appear once per exact population identity in a saved pipeline.", "bpic19_pipeline.actions")
