@@ -1,0 +1,1328 @@
+{
+  "positive": [
+    {
+      "name": "utc_instant:A",
+      "expected_answer": "positive/utc_instant-A.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:B",
+      "expected_answer": "positive/utc_instant-B.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:C",
+      "expected_answer": "positive/utc_instant-C.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:D",
+      "expected_answer": "positive/utc_instant-D.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:Missing",
+      "expected_answer": "positive/utc_instant-Missing.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:RawFirstUnlabelled",
+      "expected_answer": "positive/utc_instant-RawFirstUnlabelled.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:AllUnlabelled",
+      "expected_answer": "positive/utc_instant-AllUnlabelled.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:Micro2500",
+      "expected_answer": "positive/utc_instant-Micro2500.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:Bounds",
+      "expected_answer": "positive/utc_instant-Bounds.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:MinimumSingleton",
+      "expected_answer": "positive/utc_instant-MinimumSingleton.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:MaximumSingleton",
+      "expected_answer": "positive/utc_instant-MaximumSingleton.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:HugeUnequal",
+      "expected_answer": "positive/utc_instant-HugeUnequal.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:HugeEqual",
+      "expected_answer": "positive/utc_instant-HugeEqual.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:TwoTieGroups",
+      "expected_answer": "positive/utc_instant-TwoTieGroups.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:DST",
+      "expected_answer": "positive/utc_instant-DST.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:EquivalentOffsets",
+      "expected_answer": "positive/utc_instant-EquivalentOffsets.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:BelowUtcRange",
+      "expected_answer": "positive/utc_instant-BelowUtcRange.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:AboveUtcRange",
+      "expected_answer": "positive/utc_instant-AboveUtcRange.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:A",
+      "expected_answer": "positive/wall_clock-A.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:B",
+      "expected_answer": "positive/wall_clock-B.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:C",
+      "expected_answer": "positive/wall_clock-C.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:D",
+      "expected_answer": "positive/wall_clock-D.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:Missing",
+      "expected_answer": "positive/wall_clock-Missing.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:RawFirstUnlabelled",
+      "expected_answer": "positive/wall_clock-RawFirstUnlabelled.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:AllUnlabelled",
+      "expected_answer": "positive/wall_clock-AllUnlabelled.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:Micro2500",
+      "expected_answer": "positive/wall_clock-Micro2500.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:Bounds",
+      "expected_answer": "positive/wall_clock-Bounds.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:MinimumSingleton",
+      "expected_answer": "positive/wall_clock-MinimumSingleton.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:MaximumSingleton",
+      "expected_answer": "positive/wall_clock-MaximumSingleton.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:HugeUnequal",
+      "expected_answer": "positive/wall_clock-HugeUnequal.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:HugeEqual",
+      "expected_answer": "positive/wall_clock-HugeEqual.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:TwoTieGroups",
+      "expected_answer": "positive/wall_clock-TwoTieGroups.json",
+      "native_reachable": true
+    },
+    {
+      "name": "wall_clock:DST",
+      "expected_answer": "positive/wall_clock-DST.json",
+      "native_reachable": true
+    },
+    {
+      "name": "utc_instant:AllValidOrderU",
+      "expected_answer": "positive/utc_instant-AllValidOrderU-protocol.json",
+      "native_reachable": false
+    },
+    {
+      "name": "wall_clock:AllValidOrderU",
+      "expected_answer": "positive/wall_clock-AllValidOrderU-protocol.json",
+      "native_reachable": false
+    }
+  ],
+  "negative": [
+    {
+      "name": "explicit-null-field",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/explicit-null-field.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time",
+          "value": null
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-diagnostic-field",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/unknown-diagnostic-field.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/today_age_hours",
+          "value": 0
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-row-field",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/unknown-row-field.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/age_microseconds",
+          "value": "0"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-gap-field",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/unknown-gap-field.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/gap_before/reason",
+          "value": "guessed"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "missing-required-clock",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/missing-required-clock.json",
+      "mutations": [],
+      "remove_pointer": "/incident_time/records/0/clock_microseconds"
+    },
+    {
+      "name": "wrong-policy-version",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/wrong-policy-version.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/policy_id",
+          "value": "incident.time_diagnostics.full_raw_declared_order.v2"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "clock-kind-summary-conflict",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/clock-kind-summary-conflict.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/timestamp_kind",
+          "value": "wall_clock"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "UTC-wall-duration-basis",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/UTC-wall-duration-basis.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/duration_basis",
+          "value": "recorded_wall_clock"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "wall-UTC-duration-basis",
+      "base_positive": "positive/wall_clock-A.json",
+      "malicious_full_wire": "negative/wall-UTC-duration-basis.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/duration_basis",
+          "value": "elapsed_utc"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "UTC-limitation-added",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/UTC-limitation-added.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/clock_limitation",
+          "value": "recorded_wall_duration_may_differ_from_physical_elapsed"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "wall-limitation-removed",
+      "base_positive": "positive/wall_clock-A.json",
+      "malicious_full_wire": "negative/wall-limitation-removed.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/clock_limitation",
+          "value": null
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "UTC-offset-key-instead-Z",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/UTC-offset-key-instead-Z.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/timestamp_key",
+          "value": "2026-10-01T00:00:00+00:00"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "wall-Z-key",
+      "base_positive": "positive/wall_clock-A.json",
+      "malicious_full_wire": "negative/wall-Z-key.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/timestamp_key",
+          "value": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "wall-impossible-calendar",
+      "base_positive": "positive/wall_clock-A.json",
+      "malicious_full_wire": "negative/wall-impossible-calendar.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/timestamp_key",
+          "value": "2026-02-30T00:00:00"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "UTC-impossible-calendar",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/UTC-impossible-calendar.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/timestamp_key",
+          "value": "2026-02-30T00:00:00Z"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-0",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-0.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "-0"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-1",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-1.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "00"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-2",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-2.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "01"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-3",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-3.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "+1"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-4",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-4.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "1e6"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-5",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-5.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "0.0"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-6",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-6.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": " 1"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-7",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-7.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "1 "
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "noncanonical-clock-decimal-8",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/noncanonical-clock-decimal-8.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "\u0661"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "clock-as-JSON-number",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/clock-as-JSON-number.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": 1790812800000000
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "negative-offset",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/negative-offset.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/offset_from_first_record_microseconds",
+          "value": "-1"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "negative-gap",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/negative-gap.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/gap_before/microseconds",
+          "value": "-1"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "negative-equal-count",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/negative-equal-count.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/maximum_gap_equal_count",
+          "value": -1
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "bool-equal-count",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/bool-equal-count.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/maximum_gap_equal_count",
+          "value": true
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "float-equal-count",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/float-equal-count.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/maximum_gap_equal_count",
+          "value": 1.5
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "equal-count-over-safe-bound",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/equal-count-over-safe-bound.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/maximum_gap_equal_count",
+          "value": 9007199254740992
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "clock-below-range",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/clock-below-range.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "-62135596800000001"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "clock-above-range",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/clock-above-range.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": "253402300800000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "span-above-supported-range",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/span-above-supported-range.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/observed_span_microseconds",
+          "value": "315537897600000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "key-clock-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/key-clock-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/clock_microseconds",
+          "value": "1790816400000001"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "timestamp-key-not-native",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/timestamp-key-not-native.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/timestamp_key",
+          "value": "2026-10-01T02:00:00Z"
+        },
+        {
+          "pointer": "/incident_time/records/1/clock_microseconds",
+          "value": "1790820000000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "first-offset-nonzero",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/first-offset-nonzero.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/offset_from_first_record_microseconds",
+          "value": "1"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "later-offset-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/later-offset-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/offset_from_first_record_microseconds",
+          "value": "3600000001"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unlabelled-first-reanchor",
+      "base_positive": "positive/utc_instant-RawFirstUnlabelled.json",
+      "malicious_full_wire": "negative/unlabelled-first-reanchor.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/observed_span_microseconds",
+          "value": "0"
+        },
+        {
+          "pointer": "/incident_time/records/1/offset_from_first_record_microseconds",
+          "value": "0"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "first-gap-available",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/first-gap-available.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/gap_before",
+          "value": {
+            "status": "available",
+            "from_row_id": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+            "microseconds": "0",
+            "hours": 0.0
+          }
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "later-gap-first-record",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/later-gap-first-record.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/gap_before",
+          "value": {
+            "status": "unavailable",
+            "reason": "first_record",
+            "from_row_id": null,
+            "microseconds": null,
+            "hours": null
+          }
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "gap-wrong-predecessor",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/gap-wrong-predecessor.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/2/gap_before/from_row_id",
+          "value": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "gap-exact-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/gap-exact-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/2/gap_before/microseconds",
+          "value": "14400000001"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "gap-hours-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/gap-hours-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/2/gap_before/hours",
+          "value": 5.0
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "span-exact-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/span-exact-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/observed_span_microseconds",
+          "value": "18000000001"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "span-summary-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/span-summary-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/observed_span_hours",
+          "value": 4.0
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "maximum-exact-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/maximum-exact-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/maximum_adjacent_raw_gap_microseconds",
+          "value": "14400000001"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "maximum-equal-count-null",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/maximum-equal-count-null.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/maximum_gap_equal_count",
+          "value": null
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "maximum-equal-count-wrong",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/maximum-equal-count-wrong.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/maximum_gap_equal_count",
+          "value": 2
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "witness-not-adjacent",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/witness-not-adjacent.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/maximum_gap_witness/from_row_id",
+          "value": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "witness-mapped-label-invented",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/witness-mapped-label-invented.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/maximum_gap_witness/from_activity",
+          "value": "Start"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "witness-offset-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/witness-offset-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/maximum_gap_witness/from_offset_hours",
+          "value": 0.0
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "witness-share-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/witness-share-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/maximum_gap_witness/share_of_observed_span",
+          "value": 1.0
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "usable-gap-count-disagreement",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/usable-gap-count-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/usable_gap_count",
+          "value": 1
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "tied-group-count-disagreement",
+      "base_positive": "positive/utc_instant-TwoTieGroups.json",
+      "malicious_full_wire": "negative/tied-group-count-disagreement.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/tied_timestamp_group_count",
+          "value": 3
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "zero-gap-called-unavailable",
+      "base_positive": "positive/utc_instant-B.json",
+      "malicious_full_wire": "negative/zero-gap-called-unavailable.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/gap_before",
+          "value": {
+            "status": "unavailable",
+            "reason": "first_record",
+            "from_row_id": null,
+            "microseconds": null,
+            "hours": null
+          }
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "zero-span-share-invented",
+      "base_positive": "positive/utc_instant-B.json",
+      "malicious_full_wire": "negative/zero-span-share-invented.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/maximum_gap_witness/share_of_observed_span",
+          "value": 0.0
+        },
+        {
+          "pointer": "/incident_time/summary/maximum_gap_witness/share_unavailable_reason",
+          "value": null
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "singleton-maximum-invented",
+      "base_positive": "positive/utc_instant-C.json",
+      "malicious_full_wire": "negative/singleton-maximum-invented.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/maximum_adjacent_raw_gap_microseconds",
+          "value": "0"
+        },
+        {
+          "pointer": "/incident_time/maximum_gap_equal_count",
+          "value": 1
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "singleton-span-nonzero",
+      "base_positive": "positive/utc_instant-C.json",
+      "malicious_full_wire": "negative/singleton-span-nonzero.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/observed_span_microseconds",
+          "value": "1"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-first-record-reason",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/unknown-first-record-reason.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/gap_before/reason",
+          "value": "first_record"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-usable-pair-gap",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/unknown-usable-pair-gap.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/gap_before",
+          "value": {
+            "status": "available",
+            "from_row_id": "row.v1:sha256:1b8177d7a5fccf084f3b32b1b63183e0f52b4703d0efedef3d41a7f73e5b7070",
+            "microseconds": "3600000000",
+            "hours": 1.0
+          }
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-offset-invented",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/unknown-offset-invented.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/offset_from_first_record_microseconds",
+          "value": "0"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-span-invented",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/unknown-span-invented.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/observed_span_microseconds",
+          "value": "3600000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-usable-key-discarded",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/unknown-usable-key-discarded.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/0/timestamp_key",
+          "value": null
+        },
+        {
+          "pointer": "/incident_time/records/0/clock_microseconds",
+          "value": null
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-invalid-key-invented",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/unknown-invalid-key-invented.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/2/timestamp_key",
+          "value": "2026-10-01T02:00:00Z"
+        },
+        {
+          "pointer": "/incident_time/records/2/clock_microseconds",
+          "value": "1790820000000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-unavailable-count-invented",
+      "base_positive": "positive/utc_instant-AllValidOrderU-protocol.json",
+      "malicious_full_wire": "negative/unknown-unavailable-count-invented.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/unavailable_timestamp_record_count",
+          "value": 1
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "unknown-unavailable-count-wrong",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/unknown-unavailable-count-wrong.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/unavailable_timestamp_record_count",
+          "value": 0
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "wall-unknown-clock-kind-changed",
+      "base_positive": "positive/wall_clock-D.json",
+      "malicious_full_wire": "negative/wall-unknown-clock-kind-changed.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/timestamp_kind",
+          "value": "utc_instant"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "sequence-known-diagnostics-unknown",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/sequence-known-diagnostics-unknown.json",
+      "mutations": [
+        {
+          "pointer": "/sequence_evaluable",
+          "value": true
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "sequence-unknown-diagnostics-known",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/sequence-unknown-diagnostics-known.json",
+      "mutations": [
+        {
+          "pointer": "/sequence_evaluable",
+          "value": false
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "rows-empty",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/rows-empty.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records",
+          "value": []
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "diagnostic-row-dropped",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/diagnostic-row-dropped.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records",
+          "value": [
+            {
+              "row_id": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+              "timestamp_key": "2026-10-01T00:00:00Z",
+              "clock_microseconds": "1790812800000000",
+              "offset_from_first_record_microseconds": "0",
+              "gap_before": {
+                "status": "unavailable",
+                "reason": "first_record",
+                "from_row_id": null,
+                "microseconds": null,
+                "hours": null
+              }
+            },
+            {
+              "row_id": "row.v1:sha256:0d37ace9ebde5ce42888925790311c4818ccb0a9ddaa4012928ed11ad7637a0f",
+              "timestamp_key": "2026-10-01T01:00:00Z",
+              "clock_microseconds": "1790816400000000",
+              "offset_from_first_record_microseconds": "3600000000",
+              "gap_before": {
+                "status": "available",
+                "from_row_id": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+                "microseconds": "3600000000",
+                "hours": 1.0
+              }
+            }
+          ]
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "diagnostic-row-duplicated",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/diagnostic-row-duplicated.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/row_id",
+          "value": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "diagnostic-rows-reordered",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/diagnostic-rows-reordered.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records",
+          "value": [
+            {
+              "row_id": "row.v1:sha256:f951309c2fe0d7a9d5511f2f883bc5fb09b36fd01a4da970a01f8c805b63249a",
+              "timestamp_key": "2026-10-01T05:00:00Z",
+              "clock_microseconds": "1790830800000000",
+              "offset_from_first_record_microseconds": "18000000000",
+              "gap_before": {
+                "status": "available",
+                "from_row_id": "row.v1:sha256:0d37ace9ebde5ce42888925790311c4818ccb0a9ddaa4012928ed11ad7637a0f",
+                "microseconds": "14400000000",
+                "hours": 4.0
+              }
+            },
+            {
+              "row_id": "row.v1:sha256:0d37ace9ebde5ce42888925790311c4818ccb0a9ddaa4012928ed11ad7637a0f",
+              "timestamp_key": "2026-10-01T01:00:00Z",
+              "clock_microseconds": "1790816400000000",
+              "offset_from_first_record_microseconds": "3600000000",
+              "gap_before": {
+                "status": "available",
+                "from_row_id": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+                "microseconds": "3600000000",
+                "hours": 1.0
+              }
+            },
+            {
+              "row_id": "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f",
+              "timestamp_key": "2026-10-01T00:00:00Z",
+              "clock_microseconds": "1790812800000000",
+              "offset_from_first_record_microseconds": "0",
+              "gap_before": {
+                "status": "unavailable",
+                "reason": "first_record",
+                "from_row_id": null,
+                "microseconds": null,
+                "hours": null
+              }
+            }
+          ]
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "raw-native-status-rewritten",
+      "base_positive": "positive/utc_instant-D.json",
+      "malicious_full_wire": "negative/raw-native-status-rewritten.json",
+      "mutations": [
+        {
+          "pointer": "/records/2/timestamp_status",
+          "value": "missing"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "coverage-omitted-count-wrong",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/coverage-omitted-count-wrong.json",
+      "mutations": [
+        {
+          "pointer": "/coverage/omitted_activity_record_count",
+          "value": 0
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "mapped-id-drops-valid-activity",
+      "base_positive": "positive/utc_instant-A.json",
+      "malicious_full_wire": "negative/mapped-id-drops-valid-activity.json",
+      "mutations": [
+        {
+          "pointer": "/mapped_row_ids",
+          "value": [
+            "row.v1:sha256:e2dd2a30545dfe8b306bd67a5d8c558d5a10690f26cbffc5fac5e6ed5f21418f"
+          ]
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "huge-float-tie-wrong-first-witness",
+      "base_positive": "positive/utc_instant-HugeUnequal.json",
+      "malicious_full_wire": "negative/huge-float-tie-wrong-first-witness.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/maximum_gap_witness",
+          "value": {
+            "from_row_id": "row.v1:sha256:3dc92e02aceff4eea587a3e72e25dfa01b43d59f7be8ee7c0cb42e0e9b9162fe",
+            "to_row_id": "row.v1:sha256:6a8010d4fd6637911ff1a2d68110784a2f90fed3a737df452c6c57ea6da2292f",
+            "from_activity": "First",
+            "to_activity": null,
+            "from_offset_hours": 0.0,
+            "share_of_observed_span": 0.5,
+            "share_unavailable_reason": null
+          }
+        },
+        {
+          "pointer": "/incident_time/maximum_gap_equal_count",
+          "value": 2
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "huge-true-tie-wrong-later-witness",
+      "base_positive": "positive/utc_instant-HugeEqual.json",
+      "malicious_full_wire": "negative/huge-true-tie-wrong-later-witness.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/summary/maximum_gap_witness",
+          "value": {
+            "from_row_id": "row.v1:sha256:6591658ced9c37baecf955aa0508c9dc0090e83f5d2fd8e91d67954f53aec9fa",
+            "to_row_id": "row.v1:sha256:c2217399b34bd82ac72924496c248c6ee669f2ae6128d2dfb4301f7b87636292",
+            "from_activity": null,
+            "to_activity": "Last",
+            "from_offset_hours": 35054496.0,
+            "share_of_observed_span": 0.5,
+            "share_unavailable_reason": null
+          }
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "year2500-microsecond-collapsed",
+      "base_positive": "positive/utc_instant-Micro2500.json",
+      "malicious_full_wire": "negative/year2500-microsecond-collapsed.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/timestamp_key",
+          "value": "2500-01-01T00:00:00Z"
+        },
+        {
+          "pointer": "/incident_time/records/1/clock_microseconds",
+          "value": "16725225600000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "DST-UTC-used-wall-duration",
+      "base_positive": "positive/utc_instant-DST.json",
+      "malicious_full_wire": "negative/DST-UTC-used-wall-duration.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/observed_span_microseconds",
+          "value": "7200000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "DST-wall-used-physical-duration",
+      "base_positive": "positive/wall_clock-DST.json",
+      "malicious_full_wire": "negative/DST-wall-used-physical-duration.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/observed_span_microseconds",
+          "value": "10800000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "lower-overflow-clipped",
+      "base_positive": "positive/utc_instant-BelowUtcRange.json",
+      "malicious_full_wire": "negative/lower-overflow-clipped.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/timestamp_key",
+          "value": "0001-01-01T00:00:00Z"
+        },
+        {
+          "pointer": "/incident_time/records/1/clock_microseconds",
+          "value": "-62135596800000000"
+        }
+      ],
+      "remove_pointer": null
+    },
+    {
+      "name": "upper-overflow-clipped",
+      "base_positive": "positive/utc_instant-AboveUtcRange.json",
+      "malicious_full_wire": "negative/upper-overflow-clipped.json",
+      "mutations": [
+        {
+          "pointer": "/incident_time/records/1/timestamp_key",
+          "value": "9999-12-31T23:59:59.999999Z"
+        },
+        {
+          "pointer": "/incident_time/records/1/clock_microseconds",
+          "value": "253402300799999999"
+        }
+      ],
+      "remove_pointer": null
+    }
+  ]
+}

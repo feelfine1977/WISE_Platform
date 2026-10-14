@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "message_type": "imported_case_evidence_answer",
+  "request_id": "oracle-wall_clock-HugeUnequal",
+  "query_revision": 12,
+  "workspace_id": "workspace.v1:dffd73dbb782449c9a480ff9fc25d3d7",
+  "identity": {
+    "source_id": "source.v1:sha256:c62fa1316c3404b83a62b306344e52575efd4aea574ef54d16b54e9f6ffcd78d",
+    "preparation_id": "preparation.v1:sha256:44307ca8a7885b7c924650a4c930e3c0a0735c353c4c52ec1f7c6412e7cede02",
+    "representation_id": "representation.v1:sha256:d934eebd0204d05d9e7a9bdd8c2d2e370ab18171aab534ecad093b80263901c0",
+    "case_dictionary_id": "case-dictionary.v1:sha256:285a14f9744d2c40e50cb8703deb3f69a7d028cbde4ba0e719084ef4c65a1894",
+    "population_id": "population.v1:sha256:e312b25012169ea52476073e3f8ba7dceceb75f0cacfb54e8de2e2af025f7145",
+    "implementation_version": "0.1.0"
+  },
+  "case_id": "HugeUnequal",
+  "coverage": {
+    "raw_record_count": 3,
+    "mapped_record_count": 2,
+    "omitted_activity_record_count": 1
+  },
+  "columns": [
+    {
+      "index": 0,
+      "name": "case_id"
+    },
+    {
+      "index": 1,
+      "name": "activity"
+    },
+    {
+      "index": 2,
+      "name": "timestamp"
+    },
+    {
+      "index": 3,
+      "name": "source_sequence"
+    }
+  ],
+  "sequence_evaluable": true,
+  "records": [
+    {
+      "row_id": "row.v1:sha256:476321c8d4c4b4b60e064caebbe391cba811b4f38c65d34908f377b14819b5b5",
+      "source_position": 22,
+      "source_sequence": 1,
+      "activity": "First",
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "0001-01-01T00:00:00",
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "HugeUnequal",
+        "First",
+        "0001-01-01T00:00:00",
+        "1"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:689d94a80f83ef06bfbf34a896d3e7a17021b50d4e5e9cecbfda84ec21660d4d",
+      "source_position": 23,
+      "source_sequence": 2,
+      "activity": null,
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "4000-01-01T00:00:00",
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "HugeUnequal",
+        "",
+        "4000-01-01T00:00:00",
+        "2"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:addc8f4aae15f16e326ee20ece450344e0b82d7df5b826b8e3999cadfda7f8d4",
+      "source_position": 24,
+      "source_sequence": 3,
+      "activity": "Last",
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "7998-12-31T00:00:00.000001",
+      "timestamp_status": "usable",
+      "context": [],
+      "original_cells": [
+        "HugeUnequal",
+        "Last",
+        "7998-12-31T00:00:00.000001",
+        "3"
+      ]
+    }
+  ],
+  "mapped_row_ids": [
+    "row.v1:sha256:476321c8d4c4b4b60e064caebbe391cba811b4f38c65d34908f377b14819b5b5",
+    "row.v1:sha256:addc8f4aae15f16e326ee20ece450344e0b82d7df5b826b8e3999cadfda7f8d4"
+  ],
+  "omitted_activity_row_ids": [
+    "row.v1:sha256:689d94a80f83ef06bfbf34a896d3e7a17021b50d4e5e9cecbfda84ec21660d4d"
+  ],
+  "incident_time": {
+    "policy_id": "incident.time_diagnostics.full_raw_declared_order.v1",
+    "timestamp_kind": "wall_clock",
+    "duration_basis": "recorded_wall_clock",
+    "clock_limitation": "recorded_wall_duration_may_differ_from_physical_elapsed",
+    "summary": {
+      "status": "available",
+      "timestamp_kind": "wall_clock",
+      "first_recorded_timestamp": "0001-01-01T00:00:00",
+      "last_recorded_timestamp": "7998-12-31T00:00:00.000001",
+      "first_recorded_activity": "First",
+      "last_recorded_activity": "Last",
+      "observed_span_hours": 70108992.0,
+      "observed_span_unavailable_reason": null,
+      "maximum_adjacent_raw_gap_hours": 35054496.0,
+      "maximum_adjacent_raw_gap_unavailable_reason": null,
+      "maximum_gap_witness": {
+        "from_row_id": "row.v1:sha256:689d94a80f83ef06bfbf34a896d3e7a17021b50d4e5e9cecbfda84ec21660d4d",
+        "to_row_id": "row.v1:sha256:addc8f4aae15f16e326ee20ece450344e0b82d7df5b826b8e3999cadfda7f8d4",
+        "from_activity": null,
+        "to_activity": "Last",
+        "from_offset_hours": 35054496.0,
+        "share_of_observed_span": 0.5,
+        "share_unavailable_reason": null
+      },
+      "usable_gap_count": 2,
+      "tied_timestamp_group_count": 0
+    },
+    "observed_span_microseconds": "252392371200000001",
+    "maximum_adjacent_raw_gap_microseconds": "126196185600000001",
+    "maximum_gap_equal_count": 1,
+    "records": [
+      {
+        "row_id": "row.v1:sha256:476321c8d4c4b4b60e064caebbe391cba811b4f38c65d34908f377b14819b5b5",
+        "timestamp_key": "0001-01-01T00:00:00",
+        "clock_microseconds": "-62135596800000000",
+        "offset_from_first_record_microseconds": "0",
+        "gap_before": {
+          "status": "unavailable",
+          "reason": "first_record",
+          "from_row_id": null,
+          "microseconds": null,
+          "hours": null
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:689d94a80f83ef06bfbf34a896d3e7a17021b50d4e5e9cecbfda84ec21660d4d",
+        "timestamp_key": "4000-01-01T00:00:00",
+        "clock_microseconds": "64060588800000000",
+        "offset_from_first_record_microseconds": "126196185600000000",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:476321c8d4c4b4b60e064caebbe391cba811b4f38c65d34908f377b14819b5b5",
+          "microseconds": "126196185600000000",
+          "hours": 35054496.0
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:addc8f4aae15f16e326ee20ece450344e0b82d7df5b826b8e3999cadfda7f8d4",
+        "timestamp_key": "7998-12-31T00:00:00.000001",
+        "clock_microseconds": "190256774400000001",
+        "offset_from_first_record_microseconds": "252392371200000001",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:689d94a80f83ef06bfbf34a896d3e7a17021b50d4e5e9cecbfda84ec21660d4d",
+          "microseconds": "126196185600000001",
+          "hours": 35054496.0
+        }
+      }
+    ]
+  }
+}
