@@ -72,11 +72,16 @@ function analysisKey(settings: Settings, review?: ExposureReview): string {
 }
 function ExposureReceipt({receipt}: {receipt: Record<string, unknown>}) {
   const reviewed = receipt.unit_provenance === "explicit_raw_measures_definition.v1";
+  const fit = receipt.fit_population_identity;
+  const fitPopulation = fit && typeof fit === "object" && !Array.isArray(fit) ? (fit as Record<string, unknown>).population_id : undefined;
+  const fitCount = Array.isArray(receipt.population_case_ids) ? receipt.population_case_ids.length : receipt.case_count;
   return <div aria-label="Exposure provenance"><h3>Exposure and priority units</h3>
     {reviewed ? <p>Original value field {String(receipt.source_column_name)} (column {number(receipt.source_field)}), reviewed unit {String(receipt.source_unit)}.
       Reducer {String(receipt.value_reducer)}. Priority unit {String(receipt.priority_unit)}.</p> :
       <p>This stored run uses generic source value units. No currency or original value-field unit was verified for this native receipt.</p>}
     {receipt.policy === "max_absolute_p95" && <p>Exposure is dimensionless after normalization by the frozen 95th percentile {number(receipt.cutoff ?? receipt.quantile)}{reviewed ? ` ${String(receipt.source_unit)}` : " generic source units"}. The calibration was not refitted for this member page.</p>}
+    {reviewed && receipt.policy === "max_absolute_p95" && <p>Frozen reviewed fit population: {String(fitPopulation ?? "Not retained in this receipt")}. Complete items: {number(fitCount)}.</p>}
+    {reviewed && <p>Missing source amounts: {String(receipt.source_value_missing_policy ?? receipt.missing_policy ?? "Unavailable")}. Negative source amounts: {String(receipt.source_value_negative_policy ?? receipt.raw_negative_policy ?? "Unavailable")}.</p>}
     {receipt.missing_policy === "source_compatible_fill_zero" && <p>Historical compatibility fills {number(receipt.missing_case_count)} missing items with zero and uses the recorded denominator {number(receipt.denominator)} (P95 or 1). This policy is retained separately from reviewed refusal.</p>}
     {reviewed && <p>Reviewed measures {String(receipt.reviewed_measure_definition_id)}. Frozen calibration {String(receipt.calibration_id ?? "Unavailable")}.</p>}
   </div>;
@@ -269,7 +274,7 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       <label>Minimum scored items<input type="number" min="1" step="1" value={settings.min_cases} onChange={e => update({ min_cases: Number(e.target.value) })} /></label>
       <label>Association minimum support<input type="number" min="1" step="1" value={settings.association_min_support ?? 1} onChange={e => update({association_min_support:Number(e.target.value)})} /></label>
       <label>Priority multiplier<select value={settings.volume} onChange={e => update({ volume: e.target.value as Settings["volume"] })}><option value="cases">Scored item count</option><option value="exposure">Reviewed exposure</option></select></label>
-      {settings.volume === "exposure" && <label>Exposure recipe<select value={settings.exposure_policy} onChange={e => update({ exposure_policy: e.target.value as Settings["exposure_policy"] })}><option value="max_absolute_p95">Maximum absolute value · frozen parent 95th percentile</option><option value="creation_unique_event">Unique creation event value</option><option value="creation_unique_value">Unique finite creation value</option></select></label>}
+      {settings.volume === "exposure" && <label>Exposure recipe<select value={settings.exposure_policy} onChange={e => update({ exposure_policy: e.target.value as Settings["exposure_policy"] })}><option value="max_absolute_p95">Maximum absolute value · frozen reviewed 95th percentile</option><option value="creation_unique_event">Unique creation event value</option><option value="creation_unique_value">Unique finite creation value</option></select></label>}
       {settings.volume === "exposure" && <label>Reviewed value definition<select value={selectedReviewIndex < 0 ? "" : String(selectedReviewIndex)} onChange={event => {
         const selected = event.target.value === "" ? undefined : reviewOptions[Number(event.target.value)];
         setExposureReview(selected); const policy = exposurePolicy(selected); if (policy) update({exposure_policy: policy});
@@ -351,6 +356,10 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
         <button type="button" disabled={pending || report.case_page.offset === 0} onClick={() => void run(Math.max(0, report.case_page.offset - report.case_page.limit))}>Previous items</button>
         <button type="button" disabled={pending || report.case_page.offset + report.case_page.cases.length >= report.case_page.total} onClick={() => void run(report.case_page.offset + report.case_page.limit)}>Next items</button></div>
       <details><summary>Definition, source and run receipt</summary><p>Profile {report.profile_id}. {report.admitted_criterion_count} criteria admitted. Method {report.method_artifact.version}, {report.method_artifact.qualification}. Run {answer?.run_id}.</p>
+        <p>Native definition: {answer?.definition_id ?? answer?.definition_version_id ?? "Not retained in this legacy receipt"}.</p>
+        <p>Original source: {answer?.base_identity.source_id}. Preparation: {answer?.base_identity.preparation_id}.</p>
+        <p>Representation: {answer?.base_identity.representation_id}. Case dictionary: {answer?.base_identity.case_dictionary_id}.</p>
+        <p>Assessed population: {answer?.named_population.identity.population_id}. Frozen parent: {answer?.parent_identity?.population_id ?? "Not retained in this legacy receipt"}.</p>
         <p>Norm fingerprint: {report.norm_fingerprint}</p><pre>{JSON.stringify({ norm: report.norm, settings: report.settings, exposure: report.exposure_calibration, omissions: report.omissions }, null, 2)}</pre></details>
       {client.export && <button type="button" disabled={pending} onClick={() => void exportRun()}>Export complete native run</button>}
     </>}
