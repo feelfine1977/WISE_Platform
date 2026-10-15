@@ -129,7 +129,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
     </details>}
     {profile && <div className="bpic19-answers" data-stale={actionsPaused ? "true" : undefined}>
       <p className="bpic19-population"><strong>{number.format(profile.population.case_count)} PO items</strong> · {number.format(profile.population.record_count)} original records · {number.format(profile.population.document_count)} purchasing documents</p>
-      {profile.source_review && <SourceReview review={profile.source_review} disabled={actionsPaused} onInspect={onInspect} onKeep={ids => keep(ids, { kind: "source_inclusion" })} />}
+      {profile.source_review && <SourceReview review={profile.source_review} disabled={actionsPaused} onInspect={onInspect} onKeep={(ids,state) => keep(ids, { kind: "source_inclusion", state })} />}
       <p>Four supplied categories partition these items; unknown or changing categories remain separate. Before-GR permits either observed receipt order. Flag checks do not change the category.</p>
       <details><summary>Historical flag-only views · overlapping purchasing flows</summary>
         <p>These views use exact lowercase raw flag strings on at least one same original record. Every retained item keeps its complete history. GR=true AND IV=false includes before-GR and Consignment in the original BPIC19 source; IV=false alone additionally includes two-way items. These are overlapping flag views, separate from the four category partitions.</p>

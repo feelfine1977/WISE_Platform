@@ -14,7 +14,7 @@ function literal():{revision:SavedRevision;manifest:Bpic19PipelineManifest}{
       {operation:"bpic19_score",identity:containingOpenedIdentity,query:scoreQuery,definition_id:scoreId}],literature_claims:claims}}};
   const manifest:Bpic19PipelineManifest={schema_version:1,claim_level:"complete_registered_pipeline",run_id:"pipeline-run-literal",literature_claims:structuredClone(claims),outputs:[
     {operation:"bpic19_profile",definition_id:profileId,sha256:"1".repeat(64),output:{identity:baseIdentity,query:profileQuery,
-      profile:{definition:{policy_id:"literal-source-profile",roles:{item_category:9},source_interpretation:{inclusion:{kind:"all_source"},horizon:{value:null,provenance:null}}},population:{case_count:2,record_count:3,document_count:2},flows:[],source_review:{source_id:baseIdentity.source_id,clock_kind:"wall_clock",parser_time_policy:"as_recorded",observed_raw_maximum:"2020-01-01T00:00:00",horizon_state:"unknown",interpretation:{inclusion:{kind:"all_source"},horizon:{value:null,provenance:null}},raw_support:{case_count:2,record_count:3,document_count:2}}}}},
+      profile:{definition:{policy_id:"literal-source-profile",roles:{item_category:9},category_labels:{before_gr:"3-way match, invoice before GR"},source_interpretation:{inclusion:{kind:"all_source"},horizon:{value:null,provenance:null}}},population:{case_count:2,record_count:3,document_count:2},flows:[],source_review:{source_id:baseIdentity.source_id,clock_kind:"wall_clock",parser_time_policy:"as_recorded",observed_raw_maximum:"2020-01-01T00:00:00",horizon_state:"unknown",interpretation:{inclusion:{kind:"all_source"},horizon:{value:null,provenance:null}},raw_support:{case_count:2,record_count:3,document_count:2}}}}},
     {operation:"bpic19_score",definition_id:scoreId,sha256:"2".repeat(64),output:{run_id:runId,named_population:{identity:containingOpenedIdentity},definition:{elapsed_unit:"days"},
       report:{profile_id:"paper",profile_complete:true,population_case_count:1,scored_case_count:1,unscored_case_count:0,mean_score:0.8,mean_coverage:1,
         method_artifact:{distribution:"wise-pm",version:"0.2.0",qualification:"candidate_component_checked_release_pending",eligible_release:false},settings:{view:"Balanced",mode:"flat",gamma:0},
@@ -24,6 +24,15 @@ function literal():{revision:SavedRevision;manifest:Bpic19PipelineManifest}{
   ]};return {revision,manifest};
 }
 describe("human-readable frozen purchasing report",()=>{
+  it("names the verified selection-step association and exact category labels without retrofitting legacy origins",()=>{
+    const {revision,manifest}=literal();
+    revision.content.bpic19_pipeline!.actions[0].selection_keep={policy_id:"bpic19.profile_group_keep.v1",step_index:0,group:{kind:"flow",flow_id:"before_gr"}};
+    const md=purchasingReportMarkdown(revision,manifest);
+    expect(md).toContain("Verified purchasing selection lineage");expect(md).toContain(String.raw`"flow\_id":"before\_gr"`);
+    expect(md).toContain("3-way match, invoice before GR");expect(md).toContain("Legacy ID-only selections are not retroactively assigned");
+    delete revision.content.bpic19_pipeline!.actions[0].selection_keep;
+    expect(purchasingReportMarkdown(revision,manifest)).not.toContain("Verified purchasing selection lineage");
+  });
   it("renders one coherent revision, source/selected scopes, actual tools/numbers and separately reported literature claims",()=>{
     const {revision,manifest}=literal();const md=purchasingReportMarkdown(revision,manifest);
     expect(md).toContain(firstRevisionId);expect(md).toContain(baseIdentity.source_id);expect(md).toContain(baseIdentity.preparation_id);

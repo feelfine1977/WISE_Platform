@@ -41,7 +41,7 @@ describe("source interpretation review", () => {
     await user.keyboard("{Enter}");
     expect(onInspect).toHaveBeenLastCalledWith("A", [witnessRow]);
     await user.click(screen.getByRole("button", { name: "Keep source inclusion" }));
-    expect(onKeep).toHaveBeenLastCalledWith(["C"]);
+    expect(onKeep).toHaveBeenLastCalledWith(["C"], "retained");
   });
 
   it("labels an event projection as derived and keeps the raw parent counts visible", async () => {

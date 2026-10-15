@@ -18,6 +18,7 @@ from .bpic19_profiles import Bpic19Profiles
 from .imports import Imports
 from .workspace import Problem
 from .strict_reading import alternatives_of, read_strictly
+from .bpic19_selection_keep import keep_step_problem, profile_keep_problem
 
 
 def _request_model(operation):
@@ -97,7 +98,9 @@ def _registered_bindings(imports: Imports, actions: list[dict]) -> dict | Proble
 
 
 def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
-                    allowed_identities: list[dict]) -> dict | None | Problem:
+                    allowed_identities: list[dict], *, selection_recipe: dict | None = None,
+                    selection_prefix_identities: list[dict] | None = None,
+                    selection_prefix_supports: list[dict] | None = None) -> dict | None | Problem:
     if pipeline is None:
         return None
     claims = pipeline.get("literature_claims", [])
@@ -150,7 +153,8 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
         return registry
     operator_names = {"bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"}
     comparison_names = {"bpic19_operator_comparison", "bpic19_cohort_comparison"}
-    keys = [(action["operation"], action["definition_id"], json.dumps(action["identity"], sort_keys=True, separators=(",", ":"))) for action in pipeline["actions"]]
+    keys = [(action["operation"], action["definition_id"], json.dumps(action["identity"], sort_keys=True, separators=(",", ":")),
+             json.dumps(action.get("selection_keep"), sort_keys=True, separators=(",", ":"))) for action in pipeline["actions"]]
     if len(set(keys)) != len(keys):
         return Problem("invalid_parameter", "A reviewed action definition may appear once per exact population identity in a saved pipeline.", "bpic19_pipeline.actions")
     # Admit every closed request before any service computes an output. Partial
@@ -158,8 +162,11 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
     # admitted query. This also checks both inner recipes of a comparison.
     envelopes = {}
     for index, action in enumerate(pipeline["actions"]):
-        if action["operation"] == "bpic19_method_gate": continue
         field = f"bpic19_pipeline.actions.{index}"
+        problem = keep_step_problem(action, selection_recipe, selection_prefix_identities,
+                                    allowed_identities[0], field + ".selection_keep")
+        if problem is not None: return problem
+        if action["operation"] == "bpic19_method_gate": continue
         registered = registry.get(action["operation"])
         if registered is None: return Problem("unsupported_action", "This pipeline action is not registered.", field + ".operation")
         given = {"schema_version": 1, "message_type": registered[1], "request_id": "saved-bpic19-" + str(index),
@@ -211,6 +218,9 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
             definition_id = (answer.get("profile") or {}).get("definition_id")
         if definition_id is None or definition_id != action["definition_id"]:
             return Problem("identity_mismatch", "The action definition is unreviewed or differs from the displayed result.", field + ".definition_id")
+        problem = profile_keep_problem(action, answer, selection_recipe, selection_prefix_supports,
+                                       field + ".selection_keep")
+        if problem is not None: return problem
         payload = canonical_output(answer)
         raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
         outputs.append({"operation": action["operation"], "definition_id": definition_id,

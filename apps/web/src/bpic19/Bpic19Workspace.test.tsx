@@ -16,7 +16,7 @@ import { SavingCoordinator } from "../saved/coordinator";
 import { scriptedComparisonClient } from "../test/comparisons";
 import { earlierPreparationId, evidenceAnswer, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import { firstRevisionId, reopenAnswer, saveAnswer, savedContent, savedSummary, scriptedSavingClient } from "../test/saving";
-import { containingOpened, everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer, type Figures } from "../test/selections";
+import { containingOpened, everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer, selectionRefusal, type Figures } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
 import { Bpic19Workspace } from "./Bpic19Workspace";
 import { Bpic19Session } from "./session";
@@ -50,7 +50,9 @@ function reviewedAnswer(props: Bpic19ProfileProps): Bpic19ProfileAnswer {
         category_assignment: "supplied_exact_invariant_category", flag_policy: "bpic19.category_flags_and_consignment_type.v1", grain_policy: "bpic19.document_item_underscore.v1",
         ...(chosen.source_interpretation ? { source_interpretation: chosen.source_interpretation } : {}) },
       population: { case_count: 2, record_count: 3, document_count: 2, document_unknown_case_count: 0 },
-      flows: [], unresolved: [], cross_checks: [], attributes: [], flow_item_types: [],
+      flows: [{flow_id:"after_gr",label:"Three-way: invoice after goods receipt",category_value:"3-way match, invoice after GR",
+        case_ids:["A-1"],case_count:1,record_count:2,document_count:1,share:.5,example_case_ids:["A-1"]}],
+      unresolved: [], cross_checks: [], attributes: [], flow_item_types: [],
       partition: { classified_case_count: 0, unresolved_case_count: 2, is_disjoint: true, covers_parent: true },
       grain: { mixed_flow_document_count: 0, mixed_flow_document_examples: [], identity_issues: [] },
     },
@@ -76,7 +78,7 @@ vi.mock("./Bpic19Profile", () => ({ Bpic19Profile: function ProfileBoundary(prop
       if (!answer.profile) throw new Error("Missing reviewed profile");
       props.onKeep({ kind: "case_id_in", case_ids: ["A-1"], negate: false }, {
         definition_id: answer.profile.definition_id, definition: answer.profile.definition,
-        source_identity: props.identity, query: answer.query, group: { kind: "source_inclusion" }, case_ids: ["A-1"],
+        source_identity: props.identity, query: answer.query, group: { kind: "flow",flow_id:"after_gr" }, case_ids: ["A-1"],
       });
     }}>Keep scripted first item</button>
     <button onClick={() => {
@@ -571,6 +573,59 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     expect(app.session.savedPipeline()).toBeNull();
     await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
     expect(app.session.savedPipeline()?.actions.at(-1)).toMatchObject({ identity: child?.answer.identity, query });
+    const typed=app.session.savedPipeline()!.actions.filter(action=>action.selection_keep);
+    expect(typed).toHaveLength(1);
+    expect(typed[0]).toMatchObject({identity:parentIdentity,query,selection_prefix_length:0,
+      selection_keep:{policy_id:"bpic19.profile_group_keep.v1",step_index:0,group:{kind:"flow",flow_id:"after_gr"}}});
+    expect(app.session.savedPipeline()!.actions.filter(action=>action.operation==="bpic19_profile" && action.identity.population_id===parentIdentity?.population_id)).toHaveLength(1);
+    expect(screen.getByText("Reviewed purchasing selection recipes")).toBeTruthy();
+    await act(async()=>{app.saving.save("Typed complete-item Keep","Exact parent recipe","incidents");await settle();});
+    expect(app.saves.saves[0].request.bpic19_pipeline?.actions).toContainEqual(typed[0]);
+  });
+
+  it("a failed Keep cannot lend its typed origin to later equal-member generic IDs",async()=>{
+    const app=await opening();await app.user.click(screen.getByRole("button",{name:"Review scripted source"}));
+    await app.user.click(screen.getByRole("button",{name:"Keep scripted first item"}));
+    expect(app.session.readyForSave()).toBe(false);
+    await act(async()=>{const call=app.selecting.selections[1];call.reply(selectionRefusal(call.request,"select_cases","computation_failed","Literal selection failure"));await settle();});
+    expect(app.investigation.getState().selection.phase).toBe("failed");
+    await act(async()=>{app.investigation.staySelection();await settle();});
+    expect(app.session.declarations().some(action=>action.selection_keep)).toBe(false);
+    await act(async()=>{app.investigation.addStep({kind:"case_id_in",case_ids:["A-1"],negate:false});await settle();});
+    await answerSelection(app,2,containingOpened);
+    await app.user.click(screen.getByRole("button",{name:"Review scripted source"}));
+    expect(app.session.declarations().some(action=>action.selection_keep)).toBe(false);
+  });
+
+  it("cancelling a pending Keep by Undo clears its origin before a manual equal-member step",async()=>{
+    const app=await opening();await app.user.click(screen.getByRole("button",{name:"Review scripted source"}));
+    await app.user.click(screen.getByRole("button",{name:"Keep scripted first item"}));
+    await act(async()=>{app.investigation.undo();await settle();});
+    await answerSelection(app,2,everyIncident);
+    expect(app.session.declarations().some(action=>action.selection_keep)).toBe(false);
+    await act(async()=>{app.investigation.addStep({kind:"case_id_in",case_ids:["A-1"],negate:false});await settle();});
+    await answerSelection(app,3,containingOpened);
+    await app.user.click(screen.getByRole("button",{name:"Review scripted source"}));
+    expect(app.session.declarations().some(action=>action.selection_keep)).toBe(false);
+  });
+
+  it("refuses a stale typed Keep callback after the source definition becomes unreviewed",async()=>{
+    const app=await opening();await app.user.click(screen.getByRole("button",{name:"Review scripted source"}));
+    await app.user.click(screen.getByRole("button",{name:"Edit scripted source definition"}));
+    await app.user.click(screen.getByRole("button",{name:"Keep scripted first item"}));
+    expect(app.selecting.selections).toHaveLength(1);
+    expect(screen.getByRole("alert").textContent).toContain("Review this group on the current purchasing parent");
+    expect(app.session.declarations().some(action=>action.selection_keep)).toBe(false);
+  });
+
+  it("repeating an already recorded Keep remains a no-op without leaving a pending unsavable association",async()=>{
+    const app=await opening();await app.user.click(screen.getByRole("button",{name:"Review scripted source"}));
+    await app.user.click(screen.getByRole("button",{name:"Keep scripted first item"}));await answerSelection(app,1,containingOpened);
+    await app.user.click(screen.getByRole("button",{name:"Review scripted source"}));
+    const before=app.session.savedPipeline();expect(before).not.toBeNull();
+    await app.user.click(screen.getByRole("button",{name:"Keep scripted first item"}));
+    expect(app.selecting.selections).toHaveLength(2);expect(app.session.readyForSave()).toBe(true);
+    expect(app.session.savedPipeline()).toEqual(before);
   });
 
   it("removes current export and blocks save after the displayed source definition becomes dirty", async () => {

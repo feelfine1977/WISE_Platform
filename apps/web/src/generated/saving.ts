@@ -70,6 +70,15 @@ export type PeriodComparisonDefinition = UtcPeriodComparisonDefinition | WallPer
 export type RowId = string;
 export type ScoreRunId = string;
 export type CalibrationId = string;
+export type Bpic19ProfileKeepGroup =
+  | FlowKeepGroup
+  | InvariantSubtypeKeepGroup
+  | UnavailableSubtypeKeepGroup
+  | UnresolvedKeepGroup
+  | CrossCheckKeepGroup
+  | GrainIssueKeepGroup
+  | SourceInclusionKeepGroup
+  | AttributeValueKeepGroup;
 export type SavingRefusal = SavingRefusal1;
 
 export interface SaveInvestigationRequest2 {
@@ -362,6 +371,53 @@ export interface Bpic19PipelineAction {
    * Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position.
    */
   selection_prefix_length?: number | null;
+  selection_keep?: Bpic19SelectionKeep;
+}
+/**
+ * Exact complete-case selection step justified by this frozen parent profile. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
+ */
+export interface Bpic19SelectionKeep {
+  policy_id: "bpic19.profile_group_keep.v1";
+  step_index: number;
+  group: Bpic19ProfileKeepGroup;
+}
+export interface FlowKeepGroup {
+  kind: "flow";
+  flow_id: "after_gr" | "before_gr" | "two_way" | "consignment";
+}
+export interface InvariantSubtypeKeepGroup {
+  kind: "flow_item_type";
+  flow_id: "after_gr" | "before_gr" | "two_way" | "consignment";
+  state: "invariant";
+  item_type_value: string;
+}
+export interface UnavailableSubtypeKeepGroup {
+  kind: "flow_item_type";
+  flow_id: "after_gr" | "before_gr" | "two_way" | "consignment";
+  state: "missing" | "conflicting";
+  item_type_value: null;
+}
+export interface UnresolvedKeepGroup {
+  kind: "unresolved";
+  state: "missing" | "conflicting" | "unrecognized";
+}
+export interface CrossCheckKeepGroup {
+  kind: "cross_check";
+  state: "valid" | "unavailable" | "flag_disagreement";
+}
+export interface GrainIssueKeepGroup {
+  kind: "grain_issue";
+  state:
+    "missing_document_or_item" | "conflicting_document_or_item" | "source_case_mismatch" | "duplicate_document_item";
+}
+export interface SourceInclusionKeepGroup {
+  kind: "source_inclusion";
+  state: "retained";
+}
+export interface AttributeValueKeepGroup {
+  kind: "attribute_value";
+  column_index: number;
+  value: string | null;
 }
 export interface Bpic19LiteratureClaim {
   claim_id: string;

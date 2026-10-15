@@ -11,6 +11,7 @@ import type {
   SavingRefusal,
   RecoverInvestigationMetadataRequest,
   RecoverInvestigationMetadataAnswer,
+  Bpic19PipelineAction,
 } from "../generated/saving";
 
 export const savingRoutes = {
@@ -57,6 +58,7 @@ function validator<T>(definition: string): ContractCheck<T> {
 }
 
 export const savingContract = {
+  pipelineAction: validator<Bpic19PipelineAction>("Bpic19PipelineAction"),
   saveRequest: validator<SaveInvestigationRequest>("SaveInvestigationRequest"),
   saveAnswer: validator<SaveInvestigationAnswer>("SaveInvestigationAnswer"),
   listRequest: validator<ListSavedRequest>("ListSavedRequest"),

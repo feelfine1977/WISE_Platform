@@ -442,7 +442,12 @@ class Saving:
         # enter the registry. Caller-supplied action identities are never registered.
         for selection in prefixes: registry.keep(workspace_id, selection)
         return replay_pipeline(self._imports, workspace_id, content.get("bpic19_pipeline"),
-                               [question.prepared.identity_dict(), *[selection.identity_dict() for selection in prefixes]])
+                               [question.prepared.identity_dict(), *[selection.identity_dict() for selection in prefixes]],
+                               selection_recipe=recipe,
+                               selection_prefix_identities=[selection.identity_dict() for selection in prefixes],
+                               selection_prefix_supports=([{"case_ids": selection.kept.case_ids,
+                                   "case_count": selection.kept.case_count, "record_count": selection.kept.record_count} for selection in prefixes]
+                                   if pipeline is not None and any("selection_keep" in action for action in pipeline["actions"]) else None))
 
     def _source(
         self, workspace: Workspace, source_id: str, saved: StoredRevision | None, *, bpic: bool = False

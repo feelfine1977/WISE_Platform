@@ -2111,6 +2111,10 @@
           "minimum": 0,
           "maximum": 100,
           "description": "Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position."
+        },
+        "selection_keep": {
+          "$ref": "#/$defs/Bpic19SelectionKeep",
+          "description": "Exact complete-case selection step justified by this frozen parent profile. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
         }
       },
       "required": [
@@ -2817,6 +2821,243 @@
         "selection_restored",
         "source_verified",
         "metadata"
+      ]
+    },
+    "Bpic19ProfileKeepGroup": {
+      "title": "Bpic19ProfileKeepGroup",
+      "oneOf": [
+        {
+          "title": "FlowKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "flow"
+            },
+            "flow_id": {
+              "type": "string",
+              "enum": [
+                "after_gr",
+                "before_gr",
+                "two_way",
+                "consignment"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "flow_id"
+          ]
+        },
+        {
+          "title": "InvariantSubtypeKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "flow_item_type"
+            },
+            "flow_id": {
+              "type": "string",
+              "enum": [
+                "after_gr",
+                "before_gr",
+                "two_way",
+                "consignment"
+              ]
+            },
+            "state": {
+              "type": "string",
+              "const": "invariant"
+            },
+            "item_type_value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "flow_id",
+            "state",
+            "item_type_value"
+          ]
+        },
+        {
+          "title": "UnavailableSubtypeKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "flow_item_type"
+            },
+            "flow_id": {
+              "type": "string",
+              "enum": [
+                "after_gr",
+                "before_gr",
+                "two_way",
+                "consignment"
+              ]
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "missing",
+                "conflicting"
+              ]
+            },
+            "item_type_value": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "kind",
+            "flow_id",
+            "state",
+            "item_type_value"
+          ]
+        },
+        {
+          "title": "UnresolvedKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "unresolved"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "missing",
+                "conflicting",
+                "unrecognized"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        },
+        {
+          "title": "CrossCheckKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "cross_check"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "valid",
+                "unavailable",
+                "flag_disagreement"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        },
+        {
+          "title": "GrainIssueKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "grain_issue"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "missing_document_or_item",
+                "conflicting_document_or_item",
+                "source_case_mismatch",
+                "duplicate_document_item"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        },
+        {
+          "title": "SourceInclusionKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "source_inclusion"
+            },
+            "state": {
+              "type": "string",
+              "const": "retained"
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        },
+        {
+          "title": "AttributeValueKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "attribute_value"
+            },
+            "column_index": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "column_index",
+            "value"
+          ]
+        }
+      ]
+    },
+    "Bpic19SelectionKeep": {
+      "title": "Bpic19SelectionKeep",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.profile_group_keep.v1"
+        },
+        "step_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99
+        },
+        "group": {
+          "$ref": "#/$defs/Bpic19ProfileKeepGroup"
+        }
+      },
+      "required": [
+        "policy_id",
+        "step_index",
+        "group"
       ]
     }
   }

@@ -36,14 +36,14 @@ export function SourceDefinition({ value, disabled, onChange }: { value: Bpic19S
   </details>;
 }
 
-export function SourceReview({ review, disabled, onInspect, onKeep }: { review: Bpic19SourceReview; disabled: boolean; onInspect: (caseId: string, rowIds?: string[]) => void; onKeep: (caseIds: string[]) => void }) {
+export function SourceReview({ review, disabled, onInspect, onKeep }: { review: Bpic19SourceReview; disabled: boolean; onInspect: (caseId: string, rowIds?: string[]) => void; onKeep: (caseIds: string[], state: "retained") => void }) {
   return <details><summary>Source scope and observation review · {review.interpretation.profile_name}</summary>
     <p>Raw parent: {number.format(review.raw_support.case_count)} items / {number.format(review.raw_support.record_count)} original records / {number.format(review.raw_support.document_count)} known documents.</p>
     <p>Raw parsed range: {review.observed_raw_minimum ?? "unavailable"} to {review.observed_raw_maximum ?? "unavailable"}. Parser admission cutoff: {review.parser_cutoff}.</p>
     <p>Observation horizon: {review.horizon_state === "unknown" ? "unknown" : review.interpretation.horizon.value}; {review.interpretation.horizon.provenance ?? "no observation contract supplied"}. Due/overdue assessment: unavailable ({review.due_assessment_reason.replaceAll("_", " ")}).</p>
     {review.projection ? <p>Derived record projection: {number.format(review.projection.record_count)} records across {number.format(review.projection.case_count)} items. Original histories remain complete.</p> : <>
       <p>Retained: {number.format(review.retained.case_count)} items / {number.format(review.retained.record_count)} records / {number.format(review.retained.document_count)} known documents. Excluded: {number.format(review.excluded.case_count)} items / {number.format(review.excluded.record_count)} records / {number.format(review.excluded.document_count)} known documents. Unavailable: {number.format(review.unavailable.case_count)} items.</p>
-      <button type="button" disabled={disabled || !review.retained.case_count} onClick={() => onKeep(review.retained.case_ids)}>Keep source inclusion</button>
+      <button type="button" disabled={disabled || !review.retained.case_count} onClick={() => onKeep(review.retained.case_ids, "retained")}>Keep source inclusion</button>
     </>}
     <p>Source bytes: <code>{review.source_id}</code>. Preparation: <code>{review.preparation_id}</code>.</p>
     {review.discrepancies.map((d, i) => <p key={i}><strong>Source discrepancy: {number.format(d.difference)} items</strong> · {d.reference}: reported total {number.format(d.reported_total)}, category subtotal {number.format(d.reported_subtotal)}; measured parent {number.format(d.measured_parent_case_count)}. The measured source is unchanged.</p>)}

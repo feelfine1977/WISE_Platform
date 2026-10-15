@@ -4,13 +4,13 @@ import { sameJson } from "../data/coordinator";
 
 const operations = ["bpic19_profile", "bpic19_measures", "bpic19_cohorts", "bpic19_score",
   "bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting", "bpic19_flow_comparison", "bpic19_interval_comparison", "bpic19_operator_comparison", "bpic19_cohort_comparison", "bpic19_method_gate"] as const;
-type Reviewed = { action: Bpic19PipelineAction; path: readonly unknown[] };
+type Reviewed = { action: Bpic19PipelineAction; path: readonly unknown[]; keepPredicate?:unknown };
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
   if (value !== null && typeof value === "object") return `{${Object.entries(value).sort(([a],[b]) => a.localeCompare(b)).map(([k,v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(",")}}`;
   return JSON.stringify(value) ?? "null";
 }
-function actionKey(action: Bpic19PipelineAction) { return canonical([action.operation, action.definition_id, action.identity]); }
+function actionKey(action: Bpic19PipelineAction) { return canonical([action.operation, action.definition_id, action.identity, action.selection_keep ?? null]); }
 function prefix(path: readonly unknown[], current: readonly unknown[]) { return path.length <= current.length && path.every((p,i) => sameJson(p,current[i])); }
 function binding(workspaceId: string, identity: AnswerIdentity) {
   const { population_id: _population, ...source } = identity; return canonical([workspaceId, source]);
@@ -28,6 +28,25 @@ export class Bpic19Session implements PipelineSource {
   private replayMode: "require_all" | "partial" | undefined;
   private literatureClaims:Bpic19LiteratureClaim[]=[];
   private literatureDraftCurrent=true;
+  private pendingKeep: {action:Bpic19PipelineAction;path:readonly unknown[];predicate:unknown} | undefined;
+
+  /** A failed/cancelled selection cannot later lend its origin to equal-member IDs. */
+  discardPendingKeep():void {this.pendingKeep=undefined;}
+
+  /** Capture meaning before selection; publish it only after that exact child succeeds. */
+  recordKeep(action:Bpic19PipelineAction,predicate:unknown):boolean {
+    const current=this.actions.get("bpic19_profile"),keep=action.selection_keep;
+    const position=current?.selection_prefix_length;
+    const exactBase=position===null && this.baseIdentity!==undefined && sameJson(action.identity,this.baseIdentity);
+    if(!current || this.validity.get("bpic19_profile")!==true || !keep || this.path===undefined ||
+      this.path.some(step=>sameJson(step,predicate)) ||
+      keep.step_index!==this.path.length || action.selection_prefix_length!==position ||
+      !(position===this.path.length || exactBase && this.path.length===0) ||
+      !sameJson(action.identity,current.identity) || action.definition_id!==current.definition_id ||
+      !sameJson(action.query,current.query))return false;
+    this.pendingKeep={action:structuredClone(action),path:structuredClone(this.path),predicate:structuredClone(predicate)};
+    return true;
+  }
 
   basis(workspaceId: string, identity: AnswerIdentity, predicates?: readonly unknown[], baseIdentity?: AnswerIdentity): void {
     const next = JSON.stringify([workspaceId, identity]);
@@ -37,14 +56,25 @@ export class Bpic19Session implements PipelineSource {
     }
     const nextBinding = binding(workspaceId, identity);
     if (this.binding === nextBinding && predicates !== undefined && this.path !== undefined) {
+      const pending=this.pendingKeep;
+      if(pending && prefix(pending.path,predicates) && predicates.length>pending.path.length &&
+        sameJson(predicates[pending.path.length],pending.predicate))this.ancestors.push({action:pending.action,path:pending.path,keepPredicate:pending.predicate});
       this.ancestors = this.ancestors.filter(entry => prefix(entry.path, predicates));
+      this.ancestors=this.ancestors.map(entry=>{
+        const keep=entry.action.selection_keep;
+        if(!keep || (keep.step_index< predicates.length && sameJson(entry.keepPredicate,predicates[keep.step_index])))return entry;
+        const {selection_keep:_association,...ordinary}=entry.action;
+        return {...entry,action:ordinary};
+      });
       if (prefix(this.path, predicates)) {
         for (const [operation, action] of this.actions) {
-          if (this.validity.get(operation) === true) this.ancestors.push({ action: structuredClone(action), path: structuredClone(this.path) });
+          if (this.validity.get(operation) === true) this.ancestors.push({ action: structuredClone(action), path: structuredClone(this.path),
+            ...(action.selection_keep?{keepPredicate:structuredClone(this.path[action.selection_keep.step_index])}:{}) });
         }
       }
     } else { this.ancestors = []; this.replayMode = undefined;this.literatureClaims=[];this.literatureDraftCurrent=true; }
     this.key = next;
+    this.pendingKeep=undefined;
     this.binding = nextBinding;
     this.baseIdentity = baseIdentity === undefined ? undefined : structuredClone(baseIdentity);
     this.path = predicates === undefined ? undefined : structuredClone(predicates);
@@ -109,6 +139,7 @@ export class Bpic19Session implements PipelineSource {
 
   /** Called once with a successful server-reopened manifest, never unverified local storage. */
   restore(workspaceId: string, identity: AnswerIdentity, predicates: readonly unknown[], actions: readonly Bpic19PipelineAction[], baseIdentity?: AnswerIdentity, replayMode?: "require_all" | "partial",literatureClaims:readonly Bpic19LiteratureClaim[]=[]): boolean {
+    this.pendingKeep=undefined;
     this.basis(workspaceId, identity, predicates, baseIdentity);
     this.replayMode = replayMode;
     this.setClaims(literatureClaims);
@@ -116,6 +147,11 @@ export class Bpic19Session implements PipelineSource {
     for (const action of actions) {
       if (binding(workspaceId, action.identity) !== this.binding) return false;
       const length = action.selection_prefix_length;
+      const keep=action.selection_keep;
+      if(keep && (action.operation!=="bpic19_profile" ||
+        !(length===keep.step_index || length===null && keep.step_index===0 && sameJson(action.identity,this.baseIdentity)) ||
+        typeof length==="number" && sameJson(action.identity,this.baseIdentity) ||
+        keep.step_index>=predicates.length))return false;
       if (length === undefined) {
         // A legacy current answer is usable; an ancestor without a position is not guessed.
         if (sameJson(action.identity, identity)) accepted.push({ action: structuredClone(action), path: structuredClone(predicates) });
@@ -123,10 +159,12 @@ export class Bpic19Session implements PipelineSource {
       }
       if (length === null) {
         if (this.baseIdentity !== undefined && !sameJson(action.identity, this.baseIdentity)) return false;
-        accepted.push({ action: structuredClone(action), path: [] });
+        accepted.push({ action: structuredClone(action), path: [],
+          ...(keep?{keepPredicate:structuredClone(predicates[keep.step_index])}:{}) });
       } else {
         if (!Number.isInteger(length) || length < 0 || length > Math.min(100, predicates.length)) return false;
-        accepted.push({ action: structuredClone(action), path: structuredClone(predicates.slice(0, length)) });
+        accepted.push({ action: structuredClone(action), path: structuredClone(predicates.slice(0, length)),
+          ...(keep?{keepPredicate:structuredClone(predicates[keep.step_index])}:{}) });
       }
     }
     this.actions.clear(); this.ancestors = [];
@@ -143,6 +181,7 @@ export class Bpic19Session implements PipelineSource {
   }
 
   readyForSave(): boolean {
+    if(this.pendingKeep)return false;
     if(!this.literatureDraftCurrent)return false;
     if (this.actions.size === 0 && this.ancestors.length === 0) return this.literatureClaims.length===0;
     if (this.orderedActions().length > 32) return false;
@@ -157,7 +196,10 @@ export class Bpic19Session implements PipelineSource {
       const action = this.actions.get(operation);
       if (action && (!reviewedCurrentOnly || this.validity.get(operation) === true)) unique.set(actionKey(action), action);
     }
-    return [...unique.values()];
+    const all=[...unique.values()];
+    const baseKey=(action:Bpic19PipelineAction)=>canonical([action.operation,action.definition_id,action.identity,action.query]);
+    const associated=new Set(all.filter(action=>action.selection_keep).map(baseKey));
+    return all.filter(action=>action.selection_keep || !associated.has(baseKey(action)));
   }
 
   savedPipeline(): Bpic19Pipeline | null {

@@ -20,6 +20,7 @@ import { bpic19Contract } from "./scoring-client";
 import { Bpic19Operators, type Bpic19OperatorComparison } from "./Bpic19Operators";
 import { Bpic19Admission } from "./Bpic19Admission";
 import { Bpic19FlowComparison, flowComparisonQuery } from "./Bpic19FlowComparison";
+import { profileKeepAction } from "./profile-keep";
 import { Bpic19RetainedFlowComparisons, retainedFlowComparisonRequest, type RecordedFlowReturn } from "./Bpic19RetainedFlowComparisons";
 import type { Bpic19FlowComparisonAnswer, FlowComparisonQuery } from "../generated/bpic19-flow-comparison";
 import type { AnswerIdentity, Bpic19PipelineAction } from "../generated/saving";
@@ -79,6 +80,7 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   const restoredRevision = useRef<string | undefined>(undefined);
   const returningFlowParent = useRef<{ identity: AnswerIdentity; base: AnswerIdentity; revision: number } | null>(null);
   const [flowReturnProblem, setFlowReturnProblem] = useState<string | null>(null);
+  const [profileKeepProblem,setProfileKeepProblem]=useState<string|null>(null);
   const queries = useRef<{ preparation: string; revision: string | undefined; profile?: Bpic19ProfileQuery; measures?: MeasureQuery; cohorts?: CohortQuery; operators?: OperatorQuery; scoreRunId?: string; scorePopulationId?: string }>({ preparation: "", revision: undefined });
   const [, refresh] = useState(0);
   const shown = shownSelection(state.selection);
@@ -108,6 +110,7 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   }
 
   useLayoutEffect(() => {
+    setProfileKeepProblem(null);
     setProfile(null); setRows([]); setFlowComparison(null);setFlowReturnProblem(null);setIntervalComparison(null);setRecipeComparisons({});flowIntervalSides.current=undefined;
     if (population && identity) {
       session.basis(population.workspace_id, identity, shown?.steps ?? [], population.identity);
@@ -116,6 +119,10 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
       if (recorded) setFlowComparison({ identity: recorded.identity, query: recorded.query, definitionId: action.definition_id });
     }
   }, [key, session]);
+
+  useLayoutEffect(()=>{
+    if(state.selection.phase==="ready" || state.selection.phase==="failed")session.discardPendingKeep();
+  },[state.selection.phase,key,revision,session]);
 
   useLayoutEffect(() => {
     const pending = returningFlowParent.current;
@@ -304,11 +311,24 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
     <div className="bpic19-content" data-inspector={inspectorOpen ? layout : "none"}>
       <div className="bpic19-main" hidden={inspectorOpen && layout === "full"} inert={paused || undefined}>
         <Bpic19Profile key={key} workspaceId={population.workspace_id} identity={identity} revision={revision} query={profileQuery} onReviewed={reviewedProfile} onColumns={availableColumns} onValidityChange={profileValid} onInspect={inspect}
-          onKeep={predicate => investigation.addStep(predicate)}
+          onKeep={(predicate,recipe) => {
+            if(shown?.steps.some(step=>sameJson(step,predicate)))return;
+            const action=currentProfile && shown && profileKeepAction(currentProfile,recipe,predicate,shown.steps.length,
+              sameJson(currentProfile.identity,population.identity)?null:shown.steps.length);
+            if(!action || !session.recordKeep(action,predicate)) {
+              setProfileKeepProblem("Review this group on the current purchasing parent before keeping it.");return;
+            }
+            setProfileKeepProblem(null);investigation.addStep(predicate);
+          }}
           onKeepRecordPredicate={predicate => { recordPredicate.current = predicate; investigation.addStep(predicate); }}
           onCompare={(target, comparator) => {
             setFlowComparison({ identity: target.recipe.source_identity, query: flowComparisonQuery(target,comparator) });
           }} />
+        {profileKeepProblem && <p role="alert">{profileKeepProblem}</p>}
+        {session.reviewedDeclarations().some(action=>action.selection_keep) && <details className="bpic19-profile"><summary>Reviewed purchasing selection recipes</summary>
+          <p>Each typed Keep is tied to its recorded selection step and reviewed parent. The saved profile supplies its exact field roles, category labels, reducer, policies and separate item, record and document supports.</p>
+          <ol>{session.reviewedDeclarations().filter(action=>action.selection_keep).map((action,index)=><li key={index}>Selection step {action.selection_keep!.step_index+1}: {JSON.stringify(action.selection_keep!.group)}. Parent {action.identity.population_id}. Profile {action.definition_id}.</li>)}</ol>
+        </details>}
         {flowComparison && sameJson(flowComparison.identity,identity) && <Bpic19FlowComparison key={JSON.stringify(flowComparison)} workspaceId={population.workspace_id}
           identity={flowComparison.identity} revision={revision} query={flowComparison.query} recordedDefinitionId={flowComparison.definitionId} onReviewed={reviewedFlowComparison} onValidityChange={flowComparisonValid}
           onInspect={inspect} onKeepCases={caseIds=>{if(caseIds.length) investigation.addStep({kind:'case_id_in',case_ids:[caseIds[0],...caseIds.slice(1)],negate:false});}} />}

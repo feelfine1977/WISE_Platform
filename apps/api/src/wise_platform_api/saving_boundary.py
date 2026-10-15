@@ -198,6 +198,11 @@ def _beyond_the_models(message: dict, model: type[BaseModel]) -> list[Failure]:
                        ("comparison", "definition", "target", "definition", "predicates"),
                        ("comparison", "definition", "reference", "definition", "predicates"))
     failures += predicate_wire_failures(message, predicate_paths)
+    pipeline = message.get("bpic19_pipeline")
+    if isinstance(pipeline, dict):
+        for index, action in enumerate(pipeline.get("actions", [])):
+            if isinstance(action, dict) and "selection_keep" in action and action["selection_keep"] is None:
+                failures.append(Failure(("bpic19_pipeline", "actions", index, "selection_keep"), "a supplied profile Keep association cannot be null"))
     failures += repeated_failures(message, _UNIQUE)
     failures += version_failures(message, _VERSIONS)
     comparison = message.get("comparison")

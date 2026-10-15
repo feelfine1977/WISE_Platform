@@ -590,6 +590,113 @@ class RecoveredNotesPage(BaseModel):
     next_offset: conint(ge=0, le=9007199254740991) | None
 
 
+class Bpic19ProfileKeepGroup1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['flow']
+    flow_id: Literal['after_gr', 'before_gr', 'two_way', 'consignment']
+
+
+class Bpic19ProfileKeepGroup2(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['flow_item_type']
+    flow_id: Literal['after_gr', 'before_gr', 'two_way', 'consignment']
+    state: Literal['invariant']
+    item_type_value: str
+
+
+class Bpic19ProfileKeepGroup3(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['flow_item_type']
+    flow_id: Literal['after_gr', 'before_gr', 'two_way', 'consignment']
+    state: Literal['missing', 'conflicting']
+    item_type_value: None
+
+
+class Bpic19ProfileKeepGroup4(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['unresolved']
+    state: Literal['missing', 'conflicting', 'unrecognized']
+
+
+class Bpic19ProfileKeepGroup5(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['cross_check']
+    state: Literal['valid', 'unavailable', 'flag_disagreement']
+
+
+class Bpic19ProfileKeepGroup6(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['grain_issue']
+    state: Literal[
+        'missing_document_or_item',
+        'conflicting_document_or_item',
+        'source_case_mismatch',
+        'duplicate_document_item',
+    ]
+
+
+class Bpic19ProfileKeepGroup7(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['source_inclusion']
+    state: Literal['retained']
+
+
+class Bpic19ProfileKeepGroup8(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['attribute_value']
+    column_index: conint(ge=0)
+    value: str | None
+
+
+class Bpic19ProfileKeepGroup(
+    RootModel[
+        Bpic19ProfileKeepGroup1
+        | Bpic19ProfileKeepGroup2
+        | Bpic19ProfileKeepGroup3
+        | Bpic19ProfileKeepGroup4
+        | Bpic19ProfileKeepGroup5
+        | Bpic19ProfileKeepGroup6
+        | Bpic19ProfileKeepGroup7
+        | Bpic19ProfileKeepGroup8
+    ]
+):
+    root: (
+        Bpic19ProfileKeepGroup1
+        | Bpic19ProfileKeepGroup2
+        | Bpic19ProfileKeepGroup3
+        | Bpic19ProfileKeepGroup4
+        | Bpic19ProfileKeepGroup5
+        | Bpic19ProfileKeepGroup6
+        | Bpic19ProfileKeepGroup7
+        | Bpic19ProfileKeepGroup8
+    ) = Field(..., title='Bpic19ProfileKeepGroup')
+
+
+class Bpic19SelectionKeep(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.profile_group_keep.v1']
+    step_index: conint(ge=0, le=99)
+    group: Bpic19ProfileKeepGroup
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -684,6 +791,10 @@ class Bpic19PipelineAction(BaseModel):
     selection_prefix_length: conint(ge=0, le=100) | None = Field(
         None,
         description='Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position.',
+    )
+    selection_keep: Bpic19SelectionKeep | None = Field(
+        None,
+        description='Exact complete-case selection step justified by this frozen parent profile. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
     )
 
 
