@@ -93,6 +93,13 @@ class BundleAdmissionTests(unittest.TestCase):
                 self.assertIsNotNone(b.PRIVATE_PATH.search(path))
         self.assertIsNone(b.PRIVATE_PATH.search(b'https://example.invalid/api/health'))
 
+    def test_shipped_historical_catalogue_excludes_private_source_defaults(self):
+        reference = ROOT / 'apps/api/src/wise_platform_api/bpic19_reference/historical-notebook-norm.json'
+        # Exercise the actual packaged data with the release guard. Never echo
+        # the matched value into a failure or public qualification log.
+        self.assertTrue(b.PRIVATE_PATH.search(reference.read_bytes()) is None,
+                        'The shipped historical catalogue contains a private source path.')
+
     def test_unverified_installer_is_never_executed(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); path = root / 'fixture-installer.exe'

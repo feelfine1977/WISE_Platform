@@ -23,6 +23,11 @@ from . import method
 
 PAPER_PROFILE = "bpic19.paper.2026-10-12.v1"
 HISTORICAL_PROFILE = "bpic19.notebook.1.0-paper-aligned.partial.v1"
+# The upstream catalogue remains the authority for prepared-v1 declarations.
+# The distribution copy removes only its unused machine-local source default.
+HISTORICAL_UPSTREAM_CATALOGUE_SHA256 = "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef"
+HISTORICAL_PACKAGED_CATALOGUE_SHA256 = "54842010ffe89ea41a0e17ae7617e619a116d6ad7f0cb83bbb07df55faf87ffe"
+HISTORICAL_CATALOGUE_ADAPTATION = "bpic19.catalogue.omit_unused_private_default.v1"
 PAPER_SOURCE_SHA256 = "abc7d58c3558790395622c5758f55e005ed1816092f5cd47a186744569608408"
 LAYERS = ("Completion", "Timing", "Rework", "Effort")
 FLOWS = ("DF1", "DF2", "two_way", "Consignment")
@@ -114,8 +119,21 @@ def historical_catalogue() -> dict:
     return {"source_sha256": hashlib.sha256(raw).hexdigest(), "source": document}
 
 
-def _historical_binding() -> tuple[dict, list[dict], dict[str, dict]]:
+def verified_historical_catalogue() -> dict:
+    """Verify distribution bytes separately from the immutable upstream authority."""
     catalogue = historical_catalogue()
+    if catalogue["source_sha256"] != HISTORICAL_PACKAGED_CATALOGUE_SHA256:
+        raise ValueError("The frozen historical catalogue differs from its verified distribution copy.")
+    return {**catalogue, "provenance": {
+        "upstream_source_sha256": HISTORICAL_UPSTREAM_CATALOGUE_SHA256,
+        "packaged_source_sha256": catalogue["source_sha256"],
+        "adaptation_policy_id": HISTORICAL_CATALOGUE_ADAPTATION,
+        "omitted_json_pointers": ["/preparation/path_default"],
+    }}
+
+
+def _historical_binding() -> tuple[dict, list[dict], dict[str, dict]]:
+    catalogue = verified_historical_catalogue()
     source = catalogue["source"]
     constraints, omitted, bindings = [], [], {}
     historical_features = {
@@ -183,6 +201,7 @@ def _historical_binding() -> tuple[dict, list[dict], dict[str, dict]]:
         "constraints": constraints,
         "metadata": {
             "source_sha256": catalogue["source_sha256"],
+            "source_provenance": catalogue["provenance"],
             "partial": bool(omitted),
             "requested_criterion_count": 29,
             "omissions": omitted,

@@ -83,6 +83,8 @@ Steps 1, 2, 4 (for groups and periods), 5 (map and variants), 6 (one expectation
 
 ## Project guide
 
+- [Prepared catalogue provenance](docs/prepared-catalogue-provenance.md): upstream prepared-v1 authority, verified distribution bytes and immutable stored native results.
+
 - [Architecture](docs/architecture.md): module ownership, contracts, state and local deployment.
 - [Requirements](docs/requirements.md), [design perspectives](docs/design.md), [decisions](docs/adr/README.md) and [glossary](GLOSSARY.md).
 - [Goal authoring](docs/goal-authoring.md): capability scope, review and scoring boundaries.

@@ -1445,7 +1445,10 @@ class PreparedInput(BaseModel):
     profile_id: Literal['bpic19.notebook.1.0-paper-aligned.v1']
     catalogue_sha256: Literal[
         '498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef'
-    ]
+    ] = Field(
+        ...,
+        description='Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md.',
+    )
     input_policy: Literal['declared_prepared_measurements.v1']
     rows: list[AssessmentRow] = Field(
         ...,
@@ -1627,7 +1630,10 @@ class PreparedDefinition(BaseModel):
     profile_id: Literal['bpic19.notebook.1.0-paper-aligned.v1']
     catalogue_sha256: Literal[
         '498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef'
-    ]
+    ] = Field(
+        ...,
+        description='Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md.',
+    )
     mode: Literal['layer_balanced']
     view: Literal['Finance', 'Logistics', 'Compliance', 'Automation']
     norm_fingerprint: str
@@ -1752,7 +1758,10 @@ class Bpic19PreparedRunRequest(BaseModel):
     profile_id: Literal['bpic19.notebook.1.0-paper-aligned.v1']
     catalogue_sha256: Literal[
         '498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef'
-    ]
+    ] = Field(
+        ...,
+        description='Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md.',
+    )
     mode: Literal['layer_balanced']
     view: Literal['Finance', 'Logistics', 'Compliance', 'Automation']
 

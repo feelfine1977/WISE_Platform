@@ -112,7 +112,28 @@ class PreparedInputContractTests(unittest.TestCase):
                            check=True, capture_output=True)
             self.assertEqual(target.read_bytes(), original)
             self.assertEqual(hashlib.sha256(target.read_bytes()).hexdigest(),
-                             "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef")
+                             "54842010ffe89ea41a0e17ae7617e619a116d6ad7f0cb83bbb07df55faf87ffe")
+
+    def test_distribution_provenance_preserves_upstream_v1_input_identity(self):
+        catalogue = bpic19_method.verified_historical_catalogue()
+        self.assertEqual(catalogue["source_sha256"],
+                         "54842010ffe89ea41a0e17ae7617e619a116d6ad7f0cb83bbb07df55faf87ffe")
+        self.assertNotIn("path_default", catalogue["source"]["preparation"])
+        self.assertEqual(catalogue["provenance"], {
+            "upstream_source_sha256": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef",
+            "packaged_source_sha256": catalogue["source_sha256"],
+            "adaptation_policy_id": "bpic19.catalogue.omit_unused_private_default.v1",
+            "omitted_json_pointers": ["/preparation/path_default"],
+        })
+        # This exact declaration was frozen on the original upstream catalogue.
+        # Distribution-only metadata must not rewrite its content authority.
+        self.assertEqual(self.artifact.content_id,
+                         "bpic19-prepared-input.v1:sha256:1373b93a06382a6938d51ea6607e2ea10e2267300e4f169d0a6f1e22284ad60e")
+        self.assertEqual(self.artifact.to_dict()["catalogue_sha256"],
+                         catalogue["provenance"]["upstream_source_sha256"])
+        norm, _omissions, _bindings = bpic19_method._historical_binding()
+        self.assertEqual(norm["metadata"]["source_sha256"], catalogue["source_sha256"])
+        self.assertEqual(norm["metadata"]["source_provenance"], catalogue["provenance"])
 
     def test_frozen_catalogue_still_refuses_a_meaning_changed_byte(self):
         raw = Path(bpic19_method.__file__).with_name("bpic19_reference").joinpath("historical-notebook-norm.json").read_bytes()
@@ -129,6 +150,8 @@ class PreparedInputContractTests(unittest.TestCase):
                 self.assertEqual(bpic19_method.historical_catalogue()["source_sha256"], hashlib.sha256(changed).hexdigest())
                 with self.assertRaisesRegex(ValueError, "The frozen historical catalogue differs"):
                     binding_catalogue()
+                with self.assertRaisesRegex(ValueError, "The frozen historical catalogue differs"):
+                    bpic19_method._historical_binding()
 
     def test_exact_existing_29_attributes_units_scopes_and_schema_declarations(self):
         expected = {name: (unit, scopes) for name, unit, scopes, _value in CELLS}

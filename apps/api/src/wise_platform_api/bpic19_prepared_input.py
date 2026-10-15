@@ -31,9 +31,14 @@ from typing import Any
 
 from wise_platform_analytics.preparation import content_identity
 
-from .bpic19_method import FLOWS, HISTORICAL_PROFILE, historical_catalogue
+from .bpic19_method import (
+    FLOWS, HISTORICAL_PROFILE, HISTORICAL_UPSTREAM_CATALOGUE_SHA256,
+    verified_historical_catalogue,
+)
 
-CATALOGUE_SHA256 = "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef"
+# This v1 field identifies the immutable upstream authority, not distribution
+# bytes. verified_historical_catalogue checks the separately pinned copy.
+CATALOGUE_SHA256 = HISTORICAL_UPSTREAM_CATALOGUE_SHA256
 PROFILE_ID = HISTORICAL_PROFILE.replace(".partial", "")
 INPUT_POLICY = "declared_prepared_measurements.v1"
 _SAFE_INTEGER = 2**53 - 1
@@ -64,9 +69,10 @@ class Binding:
 
 def binding_catalogue() -> tuple[Binding, ...]:
     """The exact existing bindings; callers cannot redefine units or scope."""
-    catalogue = historical_catalogue()
-    if catalogue["source_sha256"] != CATALOGUE_SHA256:
-        raise ValueError("The frozen historical catalogue differs from prepared-input v1.")
+    try:
+        catalogue = verified_historical_catalogue()
+    except ValueError as error:
+        raise ValueError("The frozen historical catalogue differs from prepared-input v1.") from error
     return tuple(
         Binding(
             criterion["id"],

@@ -337,6 +337,9 @@ export interface PreparedInput {
   schema_version: 1;
   artifact_kind: "bpic19.prepared-input";
   profile_id: "bpic19.notebook.1.0-paper-aligned.v1";
+  /**
+   * Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md.
+   */
   catalogue_sha256: "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef";
   input_policy: "declared_prepared_measurements.v1";
   /**
@@ -411,6 +414,9 @@ export interface Bpic19PreparedRunRequest {
   workspace_id: string;
   input_id: InputId;
   profile_id: "bpic19.notebook.1.0-paper-aligned.v1";
+  /**
+   * Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md.
+   */
   catalogue_sha256: "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef";
   mode: "layer_balanced";
   view: "Finance" | "Logistics" | "Compliance" | "Automation";
@@ -463,6 +469,9 @@ export interface PreparedReference {
 export interface PreparedDefinition {
   definition_id: DefinitionId;
   profile_id: "bpic19.notebook.1.0-paper-aligned.v1";
+  /**
+   * Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md.
+   */
   catalogue_sha256: "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef";
   mode: "layer_balanced";
   view: "Finance" | "Logistics" | "Compliance" | "Automation";

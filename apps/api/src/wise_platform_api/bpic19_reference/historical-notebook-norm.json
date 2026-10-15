@@ -5,12 +5,11 @@
     "created_at": "2026-03-07T15:54:12.947106+00:00",
     "purpose": "Single end-to-end WISE norm for BPIC'19 Q3 analysis from stakeholder expectations to norm, case scoring, and PI backlogs.",
     "domain": "Purchase-to-Pay / BPIC'19",
-    "case_notion": "PO item (Purchasing Document \u00d7 Item)",
+    "case_notion": "PO item (Purchasing Document × Item)",
     "governance_unit": "Purchase document (PO header)",
     "note": "Paper-aligned version: constraint types match Section IV-B vocabulary (pres, lag, bal, sing, excl). Balance constraints added per Table V pattern."
   },
   "preparation": {
-    "path_default": "/Users/ula/code/PhD/WISE/WISE/Untitled/data/BPI_Challenge_2019.csv",
     "encoding": "latin-1",
     "required_columns": [
       "eventID",
@@ -743,7 +742,7 @@
         "case Document Type",
         "flow_type"
       ],
-      "description": "Document type \u00d7 flow type cohorts (BPIC'19: Standard PO, Framework Order, EC Purchase Order)"
+      "description": "Document type × flow type cohorts (BPIC'19: Standard PO, Framework Order, EC Purchase Order)"
     }
   }
 }

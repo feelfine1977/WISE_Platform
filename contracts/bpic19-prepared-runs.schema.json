@@ -1201,7 +1201,8 @@
           "const": "bpic19.notebook.1.0-paper-aligned.v1"
         },
         "catalogue_sha256": {
-          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef"
+          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef",
+          "description": "Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md."
         },
         "input_policy": {
           "const": "declared_prepared_measurements.v1"
@@ -1552,7 +1553,8 @@
           "const": "bpic19.notebook.1.0-paper-aligned.v1"
         },
         "catalogue_sha256": {
-          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef"
+          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef",
+          "description": "Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md."
         },
         "mode": {
           "const": "layer_balanced"
@@ -1947,7 +1949,8 @@
           "const": "bpic19.notebook.1.0-paper-aligned.v1"
         },
         "catalogue_sha256": {
-          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef"
+          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef",
+          "description": "Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md."
         },
         "mode": {
           "const": "layer_balanced"
