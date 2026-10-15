@@ -51,7 +51,8 @@ def test_exemplar_beyond_first_page_reads_production_later_chunk_without_rescore
     folder = tmp_path / "workspace"; folder.mkdir()
     assert bpic19_scoring._CHUNK_SIZE == 500
     with TestClient(app()) as client:
-        wid, identity = prepare(client, folder, later_exemplar_source())
+        raw = later_exemplar_source()
+        wid, identity = prepare(client, folder, raw)
         request = given(wid, identity); request["case_limit"] = 50
         scored = client.post('/api/investigations/bpic19-score', json=request)
         assert scored.status_code == 200, scored.text
@@ -62,6 +63,11 @@ def test_exemplar_beyond_first_page_reads_production_later_chunk_without_rescore
         exemplar = original['report']['exemplars'][0]
         assert exemplar['reference_median_days'] == 2 and exemplar['evaluated_support'] == 501 and exemplar['positive_support'] == 1
         assert exemplar['measurement_days'] == 61
+        source_id = "source.v1:sha256:" + hashlib.sha256(raw).hexdigest()
+        expected_rows = ["row.v1:sha256:" + hashlib.sha256(json.dumps(
+            {"format_version": 1, "source_id": source_id, "source_position": position},
+            sort_keys=True, separators=(",", ":")).encode()).hexdigest() for position in (2001, 2003)]
+        assert exemplar['row_ids'] == expected_rows
         before = artifact_digests(folder)
         monkeypatch.setattr(bpic19_scoring, 'evaluate_features', lambda *args, **kwargs: pytest.fail('Native member reads must never rescore'))
         inspected = client.post('/api/investigations/bpic19-read', json={**read(wid, original['run_id']), 'case_offset': 500, 'case_limit': 50})
@@ -71,6 +77,7 @@ def test_exemplar_beyond_first_page_reads_production_later_chunk_without_rescore
         native = answer['report']['case_page']['cases'][0]
         assert len(native['criteria']) == 10 and criterion(native, 'C04')['measurement'] == 61
         assert criterion(native, 'C04')['deviation'] == pytest.approx(31 / 60)
+        assert criterion(native, 'C04')['row_ids'] == expected_rows
         assert native['score'] == pytest.approx(1 - (31 / 60) / 9)
         assert criterion(native, 'C05')['reason'] == 'out_of_scope'
         for key in ('run_id', 'definition_id', 'definition_version_id', 'base_identity', 'named_population', 'snapshot'):

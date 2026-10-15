@@ -6,7 +6,7 @@ read recorded artifacts; none of those operations scores or fits a calibration.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import gzip
 import hashlib
 import io
@@ -392,7 +392,13 @@ class Bpic19Scoring:
                     exposure_review_fit_ids=scoped_exposure[1] if scoped_exposure is not None and scoped_exposure[0]["query"]["measure_profile"] == "historical_v1" else None)
                 value_definition, provenance = self._verify_exposure_reference(given, prepared, scoped_exposure) if scoped_exposure is not None else (None, None)
                 version = _checked(workspace.store_definition(definition))
-                if settings["profile"] == "historical":
+                evidence = None
+                # This route has no custom recipe, exposure fit or added creation
+                # witness; on-demand evidence must use that same unmodified recipe.
+                if (settings["profile"] == "paper" and settings["volume"] == "cases"
+                        and settings["exposure_policy"] == "max_absolute_p95" and value_definition is None):
+                    features, evidence = bpic19_method.prepared_score_inputs(prepared, population.case_ids, given["roles"])
+                elif settings["profile"] == "historical":
                     if value_definition is None:
                         features = build_historical_features(prepared, population.case_ids, given["roles"], calibration_case_ids=population.parent_ids)
                     else:
@@ -449,6 +455,8 @@ class Bpic19Scoring:
                                    "raw_measure": "maximum_absolute_event_value", "missing_policy": "refuse",
                                    "value_row_ids": [row for m in measures for row in m.get("row_ids", [])]}
                 assessment = evaluate_features(features, **settings, exposure_calibration=calibration, exposure_provenance=provenance)
+                if evidence is not None:
+                    assessment = replace(assessment, _evidence=evidence)
                 if settings["volume"] == "exposure" and provenance is None:
                     source_field = checked_measure_roles(prepared, given["roles"])["net_worth"]
                     assessment.exposure_receipt.update(source_field=source_field,

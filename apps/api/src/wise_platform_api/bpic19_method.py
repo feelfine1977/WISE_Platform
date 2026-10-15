@@ -8,7 +8,8 @@ row witnesses remain attached to the measured input. Resolution is unchanged.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
+from collections.abc import Callable
 import hashlib
 import json
 import math
@@ -17,7 +18,9 @@ from pathlib import Path
 from functools import cached_property
 from typing import Any, Mapping, Sequence
 
-from wise_platform_analytics.bpic19_measures import FIRST_CREATION_POLICY
+from wise_platform_analytics.bpic19_measures import FIRST_CREATION_POLICY, checked_measure_roles, derive_case_measures
+from wise_platform_analytics.preparation import PreparedData
+from wise_platform_analytics.selection import case_ids as checked_case_ids
 
 from . import method
 
@@ -342,6 +345,32 @@ def _transport(features: Sequence[dict], bindings: dict | None) -> Any:
     )
 
 
+def prepared_score_inputs(prepared: PreparedData, case_ids: Sequence[str], roles: Mapping) -> tuple[list[dict], Callable[[str], dict]]:
+    """Retain scoring/report inputs, deriving complete case evidence only on demand."""
+    chosen = checked_measure_roles(prepared, roles)
+
+    def evidence(case_id: str) -> dict:
+        feature = derive_case_measures(prepared, case_id, chosen)
+        for name in ("creation_value", "exposure"):
+            feature["measures"][name]["unit"] = "source_value_units"
+        return feature
+
+    inputs = []
+    for case_id in checked_case_ids(prepared, case_ids):
+        feature = evidence(case_id)
+        inputs.append({
+            **{key: feature[key] for key in ("case_id", "flow", "document", "company", "spend_area", "record_count",
+                                             "activity_counts", "activity_counts_available")},
+            "context": {role: {key: value for key, value in feature["context"][role].items() if key != "row_ids"}
+                        for role in ("purchasing_document", "company", "spend_area", "item_type")},
+            "measures": {name: {"value": witness.get("value"), "available": witness.get("available")}
+                         for name, witness in feature["measures"].items()},
+            "representations": {key: feature["representations"][key]
+                                for key in ("available", "exact_sequence", "first_occurrence_signature")},
+        })
+    return inputs, evidence
+
+
 @dataclass(frozen=True)
 class Bpic19Assessment:
     """An immutable native evaluation in memory, with bounded serializable pages."""
@@ -357,6 +386,7 @@ class Bpic19Assessment:
     exposure_receipt: dict | None
     omissions: list[dict]
     association_min_support: int = 1
+    _evidence: Callable[[str], dict] | None = field(default=None, repr=False, compare=False)
 
     @cached_property
     def effective_weights(self) -> Any:
@@ -395,7 +425,8 @@ class Bpic19Assessment:
     def case(self, case_id: str) -> dict:
         if case_id not in self.features:
             raise ValueError("The item is outside this frozen assessment.")
-        result, feature = self.result, self.features[case_id]
+        result = self.result
+        feature = self._evidence(case_id) if self._evidence is not None else self.features[case_id]
         position = self.native_positions[case_id]
         native = self.native_tables
         weights, penalties, known, evaluated, reasons = (
@@ -754,7 +785,8 @@ class Bpic19Assessment:
             cid, value, dev = min(candidates, key=lambda item: (abs(item[1] - median), item[0]))
             rows.append({**dict(zip(self.group_by, key)), "case_id": cid, "criterion_id": "C04",
                          "reference_median_days": median, "evaluated_support": len(members), "positive_support": len(candidates),
-                         "measurement_days": value, "deviation": dev, "row_ids": self.features[cid]["measures"]["invoice_to_clearing_days"].get("row_ids", []),
+                         "measurement_days": value, "deviation": dev,
+                         "row_ids": (self._evidence(cid) if self._evidence is not None else self.features[cid])["measures"]["invoice_to_clearing_days"].get("row_ids", []),
                          "selection_recipe": "positive_nearest_all_evaluable_median_then_case_id_ascending"})
         return rows
 
