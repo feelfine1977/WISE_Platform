@@ -69,14 +69,22 @@ describe("BPIC19 criterion analysis", () => {
   });
   it("invalidates a reviewed run when only source-role meaning changes", async () => {
     const valid = vi.fn(), reviewed = vi.fn();
-    const client: Bpic19Client = {score: vi.fn<Bpic19Client["score"]>(async request => ({ok:true,answer:answer(request)})),read:vi.fn()};
+    let resolve: ((value: Bpic19Outcome) => void) | undefined;
+    let sent: Bpic19ScoreRequest | undefined;
+    const client: Bpic19Client = {score: vi.fn<Bpic19Client["score"]>(request => {
+      sent = request; return new Promise<Bpic19Outcome>(done => { resolve = done; });
+    }),read:vi.fn()};
     const {rerender} = render(<Bpic19Scoring subject={subject} client={client} revision={12} onReviewed={reviewed} onValidityChange={valid} />);
     fireEvent.click(screen.getByRole("button",{name:"Run analysis"}));
-    await screen.findByText(/2 of 2 items scored/);
-    expect(reviewed).toHaveBeenCalledTimes(1); expect(valid).toHaveBeenLastCalledWith(true);
-    rerender(<Bpic19Scoring subject={{...subject,roles:{...subject.roles,resource:6}}} client={client} revision={12} onReviewed={reviewed} onValidityChange={valid} />);
-    await waitFor(() => expect(screen.queryByText(/2 of 2 items scored/)).toBeNull());
     expect(valid).toHaveBeenLastCalledWith(false);
+    expect(reviewed).not.toHaveBeenCalled();
+    if (!resolve || !sent) throw new Error("The scoring request should be pending.");
+    await act(async () => resolve?.({ok:true,answer:answer(sent)}));
+    await screen.findByText(/2 of 2 items scored/);
+    // DOM publication can precede the passive validity effect; await its own signal.
+    await waitFor(() => { expect(reviewed).toHaveBeenCalledTimes(1); expect(valid).toHaveBeenLastCalledWith(true); });
+    rerender(<Bpic19Scoring subject={{...subject,roles:{...subject.roles,resource:6}}} client={client} revision={12} onReviewed={reviewed} onValidityChange={valid} />);
+    await waitFor(() => { expect(screen.queryByText(/2 of 2 items scored/)).toBeNull(); expect(valid).toHaveBeenLastCalledWith(false); });
     expect(reviewed).toHaveBeenCalledTimes(1);
   });
   it("inspects stored group members with the same run instead of scoring a subset", async () => {
