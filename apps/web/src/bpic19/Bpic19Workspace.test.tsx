@@ -46,7 +46,7 @@ function reviewedAnswer(props: Bpic19ProfileProps): Bpic19ProfileAnswer {
     workspace_id: props.workspaceId, identity: props.identity, parent_identity: props.identity,
     query: chosen, binding_state: "reviewed", columns: [], suggested_roles: chosen.roles,
     profile: {
-      definition_id: "bpic19-profile.v1:sha256:" + "1".repeat(64),
+      definition_id: "bpic19-profile.v1:sha256:" + (chosen.roles.item_category === 7 ? "2" : "1").repeat(64),
       definition: { policy_id: "bpic19.all_raw_case_attributes.v1", roles: chosen.roles, profile_columns: [],
         category_labels: { after_gr: "3-way match, invoice after GR", before_gr: "3-way match, invoice before GR", two_way: "2-way match", consignment: "Consignment" },
         category_assignment: "supplied_exact_invariant_category", flag_policy: "bpic19.category_flags_and_consignment_type.v1", grain_policy: "bpic19.document_item_underscore.v1",
@@ -224,6 +224,53 @@ function comparisonHttp() {
 
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("preserves current A after its earlier ordinary declaration and a same-population typed Keep B", async () => {
+    keptProfileGroup.caseIds = ["A-1", "B-2"];
+    const app = await opening();
+    const generic: CaseIdIn = { kind: "case_id_in", case_ids: ["B-2", "A-1"], negate: false };
+    await act(async () => { app.investigation.addStep(generic); await settle(); });
+    const full = { kept: everyIncident.kept, removed: everyIncident.removed, unevaluable: everyIncident.unevaluable };
+    await answerSelection(app, 1, { ...everyIncident, population: "a", results: [full] });
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    const identityBefore = shownSelection(app.investigation.getState().selection)!.answer.identity;
+    async function saveCurrent(index: number, revisionId: string) {
+      await act(async () => { app.saving.save("Independent cross-prefix chronology " + index, "Real coordinators; scripted service/analytics boundaries", "incidents"); await settle(); });
+      expect(app.saves.saves).toHaveLength(index + 1);
+      const call=app.saves.saves[index], saved=saveAnswer(call.request,revisionId,index===0);
+      saved.revision.content.bpic19_pipeline=structuredClone(call.request.bpic19_pipeline);
+      await act(async () => { call.reply({ok:true,answer:saved});await settle(); });
+      expect(app.investigation.getState().saved?.revisionId).toBe(revisionId);
+    }
+    await saveCurrent(0, firstRevisionId);
+    const originalRevision=structuredClone(app.investigation.getState().saved!.content);
+    expect(app.session.savedPipeline()!.actions.filter(action=>action.operation==="bpic19_profile")).toMatchObject([{selection_prefix_length:1,query:{roles:{item_category:0}}}]);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted changed source roles" }));
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null").roles.item_category).toBe(7);
+    await app.user.click(screen.getByRole("button", { name: "Keep scripted first item" }));
+    expect(app.selecting.selections).toHaveLength(3);
+    await answerSelection(app, 2, { ...everyIncident, population: "a", results: [full, full] });
+    expect(shownSelection(app.investigation.getState().selection)!.answer.identity).toEqual(identityBefore);
+    const typed=app.session.declarations().filter(action=>action.selection_keep);
+    expect(typed).toHaveLength(1);
+    expect(typed[0]).toMatchObject({selection_prefix_length:1,selection_keep:{step_index:1},query:{roles:{item_category:7}}});
+    await app.user.click(screen.getByRole("button", { name: "Review scripted original source roles" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    const before=JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null");
+    expect(before).toEqual(query);
+    const profiles=app.session.savedPipeline()!.actions.filter(action=>action.operation==="bpic19_profile");
+    expect(profiles.find(action=>!action.selection_keep)).toMatchObject({selection_prefix_length:2,query:{roles:{item_category:0}}});
+    expect(profiles.filter(action=>action.selection_keep)).toEqual(typed);
+    expect(profiles.at(-1)).toMatchObject({selection_prefix_length:2,query:{roles:{item_category:0}}});
+    // The backend permits one ordinary operation/definition/full-identity key.
+    expect(profiles.filter(action=>!action.selection_keep)).toHaveLength(1);
+    await saveCurrent(1, secondRevisionId);
+    expect(app.saves.reopens).toHaveLength(0);
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null")).toEqual(before);
+    expect(app.saves.saves[0].request.bpic19_pipeline).toEqual(originalRevision.bpic19_pipeline);
+    expect(app.session.savedPipeline()!.actions.filter(action=>action.selection_keep)).toEqual(typed);
+  });
+
   it("keeps the recorded comparator and excluded target readable, then restores the exact comparison on Return and Undo", async () => {
     const http = comparisonHttp(), app = await opening();
     await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));

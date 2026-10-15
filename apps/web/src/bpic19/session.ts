@@ -219,13 +219,18 @@ export class Bpic19Session implements PipelineSource {
       const action = this.actions.get(operation);
       if (action && (!reviewedCurrentOnly || this.validity.get(operation) === true)) {
         const key = actionKey(action);
+        const retainedAtKey = unique.get(key);
         const latestAtPosition = [...unique.values()].filter(previous =>
           previous.operation === operation && sameJson(previous.identity, action.identity) &&
           previous.selection_prefix_length === action.selection_prefix_length).at(-1);
         // Map.set keeps a retained recipe's first insertion position. A return
         // to that recipe is a new current review only in this exact context.
+        // A new prefix can have the same canonical population and ordinary key.
+        // Keep the backend's one ordinary key, but publish its current position.
         // An unchanged reread must preserve the frozen declaration order.
-        if (!action.selection_keep && latestAtPosition && actionKey(latestAtPosition) !== key) unique.delete(key);
+        if (!action.selection_keep && (
+          retainedAtKey && retainedAtKey.selection_prefix_length !== action.selection_prefix_length ||
+          latestAtPosition && actionKey(latestAtPosition) !== key)) unique.delete(key);
         unique.set(key, action);
       }
     }
