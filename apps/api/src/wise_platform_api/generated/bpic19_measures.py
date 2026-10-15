@@ -168,6 +168,8 @@ class RawMeasure(BaseModel):
     candidate_count: conint(ge=0) | None = None
     winner_row_ids: list[str] | None = None
     state: str | None = None
+    first_candidate_row_id: str | None = None
+    first_candidate_source_position: conint(ge=0, le=9007199254740991) | None = None
 
 
 class ContextMeasure(BaseModel):
@@ -231,45 +233,6 @@ class ActivityLabels(BaseModel):
 
 class CreationSelectorItem(RootModel[constr(min_length=1)]):
     root: constr(min_length=1)
-
-
-class Definition(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    policy_id: Literal['bpic19.source_witnessed_measures.v1']
-    measure_profile: Literal['paper_v1', 'historical_v1']
-    time_policy_id: str
-    resource_policy_id: str
-    roles: MeasureRoles
-    activity_labels: ActivityLabels
-    historical_policy_id: str | None = None
-    calibration: Calibration | None = None
-    activity_selector: list[ActivitySelectorItem] = Field(
-        ..., max_length=100, min_length=1
-    )
-    interval_source: list[IntervalSourceItem] = Field(..., max_length=100, min_length=1)
-    interval_target: list[IntervalTargetItem] = Field(..., max_length=100, min_length=1)
-    activity_operator: str
-    interval_policy: str
-    value_reducer: str
-    representation_policy: str
-    definition_id: str
-    clock_kind: str
-    clock_policy_id: str
-    elapsed_unit: str
-    endpoint_admissibility: str
-    resource_normalization: str
-    resource_unknown_policy: str
-    value_unit: str
-    numeric_policy: str
-    value_missing_policy: str
-    creation_conflict_policy: str
-    source_representation: str
-    creation_selector: list[CreationSelectorItem] = Field(
-        ..., max_length=100, min_length=1
-    )
-    value_band_edges: list[float] = Field(..., max_length=50)
 
 
 class Milestones(BaseModel):
@@ -455,6 +418,58 @@ class ValueBand(BaseModel):
     lower_inclusive: float | None
     upper_exclusive: float | None
     case_ids: list[str]
+
+
+class FirstCreationPolicy(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.panel_first_creation_source_position.v1']
+    authority: Literal['panel_product_decision']
+    order: Literal['original_source_position_ascending']
+    duplicate_policy: Literal['retain_all_creation_records']
+    selected_value_policy: Literal['first_candidate_only_no_fallback']
+    negative_value_policy: Literal['preserve_sign_in_raw_measure']
+
+
+class Definition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.source_witnessed_measures.v1']
+    measure_profile: Literal['paper_v1', 'historical_v1']
+    time_policy_id: str
+    resource_policy_id: str
+    roles: MeasureRoles
+    activity_labels: ActivityLabels
+    historical_policy_id: str | None = None
+    calibration: Calibration | None = None
+    activity_selector: list[ActivitySelectorItem] = Field(
+        ..., max_length=100, min_length=1
+    )
+    interval_source: list[IntervalSourceItem] = Field(..., max_length=100, min_length=1)
+    interval_target: list[IntervalTargetItem] = Field(..., max_length=100, min_length=1)
+    activity_operator: str
+    interval_policy: str
+    value_reducer: str
+    representation_policy: str
+    definition_id: str
+    clock_kind: str
+    clock_policy_id: str
+    elapsed_unit: str
+    endpoint_admissibility: str
+    resource_normalization: str
+    resource_unknown_policy: str
+    value_unit: str
+    numeric_policy: str
+    value_missing_policy: str
+    creation_conflict_policy: str
+    source_representation: str
+    creation_selector: list[CreationSelectorItem] = Field(
+        ..., max_length=100, min_length=1
+    )
+    value_band_edges: list[float] = Field(..., max_length=50)
+    first_creation_policy: FirstCreationPolicy | None = None
 
 
 class CaseFeatures(BaseModel):

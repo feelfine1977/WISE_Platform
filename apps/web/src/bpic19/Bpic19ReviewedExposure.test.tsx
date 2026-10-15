@@ -37,6 +37,21 @@ function chooseReview(index="0") {
 }
 afterEach(()=>vi.unstubAllGlobals());
 describe("Explicit reviewed exposure native handoff",()=>{
+  it("requires and consumes the distinct reviewed panel first-source recipe",async()=>{
+    const panel:ExposureReview={...eur,definition_id:`bpic19-measure-definition.v1:sha256:${"c".repeat(64)}`,
+      query:{...eur.query,value_reducer:"first_creation_source_position"}};
+    const client:Bpic19Client={score:vi.fn<Bpic19Client["score"]>(async sent=>({ok:true,answer:answered(sent)})),read:vi.fn()};
+    render(<Bpic19Scoring subject={subject} client={client} exposureReviews={[eur,panel]} />);
+    fireEvent.change(screen.getByLabelText("Priority multiplier"),{target:{value:"exposure"}});
+    fireEvent.change(screen.getByLabelText("Exposure recipe"),{target:{value:"creation_first_source_position"}});
+    expect(screen.getByRole("button",{name:"Run analysis"})).toHaveProperty("disabled",true);
+    fireEvent.change(screen.getByLabelText("Reviewed value definition"),{target:{value:"1"}});
+    fireEvent.click(screen.getByRole("button",{name:"Run analysis"}));
+    await screen.findByText(/Reviewed panel occurrence choice/);
+    expect(client.score).toHaveBeenCalledWith(expect.objectContaining({exposure_review:panel,
+      settings:expect.objectContaining({volume:"exposure",exposure_policy:"creation_first_source_position"})}),expect.any(AbortSignal));
+  });
+
   it("requires a declared review for new unit-aware browser exposure but leaves item-count usable",()=>{
     const client:Bpic19Client={score:vi.fn(),read:vi.fn()};
     render(<Bpic19Scoring subject={subject} client={client} />);

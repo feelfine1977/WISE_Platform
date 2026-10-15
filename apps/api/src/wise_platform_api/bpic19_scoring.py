@@ -277,7 +277,8 @@ class Bpic19Scoring:
         if source_field is None or source_field != source_roles["net_worth"]:
             raise _Refused(Problem("identity_mismatch", "The native value role and reviewed original value field must be the same column.", "exposure_review.query.roles"))
         reducers = {"creation_value": "unique_creation_value", "creation_unique_value": "unique_creation_value",
-                    "creation_unique_event": "unique_creation_event", "max_absolute_p95": "maximum_absolute_event_value"}
+                    "creation_unique_event": "unique_creation_event", "max_absolute_p95": "maximum_absolute_event_value",
+                    "creation_first_source_position": "first_creation_source_position"}
         if given["settings"]["volume"] == "exposure" and definition["value_reducer"] != reducers[given["settings"]["exposure_policy"]]:
             raise _Refused(Problem("unsupported_policy", "The reviewed value reducer differs from the selected native exposure recipe.", "exposure_review.query.value_reducer"))
         historical = given["settings"]["profile"] == "historical" and given["settings"]["exposure_policy"] == "max_absolute_p95"
@@ -290,6 +291,8 @@ class Bpic19Scoring:
                       "source_record_basis": "complete_original_item_histories",
                       "source_value_missing_policy": "source_compatible_fill_zero" if historical else "unavailable",
                       "source_value_negative_policy": "absolute_before_max" if definition["value_reducer"] == "maximum_absolute_event_value" else "native_exposure_nonnegative_required"}
+        if definition["value_reducer"] == "first_creation_source_position":
+            provenance["first_creation_policy"] = definition["first_creation_policy"]
         return definition, provenance
 
     def score(self, body: bytes) -> Bpic19ScoringReply:
@@ -341,6 +344,9 @@ class Bpic19Scoring:
             if prepared.identity_dict() != given["base_identity"]:
                 raise _Refused(Problem("identity_mismatch", "The source basis does not match this preparation.", "base_identity"))
             settings = given["settings"]
+            if (settings["volume"] == "exposure" and settings["exposure_policy"] == "creation_first_source_position"
+                    and given.get("exposure_review") is None):
+                raise _Refused(Problem("unsupported_policy", "Panel first-source creation exposure requires its explicitly reviewed original-source-position measure recipe.", "exposure_review"))
             problem = method.method_problem()
             if problem is not None: raise _Refused(problem)
             if settings["profile"] == "historical" and (settings["mode"] != "layer_balanced" or settings["criteria_family"] != "full"):
@@ -404,10 +410,13 @@ class Bpic19Scoring:
                     for feature in features:
                         measure = derive_case_measures(prepared, feature["case_id"], given["roles"], {"value_reducer": "unique_creation_event"})
                         feature["measures"]["creation_unique_event"] = measure["measures"]["selected_value"]
+                if settings["exposure_policy"] == "creation_first_source_position" and value_definition is not None:
+                    for feature in features:
+                        feature["measures"]["creation_first_source_position"] = feature["measures"]["selected_value"]
                 # Only the exact reviewed source unit can qualify native value witnesses.
                 # Existing raw helper defaults never imply currency for a native run.
                 for feature in features:
-                    for measure_name in ("creation_value", "creation_unique_event", "exposure"):
+                    for measure_name in ("creation_value", "creation_unique_event", "exposure", "creation_first_source_position"):
                         witness = feature["measures"].get(measure_name)
                         if witness is not None:
                             witness["unit"] = value_definition["value_unit"] if value_definition is not None else "source_value_units"

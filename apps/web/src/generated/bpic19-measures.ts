@@ -171,6 +171,7 @@ export interface Definition {
    * @maxItems 50
    */
   value_band_edges: number[];
+  first_creation_policy?: FirstCreationPolicy;
 }
 export interface Calibration {
   policy_id: string;
@@ -191,6 +192,14 @@ export interface Calibration {
   population_case_ids: string[];
   preparation_id: string;
   finite_guard: string;
+}
+export interface FirstCreationPolicy {
+  policy_id: "bpic19.panel_first_creation_source_position.v1";
+  authority: "panel_product_decision";
+  order: "original_source_position_ascending";
+  duplicate_policy: "retain_all_creation_records";
+  selected_value_policy: "first_candidate_only_no_fallback";
+  negative_value_policy: "preserve_sign_in_raw_measure";
 }
 export interface Summary {
   available_case_count: number;
@@ -303,6 +312,8 @@ export interface RawMeasure {
   candidate_count?: number;
   winner_row_ids?: string[];
   state?: string;
+  first_candidate_row_id?: string | null;
+  first_candidate_source_position?: number | null;
 }
 export interface ActivityMeasure {
   count: RawMeasure;

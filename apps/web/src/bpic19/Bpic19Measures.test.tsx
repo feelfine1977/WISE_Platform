@@ -15,6 +15,34 @@ function setup(client: Bpic19MeasuresClient = { measures: vi.fn(async request =>
 const distributions = () => screen.findByRole("table", { name: "Raw-measure distributions over the complete named population" });
 
 describe("source-witnessed BPIC19 measures", () => {
+  it("reviews the explicit panel source-position choice and opens its supplied first witness", async () => {
+    const client: Bpic19MeasuresClient = { measures: vi.fn<Bpic19MeasuresClient["measures"]>(async request => {
+      const answer = measuresAnswer(request);
+      if (request.query.value_reducer === "first_creation_source_position") {
+        answer.definition.first_creation_policy = { policy_id: "bpic19.panel_first_creation_source_position.v1", authority: "panel_product_decision",
+          order: "original_source_position_ascending", duplicate_policy: "retain_all_creation_records", selected_value_policy: "first_candidate_only_no_fallback", negative_value_policy: "preserve_sign_in_raw_measure" };
+        answer.cases[0].measures.selected_value = { value: 100, available: true, reason: null, row_ids: ["row-1", "row-2"],
+          candidate_count: 2, winner_row_ids: ["row-1"], first_candidate_row_id: "row-1", first_candidate_source_position: 0,
+          reducer: "first_creation_source_position", unit: "source_units" };
+      }
+      return { ok: true, answer };
+    }) };
+    const { user, props } = setup(client);
+    await distributions();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Item-value reducer" }), "first_creation_source_position");
+    expect(screen.getByText(/Panel choice: use the first original/)).toBeTruthy();
+    expect(vi.mocked(client.measures)).toHaveBeenCalledTimes(1);
+    expect(props.onValidityChange).toHaveBeenLastCalledWith(false);
+    await user.click(screen.getByRole("button", { name: "Review and read measures" }));
+    expect(vi.mocked(client.measures).mock.calls[1][0].query.value_reducer).toBe("first_creation_source_position");
+    await screen.findByText(/Reviewed panel first-creation policy/);
+    await user.click(screen.getByText("Item A_1 · DF1 · 6 records"));
+    expect(await screen.findByText(/First original creation: row-1 · source position 0/)).toBeTruthy();
+    const first = screen.getByRole("button", { name: "Inspect selected first creation of A_1" });
+    first.focus(); await user.keyboard("{Enter}");
+    expect(props.onInspect).toHaveBeenLastCalledWith("A_1", ["row-1"]);
+  });
+
   it("retains only reviewed current measures and reads an explicit previously retained actor recipe", async () => {
     const client: Bpic19MeasuresClient = { measures: vi.fn(async request => answering(request)) };
     const onRetain = vi.fn(), user = userEvent.setup();

@@ -122,6 +122,7 @@ class Settings(BaseModel):
         'creation_unique_value',
         'creation_unique_event',
         'max_absolute_p95',
+        'creation_first_source_position',
     ]
     criteria_family: Literal[
         'completion', 'completion_timing', 'completion_rework_effort', 'full'

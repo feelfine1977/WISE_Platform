@@ -109,7 +109,12 @@ export interface Settings {
   ];
   min_cases: number;
   volume: "cases" | "exposure";
-  exposure_policy: "creation_value" | "creation_unique_value" | "creation_unique_event" | "max_absolute_p95";
+  exposure_policy:
+    | "creation_value"
+    | "creation_unique_value"
+    | "creation_unique_event"
+    | "max_absolute_p95"
+    | "creation_first_source_position";
   criteria_family: "completion" | "completion_timing" | "completion_rework_effort" | "full";
   association_min_support?: number;
 }

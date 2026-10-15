@@ -17,6 +17,8 @@ from pathlib import Path
 from functools import cached_property
 from typing import Any, Mapping, Sequence
 
+from wise_platform_analytics.bpic19_measures import FIRST_CREATION_POLICY
+
 from . import method
 
 PAPER_PROFILE = "bpic19.paper.2026-10-12.v1"
@@ -440,7 +442,8 @@ class Bpic19Assessment:
             "context_evidence": _json(feature.get("context", {})),
             "historical_artifacts": _json(feature.get("historical_artifacts")),
             "value_evidence": _json({key: feature.get("measures", {}).get(key, {}) for key in
-                                     ("creation_value", "creation_unique_event", "exposure")}),
+                                     ("creation_value", "creation_unique_event", "exposure", "creation_first_source_position")
+                                     if key != "creation_first_source_position" or key in feature.get("measures", {})}),
         }
 
     def case_chunks(self, chunk_size: int = 1000):
@@ -825,7 +828,7 @@ def evaluate_features(
     log = _transport(features, bindings)
     receipt = None
     if volume == "exposure":
-        if exposure_policy not in {"creation_value", "creation_unique_value", "creation_unique_event", "max_absolute_p95"}:
+        if exposure_policy not in {"creation_value", "creation_unique_value", "creation_unique_event", "max_absolute_p95", "creation_first_source_position"}:
             raise ValueError("Choose the reviewed creation value or maximum absolute 95th percentile exposure recipe.")
         if profile == "historical" and exposure_policy == "max_absolute_p95":
             calibrations = [f.get("historical_policy", {}).get("calibration") for f in features]
@@ -888,7 +891,7 @@ def _checked_exposure_provenance(provenance: Mapping, exposure_policy: str) -> d
     """
     required = {"reviewed_measure_definition_id", "reviewed_population_identity", "source_field",
                 "source_column_name", "source_unit", "value_reducer", "unit_provenance"}
-    optional = {"source_id", "preparation_id", "fit_population_identity", "fit_membership_sha256", "source_record_basis", "source_value_missing_policy", "source_value_negative_policy"}
+    optional = {"source_id", "preparation_id", "fit_population_identity", "fit_membership_sha256", "source_record_basis", "source_value_missing_policy", "source_value_negative_policy", "first_creation_policy"}
     if (not isinstance(provenance, Mapping) or not required.issubset(provenance)
             or set(provenance) - required - optional):
         raise ValueError("Reviewed exposure provenance needs its finite source/unit/definition fields, never client amounts.")
@@ -900,9 +903,12 @@ def _checked_exposure_provenance(provenance: Mapping, exposure_policy: str) -> d
             or provenance["unit_provenance"] != "explicit_raw_measures_definition.v1"):
         raise ValueError("Reviewed exposure provenance has an unavailable source field, declared unit or definition.")
     reducer = {"creation_value": "unique_creation_value", "creation_unique_value": "unique_creation_value",
-               "creation_unique_event": "unique_creation_event", "max_absolute_p95": "maximum_absolute_event_value"}[exposure_policy]
+               "creation_unique_event": "unique_creation_event", "max_absolute_p95": "maximum_absolute_event_value",
+               "creation_first_source_position": "first_creation_source_position"}[exposure_policy]
     if provenance["value_reducer"] != reducer:
         raise ValueError("The reviewed value reducer differs from the chosen native exposure recipe.")
+    if exposure_policy == "creation_first_source_position" and provenance.get("first_creation_policy") != FIRST_CREATION_POLICY:
+        raise ValueError("First-source creation exposure needs its exact reviewed panel occurrence policy.")
     return dict(provenance)
 
 
@@ -910,8 +916,11 @@ def _reviewed_exposure(
     log: Any, features: Sequence[dict], exposure_policy: str, exposure_calibration: Mapping | None,
     exposure_provenance: Mapping | None = None,
 ) -> tuple[Any, dict]:
+    if exposure_policy == "creation_first_source_position" and exposure_provenance is None:
+        raise ValueError("First-source creation exposure requires its reviewed panel occurrence policy.")
     pandas = method._pandas()
-    measure = ("creation_unique_event" if exposure_policy == "creation_unique_event" else
+    measure = ("creation_first_source_position" if exposure_policy == "creation_first_source_position" else
+               "creation_unique_event" if exposure_policy == "creation_unique_event" else
                "creation_value" if exposure_policy in {"creation_value", "creation_unique_value"} else "exposure")
     amounts = {
         f["case_id"]: (

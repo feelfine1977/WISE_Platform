@@ -433,6 +433,20 @@
         },
         "state": {
           "type": "string"
+        },
+        "first_candidate_row_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "first_candidate_source_position": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
       },
       "required": [
@@ -785,6 +799,9 @@
             "type": "number"
           },
           "maxItems": 50
+        },
+        "first_creation_policy": {
+          "$ref": "#/$defs/FirstCreationPolicy"
         }
       },
       "required": [
@@ -1800,6 +1817,38 @@
         "lower_inclusive",
         "upper_exclusive",
         "case_ids"
+      ]
+    },
+    "FirstCreationPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "const": "bpic19.panel_first_creation_source_position.v1"
+        },
+        "authority": {
+          "const": "panel_product_decision"
+        },
+        "order": {
+          "const": "original_source_position_ascending"
+        },
+        "duplicate_policy": {
+          "const": "retain_all_creation_records"
+        },
+        "selected_value_policy": {
+          "const": "first_candidate_only_no_fallback"
+        },
+        "negative_value_policy": {
+          "const": "preserve_sign_in_raw_measure"
+        }
+      },
+      "required": [
+        "policy_id",
+        "authority",
+        "order",
+        "duplicate_policy",
+        "selected_value_policy",
+        "negative_value_policy"
       ]
     }
   }

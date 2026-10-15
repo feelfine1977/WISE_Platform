@@ -26,6 +26,14 @@ SIGNATURE_POLICY = "bpic19.first_occurrence_signature.v1"
 EXACT_POLICY = "bpic19.exact_original_sequence.v1"
 ACTIVITY_POLICY = "bpic19.exact_activity_finite_indicators.v1"
 VALUE_POLICY = "bpic19.unique_finite_creation_value.v1"
+FIRST_CREATION_POLICY = {
+    "policy_id": "bpic19.panel_first_creation_source_position.v1",
+    "authority": "panel_product_decision",
+    "order": "original_source_position_ascending",
+    "duplicate_policy": "retain_all_creation_records",
+    "selected_value_policy": "first_candidate_only_no_fallback",
+    "negative_value_policy": "preserve_sign_in_raw_measure",
+}
 DEFAULT_SELECTOR = ("Record Invoice Receipt",)
 DEFAULT_SOURCE = ("Record Invoice Receipt",)
 DEFAULT_TARGET = ("Clear Invoice",)
@@ -108,7 +116,7 @@ def checked_measure_definition(given: Mapping[str, object] | None = None) -> dic
     resolved = {name: given.get(name, default) for name, default in DEFINITION_DEFAULTS.items()}
     admitted = {"activity_operator": {"count", "presence", "repeat_quantity", "repeated_presence"},
                 "interval_policy": {"independent_minimum"},
-                "value_reducer": {"unique_creation_value", "unique_creation_event", "maximum_absolute_event_value"},
+                "value_reducer": {"unique_creation_value", "unique_creation_event", "maximum_absolute_event_value", "first_creation_source_position"},
                 "representation_policy": {"exact", "first_occurrence"}}
     for name, choices in admitted.items():
         if resolved[name] not in choices:
@@ -278,6 +286,33 @@ def _value_measure(amounts: list[dict], reducer: str, candidate_ids: list[str], 
                     unit="EUR", reducer=reducer)
 
 
+def _first_source_creation_value(amounts: list[dict], records: tuple[PreparedRecord, ...]) -> dict:
+    """An explicit panel occurrence choice, independent of clock/display order.
+
+    Later candidates remain evidence; none can replace a missing/invalid first
+    amount. Original source ordinals are unique and no records are deduplicated.
+    """
+    candidates = sorted((row for row in records if row.activity == "Create Purchase Order Item"),
+                        key=lambda row: row.source_position)
+    by_id = {amount["row_id"]: amount for amount in amounts}
+    first = candidates[0] if candidates else None
+    amount = None if first is None else by_id[first.row_id]
+    state = "missing" if amount is None else amount["state"]
+    reason = {"finite": None, "missing": "missing_value", "role_unmapped": "role_unmapped",
+              "invalid_nonfinite": "invalid_nonfinite", "invalid_numeric": "invalid_numeric"}[state]
+    if any(row.activity is None for row in records):
+        reason = "missing_activity_label"
+    return _measure(amount["value"] if reason is None else None,
+                    [row.row_id for row in candidates], reason,
+                    candidate_count=len(candidates),
+                    first_candidate_row_id=None if first is None else first.row_id,
+                    first_candidate_source_position=None if first is None else first.source_position,
+                    winner_row_ids=[first.row_id] if first is not None and reason is None else [],
+                    invalid_row_ids=[row.row_id for row in candidates if by_id[row.row_id]["state"].startswith("invalid")],
+                    state="available" if reason is None else reason, unit="EUR",
+                    reducer="first_creation_source_position", policy_id=FIRST_CREATION_POLICY["policy_id"])
+
+
 def derive_case_measures(prepared: PreparedData, case_id: str, roles: Mapping[str, int | None] | None = None,
                          definition: Mapping[str, object] | None = None) -> dict:
     """Independent evidence over complete original item histories."""
@@ -311,8 +346,9 @@ def derive_case_measures(prepared: PreparedData, case_id: str, roles: Mapping[st
     creation = _value_measure(amounts, "unique_creation_value", creation_ids, bool(missing_labels))
     max_abs = _value_measure(amounts, "maximum_absolute_event_value", all_ids)
     creation["unit"] = max_abs["unit"] = recipe["value_unit"]
-    chosen_value = _value_measure(amounts, recipe["value_reducer"], all_ids if recipe["value_reducer"] == "maximum_absolute_event_value" else creation_ids,
-                                  bool(missing_labels) and recipe["value_reducer"] != "maximum_absolute_event_value")
+    chosen_value = (_first_source_creation_value(amounts, records) if recipe["value_reducer"] == "first_creation_source_position" else
+                    _value_measure(amounts, recipe["value_reducer"], all_ids if recipe["value_reducer"] == "maximum_absolute_event_value" else creation_ids,
+                                   bool(missing_labels) and recipe["value_reducer"] != "maximum_absolute_event_value"))
     chosen_value["unit"] = recipe["value_unit"]
     value_band = sum(chosen_value["value"] >= edge for edge in recipe["value_band_edges"]) if chosen_value["available"] and recipe["value_band_edges"] else None
     sequence_known = prepared.sequence_evaluable(case_id) and not missing_labels
@@ -542,6 +578,8 @@ def measure_population(prepared: PreparedData, case_ids: Iterable[str], roles: M
                   "source_representation": "complete_original_item_histories",
                   "activity_labels": {"invoice": "Record Invoice Receipt", "clearing": "Clear Invoice",
                                       "receipt_any": ["Record Goods Receipt", "Record Service Entry Sheet"]}}
+    if recipe["value_reducer"] == "first_creation_source_position":
+        definition["first_creation_policy"] = dict(FIRST_CREATION_POLICY)
     if calibration is not None:
         definition["historical_policy_id"] = HISTORICAL_POLICY
         definition["calibration"] = calibration

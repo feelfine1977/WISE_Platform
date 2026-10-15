@@ -50,7 +50,7 @@ function restoredSettings(answer?: Bpic19ScoreAnswer): Settings {
     group_by: stored.group_by as Settings["group_by"], min_cases: stored.min_cases,
     association_min_support: stored.association_min_support ?? 1,
     volume: stored.volume === "exposure" ? "exposure" : "cases",
-    exposure_policy: (["creation_value", "creation_unique_event", "creation_unique_value"].includes(String(answer.report.exposure_calibration?.policy)) ?
+    exposure_policy: (["creation_value", "creation_unique_event", "creation_unique_value", "creation_first_source_position"].includes(String(answer.report.exposure_calibration?.policy)) ?
       answer.report.exposure_calibration?.policy : "max_absolute_p95") as Settings["exposure_policy"] };
 }
 function frozenExposureReview(answer?: Bpic19ScoreAnswer): ExposureReview | undefined {
@@ -61,6 +61,7 @@ function exposurePolicy(review?: ExposureReview): Settings["exposure_policy"] | 
   switch (review?.query.value_reducer) {
     case "unique_creation_event": return "creation_unique_event";
     case "unique_creation_value": return "creation_unique_value";
+    case "first_creation_source_position": return "creation_first_source_position";
     case "maximum_absolute_event_value": return "max_absolute_p95";
     default: return null;
   }
@@ -82,6 +83,7 @@ function ExposureReceipt({receipt}: {receipt: Record<string, unknown>}) {
     {receipt.policy === "max_absolute_p95" && <p>Exposure is dimensionless after normalization by the frozen 95th percentile {number(receipt.cutoff ?? receipt.quantile)}{reviewed ? ` ${String(receipt.source_unit)}` : " generic source units"}. The calibration was not refitted for this member page.</p>}
     {reviewed && receipt.policy === "max_absolute_p95" && <p>Frozen reviewed fit population: {String(fitPopulation ?? "Not retained in this receipt")}. Complete items: {number(fitCount)}.</p>}
     {reviewed && <p>Missing source amounts: {String(receipt.source_value_missing_policy ?? receipt.missing_policy ?? "Unavailable")}. Negative source amounts: {String(receipt.source_value_negative_policy ?? receipt.raw_negative_policy ?? "Unavailable")}.</p>}
+    {receipt.policy === "creation_first_source_position" && <p>Reviewed panel occurrence choice: first original Create Purchase Order Item record by source position. Timestamp/display order and later amounts cannot substitute for that witness. No event deduplication or R07 financial matching is implied.</p>}
     {receipt.missing_policy === "source_compatible_fill_zero" && <p>Historical compatibility fills {number(receipt.missing_case_count)} missing items with zero and uses the recorded denominator {number(receipt.denominator)} (P95 or 1). This policy is retained separately from reviewed refusal.</p>}
     {reviewed && <p>Reviewed measures {String(receipt.reviewed_measure_definition_id)}. Frozen calibration {String(receipt.calibration_id ?? "Unavailable")}.</p>}
   </div>;
@@ -148,7 +150,8 @@ function CaseRows({ item, open, toggle, onInspect }: { item: CaseAssessment; ope
         <thead><tr><th>Value recipe</th><th>Item value</th><th>Raw unit</th><th>Availability</th><th>Source witness</th></tr></thead>
         <tbody>{valueContributions(item.value_evidence).map(([name,witness]) => <tr key={name}><td>{name.replaceAll("_"," ")}</td>
           <td>{number(witness.value)}</td><td>{String(witness.unit ?? "Unconfirmed")}</td><td>{witness.available === true ? "Available" : String(witness.reason ?? "Unavailable")}</td>
-          <td>{onInspect && valueWitnessRows(witness).length > 0 ? <button type="button" onClick={() => onInspect(item.case_id,valueWitnessRows(witness))}>Inspect {name.replaceAll("_"," ")} original values</button> : "No contributing source rows recorded"}</td></tr>)}</tbody>
+          <td>{onInspect && valueWitnessRows(witness).length > 0 ? <button type="button" onClick={() => onInspect(item.case_id,valueWitnessRows(witness))}>Inspect {name.replaceAll("_"," ")} original values</button> : "No contributing source rows recorded"}
+            {typeof witness.first_candidate_row_id === "string" && <small>Selected first creation: {witness.first_candidate_row_id} · original source position {number(witness.first_candidate_source_position)} (zero based).</small>}</td></tr>)}</tbody>
       </table>}
       {item.historical_artifacts && <details><summary>Historical quarter, paths and replication proxy</summary><p>Quarter {String(item.historical_artifacts.start_quarter ?? "Unavailable")}. Original events divided by distinct parsed timestamps is a replication proxy, not a verified duplicate count. Historical timestamps retain their source range policy.</p><pre>{JSON.stringify(item.historical_artifacts,null,2)}</pre></details>}
       </td></tr>}</>;
@@ -274,7 +277,7 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       <label>Minimum scored items<input type="number" min="1" step="1" value={settings.min_cases} onChange={e => update({ min_cases: Number(e.target.value) })} /></label>
       <label>Association minimum support<input type="number" min="1" step="1" value={settings.association_min_support ?? 1} onChange={e => update({association_min_support:Number(e.target.value)})} /></label>
       <label>Priority multiplier<select value={settings.volume} onChange={e => update({ volume: e.target.value as Settings["volume"] })}><option value="cases">Scored item count</option><option value="exposure">Reviewed exposure</option></select></label>
-      {settings.volume === "exposure" && <label>Exposure recipe<select value={settings.exposure_policy} onChange={e => update({ exposure_policy: e.target.value as Settings["exposure_policy"] })}><option value="max_absolute_p95">Maximum absolute value · frozen reviewed 95th percentile</option><option value="creation_unique_event">Unique creation event value</option><option value="creation_unique_value">Unique finite creation value</option></select></label>}
+      {settings.volume === "exposure" && <label>Exposure recipe<select value={settings.exposure_policy} onChange={e => update({ exposure_policy: e.target.value as Settings["exposure_policy"] })}><option value="max_absolute_p95">Maximum absolute value · frozen reviewed 95th percentile</option><option value="creation_unique_event">Unique creation event value</option><option value="creation_unique_value">Unique finite creation value</option><option value="creation_first_source_position">Panel first creation · original source position</option></select></label>}
       {settings.volume === "exposure" && <label>Reviewed value definition<select value={selectedReviewIndex < 0 ? "" : String(selectedReviewIndex)} onChange={event => {
         const selected = event.target.value === "" ? undefined : reviewOptions[Number(event.target.value)];
         setExposureReview(selected); const policy = exposurePolicy(selected); if (policy) update({exposure_policy: policy});
