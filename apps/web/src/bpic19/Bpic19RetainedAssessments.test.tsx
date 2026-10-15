@@ -218,3 +218,27 @@ describe("explicit frozen native assessment viewer", () => {
     expect(client.read).not.toHaveBeenCalled(); expect(client.score).not.toHaveBeenCalled();
   });
 });
+
+it("keeps the first visible frozen member read live through its exact role refusal",async()=>{
+ let sent:Bpic19ReadRequest|undefined,signal:AbortSignal|undefined,resolve:((outcome:Bpic19Outcome)=>void)|undefined,reads=0,clicked=false;
+ const client:Bpic19Client={score:vi.fn(),read:vi.fn<Bpic19Client["read"]>((request,abort)=>{
+  if(++reads===1)return Promise.resolve({ok:true,answer:readAnswer(request)});
+  sent=request;signal=abort;return new Promise(done=>{resolve=done;});
+ })};
+ const observer=new MutationObserver(()=>{
+  if(clicked||!document.body.textContent?.includes("2 of 2 items scored"))return;
+  const button=Array.from(document.querySelectorAll("button")).find(value=>value.textContent==="Inspect members of A · Parts");
+  if(!button)return;clicked=true;fireEvent.click(button);
+ });
+ observer.observe(document.body,{childList:true,subtree:true});
+ try{
+  render(<Bpic19RetainedAssessments {...props(client,{actions:[parent]})}/>);choose();
+  await screen.findByText(/2 of 2 items scored/);await waitFor(()=>expect(sent).toBeDefined());
+  if(!sent||!resolve)throw Error("The first visible member action must start a read.");
+  expect(clicked).toBe(true);expect(signal?.aborted).toBe(false);
+  expect(sent).toMatchObject({run_id:original.run_id,case_filter:{group_values:{company:"A",spend_area:"Parts"}}});
+  await act(async()=>resolve!({ok:true,answer:{...readAnswer(sent!),definition:{roles:{...roles,resource:20}}}}));
+  expect(screen.getByText(/source-role recipe changed during/)).toBeTruthy();
+  expect(client.read).toHaveBeenCalledTimes(2);expect(client.score).not.toHaveBeenCalled();
+ }finally{observer.disconnect();}
+});

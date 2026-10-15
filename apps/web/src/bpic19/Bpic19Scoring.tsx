@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { bpic19Contract, localBpic19Client, sameExposureReview, type Bpic19Client, type Bpic19Outcome } from "./scoring-client";
 import type { AnswerIdentity, Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, CaseAssessment, NativeRow, NamedPopulation, Roles, Settings, ExposureReview } from "./scoring-types";
 import "./scoring.css";
@@ -114,7 +114,8 @@ type FocusedExemplar = { caseId: string; requestId: string };
 function Cases({ cases, onInspect, focusedExemplar }: { cases: CaseAssessment[]; onInspect?: Bpic19ScoringProps["onInspect"]; focusedExemplar: FocusedExemplar | null }) {
   const [open, setOpen] = useState<string | null>(null);
   const container = useRef<HTMLDivElement>(null);
-  useEffect(() => { setOpen(focusedExemplar?.caseId ?? null); }, [focusedExemplar?.requestId]);
+  // Finish focus synchronization before a newly visible item can be expanded.
+  useLayoutEffect(() => { setOpen(focusedExemplar?.caseId ?? null); }, [focusedExemplar?.requestId]);
   useEffect(() => {
     if (!focusedExemplar || open !== focusedExemplar.caseId) return;
     const caption = Array.from(container.current?.querySelectorAll("caption") ?? [])
@@ -188,7 +189,8 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
   const missingExposureReview = settings.volume === "exposure" && (!exposureReview || exposurePolicy(exposureReview) !== settings.exposure_policy || selectedReviewIndex < 0);
   const requestScope = JSON.stringify([subjectKey, settingsKey]);
   const activeScope = useRef(requestScope); activeScope.current = requestScope;
-  useEffect(() => {
+  // Establish request ownership before the visible frozen-run controls can act.
+  useLayoutEffect(() => {
     generation.current += 1;
     controller.current?.abort();
     setPending(false); setProblem(null); setFocusedExemplar(null); setPendingExemplar(null);

@@ -138,3 +138,25 @@ it("refuses another unit recipe in a frozen member page even when its run ID is 
   await screen.findByText(/another reviewed value recipe, unit or population/);
   expect(screen.getByText(/Priority unit EUR-score units/)).toBeTruthy();expect(client.score).not.toHaveBeenCalled();
 });
+
+it("preserves the first visible original value contribution action",async()=>{
+ const inspect=vi.fn();let clicked=false;
+ const client:Bpic19Client={score:vi.fn<Bpic19Client["score"]>(async sent=>{
+  const value=answered(sent);value.report.case_page.cases[0].value_evidence={creation_value:{available:true,value:10,unit:"EUR",row_ids:["original-creation-A"],reason:null}};
+  return {ok:true,answer:value};
+ }),read:vi.fn()};
+ const observer=new MutationObserver(()=>{
+  if(clicked||!document.body.textContent?.includes("items scored"))return;
+  const button=Array.from(document.querySelectorAll("button")).find(value=>value.textContent==="A");
+  if(!button)return;clicked=true;fireEvent.click(button);
+ });
+ observer.observe(document.body,{childList:true,subtree:true});
+ try{
+  render(<Bpic19Scoring subject={subject} client={client} exposureReviews={[eur]} onInspect={inspect}/>);
+  chooseReview();fireEvent.click(screen.getByRole("button",{name:"Run analysis"}));
+  await screen.findByText(/items scored/);expect(clicked).toBe(true);
+  expect(screen.getByText("Original value contributions for A")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button",{name:"Inspect creation value original values"}));
+  expect(inspect).toHaveBeenCalledWith("A",["original-creation-A"]);
+ }finally{observer.disconnect();}
+});

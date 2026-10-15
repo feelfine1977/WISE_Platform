@@ -97,3 +97,23 @@ describe("BPIC19 criterion analysis", () => {
     expect(screen.getByText(/parent scores and reference are unchanged/)).toBeTruthy();
   });
 });
+
+it("preserves the first visible item expansion and raw witness click",async()=>{
+ const inspect=vi.fn();let clicked=false;
+ const client:Bpic19Client={score:vi.fn<Bpic19Client["score"]>(async request=>({ok:true,answer:answer(request)})),read:vi.fn()};
+ // Observe the real DOM commit: the enabled item button must already work,
+ // even when its mount effects have not had a later turn to run.
+ const observer=new MutationObserver(()=>{
+  if(clicked||!document.body.textContent?.includes("2 of 2 items scored"))return;
+  const button=Array.from(document.querySelectorAll("button")).find(value=>value.textContent==="A");
+  if(!button)return;clicked=true;fireEvent.click(button);
+ });
+ observer.observe(document.body,{childList:true,subtree:true});
+ try{
+  render(<Bpic19Scoring subject={subject} client={client} onInspect={inspect}/>);
+  fireEvent.click(screen.getByRole("button",{name:"Run analysis"}));
+  await screen.findByText(/2 of 2 items scored/);expect(clicked).toBe(true);
+  fireEvent.click(screen.getAllByRole("button",{name:"1 source records"})[0]);
+  expect(inspect).toHaveBeenCalledWith("A",["A:invoice_count"]);
+ }finally{observer.disconnect();}
+});
