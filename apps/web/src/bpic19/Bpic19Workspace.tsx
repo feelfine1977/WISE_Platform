@@ -85,7 +85,7 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
   const returningFlowParent = useRef<{ identity: AnswerIdentity; base: AnswerIdentity; revision: number } | null>(null);
   const [flowReturnProblem, setFlowReturnProblem] = useState<string | null>(null);
   const [profileKeepProblem,setProfileKeepProblem]=useState<string|null>(null);
-  const queries = useRef<{ preparation: string; revision: string | undefined; profile?: Bpic19ProfileQuery; measures?: MeasureQuery; cohorts?: CohortQuery; operators?: OperatorQuery; scoreRunId?: string; scorePopulationId?: string }>({ preparation: "", revision: undefined });
+  const queries = useRef<{ preparation: string; revision: string | undefined; population?: typeof state.population; profile?: Bpic19ProfileQuery; measures?: MeasureQuery; cohorts?: CohortQuery; operators?: OperatorQuery; scoreRunId?: string; scorePopulationId?: string }>({ preparation: "", revision: undefined });
   const [, refresh] = useState(0);
   const shown = shownSelection(state.selection);
   const population = state.population.phase === "ready" ? state.population.answer : null;
@@ -100,12 +100,14 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
   const savedRevision = state.saved?.revisionId;
   // Reopen publishes the saved binding before its asynchronous selection is
   // ready. Do not consume that revision until its exact identity is shown.
-  const savedQueryReady = !state.saved || sameJson(state.saved.content.selection_identity, identity);
+  const savedQueryReady = !state.saved || state.selection.phase === "ready" && sameJson(state.saved.content.selection_identity, identity);
   if (queries.current.preparation !== preparation && !savedQueryReady) {
     queries.current = { preparation, revision: undefined };
     recordPredicate.current = undefined;
   }
-  if (savedQueryReady && (queries.current.preparation !== preparation || queries.current.revision !== savedRevision)) {
+  // A genuine Reopen accepts a new population reading even for the same saved
+  // revision. A no-op Save keeps that reading and its current query drafts.
+  if (savedQueryReady && (queries.current.preparation !== preparation || queries.current.revision !== savedRevision || queries.current.population !== state.population)) {
     const allActions = state.saved?.content.bpic19_pipeline?.actions ?? [];
     const actions = allActions.filter(action => sameJson(action.identity, identity));
     // Retained recipes are ordered history; the current reading is the latest
@@ -114,7 +116,7 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
     if (queries.current.preparation !== preparation) recordPredicate.current = undefined;
     const savedRecordPredicate = state.saved?.content.selection_recipe.predicates.filter(predicate=>predicate.kind==='record_attributes_all').at(-1);
     if(savedRecordPredicate?.kind==='record_attributes_all') recordPredicate.current = savedRecordPredicate;
-    queries.current = { preparation, revision: savedRevision,
+    queries.current = { preparation, revision: savedRevision, population: state.population,
       profile: actions.filter(action => action.operation === "bpic19_profile").at(-1)?.query as Bpic19ProfileQuery | undefined,
       measures: actions.filter(action => action.operation === "bpic19_measures").at(-1)?.query as MeasureQuery | undefined,
       cohorts: actions.filter(action => action.operation === "bpic19_cohorts").at(-1)?.query as unknown as CohortQuery | undefined,

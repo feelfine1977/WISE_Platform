@@ -10,6 +10,13 @@ import type { ImportedCaseEvidenceRequest } from "../generated/imports";
 import type { Bpic19ProfileProps } from "./Bpic19Profile";
 import type { Bpic19MeasuresProps } from "./Bpic19Measures";
 import type { Bpic19ScoringProps } from "./Bpic19Scoring";
+import type { Bpic19OperatorsProps } from "./Bpic19Operators";
+import type { OperatorQuery } from "../generated/bpic19-operators";
+import { operatorAnswer } from "./operators-test-fixture";
+import type { Bpic19CohortsProps } from "./Bpic19Cohorts";
+import cohortLiteral from "./cohorts-test-answer.json";
+import { cohortsContract } from "./cohorts-client";
+import scoreLiteral from "./scoring-fixtures/native-two-items.json";
 import { measuresAnswer } from "./measures-test-fixture";
 import { CompareCoordinator } from "../compare/coordinator";
 import { ImportedInvestigationCoordinator, shownSelection } from "../imported/coordinator";
@@ -128,6 +135,55 @@ vi.mock("./Bpic19SavedScore", () => ({ Bpic19SavedScore: function NativeDraft(pr
   return <section aria-label="Scripted current assessment">{props.savedRunId ?? "Unrequested current draft"}
     <output data-testid="offered-exposure-reviews">{JSON.stringify(props.exposureReviews ?? [])}</output></section>;
 } }));
+vi.mock("./Bpic19Cohorts", () => ({ Bpic19Cohorts: function CohortBoundary(props: Bpic19CohortsProps) {
+  return <section aria-label="Scripted completion recipe">
+    <output data-testid="current-cohort-query">{JSON.stringify(props.query ?? null)}</output>
+    <button onClick={() => {
+      if (!cohortsContract.answer(cohortLiteral)) throw new Error("An admitted literal cohort is required");
+      props.onReviewed?.({ ...cohortLiteral, workspace_id: props.workspaceId, identity: props.identity,
+        query: { ...cohortLiteral.query, retain: "unknown" } });
+      props.onValidityChange?.(true);
+    }}>Review scripted unknown cohort</button>
+  </section>;
+} }));
+
+// Controlled analytical seam only: the real Workspace/session owns retained recipes,
+// and the real investigation coordinator accepts Keep and Reopen selections.
+// These receipts do not establish waiting arithmetic on the import fixture.
+const waitingA: OperatorQuery = {
+  policy_id: "bpic19.declared_operators.v1", roles: { event_id: 3, item_category: 4, net_worth: 5 },
+  recipe: { kind: "waiting", activation_activities: ["A"], response_activities: ["B"],
+    endpoints: "first_first", completion: "completed_only", horizon_start: "2018-01-01T00:00:00",
+    horizon_end: "2018-01-07T00:00:00", horizon_provenance: "Independent literal snapshot observed through day6; no operational obligation asserted",
+    horizon_policy: "refuse_outside", calendar: "elapsed_segments" }, offset: 0, limit: 20,
+};
+const waitingB: OperatorQuery = { ...waitingA, recipe: { ...waitingA.recipe!, completion: "right_censored" } as OperatorQuery["recipe"] };
+vi.mock("./Bpic19Operators", () => ({ Bpic19Operators: function OperatorBoundary(props: Bpic19OperatorsProps) {
+  const review = (chosen: OperatorQuery, retain = false) => {
+    const answer = operatorAnswer({ schema_version: 1, message_type: "bpic19_operator_request", request_id: "controlled-workspace-reading",
+      query_revision: props.revision, workspace_id: props.workspaceId, identity: props.identity, query: chosen });
+    // Distinct A/B definition identities from the authenticated waiting packet;
+    // the generic operator fixture otherwise reuses one waiting definition.
+    answer.definition_id = "bpic19-operator-definition.v1:sha256:" + (chosen.recipe?.kind === "waiting" && chosen.recipe.completion === "right_censored"
+      ? "941769c3759db8fe04f9dadb5a929528c3f46a8deb95f547dbdf39e8e5b14994"
+      : "d1226f205bc81e32495db90895b8b2c8714817cc1d504426bdd1c933e2d3777b");
+    answer.definition.definition_id = answer.definition_id;
+    props.onReviewed?.(answer); props.onValidityChange?.(true);
+    if (retain) props.onRetain?.(answer);
+  };
+  return <section aria-label="Scripted waiting recipes">
+    <output data-testid="current-operator-query">{JSON.stringify(props.query ?? null)}</output>
+    <button onClick={() => review(waitingA, true)}>Review and retain scripted waiting A</button>
+    <button onClick={() => review(waitingB)}>Review scripted waiting B</button>
+    <button onClick={() => {
+      const retained = props.retainedQueries?.find(value => value.recipe?.kind === "waiting" && value.recipe.completion === "completed_only");
+      if (!retained) throw new Error("A must be supplied by the actual session's retained declarations");
+      review(retained);
+    }}>Select retained scripted waiting A</button>
+    <button onClick={() => { if (!props.query) throw new Error("A current recipe is required"); review(props.query); }}>Read scripted current waiting</button>
+    <button onClick={() => props.onKeepCases?.(["A-1"], "Controlled complete-item cohort")}>Keep scripted waiting cohort</button>
+  </section>;
+} }));
 
 const active: { stop(): void }[] = [];
 afterEach(() => { keptProfileGroup.caseIds = ["A-1"]; for (const coordinator of active.splice(0)) coordinator.stop(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
@@ -224,6 +280,150 @@ function comparisonHttp() {
 
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("restores current queries on a new accepted reading of the same saved B after retained A and genuine Keep", async () => {
+    const app = await opening();
+    const restore = vi.spyOn(app.session, "restore");
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    await app.user.click(screen.getByRole("button", { name: "Review invoice matches, recorded rules and waiting intervals" }));
+    await app.user.click(screen.getByRole("button", { name: "Review and retain scripted waiting A" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted waiting B" }));
+    const parent = shownSelection(app.investigation.getState().selection)!;
+    const frozen = structuredClone(app.session.savedPipeline());
+    expect(frozen?.actions.filter(action => action.operation === "bpic19_waiting").map(action => action.query)).toEqual([waitingA, waitingB]);
+    await act(async () => { app.saving.save("Current waiting B", "Controlled lifecycle proof", "incidents"); await settle(); });
+    const call = app.saves.saves[0], saved = saveAnswer(call.request, firstRevisionId, true);
+    saved.revision.content.bpic19_pipeline = structuredClone(call.request.bpic19_pipeline);
+    const outputs: Bpic19PipelineOutput[] = frozen!.actions.map((action, index) => {
+      if (action.operation === "bpic19_method_gate") throw new Error("No Method action is admitted");
+      return { operation: action.operation, definition_id: action.definition_id, sha256: String(index + 1).repeat(64),
+        output: { identity: action.identity, query: action.query, cases: [] } };
+    });
+    saved.bpic19_outputs = { schema_version: 1, outputs: [outputs[0], ...outputs.slice(1)] };
+    await act(async () => { call.reply({ ok: true, answer: saved }); await settle(); });
+    expect(app.saving.verifiedExportReceipt()).not.toBeNull();
+    const originalPopulation = app.investigation.getState().population;
+    const savedBinding = app.investigation.getState().saved;
+    expect(restore).toHaveBeenCalledTimes(1);
+
+    await app.user.click(screen.getByRole("button", { name: "Select retained scripted waiting A" }));
+    expect(JSON.parse(screen.getByTestId("current-operator-query").textContent!)).toEqual(waitingA);
+    expect(app.saving.verifiedExportReceipt()).toBeNull();
+    await app.user.click(screen.getByRole("button", { name: "Keep scripted waiting cohort" }));
+    await answerSelection(app, 1, containingOpened);
+    expect(shownSelection(app.investigation.getState().selection)?.steps).toEqual([{ kind: "case_id_in", case_ids: ["A-1"], negate: false }]);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Read scripted current waiting" }));
+    expect(JSON.parse(screen.getByTestId("current-operator-query").textContent!)).toEqual(waitingA);
+    expect(app.session.savedPipeline()?.actions.filter(action => action.operation === "bpic19_waiting").at(-1)?.query).toEqual(waitingA);
+
+    let reopening: Promise<boolean> | undefined;
+    await act(async () => { reopening = app.saving.reopen({ ...savedSummary, latest_revision_id: firstRevisionId }, workspaceId); await settle(); });
+    const reopenCall = app.saves.reopens[0], reply = reopenAnswer(reopenCall.request);
+    reply.revision = structuredClone(saved.revision);
+    reply.bpic19_outputs = structuredClone(saved.bpic19_outputs);
+    reply.restored_comparison_id = null;
+    reply.restored_selection = { identity: parent.answer.identity, parent_identity: parent.answer.parent_identity,
+      parent: parent.answer.parent, kept: parent.answer.kept, removed: parent.answer.removed,
+      unevaluable: parent.answer.unevaluable, predicate_results: parent.answer.predicate_results };
+    await act(async () => { reopenCall.reply({ ok: true, answer: reply }); await settle(); });
+    expect(await reopening).toBe(true);
+    expect(restore).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      const population = app.imports.populations[1];
+      population.reply({ ok: true, answer: populationAnswer(population.request) }); await settle();
+    });
+    const pending = app.investigation.getState();
+    expect(pending.saved?.revisionId).toBe(firstRevisionId);
+    expect(pending.saved).not.toBe(savedBinding);
+    expect(pending.selection.phase).toBe("loading");
+    expect(shownSelection(pending.selection)).toBeNull();
+    expect(restore).toHaveBeenCalledTimes(1);
+    expect(app.saving.verifiedExportReceipt()).toBeNull();
+    await answerSelection(app, 2, everyIncident);
+    expect(app.investigation.getState().population).not.toBe(originalPopulation);
+    expect(shownSelection(app.investigation.getState().selection)?.answer.identity).toEqual(parent.answer.identity);
+    expect(restore).toHaveBeenCalledTimes(2);
+    // Session hydration is real and succeeds independently of current panel query authority.
+    expect(restore.mock.results.at(-1)?.value).toBe(true);
+    expect(app.session.declarations()).toEqual(frozen!.actions);
+    const restoredQuery = JSON.parse(screen.getByTestId("current-operator-query").textContent!);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    await app.user.click(screen.getByRole("button", { name: "Read scripted current waiting" }));
+    expect({ restoredQuery, pipeline: app.session.savedPipeline(), verified: app.saving.verifiedExportReceipt() !== null,
+      machine: screen.queryByRole("button", { name: "Export saved definitions, results and witnesses" }) !== null,
+      readable: screen.queryByRole("button", { name: "Export readable purchasing analysis report" }) !== null,
+    }).toEqual({ restoredQuery: waitingB, pipeline: frozen, verified: true, machine: true, readable: true });
+    expect(app.investigation.getState().saved?.content).toEqual(saved.revision.content);
+    expect(app.saves.saves).toHaveLength(1);
+    expect(app.saves.reopens).toHaveLength(1);
+    expect(restore).toHaveBeenCalledTimes(2);
+  });
+
+  it("restores profile, measures and cohort queries together while fencing the saved score to its exact accepted population", async () => {
+    const app = await opening();
+    if (!cohortsContract.answer(cohortLiteral)) throw new Error("An admitted literal cohort is required");
+    const initial = app.investigation.getState();
+    if (initial.population.phase !== "ready") throw new Error("The imported source is ready");
+    const parent = shownSelection(initial.selection)!;
+    const measureQuery = { policy_id: "bpic19.source_witnessed_measures.v1" as const, measure_profile: "paper_v1" as const,
+      roles: { net_worth: 5, value: 5 }, offset: 7, limit: 3, value_unit: "EUR", value_reducer: "unique_creation_value" as const, calibration_population: "parent" as const };
+    const measure = measuresAnswer({ schema_version: 1, message_type: "bpic19_measures_request", request_id: "controlled-measures",
+      query_revision: parent.revision, workspace_id: workspaceId, identity: parent.answer.identity, query: measureQuery });
+    const actions: Bpic19PipelineAction[] = [
+      { operation: "bpic19_profile", identity: parent.answer.identity, selection_prefix_length: 0,
+        query: { ...query }, definition_id: reviewedAnswer({ workspaceId, identity: parent.answer.identity, revision: parent.revision, onKeep: vi.fn(), onInspect: vi.fn() }).profile!.definition_id },
+      { operation: "bpic19_measures", identity: parent.answer.identity, selection_prefix_length: 0, query: { ...measureQuery }, definition_id: measure.definition_id },
+      { operation: "bpic19_cohorts", identity: parent.answer.identity, selection_prefix_length: 0, query: { ...cohortLiteral.query }, definition_id: cohortLiteral.definition_id },
+      { operation: "bpic19_score", identity: parent.answer.identity, selection_prefix_length: 0, query: { run_id: scoreLiteral.run_id }, definition_id: "frozen-definition" },
+    ];
+    const reopen = async (index: number) => {
+      let result: Promise<boolean> | undefined;
+      await act(async () => { result = app.saving.reopen({ ...savedSummary, latest_revision_id: firstRevisionId }, workspaceId); await settle(); });
+      const call = app.saves.reopens[index], reply = reopenAnswer(call.request);
+      reply.revision.content = { ...savedContent, base_identity: initial.population.phase === "ready" ? initial.population.answer.identity : parent.answer.parent_identity,
+        selection_identity: parent.answer.identity, selection_recipe: { parent_case_ids: parent.answer.kept.case_ids, predicates: [] },
+        comparison: null, bpic19_pipeline: { schema_version: 1, actions: structuredClone(actions) as [Bpic19PipelineAction, ...Bpic19PipelineAction[]] } };
+      reply.restored_comparison_id = null;
+      reply.restored_selection = { identity: parent.answer.identity, parent_identity: parent.answer.parent_identity,
+        parent: parent.answer.parent, kept: parent.answer.kept, removed: parent.answer.removed,
+        unevaluable: parent.answer.unevaluable, predicate_results: [] };
+      await act(async () => { call.reply({ ok: true, answer: reply }); await settle(); });
+      expect(await result).toBe(true);
+      await act(async () => {
+        const population = app.imports.populations[index + 1];
+        population.reply({ ok: true, answer: populationAnswer(population.request) }); await settle();
+      });
+      expect(app.investigation.getState().selection.phase).toBe("loading");
+      expect(screen.queryByRole("region", { name: "Scripted current assessment" })).toBeNull();
+    };
+    await reopen(0);
+    await answerSelection(app, 1, everyIncident);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    expect(screen.getByRole("region", { name: "Scripted current assessment" }).textContent).toContain(scoreLiteral.run_id);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted changed source roles" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted unknown cohort" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep scripted first item" }));
+    await answerSelection(app, 2, containingOpened);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent!).roles.item_category).toBe(7);
+    expect(JSON.parse(screen.getByTestId("current-measures-query").textContent!).roles).toEqual({});
+    expect(JSON.parse(screen.getByTestId("current-cohort-query").textContent!).retain).toBe("unknown");
+    expect(screen.queryByRole("region", { name: "Scripted current assessment" })).toBeNull();
+    await reopen(1);
+    await answerSelection(app, 3, everyIncident);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    expect({ profile: JSON.parse(screen.getByTestId("current-source-query").textContent!),
+      measures: JSON.parse(screen.getByTestId("current-measures-query").textContent!),
+      cohorts: JSON.parse(screen.getByTestId("current-cohort-query").textContent!),
+      score: screen.getByRole("region", { name: "Scripted current assessment" }).textContent?.includes(scoreLiteral.run_id),
+    }).toEqual({ profile: query, measures: measureQuery, cohorts: cohortLiteral.query, score: true });
+    expect(app.saves.saves).toHaveLength(0);
+    expect(app.saves.reopens).toHaveLength(2);
+  });
+
   it("preserves the genuine typed Keep child through Undo, canonical no-op Save, and Redo", async () => {
     const app = await opening();
     await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
