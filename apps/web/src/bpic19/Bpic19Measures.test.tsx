@@ -15,6 +15,39 @@ function setup(client: Bpic19MeasuresClient = { measures: vi.fn(async request =>
 const distributions = () => screen.findByRole("table", { name: "Raw-measure distributions over the complete named population" });
 
 describe("source-witnessed BPIC19 measures", () => {
+  it("replays an omitted-default declaration exactly while explicit edits review a new definition", async () => {
+    const query: MeasureQuery = { policy_id: "bpic19.source_witnessed_measures.v1", measure_profile: "paper_v1",
+      roles: { activity: 1, item_category: 3 }, offset: 0, limit: 50, calibration_population: "parent",
+      activity_selector: ["Record Invoice Receipt"], activity_operator: "count", representation_policy: "exact" };
+    const client: Bpic19MeasuresClient = { measures: vi.fn(async (request: Bpic19MeasuresRequest): Promise<Bpic19MeasuresOutcome> => {
+      const answer = measuresAnswer(request);
+      if (request.query.activity_operator === "presence") {
+        answer.definition_id = "bpic19-measure-definition.v1:sha256:" + "1".repeat(64);
+        answer.definition.definition_id = answer.definition_id;
+      }
+      return { ok: true, answer };
+    }) };
+    const onReviewed = vi.fn(), onValidityChange = vi.fn(), user = userEvent.setup();
+    render(<Bpic19Measures workspaceId="workspace.v1:literal-fixture" identity={measuresIdentity} revision={2}
+      roles={measuresRoles} query={query} client={client} onInspect={vi.fn()} onKeepCases={vi.fn()} onReviewed={onReviewed} onValidityChange={onValidityChange} />);
+    await distributions();
+    expect(vi.mocked(client.measures).mock.calls[0][0].query).toEqual(query);
+    expect(onReviewed.mock.calls[0][0].query).toEqual(query);
+    expect((screen.getByRole("textbox", { name: "Source activity selector" }) as HTMLTextAreaElement).value).toBe("Record Invoice Receipt");
+    expect((screen.getByRole("textbox", { name: "Target activity selector" }) as HTMLTextAreaElement).value).toBe("Clear Invoice");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Activity operator" }), "presence");
+    expect(onValidityChange).toHaveBeenLastCalledWith(false);
+    expect(onReviewed).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Keep positive items" }).hasAttribute("disabled")).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Review and read measures" }));
+    await waitFor(() => expect(onReviewed).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(client.measures).mock.calls[1][0].query).toMatchObject({ activity_operator: "presence",
+      interval_source: ["Record Invoice Receipt"], interval_target: ["Clear Invoice"], value_unit: "source_units" });
+    expect(onReviewed.mock.calls[1][0].definition_id).not.toBe(onReviewed.mock.calls[0][0].definition_id);
+    expect(onReviewed.mock.calls[1][0].query).not.toEqual(query);
+    expect(onValidityChange).toHaveBeenLastCalledWith(true);
+  });
+
   it("reviews the explicit panel source-position choice and opens its supplied first witness", async () => {
     const client: Bpic19MeasuresClient = { measures: vi.fn<Bpic19MeasuresClient["measures"]>(async request => {
       const answer = measuresAnswer(request);

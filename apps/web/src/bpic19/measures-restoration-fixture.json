@@ -1,0 +1,4124 @@
+{
+  "reopen": {
+    "schema_version": 1,
+    "message_type": "reopen_investigation_answer",
+    "request_id": "reopen-6",
+    "query_revision": 6,
+    "workspace_id": "workspace.v1:a715ba9127ff42f0a21df67a2c4b7ba5",
+    "revision": {
+      "investigation_id": "investigation.v1:93dd96ce1b704b45bba62d11f678b809",
+      "saved_revision_id": "saved-revision.v1:sha256:47fa3587d04f3134652a7946131e9a535ee2ae979c545bc8f5fad0f44451ce1d",
+      "content": {
+        "format_version": 1,
+        "name": "Receipt evidence including missing activity labels",
+        "base_identity": {
+          "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+          "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+          "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+          "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+          "population_id": "population.v1:sha256:abc14bcd775584afd88bc3ab3363d5a1879918339d76b577f31911a6bab0622f",
+          "implementation_version": "0.1.0"
+        },
+        "selection_identity": {
+          "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+          "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+          "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+          "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+          "population_id": "population.v1:sha256:918eb3d1e41c69e8eef4f8f0c8d10ebac24776a6684186b95d0b892b69d98853",
+          "implementation_version": "0.1.0"
+        },
+        "selection_recipe": {
+          "parent_case_ids": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ],
+          "predicates": [
+            {
+              "kind": "case_id_in",
+              "case_ids": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "F"
+              ],
+              "negate": false
+            }
+          ]
+        },
+        "context_policy": "incident.context.first_record_in_declared_order.v1",
+        "comparison": null,
+        "notes": "Independent literal source measurements; complete original histories, no Flow/Norm/native grade. Generic case-id selection is not typed semantic cohort origin.",
+        "bookmarks": [],
+        "score_run_ref": null,
+        "bpic19_pipeline": {
+          "schema_version": 1,
+          "actions": [
+            {
+              "operation": "bpic19_measures",
+              "identity": {
+                "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+                "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+                "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+                "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+                "population_id": "population.v1:sha256:918eb3d1e41c69e8eef4f8f0c8d10ebac24776a6684186b95d0b892b69d98853",
+                "implementation_version": "0.1.0"
+              },
+              "query": {
+                "policy_id": "bpic19.source_witnessed_measures.v1",
+                "measure_profile": "paper_v1",
+                "roles": {
+                  "activity": 1,
+                  "item_category": 3
+                },
+                "offset": 0,
+                "limit": 50,
+                "calibration_population": "parent",
+                "activity_selector": [
+                  "Record Invoice Receipt"
+                ],
+                "activity_operator": "count",
+                "representation_policy": "exact"
+              },
+              "definition_id": "bpic19-measure-definition.v1:sha256:9840038abf5e241fcfbc9ec337ff539dc2109e2178c0b1a3f19c3c4fa78408b7",
+              "selection_prefix_length": 1
+            }
+          ]
+        }
+      }
+    },
+    "bpic19_outputs": {
+      "schema_version": 1,
+      "outputs": [
+        {
+          "operation": "bpic19_measures",
+          "definition_id": "bpic19-measure-definition.v1:sha256:9840038abf5e241fcfbc9ec337ff539dc2109e2178c0b1a3f19c3c4fa78408b7",
+          "sha256": "3e055d6db86547e2d99103101ea616b2071d5780e4321c47ffb7983cff56fe1e",
+          "output": {
+            "schema_version": 1,
+            "message_type": "bpic19_measures_answer",
+            "identity": {
+              "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+              "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+              "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+              "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+              "population_id": "population.v1:sha256:918eb3d1e41c69e8eef4f8f0c8d10ebac24776a6684186b95d0b892b69d98853",
+              "implementation_version": "0.1.0"
+            },
+            "parent_identity": {
+              "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+              "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+              "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+              "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+              "population_id": "population.v1:sha256:34b9798b80708fd445633141dadf16618b9443375d6f560234f3323772083f67",
+              "implementation_version": "0.1.0"
+            },
+            "query": {
+              "policy_id": "bpic19.source_witnessed_measures.v1",
+              "measure_profile": "paper_v1",
+              "roles": {
+                "activity": 1,
+                "item_category": 3
+              },
+              "offset": 0,
+              "limit": 50,
+              "calibration_population": "parent",
+              "activity_selector": [
+                "Record Invoice Receipt"
+              ],
+              "activity_operator": "count",
+              "representation_policy": "exact"
+            },
+            "result_id": "bpic19-measures.v1:sha256:41607d816a8bef374013c55b907b02e8a6604cdd7a87a4334ea857da6ff57281",
+            "definition_id": "bpic19-measure-definition.v1:sha256:9840038abf5e241fcfbc9ec337ff539dc2109e2178c0b1a3f19c3c4fa78408b7",
+            "definition": {
+              "policy_id": "bpic19.source_witnessed_measures.v1",
+              "measure_profile": "paper_v1",
+              "time_policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+              "resource_policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+              "roles": {
+                "item_category": 3,
+                "item_type": null,
+                "goods_receipt": null,
+                "gr_based_iv": null,
+                "purchasing_document": null,
+                "item": null,
+                "source_case": null,
+                "company": null,
+                "spend_area": null,
+                "resource": null,
+                "net_worth": null,
+                "value": null,
+                "activity": 1
+              },
+              "activity_selector": [
+                "Record Invoice Receipt"
+              ],
+              "activity_operator": "count",
+              "interval_source": [
+                "Record Invoice Receipt"
+              ],
+              "interval_target": [
+                "Clear Invoice"
+              ],
+              "interval_policy": "independent_minimum",
+              "value_reducer": "unique_creation_value",
+              "representation_policy": "exact",
+              "value_unit": "source_units",
+              "value_band_edges": [],
+              "clock_kind": "wall_clock",
+              "clock_policy_id": "incident.time.wall_clock_as_recorded.v1",
+              "elapsed_unit": "days",
+              "endpoint_admissibility": "select_parsed_minimum_then_2017_inclusive_2020_exclusive",
+              "resource_normalization": "strip_casefold_fullmatch_user_or_batch_numeric_suffix",
+              "resource_unknown_policy": "full_effort_unavailable_keep_classified_lower_bounds",
+              "creation_selector": [
+                "Create Purchase Order Item"
+              ],
+              "numeric_policy": "finite_float_scientific_notation_no_locale_conversion",
+              "value_missing_policy": "unavailable",
+              "creation_conflict_policy": "unique_creation_value",
+              "source_representation": "complete_original_item_histories",
+              "activity_labels": {
+                "invoice": "Record Invoice Receipt",
+                "clearing": "Clear Invoice",
+                "receipt_any": [
+                  "Record Goods Receipt",
+                  "Record Service Entry Sheet"
+                ]
+              },
+              "definition_id": "bpic19-measure-definition.v1:sha256:9840038abf5e241fcfbc9ec337ff539dc2109e2178c0b1a3f19c3c4fa78408b7"
+            },
+            "roles_proposed_from_headers": false,
+            "population_case_count": 6,
+            "population_record_count": 15,
+            "flow_case_counts": {
+              "unknown": 6
+            },
+            "activity_cohorts": {
+              "positive_case_ids": [
+                "A"
+              ],
+              "zero_case_ids": [
+                "B",
+                "C"
+              ],
+              "unavailable_case_ids": [
+                "D",
+                "E",
+                "F"
+              ],
+              "presence_positive_case_ids": [
+                "A",
+                "E",
+                "F"
+              ],
+              "presence_absent_case_ids": [
+                "B",
+                "C"
+              ],
+              "presence_unknown_case_ids": [
+                "D"
+              ],
+              "repeated_positive_case_ids": [
+                "A",
+                "F"
+              ],
+              "repeated_absent_case_ids": [
+                "B",
+                "C"
+              ],
+              "repeated_unknown_case_ids": [
+                "D",
+                "E"
+              ],
+              "population_case_count": 6,
+              "presence_fraction": 0.5,
+              "repeated_presence_fraction": 0.3333333333333333,
+              "denominator": 6,
+              "reason": null
+            },
+            "representation_groups": {
+              "exact": [
+                {
+                  "group_id": "bpic19-variant-group.v1:sha256:a2e994a15f960ec26b8d5af533c708dc87250a2286232b7605b7db3c4766c5ac",
+                  "sequence": [
+                    "Record Invoice Receipt",
+                    "Record Invoice Receipt",
+                    "Clear Invoice",
+                    "Change Price",
+                    "Change Quantity",
+                    "Cancel Invoice Receipt"
+                  ],
+                  "case_ids": [
+                    "A"
+                  ],
+                  "case_count": 1,
+                  "record_count": 6
+                },
+                {
+                  "group_id": "bpic19-variant-group.v1:sha256:3706febce662f21418baf6800fb6702ca1921af6bd31f2b55026026ef87cb81f",
+                  "sequence": [
+                    "Vendor creates invoice"
+                  ],
+                  "case_ids": [
+                    "B"
+                  ],
+                  "case_count": 1,
+                  "record_count": 1
+                }
+              ],
+              "first_occurrence": [
+                {
+                  "group_id": "bpic19-variant-group.v1:sha256:ed79cc08721c1012385029ee5c7dc78c7466050d25ee5d22e419d483d4fd4bbe",
+                  "sequence": [
+                    "Record Invoice Receipt",
+                    "Clear Invoice",
+                    "Change Price",
+                    "Change Quantity",
+                    "Cancel Invoice Receipt"
+                  ],
+                  "case_ids": [
+                    "A"
+                  ],
+                  "case_count": 1,
+                  "record_count": 6
+                },
+                {
+                  "group_id": "bpic19-variant-group.v1:sha256:32d0ea42bb7ecb84769385d795d5f0bec38204af45dd64832d5ea362b6a678cc",
+                  "sequence": [
+                    "Vendor creates invoice"
+                  ],
+                  "case_ids": [
+                    "B"
+                  ],
+                  "case_count": 1,
+                  "record_count": 1
+                }
+              ]
+            },
+            "representation_unavailable_case_ids": [
+              "C",
+              "D",
+              "E",
+              "F"
+            ],
+            "value_bands": [],
+            "value_band_unavailable_case_ids": [],
+            "summaries": {
+              "cancellation_count": {
+                "available_case_count": 3,
+                "zero_case_count": 2,
+                "reason": null,
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "mean": 0.3333333333333333,
+                "median": 0.0,
+                "unavailable_case_count": 3
+              },
+              "clearing_count": {
+                "available_case_count": 3,
+                "zero_case_count": 2,
+                "reason": null,
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "mean": 0.3333333333333333,
+                "median": 0.0,
+                "unavailable_case_count": 3
+              },
+              "creation_value": {
+                "available_case_count": 0,
+                "zero_case_count": 0,
+                "reason": "empty_support",
+                "minimum": null,
+                "maximum": null,
+                "mean": null,
+                "median": null,
+                "unavailable_case_count": 6
+              },
+              "distinct_user_count": {
+                "available_case_count": 0,
+                "zero_case_count": 0,
+                "reason": "empty_support",
+                "minimum": null,
+                "maximum": null,
+                "mean": null,
+                "median": null,
+                "unavailable_case_count": 6
+              },
+              "edit_count": {
+                "available_case_count": 3,
+                "zero_case_count": 2,
+                "reason": null,
+                "minimum": 0.0,
+                "maximum": 2.0,
+                "mean": 0.6666666666666666,
+                "median": 0.0,
+                "unavailable_case_count": 3
+              },
+              "exposure": {
+                "available_case_count": 0,
+                "zero_case_count": 0,
+                "reason": "empty_support",
+                "minimum": null,
+                "maximum": null,
+                "mean": null,
+                "median": null,
+                "unavailable_case_count": 6
+              },
+              "invoice_count": {
+                "available_case_count": 3,
+                "zero_case_count": 2,
+                "reason": null,
+                "minimum": 0.0,
+                "maximum": 2.0,
+                "mean": 0.6666666666666666,
+                "median": 0.0,
+                "unavailable_case_count": 3
+              },
+              "invoice_precedes_receipt": {
+                "available_case_count": 0,
+                "zero_case_count": 0,
+                "reason": "empty_support",
+                "minimum": null,
+                "maximum": null,
+                "mean": null,
+                "median": null,
+                "unavailable_case_count": 6
+              },
+              "invoice_to_clearing_days": {
+                "available_case_count": 1,
+                "zero_case_count": 0,
+                "reason": null,
+                "minimum": 1.0,
+                "maximum": 1.0,
+                "mean": 1.0,
+                "median": 1.0,
+                "unavailable_case_count": 5
+              },
+              "receipt_count": {
+                "available_case_count": 3,
+                "zero_case_count": 3,
+                "reason": null,
+                "minimum": 0.0,
+                "maximum": 0.0,
+                "mean": 0.0,
+                "median": 0.0,
+                "unavailable_case_count": 3
+              },
+              "selected_activity": {
+                "available_case_count": 3,
+                "zero_case_count": 2,
+                "reason": null,
+                "minimum": 0.0,
+                "maximum": 2.0,
+                "mean": 0.6666666666666666,
+                "median": 0.0,
+                "unavailable_case_count": 3
+              },
+              "selected_interval": {
+                "available_case_count": 1,
+                "zero_case_count": 0,
+                "reason": null,
+                "minimum": 1.0,
+                "maximum": 1.0,
+                "mean": 1.0,
+                "median": 1.0,
+                "unavailable_case_count": 5
+              },
+              "selected_value": {
+                "available_case_count": 0,
+                "zero_case_count": 0,
+                "reason": "empty_support",
+                "minimum": null,
+                "maximum": null,
+                "mean": null,
+                "median": null,
+                "unavailable_case_count": 6
+              },
+              "user_event_count": {
+                "available_case_count": 0,
+                "zero_case_count": 0,
+                "reason": "empty_support",
+                "minimum": null,
+                "maximum": null,
+                "mean": null,
+                "median": null,
+                "unavailable_case_count": 6
+              }
+            },
+            "offset": 0,
+            "limit": 50,
+            "next_offset": null,
+            "cases": [
+              {
+                "case_id": "A",
+                "flow": null,
+                "flow_available": false,
+                "document": null,
+                "company": null,
+                "spend_area": null,
+                "context": {
+                  "item_category": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_case_attribute",
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba"
+                    ]
+                  },
+                  "item_type": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "goods_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "gr_based_iv": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "purchasing_document": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "item": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "source_case": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "company": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "spend_area": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  }
+                },
+                "record_count": 6,
+                "record_row_ids": [
+                  "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                  "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                  "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                  "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                  "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac",
+                  "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd"
+                ],
+                "activity_counts": {
+                  "Cancel Invoice Receipt": 1,
+                  "Change Price": 1,
+                  "Change Quantity": 1,
+                  "Clear Invoice": 1,
+                  "Record Invoice Receipt": 2
+                },
+                "activity_row_ids": {
+                  "Record Invoice Receipt": [
+                    "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                    "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                  ],
+                  "Clear Invoice": [
+                    "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                  ],
+                  "Change Price": [
+                    "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef"
+                  ],
+                  "Change Quantity": [
+                    "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac"
+                  ],
+                  "Cancel Invoice Receipt": [
+                    "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd"
+                  ]
+                },
+                "activity_counts_available": true,
+                "missing_activity_row_ids": [],
+                "activity_measure": {
+                  "matching_row_ids": [
+                    "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                    "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                  ],
+                  "lower_bound": 2,
+                  "unknown_label_count": 0,
+                  "unknown_row_ids": [],
+                  "absence_row_ids": [],
+                  "policy_id": "bpic19.exact_activity_finite_indicators.v1",
+                  "count": {
+                    "value": 2,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "presence": {
+                    "value": 1,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unit": "case_presence_boolean",
+                    "lower_bound": 2,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeat_quantity": {
+                    "value": 1,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unit": "repeated_event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeated_presence": {
+                    "value": 1,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unit": "case_repeated_presence_boolean",
+                    "lower_bound": 2,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  }
+                },
+                "selected_value_band": null,
+                "actor_records": [
+                  {
+                    "row_id": "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  }
+                ],
+                "actor_summary": {
+                  "known_user_event_count": 0,
+                  "distinct_normalized_user_count": 0,
+                  "batch_event_count": 0,
+                  "unknown_event_count": 6,
+                  "event_count": 6,
+                  "available": false,
+                  "reason": "role_unmapped",
+                  "batch_all_share": null,
+                  "batch_human_ratio": null,
+                  "batch_all_denominator": 6,
+                  "batch_human_denominator": 0
+                },
+                "amount_records": [
+                  {
+                    "row_id": "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  }
+                ],
+                "milestones": {
+                  "invoice": {
+                    "available": true,
+                    "reason": null,
+                    "endpoint_state": "available",
+                    "timestamp": "2018-01-01T00:00:00",
+                    "selected_row_id": "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "clearing": {
+                    "available": true,
+                    "reason": null,
+                    "endpoint_state": "available",
+                    "timestamp": "2018-01-02T00:00:00",
+                    "selected_row_id": "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                    "row_ids": [
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "receipt": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "source": {
+                    "available": true,
+                    "reason": null,
+                    "endpoint_state": "available",
+                    "timestamp": "2018-01-01T00:00:00",
+                    "selected_row_id": "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "target": {
+                    "available": true,
+                    "reason": null,
+                    "endpoint_state": "available",
+                    "timestamp": "2018-01-02T00:00:00",
+                    "selected_row_id": "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                    "row_ids": [
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  }
+                },
+                "measures": {
+                  "invoice_count": {
+                    "value": 2,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "clearing_count": {
+                    "value": 1,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 1,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "receipt_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                      "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                      "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac",
+                      "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "cancellation_count": {
+                    "value": 1,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 1,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "edit_count": {
+                    "value": 2,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                      "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "invoice_to_clearing_days": {
+                    "value": 1.0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "interval_state": "available",
+                    "activation_row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "response_row_ids": [
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "activation_timestamp": "2018-01-01T00:00:00",
+                    "response_timestamp": "2018-01-02T00:00:00",
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days",
+                    "recorded_difference_days": 1.0
+                  },
+                  "invoice_precedes_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unit": "boolean_observation"
+                  },
+                  "user_event_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "user_attributed_events",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                      "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                      "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac",
+                      "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 6
+                  },
+                  "distinct_user_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "distinct_user_identities",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                      "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                      "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac",
+                      "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 6
+                  },
+                  "creation_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "exposure": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                      "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                      "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac",
+                      "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd"
+                    ],
+                    "candidate_count": 6,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "maximum_absolute_event_value"
+                  },
+                  "selected_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "selected_activity": {
+                    "value": 2,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "selected_interval": {
+                    "value": 1.0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0",
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "interval_state": "available",
+                    "activation_row_ids": [
+                      "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                      "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                    ],
+                    "response_row_ids": [
+                      "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261"
+                    ],
+                    "activation_timestamp": "2018-01-01T00:00:00",
+                    "response_timestamp": "2018-01-02T00:00:00",
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days",
+                    "recorded_difference_days": 1.0
+                  }
+                },
+                "representations": {
+                  "exact_sequence": [
+                    "Record Invoice Receipt",
+                    "Record Invoice Receipt",
+                    "Clear Invoice",
+                    "Change Price",
+                    "Change Quantity",
+                    "Cancel Invoice Receipt"
+                  ],
+                  "first_occurrence_signature": [
+                    "Record Invoice Receipt",
+                    "Clear Invoice",
+                    "Change Price",
+                    "Change Quantity",
+                    "Cancel Invoice Receipt"
+                  ],
+                  "signature_policy_id": "bpic19.first_occurrence_signature.v1",
+                  "available": true,
+                  "reason": null,
+                  "omitted_activity_row_ids": [],
+                  "signature_suppressed_row_ids": [
+                    "row.v1:sha256:d2c0783f60e72088bfeaec775abe20deb83b56b669e0cbebdc0de8c913ca98c0"
+                  ],
+                  "signature_retained_row_ids": [
+                    "row.v1:sha256:eeec72fcdea19bf4a77f046b2f0d7d876803ca1c82f21c1611ccc8a6e4d0d7ba",
+                    "row.v1:sha256:0e2c0d687f8e7a62d041dc16ad498d88334a082be4601c36c982225e21bd6261",
+                    "row.v1:sha256:dca0f04463853fc8db1ab11c721f094dfd4c6f37cb0073b552375c16a7c921ef",
+                    "row.v1:sha256:e1e9bcff13fdcc8b3afd6c3f77cae5b8512214fc6327d8532613486673cab7ac",
+                    "row.v1:sha256:0914bec1f3bbdb7a705e31733c9e337e53d4c72d7ea820b91ca1e17e0262b8cd"
+                  ],
+                  "exact_representation_id": "bpic19-exact.v1:sha256:1d54076bc0bcd785b477dceafc192453a3c22cb02a6fd78c72fe29c194487ac3",
+                  "signature_representation_id": "bpic19-signature.v1:sha256:22d6350a1a53f64ff698bae5e1742b695caa45bd422fd2224534ce64c72d12eb"
+                }
+              },
+              {
+                "case_id": "B",
+                "flow": null,
+                "flow_available": false,
+                "document": null,
+                "company": null,
+                "spend_area": null,
+                "context": {
+                  "item_category": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_case_attribute",
+                    "row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ]
+                  },
+                  "item_type": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "goods_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "gr_based_iv": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "purchasing_document": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "item": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "source_case": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "company": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "spend_area": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  }
+                },
+                "record_count": 1,
+                "record_row_ids": [
+                  "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                ],
+                "activity_counts": {
+                  "Vendor creates invoice": 1
+                },
+                "activity_row_ids": {
+                  "Vendor creates invoice": [
+                    "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                  ]
+                },
+                "activity_counts_available": true,
+                "missing_activity_row_ids": [],
+                "activity_measure": {
+                  "matching_row_ids": [],
+                  "lower_bound": 0,
+                  "unknown_label_count": 0,
+                  "unknown_row_ids": [],
+                  "absence_row_ids": [
+                    "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                  ],
+                  "policy_id": "bpic19.exact_activity_finite_indicators.v1",
+                  "count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "presence": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "case_presence_boolean",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeat_quantity": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "repeated_event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeated_presence": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "case_repeated_presence_boolean",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  }
+                },
+                "selected_value_band": null,
+                "actor_records": [
+                  {
+                    "row_id": "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  }
+                ],
+                "actor_summary": {
+                  "known_user_event_count": 0,
+                  "distinct_normalized_user_count": 0,
+                  "batch_event_count": 0,
+                  "unknown_event_count": 1,
+                  "event_count": 1,
+                  "available": false,
+                  "reason": "role_unmapped",
+                  "batch_all_share": null,
+                  "batch_human_ratio": null,
+                  "batch_all_denominator": 1,
+                  "batch_human_denominator": 0
+                },
+                "amount_records": [
+                  {
+                    "row_id": "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  }
+                ],
+                "milestones": {
+                  "invoice": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "clearing": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "receipt": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "source": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "target": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  }
+                },
+                "measures": {
+                  "invoice_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "clearing_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "receipt_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "cancellation_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "edit_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "invoice_to_clearing_days": {
+                    "value": null,
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  },
+                  "invoice_precedes_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "row_ids": [],
+                    "unit": "boolean_observation"
+                  },
+                  "user_event_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "user_attributed_events",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 1
+                  },
+                  "distinct_user_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "distinct_user_identities",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 1
+                  },
+                  "creation_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "exposure": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "candidate_count": 1,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "maximum_absolute_event_value"
+                  },
+                  "selected_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "selected_activity": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "selected_interval": {
+                    "value": null,
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  }
+                },
+                "representations": {
+                  "exact_sequence": [
+                    "Vendor creates invoice"
+                  ],
+                  "first_occurrence_signature": [
+                    "Vendor creates invoice"
+                  ],
+                  "signature_policy_id": "bpic19.first_occurrence_signature.v1",
+                  "available": true,
+                  "reason": null,
+                  "omitted_activity_row_ids": [],
+                  "signature_suppressed_row_ids": [],
+                  "signature_retained_row_ids": [
+                    "row.v1:sha256:44e174f8a0803e5503814444b53efa61e9820c06cf4da4ac31e2caf75f17b063"
+                  ],
+                  "exact_representation_id": "bpic19-exact.v1:sha256:4e64942abeef2774e2f2ad3f7846610fcaa63f516689e80b78871b33e824974d",
+                  "signature_representation_id": "bpic19-signature.v1:sha256:77bfe639c1f692dec456942a8839529e531b0e8f8ccf56da7c11ea3f0808fb37"
+                }
+              },
+              {
+                "case_id": "C",
+                "flow": null,
+                "flow_available": false,
+                "document": null,
+                "company": null,
+                "spend_area": null,
+                "context": {
+                  "item_category": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_case_attribute",
+                    "row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ]
+                  },
+                  "item_type": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "goods_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "gr_based_iv": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "purchasing_document": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "item": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "source_case": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "company": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "spend_area": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  }
+                },
+                "record_count": 1,
+                "record_row_ids": [
+                  "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                ],
+                "activity_counts": {
+                  "Unrelated": 1
+                },
+                "activity_row_ids": {
+                  "Unrelated": [
+                    "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                  ]
+                },
+                "activity_counts_available": true,
+                "missing_activity_row_ids": [],
+                "activity_measure": {
+                  "matching_row_ids": [],
+                  "lower_bound": 0,
+                  "unknown_label_count": 0,
+                  "unknown_row_ids": [],
+                  "absence_row_ids": [
+                    "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                  ],
+                  "policy_id": "bpic19.exact_activity_finite_indicators.v1",
+                  "count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "presence": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "case_presence_boolean",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeat_quantity": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "repeated_event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeated_presence": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "case_repeated_presence_boolean",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  }
+                },
+                "selected_value_band": null,
+                "actor_records": [
+                  {
+                    "row_id": "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  }
+                ],
+                "actor_summary": {
+                  "known_user_event_count": 0,
+                  "distinct_normalized_user_count": 0,
+                  "batch_event_count": 0,
+                  "unknown_event_count": 1,
+                  "event_count": 1,
+                  "available": false,
+                  "reason": "role_unmapped",
+                  "batch_all_share": null,
+                  "batch_human_ratio": null,
+                  "batch_all_denominator": 1,
+                  "batch_human_denominator": 0
+                },
+                "amount_records": [
+                  {
+                    "row_id": "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  }
+                ],
+                "milestones": {
+                  "invoice": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "clearing": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "receipt": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "source": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  },
+                  "target": {
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": []
+                  }
+                },
+                "measures": {
+                  "invoice_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "clearing_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "receipt_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "cancellation_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "edit_count": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "invoice_to_clearing_days": {
+                    "value": null,
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  },
+                  "invoice_precedes_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "row_ids": [],
+                    "unit": "boolean_observation"
+                  },
+                  "user_event_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "user_attributed_events",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 1
+                  },
+                  "distinct_user_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "distinct_user_identities",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 1
+                  },
+                  "creation_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "exposure": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "candidate_count": 1,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "maximum_absolute_event_value"
+                  },
+                  "selected_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "selected_activity": {
+                    "value": 0,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 0,
+                    "unknown_row_ids": [],
+                    "absence_row_ids": [
+                      "row.v1:sha256:1821b59a16fac8cc34405bb37d590178aeae460637a37c38dcc2b5f49c7bfd5a"
+                    ],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "selected_interval": {
+                    "value": null,
+                    "available": false,
+                    "reason": "no_parsed_endpoint",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  }
+                },
+                "representations": {
+                  "exact_sequence": null,
+                  "first_occurrence_signature": null,
+                  "signature_policy_id": "bpic19.first_occurrence_signature.v1",
+                  "available": false,
+                  "reason": "order_unknown",
+                  "omitted_activity_row_ids": [],
+                  "signature_suppressed_row_ids": [],
+                  "signature_retained_row_ids": [],
+                  "exact_representation_id": "bpic19-exact.v1:sha256:75dbd2023e6f22f6d9b9a24c65694068427eaa16dcb85dd5177f4750e544d8e5",
+                  "signature_representation_id": "bpic19-signature.v1:sha256:891f95f57da6bb7d6f8fb893078c5d4b587a1f62a0f87d31effad40a8d9bff66"
+                }
+              },
+              {
+                "case_id": "D",
+                "flow": null,
+                "flow_available": false,
+                "document": null,
+                "company": null,
+                "spend_area": null,
+                "context": {
+                  "item_category": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_case_attribute",
+                    "row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ]
+                  },
+                  "item_type": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "goods_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "gr_based_iv": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "purchasing_document": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "item": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "source_case": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "company": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "spend_area": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  }
+                },
+                "record_count": 2,
+                "record_row_ids": [
+                  "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841",
+                  "row.v1:sha256:0a4c07fbadd74fa9d3bf9fb5926ca2c65c936d6c1d7d6db7fcc82932f15a779e"
+                ],
+                "activity_counts": {
+                  "Other": 1
+                },
+                "activity_row_ids": {
+                  "Other": [
+                    "row.v1:sha256:0a4c07fbadd74fa9d3bf9fb5926ca2c65c936d6c1d7d6db7fcc82932f15a779e"
+                  ]
+                },
+                "activity_counts_available": false,
+                "missing_activity_row_ids": [
+                  "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                ],
+                "activity_measure": {
+                  "matching_row_ids": [],
+                  "lower_bound": 0,
+                  "unknown_label_count": 1,
+                  "unknown_row_ids": [
+                    "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                  ],
+                  "absence_row_ids": [],
+                  "policy_id": "bpic19.exact_activity_finite_indicators.v1",
+                  "count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "presence": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "case_presence_boolean",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeat_quantity": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "repeated_event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeated_presence": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "case_repeated_presence_boolean",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  }
+                },
+                "selected_value_band": null,
+                "actor_records": [
+                  {
+                    "row_id": "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:0a4c07fbadd74fa9d3bf9fb5926ca2c65c936d6c1d7d6db7fcc82932f15a779e",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  }
+                ],
+                "actor_summary": {
+                  "known_user_event_count": 0,
+                  "distinct_normalized_user_count": 0,
+                  "batch_event_count": 0,
+                  "unknown_event_count": 2,
+                  "event_count": 2,
+                  "available": false,
+                  "reason": "role_unmapped",
+                  "batch_all_share": null,
+                  "batch_human_ratio": null,
+                  "batch_all_denominator": 2,
+                  "batch_human_denominator": 0
+                },
+                "amount_records": [
+                  {
+                    "row_id": "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:0a4c07fbadd74fa9d3bf9fb5926ca2c65c936d6c1d7d6db7fcc82932f15a779e",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  }
+                ],
+                "milestones": {
+                  "invoice": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ]
+                  },
+                  "clearing": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ]
+                  },
+                  "receipt": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ]
+                  },
+                  "source": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ]
+                  },
+                  "target": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ]
+                  }
+                },
+                "measures": {
+                  "invoice_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "clearing_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "receipt_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "cancellation_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "edit_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "invoice_to_clearing_days": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  },
+                  "invoice_precedes_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "boolean_observation"
+                  },
+                  "user_event_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "user_attributed_events",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841",
+                      "row.v1:sha256:0a4c07fbadd74fa9d3bf9fb5926ca2c65c936d6c1d7d6db7fcc82932f15a779e"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 2
+                  },
+                  "distinct_user_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "distinct_user_identities",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841",
+                      "row.v1:sha256:0a4c07fbadd74fa9d3bf9fb5926ca2c65c936d6c1d7d6db7fcc82932f15a779e"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 2
+                  },
+                  "creation_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "missing_activity_label",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "exposure": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841",
+                      "row.v1:sha256:0a4c07fbadd74fa9d3bf9fb5926ca2c65c936d6c1d7d6db7fcc82932f15a779e"
+                    ],
+                    "candidate_count": 2,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "maximum_absolute_event_value"
+                  },
+                  "selected_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "missing_activity_label",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "selected_activity": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "selected_interval": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  }
+                },
+                "representations": {
+                  "exact_sequence": null,
+                  "first_occurrence_signature": null,
+                  "signature_policy_id": "bpic19.first_occurrence_signature.v1",
+                  "available": false,
+                  "reason": "missing_activity_label",
+                  "omitted_activity_row_ids": [
+                    "row.v1:sha256:e80132837b8ca9ffde799d1636eb86c4121a05c3c29177eb2c97f78bf7af1841"
+                  ],
+                  "signature_suppressed_row_ids": [],
+                  "signature_retained_row_ids": [],
+                  "exact_representation_id": "bpic19-exact.v1:sha256:99ec0de03b41be2836eec5dd755f487618d56b982ac856dac319c37e631821a9",
+                  "signature_representation_id": "bpic19-signature.v1:sha256:33df09a7ee31900391d1568d4fcc1d9aa48a838d7cf6a18165ef42445554423a"
+                }
+              },
+              {
+                "case_id": "E",
+                "flow": null,
+                "flow_available": false,
+                "document": null,
+                "company": null,
+                "spend_area": null,
+                "context": {
+                  "item_category": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_case_attribute",
+                    "row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ]
+                  },
+                  "item_type": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "goods_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "gr_based_iv": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "purchasing_document": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "item": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "source_case": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "company": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "spend_area": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  }
+                },
+                "record_count": 2,
+                "record_row_ids": [
+                  "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f",
+                  "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                ],
+                "activity_counts": {
+                  "Record Invoice Receipt": 1
+                },
+                "activity_row_ids": {
+                  "Record Invoice Receipt": [
+                    "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                  ]
+                },
+                "activity_counts_available": false,
+                "missing_activity_row_ids": [
+                  "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                ],
+                "activity_measure": {
+                  "matching_row_ids": [
+                    "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                  ],
+                  "lower_bound": 1,
+                  "unknown_label_count": 1,
+                  "unknown_row_ids": [
+                    "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                  ],
+                  "absence_row_ids": [],
+                  "policy_id": "bpic19.exact_activity_finite_indicators.v1",
+                  "count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 1,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "presence": {
+                    "value": 1,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unit": "case_presence_boolean",
+                    "lower_bound": 1,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeat_quantity": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unit": "repeated_event_occurrences",
+                    "lower_bound": 1,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeated_presence": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unit": "case_repeated_presence_boolean",
+                    "lower_bound": 1,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  }
+                },
+                "selected_value_band": null,
+                "actor_records": [
+                  {
+                    "row_id": "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  }
+                ],
+                "actor_summary": {
+                  "known_user_event_count": 0,
+                  "distinct_normalized_user_count": 0,
+                  "batch_event_count": 0,
+                  "unknown_event_count": 2,
+                  "event_count": 2,
+                  "available": false,
+                  "reason": "role_unmapped",
+                  "batch_all_share": null,
+                  "batch_human_ratio": null,
+                  "batch_all_denominator": 2,
+                  "batch_human_denominator": 0
+                },
+                "amount_records": [
+                  {
+                    "row_id": "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  }
+                ],
+                "milestones": {
+                  "invoice": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unparseable_row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ]
+                  },
+                  "clearing": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ]
+                  },
+                  "receipt": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ]
+                  },
+                  "source": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unparseable_row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ]
+                  },
+                  "target": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ]
+                  }
+                },
+                "measures": {
+                  "invoice_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 1,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "clearing_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "receipt_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "cancellation_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "edit_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "invoice_to_clearing_days": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  },
+                  "invoice_precedes_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "boolean_observation"
+                  },
+                  "user_event_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "user_attributed_events",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f",
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 2
+                  },
+                  "distinct_user_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "distinct_user_identities",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f",
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 2
+                  },
+                  "creation_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "missing_activity_label",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "exposure": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f",
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "candidate_count": 2,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "maximum_absolute_event_value"
+                  },
+                  "selected_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "missing_activity_label",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "selected_activity": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:d433a5f7b05332205f31194cb3f40b7ab84c1bf67bc49526dd66c1c1624efc8f"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 1,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "selected_interval": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  }
+                },
+                "representations": {
+                  "exact_sequence": null,
+                  "first_occurrence_signature": null,
+                  "signature_policy_id": "bpic19.first_occurrence_signature.v1",
+                  "available": false,
+                  "reason": "missing_activity_label",
+                  "omitted_activity_row_ids": [
+                    "row.v1:sha256:de6facbdef2dd6ff8631c99a1a1375ab237bb0fefbf56ecb68c48b0e80331d48"
+                  ],
+                  "signature_suppressed_row_ids": [],
+                  "signature_retained_row_ids": [],
+                  "exact_representation_id": "bpic19-exact.v1:sha256:6a4aa647a44177680401d1b247ff71ccdc99dd24cfb583f804c932d7ce477bb4",
+                  "signature_representation_id": "bpic19-signature.v1:sha256:f8c533da225226ea9bbef0557959cd0cf02b2f5b34ba922f205bf682445a4e53"
+                }
+              },
+              {
+                "case_id": "F",
+                "flow": null,
+                "flow_available": false,
+                "document": null,
+                "company": null,
+                "spend_area": null,
+                "context": {
+                  "item_category": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_case_attribute",
+                    "row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91"
+                    ]
+                  },
+                  "item_type": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "goods_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "gr_based_iv": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "purchasing_document": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "item": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "source_case": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "company": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  },
+                  "spend_area": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": []
+                  }
+                },
+                "record_count": 3,
+                "record_row_ids": [
+                  "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                  "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c",
+                  "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                ],
+                "activity_counts": {
+                  "Record Invoice Receipt": 2
+                },
+                "activity_row_ids": {
+                  "Record Invoice Receipt": [
+                    "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                    "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                  ]
+                },
+                "activity_counts_available": false,
+                "missing_activity_row_ids": [
+                  "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                ],
+                "activity_measure": {
+                  "matching_row_ids": [
+                    "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                    "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                  ],
+                  "lower_bound": 2,
+                  "unknown_label_count": 1,
+                  "unknown_row_ids": [
+                    "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                  ],
+                  "absence_row_ids": [],
+                  "policy_id": "bpic19.exact_activity_finite_indicators.v1",
+                  "count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "presence": {
+                    "value": 1,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unit": "case_presence_boolean",
+                    "lower_bound": 2,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeat_quantity": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unit": "repeated_event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "repeated_presence": {
+                    "value": 1,
+                    "available": true,
+                    "reason": null,
+                    "row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unit": "case_repeated_presence_boolean",
+                    "lower_bound": 2,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  }
+                },
+                "selected_value_band": null,
+                "actor_records": [
+                  {
+                    "row_id": "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa",
+                    "raw": null,
+                    "normalized": null,
+                    "classification": "unknown"
+                  }
+                ],
+                "actor_summary": {
+                  "known_user_event_count": 0,
+                  "distinct_normalized_user_count": 0,
+                  "batch_event_count": 0,
+                  "unknown_event_count": 3,
+                  "event_count": 3,
+                  "available": false,
+                  "reason": "role_unmapped",
+                  "batch_all_share": null,
+                  "batch_human_ratio": null,
+                  "batch_all_denominator": 3,
+                  "batch_human_denominator": 0
+                },
+                "amount_records": [
+                  {
+                    "row_id": "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  },
+                  {
+                    "row_id": "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa",
+                    "raw": null,
+                    "value": null,
+                    "state": "role_unmapped"
+                  }
+                ],
+                "milestones": {
+                  "invoice": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unparseable_row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ]
+                  },
+                  "clearing": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ]
+                  },
+                  "receipt": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ]
+                  },
+                  "source": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unparseable_row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ]
+                  },
+                  "target": {
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "endpoint_state": "missing",
+                    "timestamp": null,
+                    "selected_row_id": null,
+                    "row_ids": [],
+                    "later_row_ids": [],
+                    "candidate_row_ids": [],
+                    "unparseable_row_ids": [],
+                    "unknown_activity_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ]
+                  }
+                },
+                "measures": {
+                  "invoice_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "clearing_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "receipt_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "cancellation_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "edit_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "event_occurrences",
+                    "lower_bound": 0,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "invoice_to_clearing_days": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  },
+                  "invoice_precedes_receipt": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "unit": "boolean_observation"
+                  },
+                  "user_event_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "user_attributed_events",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c",
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 3
+                  },
+                  "distinct_user_count": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [],
+                    "lower_bound": 0,
+                    "unit": "distinct_user_identities",
+                    "invalid_row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c",
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "policy_id": "bpic19.paper.complete_user_batch_attribution.v1",
+                    "unknown_label_count": 3
+                  },
+                  "creation_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "missing_activity_label",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "exposure": {
+                    "value": null,
+                    "available": false,
+                    "reason": "role_unmapped",
+                    "row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c",
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "candidate_count": 3,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "role_unmapped",
+                    "unit": "source_units",
+                    "reducer": "maximum_absolute_event_value"
+                  },
+                  "selected_value": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "candidate_count": 0,
+                    "winner_row_ids": [],
+                    "invalid_row_ids": [],
+                    "state": "missing_activity_label",
+                    "unit": "source_units",
+                    "reducer": "unique_creation_value"
+                  },
+                  "selected_activity": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [
+                      "row.v1:sha256:9211ee5581cbc6e88e721d96c3e787a63d9b36cc1ebc557f5677c66587624c91",
+                      "row.v1:sha256:f308a5059b4551907cce08cabe8c3f97dab1d54d68f0b388f48ace0d4edba92c"
+                    ],
+                    "unit": "event_occurrences",
+                    "lower_bound": 2,
+                    "unknown_label_count": 1,
+                    "unknown_row_ids": [
+                      "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                    ],
+                    "absence_row_ids": [],
+                    "policy_id": "bpic19.exact_activity_finite_indicators.v1"
+                  },
+                  "selected_interval": {
+                    "value": null,
+                    "available": false,
+                    "reason": "missing_activity_label",
+                    "row_ids": [],
+                    "interval_state": "endpoint_unavailable",
+                    "activation_row_ids": [],
+                    "response_row_ids": [],
+                    "activation_timestamp": null,
+                    "response_timestamp": null,
+                    "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+                    "unit": "days"
+                  }
+                },
+                "representations": {
+                  "exact_sequence": null,
+                  "first_occurrence_signature": null,
+                  "signature_policy_id": "bpic19.first_occurrence_signature.v1",
+                  "available": false,
+                  "reason": "missing_activity_label",
+                  "omitted_activity_row_ids": [
+                    "row.v1:sha256:070b1aafb216b103b6fa677f8b51010abd17738d922a5c3967a6596f4f7807aa"
+                  ],
+                  "signature_suppressed_row_ids": [],
+                  "signature_retained_row_ids": [],
+                  "exact_representation_id": "bpic19-exact.v1:sha256:c5671297f51f08e5fdf8e448b9a263b6c5cc4f6da3607b9ea23ed3dd3479b275",
+                  "signature_representation_id": "bpic19-signature.v1:sha256:2fcfcb42e91b4731497e67298d021ac0bc80e1a91ac6a9ab86a6998ffbd9f019"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "restored_selection": {
+      "identity": {
+        "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+        "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+        "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+        "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+        "population_id": "population.v1:sha256:918eb3d1e41c69e8eef4f8f0c8d10ebac24776a6684186b95d0b892b69d98853",
+        "implementation_version": "0.1.0"
+      },
+      "parent_identity": {
+        "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+        "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+        "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+        "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+        "population_id": "population.v1:sha256:34b9798b80708fd445633141dadf16618b9443375d6f560234f3323772083f67",
+        "implementation_version": "0.1.0"
+      },
+      "parent": {
+        "case_ids": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "F"
+        ],
+        "case_count": 6,
+        "record_count": 15
+      },
+      "kept": {
+        "case_ids": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "F"
+        ],
+        "case_count": 6,
+        "record_count": 15
+      },
+      "removed": {
+        "case_ids": [],
+        "case_count": 0,
+        "record_count": 0
+      },
+      "unevaluable": {
+        "case_ids": [],
+        "case_count": 0,
+        "record_count": 0
+      },
+      "predicate_results": [
+        {
+          "predicate": {
+            "kind": "case_id_in",
+            "case_ids": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F"
+            ],
+            "negate": false
+          },
+          "kept": {
+            "case_ids": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F"
+            ],
+            "case_count": 6,
+            "record_count": 15
+          },
+          "removed": {
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0
+          },
+          "unevaluable": {
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0
+          }
+        }
+      ]
+    },
+    "restored_comparison_id": null,
+    "recovery": {
+      "presentation_state": null,
+      "warnings": []
+    }
+  },
+  "population": {
+    "schema_version": 1,
+    "message_type": "imported_population_answer",
+    "request_id": "population-7",
+    "query_revision": 7,
+    "workspace_id": "workspace.v1:a715ba9127ff42f0a21df67a2c4b7ba5",
+    "source": {
+      "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+      "filename": "independent-t05-literal.csv",
+      "byte_count": 449
+    },
+    "identity": {
+      "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+      "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+      "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+      "population_id": "population.v1:sha256:abc14bcd775584afd88bc3ab3363d5a1879918339d76b577f31911a6bab0622f",
+      "implementation_version": "0.1.0"
+    },
+    "preparation": {
+      "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+      "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+      "dialect": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "quotechar": "\"",
+        "header": "first_record"
+      },
+      "mapping": {
+        "case_column": 0,
+        "activity_column": 1,
+        "timestamp_column": 2,
+        "sequence_column": null,
+        "context_columns": [
+          3
+        ]
+      },
+      "policies": {
+        "time": {
+          "id": "incident.time.wall_clock_as_recorded.v1",
+          "parameters": {
+            "format": "iso8601",
+            "timezone": "none_as_recorded",
+            "snapshot_cutoff_local": "2018-01-10T00:00:00"
+          }
+        },
+        "order": {
+          "id": "incident.order.declared_time_optional_sequence_source_position.v1",
+          "parameters": {
+            "primary": "usable_declared_time_ascending",
+            "secondary": "mapped_sequence_or_source_position",
+            "tie_breaker": "source_position_ascending",
+            "unavailable_timestamp": "presentation_tail_source_position",
+            "unavailable_timestamp_case_sequence": "unevaluable"
+          }
+        },
+        "rows": {
+          "id": "incident.rows.missing_id_outside_invalid_time_retained.v2",
+          "parameters": {
+            "missing_case_id": "outside_population_preserve_source",
+            "unavailable_timestamp": "retain_case_raw_flag_order_unknown",
+            "invalid_mapped_sequence": "block_preparation",
+            "duplicate_candidates": "retain_all",
+            "blank_records": "skip_count_preserve_source_ordinal",
+            "ragged_records": "outside_population_preserve_raw",
+            "maximum_ragged_fraction": 0.05,
+            "field_character_limit": 10485760
+          }
+        },
+        "missing_values": {
+          "id": "incident.missing.empty_mapped_activity_context.v1",
+          "parameters": {
+            "empty_activity_context": "missing",
+            "literal_values": "preserve"
+          }
+        },
+        "identifier": {
+          "id": "incident.identifier.trim_outer_whitespace.v1",
+          "parameters": {
+            "normalization": "trim_outer_whitespace_preserve_raw"
+          }
+        },
+        "activity_projection": {
+          "id": "incident.activity.omit_missing_retain_raw_gaps.v1",
+          "parameters": {
+            "missing_activity": "omit_from_mapped_sequence",
+            "raw_records": "retain_all",
+            "gap_evidence": "omitted_row_ids"
+          }
+        },
+        "parent": {
+          "id": "incident.parent.all_identified_cases.v1",
+          "parameters": {
+            "eligibility": "nonempty_normalized_case_identifier"
+          }
+        }
+      }
+    },
+    "population": {
+      "case_ids": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ],
+      "case_count": 6,
+      "record_count": 15
+    },
+    "coverage": {
+      "raw_record_count": 15,
+      "mapped_record_count": 12,
+      "omitted_activity_record_count": 3
+    },
+    "unassigned_record_count": 0,
+    "cases": [
+      {
+        "case_id": "A",
+        "record_count": 6,
+        "mapped_record_count": 6,
+        "omitted_activity_record_count": 0,
+        "sequence_evaluable": true
+      },
+      {
+        "case_id": "B",
+        "record_count": 1,
+        "mapped_record_count": 1,
+        "omitted_activity_record_count": 0,
+        "sequence_evaluable": true
+      },
+      {
+        "case_id": "C",
+        "record_count": 1,
+        "mapped_record_count": 1,
+        "omitted_activity_record_count": 0,
+        "sequence_evaluable": false
+      },
+      {
+        "case_id": "D",
+        "record_count": 2,
+        "mapped_record_count": 1,
+        "omitted_activity_record_count": 1,
+        "sequence_evaluable": false
+      },
+      {
+        "case_id": "E",
+        "record_count": 2,
+        "mapped_record_count": 1,
+        "omitted_activity_record_count": 1,
+        "sequence_evaluable": false
+      },
+      {
+        "case_id": "F",
+        "record_count": 3,
+        "mapped_record_count": 2,
+        "omitted_activity_record_count": 1,
+        "sequence_evaluable": false
+      }
+    ]
+  },
+  "selection": {
+    "schema_version": 1,
+    "message_type": "selection_answer",
+    "request_id": "select-8",
+    "query_revision": 8,
+    "workspace_id": "workspace.v1:a715ba9127ff42f0a21df67a2c4b7ba5",
+    "identity": {
+      "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+      "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+      "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+      "population_id": "population.v1:sha256:918eb3d1e41c69e8eef4f8f0c8d10ebac24776a6684186b95d0b892b69d98853",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+      "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+      "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+      "population_id": "population.v1:sha256:34b9798b80708fd445633141dadf16618b9443375d6f560234f3323772083f67",
+      "implementation_version": "0.1.0"
+    },
+    "parent": {
+      "case_ids": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ],
+      "case_count": 6,
+      "record_count": 15
+    },
+    "kept": {
+      "case_ids": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ],
+      "case_count": 6,
+      "record_count": 15
+    },
+    "removed": {
+      "case_ids": [],
+      "case_count": 0,
+      "record_count": 0
+    },
+    "unevaluable": {
+      "case_ids": [],
+      "case_count": 0,
+      "record_count": 0
+    },
+    "predicate_results": [
+      {
+        "predicate": {
+          "kind": "case_id_in",
+          "case_ids": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ],
+          "negate": false
+        },
+        "kept": {
+          "case_ids": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ],
+          "case_count": 6,
+          "record_count": 15
+        },
+        "removed": {
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0
+        },
+        "unevaluable": {
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0
+        }
+      }
+    ]
+  },
+  "profile": {
+    "schema_version": 1,
+    "message_type": "bpic19_profile_answer",
+    "request_id": "bpic19-profile-8-1",
+    "query_revision": 8,
+    "workspace_id": "workspace.v1:a715ba9127ff42f0a21df67a2c4b7ba5",
+    "identity": {
+      "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+      "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+      "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+      "population_id": "population.v1:sha256:918eb3d1e41c69e8eef4f8f0c8d10ebac24776a6684186b95d0b892b69d98853",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+      "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+      "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+      "population_id": "population.v1:sha256:34b9798b80708fd445633141dadf16618b9443375d6f560234f3323772083f67",
+      "implementation_version": "0.1.0"
+    },
+    "query": {
+      "roles": null,
+      "profile_columns": null,
+      "policy_id": "bpic19.all_raw_case_attributes.v1"
+    },
+    "binding_state": "needs_review",
+    "columns": [
+      {
+        "index": 0,
+        "name": "case",
+        "mapped_context": false
+      },
+      {
+        "index": 1,
+        "name": "activity",
+        "mapped_context": false
+      },
+      {
+        "index": 2,
+        "name": "time",
+        "mapped_context": false
+      },
+      {
+        "index": 3,
+        "name": "Item Category",
+        "mapped_context": true
+      }
+    ],
+    "suggested_roles": {
+      "item_category": null,
+      "item_type": null,
+      "goods_receipt": null,
+      "gr_based_iv": null,
+      "purchasing_document": null,
+      "item": null,
+      "source_case": null
+    },
+    "profile": null
+  },
+  "summary": {
+    "investigation_id": "investigation.v1:93dd96ce1b704b45bba62d11f678b809",
+    "latest_revision_id": "saved-revision.v1:sha256:47fa3587d04f3134652a7946131e9a535ee2ae979c545bc8f5fad0f44451ce1d",
+    "name": "Receipt evidence including missing activity labels",
+    "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+    "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+    "selected_case_count": 6,
+    "selected_record_count": 15,
+    "comparison_kind": null,
+    "has_score_run": false,
+    "source_validation": "not_checked"
+  },
+  "graph": {
+    "schema_version": 1,
+    "message_type": "process_graph_answer",
+    "request_id": "graph-8",
+    "query_revision": 8,
+    "workspace_id": "workspace.v1:a715ba9127ff42f0a21df67a2c4b7ba5",
+    "identity": {
+      "source_id": "source.v1:sha256:8942cb077cb8d3afe511d96b8d2ee531cb96c9fb597bb4c9ca08754ee910908e",
+      "preparation_id": "preparation.v1:sha256:fd50688b0a8e69cd7908c6b8c54c27558f1391913def67b7d097650849604a44",
+      "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+      "population_id": "population.v1:sha256:918eb3d1e41c69e8eef4f8f0c8d10ebac24776a6684186b95d0b892b69d98853",
+      "implementation_version": "0.1.0"
+    },
+    "graph": {
+      "nodes": [
+        {
+          "id": "activity.v1:sha256:08b3c2dbadbb37772356131e984d875f923869a56a1cb2e9f997fc321dfc3485",
+          "kind": "activity",
+          "label": "Cancel Invoice Receipt",
+          "metrics": {
+            "count": 1,
+            "events": 1,
+            "cases": 1,
+            "starts": 0,
+            "ends": 1,
+            "medianPreviousHours": 24.0,
+            "usablePreviousCount": 1,
+            "usableNextCount": 0
+          }
+        },
+        {
+          "id": "activity.v1:sha256:c98f044f699a789a7efad7868cdf4247a07e9d5585f2be7a6ff62dac151e6d3b",
+          "kind": "activity",
+          "label": "Change Price",
+          "metrics": {
+            "count": 1,
+            "events": 1,
+            "cases": 1,
+            "starts": 0,
+            "ends": 0,
+            "medianPreviousHours": 24.0,
+            "usablePreviousCount": 1,
+            "medianNextHours": 24.0,
+            "usableNextCount": 1
+          }
+        },
+        {
+          "id": "activity.v1:sha256:a2424d64b9ee68c9e2828f504a866e8ba106806a2150155ab6ccd452c6b28f49",
+          "kind": "activity",
+          "label": "Change Quantity",
+          "metrics": {
+            "count": 1,
+            "events": 1,
+            "cases": 1,
+            "starts": 0,
+            "ends": 0,
+            "medianPreviousHours": 24.0,
+            "usablePreviousCount": 1,
+            "medianNextHours": 24.0,
+            "usableNextCount": 1
+          }
+        },
+        {
+          "id": "activity.v1:sha256:9453eb6ed4a7974e8916824b4ff9b27195fa36d27fc20761b0d29588fa802d59",
+          "kind": "activity",
+          "label": "Clear Invoice",
+          "metrics": {
+            "count": 1,
+            "events": 1,
+            "cases": 1,
+            "starts": 0,
+            "ends": 0,
+            "medianPreviousHours": 24.0,
+            "usablePreviousCount": 1,
+            "medianNextHours": 24.0,
+            "usableNextCount": 1
+          }
+        },
+        {
+          "id": "activity.v1:sha256:f97e9da0e3b879f0a9df979ae260a5f7e1371edb127c1862d4f861981166cdc1",
+          "kind": "activity",
+          "label": "Other",
+          "metrics": {
+            "count": 1,
+            "events": 1,
+            "cases": 1,
+            "starts": 0,
+            "ends": 0,
+            "usablePreviousCount": 0,
+            "usableNextCount": 0
+          }
+        },
+        {
+          "id": "activity.v1:sha256:b8173ea2e30db5a3b287cc64e0a10ea08d5ebac76d0636462e63303aa95f38c3",
+          "kind": "activity",
+          "label": "Record Invoice Receipt",
+          "metrics": {
+            "count": 5,
+            "events": 5,
+            "cases": 3,
+            "starts": 1,
+            "ends": 0,
+            "medianPreviousHours": 0.0,
+            "usablePreviousCount": 1,
+            "medianNextHours": 12.0,
+            "usableNextCount": 2
+          }
+        },
+        {
+          "id": "activity.v1:sha256:258ed28e7acdd73e43e64964f3b18c772949220f64c94d03c610928dafffb5fc",
+          "kind": "activity",
+          "label": "Unrelated",
+          "metrics": {
+            "count": 1,
+            "events": 1,
+            "cases": 1,
+            "starts": 0,
+            "ends": 0,
+            "usablePreviousCount": 0,
+            "usableNextCount": 0
+          }
+        },
+        {
+          "id": "activity.v1:sha256:112a0cfdc628ea888741e7c442726ebff8e4c26433104c33bf9c3a59e1d4db33",
+          "kind": "activity",
+          "label": "Vendor creates invoice",
+          "metrics": {
+            "count": 1,
+            "events": 1,
+            "cases": 1,
+            "starts": 1,
+            "ends": 1,
+            "usablePreviousCount": 0,
+            "usableNextCount": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "path.v1:sha256:477589540d4150ff13e0c1f34b4fc71b635fceabbdb0dbde54148fea3c8cd3c6",
+          "kind": "follows",
+          "source": "activity.v1:sha256:c98f044f699a789a7efad7868cdf4247a07e9d5585f2be7a6ff62dac151e6d3b",
+          "target": "activity.v1:sha256:a2424d64b9ee68c9e2828f504a866e8ba106806a2150155ab6ccd452c6b28f49",
+          "metrics": {
+            "count": 1,
+            "cases": 1,
+            "medianLagHours": 24.0,
+            "usableLagCount": 1
+          },
+          "payload": {
+            "source_activity": "Change Price",
+            "target_activity": "Change Quantity",
+            "case_ids": [
+              "A"
+            ],
+            "gap_case_ids": [],
+            "omitted_row_ids": [],
+            "bridged_passage_count": 0
+          }
+        },
+        {
+          "id": "path.v1:sha256:336fdae9472661e3aab64b61b37192ec8805ef91c5cb4ef1523a0650e468a00e",
+          "kind": "follows",
+          "source": "activity.v1:sha256:a2424d64b9ee68c9e2828f504a866e8ba106806a2150155ab6ccd452c6b28f49",
+          "target": "activity.v1:sha256:08b3c2dbadbb37772356131e984d875f923869a56a1cb2e9f997fc321dfc3485",
+          "metrics": {
+            "count": 1,
+            "cases": 1,
+            "medianLagHours": 24.0,
+            "usableLagCount": 1
+          },
+          "payload": {
+            "source_activity": "Change Quantity",
+            "target_activity": "Cancel Invoice Receipt",
+            "case_ids": [
+              "A"
+            ],
+            "gap_case_ids": [],
+            "omitted_row_ids": [],
+            "bridged_passage_count": 0
+          }
+        },
+        {
+          "id": "path.v1:sha256:baab26276cba2f9737137a4c3cb98dcf9c807a97e45765012b4d698c5e19fc94",
+          "kind": "follows",
+          "source": "activity.v1:sha256:9453eb6ed4a7974e8916824b4ff9b27195fa36d27fc20761b0d29588fa802d59",
+          "target": "activity.v1:sha256:c98f044f699a789a7efad7868cdf4247a07e9d5585f2be7a6ff62dac151e6d3b",
+          "metrics": {
+            "count": 1,
+            "cases": 1,
+            "medianLagHours": 24.0,
+            "usableLagCount": 1
+          },
+          "payload": {
+            "source_activity": "Clear Invoice",
+            "target_activity": "Change Price",
+            "case_ids": [
+              "A"
+            ],
+            "gap_case_ids": [],
+            "omitted_row_ids": [],
+            "bridged_passage_count": 0
+          }
+        },
+        {
+          "id": "path.v1:sha256:eb5788ca616c88a30635e4987d8e48248a058783e796fe3f81b897de0e4320ea",
+          "kind": "follows",
+          "source": "activity.v1:sha256:b8173ea2e30db5a3b287cc64e0a10ea08d5ebac76d0636462e63303aa95f38c3",
+          "target": "activity.v1:sha256:9453eb6ed4a7974e8916824b4ff9b27195fa36d27fc20761b0d29588fa802d59",
+          "metrics": {
+            "count": 1,
+            "cases": 1,
+            "medianLagHours": 24.0,
+            "usableLagCount": 1
+          },
+          "payload": {
+            "source_activity": "Record Invoice Receipt",
+            "target_activity": "Clear Invoice",
+            "case_ids": [
+              "A"
+            ],
+            "gap_case_ids": [],
+            "omitted_row_ids": [],
+            "bridged_passage_count": 0
+          }
+        },
+        {
+          "id": "path.v1:sha256:87fb9c0d369e5f920d759fb8d21cd309f2a238cb53540fe39e1870c9d9175d4a",
+          "kind": "follows",
+          "source": "activity.v1:sha256:b8173ea2e30db5a3b287cc64e0a10ea08d5ebac76d0636462e63303aa95f38c3",
+          "target": "activity.v1:sha256:b8173ea2e30db5a3b287cc64e0a10ea08d5ebac76d0636462e63303aa95f38c3",
+          "metrics": {
+            "count": 1,
+            "cases": 1,
+            "medianLagHours": 0.0,
+            "usableLagCount": 1
+          },
+          "payload": {
+            "source_activity": "Record Invoice Receipt",
+            "target_activity": "Record Invoice Receipt",
+            "case_ids": [
+              "A"
+            ],
+            "gap_case_ids": [],
+            "omitted_row_ids": [],
+            "bridged_passage_count": 0
+          }
+        }
+      ],
+      "meta": {
+        "representation_id": "representation.v1:sha256:46a52b48faa291dc98d81701edaaa8a99a5a6e3a64053118f254ad920249ce55",
+        "case_dictionary_id": "case-dictionary.v1:sha256:6665acd64683ac7dbba69d7201a26c015ea2e75cbdfc3193e326ea67cfa86021",
+        "selected_case_ids": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "F"
+        ],
+        "selected_case_count": 6,
+        "cases": 6,
+        "events": 12,
+        "raw_record_count": 15,
+        "mapped_record_count": 12,
+        "omitted_activity_record_count": 3,
+        "sequence_evaluable_case_ids": [
+          "A",
+          "B"
+        ],
+        "sequence_evaluable_case_count": 2,
+        "sequence_unevaluable_case_ids": [
+          "C",
+          "D",
+          "E",
+          "F"
+        ],
+        "sequence_unevaluable_case_count": 4,
+        "sequence_unevaluable_record_count": 8,
+        "node_support_basis": "all_selected_raw_histories",
+        "node_case_denominator": 6,
+        "path_support_basis": "sequence_evaluable_cases",
+        "path_case_denominator": 2,
+        "activity_projection_policy": "incident.activity.omit_missing_retain_raw_gaps.v1",
+        "path_adjacency": "mapped_sequence_with_disclosed_raw_gaps",
+        "boundary_support_basis": "sequence_evaluable_cases_with_labeled_raw_boundaries",
+        "boundary_policy": "incident.boundary.raw_labeled_start_end.v1",
+        "timestamp_kind": "wall_clock",
+        "lag_unit": "hours",
+        "lag_clock": "recorded_wall_clock_hours",
+        "clock_limitation": "Recorded wall-clock differences may differ from physical elapsed time across clock changes."
+      }
+    }
+  }
+}

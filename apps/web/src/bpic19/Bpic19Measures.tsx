@@ -177,7 +177,8 @@ export function Bpic19Measures({ workspaceId, identity, revision, roles, columns
   useEffect(() => {
     const next = normalized(query ?? defaults(roles), roles);
     setAnswer(null); setDraft(next); setBandText(next.value_band_edges?.join(", ") ?? ""); setSelectorText({ activity: next.activity_selector?.join("\n") ?? "", source: next.interval_source?.join("\n") ?? "", target: next.interval_target?.join("\n") ?? "" }); setCancelled(false);
-    void load(next);
+    // A saved wire declaration remains exact; defaults belong to the editing form.
+    void load(query ?? next);
     return () => { ++serial.current; controller.current?.abort(); callbacks.current.onValidityChange?.(false); };
     // Every source, population, recipe and revision change fences successes, errors and pages.
     // eslint-disable-next-line react-hooks/exhaustive-deps
