@@ -94,17 +94,26 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   if (active) activated.current = preparation;
   const engaged = active || activated.current === preparation;
   const savedRevision = state.saved?.revisionId;
-  if (queries.current.preparation !== preparation || queries.current.revision !== savedRevision) {
+  // Reopen publishes the saved binding before its asynchronous selection is
+  // ready. Do not consume that revision until its exact identity is shown.
+  const savedQueryReady = !state.saved || sameJson(state.saved.content.selection_identity, identity);
+  if (queries.current.preparation !== preparation && !savedQueryReady) {
+    queries.current = { preparation, revision: undefined };
+    recordPredicate.current = undefined;
+  }
+  if (savedQueryReady && (queries.current.preparation !== preparation || queries.current.revision !== savedRevision)) {
     const allActions = state.saved?.content.bpic19_pipeline?.actions ?? [];
     const actions = allActions.filter(action => sameJson(action.identity, identity));
-    const scoredAction = actions.find(action => action.operation === "bpic19_score");
+    // Retained recipes are ordered history; the current reading is the latest
+    // review for this exact identity, including immediately after saving it.
+    const scoredAction = actions.filter(action => action.operation === "bpic19_score").at(-1);
     if (queries.current.preparation !== preparation) recordPredicate.current = undefined;
     const savedRecordPredicate = state.saved?.content.selection_recipe.predicates.filter(predicate=>predicate.kind==='record_attributes_all').at(-1);
     if(savedRecordPredicate?.kind==='record_attributes_all') recordPredicate.current = savedRecordPredicate;
     queries.current = { preparation, revision: savedRevision,
-      profile: actions.find(action => action.operation === "bpic19_profile")?.query as Bpic19ProfileQuery | undefined,
-      measures: actions.find(action => action.operation === "bpic19_measures")?.query as MeasureQuery | undefined,
-      cohorts: actions.find(action => action.operation === "bpic19_cohorts")?.query as unknown as CohortQuery | undefined,
+      profile: actions.filter(action => action.operation === "bpic19_profile").at(-1)?.query as Bpic19ProfileQuery | undefined,
+      measures: actions.filter(action => action.operation === "bpic19_measures").at(-1)?.query as MeasureQuery | undefined,
+      cohorts: actions.filter(action => action.operation === "bpic19_cohorts").at(-1)?.query as unknown as CohortQuery | undefined,
       operators: actions.filter(action => ["bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"].includes(action.operation)).at(-1)?.query as unknown as OperatorQuery | undefined,
       scoreRunId: typeof scoredAction?.query.run_id === "string" ? scoredAction.query.run_id : undefined,
       scorePopulationId: scoredAction?.identity.population_id };
