@@ -15,7 +15,7 @@ import { CompareCoordinator } from "../compare/coordinator";
 import { ImportedInvestigationCoordinator, shownSelection } from "../imported/coordinator";
 import { SavingCoordinator } from "../saved/coordinator";
 import { scriptedComparisonClient } from "../test/comparisons";
-import { earlierPreparationId, evidenceAnswer, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
+import { earlierPreparationId, evidenceAnswer, otherSourceId, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import { firstRevisionId, secondRevisionId, reopenAnswer, saveAnswer, savedContent, savedSummary, scriptedSavingClient } from "../test/saving";
 import { containingOpened, everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer, selectionRefusal, type Figures } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
@@ -224,6 +224,120 @@ function comparisonHttp() {
 
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("preserves the genuine typed Keep child through Undo, canonical no-op Save, and Redo", async () => {
+    const app = await opening();
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    const parent = shownSelection(app.investigation.getState().selection)!;
+    const parentPipeline = structuredClone(app.session.savedPipeline());
+    expect(parentPipeline?.actions.map(action => [action.operation, action.selection_prefix_length])).toEqual([
+      ["bpic19_profile", 0], ["bpic19_measures", 0],
+    ]);
+    // Match saved_store.revision_id: sorted compact UTF-8 JSON of these four fields.
+    // The transport returns the immutable head only for exactly equal backend content.
+    const canonical = (value: unknown): string => {
+      if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+      if (value !== null && typeof value === "object") return `{${Object.keys(value).sort().map(key =>
+        `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`).join(",")}}`;
+      return JSON.stringify(value);
+    };
+    const { webcrypto } = await vi.importActual<{ webcrypto: Crypto }>("node:crypto");
+    const revisionFor = async (content: unknown) => {
+      const bytes = new TextEncoder().encode(canonical({ kind: "investigation_revision.v1",
+        investigation_id: "investigation.v1:0a1b2c3d-saved", replaces_revision_id: null, content }));
+      const digest = new Uint8Array(await webcrypto.subtle.digest("SHA-256", bytes));
+      return "saved-revision.v1:sha256:" + [...digest].map(byte => byte.toString(16).padStart(2, "0")).join("");
+    };
+    await act(async () => { app.saving.save("Reviewed parent P", "Unchanged parent note", "incidents"); await settle(); });
+    expect(app.saves.saves).toHaveLength(1);
+    const firstCall = app.saves.saves[0];
+    const first = saveAnswer(firstCall.request, firstRevisionId, true);
+    first.revision.content.bpic19_pipeline = structuredClone(firstCall.request.bpic19_pipeline);
+    first.revision.saved_revision_id = await revisionFor(first.revision.content);
+    const frozenParent = structuredClone(first.revision);
+    await act(async () => { firstCall.reply({ ok: true, answer: first }); await settle(); });
+    const firstBinding = app.investigation.getState().saved;
+    expect(firstBinding?.revisionId).toBe(frozenParent.saved_revision_id);
+    expect(app.session.savedPipeline()).toEqual(parentPipeline);
+
+    await app.user.click(screen.getByRole("button", { name: "Keep scripted first item" }));
+    await answerSelection(app, 1, containingOpened);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    const child = shownSelection(app.investigation.getState().selection)!;
+    const childPipeline = structuredClone(app.session.savedPipeline());
+    expect(child.steps).toEqual([{ kind: "case_id_in", case_ids: ["A-1"], negate: false }]);
+    expect(child.answer.identity).not.toEqual(parent.answer.identity);
+    expect(child.answer.parent_identity).toEqual(parent.answer.identity);
+    expect(childPipeline?.actions.map(action => [action.operation, action.selection_prefix_length])).toEqual([
+      ["bpic19_measures", 0], ["bpic19_profile", 0],
+      ["bpic19_profile", 1], ["bpic19_measures", 1],
+    ]);
+    const typed = childPipeline!.actions.filter(action => action.selection_keep);
+    expect(typed).toHaveLength(1);
+    expect(typed[0]).toMatchObject({ identity: parent.answer.identity, selection_prefix_length: 0,
+      selection_keep: { step_index: 0 } });
+    expect(app.saves.saves).toHaveLength(1); // C is genuinely unsaved.
+    await act(async () => { app.investigation.undo(); await settle(); });
+    await answerSelection(app, 2, everyIncident);
+    const undone = app.investigation.getState().selection;
+    if (undone.phase !== "ready") throw new Error("Undo must complete");
+    expect(undone.shown.steps).toBe(parent.steps);
+    expect(undone.history.future[0]).toBe(child.steps);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    expect(app.session.savedPipeline()).toEqual(parentPipeline);
+    await act(async () => { app.saving.save("Reviewed parent P", "Unchanged parent note", "incidents"); await settle(); });
+    expect(app.saves.saves).toHaveLength(2);
+    const secondCall = app.saves.saves[1];
+    const second = saveAnswer(secondCall.request, "", false, false);
+    second.revision.content.bpic19_pipeline = structuredClone(secondCall.request.bpic19_pipeline);
+    // Assert the ENTIRE backend content, ordered pipeline, identities, recipe, name and note
+    // before supplying a same-ID reply. Changed content cannot take this no-op path.
+    expect(second.revision.content).toEqual(frozenParent.content);
+    expect(secondCall.request.bpic19_pipeline).toEqual(firstCall.request.bpic19_pipeline);
+    const { request_id: _r1, query_revision: _q1, investigation_id: _i1, expected_revision_id: _e1, ...firstQuestion } = firstCall.request;
+    const { request_id: _r2, query_revision: _q2, investigation_id: _i2, expected_revision_id: _e2, ...secondQuestion } = secondCall.request;
+    expect(secondQuestion).toEqual(firstQuestion);
+    expect(firstCall.request.investigation_id).toBeNull();
+    expect(firstCall.request.expected_revision_id).toBeNull();
+    expect(secondCall.request.investigation_id).toBe(frozenParent.investigation_id);
+    expect(secondCall.request.expected_revision_id).toBe(frozenParent.saved_revision_id);
+    expect(await revisionFor(second.revision.content)).toBe(frozenParent.saved_revision_id);
+    second.revision = structuredClone(frozenParent);
+    await act(async () => { secondCall.reply({ ok: true, answer: second }); await settle(); });
+    expect(app.saving.getState().save).toMatchObject({ phase: "saved", answer: { semantic_change: false } });
+    expect(app.investigation.getState().saved).not.toBe(firstBinding);
+    expect(app.investigation.getState().saved?.revisionId).toBe(frozenParent.saved_revision_id);
+    const savedParent = app.investigation.getState().selection;
+    if (savedParent.phase !== "ready") throw new Error("Save must retain the current selection");
+    expect(savedParent.history).toBe(undone.history);
+    expect(savedParent.history.future[0]).toBe(child.steps);
+    console.info("canonical no-op authenticated", JSON.stringify({ revision: frozenParent.saved_revision_id,
+      contentEqual: true, parentNodeRetained: savedParent.shown.steps === parent.steps,
+      redoNodeRetained: savedParent.history.future[0] === child.steps }));
+
+    await act(async () => { app.investigation.redo(); await settle(); });
+    await answerSelection(app, 3, containingOpened);
+    const redone = app.investigation.getState().selection;
+    if (redone.phase !== "ready") throw new Error("Redo must complete");
+    expect(redone.shown.steps).toBe(child.steps);
+    expect(redone.history.present).toBe(child.steps);
+    expect(redone.history.past.at(-1)).toBe(parent.steps);
+    expect(redone.history.future).toHaveLength(0);
+    expect(redone.shown.answer.identity).toEqual(child.answer.identity);
+    expect(redone.shown.answer.parent_identity).toEqual(child.answer.parent_identity);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    expect(app.session.reviewedDeclarations().filter(action => action.selection_keep)).toEqual(typed);
+    expect(app.session.savedPipeline()).toEqual(childPipeline);
+    expect(app.session.readyForSave()).toBe(true);
+    expect(first.revision).toEqual(frozenParent);
+    expect(app.saves.reopens).toHaveLength(0);
+  });
+
+
+
   it("preserves current A after its earlier ordinary declaration and a same-population typed Keep B", async () => {
     keptProfileGroup.caseIds = ["A-1", "B-2"];
     const app = await opening();
@@ -702,6 +816,188 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     await app.user.click(screen.getByRole("button", { name: "Edit scripted source definition" }));
     expect(screen.queryByRole("button", { name: "Export saved definitions, results and witnesses" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Export readable purchasing analysis report" })).toBeNull();
+  });
+
+  it("rehydrates typed prefix-zero history after Data Open and the same saved revision reopens", async () => {
+    const app = await opening();
+    const restore = vi.spyOn(app.session, "restore");
+    await app.user.click(screen.getByRole("button", { name: "Inspect scripted columns" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep scripted first item" }));
+    await answerSelection(app, 1, containingOpened);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    const chosen = shownSelection(app.investigation.getState().selection)!;
+    const current = app.investigation.getState();
+    if (current.population.phase !== "ready") throw new Error("The original source is ready");
+    const frozen = structuredClone(app.session.savedPipeline());
+    if (!frozen) throw new Error("The typed Keep and current declarations were reviewed");
+    expect(frozen.actions.map(action => [action.operation, action.selection_prefix_length])).toEqual([
+      ["bpic19_profile", 0], ["bpic19_measures", 0], ["bpic19_profile", 1], ["bpic19_measures", 1],
+    ]);
+    expect(frozen.actions.filter(action => action.selection_keep)).toHaveLength(1);
+    expect(frozen.actions[0].identity.population_id).not.toBe(current.population.answer.identity.population_id);
+    await act(async () => { app.saving.save("Typed source-parent recipe", "Same revision lifecycle", "incidents"); await settle(); });
+    const call = app.saves.saves[0], saved = saveAnswer(call.request, firstRevisionId, true);
+    saved.revision.content.bpic19_pipeline = structuredClone(call.request.bpic19_pipeline);
+    const outputs: Bpic19PipelineOutput[] = frozen.actions.map((action, index) => {
+      if (action.operation === "bpic19_method_gate") throw new Error("No Method gate is requested");
+      return { operation: action.operation, definition_id: action.definition_id, sha256: String(index + 1).repeat(64),
+        output: { identity: action.identity, query: action.query, definition: { value_unit: "EUR" }, cases: [] } };
+    });
+    const [first, ...remaining] = outputs;
+    saved.bpic19_outputs = { schema_version: 1, outputs: [first, ...remaining] };
+    await act(async () => { call.reply({ ok: true, answer: saved }); await settle(); });
+    expect(app.saving.verifiedExportReceipt()).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Export saved definitions, results and witnesses" })).toBeTruthy();
+    expect(restore).toHaveBeenCalledTimes(1);
+
+    await act(async () => { app.investigation.open({ workspaceId, preparationId }); await settle(); });
+    await act(async () => {
+      const population = app.imports.populations[1];
+      population.reply({ ok: true, answer: populationAnswer(population.request) }); await settle();
+    });
+    await answerSelection(app, 2, everyIncident);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    expect(app.investigation.getState().saved).toBeNull();
+    expect(app.session.reviewedDeclarations().filter(action => action.selection_keep)).toHaveLength(0);
+    expect(app.saving.verifiedExportReceipt()).toBeNull();
+
+    let reopening: Promise<boolean> | undefined;
+    await act(async () => { reopening = app.saving.reopen({ ...savedSummary, latest_revision_id: firstRevisionId }, workspaceId); await settle(); });
+    const reopenCall = app.saves.reopens[0], reply = reopenAnswer(reopenCall.request);
+    reply.revision = structuredClone(saved.revision);
+    reply.bpic19_outputs = structuredClone(saved.bpic19_outputs);
+    reply.restored_selection = { identity: chosen.answer.identity, parent_identity: chosen.answer.parent_identity,
+      parent: chosen.answer.parent, kept: chosen.answer.kept, removed: chosen.answer.removed,
+      unevaluable: chosen.answer.unevaluable, predicate_results: chosen.answer.predicate_results };
+    await act(async () => { reopenCall.reply({ ok: true, answer: reply }); await settle(); });
+    expect(await reopening).toBe(true);
+    expect(restore).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      const population = app.imports.populations[2];
+      population.reply({ ok: true, answer: populationAnswer(population.request) }); await settle();
+    });
+    // The saved binding is published before the asynchronous matching selection.
+    expect(app.investigation.getState().saved?.revisionId).toBe(firstRevisionId);
+    expect(app.investigation.getState().selection.phase).toBe("loading");
+    expect(restore).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Export readable purchasing analysis report" })).toBeNull();
+    await answerSelection(app, 3, containingOpened);
+    // Unchanged panel replies must neither erase the Keep association nor reorder history.
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    expect(app.session.readyForSave()).toBe(true);
+    expect({
+      typedOrigins: app.session.reviewedDeclarations().filter(action => action.selection_keep).length,
+      machineExport: screen.queryByRole("button", { name: "Export saved definitions, results and witnesses" }) !== null,
+      readableExport: screen.queryByRole("button", { name: "Export readable purchasing analysis report" }) !== null,
+    }).toEqual({ typedOrigins: 1, machineExport: true, readableExport: true });
+    expect(app.session.reviewedDeclarations()).toHaveLength(4);
+    expect(app.session.savedPipeline()).toEqual(frozen);
+    expect(app.saving.verifiedExportReceipt()).not.toBeNull();
+    expect(screen.getByText("Reviewed purchasing selection recipes")).toBeTruthy();
+    expect(restore).toHaveBeenCalledTimes(2);
+    app.rerender(<Bpic19Workspace {...app.props} />);
+    expect(restore).toHaveBeenCalledTimes(2);
+    expect(app.session.savedPipeline()).toEqual(frozen);
+    expect(app.saves.saves).toHaveLength(1);
+    expect(app.saves.reopens).toHaveLength(1);
+    expect(screen.queryByRole("region", { name: "Scripted current assessment" })).toBeNull();
+  });
+
+  it("waits for the shown selection even when the pending source identity matches, once per Saved reading", async () => {
+    const app = fixture();
+    const restore = vi.spyOn(app.session, "restore");
+    render(<Bpic19Workspace {...app.props} />);
+    for (const index of [0, 1]) {
+      let reopening: Promise<boolean> | undefined;
+      await act(async () => { reopening = app.saving.reopen({ ...savedSummary, latest_revision_id: firstRevisionId }, workspaceId); await settle(); });
+      const call = app.saves.reopens[index], reply = reopenAnswer(call.request);
+      const base = reply.revision.content.base_identity;
+      reply.revision.content = { ...reply.revision.content, comparison: null, selection_identity: base,
+        selection_recipe: { parent_case_ids: ["A-1", "B-2"], predicates: [] },
+        bpic19_pipeline: { schema_version: 1, actions: [{ operation: "bpic19_profile", identity: base,
+          selection_prefix_length: null, query: { ...query }, definition_id: "bpic19-profile.v1:sha256:" + "1".repeat(64) }] } };
+      reply.restored_comparison_id = null;
+      reply.restored_selection = { ...reply.restored_selection, identity: base, kept: everyIncident.kept,
+        removed: everyIncident.removed, unevaluable: everyIncident.unevaluable, predicate_results: [] };
+      await act(async () => { call.reply({ ok: true, answer: reply }); await settle(); });
+      expect(await reopening).toBe(true);
+      expect(restore).toHaveBeenCalledTimes(index);
+      await act(async () => {
+        const population = app.imports.populations[index];
+        population.reply({ ok: true, answer: populationAnswer(population.request) }); await settle();
+      });
+      const pending = app.investigation.getState();
+      expect(pending.selection.phase).toBe("loading");
+      expect(shownSelection(pending.selection)).toBeNull();
+      expect(pending.population.phase === "ready" && pending.population.answer.identity).toEqual(base);
+      expect(restore).toHaveBeenCalledTimes(index);
+      // Equal members do not establish identity: this fixture explicitly supplies the base identity.
+      await answerSelection(app, index, { ...everyIncident, population: "b" });
+      expect(restore).toHaveBeenCalledTimes(index + 1);
+      expect(app.session.declarations()).toEqual(reply.revision.content.bpic19_pipeline?.actions);
+      const before = structuredClone(app.session.declarations());
+      await act(async () => { app.investigation.openCase("A-1"); await settle(); });
+      expect(restore).toHaveBeenCalledTimes(index + 1);
+      expect(app.session.declarations()).toEqual(before);
+    }
+    expect(app.saves.saves).toHaveLength(0);
+    expect(app.saves.reopens).toHaveLength(2);
+  });
+
+  it.each(["workspace", "source", "selection"] as const)("does not hydrate an old Saved reading after its %s changes", async context => {
+    const app = await opening();
+    const restore = vi.spyOn(app.session, "restore");
+    let reopening: Promise<boolean> | undefined;
+    await act(async () => { reopening = app.saving.reopen({ ...savedSummary, latest_revision_id: firstRevisionId }, workspaceId); await settle(); });
+    const call = app.saves.reopens[0], reply = reopenAnswer(call.request);
+    reply.revision.content.bpic19_pipeline = { schema_version: 1, actions: [{ operation: "bpic19_profile",
+      identity: reply.revision.content.selection_identity, selection_prefix_length: 1, query: { ...query },
+      definition_id: "bpic19-profile.v1:sha256:" + "1".repeat(64) }] };
+    await act(async () => { call.reply({ ok: true, answer: reply }); await settle(); });
+    expect(await reopening).toBe(true);
+    if (context === "selection") {
+      await act(async () => {
+        const population = app.imports.populations[1];
+        population.reply({ ok: true, answer: populationAnswer(population.request) }); await settle();
+      });
+      const selection = app.selecting.selections[1];
+      await act(async () => {
+        // The same member IDs under a different immutable identity are refused.
+        selection.reply({ ok: true, answer: selectionAnswer(selection.request, { ...containingOpened, population: "6" }) });
+        await settle();
+      });
+      expect(app.investigation.getState().selection.phase).toBe("failed");
+    } else {
+      await act(async () => {
+        app.investigation.open({ workspaceId: context === "workspace" ? "workspace.v1:fedcba9876543210" : workspaceId,
+          preparationId: context === "source" ? earlierPreparationId : preparationId });
+        await settle();
+        const population = app.imports.populations[2], answer = populationAnswer(population.request);
+        if (context === "source") {
+          answer.identity.source_id = otherSourceId;
+          answer.preparation.source_id = otherSourceId;
+          answer.source.source_id = otherSourceId;
+        }
+        population.reply({ ok: true, answer }); await settle();
+      });
+      await answerSelection(app, 1, everyIncident);
+      await act(async () => {
+        const stale = app.imports.populations[1];
+        stale.reply({ ok: true, answer: populationAnswer(stale.request) }); await settle();
+      });
+      expect(app.investigation.getState().saved).toBeNull();
+    }
+    expect(restore).not.toHaveBeenCalled();
+    expect(app.session.declarations()).toEqual([]);
+    expect(app.saving.verifiedExportReceipt()).toBeNull();
+    expect(screen.queryByRole("button", { name: "Export saved definitions, results and witnesses" })).toBeNull();
+    expect(app.saves.saves).toHaveLength(0);
+    expect(app.saves.reopens).toHaveLength(1);
   });
 
   it("keeps restored source-parent assessments separate without opening an unrequested current-selection draft", async () => {

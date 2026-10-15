@@ -81,7 +81,7 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
   const operatorName = useRef<"bpic19_ordinal" | "bpic19_fifo" | "bpic19_cancellation" | "bpic19_rule" | "bpic19_waiting">("bpic19_ordinal");
   const heading = useRef<HTMLHeadingElement>(null);
   const activated = useRef("");
-  const restoredRevision = useRef<string | undefined>(undefined);
+  const restoredReading = useRef<{ population: typeof state.population; revisionId: string } | null>(null);
   const returningFlowParent = useRef<{ identity: AnswerIdentity; base: AnswerIdentity; revision: number } | null>(null);
   const [flowReturnProblem, setFlowReturnProblem] = useState<string | null>(null);
   const [profileKeepProblem,setProfileKeepProblem]=useState<string|null>(null);
@@ -160,11 +160,15 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
   }, [key, revision, state.selection.phase, population]);
 
   useLayoutEffect(() => {
-    if (!population || !identity || !state.saved || restoredRevision.current === savedRevision ||
+    // A population open owns the reading. markSaved keeps that authority even
+    // when a no-op Save publishes a new binding; Reopen creates a new reading.
+    // Wait for its exact selection, then hydrate each reading/revision once.
+    if (!population || !identity || state.selection.phase !== "ready" || !state.saved ||
+        (restoredReading.current?.population === state.population && restoredReading.current.revisionId === savedRevision) ||
         !sameJson(state.saved.content.selection_identity, identity)) return;
     session.restore(population.workspace_id, identity, shown?.steps ?? [],
       state.saved.content.bpic19_pipeline?.actions ?? [], population.identity, state.saved.content.bpic19_pipeline?.replay_mode,state.saved.content.bpic19_pipeline?.literature_claims);
-    restoredRevision.current = savedRevision;
+    restoredReading.current = { population: state.population, revisionId: state.saved.revisionId };
     const comparisonAction = session.reviewedDeclarations().filter(action=>action.operation==='bpic19_flow_comparison' && sameJson(action.identity,identity)).at(-1);
     const recordedComparison = comparisonAction && retainedFlowComparisonRequest(population.workspace_id, comparisonAction);
     if(recordedComparison) setFlowComparison({identity:recordedComparison.identity, query:recordedComparison.query,definitionId:comparisonAction.definition_id});
@@ -177,7 +181,7 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
     }
     setRecipeComparisons(pairs);
     refresh(value => value + 1);
-  }, [key, savedRevision, session]);
+  }, [key, state.population, state.saved, state.selection.phase, session]);
 
   const reviewedProfile = useCallback((answer: Bpic19ProfileAnswer) => {
     setProfile(answer);
