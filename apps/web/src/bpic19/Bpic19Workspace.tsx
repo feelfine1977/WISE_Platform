@@ -174,7 +174,7 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
     const comparisonAction = session.reviewedDeclarations().filter(action=>action.operation==='bpic19_flow_comparison' && sameJson(action.identity,identity)).at(-1);
     const recordedComparison = comparisonAction && retainedFlowComparisonRequest(population.workspace_id, comparisonAction);
     if(recordedComparison) setFlowComparison({identity:recordedComparison.identity, query:recordedComparison.query,definitionId:comparisonAction.definition_id});
-    const intervalAction=state.saved.content.bpic19_pipeline?.actions.find(action=>action.operation==='bpic19_interval_comparison' && sameJson(action.identity,identity));
+    const intervalAction=state.saved.content.bpic19_pipeline?.actions.filter(action=>action.operation==='bpic19_interval_comparison' && sameJson(action.identity,identity)).at(-1);
     if(intervalAction)setIntervalComparison({identity:intervalAction.identity,query:intervalAction.query as unknown as IntervalComparisonQuery});
     const pairs:typeof recipeComparisons={};
     for(const operation of ['bpic19_operator_comparison','bpic19_cohort_comparison'] as const){
@@ -337,6 +337,10 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
     <div className="bpic19-content" data-inspector={inspectorOpen ? layout : "none"}>
       <div className="bpic19-main" hidden={inspectorOpen && layout === "full"} inert={paused || undefined}>
         <Bpic19Profile key={key} workspaceId={population.workspace_id} identity={identity} revision={revision} query={profileQuery} onReviewed={reviewedProfile} onColumns={availableColumns} onValidityChange={profileValid} onInspect={inspect}
+          onInspectSource={(caseId, rowIds = []) => {
+            investigation.closeCase(); setLayout("side");
+            void lineage.open({ identity: population.identity, caseId, rowIds, witnessScope: "source", reason: "Original-source inclusion and observation witnesses; outside-parent items do not enter the current supports" });
+          }}
           onKeep={(predicate,recipe) => {
             if(shown?.steps.some(step=>sameJson(step,predicate)))return;
             const action=currentProfile && shown && profileKeepAction(currentProfile,recipe,predicate,shown.steps.length,

@@ -455,14 +455,20 @@ def review_source(prepared: PreparedData, roles: Mapping[str, int | None], paren
     reasons, witnesses = {}, {}
     projected_rows, projected_cases = [], set()
     groups = defaultdict(list)
+    parent_ids = set(parent)
     if kind == "document_start":
         for cid in parent:
             if documents[cid] is not None:
-                groups[documents[cid]].append(cid)
+                groups[documents[cid]]
             else:
                 unavailable.append(cid)
                 reasons[cid] = "document_relation_missing_or_conflicting"
                 witnesses[cid] = list(prepared.histories[cid])
+        # Document eligibility sees complete source siblings, not just kept items.
+        for cid, history in prepared.histories.items():
+            state, value = invariant_value(history, roles["purchasing_document"])
+            if state == "invariant" and value in groups:
+                groups[value].append(cid)
     elif kind == "item_start":
         groups = {cid: [cid] for cid in parent}
     if kind in {"item_start", "document_start"}:
@@ -478,6 +484,8 @@ def review_source(prepared: PreparedData, roles: Mapping[str, int | None], paren
             else:
                 target, reason, evidence = retained, "all_raw_events_at_or_after_start", rows
             for cid in members:
+                if cid not in parent_ids:
+                    continue
                 target.append(cid); reasons[cid] = reason; witnesses[cid] = evidence
     elif kind == "all_source":
         retained = list(parent)

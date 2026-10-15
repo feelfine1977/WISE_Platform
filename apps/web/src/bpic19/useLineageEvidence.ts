@@ -4,7 +4,7 @@ import { httpImportClient, type ImportClient } from '../data/client';
 import { sameJson } from '../data/coordinator';
 import type { ImportedCaseState } from '../imported/coordinator';
 
-export interface LineageRequest { identity: AnswerIdentity; caseId: string; rowIds: string[]; reason: string }
+export interface LineageRequest { identity: AnswerIdentity; caseId: string; rowIds: string[]; reason: string; witnessScope?: "source" }
 /** Reads the declared ancestor directly, with source/revision/request fences and no selection fallback. */
 export function useLineageEvidence(workspaceId: string | undefined, sourceIdentity: AnswerIdentity | undefined, revision: number,
   client: Pick<ImportClient,'caseEvidence'>=httpImportClient) {
@@ -25,9 +25,12 @@ export function useLineageEvidence(workspaceId: string | undefined, sourceIdenti
     if(mine!==serial.current || controller.signal.aborted)return;
     if(!reply.ok){setState({phase:'failed',caseId:intent.caseId,problem:reply.problem});return;}
     const a=reply.answer;
-    if(a.request_id!==request.request_id || a.query_revision!==request.query_revision || a.workspace_id!==workspaceId || !sameJson(a.identity,intent.identity) || a.case_id!==intent.caseId || intent.rowIds.some(row=>!a.records.some(record=>record.row_id===row))){
+    // Source inclusion receipts can name rows from several sibling histories.
+    const rowIds = intent.witnessScope === "source" ? intent.rowIds.filter(row => a.records.some(record => record.row_id === row)) : intent.rowIds;
+    if(a.request_id!==request.request_id || a.query_revision!==request.query_revision || a.workspace_id!==workspaceId || !sameJson(a.identity,intent.identity) || a.case_id!==intent.caseId || rowIds.some(row=>!a.records.some(record=>record.row_id===row)) || intent.rowIds.length > 0 && rowIds.length === 0){
       setState({phase:'failed',caseId:intent.caseId,problem:{kind:'unsupported_reply',detail:'The returned history differs from the retained population, item or contributing records. No current-selection history was substituted.'}});return;
     }
+    setContext({ ...structuredClone(intent), rowIds });
     setState({phase:'ready',caseId:intent.caseId,answer:a});
   },[workspaceId,sourceKey,revision,client]);
   const retry=useCallback(()=>{if(last.current)void open(last.current);},[open]);

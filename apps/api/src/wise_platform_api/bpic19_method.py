@@ -474,14 +474,31 @@ class Bpic19Assessment:
             yield {"offset": offset, "cases": [self.case(key) for key in ids[offset : offset + chunk_size]]}
 
     def backlog(self, group_by: Sequence[str] | None = None) -> Any:
+        keys = list(group_by or self.group_by)
+        frame = self.result.frame(self.view)
+        for key in keys:
+            if frame[key].isna().any() and frame[key].eq("(missing)").any():
+                raise ValueError(f"Native grouping cannot distinguish unavailable {key} from literal '(missing)'. Choose another grouping; original source values remain unchanged.")
         return method._wise().prioritize(
             self.result,
-            by=list(group_by or self.group_by),
+            by=keys,
             view=self.view,
             gamma=self.gamma,
             volume="reviewed_exposure" if self.volume == "exposure" else "cases",
             min_cases=self.min_cases,
         )
+
+    def _group_records(self, frame: Any, keys: Sequence[str]) -> list[dict]:
+        rows = _records(frame)
+        # Method labels missing keys for display; public selectors use null.
+        # A literal label is retained when that source key has no missingness.
+        source = self.result.frame(self.view)
+        missing_keys = [key for key in keys if source[key].isna().any()]
+        for row in rows:
+            for key in missing_keys:
+                if row.get(key) == "(missing)":
+                    row[key] = None
+        return rows
 
     def report(
         self, *, case_offset: int = 0, case_limit: int = 100, group_offset: int = 0, group_limit: int = 100
@@ -509,7 +526,7 @@ class Bpic19Assessment:
         if bool(scored.any()):
             backlog = self.backlog()
             group_total = len(backlog.table)
-            backlog_rows = _records(backlog.table.reset_index().iloc[group_offset : group_offset + group_limit])
+            backlog_rows = self._group_records(backlog.table.reset_index().iloc[group_offset : group_offset + group_limit], self.group_by)
             spec = _json(asdict(backlog.spec))
             native_drivers = wise.layer_drivers(result, backlog, as_index=False)
             ranked = backlog.table.reset_index().iloc[group_offset : group_offset + group_limit]
@@ -521,10 +538,10 @@ class Bpic19Assessment:
                 joined[f"{layer}__signed_stable_PI"] = (
                     joined[f"{layer}__signed_PI"] * joined["n_cases"] / (joined["n_cases"] + self.gamma)
                 )
-            drivers = _records(joined)
+            drivers = self._group_records(joined, self.group_by)
             document_backlog = self.backlog(["document"])
             document_total = len(document_backlog.table)
-            documents = _records(document_backlog.table.reset_index().iloc[group_offset : group_offset + group_limit])
+            documents = self._group_records(document_backlog.table.reset_index().iloc[group_offset : group_offset + group_limit], ["document"])
             document_members = {}
             for feature in self.features.values():
                 document_members.setdefault(feature.get("document"), []).append(feature["case_id"])
@@ -650,8 +667,8 @@ class Bpic19Assessment:
                 volume="reviewed_exposure" if self.volume == "exposure" else "cases",min_cases=self.min_cases)
             group = wise.prioritize(self.result,by=self.group_by,view=view,gamma=self.gamma,
                 volume="reviewed_exposure" if self.volume == "exposure" else "cases",min_cases=self.min_cases)
-            views[view] = {"state":"evaluated", "documents":_records(doc.table.loc[doc.table["stable_PI"]>0].head(20).reset_index()),
-                "groups":_records(group.table.loc[group.table["stable_PI"]>0].head(10).reset_index()),
+            views[view] = {"state":"evaluated", "documents":self._group_records(doc.table.loc[doc.table["stable_PI"]>0].head(20).reset_index(), ["document"]),
+                "groups":self._group_records(group.table.loc[group.table["stable_PI"]>0].head(10).reset_index(), self.group_by),
                 "document_reference":_json(asdict(doc.spec)), "group_reference":_json(asdict(group.spec))}
         names = list(views)
         for i,left in enumerate(names):
@@ -665,12 +682,12 @@ class Bpic19Assessment:
         if self.result.scores[self.view].notna().any():
             mass = wise.penalty_mass(self.result,self.view,by=self.group_by,as_index=False)
             mass = mass.loc[mass["n_cases"]>=self.min_cases]
-            policies["total_penalty"] = _records(mass.head(10))
-            policies["mean_penalty"] = _records(mass.sort_values(["mean_penalty","n_cases"],ascending=[False,False],kind="mergesort").head(10))
+            policies["total_penalty"] = self._group_records(mass.head(10), self.group_by)
+            policies["mean_penalty"] = self._group_records(mass.sort_values(["mean_penalty","n_cases"],ascending=[False,False],kind="mergesort").head(10), self.group_by)
             for gamma in (0,20):
                 backlog = wise.prioritize(self.result,by=self.group_by,view=self.view,gamma=gamma,
                     volume="reviewed_exposure" if self.volume == "exposure" else "cases",min_cases=self.min_cases)
-                policies["PI_gamma_"+str(gamma)] = _records(backlog.table.head(10).reset_index())
+                policies["PI_gamma_"+str(gamma)] = self._group_records(backlog.table.head(10).reset_index(), self.group_by)
         return {"views":views,"document_overlaps":overlaps,"group_policies":policies,
                 "top_document_limit":20,"top_group_limit":10,"tie_policy":"native descending priority, descending scored count, ascending grouping keys with missing last",
                 "interpretation":"descriptive ranking comparisons on one frozen evaluation; each view has its own arithmetic item reference"}

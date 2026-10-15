@@ -23,6 +23,7 @@ export interface Bpic19ProfileProps {
   onKeep: (predicate: SelectionPredicate, recipe: Bpic19GroupRecipe) => void;
   onKeepRecordPredicate?: (predicate: RecordAttributesAll) => void;
   onInspect: (caseId: string, rowIds?: string[]) => void;
+  onInspectSource?: (caseId: string, rowIds?: string[]) => void;
   onCompare?: (target: Bpic19ComparisonSide, comparator: Bpic19ComparisonSide) => void;
   onReviewed?: (answer: Bpic19ProfileAnswer) => void;
   onColumns?: (answer: Bpic19ProfileAnswer) => void;
@@ -30,7 +31,7 @@ export interface Bpic19ProfileProps {
 }
 
 /** Source-derived answers lead this view; local state chooses reviewed bindings and navigation only. */
-export function Bpic19Profile({ workspaceId, identity, revision, query, client = httpBpic19ProfileClient, onKeep, onKeepRecordPredicate, onInspect, onCompare, onReviewed, onColumns, onValidityChange }: Bpic19ProfileProps) {
+export function Bpic19Profile({ workspaceId, identity, revision, query, client = httpBpic19ProfileClient, onKeep, onKeepRecordPredicate, onInspect, onInspectSource = onInspect, onCompare, onReviewed, onColumns, onValidityChange }: Bpic19ProfileProps) {
   const [answer, setAnswer] = useState<Bpic19ProfileAnswer | null>(null);
   const [roles, setRoles] = useState<Bpic19SuggestedRoles>(emptyRoles);
   const [columns, setColumns] = useState<number[] | null>(null);
@@ -161,7 +162,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
         <p>Declared provenance: {profile.definition.category_lineage.provenance}</p>
         <p>Policy: <code>{profile.definition.category_lineage.policy_id}</code>. This verifies category correspondence, not other fields or conversion authorship.</p>
       </div>}
-      {profile.source_review && <SourceReview review={profile.source_review} disabled={actionsPaused} onInspect={onInspect} onKeep={(ids,state) => keep(ids, { kind: "source_inclusion", state })} />}
+      {profile.source_review && <SourceReview review={profile.source_review} disabled={actionsPaused} onInspect={onInspectSource} onKeep={(ids,state) => keep(ids, { kind: "source_inclusion", state })} />}
       <p>Four supplied categories partition these items; unknown or changing categories remain separate. Before-GR permits either observed receipt order. Flag checks do not change the category.</p>
       <details><summary>Historical flag-only views · overlapping purchasing flows</summary>
         <p>These views use exact lowercase raw flag strings on at least one same original record. Every retained item keeps its complete history. GR=true AND IV=false includes before-GR and Consignment in the original BPIC19 source; IV=false alone additionally includes two-way items. These are overlapping flag views, separate from the four category partitions.</p>

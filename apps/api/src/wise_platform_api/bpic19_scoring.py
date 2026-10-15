@@ -153,6 +153,19 @@ def _load_artifact(workspace: Workspace, receipt: dict):
         raise _Refused(Problem("checksum_mismatch", "A native result artifact is not the recorded JSON snapshot.")) from None
 
 
+def _refuse_legacy_group_labels(report: dict, index: dict, values: dict, field: str):
+    for key, value in values.items():
+        if value != "(missing)":
+            continue
+        contexts = index["contexts"].values()
+        if any(context.get(key) == value for context in contexts):
+            continue
+        if any(context.get(key) is None for context in contexts) and any(
+            row.get(key) == value for table in ("groups", "documents") for row in report.get(table, [])
+        ):
+            raise _Refused(Problem("unsupported_policy", "This stored table uses a legacy missing-group label. Run a new assessment for nullable linked-group actions; the original report, saved outputs and direct item histories remain unchanged.", field))
+
+
 def _bounded_analysis(value, limit=200):
     """Keep large population witnesses in the artifact, with bounded public receipts."""
     if isinstance(value,dict):
@@ -529,6 +542,7 @@ class Bpic19Scoring:
             workspace,parent=self._stored(given)
             refs=parent["snapshot"]["artifacts"]
             index=_load_artifact(workspace,next(ref for ref in refs if ref["kind"]=="membership"))
+            report=_load_artifact(workspace,next(ref for ref in refs if ref["kind"]=="report"))
             query=json.loads(json.dumps(given["query"]))
             for name in ("target","comparator"):
                 if query[name]["selector"]["kind"]=="case_ids":
@@ -551,9 +565,10 @@ class Bpic19Scoring:
                 admitted = set(next(iter(index["contexts"].values()), {})) & {"document", "flow", "company", "spend_area", "item_type"}
                 if (set(keys) | set(excluded)) - admitted:
                     raise ValueError("That context field was not recorded in this frozen run. Evaluate a new identified run with that context receipt.")
+                _refuse_legacy_group_labels(report, index, keys, "query")
+                _refuse_legacy_group_labels(report, index, excluded, "query")
                 def matches(cid, values):
-                    return all(index["contexts"][cid].get(key)==value or
-                        (value=="(missing)" and index["contexts"][cid].get(key) is None) for key,value in values.items())
+                    return all(index["contexts"][cid].get(key)==value for key,value in values.items())
                 return [cid for cid in index["case_ids"] if matches(cid, keys) and (not excluded or not matches(cid, excluded))]
             target=resolve(query["target"]["selector"])
             comparator=resolve(query["comparator"]["selector"],target)
@@ -570,7 +585,6 @@ class Bpic19Scoring:
             analysis["source_native_run_id"]=parent["identity"]["run_id"]
             analysis["source_native_definition_id"]=parent["identity"]["definition_version_id"]
             analysis["source_population_identity"]=parent["identity"]["population_identity"]
-            report=_load_artifact(workspace,next(ref for ref in refs if ref["kind"]=="report"))
             report["association_analysis"]=analysis
             recipe={"query":query,"target_membership_sha256":_digest(_canonical(target)),"target_case_count":len(target),
                     "comparator_membership_sha256":_digest(_canonical(comparator)),"comparator_case_count":len(comparator),
@@ -630,8 +644,8 @@ class Bpic19Scoring:
             keys = filter_["group_values"]
             if not keys or set(keys) - (set(report["settings"]["group_by"]) | {"document"}):
                 raise _Refused(Problem("invalid_parameter", "Member inspection only uses this run's grouping keys or document.", "case_filter.group_values"))
-            ids = [cid for cid in ids if all(index["contexts"][cid].get(key) == value or
-                (value == "(missing)" and index["contexts"][cid].get(key) is None) for key, value in keys.items())]
+            _refuse_legacy_group_labels(report, index, keys, "case_filter.group_values")
+            ids = [cid for cid in ids if all(index["contexts"][cid].get(key) == value for key, value in keys.items())]
         if "criterion_id" in filter_:
             state = filter_.get("criterion_state", "positive")
             criterion = index["criterion_members"].get(filter_["criterion_id"])
