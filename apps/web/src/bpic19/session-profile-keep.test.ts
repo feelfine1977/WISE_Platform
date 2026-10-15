@@ -153,3 +153,22 @@ it.each([
   expect(session.restore(workspaceId,parent,[first],[typed,ordinary],base)).toBe(true);
   expect(session.savedPipeline()!.actions).toEqual([typed,ordinary]);
 });
+
+
+it.each([undefined,0,1] as const)("moves a current ordinary recipe from prior position %s after its retained typed ancestor without duplicate keys",position=>{
+  const oldA={...profile(at(1)),...(position===undefined?{}:{selection_prefix_length:position})};
+  const typedB={...keep(at(1),1),definition_id:"typed-recipe-B",selection_keep:{...keep(at(1),1).selection_keep!,step_index:1}};
+  const old=structuredClone([oldA,typedB]);
+  const session=new Bpic19Session();
+  expect(session.restore(workspaceId,at(1),[first,second],old,base)).toBe(true);
+  session.reviewed(profile(at(1)));
+  const currentA={...profile(at(1)),selection_prefix_length:2};
+  expect(session.savedPipeline()!.actions).toEqual([typedB,currentA]);
+  // Saved revisions and typed origins stay immutable; ordinary backend keys stay unique.
+  expect(old).toEqual([oldA,typedB]);
+  const reread=new Bpic19Session();
+  expect(reread.restore(workspaceId,at(1),[first,second],[typedB,currentA],base)).toBe(true);
+  expect(reread.savedPipeline()!.actions).toEqual([typedB,currentA]);
+  reread.reviewed(profile(at(1)));
+  expect(reread.savedPipeline()!.actions).toEqual([typedB,currentA]);
+});
