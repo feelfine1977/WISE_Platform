@@ -10,7 +10,7 @@ or full BPIC source qualification.
 from copy import deepcopy
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import socket
 
 from fastapi.testclient import TestClient
@@ -28,8 +28,33 @@ from wise_platform_api.workspace import Workspace, Problem
 
 
 def tree(folder):
-    return {str(path.relative_to(folder)): hashlib.sha256(path.read_bytes()).hexdigest()
+    return {path.relative_to(folder).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in folder.rglob("*") if path.is_file()}
+
+
+def test_windows_path_inventory_allows_preparation_reconstruction_but_detects_changed_artifact(tmp_path, monkeypatch):
+    folder = tmp_path / "workspace"
+    artifact = folder / "score-run-artifacts" / "saved.json.gz"
+    artifact.parent.mkdir(parents=True)
+    artifact.write_bytes(b"saved output")
+    original_relative_to = Path.relative_to
+
+    def windows_relative_to(path, *other):
+        return PureWindowsPath(*original_relative_to(path, *other).parts)
+
+    # Only relative path values use Windows semantics; file IO stays native.
+    with monkeypatch.context() as windows:
+        windows.setattr(Path, "relative_to", windows_relative_to)
+        before = tree(folder)
+        preparation = folder / "preparations" / ("a" * 64 + ".json")
+        preparation.parent.mkdir()
+        preparation.write_bytes(b'{"preparation": "restored"}')
+        after = tree(folder)
+        assert {key: value for key, value in after.items() if not key.startswith("preparations/")} == before
+
+        artifact.write_bytes(b"changed output")
+        changed = tree(folder)
+        assert {key: value for key, value in changed.items() if not key.startswith("preparations/")} != before
 
 
 def reopen(wid, saved):
