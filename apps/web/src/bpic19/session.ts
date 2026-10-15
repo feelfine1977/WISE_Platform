@@ -5,6 +5,7 @@ import { sameJson } from "../data/coordinator";
 const operations = ["bpic19_profile", "bpic19_measures", "bpic19_cohorts", "bpic19_score",
   "bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting", "bpic19_flow_comparison", "bpic19_interval_comparison", "bpic19_operator_comparison", "bpic19_cohort_comparison", "bpic19_method_gate"] as const;
 type Reviewed = { action: Bpic19PipelineAction; path: readonly unknown[]; keepPredicate?:unknown };
+type HistoryOrigins = { key: string; path: readonly unknown[]; entries: Reviewed[] };
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
   if (value !== null && typeof value === "object") return `{${Object.entries(value).sort(([a],[b]) => a.localeCompare(b)).map(([k,v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(",")}}`;
@@ -29,6 +30,8 @@ export class Bpic19Session implements PipelineSource {
   private literatureClaims:Bpic19LiteratureClaim[]=[];
   private literatureDraftCurrent=true;
   private pendingKeep: {action:Bpic19PipelineAction;path:readonly unknown[];predicate:unknown} | undefined;
+  private historyNode: readonly unknown[] | undefined;
+  private historyOrigins = new WeakMap<readonly unknown[], HistoryOrigins>();
 
   /** A failed/cancelled selection cannot later lend its origin to equal-member IDs. */
   discardPendingKeep():void {this.pendingKeep=undefined;}
@@ -50,12 +53,20 @@ export class Bpic19Session implements PipelineSource {
 
   basis(workspaceId: string, identity: AnswerIdentity, predicates?: readonly unknown[], baseIdentity?: AnswerIdentity): void {
     const next = JSON.stringify([workspaceId, identity]);
-    if (next === this.key && sameJson(predicates, this.path)) {
+    if (next === this.key && sameJson(predicates, this.path) && predicates === this.historyNode) {
       if (baseIdentity !== undefined) this.baseIdentity = structuredClone(baseIdentity);
       return;
     }
     const nextBinding = binding(workspaceId, identity);
     if (this.binding === nextBinding && predicates !== undefined && this.path !== undefined) {
+      // Undo/Redo reuses the coordinator's immutable history arrays. A fresh
+      // manual branch gets a new node even when every predicate is equal.
+      if (this.historyNode) this.historyOrigins.set(this.historyNode, {
+        key: this.key, path: structuredClone(this.path),
+        entries: structuredClone([...new Map(this.ancestors.filter(entry => entry.action.selection_keep)
+          .map(entry => [actionKey(entry.action), entry])).values()]),
+      });
+      const restoredOrigins = this.historyOrigins.get(predicates);
       const pending=this.pendingKeep;
       if(pending && prefix(pending.path,predicates) && predicates.length>pending.path.length &&
         sameJson(predicates[pending.path.length],pending.predicate))this.ancestors.push({action:pending.action,path:pending.path,keepPredicate:pending.predicate});
@@ -72,12 +83,22 @@ export class Bpic19Session implements PipelineSource {
             ...(action.selection_keep?{keepPredicate:structuredClone(this.path[action.selection_keep.step_index])}:{}) });
         }
       }
-    } else { this.ancestors = []; this.replayMode = undefined;this.literatureClaims=[];this.literatureDraftCurrent=true; }
+      if (restoredOrigins?.key === next && sameJson(restoredOrigins.path, predicates)) {
+        const retained = new Set(this.ancestors.map(entry => actionKey(entry.action)));
+        for (const entry of restoredOrigins.entries) if (!retained.has(actionKey(entry.action))) {
+          this.ancestors.push(structuredClone(entry)); retained.add(actionKey(entry.action));
+        }
+      }
+    } else {
+      this.ancestors = []; this.replayMode = undefined;this.literatureClaims=[];this.literatureDraftCurrent=true;
+      this.historyOrigins = new WeakMap();
+    }
     this.key = next;
     this.pendingKeep=undefined;
     this.binding = nextBinding;
     this.baseIdentity = baseIdentity === undefined ? undefined : structuredClone(baseIdentity);
     this.path = predicates === undefined ? undefined : structuredClone(predicates);
+    this.historyNode = predicates;
     this.actions.clear();
     this.validity.clear();
     // Definitions reviewed at the restored ancestor become current again on Undo.
@@ -140,6 +161,8 @@ export class Bpic19Session implements PipelineSource {
   /** Called once with a successful server-reopened manifest, never unverified local storage. */
   restore(workspaceId: string, identity: AnswerIdentity, predicates: readonly unknown[], actions: readonly Bpic19PipelineAction[], baseIdentity?: AnswerIdentity, replayMode?: "require_all" | "partial",literatureClaims:readonly Bpic19LiteratureClaim[]=[]): boolean {
     this.pendingKeep=undefined;
+    this.historyNode=undefined;
+    this.historyOrigins=new WeakMap();
     this.basis(workspaceId, identity, predicates, baseIdentity);
     this.replayMode = replayMode;
     this.setClaims(literatureClaims);

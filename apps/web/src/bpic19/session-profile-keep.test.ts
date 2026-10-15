@@ -86,3 +86,31 @@ it("legacy actions never receive retroactive origin and source replacement clear
   session.basis(workspaceId,foreign,[],foreign);
   expect(session.readyForSave()).toBe(true);expect(session.savedPipeline()).toBeNull();
 });
+
+
+it("restores the reviewed origin for the actual retained history node, but never for a fresh equal-predicate branch",()=>{
+  const session=new Bpic19Session();const parent:readonly unknown[]=[];const typedChild=[first];
+  session.basis(workspaceId,at(0),parent,base);session.reviewed(profile(at(0)));
+  session.recordKeep(keep(at(0)),first);session.basis(workspaceId,at(1),typedChild,base);session.reviewed(profile(at(1)));
+  const original=session.savedPipeline()!.actions.filter(action=>action.selection_keep);
+  session.basis(workspaceId,at(0),parent,base);
+  expect(session.declarations().some(action=>action.selection_keep)).toBe(false);
+  session.basis(workspaceId,at(1),typedChild,base);session.reviewed(profile(at(1)));
+  expect(session.savedPipeline()!.actions.filter(action=>action.selection_keep)).toEqual(original);
+  session.basis(workspaceId,at(0),parent,base);
+  const manualChild=[first];session.basis(workspaceId,at(1),manualChild,base);session.reviewed(profile(at(1)));
+  expect(session.declarations().some(action=>action.selection_keep)).toBe(false);
+  session.basis(workspaceId,at(0),parent,base);session.basis(workspaceId,at(1),manualChild,base);session.reviewed(profile(at(1)));
+  expect(session.declarations().some(action=>action.selection_keep)).toBe(false);
+});
+
+it("source replacement clears even a retained node's earlier origin",()=>{
+  const session=new Bpic19Session();const parent:readonly unknown[]=[];const child=[first];
+  session.basis(workspaceId,at(0),parent,base);session.reviewed(profile(at(0)));
+  session.recordKeep(keep(at(0)),first);session.basis(workspaceId,at(1),child,base);session.reviewed(profile(at(1)));
+  session.basis(workspaceId,at(0),parent,base);
+  const foreign={...base,preparation_id:"preparation.v1:sha256:"+"f".repeat(64)};
+  session.basis(workspaceId,foreign,[],foreign);
+  session.basis(workspaceId,at(1),child,base);session.reviewed(profile(at(1)));
+  expect(session.declarations().some(action=>action.selection_keep)).toBe(false);
+});

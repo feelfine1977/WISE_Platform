@@ -619,6 +619,20 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     await answerSelection(app, 3, { ...everyIncident, population: "a", results: [full] });
     expect(shownSelection(app.investigation.getState().selection)!.answer.identity).toEqual(before);
     expect(app.session.declarations().some(action => action.selection_keep)).toBe(false);
+    await act(async () => { app.investigation.redo(); await settle(); });
+    await answerSelection(app, 4, { ...everyIncident, population: "a", results: [full, full] });
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    expect(app.session.savedPipeline()!.actions.filter(action => action.selection_keep)).toEqual(kept);
+    // Undo followed by a fresh equal-predicate branch clears Redo's history node.
+    await act(async () => { app.investigation.undo(); await settle(); });
+    await answerSelection(app, 5, { ...everyIncident, population: "a", results: [full] });
+    await act(async () => { app.investigation.addStep({ kind: "case_id_in", case_ids: ["A-1", "B-2"], negate: false }); await settle(); });
+    await answerSelection(app, 6, { ...everyIncident, population: "a", results: [full, full] });
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    expect(app.session.declarations().some(action => action.selection_keep)).toBe(false);
+    const selection = app.investigation.getState().selection;
+    if (selection.phase !== "ready") throw new Error("The new manual branch is ready");
+    expect(selection.history.future).toEqual([]);
   });
 
   it("a failed Keep cannot lend its typed origin to later equal-member generic IDs",async()=>{
