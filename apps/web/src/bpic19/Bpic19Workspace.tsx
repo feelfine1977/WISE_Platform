@@ -20,8 +20,9 @@ import { bpic19Contract } from "./scoring-client";
 import { Bpic19Operators, type Bpic19OperatorComparison } from "./Bpic19Operators";
 import { Bpic19Admission } from "./Bpic19Admission";
 import { Bpic19FlowComparison, flowComparisonQuery } from "./Bpic19FlowComparison";
+import { Bpic19RetainedFlowComparisons, retainedFlowComparisonRequest, type RecordedFlowReturn } from "./Bpic19RetainedFlowComparisons";
 import type { Bpic19FlowComparisonAnswer, FlowComparisonQuery } from "../generated/bpic19-flow-comparison";
-import type { AnswerIdentity } from "../generated/saving";
+import type { AnswerIdentity, Bpic19PipelineAction } from "../generated/saving";
 import { Bpic19RetainedCohorts } from "./Bpic19RetainedCohorts";
 import { useLineageEvidence } from "./useLineageEvidence";
 import { Bpic19RecordFilter } from "./Bpic19RecordFilter";
@@ -67,7 +68,7 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   const [cohortEnabled, setCohortEnabled] = useState(false);
   const [scoreEnabled, setScoreEnabled] = useState(false);
   const [operatorsEnabled, setOperatorsEnabled] = useState(false);
-  const [flowComparison, setFlowComparison] = useState<{ identity: AnswerIdentity; query: FlowComparisonQuery } | null>(null);
+  const [flowComparison, setFlowComparison] = useState<{ identity: AnswerIdentity; query: FlowComparisonQuery; definitionId?: string } | null>(null);
   const [intervalComparison, setIntervalComparison] = useState<{ identity: AnswerIdentity; query: IntervalComparisonQuery } | null>(null);
   const [recipeComparisons,setRecipeComparisons]=useState<Partial<Record<'bpic19_operator_comparison'|'bpic19_cohort_comparison',{identity:AnswerIdentity;query:RecipeComparisonQuery;review?:number}>>>({});
   const flowIntervalSides = useRef<{identity:AnswerIdentity;target:IntervalSide;reference:IntervalSide}|undefined>(undefined);
@@ -76,6 +77,8 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   const heading = useRef<HTMLHeadingElement>(null);
   const activated = useRef("");
   const restoredRevision = useRef<string | undefined>(undefined);
+  const returningFlowParent = useRef<{ identity: AnswerIdentity; base: AnswerIdentity; revision: number } | null>(null);
+  const [flowReturnProblem, setFlowReturnProblem] = useState<string | null>(null);
   const queries = useRef<{ preparation: string; revision: string | undefined; profile?: Bpic19ProfileQuery; measures?: MeasureQuery; cohorts?: CohortQuery; operators?: OperatorQuery; scoreRunId?: string; scorePopulationId?: string }>({ preparation: "", revision: undefined });
   const [, refresh] = useState(0);
   const shown = shownSelection(state.selection);
@@ -105,9 +108,30 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   }
 
   useLayoutEffect(() => {
-    setProfile(null); setRows([]); setFlowComparison(null);setIntervalComparison(null);setRecipeComparisons({});flowIntervalSides.current=undefined;
-    if (population && identity) session.basis(population.workspace_id, identity, shown?.steps ?? [], population.identity);
+    setProfile(null); setRows([]); setFlowComparison(null);setFlowReturnProblem(null);setIntervalComparison(null);setRecipeComparisons({});flowIntervalSides.current=undefined;
+    if (population && identity) {
+      session.basis(population.workspace_id, identity, shown?.steps ?? [], population.identity);
+      const action = session.reviewedDeclarations().filter(action => action.operation === "bpic19_flow_comparison" && sameJson(action.identity, identity)).at(-1);
+      const recorded = action && retainedFlowComparisonRequest(population.workspace_id, action);
+      if (recorded) setFlowComparison({ identity: recorded.identity, query: recorded.query, definitionId: action.definition_id });
+    }
   }, [key, session]);
+
+  useLayoutEffect(() => {
+    const pending = returningFlowParent.current;
+    if (!pending) return;
+    if (!population || !sameJson(population.identity, pending.base)) {
+      returningFlowParent.current = null;
+      setFlowReturnProblem("The source changed before the recorded comparison parent returned. No replacement parent was accepted.");
+    } else if (state.selection.phase === "failed") {
+      returningFlowParent.current = null;
+      setFlowReturnProblem("The recorded comparison branch could not be reopened. Its retained recipes and evidence remain available.");
+    } else if (state.selection.phase === "ready" && shown && shown.revision > pending.revision) {
+      returningFlowParent.current = null;
+      setFlowReturnProblem(sameJson(shown.answer.identity, pending.identity) ? null :
+        "The selected branch differs from the exact recorded comparison parent. It was not substituted for that parent; read the retained evidence separately.");
+    }
+  }, [key, revision, state.selection.phase, population]);
 
   useLayoutEffect(() => {
     if (!population || !identity || !state.saved || restoredRevision.current === savedRevision ||
@@ -115,8 +139,9 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
     session.restore(population.workspace_id, identity, shown?.steps ?? [],
       state.saved.content.bpic19_pipeline?.actions ?? [], population.identity, state.saved.content.bpic19_pipeline?.replay_mode,state.saved.content.bpic19_pipeline?.literature_claims);
     restoredRevision.current = savedRevision;
-    const comparisonAction = state.saved.content.bpic19_pipeline?.actions.find(action=>action.operation==='bpic19_flow_comparison' && sameJson(action.identity,identity));
-    if(comparisonAction) setFlowComparison({identity:comparisonAction.identity, query:comparisonAction.query as unknown as FlowComparisonQuery});
+    const comparisonAction = session.reviewedDeclarations().filter(action=>action.operation==='bpic19_flow_comparison' && sameJson(action.identity,identity)).at(-1);
+    const recordedComparison = comparisonAction && retainedFlowComparisonRequest(population.workspace_id, comparisonAction);
+    if(recordedComparison) setFlowComparison({identity:recordedComparison.identity, query:recordedComparison.query,definitionId:comparisonAction.definition_id});
     const intervalAction=state.saved.content.bpic19_pipeline?.actions.find(action=>action.operation==='bpic19_interval_comparison' && sameJson(action.identity,identity));
     if(intervalAction)setIntervalComparison({identity:intervalAction.identity,query:intervalAction.query as unknown as IntervalComparisonQuery});
     const pairs:typeof recipeComparisons={};
@@ -222,6 +247,27 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
     lineage.close();setRows(rowIds); setLayout("side"); investigation.openCase(caseId);
     setTimeout(() => heading.current?.focus(), 0);
   }, [investigation,lineage.close]);
+  const returnToFlowParent = useCallback((action: Bpic19PipelineAction): RecordedFlowReturn => {
+    const current = investigation.getState(), selected = shownSelection(current.selection);
+    if (current.population.phase !== "ready" || current.selection.phase !== "ready" || !selected || current.replacement)
+      return { ok: false, message: "Wait for the current selection before returning to a recorded comparison branch." };
+    if (!retainedFlowComparisonRequest(current.population.answer.workspace_id, action))
+      return { ok: false, message: "This declaration has no supported frozen comparison recipe." };
+    if (!session.reviewedDeclarations().some(recorded => sameJson(recorded, action)))
+      return { ok: false, message: "The comparison no longer belongs to this reviewed branch. No replacement parent was chosen." };
+    const length = action.selection_prefix_length;
+    if (length === null || length === undefined)
+      return { ok: false, message: "This source-parent declaration has no selectable recorded prefix. Its exact source-parent evidence remains readable; an equal-member empty selection cannot replace its identity." };
+    if (!Number.isSafeInteger(length) || length < 0 || length > selected.steps.length)
+      return { ok: false, message: "The recorded comparison prefix is unavailable in this branch. Its retained evidence remains readable." };
+    if (sameJson(action.identity, selected.answer.identity)) return { ok: true };
+    if (length === selected.steps.length)
+      return { ok: false, message: "This prefix names another population identity. It cannot be substituted for the recorded parent." };
+    returningFlowParent.current = { identity: structuredClone(action.identity), base: structuredClone(current.population.answer.identity), revision: selected.revision };
+    setFlowReturnProblem(null); lineage.close(); investigation.closeCase();
+    for (const step of [...selected.steps.slice(length)].reverse()) investigation.removeStep(step);
+    return { ok: true };
+  }, [investigation, session, lineage.close]);
 
   if (!engaged) return null;
   if (!population || !identity) return <main className="bpic19-workspace"><h1>Purchasing analysis</h1><p>Open a reviewed source to inspect its purchasing flows and recorded measures.</p><button onClick={onShowData}>Open Data</button></main>;
@@ -264,8 +310,15 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
             setFlowComparison({ identity: target.recipe.source_identity, query: flowComparisonQuery(target,comparator) });
           }} />
         {flowComparison && sameJson(flowComparison.identity,identity) && <Bpic19FlowComparison key={JSON.stringify(flowComparison)} workspaceId={population.workspace_id}
-          identity={flowComparison.identity} revision={revision} query={flowComparison.query} onReviewed={reviewedFlowComparison} onValidityChange={flowComparisonValid}
+          identity={flowComparison.identity} revision={revision} query={flowComparison.query} recordedDefinitionId={flowComparison.definitionId} onReviewed={reviewedFlowComparison} onValidityChange={flowComparisonValid}
           onInspect={inspect} onKeepCases={caseIds=>{if(caseIds.length) investigation.addStep({kind:'case_id_in',case_ids:[caseIds[0],...caseIds.slice(1)],negate:false});}} />}
+        {flowReturnProblem && <p role="alert">{flowReturnProblem}</p>}
+        <Bpic19RetainedFlowComparisons workspaceId={population.workspace_id} baseIdentity={population.identity} currentIdentity={identity}
+          actions={session.reviewedDeclarations()} revision={revision} onReturnParent={returnToFlowParent}
+          onInspect={(parentIdentity, caseId, rowIds, reason) => {
+            investigation.closeCase(); setLayout("side");
+            void lineage.open({ identity: parentIdentity, caseId, rowIds, reason });
+          }} />
         {currentProfile && <Bpic19Measures workspaceId={population.workspace_id} identity={identity} revision={revision} roles={roles} columns={currentProfile.columns} query={measuresQuery} onReviewed={reviewedMeasures} onValidityChange={measuresValid} onInspect={inspect}
           onRetain={retainMeasures} retainedQueries={session.retainedActions().filter(action=>action.operation==='bpic19_measures').map(action=>({definition_id:action.definition_id,label:`${String(action.query.measure_profile)} · ${action.definition_id}`,query:action.query as unknown as MeasureQuery}))}
           onKeepCases={(caseIds) => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }} />}

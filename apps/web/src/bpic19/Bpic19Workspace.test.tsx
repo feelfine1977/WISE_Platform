@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Bpic19ProfileAnswer, Bpic19ProfileQuery } from "../generated/bpic19-profile";
 import type { Bpic19PipelineAction, Bpic19PipelineOutput } from "../generated/saving";
+import type { Bpic19FlowComparisonAnswer, Bpic19FlowComparisonRequest } from "../generated/bpic19-flow-comparison";
+import type { ImportedCaseEvidenceRequest } from "../generated/imports";
 import type { Bpic19ProfileProps } from "./Bpic19Profile";
 import type { Bpic19MeasuresProps } from "./Bpic19Measures";
 import type { Bpic19ScoringProps } from "./Bpic19Scoring";
@@ -18,6 +20,9 @@ import { containingOpened, everyIncident, graphAnswer, scriptedSelectionClient, 
 import { scriptedViewClient } from "../test/views";
 import { Bpic19Workspace } from "./Bpic19Workspace";
 import { Bpic19Session } from "./session";
+import comparisonLiteral from "./flow-comparison-test-answer.json";
+import { bpic19FlowComparisonContract } from "./flow-comparison-client";
+import { importContract } from "../data/client";
 
 // Analytical panels are mocked deliberately: these tests exercise the real selection/save/session
 // boundary, preserving declarations and publication validity. Analytics has separate literal tests.
@@ -74,6 +79,16 @@ vi.mock("./Bpic19Profile", () => ({ Bpic19Profile: function ProfileBoundary(prop
         source_identity: props.identity, query: answer.query, group: { kind: "source_inclusion" }, case_ids: ["A-1"],
       });
     }}>Keep scripted first item</button>
+    <button onClick={() => {
+      const answer = reviewedAnswer(props);
+      if (!answer.profile) throw new Error("The comparison has a reviewed source");
+      const side = (value: string, ids: string[]) => ({name: value, caseIds: ids, recipe: {
+        definition_id: answer.profile!.definition_id, definition: answer.profile!.definition,
+        source_identity: props.identity, query: answer.query, case_ids: ids,
+        group: {kind: "flow_item_type" as const, flow_id: "after_gr", state: "invariant", item_type_value: value},
+      }});
+      props.onCompare?.(side("Standard", ["B-2"]), side("Service", ["A-1"]));
+    }}>Compare scripted Standard and Service</button>
   </section>;
 } }));
 vi.mock("./Bpic19Measures", () => ({ Bpic19Measures: (props: Bpic19MeasuresProps) => {
@@ -140,8 +155,195 @@ async function opening() {
   return { ...app, ...view, user: userEvent.setup() };
 }
 
+/** Independently declared UI-only comparison: A-1 Service has two original records,
+ * B-2 Standard has one. Both belong to document X; each side one item/document,
+ * union two items/three records/one document and one overlapping document. */
+function comparisonReply(request: Bpic19FlowComparisonRequest): Bpic19FlowComparisonAnswer {
+  const raw: unknown = structuredClone(comparisonLiteral);
+  if (!bpic19FlowComparisonContract.answer(raw)) throw new Error("Literal comparison boundary");
+  const a = raw;
+  a.request_id = request.request_id; a.query_revision = request.query_revision; a.workspace_id = request.workspace_id;
+  a.identity = request.identity; a.parent_identity = request.identity; a.query = structuredClone(request.query);
+  const support = (ids: string[], records: number, share: number) => ({case_ids: ids, case_count: ids.length,
+    record_count: records, document_count: ids.length ? 1 : 0, share, example_case_ids: ids});
+  a.comparison.parent = support(["A-1", "B-2"], 3, 1);
+  a.comparison.flow_parent = support(["A-1", "B-2"], 3, 1);
+  a.comparison.comparison_parent = support(["A-1", "B-2"], 3, 1);
+  const swapped = request.query.target.item_type_value === "Service";
+  a.comparison.target = support(swapped ? ["A-1"] : ["B-2"], swapped ? 2 : 1, .5);
+  a.comparison.reference = support(swapped ? ["B-2"] : ["A-1"], swapped ? 1 : 2, .5);
+  for (const key of ["outside", "outside_flow", "unavailable", "scope_unavailable"] as const) a.comparison[key] = support([], 0, 0);
+  a.comparison.documents = {union_document_ids: ["X"], overlap_document_ids: ["X"], union_document_count: 1,
+    overlap_document_count: 1, target_document_count: 1, reference_document_count: 1,
+    unknown_document_case_ids: [], supports_overlap: true};
+  a.comparison.shares = {item_denominator: 2, record_denominator: 3, target_item_share: .5, reference_item_share: .5,
+    target_record_share: swapped ? 2 / 3 : 1 / 3, reference_record_share: swapped ? 1 / 3 : 2 / 3, reason: null};
+  const standard = request.query.page.role === "target" ? !swapped : swapped;
+  a.comparison.page = {...request.query.page, total: 1, next_offset: null, items: [{case_id: standard ? "B-2" : "A-1",
+    role: request.query.page.role, document: "X", item_type_state: "invariant", item_type_value: standard ? "Standard" : "Service",
+    record_count: standard ? 1 : 2, witness_row_ids: standard ? ["row.v1:sha256:" + "e".repeat(64)] : [
+      "row.v1:sha256:" + "c".repeat(64), "row.v1:sha256:" + "d".repeat(64)], reason: "exact_invariant_flow_and_subtype"}]};
+  if (swapped) a.definition_id = "swapped-literal-comparison";
+  a.definition = {...a.definition, profile_definition_id: request.query.profile_definition_id,
+    target: request.query.target, reference: request.query.reference};
+  a.comparison.definition_id = a.definition_id; a.comparison.definition = a.definition;
+  return a;
+}
+function comparisonHttp() {
+  const requests: Bpic19FlowComparisonRequest[] = [], evidence: ImportedCaseEvidenceRequest[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (url: unknown, init?: RequestInit) => {
+    const request: unknown = JSON.parse(String(init?.body));
+    if (url === "/api/investigations/bpic19-flow-comparison" && bpic19FlowComparisonContract.request(request)) {
+      requests.push(structuredClone(request)); return new Response(JSON.stringify(comparisonReply(request)), {status: 200});
+    }
+    if (url === "/api/investigations/case-evidence" && importContract.caseEvidenceRequest(request)) {
+      evidence.push(structuredClone(request)); const data = evidenceAnswer(request);
+      if (request.case_id === "A-1") {data.records = [data.records[0], data.records[1]]; data.coverage = {raw_record_count: 2, mapped_record_count: 1, omitted_activity_record_count: 1}; data.mapped_row_ids = [data.records[0].row_id];}
+      else {data.records = [data.records[2]]; data.coverage = {raw_record_count: 1, mapped_record_count: 1, omitted_activity_record_count: 0}; data.omitted_activity_row_ids = [];}
+      return new Response(JSON.stringify(data), {status: 200});
+    }
+    throw new Error("Only the declared comparison and original evidence routes are admitted in this test");
+  }));
+  return {requests, evidence};
+}
+
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("keeps the recorded comparator and excluded target readable, then restores the exact comparison on Return and Undo", async () => {
+    const http = comparisonHttp(), app = await opening();
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    await app.user.click(screen.getByRole("button", {name: "Compare scripted Standard and Service"}));
+    await screen.findByRole("button", {name: "Keep target"});
+    const parent = shownSelection(app.investigation.getState().selection)!.answer.identity;
+    const recorded = app.session.reviewedDeclarations().find(action => action.operation === "bpic19_flow_comparison")!;
+    expect(recorded.selection_prefix_length).toBe(0);
+    await app.user.click(screen.getByRole("button", {name: "Keep comparator"}));
+    await answerSelection(app, 1, containingOpened);
+    expect(screen.queryByRole("heading", {name: "Compare the reviewed item types"})).toBeNull();
+    const child = shownSelection(app.investigation.getState().selection)!.answer.identity;
+    expect(child).not.toEqual(parent);
+    await app.user.click(screen.getByText(/Reviewed and retained flow comparisons/));
+    await app.user.selectOptions(screen.getByRole("combobox", {name: "Retained flow comparison"}), "0");
+    const inspect = await screen.findByRole("button", {name: "Inspect comparison item B-2"});
+    inspect.focus(); await app.user.keyboard("{Enter}");
+    await waitFor(() => expect(http.evidence).toHaveLength(1));
+    expect(http.evidence[0].identity).toEqual(parent);
+    expect(http.evidence[0].case_id).toBe("B-2");
+    expect(shownSelection(app.investigation.getState().selection)!.answer.identity).toEqual(child);
+    expect((await screen.findByText(/Retained parent evidence: Recorded target/)).textContent).toContain(recorded.definition_id);
+    expect(screen.getAllByText("Original cells", {exact: true})).toHaveLength(1);
+    expect(app.session.reviewedDeclarations().find(action => action.operation === "bpic19_flow_comparison")).toEqual(recorded);
+    await app.user.click(screen.getByRole("button", {name: "Return to purchasing parent"}));
+    expect(app.selecting.selections[2].request.predicates).toEqual([]);
+    await answerSelection(app, 2, everyIncident);
+    await screen.findByRole("heading", {name: "Compare the reviewed item types"});
+    expect(shownSelection(app.investigation.getState().selection)!.answer.identity).toEqual(parent);
+    expect(http.requests.at(-1)!.query).toEqual(recorded.query);
+    expect(app.session.reviewedDeclarations().find(action => action.operation === "bpic19_flow_comparison")).toEqual(recorded);
+    // A new branch followed by real coordinator Undo must remount the same recipe too.
+    await app.user.click(screen.getByRole("button", {name: "Keep comparator"}));
+    await answerSelection(app, 3, containingOpened);
+    await act(async () => {app.investigation.undo(); await settle();});
+    await answerSelection(app, 4, everyIncident);
+    await screen.findByRole("button", {name: "Keep target"});
+    expect(http.requests.at(-1)!.identity).toEqual(parent);
+    expect(http.requests.at(-1)!.query).toEqual(recorded.query);
+    expect(app.saves.saves).toHaveLength(0);
+  });
+
+  it("returns to a nonzero recorded prefix instead of clearing its larger source parent", async () => {
+    comparisonHttp(); const app = await opening();
+    const prefix = {kind: "case_id_in" as const, case_ids: ["A-1", "B-2"] as [string, ...string[]], negate: false};
+    const kept = {case_ids: ["A-1", "B-2"], case_count: 2, record_count: 3}, empty = {case_ids: [], case_count: 0, record_count: 0};
+    const prefixFigures: Figures = {population: "4", kept, removed: empty, unevaluable: empty,
+      results: [{kept, removed: empty, unevaluable: empty}]};
+    await act(async () => {app.investigation.addStep(prefix); await settle();});
+    await answerSelection(app, 1, prefixFigures);
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    await app.user.click(screen.getByRole("button", {name: "Compare scripted Standard and Service"}));
+    await screen.findByRole("button", {name: "Keep target"});
+    const parent = shownSelection(app.investigation.getState().selection)!.answer.identity;
+    const recorded = app.session.reviewedDeclarations().find(action => action.operation === "bpic19_flow_comparison")!;
+    expect(recorded.selection_prefix_length).toBe(1);
+    await app.user.click(screen.getByRole("button", {name: "Keep target"}));
+    await answerSelection(app, 2, {population: "8", kept: {case_ids: ["B-2"], case_count: 1, record_count: 1},
+      removed: {case_ids: ["A-1"], case_count: 1, record_count: 2}, unevaluable: empty,
+      results: [prefixFigures.results[0], {kept: {case_ids: ["B-2"], case_count: 1, record_count: 1},
+        removed: {case_ids: ["A-1"], case_count: 1, record_count: 2}, unevaluable: empty}]});
+    await app.user.click(screen.getByText(/Reviewed and retained flow comparisons/));
+    await app.user.selectOptions(screen.getByRole("combobox", {name: "Retained flow comparison"}), "0");
+    await screen.findByRole("table", {name: "Comparison complete-item evidence"});
+    await app.user.click(screen.getByRole("button", {name: "Return to purchasing parent"}));
+    expect(app.selecting.selections[3].request.predicates).toEqual([prefix]);
+    await answerSelection(app, 3, prefixFigures);
+    await screen.findByRole("button", {name: "Keep comparator"});
+    expect(shownSelection(app.investigation.getState().selection)!.answer.identity).toEqual(parent);
+    expect(app.session.reviewedDeclarations().find(action => action.operation === "bpic19_flow_comparison")).toEqual(recorded);
+  });
+
+  it("does not reset a dirty current comparison or repeat its read on unrelated workspace renders", async () => {
+    const http = comparisonHttp(), app = await opening();
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    await app.user.click(screen.getByRole("button", {name: "Compare scripted Standard and Service"}));
+    await screen.findByRole("button", {name: "Keep target"});
+    await app.user.click(screen.getByRole("button", {name: "Swap target and comparator"}));
+    expect(app.session.readyForSave()).toBe(false);
+    await app.user.click(screen.getByRole("button", {name: "Review scripted activity counts"}));
+    app.rerender(<Bpic19Workspace {...app.props}/>);
+    expect(screen.getByText(/Target: after gr × Service. Comparator: after gr × Standard/)).toBeTruthy();
+    expect(screen.getByRole("button", {name: "Keep target"}).hasAttribute("disabled")).toBe(true);
+    expect(http.requests).toHaveLength(1);
+    expect(app.session.readyForSave()).toBe(false);
+  });
+
+  it("restores a saved-child parent declaration into a fresh session without substituting current query roles", async () => {
+    const http = comparisonHttp(), app = await opening();
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    await app.user.click(screen.getByRole("button", {name: "Compare scripted Standard and Service"}));
+    await screen.findByRole("button", {name: "Keep comparator"});
+    const recorded = app.session.reviewedDeclarations().find(action => action.operation === "bpic19_flow_comparison")!;
+    await app.user.click(screen.getByRole("button", {name: "Keep comparator"}));
+    await answerSelection(app, 1, containingOpened);
+    const state = app.investigation.getState(), child = shownSelection(state.selection)!;
+    if (state.population.phase !== "ready") throw new Error("The saved source is ready");
+    app.unmount();
+    const fresh = new Bpic19Session(), saving = new SavingCoordinator(app.saves.client, app.investigation, undefined, undefined, fresh);
+    active.push(saving);
+    // This is a trusted server-restored manifest fixture, not a distinct-PID receipt.
+    app.investigation.markSaved({investigationId: "investigation.v1:11111111111141118111111111111111", revisionId: firstRevisionId,
+      content: {...savedContent, base_identity: state.population.answer.identity, selection_identity: child.answer.identity,
+        selection_recipe: {parent_case_ids: ["A-1", "B-2"], predicates: [...child.steps]}, comparison: null,
+        bpic19_pipeline: {schema_version: 1, actions: [recorded]}}});
+    render(<Bpic19Workspace {...app.props} session={fresh} saving={saving}/>);
+    expect(screen.queryByRole("heading", {name: "Compare the reviewed item types"})).toBeNull();
+    await app.user.click(screen.getByText(/Reviewed and retained flow comparisons/));
+    await app.user.selectOptions(screen.getByRole("combobox", {name: "Retained flow comparison"}), "0");
+    await screen.findByRole("button", {name: "Inspect comparison item B-2"});
+    expect(http.requests.at(-1)!.identity).toEqual(recorded.identity);
+    expect(http.requests.at(-1)!.query).toEqual(recorded.query);
+    expect(fresh.reviewedDeclarations()).toEqual([recorded]);
+    expect(app.saves.saves).toHaveLength(0);
+    expect(app.selecting.selections).toHaveLength(2);
+  });
+
+  it("reports an unexpected return identity without relabeling it as the recorded comparison parent", async () => {
+    comparisonHttp(); const app = await opening();
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    await app.user.click(screen.getByRole("button", {name: "Compare scripted Standard and Service"}));
+    await screen.findByRole("button", {name: "Keep comparator"});
+    const parent = shownSelection(app.investigation.getState().selection)!.answer.identity;
+    await app.user.click(screen.getByRole("button", {name: "Keep comparator"}));
+    await answerSelection(app, 1, containingOpened);
+    await app.user.click(screen.getByText(/Reviewed and retained flow comparisons/));
+    await app.user.selectOptions(screen.getByRole("combobox", {name: "Retained flow comparison"}), "0");
+    await screen.findByRole("table", {name: "Comparison complete-item evidence"});
+    await app.user.click(screen.getByRole("button", {name: "Return to purchasing parent"}));
+    await answerSelection(app, 2, {...everyIncident, population: "2"});
+    expect((await screen.findByRole("alert")).textContent).toContain("differs from the exact recorded comparison parent");
+    expect(shownSelection(app.investigation.getState().selection)!.answer.identity).not.toEqual(parent);
+    expect(screen.queryByRole("heading", {name: "Compare the reviewed item types"})).toBeNull();
+  });
+
   it("keeps reviewed analysis and open original cells while widening, collapsing and returning from evidence", async () => {
     const app = await opening();
     await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
