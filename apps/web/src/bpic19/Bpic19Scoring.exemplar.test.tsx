@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Bpic19Scoring, type Bpic19ScoringSubject } from "./Bpic19Scoring";
 import { Bpic19RetainedAssessments } from "./Bpic19RetainedAssessments";
@@ -45,7 +45,7 @@ describe("direct native timing exemplar verdicts", () => {
     expect(screen.queryByRole("button", { name: "B" })).toBeNull();
     open();
     const table = await screen.findByRole("table", { name: "Criterion verdicts for B" });
-    expect(document.activeElement?.textContent).toBe("Criterion verdicts for B");
+    await waitFor(() => expect(document.activeElement?.textContent).toBe("Criterion verdicts for B"));
     expect(within(table).getAllByRole("row")).toHaveLength(11);
     for (let index = 1; index <= 10; index++) expect(within(table).getByText(`C${String(index).padStart(2, "0")}`)).toBeTruthy();
     const timing = within(table).getByText("C04").closest("tr");
