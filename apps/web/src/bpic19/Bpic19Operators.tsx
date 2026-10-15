@@ -124,7 +124,16 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
   const comparisonCallbacks = useRef({ onCompared, onComparisonValidityChange }); comparisonCallbacks.current = { onCompared, onComparisonValidityChange };
   const controller = useRef<AbortController | null>(null), serial = useRef(0), retry = useRef<OperatorQuery | null>(null);
   const callbacks = useRef({ onReviewed, onValidityChange }); callbacks.current = { onReviewed, onValidityChange };
+  const methodController = useRef<AbortController | null>(null), methodSerial = useRef(0);
+  const [methodState, setMethodState] = useState<{ context: string; kind: "pending" | "unavailable" | "error" | "cancelled"; message: string } | null>(null);
   const identityKey = JSON.stringify(identity), roleKey = JSON.stringify(roleBindings(roles)), queryKey = JSON.stringify(query ?? null);
+  const methodContext = JSON.stringify([workspaceId, identityKey, roleKey, revision, queryKey, draft, answer?.definition_id, answer?.result_id]);
+  const currentMethodContext = useRef(methodContext); currentMethodContext.current = methodContext;
+  function invalidateMethod() { ++methodSerial.current; methodController.current?.abort(); setMethodState(null); }
+  useEffect(() => {
+    invalidateMethod();
+    return () => { ++methodSerial.current; methodController.current?.abort(); };
+  }, [methodContext, client]);
   const restoredComparisonKey = JSON.stringify(restoredComparison ?? null);
   const envelope = (next: OperatorQuery, requestId: string): Bpic19OperatorRequest => ({ schema_version: 1, message_type: "bpic19_operator_request", request_id: requestId, query_revision: revision, workspace_id: workspaceId, identity, query: next });
   const choices = new Map<string, OperatorQuery>();
@@ -134,6 +143,7 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
   }
   const retainedChoices = [...choices.entries()];
   async function load(next: OperatorQuery) {
+    invalidateMethod();
     const token = ++serial.current; controller.current?.abort(); const abort = new AbortController(); controller.current = abort;
     setBusy(true); setProblem(null); setCancelled(false); retry.current = next; callbacks.current.onValidityChange?.(false);
     const request: Bpic19OperatorRequest = { schema_version: 1, message_type: "bpic19_operator_request", request_id: `bpic19-operators-${revision}-${token}`, query_revision: revision, workspace_id: workspaceId, identity, query: next };
@@ -188,10 +198,10 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
   const dirty = answer !== null && meaning(draft) !== meaning(answer.query);
   const paused = busy || !!problem || cancelled || dirty;
   useEffect(() => { callbacks.current.onValidityChange?.(answer !== null && !paused); }, [answer, paused, draft]);
-  function edit(patch: Partial<OperatorQuery>) { ++serial.current; controller.current?.abort(); ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); if (reviewedComparison.current) comparisonCallbacks.current.onComparisonValidityChange?.(false); setBusy(false); setProblem(null); setCancelled(false); setDraft(current => ({ ...current, ...patch, offset: 0 })); callbacks.current.onValidityChange?.(false); }
+  function edit(patch: Partial<OperatorQuery>) { invalidateMethod(); ++serial.current; controller.current?.abort(); ++compareSerial.current; compareController.current?.abort(); setCompareBusy(false); if (reviewedComparison.current) comparisonCallbacks.current.onComparisonValidityChange?.(false); setBusy(false); setProblem(null); setCancelled(false); setDraft(current => ({ ...current, ...patch, offset: 0 })); callbacks.current.onValidityChange?.(false); }
   const change = (recipe: OperatorRecipe) => edit({ recipe });
-  function cancel() { ++serial.current; controller.current?.abort(); setBusy(false); setCancelled(true); callbacks.current.onValidityChange?.(false); }
-  function restore() { if (!answer) return; ++serial.current; controller.current?.abort(); setDraft(answer.query); setBusy(false); setProblem(null); setCancelled(false); callbacks.current.onReviewed?.(answer); }
+  function cancel() { invalidateMethod(); ++serial.current; controller.current?.abort(); setBusy(false); setCancelled(true); callbacks.current.onValidityChange?.(false); }
+  function restore() { if (!answer) return; invalidateMethod(); ++serial.current; controller.current?.abort(); setDraft(answer.query); setBusy(false); setProblem(null); setCancelled(false); callbacks.current.onReviewed?.(answer); }
   function download() { if (!answer || paused) return; downloadJson(answer, `${answer.operation}-${answer.result_id.split(":").at(-1)?.slice(0, 12)}.json`); }
   function retain() { if (!answer || paused || answer.query.recipe === null) return; const key = meaning(answer.query); if (choices.size >= 32 && !choices.has(key)) return; setRetainedAnswers(current => ({ ...current, [key]: answer })); onRetain?.(answer); }
   function selectRetained(key: string) { const selected = choices.get(key); if (!selected) return; setRetainedSelection(key); setDraft(selected); void load(selected); }
@@ -237,6 +247,32 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
   const needsAuthority = recipe.kind === "waiting" && recipe.completion === "right_censored" && !recipe.horizon_provenance?.trim();
   const needsEventId = (recipe.kind === "ordinal" && recipe.order === "numeric_event_id" || recipe.kind === "fifo" && recipe.order === "timestamp_numeric_event_id") && draft.roles.event_id === null;
   const valid = bpic19OperatorContract.request(request) && !needsAuthority && !needsEventId;
+  const methodReady = valid && !paused && answer?.query.recipe?.kind === "rule" && recipe.kind === "rule" &&
+    answer.workspace_id === workspaceId && answer.query_revision === revision && sameJson(answer.identity, identity) && meaning(answer.query) === meaning(draft);
+  const currentMethodState = methodState?.context === methodContext ? methodState : null;
+  async function checkMethod() {
+    if (!methodReady || !answer) return;
+    const context = methodContext, token = ++methodSerial.current;
+    methodController.current?.abort(); const abort = new AbortController(); methodController.current = abort;
+    const request: Bpic19OperatorRequest = { ...envelope(answer.query, `bpic19-rule-method-${revision}-${token}`), intent: "normative_admission" };
+    setMethodState({ context, kind: "pending", message: "Checking actual Method admission for this reviewed recorded-event rule… Descriptive evidence remains usable." });
+    let outcome: Bpic19OperatorOutcome;
+    try { outcome = await client.operators(request, abort.signal); } catch { outcome = { ok: false, problem: { kind: "unreachable" } }; }
+    if (token !== methodSerial.current || abort.signal.aborted || context !== currentMethodContext.current) return;
+    if (!outcome.ok && outcome.problem.kind === "refusal") {
+      const refusal = outcome.problem.refusal, supplied = refusal.method_context;
+      if (refusal.code === "method_binding_unavailable") {
+        if (bpic19OperatorContract.refusal(refusal) && refusal.request_id === request.request_id && refusal.query_revision === revision && refusal.workspace_id === workspaceId &&
+            supplied && sameJson(supplied.identity, identity) && sameJson(supplied.query, answer.query) && supplied.definition_id === answer.definition_id) {
+          setMethodState({ context, kind: "unavailable", message: `${refusal.message} Descriptive result and complete original histories remain usable; no normative grade was produced. (${refusal.code})` }); return;
+        }
+        setMethodState({ context, kind: "error", message: "The Method refusal does not identify this reviewed rule. Retry the availability check." }); return;
+      }
+      setMethodState({ context, kind: "error", message: `${refusal.message} (${refusal.code}) Descriptive evidence remains usable.` }); return;
+    }
+    setMethodState({ context, kind: "error", message: !outcome.ok && outcome.problem.kind === "unreachable" ? "The local service could not be reached. Retry the Method availability check. Descriptive evidence remains usable." : "The service did not return a supported Method admission refusal. No normative grade was accepted. Descriptive evidence remains usable." });
+  }
+  function cancelMethod() { ++methodSerial.current; methodController.current?.abort(); setMethodState({ context: methodContext, kind: "cancelled", message: "Method availability check cancelled. Descriptive evidence remains usable." }); }
   const bindings = columns ?? catalogue?.columns ?? [];
   const comparisonCurrent = comparison?.every(value => value.workspace_id === workspaceId && sameJson(value.identity, identity) && value.query_revision === revision);
   const comparisonPaused = paused || compareBusy || !!compareProblem;
@@ -252,7 +288,11 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
       </fieldset><fieldset><legend>{kindLabels[recipe.kind]}</legend>
         {(recipe.kind === "ordinal" || recipe.kind === "fifo") && <EpisodeControls recipe={recipe} change={change} />}
         {recipe.kind === "cancellation" && <CancellationControls recipe={recipe} change={change} />}
-        {recipe.kind === "rule" && <RuleControls recipe={recipe} change={change} />}
+        {recipe.kind === "rule" && <><RuleControls recipe={recipe} change={change} />
+          <div className="bpic19-operator-actions"><button type="button" disabled={!methodReady || currentMethodState?.kind === "pending"} onClick={() => void checkMethod()}>Check normative Method availability</button>{currentMethodState?.kind === "pending" && <button type="button" onClick={cancelMethod}>Cancel Method availability check</button>}</div>
+          <small>Optional normative admission for the exact current reviewed rule. Review and run the descriptive rule first.</small>
+          {currentMethodState && <p role={currentMethodState.kind === "error" ? "alert" : "status"} aria-label="Normative Method availability">{currentMethodState.message}</p>}
+        </>}
         {recipe.kind === "waiting" && <WaitingControls recipe={recipe} change={change} catalogue={catalogue} />}
       </fieldset></div>
       <div className="bpic19-operator-actions"><button className="primary" type="button" disabled={busy || !valid} onClick={() => void load({ ...draft, recipe, offset: 0 })}>Review and run operator</button>{busy && <button type="button" onClick={cancel}>Cancel operator request</button>}{answer && (dirty || cancelled || problem) && <button type="button" onClick={restore}>Restore reviewed operator</button>}</div>

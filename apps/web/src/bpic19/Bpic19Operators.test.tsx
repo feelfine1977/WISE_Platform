@@ -1,16 +1,126 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Bpic19Operators, type Bpic19OperatorComparison } from "./Bpic19Operators";
 import type { Bpic19OperatorRequest, OperatorQuery } from "../generated/bpic19-operators";
 import type { Bpic19OperatorClient, Bpic19OperatorOutcome } from "./operators-client";
 import { operatorAnswer, operatorColumns, operatorIdentity, operatorRecipe, operatorRoles } from "./operators-test-fixture";
+import { bpic19OperatorContract } from "./operators-client";
 const answering = (request: Bpic19OperatorRequest): Bpic19OperatorOutcome => ({ ok: true, answer: operatorAnswer(request) });
 function setup(client: Bpic19OperatorClient = { operators: vi.fn(async request => answering(request)) }, query?: OperatorQuery, retainedQueries?: OperatorQuery[], restoredComparison?: Bpic19OperatorComparison) {
   const props = { workspaceId: "workspace.v1:literal-fixture", identity: operatorIdentity, revision: 2, roles: operatorRoles, columns: operatorColumns, query, retainedQueries, restoredComparison, client, onInspect: vi.fn(), onKeepCases: vi.fn(), onReviewed: vi.fn(), onRetain: vi.fn(), onCompared: vi.fn(), onComparisonValidityChange: vi.fn(), onValidityChange: vi.fn() };
   return { ...render(<Bpic19Operators {...props} />), props, client, user: userEvent.setup() };
 }
 async function run(user: ReturnType<typeof userEvent.setup>) { await waitFor(() => expect(screen.getByRole("button", { name: "Review and run operator" }).hasAttribute("disabled")).toBe(false));await user.click(screen.getByRole("button", { name: "Review and run operator" }));await screen.findByRole("table", { name: "Complete-item cohorts · observation groups can overlap" }); }
+
+describe("optional recorded-rule Method admission (synthetic HTTP boundary, no native proof)", () => {
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+  it("sends a closed normative request with the unchanged HTTP client and retains current descriptive evidence after refusal", async () => {
+    const requests: Bpic19OperatorRequest[] = [];
+    // Synthetic browser download sink: execute the real receipt formatter and
+    // click callback without claiming a rendered-browser download journey.
+    const blobs: Blob[] = [], filenames: string[] = [];
+    vi.stubGlobal("URL", class extends URL {
+      static createObjectURL(value: Blob | MediaSource) { if (!(value instanceof Blob)) throw new Error("Expected receipt Blob"); blobs.push(value); return `blob:rule-receipt-${blobs.length}`; }
+      static revokeObjectURL() {}
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { filenames.push(this.download); });
+    const blobText = (value: Blob) => new Promise<string>((resolve, reject) => {
+      const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsText(value);
+    });
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+      const request = JSON.parse(String(init?.body)) as Bpic19OperatorRequest;
+      expect(bpic19OperatorContract.request(request)).toBe(true);
+      requests.push(request);
+      const body = request.intent === "normative_admission" ? {
+        schema_version: 1, message_type: "bpic19_operator_refusal", request_id: request.request_id, query_revision: request.query_revision, workspace_id: request.workspace_id,
+        operation: "bpic19_operators", code: "method_binding_unavailable", message: "This recorded-event rule has no admitted actual Method binding for normative grading.", field: "intent", retryable: false,
+        method_context: { intent: "normative_admission", identity: request.identity, query: request.query, definition_id: operatorAnswer(request).definition_id },
+      } : operatorAnswer(request);
+      return new Response(JSON.stringify(body), { status: request.intent ? 409 : 200 });
+    });
+    const props = { workspaceId: "workspace.v1:literal-fixture", identity: operatorIdentity, revision: 2, roles: operatorRoles, columns: operatorColumns, onInspect: vi.fn(), onKeepCases: vi.fn(), onReviewed: vi.fn(), onRetain: vi.fn(), onValidityChange: vi.fn() };
+    render(<Bpic19Operators {...props} />);
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Recorded-event operator" }), "rule");
+    const action = screen.getByRole("button", { name: "Check normative Method availability" });
+    expect(action.hasAttribute("disabled")).toBe(true);
+    await run(user);
+    await waitFor(() => expect(props.onValidityChange).toHaveBeenLastCalledWith(true));
+    const reviewed = props.onReviewed.mock.calls[0][0];
+    await user.click(screen.getByRole("button", { name: "Download reviewed operator receipt" }));
+    const exportedBefore = await blobText(blobs[0]);
+    const validityCount = props.onValidityChange.mock.calls.length;
+    action.focus();
+    await user.keyboard("{Enter}");
+    expect((await screen.findByRole("status", { name: "Normative Method availability" })).textContent).toContain("no admitted actual Method binding");
+    expect(screen.getByRole("status", { name: "Normative Method availability" }).textContent).toContain("Descriptive result and complete original histories remain usable");
+    expect(requests.at(-1)).toMatchObject({ intent: "normative_admission", identity: reviewed.identity, query: reviewed.query });
+    expect(props.onReviewed).toHaveBeenCalledTimes(1);
+    expect(props.onValidityChange.mock.calls).toHaveLength(validityCount);
+    expect(screen.getByRole("button", { name: "Download reviewed operator receipt" }).hasAttribute("disabled")).toBe(false);
+    await user.click(screen.getByRole("button", { name: "Download reviewed operator receipt" }));
+    expect(await blobText(blobs[1])).toBe(exportedBefore);
+    expect(JSON.parse(exportedBefore)).toEqual(reviewed);
+    expect(filenames).toHaveLength(2);
+    expect(filenames[1]).toBe(filenames[0]);
+    await user.click(screen.getByRole("button", { name: "Keep truth false items" }));
+    expect(props.onKeepCases).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Inspect truth false member" }));
+    expect(props.onInspect).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Retain reviewed result for comparison and saving" }));
+    expect(props.onRetain).toHaveBeenLastCalledWith(reviewed);
+    expect(props.onRetain.mock.calls[0][0].query).not.toHaveProperty("intent");
+  });
+  it.each(["draft", "source", "workspace", "population", "cancel"].flatMap(change => ["success", "error", "refusal"].map(delivery => ({ change, delivery }))))("fences a delivered old $delivery after $change while keeping the current descriptive answer usable", async ({ change, delivery }) => {
+    let resolve: ((value: Bpic19OperatorOutcome) => void) | undefined;
+    let reject: ((reason: Error) => void) | undefined;
+    const client: Bpic19OperatorClient = { operators: vi.fn(request => request.intent === "normative_admission" ? new Promise<Bpic19OperatorOutcome>((done, fail) => { resolve = done; reject = fail; }) : Promise.resolve(answering(request))) };
+    const query: OperatorQuery = { policy_id: "bpic19.declared_operators.v1", roles: operatorRoles, recipe: operatorRecipe("rule"), offset: 0, limit: 20 };
+    const { user, props, rerender } = setup(client, query);
+    await waitFor(() => expect(props.onReviewed).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByRole("button", { name: "Check normative Method availability" }));
+    const pending = vi.mocked(client.operators).mock.calls.at(-1)!;
+    expect(pending[0].intent).toBe("normative_admission");
+    expect(screen.getByRole("status", { name: "Normative Method availability" }).textContent).toContain("Checking actual Method admission");
+    expect(screen.getByRole("button", { name: "Download reviewed operator receipt" }).hasAttribute("disabled")).toBe(false);
+    expect(props.onValidityChange).toHaveBeenLastCalledWith(true);
+    if (change === "draft") {
+      await user.selectOptions(screen.getByRole("combobox", { name: "Quantifier over activations" }), "some");
+      expect(screen.getByRole("button", { name: "Check normative Method availability" }).hasAttribute("disabled")).toBe(true);
+      await run(user);
+    } else if (change === "cancel") {
+      await user.click(screen.getByRole("button", { name: "Cancel Method availability check" }));
+    } else if (change === "workspace") {
+      rerender(<Bpic19Operators {...props} workspaceId="workspace.v1:another-fixture" />);
+    } else {
+      const identity = { ...operatorIdentity, [change === "source" ? "source_id" : "population_id"]: `${change === "source" ? "source" : "population"}.v1:sha256:${"f".repeat(64)}` };
+      rerender(<Bpic19Operators {...props} identity={identity} />);
+    }
+    await waitFor(() => expect(props.onReviewed).toHaveBeenCalledTimes(change === "cancel" ? 1 : 2));
+    expect(pending[1].aborted).toBe(true);
+    const reviewed = props.onReviewed.mock.calls.at(-1)![0];
+    const validityCount = props.onValidityChange.mock.calls.length;
+    await act(async () => {
+      if (delivery === "error") reject!(new Error("obsolete network error"));
+      else resolve!(delivery === "success" ? answering(pending[0]) : { ok: false, problem: { kind: "refusal", refusal: {
+        schema_version: 1, message_type: "bpic19_operator_refusal", request_id: pending[0].request_id, query_revision: pending[0].query_revision, workspace_id: pending[0].workspace_id,
+        operation: "bpic19_operators", code: "method_binding_unavailable", message: "OBSOLETE Method refusal", field: "intent", retryable: false,
+        method_context: { intent: "normative_admission", identity: pending[0].identity, query: pending[0].query, definition_id: operatorAnswer(pending[0]).definition_id },
+      } } });
+    });
+    const status = screen.queryByRole("status", { name: "Normative Method availability" });
+    expect(status?.textContent ?? "").toBe(change === "cancel" ? "Method availability check cancelled. Descriptive evidence remains usable." : "");
+    expect(screen.queryByRole("alert", { name: "Normative Method availability" })).toBeNull();
+    expect(props.onValidityChange.mock.calls).toHaveLength(validityCount);
+    expect(props.onValidityChange).toHaveBeenLastCalledWith(true);
+    expect(props.onReviewed).toHaveBeenLastCalledWith(reviewed);
+    expect(screen.getByRole("button", { name: "Download reviewed operator receipt" }).hasAttribute("disabled")).toBe(false);
+    expect(screen.getByRole("button", { name: "Keep truth false items" }).hasAttribute("disabled")).toBe(false);
+    await user.click(screen.getByRole("button", { name: "Retain reviewed result for comparison and saving" }));
+    expect(props.onRetain).toHaveBeenLastCalledWith(reviewed);
+  });
+});
 
 describe("visible finite recorded-event operators", () => {
   it("loads a catalogue without author confirmation, then runs ordinal and retains exact whole-item evidence", async () => {

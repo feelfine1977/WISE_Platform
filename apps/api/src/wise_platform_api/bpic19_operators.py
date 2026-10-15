@@ -69,7 +69,12 @@ def _repeats(value: object) -> bool:
 
 
 def _refused(
-    given: dict, code: str, message: str, field: str | None = None
+    given: dict,
+    code: str,
+    message: str,
+    field: str | None = None,
+    *,
+    method_context: dict | None = None,
 ) -> Bpic19OperatorReply:
     status = (
         400
@@ -113,6 +118,8 @@ def _refused(
             "population_unavailable",
         },
     }
+    if method_context is not None:
+        body["method_context"] = method_context
     if isinstance(
         read_strictly(body, generated.Bpic19OperatorRefusal, _ALTERNATIVES), list
     ):
@@ -196,6 +203,15 @@ class Bpic19Operators:
                 + checked[0].reason,
                 checked[0].field,
             )
+        # The generator represents an omitted property with a nullable default;
+        # the closed wire contract admits omission, never explicit null.
+        if "intent" in given and given["intent"] is None:
+            return _refused(
+                given,
+                "invalid_request",
+                "Choose an admitted operator intent.",
+                "intent",
+            )
         if _repeats(given):
             return _refused(
                 given,
@@ -207,6 +223,16 @@ class Bpic19Operators:
         if failures:
             return _refused(
                 given, "invalid_request", failures[0].reason, failures[0].field
+            )
+        if given.get("intent") == "normative_admission" and (
+            given["query"]["recipe"] is None
+            or given["query"]["recipe"]["kind"] != "rule"
+        ):
+            return _refused(
+                given,
+                "invalid_request",
+                "Normative admission is only defined for a recorded-event rule.",
+                "query.recipe",
             )
         try:
             resolved = resolve_population(self._imports, given)
@@ -291,6 +317,22 @@ class Bpic19Operators:
                         else None
                     ),
                 }
+            if given.get("intent") == "normative_admission":
+                # This finite descriptive rule family has no admitted Method
+                # binding. Native installation is a separate concern; other
+                # actual Method policies must keep their own admission paths.
+                return _refused(
+                    given,
+                    "method_binding_unavailable",
+                    "This recorded-event rule has no admitted actual Method binding for normative grading. Its descriptive result and complete original histories remain usable.",
+                    "intent",
+                    method_context={
+                        "intent": "normative_admission",
+                        "identity": population.identity,
+                        "query": query,
+                        "definition_id": result["definition_id"],
+                    },
+                )
             return _checked_answer(
                 {
                     "schema_version": 1,

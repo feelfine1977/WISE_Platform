@@ -1473,6 +1473,14 @@
         },
         "query": {
           "$ref": "#/$defs/OperatorQuery"
+        },
+        "intent": {
+          "type": "string",
+          "enum": [
+            "descriptive",
+            "normative_admission"
+          ],
+          "description": "Omitted or descriptive retains recorded-event evidence. normative_admission asks actual Method admission for this exact rule, without supplying a Norm or grade; intent is outside descriptive query identity."
         }
       },
       "required": [
@@ -1483,6 +1491,40 @@
         "workspace_id",
         "identity",
         "query"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "intent": {
+                "const": "normative_admission"
+              }
+            },
+            "required": [
+              "intent"
+            ]
+          },
+          "then": {
+            "properties": {
+              "query": {
+                "properties": {
+                  "recipe": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "rule"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        }
       ]
     },
     "Bpic19OperatorAnswer": {
@@ -1653,7 +1695,7 @@
         },
         "code": {
           "type": "string",
-          "description": "Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes."
+          "description": "Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes. method_binding_unavailable means no admitted actual Method binding for this finite rule family, independently of native installation; method_context identifies the validated descriptive rule."
         },
         "message": {
           "type": "string"
@@ -1670,6 +1712,9 @@
         },
         "retryable": {
           "type": "boolean"
+        },
+        "method_context": {
+          "$ref": "#/$defs/RuleMethodContext"
         }
       },
       "required": [
@@ -1683,6 +1728,66 @@
         "message",
         "field",
         "retryable"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "method_binding_unavailable"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "required": [
+              "method_context"
+            ],
+            "properties": {
+              "field": {
+                "const": "intent"
+              },
+              "retryable": {
+                "const": false
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "method_context"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "RuleMethodContext": {
+      "title": "RuleMethodContext",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "intent": {
+          "const": "normative_admission"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/OperatorQuery"
+        },
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-operator-definition\\.v1:sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "intent",
+        "identity",
+        "query",
+        "definition_id"
       ]
     }
   }

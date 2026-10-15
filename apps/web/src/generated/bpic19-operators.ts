@@ -9,6 +9,7 @@
  * Finite declarative recorded-event operators, immutable complete PO-item populations and original witness rows. Descriptive and source-qualified, never a parallel norm/scorer.
  */
 export type Bpic19OperatorMessage = Bpic19OperatorRequest | Bpic19OperatorAnswer | Bpic19OperatorRefusal;
+export type Bpic19OperatorRequest = Bpic19OperatorRequest1;
 export type RequestId = string;
 export type QueryRevision = number;
 export type WorkspaceId = string;
@@ -20,8 +21,9 @@ export type PopulationId = string;
 export type ImplementationVersion = string;
 export type OperatorRecipe = OrdinalRecipe | FifoRecipe | CancellationRecipe | RuleRecipe | WaitingRecipe;
 export type CaseId = string;
+export type Bpic19OperatorRefusal = Bpic19OperatorRefusal1;
 
-export interface Bpic19OperatorRequest {
+export interface Bpic19OperatorRequest1 {
   message_type: "bpic19_operator_request";
   schema_version: 1;
   request_id: RequestId;
@@ -29,6 +31,10 @@ export interface Bpic19OperatorRequest {
   workspace_id: WorkspaceId;
   identity: AnswerIdentity;
   query: OperatorQuery;
+  /**
+   * Omitted or descriptive retains recorded-event evidence. normative_admission asks actual Method admission for this exact rule, without supplying a Norm or grade; intent is outside descriptive query identity.
+   */
+  intent?: "descriptive" | "normative_admission";
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -299,7 +305,7 @@ export interface OperatorMeasure {
   row_ids: CaseId[];
   recorded_difference_days?: number | null;
 }
-export interface Bpic19OperatorRefusal {
+export interface Bpic19OperatorRefusal1 {
   schema_version: 1;
   message_type: "bpic19_operator_refusal";
   request_id: RequestId | null;
@@ -307,10 +313,17 @@ export interface Bpic19OperatorRefusal {
   workspace_id: WorkspaceId | null;
   operation: "bpic19_operators";
   /**
-   * Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes.
+   * Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes. method_binding_unavailable means no admitted actual Method binding for this finite rule family, independently of native installation; method_context identifies the validated descriptive rule.
    */
   code: string;
   message: string;
   field: string | null;
   retryable: boolean;
+  method_context?: RuleMethodContext;
+}
+export interface RuleMethodContext {
+  intent: "normative_admission";
+  identity: AnswerIdentity;
+  query: OperatorQuery;
+  definition_id: string;
 }

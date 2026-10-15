@@ -436,6 +436,10 @@ class Bpic19OperatorRequest(BaseModel):
     workspace_id: WorkspaceId
     identity: AnswerIdentity
     query: OperatorQuery
+    intent: Literal['descriptive', 'normative_admission'] | None = Field(
+        None,
+        description='Omitted or descriptive retains recorded-event evidence. normative_admission asks actual Method admission for this exact rule, without supplying a Norm or grade; intent is outside descriptive query identity.',
+    )
 
 
 class Bpic19OperatorAnswer(BaseModel):
@@ -474,6 +478,18 @@ class Bpic19OperatorAnswer(BaseModel):
     next_offset: conint(ge=0) | None
 
 
+class RuleMethodContext(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    intent: Literal['normative_admission']
+    identity: AnswerIdentity
+    query: OperatorQuery
+    definition_id: constr(
+        pattern=r'^bpic19-operator-definition\.v1:sha256:[a-f0-9]{64}$'
+    )
+
+
 class Bpic19OperatorRefusal(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -486,11 +502,12 @@ class Bpic19OperatorRefusal(BaseModel):
     operation: Literal['bpic19_operators']
     code: str = Field(
         ...,
-        description='Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes.',
+        description='Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes. method_binding_unavailable means no admitted actual Method binding for this finite rule family, independently of native installation; method_context identifies the validated descriptive rule.',
     )
     message: str
     field: str | None
     retryable: bool
+    method_context: RuleMethodContext | None = None
 
 
 class Bpic19OperatorMessage(
