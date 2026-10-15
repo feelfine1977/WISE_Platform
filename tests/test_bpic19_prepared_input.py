@@ -8,8 +8,12 @@ from copy import deepcopy
 from dataclasses import FrozenInstanceError
 import hashlib
 import json
+import math
 from pathlib import Path
+import subprocess
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from wise_platform_api import bpic19_method, method
 from wise_platform_api.bpic19_prepared_input import PreparedInput, binding_catalogue, build_prepared_input
@@ -88,6 +92,43 @@ class PreparedInputContractTests(unittest.TestCase):
     def assert_rejected(self, document):
         with self.assertRaises(ValueError):
             PreparedInput(reseal(document))
+
+    def test_frozen_catalogue_bytes_survive_git_autocrlf_checkout(self):
+        root = Path(__file__).resolve().parents[1]
+        relative = Path("apps/api/src/wise_platform_api/bpic19_reference/historical-notebook-norm.json")
+        original = (root / relative).read_bytes()
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = Path(directory)
+            subprocess.run(["git", "init", "--quiet", str(checkout)], check=True, capture_output=True)
+            subprocess.run(["git", "-C", str(checkout), "config", "core.autocrlf", "true"], check=True)
+            (checkout / ".gitattributes").write_bytes((root / ".gitattributes").read_bytes())
+            target = checkout / relative
+            target.parent.mkdir(parents=True)
+            target.write_bytes(original)
+            subprocess.run(["git", "-C", str(checkout), "add", "--", ".gitattributes", relative.as_posix()],
+                           check=True, capture_output=True)
+            target.unlink()
+            subprocess.run(["git", "-C", str(checkout), "checkout-index", "--force", "--", relative.as_posix()],
+                           check=True, capture_output=True)
+            self.assertEqual(target.read_bytes(), original)
+            self.assertEqual(hashlib.sha256(target.read_bytes()).hexdigest(),
+                             "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef")
+
+    def test_frozen_catalogue_still_refuses_a_meaning_changed_byte(self):
+        raw = Path(bpic19_method.__file__).with_name("bpic19_reference").joinpath("historical-notebook-norm.json").read_bytes()
+        changed = raw.replace(b'"within_layer_weight": 1.2', b'"within_layer_weight": 1.3', 1)
+        self.assertNotEqual(raw, changed)
+        self.assertEqual(json.loads(changed)["constraints"][0]["within_layer_weight"], 1.3)
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Path(directory)
+            reference = fixture / "bpic19_reference" / "historical-notebook-norm.json"
+            reference.parent.mkdir()
+            reference.write_bytes(changed)
+            # Redirect only the filesystem resource location; use the real loader and raw-byte guard.
+            with patch.object(bpic19_method, "__file__", str(fixture / "bpic19_method.py")):
+                self.assertEqual(bpic19_method.historical_catalogue()["source_sha256"], hashlib.sha256(changed).hexdigest())
+                with self.assertRaisesRegex(ValueError, "The frozen historical catalogue differs"):
+                    binding_catalogue()
 
     def test_exact_existing_29_attributes_units_scopes_and_schema_declarations(self):
         expected = {name: (unit, scopes) for name, unit, scopes, _value in CELLS}
@@ -451,8 +492,8 @@ class PreparedInputContractTests(unittest.TestCase):
             self.assertAlmostEqual(result.scores.loc[item, view], expected_score, delta=1e-8)
             self.assertAlmostEqual(result.contributions[view].loc[item].sum(), 1 - expected_score, delta=1e-8)
             raw = norm.raw_weights(view)
-            scoped_weight = sum(raw[c] for c in expected_scope)
-            evaluated_weight = sum(raw[c] for c in result.applicable.columns if result.applicable.loc[item, c])
+            scoped_weight = math.fsum(raw[c] for c in expected_scope)
+            evaluated_weight = math.fsum(raw[c] for c in result.applicable.columns if result.applicable.loc[item, c])
             self.assertEqual(evaluated_weight / scoped_weight, 1)
 
 
