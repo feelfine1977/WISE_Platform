@@ -6,13 +6,14 @@ WISE_Platform is a local web application for investigating event histories with 
 
 - imports an incident CSV into a workspace folder you choose: separator, encoding, the columns for incident, activity and time, the time format and clock, and a report of what was read and what was left out;
 - lists the incidents and shows every original record of an incident;
+- selects whole incidents from recorded-span and incident-start charts, filters opening or any-record context, and lists incidents by longest span or gap with rule-based groups;
 - draws a process map and keeps or removes whole incidents from an activity or a path, with every step shown with its counts and undo;
 - shows how the selected incidents were opened beside their parent, and their variants;
 - compares two groups of incidents, or two periods of incident starts, with every share and what it is a share of;
 - scores one expectation about the time from one activity to another with the method library, with the records behind each score;
 - saves an investigation and reopens it after the application was stopped and started.
 
-Each of these passes its contract tests through the real operations and has been used in a browser on synthetic data. **Not done yet:** qualification on Windows by a person; charts with brushing and the transition matrix; everything else the [roadmap](docs/roadmap.md) lists for the first release. The process map uses `wise-flow` 0.3.5 and the scoring uses `wise-pm` 0.2.0. Both are unreleased states of those libraries, kept as packed files under [`vendor/`](vendor/README.md); the application says so where it shows them, and their results are not those of a released library.
+The automated suite covers these operations through analytical, HTTP and browser-component tests. **Not qualified as a release:** the Windows 11 human installation/browser journey and a supported capacity tier. **Not implemented:** the transition matrix, the full linked categorical/duration exploration workflow and score-to-map projection. The time charts already support a span threshold and a band of start periods; that does not complete all linked-chart roadmap gates. See the [current status and evidence](docs/status.md) and [release checklist](docs/release-qualification.md). The process map uses `wise-flow` 0.3.5 and the scoring uses `wise-pm` 0.2.0. Both are unreleased states of those libraries, kept as packed files under [`vendor/`](vendor/README.md); the application says so where it shows them, and their results are not those of a released library.
 
 ## Installing
 
@@ -79,7 +80,7 @@ Open `http://127.0.0.1:8765`. Health is exposed at `/api/health`. Stop the host 
 6. Add a local reviewed expectation when useful; inspect applicability, scores and witnesses.
 7. Save, stop and reopen the same investigation and evidence.
 
-Steps 1, 2, 4 (for groups and periods), 5 (map and variants), 6 (one expectation about the time between two activities) and 7 are available in the current candidate in a first form. Linked charts with brushing in step 3, duration tails and the transition matrix are not built yet. Company data and runtime state belong in a selected workspace outside the repository and remain on the local computer. Synthetic fixtures support development and release qualification.
+Steps 1, 2, 3 (recorded-span thresholds and start-period bands), 4 (for groups and periods), 5 (map and variants), 6 (one expectation about the time between two activities) and 7 are available in the current candidate in a first form. Recorded span is first-to-last recorded time, not a business resolution duration. The transition matrix, general linked categorical brushing and complete release acceptance remain pending. Company data and runtime state belong in a selected workspace outside the repository and remain on the local computer. Synthetic fixtures support development and release qualification.
 
 ## Project guide
 
@@ -89,5 +90,6 @@ Steps 1, 2, 4 (for groups and periods), 5 (map and variants), 6 (one expectation
 - [Roadmap](docs/roadmap.md): 48 capabilities, priorities and completion gates.
 - [Development](docs/development.md): setup, generation, build and module rules.
 - [Testing](docs/testing.md): exact analytical fixtures, recovery and Windows acceptance.
+- [Current status](docs/status.md), [capacity measurement](docs/capacity.md) and [release qualification](docs/release-qualification.md): implemented scope, reproducible measurements, and operator checks still required.
 
 The application uses PolyForm Noncommercial 1.0.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Independently licensed dependencies retain their scoped terms and required notices.

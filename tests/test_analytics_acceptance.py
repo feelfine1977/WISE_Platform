@@ -329,23 +329,3 @@ def test_extra_request_fields_do_not_silently_expand_operation_scope(client, ope
         route, request = EVIDENCE_ROUTE, evidence_request(open_example(client), "INC05", "extra-refused")
     request["norm_id"] = "not-required-for-exploration"
     refusal(client.post(route, json=request), operation, "invalid_request", 400, request)
-
-
-@pytest.mark.skip(reason="Pending: real graph/matrix/variant operations are not qualified by population/evidence acceptance.")
-def test_pending_graph_matrix_and_variant_operations():
-    pass
-
-
-@pytest.mark.skip(reason="Pending: real context/profile comparison operations require their own semantic acceptance.")
-def test_pending_context_profile_comparison_operations():
-    pass
-
-
-@pytest.mark.skip(reason="Pending: independent 3h/4h/5h/missing endpoint fixture precedes real measured-query acceptance.")
-def test_pending_measured_true_false_and_unevaluable_operation():
-    pass
-
-
-@pytest.mark.skip(reason="Pending: exact eligible Method release and actual norm/ScoreRun applicability, values and evidence must be qualified separately.")
-def test_pending_norm_and_score_operations():
-    pass
