@@ -16,7 +16,7 @@ import { ImportedInvestigationCoordinator, shownSelection } from "../imported/co
 import { SavingCoordinator } from "../saved/coordinator";
 import { scriptedComparisonClient } from "../test/comparisons";
 import { earlierPreparationId, evidenceAnswer, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
-import { firstRevisionId, reopenAnswer, saveAnswer, savedContent, savedSummary, scriptedSavingClient } from "../test/saving";
+import { firstRevisionId, secondRevisionId, reopenAnswer, saveAnswer, savedContent, savedSummary, scriptedSavingClient } from "../test/saving";
 import { containingOpened, everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer, selectionRefusal, type Figures } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
 import { Bpic19Workspace } from "./Bpic19Workspace";
@@ -74,6 +74,14 @@ vi.mock("./Bpic19Profile", () => ({ Bpic19Profile: function ProfileBoundary(prop
     <output data-testid="current-profile-population">{props.identity.population_id}</output>
     <button onClick={() => props.onColumns?.({ ...reviewedAnswer(props), profile: null, binding_state: "needs_review", query: { ...query, roles: null } })}>Inspect scripted columns</button>
     <button onClick={() => { props.onReviewed?.(reviewedAnswer(props)); props.onValidityChange?.(true); }}>Review scripted source</button>
+    <button onClick={() => {
+      const answer = reviewedAnswer(props);
+      if (!answer.profile || !answer.query.roles) throw new Error("A source recipe is explicitly reviewed");
+      const roles = { ...answer.query.roles, item_category: 7 };
+      props.onReviewed?.({ ...answer, query: { ...answer.query, roles }, profile: { ...answer.profile,
+        definition_id: "bpic19-profile.v1:sha256:" + "2".repeat(64), definition: { ...answer.profile.definition, roles } } });
+      props.onValidityChange?.(true);
+    }}>Review scripted changed source roles</button>
     <button onClick={() => props.onValidityChange?.(false)}>Edit scripted source definition</button>
     <button onClick={() => {
       const answer = reviewedAnswer(props);
@@ -101,6 +109,7 @@ vi.mock("./Bpic19Measures", () => ({ Bpic19Measures: (props: Bpic19MeasuresProps
     query: { policy_id: "bpic19.source_witnessed_measures.v1", measure_profile: "paper_v1", roles: {net_worth: 5, value: 5},
       offset: 7, limit: 3, value_unit: "EUR", value_reducer: "unique_creation_value", calibration_population: "parent" } });
   return <section aria-label="Scripted activity counts">
+  <output data-testid="current-measures-query">{JSON.stringify(props.query ?? null)}</output>
   <button onClick={() => {
     props.onReviewed?.(measuresAnswer({ schema_version: 1, message_type: "bpic19_measures_request", request_id: "count-first-fixture",
       query_revision: props.revision, workspace_id: props.workspaceId, identity: props.identity,
@@ -108,6 +117,7 @@ vi.mock("./Bpic19Measures", () => ({ Bpic19Measures: (props: Bpic19MeasuresProps
     props.onValidityChange?.(true);
   }}>Review scripted activity counts</button>
   <button onClick={() => { props.onReviewed?.(exposure()); props.onValidityChange?.(true); }}>Review scripted exposure</button>
+  <button onClick={() => { props.onReviewed?.({ ...exposure(), definition_id: "bpic19-measure-definition.v1:sha256:" + "4".repeat(64) }); props.onValidityChange?.(true); }}>Review scripted changed exposure</button>
   <button onClick={() => props.onRetain?.(exposure())}>Retain scripted exposure</button>
   <button onClick={() => props.onValidityChange?.(false)}>Edit scripted measures</button>
 </section>;
@@ -439,6 +449,68 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     });
     expect(JSON.parse(screen.getByTestId("offered-exposure-reviews").textContent ?? "null")).toEqual([
       {definition_id: reviewed.definition_id, identity: chosen.answer.parent_identity, query: reviewed.query}]);
+  });
+
+  it("keeps the latest reviewed source roles after an actual save reply without reopening", async () => {
+    const app = await opening();
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    // A successful earlier save retains the old recipe before the analyst reviews another.
+    await act(async () => { app.saving.save("Initial source roles", "Earlier retained review", "incidents"); await settle(); });
+    const originalCall = app.saves.saves[0], original = saveAnswer(originalCall.request, firstRevisionId, true);
+    original.revision.content.bpic19_pipeline = structuredClone(originalCall.request.bpic19_pipeline);
+    await act(async () => { originalCall.reply({ ok: true, answer: original }); await settle(); });
+    await app.user.click(screen.getByRole("button", { name: "Review scripted changed source roles" }));
+    const before = JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null");
+    expect(before.roles.item_category).toBe(7);
+    expect(app.session.savedPipeline()?.actions.filter(action => action.operation === "bpic19_profile").map(action => action.query.roles)).toEqual([query.roles, before.roles]);
+    await act(async () => { app.saving.save("Latest reviewed roles", "No reopening occurred", "incidents"); await settle(); });
+    expect(app.saves.saves).toHaveLength(2);
+    const call = app.saves.saves[1], saved = saveAnswer(call.request, secondRevisionId, false);
+    saved.revision.content.bpic19_pipeline = structuredClone(call.request.bpic19_pipeline);
+    await act(async () => { call.reply({ ok: true, answer: saved }); await settle(); });
+    expect(app.investigation.getState().saved?.revisionId).toBe(secondRevisionId);
+    expect(app.saves.reopens).toHaveLength(0);
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null")).toEqual(before);
+    expect(app.session.savedPipeline()).toEqual(saved.revision.content.bpic19_pipeline);
+
+    // An explicit reopen is a different action: the earlier revision owns its
+    // original roles, rather than borrowing the newly saved revision's query.
+    const current = app.investigation.getState(), chosen = shownSelection(current.selection)!;
+    let reopening: Promise<boolean> | undefined;
+    await act(async () => { reopening = app.saving.reopen({ ...savedSummary, latest_revision_id: firstRevisionId }, workspaceId); await settle(); });
+    const reopenCall = app.saves.reopens[0], reply = reopenAnswer(reopenCall.request);
+    reply.revision = structuredClone(original.revision);
+    reply.restored_selection = { identity: chosen.answer.identity, parent_identity: chosen.answer.parent_identity,
+      parent: chosen.answer.parent, kept: chosen.answer.kept, removed: chosen.answer.removed, unevaluable: chosen.answer.unevaluable,
+      predicate_results: chosen.answer.predicate_results };
+    await act(async () => { reopenCall.reply({ ok: true, answer: reply }); await settle(); });
+    expect(await reopening).toBe(true);
+    await answerPopulation(app, 1);
+    await waitFor(() => expect(app.investigation.getState().saved?.revisionId).toBe(firstRevisionId));
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null")).toEqual(query);
+    expect(app.saves.saves).toHaveLength(2);
+  });
+
+  it("keeps the latest reviewed measure recipe after saving a later revision", async () => {
+    const app = await opening();
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    await act(async () => { app.saving.save("Initial measure", "Retained count recipe", "incidents"); await settle(); });
+    const oldCall = app.saves.saves[0], old = saveAnswer(oldCall.request, firstRevisionId, true);
+    old.revision.content.bpic19_pipeline = structuredClone(oldCall.request.bpic19_pipeline);
+    await act(async () => { oldCall.reply({ ok: true, answer: old }); await settle(); });
+    await app.user.click(screen.getByRole("button", { name: "Review scripted changed exposure" }));
+    const before = JSON.parse(screen.getByTestId("current-measures-query").textContent ?? "null");
+    expect(before.value_unit).toBe("EUR");
+    expect(app.session.savedPipeline()?.actions.filter(action => action.operation === "bpic19_measures")).toHaveLength(2);
+    await act(async () => { app.saving.save("Current exposure measure", "Latest reviewed recipe", "incidents"); await settle(); });
+    const call = app.saves.saves[1], saved = saveAnswer(call.request, secondRevisionId, false);
+    saved.revision.content.bpic19_pipeline = structuredClone(call.request.bpic19_pipeline);
+    await act(async () => { call.reply({ ok: true, answer: saved }); await settle(); });
+    expect(JSON.parse(screen.getByTestId("current-measures-query").textContent ?? "null")).toEqual(before);
+    expect(app.session.savedPipeline()).toEqual(saved.revision.content.bpic19_pipeline);
+    expect(app.saves.reopens).toHaveLength(0);
   });
 
   it("exports the same verified machine and readable receipts after unchanged reopen without another revision", async () => {
