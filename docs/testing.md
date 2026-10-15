@@ -1,6 +1,6 @@
 # Testing and qualification
 
-Tests qualify a named scope. M0 foundation tests do not establish that CSV import, incident analytics, scoring, persistence or a Windows release is complete. Follow the development setup for the current test commands.
+Tests qualify a named scope. The candidate now has import, selection, comparison, time/explorer, scoring and persistence suites in addition to M0 foundation checks. None alone establishes a Windows release. Follow the development setup for the current commands and [current status](status.md) for the evidence map and remaining gates.
 
 ## Test layers
 
@@ -30,8 +30,12 @@ Issue overlapping queries; deliver obsolete success, error and pagination replie
 
 Save an unscored investigation and one with an optional norm/score. Stop the application and reopen in another process. Verify source/preparation/representation, complete membership, target/reference roles, context reducer, bins, measures, notes and witnesses. Changed/moved/corrupt/incompatible sources or artifacts must produce explicit freshness/refusal behavior. Test database-aware backup/restoration rather than a copy of a live file alone.
 
+The implemented adapter is filesystem-based: its safe backup procedure is a complete stopped-workspace copy. `tests/test_capacity_benchmark.py` exercises that procedure through the benchmark CLI, with real HTTP and a new host on a separately restored directory; it checks the original selection, complete evidence and original score run. This is not a live backup, database-backup qualification or power-loss test. See [release qualification](release-qualification.md) for the operator procedure and upgrade exclusions.
+
 ## Human release checklist
 
 On the supported Windows target, a novice follows the README, imports the synthetic event-history input, asks a useful question, compares context, switches to map/matrix/variants, opens full evidence, optionally scores, saves, stops and reopens. Repeat using keyboard/table paths and recover from one intentional error.
 
 Record the build/runtime/assets, supported options, actual failures and capacity limits. Early Windows CI is required but does not substitute for this human journey. Private company mappings and expectations are validated locally by their owner after release qualification; test inputs and screenshots committed here remain synthetic.
+
+The [release checklist](release-qualification.md) supplies literal browser checks, offline installation, keyboard/error recovery and stopped backup/restore steps. The [capacity tool](capacity.md) records HTTP timings and storage/memory evidence without imposing an invented performance budget. Matrix checks stay not implemented until the matrix exists; do not mark the full first journey passed by exercising a substitute view.
