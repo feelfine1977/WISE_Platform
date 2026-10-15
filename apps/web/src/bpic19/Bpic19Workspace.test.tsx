@@ -82,6 +82,7 @@ vi.mock("./Bpic19Profile", () => ({ Bpic19Profile: function ProfileBoundary(prop
         definition_id: "bpic19-profile.v1:sha256:" + "2".repeat(64), definition: { ...answer.profile.definition, roles } } });
       props.onValidityChange?.(true);
     }}>Review scripted changed source roles</button>
+    <button onClick={() => { props.onReviewed?.(reviewedAnswer({ ...props, query })); props.onValidityChange?.(true); }}>Review scripted original source roles</button>
     <button onClick={() => props.onValidityChange?.(false)}>Edit scripted source definition</button>
     <button onClick={() => {
       const answer = reviewedAnswer(props);
@@ -449,6 +450,31 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     });
     expect(JSON.parse(screen.getByTestId("offered-exposure-reviews").textContent ?? "null")).toEqual([
       {definition_id: reviewed.definition_id, identity: chosen.answer.parent_identity, query: reviewed.query}]);
+  });
+
+  it("preserves the re-reviewed original recipe after three actual A to B to A saves", async () => {
+    const app = await opening();
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    async function saveCurrent(index: number, revisionId: string) {
+      await act(async () => { app.saving.save("Reviewed recipe chronology " + index, "Actual SavingCoordinator, scripted service boundary", "incidents"); await settle(); });
+      expect(app.saves.saves).toHaveLength(index + 1);
+      const call = app.saves.saves[index], saved = saveAnswer(call.request, revisionId, index === 0);
+      saved.revision.content.bpic19_pipeline = structuredClone(call.request.bpic19_pipeline);
+      await act(async () => { call.reply({ ok: true, answer: saved }); await settle(); });
+      expect(app.investigation.getState().saved?.revisionId).toBe(revisionId);
+    }
+    await saveCurrent(0, firstRevisionId);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted changed source roles" }));
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null").roles.item_category).toBe(7);
+    await saveCurrent(1, secondRevisionId);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted original source roles" }));
+    const before = JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null");
+    expect(before.roles.item_category).toBe(0);
+    expect(before).toEqual(query);
+    await saveCurrent(2, "saved-revision.v1:sha256:" + "d".repeat(64));
+    expect(app.saves.reopens).toHaveLength(0);
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null")).toEqual(before);
   });
 
   it("keeps the latest reviewed source roles after an actual save reply without reopening", async () => {

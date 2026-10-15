@@ -217,7 +217,17 @@ export class Bpic19Session implements PipelineSource {
     for (const entry of this.ancestors) unique.set(actionKey(entry.action), entry.action);
     for (const operation of operations) {
       const action = this.actions.get(operation);
-      if (action && (!reviewedCurrentOnly || this.validity.get(operation) === true)) unique.set(actionKey(action), action);
+      if (action && (!reviewedCurrentOnly || this.validity.get(operation) === true)) {
+        const key = actionKey(action);
+        const latestAtPosition = [...unique.values()].filter(previous =>
+          previous.operation === operation && sameJson(previous.identity, action.identity) &&
+          previous.selection_prefix_length === action.selection_prefix_length).at(-1);
+        // Map.set keeps a retained recipe's first insertion position. A return
+        // to that recipe is a new current review only in this exact context.
+        // An unchanged reread must preserve the frozen declaration order.
+        if (!action.selection_keep && latestAtPosition && actionKey(latestAtPosition) !== key) unique.delete(key);
+        unique.set(key, action);
+      }
     }
     const all=[...unique.values()];
     const baseKey=(action:Bpic19PipelineAction)=>canonical([action.operation,action.definition_id,action.identity,action.query]);

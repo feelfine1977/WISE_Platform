@@ -114,3 +114,20 @@ it("source replacement clears even a retained node's earlier origin",()=>{
   session.basis(workspaceId,at(1),child,base);session.reviewed(profile(at(1)));
   expect(session.declarations().some(action=>action.selection_keep)).toBe(false);
 });
+
+
+it("moves a re-reviewed current recipe after its same-prefix history while preserving the ancestor Keep",()=>{
+  const sourceKeep=keep(at(0));
+  const recipeA={...profile(at(1)),definition_id:"current-recipe-A",selection_prefix_length:1};
+  const recipeB={...profile(at(1)),definition_id:"current-recipe-B",selection_prefix_length:1};
+  const session=new Bpic19Session();
+  expect(session.restore(workspaceId,at(1),[first],[sourceKeep,recipeA,recipeB],base)).toBe(true);
+  session.reviewed(recipeA);
+  const actions=session.savedPipeline()!.actions;
+  expect(actions).toEqual([sourceKeep,recipeB,recipeA]);
+  expect(actions[0]).toEqual(sourceKeep);
+  expect(actions[0].selection_keep?.step_index).toBe(0);
+  // Reading the already-current recipe again must preserve this exact order.
+  session.reviewed(recipeA);
+  expect(session.savedPipeline()!.actions).toEqual(actions);
+});
