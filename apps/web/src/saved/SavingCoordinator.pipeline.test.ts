@@ -15,9 +15,9 @@ async function exportFixture() {
   const investigation = new ImportedInvestigationCoordinator(imports.client, selection.client, scriptedViewClient().client);
   const session = new Bpic19Session();
   const saving = new SavingCoordinator(saves.client, investigation, undefined, undefined, session);
-  const answerReading = async (index: number) => {
+  const answerReading = async (index: number, selectionIndex = index) => {
     imports.populations[index].reply({ ok: true, answer: populationAnswer(imports.populations[index].request) }); await tick();
-    const call = selection.selections[index];
+    const call = selection.selections[selectionIndex];
     call.reply({ ok: true, answer: selectionAnswer(call.request, everyIncident) }); await tick();
     selection.graphs.at(-1)!.reply({ ok: true, answer: graphAnswer(selection.graphs.at(-1)!.request, everyIncident.kept.case_ids) }); await tick();
   };
@@ -73,6 +73,60 @@ it("retains the immutable verified reopen receipt after the save form is idle wi
   expect(app.saving.verifiedExportReceipt()).toEqual(original);
   expect(app.saves.saves).toHaveLength(1);
   expect(app.saves.reopens).toHaveLength(1);
+  app.saving.stop(); app.investigation.stop();
+});
+
+it("retains the new verified receipt while reopening across preparations still shows the previous population", async () => {
+  const app = await exportFixture();
+  const original = structuredClone(app.saving.verifiedExportReceipt());
+  app.investigation.open({ workspaceId, preparationId: earlierPreparationId });
+  await app.answerReading(1);
+  expect(app.saving.verifiedExportReceipt()).toBeNull();
+
+  const request = app.saving.reopen(app.summary, workspaceId);
+  app.saves.reopens[0].reply({ ok: true, answer: app.reopened(0) }); await tick();
+  expect(await request).toBe(true);
+  const pending = app.investigation.getState();
+  expect(pending.replacement?.asked.target.preparationId).toBe(preparationId);
+  expect(pending.population.phase === "ready" && pending.population.answer.identity.preparation_id).toBe(earlierPreparationId);
+  expect(app.saving.verifiedExportReceipt()).toBeNull();
+
+  await app.answerReading(2);
+  app.session.restore(workspaceId, app.selected, [], app.answer.revision.content.bpic19_pipeline!.actions,
+    app.answer.revision.content.base_identity);
+  expect(app.saving.verifiedExportReceipt()).toEqual(original);
+  expect(app.saves.saves).toHaveLength(1);
+  app.saving.stop(); app.investigation.stop();
+});
+
+it.each(["stay", "retry"] as const)("keeps a cross-preparation receipt unavailable on replacement failure, then handles %s", async action => {
+  const app = await exportFixture();
+  const original = structuredClone(app.saving.verifiedExportReceipt());
+  app.investigation.open({ workspaceId, preparationId: earlierPreparationId });
+  await app.answerReading(1);
+  const request = app.saving.reopen(app.summary, workspaceId);
+  app.saves.reopens[0].reply({ ok: true, answer: app.reopened(0) }); await tick();
+  expect(await request).toBe(true);
+  app.imports.populations[2].reply({ ok: false, problem: { kind: "unreachable" } }); await tick();
+  expect(app.investigation.getState().replacement?.phase).toBe("failed");
+  expect(app.saving.verifiedExportReceipt()).toBeNull();
+
+  if (action === "retry") {
+    app.investigation.retryPopulation();
+    expect(app.saving.verifiedExportReceipt()).toBeNull();
+  } else {
+    app.investigation.stay(); await tick();
+    expect(app.investigation.getState().replacement).toBeNull();
+    expect(app.saving.verifiedExportReceipt()).toBeNull();
+    app.investigation.open({ workspaceId, preparationId });
+  }
+  await app.answerReading(3, 2);
+  app.session.restore(workspaceId, app.selected, [], app.answer.revision.content.bpic19_pipeline!.actions,
+    app.answer.revision.content.base_identity);
+  if (action === "stay") app.investigation.markSaved({ investigationId: app.answer.revision.investigation_id,
+    revisionId: app.answer.revision.saved_revision_id, content: app.answer.revision.content });
+  expect(app.saving.verifiedExportReceipt()).toEqual(action === "retry" ? original : null);
+  expect(app.saves.saves).toHaveLength(1);
   app.saving.stop(); app.investigation.stop();
 });
 

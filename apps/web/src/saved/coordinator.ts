@@ -164,7 +164,7 @@ export class SavingCoordinator {
       this.exportReceipt = null;
       return null;
     }
-    if (population.phase === "ready" &&
+    if (state.replacement === null && population.phase === "ready" &&
         (population.answer.workspace_id !== receipt.workspace_id ||
          !sameIdentity(population.answer.identity, receipt.revision.content.base_identity))) {
       this.exportReceipt = null;
