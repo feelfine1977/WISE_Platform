@@ -88,6 +88,7 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   const identity = shown?.answer.identity ?? population?.identity;
   const revision = shown?.revision ?? (state.population.phase === "ready" ? state.population.revision : 0);
   const key = JSON.stringify([population?.workspace_id, identity]);
+  const selectionPath = JSON.stringify(shown?.steps ?? []);
   const preparation = JSON.stringify([population?.workspace_id, identity?.preparation_id]);
   const lineage = useLineageEvidence(population?.workspace_id,population?.identity,revision);
   if (active) activated.current = preparation;
@@ -110,10 +111,15 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   }
 
   useLayoutEffect(() => {
+    // Population identity canonicalizes equivalent predicates; the analyst's
+    // actual path can still append a new step with its own reviewed Keep origin.
+    if (population && identity) session.basis(population.workspace_id, identity, shown?.steps ?? [], population.identity);
+  }, [key, selectionPath, session]);
+
+  useLayoutEffect(() => {
     setProfileKeepProblem(null);
     setProfile(null); setRows([]); setFlowComparison(null);setFlowReturnProblem(null);setIntervalComparison(null);setRecipeComparisons({});flowIntervalSides.current=undefined;
     if (population && identity) {
-      session.basis(population.workspace_id, identity, shown?.steps ?? [], population.identity);
       const action = session.reviewedDeclarations().filter(action => action.operation === "bpic19_flow_comparison" && sameJson(action.identity, identity)).at(-1);
       const recorded = action && retainedFlowComparisonRequest(population.workspace_id, action);
       if (recorded) setFlowComparison({ identity: recorded.identity, query: recorded.query, definitionId: action.definition_id });

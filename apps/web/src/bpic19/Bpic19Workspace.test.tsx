@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Bpic19ProfileAnswer, Bpic19ProfileQuery } from "../generated/bpic19-profile";
 import type { Bpic19PipelineAction, Bpic19PipelineOutput } from "../generated/saving";
+import type { CaseIdIn } from "../generated/selection";
 import type { Bpic19FlowComparisonAnswer, Bpic19FlowComparisonRequest } from "../generated/bpic19-flow-comparison";
 import type { ImportedCaseEvidenceRequest } from "../generated/imports";
 import type { Bpic19ProfileProps } from "./Bpic19Profile";
@@ -26,6 +27,7 @@ import { importContract } from "../data/client";
 
 // Analytical panels are mocked deliberately: these tests exercise the real selection/save/session
 // boundary, preserving declarations and publication validity. Analytics has separate literal tests.
+const keptProfileGroup = vi.hoisted((): { caseIds: [string, ...string[]] } => ({ caseIds: ["A-1"] }));
 const query: Bpic19ProfileQuery = {
   policy_id: "bpic19.all_raw_case_attributes.v1", profile_columns: [],
   roles: { item_category: 0, item_type: 1, goods_receipt: 2, gr_based_iv: 3, purchasing_document: 4, item: 5, source_case: 6 },
@@ -51,7 +53,7 @@ function reviewedAnswer(props: Bpic19ProfileProps): Bpic19ProfileAnswer {
         ...(chosen.source_interpretation ? { source_interpretation: chosen.source_interpretation } : {}) },
       population: { case_count: 2, record_count: 3, document_count: 2, document_unknown_case_count: 0 },
       flows: [{flow_id:"after_gr",label:"Three-way: invoice after goods receipt",category_value:"3-way match, invoice after GR",
-        case_ids:["A-1"],case_count:1,record_count:2,document_count:1,share:.5,example_case_ids:["A-1"]}],
+        case_ids:[...keptProfileGroup.caseIds],case_count:keptProfileGroup.caseIds.length,record_count:keptProfileGroup.caseIds.length === 1 ? 2 : 3,document_count:keptProfileGroup.caseIds.length,share:keptProfileGroup.caseIds.length / 2,example_case_ids:[...keptProfileGroup.caseIds]}],
       unresolved: [], cross_checks: [], attributes: [], flow_item_types: [],
       partition: { classified_case_count: 0, unresolved_case_count: 2, is_disjoint: true, covers_parent: true },
       grain: { mixed_flow_document_count: 0, mixed_flow_document_examples: [], identity_issues: [] },
@@ -76,9 +78,9 @@ vi.mock("./Bpic19Profile", () => ({ Bpic19Profile: function ProfileBoundary(prop
     <button onClick={() => {
       const answer = reviewedAnswer(props);
       if (!answer.profile) throw new Error("Missing reviewed profile");
-      props.onKeep({ kind: "case_id_in", case_ids: ["A-1"], negate: false }, {
+      props.onKeep({ kind: "case_id_in", case_ids: [...keptProfileGroup.caseIds], negate: false }, {
         definition_id: answer.profile.definition_id, definition: answer.profile.definition,
-        source_identity: props.identity, query: answer.query, group: { kind: "flow",flow_id:"after_gr" }, case_ids: ["A-1"],
+        source_identity: props.identity, query: answer.query, group: { kind: "flow",flow_id:"after_gr" }, case_ids: [...keptProfileGroup.caseIds],
       });
     }}>Keep scripted first item</button>
     <button onClick={() => {
@@ -117,7 +119,7 @@ vi.mock("./Bpic19SavedScore", () => ({ Bpic19SavedScore: function NativeDraft(pr
 } }));
 
 const active: { stop(): void }[] = [];
-afterEach(() => { for (const coordinator of active.splice(0)) coordinator.stop(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+afterEach(() => { keptProfileGroup.caseIds = ["A-1"]; for (const coordinator of active.splice(0)) coordinator.stop(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 function fixture() {
   const imports = scriptedImportClient(), selecting = scriptedSelectionClient(), saves = scriptedSavingClient();
   const investigation = new ImportedInvestigationCoordinator(imports.client, selecting.client, scriptedViewClient().client);
@@ -581,6 +583,42 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     expect(screen.getByText("Reviewed purchasing selection recipes")).toBeTruthy();
     await act(async()=>{app.saving.save("Typed complete-item Keep","Exact parent recipe","incidents");await settle();});
     expect(app.saves.saves[0].request.bpic19_pipeline?.actions).toContainEqual(typed[0]);
+  });
+
+  it("retains a typed Keep's actual new step when canonical population identity is unchanged", async () => {
+    keptProfileGroup.caseIds = ["A-1", "B-2"];
+    const app = await opening();
+    const generic: CaseIdIn = { kind: "case_id_in", case_ids: ["B-2", "A-1"], negate: false };
+    await act(async () => { app.investigation.addStep(generic); await settle(); });
+    const full = { kept: everyIncident.kept, removed: everyIncident.removed, unevaluable: everyIncident.unevaluable };
+    await answerSelection(app, 1, { ...everyIncident, population: "a", results: [full] });
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    const before = shownSelection(app.investigation.getState().selection)!.answer.identity;
+    await app.user.click(screen.getByRole("button", { name: "Keep scripted first item" }));
+    expect(app.selecting.selections[2].request.predicates).toEqual([
+      generic, { kind: "case_id_in", case_ids: ["A-1", "B-2"], negate: false },
+    ]);
+    // The service canonicalizes ID order and duplicate semantic predicates for identity,
+    // while the analyst's newly appended path step keeps its explicit position.
+    await answerSelection(app, 2, { ...everyIncident, population: "a", results: [full, full] });
+    expect(shownSelection(app.investigation.getState().selection)!.answer.identity).toEqual(before);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    const kept = app.session.savedPipeline()!.actions.filter(action => action.selection_keep);
+    expect(kept).toHaveLength(1);
+    expect(kept[0]).toMatchObject({ identity: before, selection_prefix_length: 1,
+      selection_keep: { step_index: 1, group: { kind: "flow", flow_id: "after_gr" } } });
+    const reviewed = app.session.savedPipeline();
+    app.rerender(<Bpic19Workspace {...app.props} />);
+    expect(app.session.savedPipeline()).toEqual(reviewed);
+    // Repeating this exact Keep is a real no-op; it cannot create a pending origin.
+    await app.user.click(screen.getByRole("button", { name: "Keep scripted first item" }));
+    expect(app.selecting.selections).toHaveLength(3);
+    expect(app.session.readyForSave()).toBe(true);
+    expect(app.session.savedPipeline()).toEqual(reviewed);
+    await act(async () => { app.investigation.undo(); await settle(); });
+    await answerSelection(app, 3, { ...everyIncident, population: "a", results: [full] });
+    expect(shownSelection(app.investigation.getState().selection)!.answer.identity).toEqual(before);
+    expect(app.session.declarations().some(action => action.selection_keep)).toBe(false);
   });
 
   it("a failed Keep cannot lend its typed origin to later equal-member generic IDs",async()=>{
