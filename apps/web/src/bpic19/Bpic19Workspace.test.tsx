@@ -452,6 +452,43 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
       {definition_id: reviewed.definition_id, identity: chosen.answer.parent_identity, query: reviewed.query}]);
   });
 
+  it("preserves the current recipe after Save when its typed Keep has the same canonical population at an earlier prefix", async () => {
+    keptProfileGroup.caseIds = ["A-1", "B-2"];
+    const app = await opening();
+    const generic: CaseIdIn = { kind: "case_id_in", case_ids: ["B-2", "A-1"], negate: false };
+    await act(async () => { app.investigation.addStep(generic); await settle(); });
+    const full = { kept: everyIncident.kept, removed: everyIncident.removed, unevaluable: everyIncident.unevaluable };
+    await answerSelection(app, 1, { ...everyIncident, population: "a", results: [full] });
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    const beforeKeep = shownSelection(app.investigation.getState().selection)!.answer.identity;
+    await app.user.click(screen.getByRole("button", { name: "Keep scripted first item" }));
+    await answerSelection(app, 2, { ...everyIncident, population: "a", results: [full, full] });
+    expect(shownSelection(app.investigation.getState().selection)!.answer.identity).toEqual(beforeKeep);
+    await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));
+    await app.user.click(screen.getByRole("button", { name: "Review scripted activity counts" }));
+    const typed=app.session.savedPipeline()!.actions.filter(action=>action.selection_keep);
+    expect(typed).toHaveLength(1);
+    expect(typed[0]).toMatchObject({identity:beforeKeep,selection_prefix_length:1,selection_keep:{step_index:1}});
+    async function saveCurrent(index: number, revisionId: string) {
+      await act(async () => { app.saving.save("Same canonical Keep chronology " + index, "Actual SavingCoordinator, scripted service boundary", "incidents"); await settle(); });
+      expect(app.saves.saves).toHaveLength(index + 1);
+      const call=app.saves.saves[index], saved=saveAnswer(call.request,revisionId,index===0);
+      saved.revision.content.bpic19_pipeline=structuredClone(call.request.bpic19_pipeline);
+      await act(async () => { call.reply({ok:true,answer:saved});await settle(); });
+      expect(app.investigation.getState().saved?.revisionId).toBe(revisionId);
+    }
+    await app.user.click(screen.getByRole("button",{name:"Review scripted changed source roles"}));
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null").roles.item_category).toBe(7);
+    await saveCurrent(0,firstRevisionId);
+    await app.user.click(screen.getByRole("button",{name:"Review scripted original source roles"}));
+    const before=JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null");expect(before).toEqual(query);
+    expect(app.session.savedPipeline()!.actions.filter(action=>action.selection_keep)).toEqual(typed);
+    await saveCurrent(1,secondRevisionId);
+    expect(app.saves.reopens).toHaveLength(0);
+    expect(JSON.parse(screen.getByTestId("current-source-query").textContent ?? "null")).toEqual(before);
+    expect(app.session.savedPipeline()!.actions.filter(action=>action.selection_keep)).toEqual(typed);
+  });
+
   it("preserves the re-reviewed original recipe after three actual A to B to A saves", async () => {
     const app = await opening();
     await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));

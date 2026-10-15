@@ -1,6 +1,6 @@
-import {render,screen} from '@testing-library/react';
+import {render,screen,within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {expect,it} from 'vitest';
+import {expect,it,vi} from 'vitest';
 import {Bpic19Admission} from './Bpic19Admission';
 import {Bpic19Session} from './session';
 import {identity,workspaceId} from '../test/imports';
@@ -24,4 +24,32 @@ it('requires an explicit partial admission choice and keeps the source formula o
   expect(fresh.savedPipeline()).toEqual(saved);
   await user.selectOptions(screen.getByLabelText('Replay admission'),'require_all');
   expect(session.readyForSave()).toBe(false);
+});
+
+
+it('preserves separate retained rows for same-population recipes and origins across rerenders',()=>{
+  const parent={...identity,population_id:"population.v1:sha256:"+"1".repeat(64)};
+  const path=[{kind:"contains_activity",activity:"Create",negate:false},{kind:"contains_activity",activity:"Finish",negate:false}];
+  const profile={operation:"bpic19_profile" as const,identity:parent,query:{policy_id:"literal"},definition_id:"same-profile"};
+  const typed={...profile,selection_prefix_length:1,selection_keep:{policy_id:"bpic19.profile_group_keep.v1" as const,step_index:1,group:{kind:"flow" as const,flow_id:"before_gr" as const}}};
+  const current={...profile,selection_prefix_length:2};
+  const session=new Bpic19Session();
+  expect(session.restore(workspaceId,parent,path,[typed,current],identity)).toBe(true);
+  const errors=vi.spyOn(console,"error").mockImplementation(()=>{});
+  try {
+    const props={session,identity:parent,onChange:()=>{}};
+    const view=render(<Bpic19Admission {...props}/>);
+    const list=screen.getByRole("list",{name:"Retained purchasing pipeline",hidden:true});
+    expect(within(list).getAllByRole("listitem",{hidden:true})).toHaveLength(2);
+    session.retain({...current,definition_id:"other-profile",query:{policy_id:"other"}});
+    view.rerender(<Bpic19Admission {...props}/>);
+    expect(within(list).getAllByRole("listitem",{hidden:true})).toHaveLength(3);
+    session.reviewed(current);
+    view.rerender(<Bpic19Admission {...props}/>);
+    const rows=within(list).getAllByRole("listitem",{hidden:true});
+    expect(rows).toHaveLength(3);
+    expect(rows[0].textContent).toContain("same-profile");
+    expect(rows[2].textContent).toContain("same-profile");
+    expect(errors.mock.calls.filter(call=>call.some(value=>String(value).includes("same key")))).toEqual([]);
+  } finally { errors.mockRestore(); }
 });

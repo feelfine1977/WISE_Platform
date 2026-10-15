@@ -231,8 +231,11 @@ export class Bpic19Session implements PipelineSource {
     }
     const all=[...unique.values()];
     const baseKey=(action:Bpic19PipelineAction)=>canonical([action.operation,action.definition_id,action.identity,action.query]);
-    const associated=new Set(all.filter(action=>action.selection_keep).map(baseKey));
-    return all.filter(action=>action.selection_keep || !associated.has(baseKey(action)));
+    const associated=all.filter(action=>action.selection_keep);
+    // Equal membership does not make an ancestor origin the current recipe.
+    // Legacy, source-base null and numeric positions remain distinct.
+    return all.filter(action=>action.selection_keep || !associated.some(typed=>
+      typed.selection_prefix_length===action.selection_prefix_length && baseKey(typed)===baseKey(action)));
   }
 
   savedPipeline(): Bpic19Pipeline | null {

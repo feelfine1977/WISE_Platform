@@ -8,7 +8,8 @@ export function Bpic19Admission({ session, identity, onChange }: { session: Bpic
   return <details className="bpic19-panel">
     <summary>Review retained pipeline and source-method admission</summary>
     <p>Each retained definition names its original population. A required source-method gate must be resolved before a complete replay can be saved.</p>
-    <ol aria-label="Retained purchasing pipeline">{actions.map((action,index)=><li key={`${action.operation}:${action.definition_id}:${action.identity.population_id}`}>
+    <ol aria-label="Retained purchasing pipeline">{actions.map((action,index)=><li key={JSON.stringify([action.operation,action.definition_id,action.identity,
+      action.selection_prefix_length===undefined?"legacy":action.selection_prefix_length,action.selection_keep??null,index])}>
       Step {index+1}: {action.operation.replaceAll('bpic19_','').replaceAll('_',' ')} · {action.definition_id}
       <small>Population {action.identity.population_id}</small>
     </li>)}</ol>
