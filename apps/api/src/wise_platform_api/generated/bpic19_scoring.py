@@ -607,6 +607,64 @@ class Bpic19ReviewRequest(BaseModel):
     review: AnalysisReview
 
 
+class MeasureRoles(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    item_category: conint(ge=0, le=9007199254740991) | None = None
+    item_type: conint(ge=0, le=9007199254740991) | None = None
+    goods_receipt: conint(ge=0, le=9007199254740991) | None = None
+    gr_based_iv: conint(ge=0, le=9007199254740991) | None = None
+    purchasing_document: conint(ge=0, le=9007199254740991) | None = None
+    item: conint(ge=0, le=9007199254740991) | None = None
+    source_case: conint(ge=0, le=9007199254740991) | None = None
+    company: conint(ge=0, le=9007199254740991) | None = None
+    spend_area: conint(ge=0, le=9007199254740991) | None = None
+    resource: conint(ge=0, le=9007199254740991) | None = None
+    net_worth: conint(ge=0, le=9007199254740991) | None = None
+    value: conint(ge=0, le=9007199254740991) | None = None
+    activity: conint(ge=0, le=9007199254740991) | None = None
+
+
+class ActivitySelectorItem(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class IntervalSourceItem(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class IntervalTargetItem(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class MeasureQuery(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.source_witnessed_measures.v1']
+    measure_profile: Literal['paper_v1', 'historical_v1']
+    roles: MeasureRoles | None
+    offset: conint(ge=0, le=9007199254740991)
+    limit: conint(ge=1, le=200)
+    calibration_population: Literal['parent', 'selected'] | None = None
+    activity_selector: list[ActivitySelectorItem] | None = Field(
+        None, max_length=100, min_length=1
+    )
+    interval_source: list[IntervalSourceItem] | None = Field(
+        None, max_length=100, min_length=1
+    )
+    interval_target: list[IntervalTargetItem] | None = Field(
+        None, max_length=100, min_length=1
+    )
+    activity_operator: str | None = None
+    interval_policy: str | None = None
+    value_reducer: str | None = None
+    representation_policy: str | None = None
+    value_unit: constr(min_length=1, max_length=64) | None = None
+    value_band_edges: list[float] | None = Field(None, max_length=50)
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -625,25 +683,6 @@ class NamedPopulation(BaseModel):
     )
     name: constr(min_length=1)
     identity: AnswerIdentity
-
-
-class Bpic19ScoreRequest(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    message_type: Literal['bpic19_score_request']
-    base_identity: AnswerIdentity
-    named_population: NamedPopulation
-    roles: Roles
-    settings: Settings
-    case_offset: conint(ge=0)
-    case_limit: conint(ge=1, le=200)
-    group_offset: conint(ge=0) | None = None
-    group_limit: conint(ge=1, le=200) | None = None
 
 
 class RepresentationScores(BaseModel):
@@ -721,6 +760,37 @@ class Bpic19ScoreAnswer(BaseModel):
         None,
         description='Optional presentation-only exact page positions for declared timing exemplars. Legacy answers may omit this receipt.',
     )
+
+
+class ExposureReview(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    definition_id: constr(
+        pattern=r'^bpic19-measure-definition\.v1:sha256:[a-f0-9]{64}$'
+    )
+    identity: AnswerIdentity
+    query: MeasureQuery
+
+
+class Bpic19ScoreRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    message_type: Literal['bpic19_score_request']
+    base_identity: AnswerIdentity
+    named_population: NamedPopulation
+    roles: Roles
+    settings: Settings
+    case_offset: conint(ge=0)
+    case_limit: conint(ge=1, le=200)
+    group_offset: conint(ge=0) | None = None
+    group_limit: conint(ge=1, le=200) | None = None
+    exposure_review: ExposureReview | None = None
 
 
 class BPIC19ScoringMessage(

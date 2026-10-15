@@ -76,17 +76,27 @@ vi.mock("./Bpic19Profile", () => ({ Bpic19Profile: function ProfileBoundary(prop
     }}>Keep scripted first item</button>
   </section>;
 } }));
-vi.mock("./Bpic19Measures", () => ({ Bpic19Measures: (props: Bpic19MeasuresProps) => <section aria-label="Scripted activity counts">
+vi.mock("./Bpic19Measures", () => ({ Bpic19Measures: (props: Bpic19MeasuresProps) => {
+  const exposure = () => measuresAnswer({ schema_version: 1, message_type: "bpic19_measures_request", request_id: "reviewed-value-fixture",
+    query_revision: props.revision, workspace_id: props.workspaceId, identity: props.identity,
+    query: { policy_id: "bpic19.source_witnessed_measures.v1", measure_profile: "paper_v1", roles: {net_worth: 5, value: 5},
+      offset: 7, limit: 3, value_unit: "EUR", value_reducer: "unique_creation_value", calibration_population: "parent" } });
+  return <section aria-label="Scripted activity counts">
   <button onClick={() => {
     props.onReviewed?.(measuresAnswer({ schema_version: 1, message_type: "bpic19_measures_request", request_id: "count-first-fixture",
       query_revision: props.revision, workspace_id: props.workspaceId, identity: props.identity,
       query: { policy_id: "bpic19.source_witnessed_measures.v1", measure_profile: "paper_v1", roles: {}, offset: 0, limit: 20 } }));
     props.onValidityChange?.(true);
   }}>Review scripted activity counts</button>
-</section> }));
+  <button onClick={() => { props.onReviewed?.(exposure()); props.onValidityChange?.(true); }}>Review scripted exposure</button>
+  <button onClick={() => props.onRetain?.(exposure())}>Retain scripted exposure</button>
+  <button onClick={() => props.onValidityChange?.(false)}>Edit scripted measures</button>
+</section>;
+} }));
 vi.mock("./Bpic19SavedScore", () => ({ Bpic19SavedScore: function NativeDraft(props: Bpic19ScoringProps & {savedRunId?: string}) {
   useEffect(() => { props.onValidityChange?.(false); }, [props.onValidityChange]);
-  return <section aria-label="Scripted current assessment">{props.savedRunId ?? "Unrequested current draft"}</section>;
+  return <section aria-label="Scripted current assessment">{props.savedRunId ?? "Unrequested current draft"}
+    <output data-testid="offered-exposure-reviews">{JSON.stringify(props.exposureReviews ?? [])}</output></section>;
 } }));
 
 const active: { stop(): void }[] = [];
@@ -132,6 +142,55 @@ async function opening() {
 
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("hands off the exact reviewed value recipe and fences dirty current measures without discarding a retained review", async () => {
+    const app = await opening();
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    await app.user.click(screen.getByRole("button", {name: "Evaluate purchasing criteria and priorities"}));
+    const offers = () => JSON.parse(screen.getByTestId("offered-exposure-reviews").textContent ?? "null");
+    expect(offers()).toEqual([]);
+    await app.user.click(screen.getByRole("button", {name: "Review scripted exposure"}));
+    const parent = shownSelection(app.investigation.getState().selection)!.answer.identity;
+    const frozen = offers();
+    expect(frozen).toEqual([{definition_id: "bpic19-measure-definition.v1:sha256:" + "9".repeat(64), identity: parent,
+      query: {policy_id: "bpic19.source_witnessed_measures.v1", measure_profile: "paper_v1", roles: {net_worth: 5, value: 5},
+        offset: 7, limit: 3, value_unit: "EUR", value_reducer: "unique_creation_value", calibration_population: "parent"}}]);
+    await app.user.click(screen.getByRole("button", {name: "Edit scripted measures"}));
+    expect(offers()).toEqual([]);
+    await app.user.click(screen.getByRole("button", {name: "Review scripted exposure"}));
+    await app.user.click(screen.getByRole("button", {name: "Retain scripted exposure"}));
+    await app.user.click(screen.getByRole("button", {name: "Edit scripted measures"}));
+    expect(offers()).toEqual(frozen);
+    expect(app.session.readyForSave()).toBe(false);
+    await app.user.click(screen.getByRole("button", {name: "Keep scripted first item"}));
+    await answerSelection(app, 1, containingOpened);
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    const child = shownSelection(app.investigation.getState().selection)!.answer;
+    expect(child.identity.population_id).not.toBe(parent.population_id);
+    expect(child.parent_identity).toEqual(parent);
+    expect(offers()).toEqual(frozen);
+  });
+
+  it("does not substitute the prepared source identity for an equal-membership frozen selection parent", async () => {
+    const app = await opening();
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    await app.user.click(screen.getByRole("button", {name: "Review scripted exposure"}));
+    await app.user.click(screen.getByRole("button", {name: "Evaluate purchasing criteria and priorities"}));
+    const state = app.investigation.getState();
+    if (state.population.phase !== "ready") throw new Error("Prepared source must be ready");
+    const baseIdentity = state.population.answer.identity;
+    const chosen = shownSelection(state.selection)!;
+    const reviewed = app.session.reviewedDeclarations().find(entry => entry.operation === "bpic19_measures")!;
+    expect(baseIdentity.population_id).not.toBe(chosen.answer.parent_identity.population_id);
+    await act(async () => {
+      expect(app.session.restore(workspaceId, chosen.answer.identity, chosen.steps,
+        [{...reviewed, identity: baseIdentity, selection_prefix_length: null},
+          {...reviewed, selection_prefix_length: 0}], baseIdentity)).toBe(true);
+      app.rerender(<Bpic19Workspace {...app.props} />);
+    });
+    expect(JSON.parse(screen.getByTestId("offered-exposure-reviews").textContent ?? "null")).toEqual([
+      {definition_id: reviewed.definition_id, identity: chosen.answer.parent_identity, query: reviewed.query}]);
+  });
+
   it("exports the same verified machine and readable receipts after unchanged reopen without another revision", async () => {
     const app = await opening();
     await app.user.click(screen.getByRole("button", { name: "Review scripted source" }));

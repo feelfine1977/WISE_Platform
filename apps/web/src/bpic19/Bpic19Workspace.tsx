@@ -15,7 +15,8 @@ import { Bpic19Measures } from "./Bpic19Measures";
 import { Bpic19Cohorts, type Bpic19CohortComparison } from "./Bpic19Cohorts";
 import { Bpic19SavedScore } from "./Bpic19SavedScore";
 import { Bpic19RetainedAssessments } from "./Bpic19RetainedAssessments";
-import type { Bpic19ScoreAnswer } from "./scoring-types";
+import type { Bpic19ScoreAnswer, ExposureReview } from "./scoring-types";
+import { bpic19Contract } from "./scoring-client";
 import { Bpic19Operators, type Bpic19OperatorComparison } from "./Bpic19Operators";
 import { Bpic19Admission } from "./Bpic19Admission";
 import { Bpic19FlowComparison, flowComparisonQuery } from "./Bpic19FlowComparison";
@@ -228,6 +229,13 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   const measuresQuery = queries.current.measures;
   const currentSavedRunId = queries.current.scorePopulationId === identity.population_id ? queries.current.scoreRunId : undefined;
   const currentProfile = profile && JSON.stringify(profile.identity) === JSON.stringify(identity) ? profile : null;
+  const exposureParent = shown?.answer.parent_identity ?? population.identity;
+  const exposureReviews: ExposureReview[] = session.reviewedDeclarations().flatMap(action => {
+    if (action.operation !== "bpic19_measures" ||
+        !sameJson(action.identity, identity) && !sameJson(action.identity, exposureParent)) return [];
+    const review = { definition_id: action.definition_id, identity: action.identity, query: action.query };
+    return bpic19Contract.exposureReview(review) ? [review] : [];
+  });
   const roles: MeasureRoles = { ...currentProfile?.query.roles };
   const headers: Record<string, string> = { company: "case Company", spend_area: "case Spend area text", resource: "event org:resource", value: "event Cumulative net worth (EUR)", net_worth: "event Cumulative net worth (EUR)" };
   for (const [role, name] of Object.entries(headers)) {
@@ -305,6 +313,7 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
         {currentProfile?.profile && <>
           {!scoreEnabled && !currentSavedRunId && <button onClick={() => setScoreEnabled(true)}>Evaluate purchasing criteria and priorities</button>}
           {(scoreEnabled || currentSavedRunId && state.selection.phase === "ready") && <Bpic19SavedScore key={key} revision={revision} savedRunId={currentSavedRunId}
+            exposureReviews={exposureReviews}
             subject={{ workspace_id: population.workspace_id, base_identity: population.identity,
               named_population: { name: "Current reviewed PO items", identity }, roles }}
             onReviewed={reviewedScore} onValidityChange={scoreValid} onInspect={inspect}

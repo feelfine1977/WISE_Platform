@@ -8,6 +8,23 @@ const first = { kind: "case_id_in", case_ids: ["B","C"], negate: false };
 const second = { kind: "case_id_in", case_ids: ["C"], negate: false };
 function action(at: AnswerIdentity, definition="same-definition"): Bpic19PipelineAction { return { operation:"bpic19_cohorts",identity:at,query:{policy_id:"literal"},definition_id:definition }; }
 
+it("offers immutable retained reviews while excluding dirty unretained current answers", () => {
+  const session = new Bpic19Session();
+  session.basis(workspaceId, identity, [], identity);
+  session.reviewed(action(identity, "retained"));
+  session.retain(action(identity, "retained"));
+  session.reviewed(action(identity, "current"));
+  expect(session.reviewedDeclarations().map(entry => entry.definition_id)).toEqual(["retained", "current"]);
+  session.valid("bpic19_cohorts", false);
+  expect(session.reviewedDeclarations().map(entry => entry.definition_id)).toEqual(["retained"]);
+  expect(session.readyForSave()).toBe(false);
+  const offered = session.reviewedDeclarations();
+  offered[0].query.policy_id = "caller edit";
+  expect(session.reviewedDeclarations()[0].query.policy_id).toBe("literal");
+  session.basis(workspaceId, child(1), [first], identity);
+  expect(session.reviewedDeclarations().map(entry => entry.definition_id)).toEqual(["retained"]);
+});
+
 it("keeps only reviewed current definitions and fences dirty or old-population actions", () => {
   const session = new Bpic19Session();
   session.basis(workspaceId, identity);

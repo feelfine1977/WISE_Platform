@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { localBpic19Client, type Bpic19Client, type Bpic19Outcome } from "./scoring-client";
-import type { AnswerIdentity, Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, CaseAssessment, NativeRow, NamedPopulation, Roles, Settings } from "./scoring-types";
+import { bpic19Contract, localBpic19Client, sameExposureReview, type Bpic19Client, type Bpic19Outcome } from "./scoring-client";
+import type { AnswerIdentity, Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, CaseAssessment, NativeRow, NamedPopulation, Roles, Settings, ExposureReview } from "./scoring-types";
 import "./scoring.css";
 import reference from "./scoring-reference.json";
 import { Bpic19Associations } from "./Bpic19Associations";
@@ -33,6 +33,8 @@ export interface Bpic19ScoringProps {
   onValidityChange?: (current: boolean) => void;
   onKeepCases?: (caseIds: string[], label: string) => void;
   readOnly?: boolean;
+  /** Explicit current/retained server-reviewed measure recipes, never transported amounts. */
+  exposureReviews?: readonly ExposureReview[];
 }
 const defaults: Settings = { profile: "paper", criteria_family: "full", view: "Balanced", mode: "flat", gamma: 0,
   group_by: ["company", "spend_area"], min_cases: 1, volume: "cases", exposure_policy: "max_absolute_p95", association_min_support:1 };
@@ -50,6 +52,34 @@ function restoredSettings(answer?: Bpic19ScoreAnswer): Settings {
     volume: stored.volume === "exposure" ? "exposure" : "cases",
     exposure_policy: (["creation_value", "creation_unique_event", "creation_unique_value"].includes(String(answer.report.exposure_calibration?.policy)) ?
       answer.report.exposure_calibration?.policy : "max_absolute_p95") as Settings["exposure_policy"] };
+}
+function frozenExposureReview(answer?: Bpic19ScoreAnswer): ExposureReview | undefined {
+  const stored = answer?.definition?.exposure_review;
+  return bpic19Contract.exposureReview(stored) ? stored : undefined;
+}
+function exposurePolicy(review?: ExposureReview): Settings["exposure_policy"] | null {
+  switch (review?.query.value_reducer) {
+    case "unique_creation_event": return "creation_unique_event";
+    case "unique_creation_value": return "creation_unique_value";
+    case "maximum_absolute_event_value": return "max_absolute_p95";
+    default: return null;
+  }
+}
+function analysisKey(settings: Settings, review?: ExposureReview): string {
+  if (!review) return JSON.stringify(settings); // Preserve old generic-unit frozen snapshots.
+  const {offset: _offset, limit: _limit, ...meaning} = review.query;
+  return JSON.stringify({settings, exposure_review: {...review, query: meaning}});
+}
+function ExposureReceipt({receipt}: {receipt: Record<string, unknown>}) {
+  const reviewed = receipt.unit_provenance === "explicit_raw_measures_definition.v1";
+  return <div aria-label="Exposure provenance"><h3>Exposure and priority units</h3>
+    {reviewed ? <p>Original value field {String(receipt.source_column_name)} (column {number(receipt.source_field)}), reviewed unit {String(receipt.source_unit)}.
+      Reducer {String(receipt.value_reducer)}. Priority unit {String(receipt.priority_unit)}.</p> :
+      <p>This stored run uses generic source value units. No currency or original value-field unit was verified for this native receipt.</p>}
+    {receipt.policy === "max_absolute_p95" && <p>Exposure is dimensionless after normalization by the frozen 95th percentile {number(receipt.cutoff ?? receipt.quantile)}{reviewed ? ` ${String(receipt.source_unit)}` : " generic source units"}. The calibration was not refitted for this member page.</p>}
+    {receipt.missing_policy === "source_compatible_fill_zero" && <p>Historical compatibility fills {number(receipt.missing_case_count)} missing items with zero and uses the recorded denominator {number(receipt.denominator)} (P95 or 1). This policy is retained separately from reviewed refusal.</p>}
+    {reviewed && <p>Reviewed measures {String(receipt.reviewed_measure_definition_id)}. Frozen calibration {String(receipt.calibration_id ?? "Unavailable")}.</p>}
+  </div>;
 }
 function number(value: unknown): string {
   if (value === null || value === undefined) return "Unavailable";
@@ -89,6 +119,13 @@ function Cases({ cases, onInspect, focusedExemplar }: { cases: CaseAssessment[];
   </tr></thead><tbody>{cases.map(item => <CaseRows key={item.case_id} item={item} open={open === item.case_id}
     toggle={() => setOpen(open === item.case_id ? null : item.case_id)} onInspect={onInspect} />)}</tbody></table></div>;
 }
+function valueWitnessRows(witness: Record<string, unknown>): string[] {
+  const rows=witness.row_ids; return Array.isArray(rows) ? rows.filter((row):row is string => typeof row === "string") : [];
+}
+function valueContributions(value: CaseAssessment["value_evidence"]): [string, Record<string, unknown>][] {
+  if (!value) return [];
+  return Object.entries(value).flatMap(([name, witness]) => witness && typeof witness === "object" && !Array.isArray(witness) && "available" in witness ? [[name, witness as Record<string, unknown>]] : []);
+}
 function CaseRows({ item, open, toggle, onInspect }: { item: CaseAssessment; open: boolean; toggle: () => void; onInspect?: Bpic19ScoringProps["onInspect"] }) {
   return <><tr><td><button type="button" className="bpic19-text-button" aria-expanded={open} onClick={toggle}>{item.case_id}</button></td>
     <td>{item.flow ?? "Unknown"}</td><td>{number(item.score)}</td><td>{number(item.coverage)} ({number(item.evaluated_raw_weight)} / {number(item.in_scope_raw_weight)} raw weight)</td>
@@ -102,6 +139,12 @@ function CaseRows({ item, open, toggle, onInspect }: { item: CaseAssessment; ope
             {c.measurement_evidence?.known_matching_lower_bound !== undefined && <small>Known matching lower bound {number(c.measurement_evidence.known_matching_lower_bound)}; exact count unavailable; unknown label records remain in the witness.</small>}
             {onInspect && c.row_ids.length === 0 && Array.isArray(c.measurement_evidence?.unknown_row_ids) && <button type="button" onClick={() => onInspect(item.case_id,c.measurement_evidence!.unknown_row_ids as string[])}>Inspect unknown labels</button>}
             {onInspect && Array.isArray(c.measurement_evidence?.absence_row_ids) && c.measurement_evidence.absence_row_ids.length > 0 && <button type="button" onClick={() => onInspect(item.case_id,c.measurement_evidence!.absence_row_ids as string[])}>Inspect complete-label absence evidence</button>}</td></tr>)}</tbody></table>
+      {valueContributions(item.value_evidence).length > 0 && <table><caption>Original value contributions for {item.case_id}</caption>
+        <thead><tr><th>Value recipe</th><th>Item value</th><th>Raw unit</th><th>Availability</th><th>Source witness</th></tr></thead>
+        <tbody>{valueContributions(item.value_evidence).map(([name,witness]) => <tr key={name}><td>{name.replaceAll("_"," ")}</td>
+          <td>{number(witness.value)}</td><td>{String(witness.unit ?? "Unconfirmed")}</td><td>{witness.available === true ? "Available" : String(witness.reason ?? "Unavailable")}</td>
+          <td>{onInspect && valueWitnessRows(witness).length > 0 ? <button type="button" onClick={() => onInspect(item.case_id,valueWitnessRows(witness))}>Inspect {name.replaceAll("_"," ")} original values</button> : "No contributing source rows recorded"}</td></tr>)}</tbody>
+      </table>}
       {item.historical_artifacts && <details><summary>Historical quarter, paths and replication proxy</summary><p>Quarter {String(item.historical_artifacts.start_quarter ?? "Unavailable")}. Original events divided by distinct parsed timestamps is a replication proxy, not a verified duplicate count. Historical timestamps retain their source range policy.</p><pre>{JSON.stringify(item.historical_artifacts,null,2)}</pre></details>}
       </td></tr>}</>;
 }
@@ -113,12 +156,14 @@ function NativeTable({ caption, rows, columns, onDocument, onMembers }: { captio
     {rows.length === 0 && <p>No eligible groups for these settings.</p>}</div>;
 }
 export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun, onRun, onInspect, onInspectDocument, revision,
-  onReviewed, onValidityChange, onKeepCases, readOnly = false }: Bpic19ScoringProps) {
+  onReviewed, onValidityChange, onKeepCases, readOnly = false, exposureReviews = [] }: Bpic19ScoringProps) {
   const [settings, setSettings] = useState<Settings>(() => restoredSettings(initialRun));
+  const [exposureReview, setExposureReview] = useState<ExposureReview | undefined>(() => frozenExposureReview(initialRun));
   const [answer, setAnswer] = useState<Bpic19ScoreAnswer | null>(initialRun ?? null);
-  const [resultSettings, setResultSettings] = useState<string | null>(initialRun ? JSON.stringify(restoredSettings(initialRun)) : null);
+  const [resultSettings, setResultSettings] = useState<string | null>(initialRun ? analysisKey(restoredSettings(initialRun), frozenExposureReview(initialRun)) : null);
   const [resultSubject, setResultSubject] = useState<string | null>(initialRun &&
-    (!initialRun.definition || sameRoles(initialRun.definition.roles, subject.roles)) ? JSON.stringify({subject, revision}) : null);
+    (!initialRun.definition || sameRoles(initialRun.definition.roles, subject.roles)) &&
+    (initialRun.definition?.exposure_review === undefined || frozenExposureReview(initialRun) !== undefined) ? JSON.stringify({subject, revision}) : null);
   const [caseFilter, setCaseFilter] = useState<Bpic19ReadRequest["case_filter"] | undefined>();
   const [focusedExemplar, setFocusedExemplar] = useState<FocusedExemplar | null>(null);
   const [pendingExemplar, setPendingExemplar] = useState<string | null>(null);
@@ -128,7 +173,11 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
   const generation = useRef(0);
   const callbacks = useRef({ onReviewed, onValidityChange }); callbacks.current = { onReviewed, onValidityChange };
   const subjectKey = JSON.stringify({subject, revision});
-  const settingsKey = JSON.stringify(settings);
+  const settingsKey = analysisKey(settings, exposureReview);
+  const reviewOptions = [...exposureReviews, ...(frozenExposureReview(initialRun) ? [frozenExposureReview(initialRun)!] : [])]
+    .filter((review, index, all) => bpic19Contract.exposureReview(review) && exposurePolicy(review) !== null && all.findIndex(other => sameExposureReview(review, other)) === index);
+  const selectedReviewIndex = reviewOptions.findIndex(review => sameExposureReview(exposureReview, review));
+  const missingExposureReview = settings.volume === "exposure" && (!exposureReview || exposurePolicy(exposureReview) !== settings.exposure_policy || selectedReviewIndex < 0);
   const requestScope = JSON.stringify([subjectKey, settingsKey]);
   const activeScope = useRef(requestScope); activeScope.current = requestScope;
   useEffect(() => {
@@ -156,7 +205,7 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
     let outcome: Bpic19Outcome;
     try { outcome = paging ? await client.read({ ...envelope, message_type: "bpic19_read_request", run_id: answer.run_id, ...(filter ? {case_filter: filter} : {}) }, abort.signal) :
       await client.score({ ...envelope, message_type: "bpic19_score_request", base_identity: subject.base_identity,
-        named_population: subject.named_population, roles: subject.roles, settings } satisfies Bpic19ScoreRequest, abort.signal); }
+        named_population: subject.named_population, roles: subject.roles, settings, ...(exposureReview ? {exposure_review: exposureReview} : {}) } satisfies Bpic19ScoreRequest, abort.signal); }
     catch { outcome = { ok: false, message: "The assessment service could not be reached. Retry when it is available." }; }
     if (mine !== generation.current || abort.signal.aborted || activeScope.current !== requestScope) return;
     setPending(false); setPendingExemplar(null);
@@ -177,6 +226,9 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       next.report.norm_fingerprint !== answer.report.norm_fingerprint || next.report.assessment_log_fingerprint !== answer.report.assessment_log_fingerprint ||
       !sameJson(next.report.settings, answer.report.settings))) {
       setProblem("The native exemplar read changed the frozen assessment settings or reference. Its verdicts were not opened."); return;
+    }
+    if (!sameExposureReview(paging ? frozenExposureReview(answer ?? undefined) : exposureReview, next.definition?.exposure_review)) {
+      setProblem("The answer uses another reviewed value recipe, unit or population. It was not retained."); return;
     }
     setAnswer(next); setResultSettings(settingsKey); setResultSubject(subjectKey); setCaseFilter(paging ? filter ?? undefined : undefined);
     if (exemplarCaseId) setFocusedExemplar({ caseId: exemplarCaseId, requestId: envelope.request_id });
@@ -218,7 +270,13 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
       <label>Association minimum support<input type="number" min="1" step="1" value={settings.association_min_support ?? 1} onChange={e => update({association_min_support:Number(e.target.value)})} /></label>
       <label>Priority multiplier<select value={settings.volume} onChange={e => update({ volume: e.target.value as Settings["volume"] })}><option value="cases">Scored item count</option><option value="exposure">Reviewed exposure</option></select></label>
       {settings.volume === "exposure" && <label>Exposure recipe<select value={settings.exposure_policy} onChange={e => update({ exposure_policy: e.target.value as Settings["exposure_policy"] })}><option value="max_absolute_p95">Maximum absolute value · frozen parent 95th percentile</option><option value="creation_unique_event">Unique creation event value</option><option value="creation_unique_value">Unique finite creation value</option></select></label>}
-      <button type="submit" disabled={pending || !Number.isFinite(settings.gamma) || settings.gamma < 0 || !Number.isInteger(settings.min_cases) || settings.min_cases < 1 || !Number.isInteger(settings.association_min_support ?? 1) || (settings.association_min_support ?? 1) < 1}>{pending ? "Analysing…" : "Run analysis"}</button>
+      {settings.volume === "exposure" && <label>Reviewed value definition<select value={selectedReviewIndex < 0 ? "" : String(selectedReviewIndex)} onChange={event => {
+        const selected = event.target.value === "" ? undefined : reviewOptions[Number(event.target.value)];
+        setExposureReview(selected); const policy = exposurePolicy(selected); if (policy) update({exposure_policy: policy});
+      }}><option value="">Choose an explicitly reviewed measures recipe</option>{reviewOptions.map((review,index) => <option key={review.definition_id+":"+index} value={String(index)}>
+        {review.query.value_reducer} · {review.query.value_unit ?? "source_units"} · {review.definition_id}</option>)}</select></label>}
+      {missingExposureReview && <p>Review the original value column, unit and reducer in Source measures, retain that review, then choose it here. Item-count priorities remain available.</p>}
+      <button type="submit" disabled={pending || missingExposureReview || !Number.isFinite(settings.gamma) || settings.gamma < 0 || !Number.isInteger(settings.min_cases) || settings.min_cases < 1 || !Number.isInteger(settings.association_min_support ?? 1) || (settings.association_min_support ?? 1) < 1}>{pending ? "Analysing…" : "Run analysis"}</button>
       {pending && <button type="button" onClick={() => { generation.current += 1; controller.current?.abort(); setPending(false); setResultSettings(null); setPendingExemplar(null); setFocusedExemplar(null); }}>Cancel</button>}
     </form>}
     {!readOnly && <details className="bpic19-definition-preview"><summary>Review criterion definitions and stakeholder weights before running</summary>
@@ -238,6 +296,7 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
     {report && <>
       <p role="status">{number(report.scored_case_count)} of {number(report.population_case_count)} items scored · mean score {number(report.mean_score)} · mean evidence coverage {number(report.mean_coverage)} · {report.settings.view}, {report.settings.mode}, gamma {number(report.settings.gamma)}.</p>
       {!report.profile_complete && <p role="alert">Partial profile: {report.admitted_criterion_count} of {report.requested_criterion_count} criteria admitted. Full numeric parity is unavailable.</p>}
+      {report.settings.volume === "exposure" && report.exposure_calibration && <ExposureReceipt receipt={report.exposure_calibration} />}
       <NativeTable caption={`Business group priorities · ${report.groups.length} shown of ${report.group_page.total}`} rows={report.groups} columns={[...report.settings.group_by, "n_cases", "mean_score", "volume", "PI", "stable_PI", "global_mean"]}
         onMembers={row => void run(0, {group_values: Object.fromEntries(report.settings.group_by.map(k => [k, typeof row[k] === "string" ? row[k] : null]))})} />
       <NativeTable caption="Signed layer drivers · native penalty deltas and raw/adjusted priority terms, negative offsets retained" rows={report.layer_drivers} columns={[...report.settings.group_by, ...Object.keys(report.layer_drivers[0] ?? {}).filter(c => c.endsWith("__delta") || c.endsWith("__signed_PI") || c.endsWith("__signed_stable_PI"))]} />

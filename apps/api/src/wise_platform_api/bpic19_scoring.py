@@ -22,6 +22,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, Response
 from wise_platform_analytics.bpic19_measures import (
     build_historical_features, build_paper_features, derive_case_measures,
+    checked_measure_roles, add_historical_measures, historical_exposure_calibration,
 )
 from wise_platform_analytics import bpic19_measures as measures_module
 from wise_platform_analytics.preparation import content_identity
@@ -29,6 +30,7 @@ from wise_platform_analytics.preparation import content_identity
 from . import method, bpic19_method
 from . import bpic19_associations
 from .boundary import read_object
+from .bpic19_measures import Bpic19Measures
 from .bpic19_method import evaluate_features, paper_norm_document, representation_key, _historical_binding
 from .generated import bpic19_scoring as generated
 from .imports import Imports
@@ -96,6 +98,14 @@ def _read(body: bytes, model) -> dict:
     result = read_strictly(given, model, _ALTERNATIVES)
     if isinstance(result, list):
         raise _Refused(Problem("invalid_request", result[0].reason, result[0].field))
+    if "exposure_review" in given and given["exposure_review"] is None:
+        raise _Refused(Problem("invalid_request", "Omit an absent exposure review; a supplied review must contain its closed definition, identity and query.", "exposure_review"))
+    reference = given.get("exposure_review")
+    if reference is not None:
+        for name in ("calibration_population", "activity_selector", "interval_source", "interval_target", "activity_operator",
+                     "interval_policy", "value_reducer", "representation_policy", "value_unit", "value_band_edges"):
+            if name in reference["query"] and reference["query"][name] is None:
+                raise _Refused(Problem("invalid_request", "Omit an absent optional value-recipe field; explicit null cannot select a default policy.", "exposure_review.query." + name))
     for name in ("base_identity",):
         failures = version_failures(given, ((name, "implementation_version"), ("named_population", "identity", "implementation_version")))
         if failures: raise _Refused(Problem("invalid_request", failures[0].reason, failures[0].field))
@@ -202,12 +212,16 @@ class Bpic19Scoring:
         self.max_retained_records = max_retained_records
         self._lock = RLock()
 
-    def _admit_workload(self, prepared, population, settings: dict) -> dict:
+    def _admit_workload(self, prepared, population, settings: dict, *, exposure_fit_ids=None, exposure_review_ids=None, exposure_review_fit_ids=None) -> dict:
         selected = tuple(population.case_ids)
         fits_parent = settings["profile"] == "historical" or (
             settings["profile"] == "paper" and settings["volume"] == "exposure"
             and settings["exposure_policy"] == "max_absolute_p95")
-        members = tuple(sorted(set(selected) | (set(population.parent_ids) if fits_parent else set())))
+        fit_ids = tuple(population.parent_ids) if fits_parent else ()
+        if exposure_fit_ids is not None and (settings["profile"] == "historical" or
+            settings["volume"] == "exposure" and settings["exposure_policy"] == "max_absolute_p95"):
+            fit_ids = tuple(exposure_fit_ids)
+        members = tuple(sorted(set(selected) | set(fit_ids) | set(exposure_review_ids or ()) | set(exposure_review_fit_ids or ())))
         record_count = sum(len(prepared.histories[case_id]) for case_id in members)
         if len(members) > self.max_cases or record_count > self.max_retained_records:
             raise _Refused(Problem("unsupported_policy",
@@ -220,9 +234,63 @@ class Bpic19Scoring:
                 "admitted_case_count": len(members), "admitted_record_count": record_count,
                 "selected_case_count": len(selected),
                 "selected_record_count": sum(len(prepared.histories[case_id]) for case_id in selected),
-                "includes_calibration_parent": fits_parent,
+                "includes_calibration_parent": (bool(fit_ids) and fit_ids == tuple(population.parent_ids)) or
+                    (bool(exposure_review_fit_ids) and tuple(exposure_review_fit_ids) == tuple(population.parent_ids)),
+                **({"verified_exposure_fit_case_count": len(fit_ids), "verified_exposure_fit_membership_sha256": _digest(_canonical(list(fit_ids)))} if exposure_fit_ids is not None else {}),
+                **({"verified_exposure_review_case_count": len(exposure_review_ids), "verified_exposure_review_membership_sha256": _digest(_canonical(list(exposure_review_ids)))} if exposure_review_ids is not None else {}),
+                **({"verified_exposure_review_fit_case_count": len(exposure_review_fit_ids), "verified_exposure_review_fit_membership_sha256": _digest(_canonical(list(exposure_review_fit_ids)))} if exposure_review_fit_ids is not None else {}),
                 "membership_sha256": _digest(_canonical(list(members))),
                 "interpretation": "server-local fresh-computation admission policy; not a measured capacity or runtime SLA"}
+
+    def _exposure_reference_scope(self, given: dict, prepared, population):
+        """Resolve exact declared identities without deriving any raw feature."""
+        reference = given.get("exposure_review")
+        if reference is None:
+            return None
+        if reference["identity"] not in (population.identity, population.parent_identity):
+            raise _Refused(Problem("identity_mismatch", "The reviewed value recipe must name this exact population or its exact frozen parent; equal membership is not an identity substitute.", "exposure_review.identity"))
+        reference_prepared, reference_population = _checked(resolve_population(self.imports, {
+            "workspace_id": given["workspace_id"], "identity": reference["identity"]}))
+        if reference_prepared.identity_dict() != prepared.identity_dict():
+            raise _Refused(Problem("identity_mismatch", "The reviewed values belong to another source preparation.", "exposure_review.identity"))
+        selected_fit = reference["query"].get("calibration_population") == "selected"
+        fit_ids = reference_population.case_ids if selected_fit else reference_population.parent_ids
+        fit_identity = reference_population.identity if selected_fit else reference_population.parent_identity
+        if fit_identity not in (population.identity, population.parent_identity):
+            raise _Refused(Problem("identity_mismatch", "The value calibration must use the exact current population or its exact frozen parent.", "exposure_review.query.calibration_population"))
+        frozen = {**reference, "query": {**reference["query"], "offset": 0, "limit": 1}}
+        return frozen, tuple(fit_ids), fit_identity, tuple(reference_population.case_ids)
+
+    def _verify_exposure_reference(self, given: dict, prepared, scoped):
+        frozen, fit_ids, fit_identity = scoped[:3]
+        reply = Bpic19Measures(self.imports).measures(_canonical({
+            "schema_version": 1, "message_type": "bpic19_measures_request", "request_id": given["request_id"],
+            "query_revision": given["query_revision"], "workspace_id": given["workspace_id"],
+            "identity": frozen["identity"], "query": frozen["query"]}))
+        if reply.status != 200:
+            raise _Refused(Problem(reply.body["code"], reply.body["message"], "exposure_review.query"))
+        if reply.body["definition_id"] != frozen["definition_id"]:
+            raise _Refused(Problem("identity_mismatch", "The reviewed measures definition does not match this source, value field, unit or reducer.", "exposure_review.definition_id"))
+        definition = reply.body["definition"]
+        source_roles = checked_measure_roles(prepared, given["roles"])
+        source_field = definition["roles"]["net_worth"]
+        if source_field is None or source_field != source_roles["net_worth"]:
+            raise _Refused(Problem("identity_mismatch", "The native value role and reviewed original value field must be the same column.", "exposure_review.query.roles"))
+        reducers = {"creation_value": "unique_creation_value", "creation_unique_value": "unique_creation_value",
+                    "creation_unique_event": "unique_creation_event", "max_absolute_p95": "maximum_absolute_event_value"}
+        if given["settings"]["volume"] == "exposure" and definition["value_reducer"] != reducers[given["settings"]["exposure_policy"]]:
+            raise _Refused(Problem("unsupported_policy", "The reviewed value reducer differs from the selected native exposure recipe.", "exposure_review.query.value_reducer"))
+        historical = given["settings"]["profile"] == "historical" and given["settings"]["exposure_policy"] == "max_absolute_p95"
+        provenance = {"reviewed_measure_definition_id": frozen["definition_id"], "reviewed_population_identity": frozen["identity"],
+                      "source_field": source_field, "source_column_name": prepared.columns[source_field],
+                      "source_unit": definition["value_unit"], "value_reducer": definition["value_reducer"],
+                      "unit_provenance": "explicit_raw_measures_definition.v1", "source_id": prepared.source_id,
+                      "preparation_id": prepared.preparation_id, "fit_population_identity": fit_identity,
+                      "fit_membership_sha256": _digest(_canonical(list(fit_ids))),
+                      "source_record_basis": "complete_original_item_histories",
+                      "source_value_missing_policy": "source_compatible_fill_zero" if historical else "unavailable",
+                      "source_value_negative_policy": "absolute_before_max" if definition["value_reducer"] == "maximum_absolute_event_value" else "native_exposure_nonnegative_required"}
+        return definition, provenance
 
     def score(self, body: bytes) -> Bpic19ScoringReply:
         return self._answer(body, generated.Bpic19ScoreRequest, self._score)
@@ -280,12 +348,15 @@ class Bpic19Scoring:
             norm = paper_norm_document(settings["mode"], settings["criteria_family"]) if settings["profile"] == "paper" else _historical_binding()[0]
             if settings["view"] not in {view["name"] for view in norm["views"]}:
                 raise _Refused(Problem("unsupported_policy", "That stakeholder view belongs to another source profile.", "settings.view"))
+            scoped_exposure = self._exposure_reference_scope(given, prepared, population)
             definition = {"schema_version": 1, "kind": _SNAPSHOT_VERSION, "roles": given["roles"],
                           "settings": settings, "norm": norm, "base_identity": given["base_identity"],
                           "method_artifact": method.METHOD_ARTIFACT, "review_state": "reviewed_by_explicit_run_action",
                           "binding_artifacts": {"native_binding_sha256": _digest(Path(bpic19_method.__file__).read_bytes()),
                                                 "raw_measurement_sha256": _digest(Path(measures_module.__file__).read_bytes()),
                                                 "snapshot_service_sha256": _digest(Path(__file__).read_bytes())}}
+            if scoped_exposure is not None:
+                definition["exposure_review"] = scoped_exposure[0]
             definition_id = content_identity("definition-version", definition)
             definition["definition_version_id"] = definition_id
             identity = {"format": _SNAPSHOT_VERSION, "definition_version_id": definition_id,
@@ -297,10 +368,19 @@ class Bpic19Scoring:
             run_id = content_identity("score-run", identity)
             stored = _checked(workspace.run(run_id))
             if stored is None:
-                admission = self._admit_workload(prepared, population, settings)
+                admission = self._admit_workload(prepared, population, settings, exposure_fit_ids=scoped_exposure[1] if scoped_exposure is not None else None,
+                    exposure_review_ids=scoped_exposure[3] if scoped_exposure is not None else None,
+                    exposure_review_fit_ids=scoped_exposure[1] if scoped_exposure is not None and scoped_exposure[0]["query"]["measure_profile"] == "historical_v1" else None)
+                value_definition, provenance = self._verify_exposure_reference(given, prepared, scoped_exposure) if scoped_exposure is not None else (None, None)
                 version = _checked(workspace.store_definition(definition))
                 if settings["profile"] == "historical":
-                    features = build_historical_features(prepared, population.case_ids, given["roles"], calibration_case_ids=population.parent_ids)
+                    if value_definition is None:
+                        features = build_historical_features(prepared, population.case_ids, given["roles"], calibration_case_ids=population.parent_ids)
+                    else:
+                        chosen = checked_measure_roles(prepared, given["roles"])
+                        fitted = historical_exposure_calibration(prepared, scoped_exposure[1], chosen, value_definition["value_unit"])
+                        features = [add_historical_measures(prepared, derive_case_measures(prepared, case_id, chosen, value_definition), chosen, fitted)
+                                    for case_id in population.case_ids]
                     for feature in features:
                         records = prepared.histories[feature["case_id"]]
                         timed = [record for record in records if record.time_value is not None]
@@ -318,24 +398,40 @@ class Bpic19Scoring:
                             "timestamp_policy": "historical parsed minimum without a range filter; no deduplication",
                         }
                 else:
-                    features = build_paper_features(prepared, population.case_ids, given["roles"])
+                    features = build_paper_features(prepared, population.case_ids, given["roles"]) if value_definition is None else [
+                        derive_case_measures(prepared, case_id, given["roles"], value_definition) for case_id in population.case_ids]
                 if settings["exposure_policy"] == "creation_unique_event":
                     for feature in features:
                         measure = derive_case_measures(prepared, feature["case_id"], given["roles"], {"value_reducer": "unique_creation_event"})
                         feature["measures"]["creation_unique_event"] = measure["measures"]["selected_value"]
+                # Only the exact reviewed source unit can qualify native value witnesses.
+                # Existing raw helper defaults never imply currency for a native run.
+                for feature in features:
+                    for measure_name in ("creation_value", "creation_unique_event", "exposure"):
+                        witness = feature["measures"].get(measure_name)
+                        if witness is not None:
+                            witness["unit"] = value_definition["value_unit"] if value_definition is not None else "source_value_units"
                 calibration = None
                 if settings["volume"] == "exposure" and settings["exposure_policy"] == "max_absolute_p95" and settings["profile"] == "paper":
-                    parent = features if population.case_ids == population.parent_ids else build_paper_features(prepared, population.parent_ids, given["roles"])
+                    fit_ids = scoped_exposure[1] if scoped_exposure is not None else population.parent_ids
+                    fit_identity = scoped_exposure[2] if scoped_exposure is not None else population.parent_identity
+                    parent = features if population.case_ids == fit_ids else (build_paper_features(prepared, fit_ids, given["roles"]) if value_definition is None else [
+                        derive_case_measures(prepared, case_id, given["roles"], value_definition) for case_id in fit_ids])
                     measures = [f["measures"]["exposure"] for f in parent]
                     if any(not m.get("available") or m.get("value") is None for m in measures):
                         raise _Refused(Problem("exposure_unavailable", "The parent calibration has an unavailable maximum-absolute value. It cannot become zero."))
                     cutoff = float(method._pandas().Series([m["value"] for m in measures]).quantile(.95, interpolation="linear"))
-                    calibration = {"policy": "max_absolute_p95", "population_case_ids": list(population.parent_ids),
-                                   "population_identity": population.parent_identity, "quantile": .95,
-                                   "quantile_method": "linear", "cutoff": cutoff, "source_field": given["roles"].get("net_worth", given["roles"].get("value")),
+                    calibration = {"policy": "max_absolute_p95", "population_case_ids": list(fit_ids),
+                                   "population_identity": fit_identity, "quantile": .95,
+                                   "quantile_method": "linear", "quantile_position": (len(measures)-1)*.95, "cutoff": cutoff, "source_field": checked_measure_roles(prepared, given["roles"])["net_worth"],
                                    "raw_measure": "maximum_absolute_event_value", "missing_policy": "refuse",
                                    "value_row_ids": [row for m in measures for row in m.get("row_ids", [])]}
-                assessment = evaluate_features(features, **settings, exposure_calibration=calibration)
+                assessment = evaluate_features(features, **settings, exposure_calibration=calibration, exposure_provenance=provenance)
+                if settings["volume"] == "exposure" and provenance is None:
+                    source_field = checked_measure_roles(prepared, given["roles"])["net_worth"]
+                    assessment.exposure_receipt.update(source_field=source_field,
+                        source_column_name=prepared.columns[source_field] if source_field is not None else None,
+                        source_record_basis="complete_original_item_histories", unit_provenance="unconfirmed_generic_source_value_units")
                 report = _complete_report(assessment, len(features))
                 report["case_page"]["cases"] = []
                 stored_case_ids = list(assessment.features)

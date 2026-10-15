@@ -768,6 +768,7 @@ def evaluate_features(
     volume: str = "cases",
     exposure_policy: str = "max_absolute_p95",
     exposure_calibration: Mapping | None = None,
+    exposure_provenance: Mapping | None = None,
     association_min_support: int = 1,
 ) -> Bpic19Assessment:
     """Bind reviewed raw features to native Method; no application score formula."""
@@ -851,9 +852,15 @@ def evaluate_features(
                     "Historical exposure has an unavailable item; it cannot become zero without the declared compatibility recipe."
                 )
             receipt["policy"], receipt["unit"] = exposure_policy, "normalized_exposure"
+            if exposure_provenance is not None:
+                receipt["measurement_calibration_id"] = receipt["calibration_id"]
+                receipt.update(_checked_exposure_provenance(exposure_provenance, exposure_policy))
+                receipt["priority_unit"] = "normalized exposure-score units"
+                receipt.pop("calibration_id")
+                receipt["calibration_id"] = hashlib.sha256(json.dumps(receipt, sort_keys=True, allow_nan=False).encode()).hexdigest()
             log = log.with_case_attributes({"reviewed_exposure": pandas.Series(amounts, dtype=float)})
         else:
-            log, receipt = _reviewed_exposure(log, features, exposure_policy, exposure_calibration)
+            log, receipt = _reviewed_exposure(log, features, exposure_policy, exposure_calibration, exposure_provenance)
     result = wise.score(log, norm, mode=mode, derive=False)
     result.check_decomposition()
     if result.calibrations:
@@ -873,8 +880,35 @@ def evaluate_features(
     )
 
 
+def _checked_exposure_provenance(provenance: Mapping, exposure_policy: str) -> dict:
+    """Metadata supplied only after the server verifies a measures reference.
+
+    No amounts or new measurement/scoring instruction can be transported here.
+    The native Method still consumes the already derived amount column.
+    """
+    required = {"reviewed_measure_definition_id", "reviewed_population_identity", "source_field",
+                "source_column_name", "source_unit", "value_reducer", "unit_provenance"}
+    optional = {"source_id", "preparation_id", "fit_population_identity", "fit_membership_sha256", "source_record_basis", "source_value_missing_policy", "source_value_negative_policy"}
+    if (not isinstance(provenance, Mapping) or not required.issubset(provenance)
+            or set(provenance) - required - optional):
+        raise ValueError("Reviewed exposure provenance needs its finite source/unit/definition fields, never client amounts.")
+    if (type(provenance["source_field"]) is not int or provenance["source_field"] < 0
+            or not isinstance(provenance["source_unit"], str) or not provenance["source_unit"].strip()
+            or len(provenance["source_unit"]) > 64 or not isinstance(provenance["source_column_name"], str)
+            or not isinstance(provenance["reviewed_measure_definition_id"], str)
+            or not isinstance(provenance["reviewed_population_identity"], Mapping)
+            or provenance["unit_provenance"] != "explicit_raw_measures_definition.v1"):
+        raise ValueError("Reviewed exposure provenance has an unavailable source field, declared unit or definition.")
+    reducer = {"creation_value": "unique_creation_value", "creation_unique_value": "unique_creation_value",
+               "creation_unique_event": "unique_creation_event", "max_absolute_p95": "maximum_absolute_event_value"}[exposure_policy]
+    if provenance["value_reducer"] != reducer:
+        raise ValueError("The reviewed value reducer differs from the chosen native exposure recipe.")
+    return dict(provenance)
+
+
 def _reviewed_exposure(
-    log: Any, features: Sequence[dict], exposure_policy: str, exposure_calibration: Mapping | None
+    log: Any, features: Sequence[dict], exposure_policy: str, exposure_calibration: Mapping | None,
+    exposure_provenance: Mapping | None = None,
 ) -> tuple[Any, dict]:
     pandas = method._pandas()
     measure = ("creation_unique_event" if exposure_policy == "creation_unique_event" else
@@ -913,6 +947,10 @@ def _reviewed_exposure(
     receipt["reducer"] = "maximum_absolute_event_value" if exposure_policy == "max_absolute_p95" else measure
     receipt["missing_policy"], receipt["negative_policy"] = "refuse", "refuse_negative_derived_exposure"
     receipt["raw_negative_policy"] = "preserve_then_absolute" if exposure_policy == "max_absolute_p95" else "refuse_negative_creation"
+    if exposure_provenance is not None:
+        receipt.update(_checked_exposure_provenance(exposure_provenance, exposure_policy))
+        receipt["unit"] = "normalized_exposure" if exposure_policy == "max_absolute_p95" else receipt["source_unit"]
+        receipt["priority_unit"] = "normalized exposure-score units" if exposure_policy == "max_absolute_p95" else receipt["source_unit"] + "-score units"
     receipt.pop("calibration_id", None)
     receipt["calibration_id"] = hashlib.sha256(
         json.dumps(receipt, sort_keys=True, allow_nan=False).encode()

@@ -67,6 +67,7 @@ export interface Bpic19ScoreRequest {
   case_limit: number;
   group_offset?: number;
   group_limit?: number;
+  exposure_review?: ExposureReview;
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -111,6 +112,46 @@ export interface Settings {
   exposure_policy: "creation_value" | "creation_unique_value" | "creation_unique_event" | "max_absolute_p95";
   criteria_family: "completion" | "completion_timing" | "completion_rework_effort" | "full";
   association_min_support?: number;
+}
+/**
+ * An exact server-verified raw-measures recipe reference; contains no trusted client amounts. Its identity is the named population or exact frozen parent.
+ */
+export interface ExposureReview {
+  definition_id: string;
+  identity: AnswerIdentity;
+  query: MeasureQuery;
+}
+export interface MeasureQuery {
+  policy_id: "bpic19.source_witnessed_measures.v1";
+  measure_profile: "paper_v1" | "historical_v1";
+  roles: MeasureRoles | null;
+  offset: number;
+  limit: number;
+  calibration_population?: "parent" | "selected";
+  activity_selector?: string[];
+  interval_source?: string[];
+  interval_target?: string[];
+  activity_operator?: string;
+  interval_policy?: string;
+  value_reducer?: string;
+  representation_policy?: string;
+  value_unit?: string;
+  value_band_edges?: number[];
+}
+export interface MeasureRoles {
+  item_category?: number | null;
+  item_type?: number | null;
+  goods_receipt?: number | null;
+  gr_based_iv?: number | null;
+  purchasing_document?: number | null;
+  item?: number | null;
+  source_case?: number | null;
+  company?: number | null;
+  spend_area?: number | null;
+  resource?: number | null;
+  net_worth?: number | null;
+  value?: number | null;
+  activity?: number | null;
 }
 export interface Bpic19ReadRequest {
   schema_version: 1;

@@ -87,6 +87,8 @@ export class Bpic19Session implements PipelineSource {
   }
 
   declarations(): Bpic19PipelineAction[] { return structuredClone(this.orderedActions()); }
+  /** Immutable retained recipes plus current answers whose displayed query is still reviewed. */
+  reviewedDeclarations(): Bpic19PipelineAction[] { return structuredClone(this.orderedActions(true)); }
   claims():Bpic19LiteratureClaim[]{return structuredClone(this.literatureClaims);}
   setClaims(claims:readonly Bpic19LiteratureClaim[]):void{this.literatureClaims=structuredClone([...claims]);this.literatureDraftCurrent=true;}
   validClaims(current:boolean):boolean{const changed=this.literatureDraftCurrent!==current;this.literatureDraftCurrent=current;return changed;}
@@ -148,11 +150,12 @@ export class Bpic19Session implements PipelineSource {
     return [...this.validity.values()].every(Boolean);
   }
 
-  private orderedActions(): Bpic19PipelineAction[] {
+  private orderedActions(reviewedCurrentOnly = false): Bpic19PipelineAction[] {
     const unique = new Map<string, Bpic19PipelineAction>();
     for (const entry of this.ancestors) unique.set(actionKey(entry.action), entry.action);
     for (const operation of operations) {
-      const action = this.actions.get(operation); if (action) unique.set(actionKey(action), action);
+      const action = this.actions.get(operation);
+      if (action && (!reviewedCurrentOnly || this.validity.get(operation) === true)) unique.set(actionKey(action), action);
     }
     return [...unique.values()];
   }

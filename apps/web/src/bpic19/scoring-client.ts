@@ -1,6 +1,7 @@
 import Ajv2020 from "ajv/dist/2020.js";
 import schema from "../../../../contracts/bpic19-scoring.schema.json";
-import type { Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, Bpic19Refusal, Bpic19ExportRequest, Bpic19AssociationRequest, AssociationQuery, Bpic19ReviewRequest, AnalysisReview } from "./scoring-types";
+import type { Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreRequest, Bpic19Refusal, Bpic19ExportRequest, Bpic19AssociationRequest, AssociationQuery, Bpic19ReviewRequest, AnalysisReview, ExposureReview } from "./scoring-types";
+import { sameJson } from "../data/coordinator";
 
 export type Bpic19Outcome = { ok: true; answer: Bpic19ScoreAnswer } | { ok: false; message: string };
 export interface Bpic19Client {
@@ -13,8 +14,10 @@ export interface Bpic19Client {
 const ajv = new Ajv2020({ allErrors: true, strictTypes: false, allowUnionTypes: true });
 ajv.addSchema(schema);
 const answerCheck = ajv.getSchema<Bpic19ScoreAnswer>(`${schema.$id}#/$defs/Bpic19ScoreAnswer`)!;
+const exposureReviewCheck = ajv.getSchema<ExposureReview>(`${schema.$id}#/$defs/ExposureReview`)!;
 const refusalCheck = ajv.getSchema<Bpic19Refusal>(`${schema.$id}#/$defs/Bpic19Refusal`)!;
 function isAnswer(value: unknown): value is Bpic19ScoreAnswer { return answerCheck(value) === true; }
+function isExposureReview(value: unknown): value is ExposureReview { return exposureReviewCheck(value) === true; }
 function isRefusal(value: unknown): value is Bpic19Refusal { return refusalCheck(value) === true; }
 export const bpic19Contract = {
   request: ajv.getSchema<Bpic19ScoreRequest>(`${schema.$id}#/$defs/Bpic19ScoreRequest`)!,
@@ -24,8 +27,17 @@ export const bpic19Contract = {
   associationQuery: ajv.getSchema<AssociationQuery>(`${schema.$id}#/$defs/AssociationQuery`)!,
   review: ajv.getSchema<Bpic19ReviewRequest>(`${schema.$id}#/$defs/Bpic19ReviewRequest`)!,
   interpretation: ajv.getSchema<AnalysisReview>(`${schema.$id}#/$defs/AnalysisReview`)!,
+  exposureReview: isExposureReview,
   answer: isAnswer,
 };
+/** Paging is presentation; every other reviewed value-recipe field is meaning. */
+export function sameExposureReview(left: ExposureReview | undefined, right: unknown): boolean {
+  if (left === undefined) return right === undefined;
+  if (!bpic19Contract.exposureReview(right)) return false;
+  const { offset: _leftOffset, limit: _leftLimit, ...leftMeaning } = left.query;
+  const { offset: _rightOffset, limit: _rightLimit, ...rightMeaning } = right.query;
+  return left.definition_id === right.definition_id && sameJson(left.identity, right.identity) && sameJson(leftMeaning, rightMeaning);
+}
 async function post(route: string, request: Bpic19ScoreRequest | Bpic19ReadRequest | Bpic19AssociationRequest | Bpic19ReviewRequest, signal: AbortSignal): Promise<Bpic19Outcome> {
   const check = request.message_type === "bpic19_score_request" ? bpic19Contract.request : request.message_type === "bpic19_association_request" ? bpic19Contract.associate : request.message_type === "bpic19_review_request" ? bpic19Contract.review : bpic19Contract.read;
   if (check(request) !== true) return { ok: false, message: "The request does not match the BPIC19 analysis contract." };
@@ -66,6 +78,8 @@ async function post(route: string, request: Bpic19ScoreRequest | Bpic19ReadReque
     if (!roles || typeof roles !== "object" || Array.isArray(roles) || Object.entries(request.roles).some(([k,v]) => (roles as Record<string, unknown>)[k] !== v))
       return { ok: false, message: "The service returned another source-role definition." };
   }
+  if (request.message_type === "bpic19_score_request" && !sameExposureReview(request.exposure_review, payload.definition?.exposure_review))
+    return { ok: false, message: "The service returned another reviewed exposure definition, unit or population." };
   return { ok: true, answer: payload };
 }
 export const localBpic19Client: Bpic19Client = {
