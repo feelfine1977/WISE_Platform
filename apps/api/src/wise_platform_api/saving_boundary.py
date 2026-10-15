@@ -148,6 +148,8 @@ def parse_saving_body(
     if isinstance(message, str):
         return saving_refusal(operation, "invalid_request", message)
     echo = import_echo(message)
+    if "bpic19_prepared_assessments" in message and message["bpic19_prepared_assessments"] is None:
+        return saving_refusal(operation, "invalid_request", "Omit absent prepared references; an explicit null cannot retain an assessment.", echo=echo, field="bpic19_prepared_assessments")
     version = message.get("schema_version")
     if type(version) is int and version != SCHEMA_VERSION:
         return saving_refusal(

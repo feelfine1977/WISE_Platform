@@ -1200,6 +1200,15 @@
               "type": "null"
             }
           ]
+        },
+        "bpic19_prepared_assessments": {
+          "type": "array",
+          "maxItems": 4,
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Bpic19PreparedAssessmentReference"
+          },
+          "description": "Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items."
         }
       },
       "required": [
@@ -1444,6 +1453,15 @@
               "type": "null"
             }
           ]
+        },
+        "bpic19_prepared_assessments": {
+          "type": "array",
+          "maxItems": 4,
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Bpic19PreparedAssessmentReference"
+          },
+          "description": "Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items."
         }
       },
       "required": [
@@ -1522,6 +1540,9 @@
         },
         "bpic19_outputs": {
           "$ref": "#/$defs/Bpic19PipelineManifest"
+        },
+        "bpic19_prepared_outputs": {
+          "$ref": "#/$defs/Bpic19PreparedAssessmentManifest"
         }
       },
       "required": [
@@ -1683,6 +1704,9 @@
         },
         "bpic19_outputs": {
           "$ref": "#/$defs/Bpic19PipelineManifest"
+        },
+        "bpic19_prepared_outputs": {
+          "$ref": "#/$defs/Bpic19PreparedAssessmentManifest"
         }
       },
       "required": [
@@ -3058,6 +3082,88 @@
         "policy_id",
         "step_index",
         "group"
+      ]
+    },
+    "PreparedInputId": {
+      "type": "string",
+      "pattern": "^bpic19-prepared-input\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparedDefinitionId": {
+      "type": "string",
+      "pattern": "^bpic19-prepared-definition\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparedRunId": {
+      "type": "string",
+      "pattern": "^score-run\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "Bpic19PreparedAssessmentReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basis_kind": {
+          "const": "declared_prepared_attributes"
+        },
+        "input_id": {
+          "$ref": "#/$defs/PreparedInputId"
+        },
+        "definition_id": {
+          "$ref": "#/$defs/PreparedDefinitionId"
+        },
+        "run_id": {
+          "$ref": "#/$defs/PreparedRunId"
+        },
+        "view": {
+          "enum": [
+            "Finance",
+            "Logistics",
+            "Compliance",
+            "Automation"
+          ]
+        },
+        "output_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "basis_kind",
+        "input_id",
+        "definition_id",
+        "run_id",
+        "view",
+        "output_sha256"
+      ]
+    },
+    "Bpic19PreparedAssessmentManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basis_kind": {
+          "const": "declared_prepared_attributes"
+        },
+        "input_id": {
+          "$ref": "#/$defs/PreparedInputId"
+        },
+        "assessment_item_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "maxItems": 1000
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19PreparedAssessmentReference"
+          },
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "basis_kind",
+        "input_id",
+        "assessment_item_ids",
+        "references"
       ]
     }
   }

@@ -79,6 +79,9 @@ export type Bpic19ProfileKeepGroup =
   | GrainIssueKeepGroup
   | SourceInclusionKeepGroup
   | AttributeValueKeepGroup;
+export type PreparedInputId = string;
+export type PreparedDefinitionId = string;
+export type PreparedRunId = string;
 export type SavingRefusal = SavingRefusal1;
 
 export interface SaveInvestigationRequest2 {
@@ -100,6 +103,22 @@ export interface SaveInvestigationRequest2 {
   score_run_ref?: ScoreRunReference | null;
   presentation_state?: PresentationRecovery | null;
   bpic19_pipeline?: Bpic19Pipeline | null;
+  /**
+   * Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.
+   *
+   * @minItems 1
+   * @maxItems 4
+   */
+  bpic19_prepared_assessments?:
+    | [Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference
+      ];
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -444,6 +463,14 @@ export interface Bpic19LiteratureClaim {
   claim_level: "reported_not_rerun";
   compared_run_id: string | null;
 }
+export interface Bpic19PreparedAssessmentReference {
+  basis_kind: "declared_prepared_attributes";
+  input_id: PreparedInputId;
+  definition_id: PreparedDefinitionId;
+  run_id: PreparedRunId;
+  view: "Finance" | "Logistics" | "Compliance" | "Automation";
+  output_sha256: string;
+}
 export interface SaveInvestigationAnswer {
   schema_version: 1;
   message_type: "save_investigation_answer";
@@ -455,6 +482,7 @@ export interface SaveInvestigationAnswer {
   semantic_change: boolean;
   recovery: RecoveryAnswer;
   bpic19_outputs?: Bpic19PipelineManifest;
+  bpic19_prepared_outputs?: Bpic19PreparedAssessmentManifest;
 }
 export interface SavedRevision {
   investigation_id: InvestigationId;
@@ -473,6 +501,22 @@ export interface SavedInvestigationContent {
   bookmarks: EvidenceBookmark[];
   score_run_ref: ScoreRunReference | null;
   bpic19_pipeline?: Bpic19Pipeline | null;
+  /**
+   * Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.
+   *
+   * @minItems 1
+   * @maxItems 4
+   */
+  bpic19_prepared_assessments?:
+    | [Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference
+      ];
 }
 export interface RecoveryAnswer {
   presentation_state: PresentationRecovery | null;
@@ -530,6 +574,28 @@ export interface Bpic19PipelineOmission {
   gate_reason: string;
   identity: AnswerIdentity;
 }
+export interface Bpic19PreparedAssessmentManifest {
+  basis_kind: "declared_prepared_attributes";
+  input_id: PreparedInputId;
+  /**
+   * @maxItems 1000
+   */
+  assessment_item_ids: CaseId[];
+  /**
+   * @maxItems 4
+   */
+  references:
+    | []
+    | [Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference
+      ];
+}
 export interface ListSavedRequest {
   schema_version: 1;
   message_type: "list_saved_request";
@@ -576,6 +642,7 @@ export interface ReopenInvestigationAnswer {
   restored_comparison_id: ComparisonId | null;
   recovery: RecoveryAnswer;
   bpic19_outputs?: Bpic19PipelineManifest;
+  bpic19_prepared_outputs?: Bpic19PreparedAssessmentManifest;
 }
 export interface RestoredSelection {
   identity: AnswerIdentity;

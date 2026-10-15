@@ -42,6 +42,7 @@ from wise_platform_analytics.version import IMPLEMENTATION_VERSION
 from . import __version__
 from .boundary import SCHEMA_VERSION
 from .bpic19_pipeline import replay_pipeline
+from .bpic19_prepared_runs import retained_prepared_manifest
 from .comparisons import compared, keep_comparison
 from .generated.saving import (
     ListSavedAnswer,
@@ -179,6 +180,8 @@ class Saving:
                 if isinstance(prior, Problem): return _problem(SAVE, prior, given)
                 integrity = _retained_pipeline_integrity(prior)
                 if integrity is not None: return _problem(SAVE, integrity, given)
+        prepared_manifest = retained_prepared_manifest(workspace, given.get("bpic19_prepared_assessments"))
+        if isinstance(prepared_manifest, Problem): return _problem(SAVE, prepared_manifest, given)
         reference = given.get("score_run_ref")
         unreferable = _score_reference_problem(workspace, reference, given["base_identity"])
         if unreferable is not None:
@@ -197,6 +200,8 @@ class Saving:
         }
         if given.get("bpic19_pipeline") is not None:
             content["bpic19_pipeline"] = given["bpic19_pipeline"]
+        if given.get("bpic19_prepared_assessments") is not None:
+            content["bpic19_prepared_assessments"] = given["bpic19_prepared_assessments"]
         question = self._question(workspace, content, None)
         if isinstance(question, Problem):
             return _problem(SAVE, question, given)
@@ -213,7 +218,8 @@ class Saving:
                 "analytics_version": IMPLEMENTATION_VERSION,
                 "source": dict(question.source),
                 "preparation": dict(question.preparation.descriptor),
-                "results": {**_results(question), **({"bpic19_pipeline": pipeline} if pipeline is not None else {})},
+                "results": {**_results(question), **({"bpic19_pipeline": pipeline} if pipeline is not None else {}),
+                            **({"bpic19_prepared_assessments": prepared_manifest} if prepared_manifest is not None else {})},
                 "presentation_state": presentation,
             },
         )
@@ -242,6 +248,7 @@ class Saving:
                 "semantic_change": published.semantic_change,
                 "recovery": {"presentation_state": presentation, "warnings": []},
                 **({"bpic19_outputs": pipeline} if pipeline is not None else {}),
+                **({"bpic19_prepared_outputs": prepared_manifest} if prepared_manifest is not None else {}),
             },
         )
 
@@ -288,6 +295,10 @@ class Saving:
             )
         integrity = _retained_pipeline_integrity(revision)
         if integrity is not None: return _problem(REOPEN, integrity, given)
+        prepared_manifest = retained_prepared_manifest(workspace, revision.content.get("bpic19_prepared_assessments"))
+        if isinstance(prepared_manifest, Problem): return _problem(REOPEN, prepared_manifest, given)
+        if revision.results.get("bpic19_prepared_assessments") != prepared_manifest:
+            return _problem(REOPEN, Problem("checksum_mismatch", "The saved prepared manifest differs from its immutable references. Nothing was scored again.", "saved_revision_id"), given)
         unreferable = _score_reference_problem(
             workspace, revision.content.get("score_run_ref"), revision.content["base_identity"]
         )
@@ -322,6 +333,7 @@ class Saving:
             | {
                 "revision": revision.revision(),
                 **({"bpic19_outputs": pipeline} if pipeline is not None else {}),
+                **({"bpic19_prepared_outputs": prepared_manifest} if prepared_manifest is not None else {}),
                 "restored_selection": {
                     "identity": selected["identity"],
                     "parent_identity": question.parent.identity_dict(),
