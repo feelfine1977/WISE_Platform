@@ -21,6 +21,8 @@
 .bpic19-measure-case dd { margin: 0; overflow-wrap: anywhere; }
 .bpic19-measure-case h4 { margin: var(--space-4) 0 var(--space-2); }
 .bpic19-measures pre { overflow: auto; max-height: var(--size-floating-max-height); }
+.bpic19-prepared-input { width: 100%; max-width: 100%; }
+.bpic19-prepared-native { max-height: var(--size-floating-max-height); overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 .bpic19-measures [data-stale="true"] { opacity: var(--opacity-disabled); }
 .bpic19-measure-unavailable { color: var(--color-ink-muted); }
 .bpic19-measures code { white-space: pre-wrap; overflow-wrap: anywhere; }

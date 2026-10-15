@@ -206,7 +206,7 @@ function PreparedBridgeSession({session,client,context,isActive}:{session:Prepar
   return <section className="bpic19-panel" aria-label="Prepared arithmetic workflow">
     <h2>Declared prepared arithmetic</h2>
     <p>Assess explicitly declared measurements independently of original event histories. Raw selection changes do not select assessment items or establish raw-source equivalence.</p>
-    <label>Declared measurement JSON<textarea aria-label="Declared measurement JSON" rows={8} style={{width:"100%",maxWidth:"100%"}} value={text} onChange={event=>{changed();setInitialDraft(null);setText(event.target.value);}}/></label>
+    <label>Declared measurement JSON<textarea className="bpic19-prepared-input" aria-label="Declared measurement JSON" rows={8} value={text} onChange={event=>{changed();setInitialDraft(null);setText(event.target.value);}}/></label>
     <p>Supply an object containing rows and optional presentation_order. Every item declares an identity, assessment reference, flow and all 29 measurement cells, with units, availability and declared provenance. Criterion labels are supplied by the service after Review.</p>
     <button type="button" disabled={!state.available||state.pending} onClick={open}>Open declared JSON draft</button>
     <button type="button" disabled={state.pending} onClick={()=>session.discard()}>Discard declared assessment changes</button>
@@ -228,7 +228,7 @@ function PreparedBridgeSession({session,client,context,isActive}:{session:Prepar
     {shown&&<p>Method {shown.page.definition.method_artifact.distribution} {shown.page.definition.method_artifact.version} · {shown.page.definition.method_artifact.qualification}. {shown.page.definition.method_artifact.eligible_release?"Eligible released artifact":"Packed unreleased Method artifact; eligible release remains unqualified."}</p>}
     {shown&&<details><summary>Exact native definition, scope, deviations and weights</summary>
       <p>Score, coverage and layer contributions are supplied separately per assessment item. Partial-not-qualified coverage remains unavailable; it is never replaced by zero or an inferred fraction.</p>
-      <pre tabIndex={0} aria-label="Exact supplied prepared native result" style={{maxHeight:"32rem",overflow:"auto",whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{JSON.stringify({reference:shown.page.reference,definition:shown.page.definition,cases:shown.cases},null,2)}</pre>
+      <pre className="bpic19-prepared-native" tabIndex={0} aria-label="Exact supplied prepared native result">{JSON.stringify({reference:shown.page.reference,definition:shown.page.definition,cases:shown.cases},null,2)}</pre>
     </details>}
   </section>;
 }
