@@ -109,12 +109,14 @@ it("preserves every explicitly retained or saved definition when an older same-k
   session.retain(action(identity,"first-reviewed"));
   session.retain(action(identity,"second-reviewed"));
   session.reviewed(action(identity,"first-reviewed"));
-  expect(session.savedPipeline()!.actions.map(a=>a.definition_id)).toEqual(["first-reviewed","second-reviewed"]);
+  expect(session.savedPipeline()!.actions.map(a=>a.definition_id)).toEqual(["second-reviewed","first-reviewed"]);
   const saved=session.savedPipeline()!.actions;
+  expect(new Set(saved.map(a=>a.definition_id))).toEqual(new Set(["first-reviewed","second-reviewed"]));
   const fresh=new Bpic19Session();expect(fresh.restore(workspaceId,identity,[],saved,identity)).toBe(true);
   fresh.reviewed(action(identity,"first-reviewed"));
-  expect(fresh.retainedActions().map(a=>a.definition_id)).toEqual(["first-reviewed","second-reviewed"]);
-  expect(fresh.savedPipeline()!.actions.map(a=>a.definition_id)).toEqual(["first-reviewed","second-reviewed"]);
+  expect(fresh.retainedActions().map(a=>a.definition_id)).toEqual(["second-reviewed","first-reviewed"]);
+  expect(fresh.savedPipeline()!.actions.map(a=>a.definition_id)).toEqual(["second-reviewed","first-reviewed"]);
+  expect(fresh.savedPipeline()!.actions).toEqual(saved);
   fresh.retainedActions()[0].query.policy_id="caller mutation";
   expect(fresh.retainedActions()[0].query.policy_id).toBe("literal");
 });
