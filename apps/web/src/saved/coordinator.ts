@@ -193,7 +193,21 @@ export class SavingCoordinator {
       if (!metadataRecord(settings) || typeof settings.view !== "string" || !["flat", "layer_balanced"].includes(String(settings.mode)) || typeof settings.gamma !== "number" || !Number.isFinite(settings.gamma) || typeof report.profile_id !== "string") continue;
       const profile = report.profile_id.startsWith("bpic19.notebook") ? "Historical notebook" : report.profile_id.startsWith("bpic19.paper") ? "WISE paper" : null;
       if (profile === null) continue;
-      labels[output.run_id] = `${profile} · ${settings.view} · ${settings.mode === "flat" ? "flat" : "layer balanced"} · gamma ${settings.gamma}`;
+      let multiplier = "Multiplier not retained";
+      if (settings.volume === "cases") multiplier = "Scored item count";
+      else if (settings.volume === "exposure") {
+        const calibration = metadataRecord(report.exposure_calibration) ? report.exposure_calibration : null;
+        const definition = metadataRecord(output.definition) ? output.definition : null;
+        const frozenSettings = metadataRecord(definition?.settings) ? definition.settings : null;
+        const policy = frozenSettings?.exposure_policy ?? calibration?.policy ?? settings.exposure_policy;
+        const recipes: Readonly<Record<string, string>> = {creation_value: "creation value", creation_unique_value: "unique finite creation value",
+          creation_unique_event: "unique creation event value", max_absolute_p95: "maximum absolute value · frozen P95"};
+        const recipe = typeof policy === "string" ? recipes[policy] ?? "Unsupported stored recipe" : "Recipe not retained";
+        const unit = calibration?.unit_provenance === "explicit_raw_measures_definition.v1" && typeof calibration.source_unit === "string" && calibration.source_unit.trim()
+          ? `reviewed source unit ${calibration.source_unit.trim()}` : "generic source units";
+        multiplier = `Exposure · ${recipe} · ${unit}`;
+      }
+      labels[output.run_id] = `${profile} · ${settings.view} · ${settings.mode === "flat" ? "flat" : "layer balanced"} · gamma ${settings.gamma} · ${multiplier}`;
     }
     this.nativeLabels = { revisionId, labels };
   }

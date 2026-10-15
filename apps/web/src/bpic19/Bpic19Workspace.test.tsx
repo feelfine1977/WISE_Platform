@@ -12,7 +12,7 @@ import { CompareCoordinator } from "../compare/coordinator";
 import { ImportedInvestigationCoordinator, shownSelection } from "../imported/coordinator";
 import { SavingCoordinator } from "../saved/coordinator";
 import { scriptedComparisonClient } from "../test/comparisons";
-import { earlierPreparationId, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
+import { earlierPreparationId, evidenceAnswer, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import { firstRevisionId, reopenAnswer, saveAnswer, savedContent, savedSummary, scriptedSavingClient } from "../test/saving";
 import { containingOpened, everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer, type Figures } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
@@ -142,6 +142,50 @@ async function opening() {
 
 
 describe("purchasing workspace coherence across real coordinator changes", () => {
+  it("keeps reviewed analysis and open original cells while widening, collapsing and returning from evidence", async () => {
+    const app = await opening();
+    await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
+    await app.user.click(screen.getByRole("button", {name: "Review scripted activity counts"}));
+    const frozen = structuredClone(app.session.savedPipeline());
+    const sourcePanel = screen.getByRole("region", {name: "Scripted source profile"});
+    const main = sourcePanel.closest(".bpic19-main");
+    if (!(main instanceof HTMLElement)) throw new Error("The analytical panels need their retained main column");
+    await act(async () => { app.investigation.openCase("A-1"); await settle(); });
+    const call = app.imports.evidence[0];
+    await act(async () => { call.reply({ok: true, answer: evidenceAnswer(call.request)}); await settle(); });
+    const cells = screen.getAllByText("Original cells", {exact: true})[0];
+    const details = cells.closest("details");
+    if (!(details instanceof HTMLDetailsElement)) throw new Error("Original cells must be an operable disclosure");
+    await app.user.click(cells);
+    expect(details.open).toBe(true);
+    const fullWidth = screen.getByRole("button", {name: "Full width"});
+    await app.user.click(fullWidth);
+    expect(fullWidth.getAttribute("aria-pressed")).toBe("true");
+    expect(document.activeElement).toBe(fullWidth);
+    expect(main.hidden).toBe(true);
+    expect(sourcePanel.isConnected).toBe(true);
+    expect(details.isConnected && details.open).toBe(true);
+    expect(app.session.savedPipeline()).toEqual(frozen);
+    expect(app.session.readyForSave()).toBe(true);
+    await app.user.click(screen.getByRole("button", {name: "Collapse"}));
+    expect(main.hidden).toBe(false);
+    expect(screen.getByRole("button", {name: "Expand"}).getAttribute("aria-expanded")).toBe("false");
+    await app.user.click(screen.getByRole("button", {name: "Expand"}));
+    expect(screen.getByRole("button", {name: "Full width"}).getAttribute("aria-pressed")).toBe("false");
+    expect(details.isConnected && details.open).toBe(true);
+    await app.user.click(screen.getByRole("button", {name: "Full width"}));
+    await app.user.click(screen.getByRole("button", {name: "Return to incidents"}));
+    expect(main.hidden).toBe(false);
+    expect(screen.getByRole("region", {name: "Scripted source profile"})).toBe(sourcePanel);
+    expect(app.investigation.getState().inspected.phase).toBe("closed");
+    expect(app.session.savedPipeline()).toEqual(frozen);
+    expect(app.session.readyForSave()).toBe(true);
+    expect(app.imports.evidence).toHaveLength(1);
+    expect(app.imports.populations).toHaveLength(1);
+    expect(app.selecting.selections).toHaveLength(1);
+    expect(app.saves.saves).toHaveLength(0);
+  });
+
   it("hands off the exact reviewed value recipe and fences dirty current measures without discarding a retained review", async () => {
     const app = await opening();
     await app.user.click(screen.getByRole("button", {name: "Review scripted source"}));
