@@ -98,6 +98,14 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
     if (!answer || !profile || actionsPaused) return;
     void load({ ...answer.query, attribute_view: { column_index: column, offset, limit: 12, select_value: selectValue, value } });
   }
+  function inspectIssue(caseId: string, state: string) {
+    if (!profile || actionsPaused) return;
+    const fields = state === "conflicting_document_or_item" ? [profile.definition.roles.purchasing_document, profile.definition.roles.item] : [];
+    const rows = profile.attributes.filter(attribute => fields.includes(attribute.column_index))
+      .flatMap(attribute => attribute.conflicting_witnesses?.find(witness => witness.case_id === caseId)?.rows ?? []);
+    if (rows.length) onInspect(caseId, [...new Set(rows.map(row => row.row_id))]);
+    else onInspect(caseId);
+  }
   const cells = profile?.flow_item_types.filter(cell => cell.flow_id === flow) ?? [];
   const cellName = (cell: Bpic19TypeCell) => cell.item_type_state === "invariant" ? cell.item_type_value ?? "not recorded" : stateName(cell.item_type_state);
   function compare() {
@@ -142,6 +150,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
     </details>}
     {profile && <div className="bpic19-answers" data-stale={actionsPaused ? "true" : undefined}>
       <p className="bpic19-population"><strong>{number.format(profile.population.case_count)} PO items</strong> · {number.format(profile.population.record_count)} original records · {number.format(profile.population.document_count)} purchasing documents</p>
+      <p>Items without a verified purchasing document: {number.format(profile.population.document_unknown_case_count)}. They remain in item and record totals, outside known-document supports.</p>
       {profile.definition.category_lineage && <div className="bpic19-quality">
         <h3>Verified Item Category correspondence</h3>
         <p>Origin field: <code>{profile.definition.category_lineage.origin_column_index}: {profile.definition.category_lineage.origin_column_name}</code></p>
@@ -167,7 +176,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
       <p>Document memberships can overlap: {number.format(profile.grain.mixed_flow_document_count)} documents contain items in several flows. Their row counts must not be added as distinct documents.</p>
       <details><summary>Document siblings outside the reviewed parent</summary><p>Current profile totals include only the reviewed parent. Siblings elsewhere in the original source are separate scope evidence and never enter those totals.</p>{profile.grain.outside_parent_siblings ? <><p>Outside this parent, the same verified documents contain {number.format(profile.grain.outside_parent_siblings.case_count)} other items / {number.format(profile.grain.outside_parent_siblings.record_count)} original records / {number.format(profile.grain.outside_parent_siblings.document_count)} documents.</p><p>Outside-scope item examples: {profile.grain.outside_parent_siblings.example_case_ids.join(", ") || "none"}.</p><p>{number.format(profile.grain.possible_sibling_conflict_case_ids?.length ?? 0)} outside items have changing document cells that mention these documents; they are not asserted as verified siblings.</p></> : <button type="button" disabled={actionsPaused} onClick={() => { if (answer) void load({...answer.query,include_document_siblings:true}); }}>Review outside-parent document siblings</button>}</details>
       <div className="bpic19-quality"><h3>Unresolved categories and cross-checks</h3>
-        {[...profile.unresolved, ...profile.cross_checks, ...profile.grain.identity_issues].map((group, index) => <p key={`${index}-${group.state}`}><strong>{stateName(group.state)}</strong>: {number.format(group.case_count)} items{group.case_count > 0 && <> <button disabled={actionsPaused} type="button" onClick={() => onInspect(group.example_case_ids[0])}>Inspect {stateName(group.state)}</button></>}</p>)}
+        {[...profile.unresolved, ...profile.cross_checks, ...profile.grain.identity_issues].map((group, index) => <p key={`${index}-${group.state}`}><strong>{stateName(group.state)}</strong>: {number.format(group.case_count)} items{group.case_count > 0 && <> <button disabled={actionsPaused} type="button" onClick={() => inspectIssue(group.example_case_ids[0], group.state)}>Inspect {stateName(group.state)}</button></>}</p>)}
         <p>Partition: {profile.partition.is_disjoint && profile.partition.covers_parent ? "each parent item appears exactly once among the four flows and unresolved categories" : "the partition is incomplete; review the source"}.</p>
         {profile.grain.mixed_flow_document_examples.map(doc => <details key={doc.document}><summary>Mixed-flow document {doc.document}</summary><p>{doc.flow_ids.map(stateName).join(", ")}</p>{doc.case_ids.map(id => <button key={id} type="button" disabled={actionsPaused} onClick={() => onInspect(id)}>Inspect item {id}</button>)}</details>)}
       </div>
