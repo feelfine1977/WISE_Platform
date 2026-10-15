@@ -88,10 +88,18 @@ describe("optional recorded-rule Method admission (synthetic HTTP boundary, no n
   it.each(["draft", "source", "workspace", "population", "cancel"].flatMap(change => ["success", "error", "refusal"].map(delivery => ({ change, delivery }))))("fences a delivered old $delivery after $change while keeping the current descriptive answer usable", async ({ change, delivery }) => {
     let resolve: ((value: Bpic19OperatorOutcome) => void) | undefined;
     let reject: ((reason: Error) => void) | undefined;
-    const client: Bpic19OperatorClient = { operators: vi.fn(request => request.intent === "normative_admission" ? new Promise<Bpic19OperatorOutcome>((done, fail) => { resolve = done; reject = fail; }) : Promise.resolve(answering(request))) };
+    let currentRequest: Bpic19OperatorRequest | undefined;
+    let resolveCurrent: ((value: Bpic19OperatorOutcome) => void) | undefined;
+    let descriptiveRequests = 0;
+    const client: Bpic19OperatorClient = { operators: vi.fn(request => {
+      if (request.intent === "normative_admission") return new Promise<Bpic19OperatorOutcome>((done, fail) => { resolve = done; reject = fail; });
+      if (++descriptiveRequests === 1) return Promise.resolve(answering(request));
+      currentRequest = request;
+      return new Promise<Bpic19OperatorOutcome>(done => { resolveCurrent = done; });
+    }) };
     const query: OperatorQuery = { policy_id: "bpic19.declared_operators.v1", roles: operatorRoles, recipe: operatorRecipe("rule"), offset: 0, limit: 20 };
     const { user, props, rerender } = setup(client, query);
-    await waitFor(() => expect(props.onReviewed).toHaveBeenCalledTimes(1));
+    await waitFor(() => { expect(props.onReviewed).toHaveBeenCalledTimes(1); expect(props.onValidityChange).toHaveBeenLastCalledWith(true); });
     await user.click(screen.getByRole("button", { name: "Check normative Method availability" }));
     const pending = vi.mocked(client.operators).mock.calls.at(-1)!;
     expect(pending[0].intent).toBe("normative_admission");
@@ -110,7 +118,21 @@ describe("optional recorded-rule Method admission (synthetic HTTP boundary, no n
       const identity = { ...operatorIdentity, [change === "source" ? "source_id" : "population_id"]: `${change === "source" ? "source" : "population"}.v1:sha256:${"f".repeat(64)}` };
       rerender(<Bpic19Operators {...props} identity={identity} />);
     }
-    await waitFor(() => expect(props.onReviewed).toHaveBeenCalledTimes(change === "cancel" ? 1 : 2));
+    if (change !== "cancel") {
+      await waitFor(() => expect(currentRequest).toBeDefined());
+      expect(props.onReviewed).toHaveBeenCalledTimes(1);
+      expect(props.onValidityChange).toHaveBeenLastCalledWith(false);
+      await act(async () => { resolveCurrent!(answering(currentRequest!)); });
+    }
+    // onReviewed precedes the current answer's passive validity effect. Settle
+    // that publication before measuring what the obsolete Method reply changes.
+    const reviewedCount = change === "cancel" ? 1 : 2;
+    await waitFor(() => {
+      expect(props.onReviewed).toHaveBeenCalledTimes(reviewedCount);
+      expect(props.onValidityChange).toHaveBeenLastCalledWith(true);
+      expect(screen.getByRole("button", { name: "Download reviewed operator receipt" }).hasAttribute("disabled")).toBe(false);
+    });
+    expect(descriptiveRequests).toBe(reviewedCount);
     expect(pending[1].aborted).toBe(true);
     const reviewed = props.onReviewed.mock.calls.at(-1)![0];
     const validityCount = props.onValidityChange.mock.calls.length;
@@ -128,6 +150,8 @@ describe("optional recorded-rule Method admission (synthetic HTTP boundary, no n
     expect(props.onValidityChange.mock.calls).toHaveLength(validityCount);
     expect(props.onValidityChange).toHaveBeenLastCalledWith(true);
     expect(props.onReviewed).toHaveBeenLastCalledWith(reviewed);
+    expect(props.onReviewed).toHaveBeenCalledTimes(reviewedCount);
+    expect(descriptiveRequests).toBe(reviewedCount);
     expect(screen.getByRole("button", { name: "Download reviewed operator receipt" }).hasAttribute("disabled")).toBe(false);
     expect(screen.getByRole("button", { name: "Keep truth false items" }).hasAttribute("disabled")).toBe(false);
     await user.click(screen.getByRole("button", { name: "Retain reviewed result for comparison and saving" }));
