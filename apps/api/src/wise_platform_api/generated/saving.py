@@ -697,6 +697,44 @@ class Bpic19SelectionKeep(BaseModel):
     group: Bpic19ProfileKeepGroup
 
 
+class PreparedInputId(
+    RootModel[constr(pattern=r'^bpic19-prepared-input\.v1:sha256:[a-f0-9]{64}$')]
+):
+    root: constr(pattern=r'^bpic19-prepared-input\.v1:sha256:[a-f0-9]{64}$')
+
+
+class PreparedDefinitionId(
+    RootModel[constr(pattern=r'^bpic19-prepared-definition\.v1:sha256:[a-f0-9]{64}$')]
+):
+    root: constr(pattern=r'^bpic19-prepared-definition\.v1:sha256:[a-f0-9]{64}$')
+
+
+class PreparedRunId(RootModel[constr(pattern=r'^score-run\.v1:sha256:[a-f0-9]{64}$')]):
+    root: constr(pattern=r'^score-run\.v1:sha256:[a-f0-9]{64}$')
+
+
+class Bpic19PreparedAssessmentReference(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    basis_kind: Literal['declared_prepared_attributes']
+    input_id: PreparedInputId
+    definition_id: PreparedDefinitionId
+    run_id: PreparedRunId
+    view: Literal['Finance', 'Logistics', 'Compliance', 'Automation']
+    output_sha256: constr(pattern=r'^[a-f0-9]{64}$')
+
+
+class Bpic19PreparedAssessmentManifest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    basis_kind: Literal['declared_prepared_attributes']
+    input_id: PreparedInputId
+    assessment_item_ids: list[CaseId] = Field(..., max_length=1000)
+    references: list[Bpic19PreparedAssessmentReference] = Field(..., max_length=4)
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -1098,6 +1136,12 @@ class SavedInvestigationContent(BaseModel):
     bookmarks: list[EvidenceBookmark]
     score_run_ref: ScoreRunReference | None
     bpic19_pipeline: Bpic19Pipeline | None = None
+    bpic19_prepared_assessments: list[Bpic19PreparedAssessmentReference] | None = Field(
+        None,
+        description='Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.',
+        max_length=4,
+        min_length=1,
+    )
 
 
 class SavedRevision(BaseModel):
@@ -1131,6 +1175,12 @@ class SaveInvestigationRequest1(BaseModel):
     score_run_ref: ScoreRunReference | None = None
     presentation_state: PresentationRecovery | None = None
     bpic19_pipeline: Bpic19Pipeline | None = None
+    bpic19_prepared_assessments: list[Bpic19PreparedAssessmentReference] | None = Field(
+        None,
+        description='Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.',
+        max_length=4,
+        min_length=1,
+    )
 
 
 class SaveInvestigationRequest2(BaseModel):
@@ -1159,6 +1209,12 @@ class SaveInvestigationRequest2(BaseModel):
     score_run_ref: ScoreRunReference | None = None
     presentation_state: PresentationRecovery | None = None
     bpic19_pipeline: Bpic19Pipeline | None = None
+    bpic19_prepared_assessments: list[Bpic19PreparedAssessmentReference] | None = Field(
+        None,
+        description='Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.',
+        max_length=4,
+        min_length=1,
+    )
 
 
 class SaveInvestigationRequest(
@@ -1183,6 +1239,7 @@ class SaveInvestigationAnswer(BaseModel):
     semantic_change: bool
     recovery: RecoveryAnswer
     bpic19_outputs: Bpic19PipelineManifest | None = None
+    bpic19_prepared_outputs: Bpic19PreparedAssessmentManifest | None = None
 
 
 class ReopenInvestigationAnswer(BaseModel):
@@ -1199,6 +1256,7 @@ class ReopenInvestigationAnswer(BaseModel):
     restored_comparison_id: ComparisonId | None
     recovery: RecoveryAnswer
     bpic19_outputs: Bpic19PipelineManifest | None = None
+    bpic19_prepared_outputs: Bpic19PreparedAssessmentManifest | None = None
 
 
 class SavingMessage(
