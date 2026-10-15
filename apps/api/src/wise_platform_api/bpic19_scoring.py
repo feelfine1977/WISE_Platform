@@ -41,6 +41,10 @@ _ALTERNATIVES = alternatives_of(generated)
 _SNAPSHOT_VERSION = "bpic19.native-snapshot.v3"
 _READ_VERSIONS = {_SNAPSHOT_VERSION,"bpic19.native-snapshot.v2"}
 _CHUNK_SIZE = 500
+_MATERIALIZATION_PAGE_SIZE = 100000
+_DEFAULT_MAX_CASES = 251734
+_DEFAULT_MAX_RETAINED_RECORDS = 1595923
+_WORKLOAD_POLICY = "bpic19.native_workload_admission.v1"
 _REQUEST_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
 
 
@@ -157,11 +161,68 @@ def _bounded_analysis(value, limit=200):
     return value
 
 
+def _complete_report(assessment, case_count: int) -> dict:
+    """Materialize every admitted group through Method's bounded report pages.
+
+    The report API's page limit is not a snapshot truncation policy. Each item
+    belongs to at most one group, document and representation of each kind, so
+    their complete tables are bounded by the admitted item population.
+    """
+    limit = min(_MATERIALIZATION_PAGE_SIZE, max(1, case_count))
+    report = assessment.report(case_limit=1, group_limit=limit)
+    totals = [report["group_page"]["total"], report["group_page"]["document_total"]]
+    totals.extend(report.get("representation_page", {}).get(key, 0)
+                  for key in ("exact_total", "signature_total"))
+    total = max(totals)
+    if total > case_count:
+        raise ValueError("Native group support exceeds the admitted item population.")
+    for offset in range(limit, total, limit):
+        page = assessment.report(case_limit=1, group_offset=offset, group_limit=limit)
+        for field in ("groups", "documents", "layer_drivers"):
+            report[field].extend(page[field])
+        for kind in report.get("representation_scores", {}):
+            report["representation_scores"][kind].extend(page["representation_scores"][kind])
+    report["group_page"].update(offset=0, limit=max(1, total))
+    if "representation_page" in report:
+        report["representation_page"].update(offset=0, limit=max(1, total))
+    return report
+
+
 class Bpic19Scoring:
     """The public scoring boundary, owning no alternate evaluator or mutable run cache."""
-    def __init__(self, imports: Imports) -> None:
+    def __init__(self, imports: Imports, *, max_cases: int = _DEFAULT_MAX_CASES,
+                 max_retained_records: int = _DEFAULT_MAX_RETAINED_RECORDS) -> None:
+        # Server-local admission configuration, not a measured capacity or SLA.
+        # Reject invalid deployment configuration rather than silently uncap it.
+        for name, value in (("max_cases", max_cases), ("max_retained_records", max_retained_records)):
+            if type(value) is not int or not 1 <= value <= 2**53 - 1:
+                raise ValueError(f"{name} must be a positive integer no greater than 2**53 - 1.")
         self.imports = imports
+        self.max_cases = max_cases
+        self.max_retained_records = max_retained_records
         self._lock = RLock()
+
+    def _admit_workload(self, prepared, population, settings: dict) -> dict:
+        selected = tuple(population.case_ids)
+        fits_parent = settings["profile"] == "historical" or (
+            settings["profile"] == "paper" and settings["volume"] == "exposure"
+            and settings["exposure_policy"] == "max_absolute_p95")
+        members = tuple(sorted(set(selected) | (set(population.parent_ids) if fits_parent else set())))
+        record_count = sum(len(prepared.histories[case_id]) for case_id in members)
+        if len(members) > self.max_cases or record_count > self.max_retained_records:
+            raise _Refused(Problem("unsupported_policy",
+                f"Fresh native computation requested {len(members)} complete items and {record_count} retained original records; "
+                f"the declared admission limits are {self.max_cases} items and {self.max_retained_records} records "
+                f"under {_WORKLOAD_POLICY}. No items or records were dropped and no native result was published.",
+                "named_population"))
+        return {"policy_id": _WORKLOAD_POLICY, "max_cases": self.max_cases,
+                "max_retained_records": self.max_retained_records,
+                "admitted_case_count": len(members), "admitted_record_count": record_count,
+                "selected_case_count": len(selected),
+                "selected_record_count": sum(len(prepared.histories[case_id]) for case_id in selected),
+                "includes_calibration_parent": fits_parent,
+                "membership_sha256": _digest(_canonical(list(members))),
+                "interpretation": "server-local fresh-computation admission policy; not a measured capacity or runtime SLA"}
 
     def score(self, body: bytes) -> Bpic19ScoringReply:
         return self._answer(body, generated.Bpic19ScoreRequest, self._score)
@@ -227,7 +288,6 @@ class Bpic19Scoring:
                                                 "snapshot_service_sha256": _digest(Path(__file__).read_bytes())}}
             definition_id = content_identity("definition-version", definition)
             definition["definition_version_id"] = definition_id
-            version = _checked(workspace.store_definition(definition))
             identity = {"format": _SNAPSHOT_VERSION, "definition_version_id": definition_id,
                         "base_identity": given["base_identity"], "population_identity": population.identity,
                         "parent_identity": population.parent_identity,
@@ -237,6 +297,8 @@ class Bpic19Scoring:
             run_id = content_identity("score-run", identity)
             stored = _checked(workspace.run(run_id))
             if stored is None:
+                admission = self._admit_workload(prepared, population, settings)
+                version = _checked(workspace.store_definition(definition))
                 if settings["profile"] == "historical":
                     features = build_historical_features(prepared, population.case_ids, given["roles"], calibration_case_ids=population.parent_ids)
                     for feature in features:
@@ -274,7 +336,7 @@ class Bpic19Scoring:
                                    "raw_measure": "maximum_absolute_event_value", "missing_policy": "refuse",
                                    "value_row_ids": [row for m in measures for row in m.get("row_ids", [])]}
                 assessment = evaluate_features(features, **settings, exposure_calibration=calibration)
-                report = assessment.report(case_limit=1, group_limit=100000)
+                report = _complete_report(assessment, len(features))
                 report["case_page"]["cases"] = []
                 stored_case_ids = list(assessment.features)
                 membership_positions = {cid: position for position, cid in enumerate(stored_case_ids)}
@@ -297,6 +359,7 @@ class Bpic19Scoring:
                     "definition_version": version, "named_population": given["named_population"],
                     "snapshot": {"format": _SNAPSHOT_VERSION, "artifacts": artifacts,
                                  "case_count": len(features), "chunk_size": _CHUNK_SIZE,
+                                 "workload_admission": admission,
                                  "reference": "arithmetic mean of scored items in the recorded assessment population",
                                  "calibration_population": population.parent_identity}}))
             return self._page(workspace, stored, given)
