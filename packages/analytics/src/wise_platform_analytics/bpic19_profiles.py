@@ -59,11 +59,15 @@ def invariant_value(records, index: int) -> tuple[str, str | None]:
 
 
 def suggested_roles(columns: Iterable[str]) -> dict[str, int | None]:
-    """Exact header aliases are proposals; duplicates/absent names require analyst review."""
+    """Propose exact aliases only when no normalized competing header exists."""
     columns = tuple(columns)
-    return {role: (matches[0] if len(matches := [i for i, name in enumerate(columns)
-                        if name in {header, "source__" + header}]) == 1 else None)
-            for role, header in ROLE_HEADERS.items()}
+    normalized = tuple(" ".join(name.casefold().split()).removeprefix("source__") for name in columns)
+    proposals = {}
+    for role, header in ROLE_HEADERS.items():
+        matches = [i for i, name in enumerate(columns) if name in {header, "source__" + header}]
+        unambiguous = normalized.count(header.casefold()) == 1
+        proposals[role] = matches[0] if len(matches) == 1 and unambiguous else None
+    return proposals
 
 
 def validate_roles(prepared: PreparedData, roles: object) -> dict[str, int | None] | ImportRefusal:
