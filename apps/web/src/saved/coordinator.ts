@@ -14,6 +14,7 @@ import type {
   ScoreRunReference,
   Bpic19Pipeline,
   Bpic19PipelineManifest,
+  Bpic19PreparedAssessmentReference,
 } from "../generated/saving";
 import {
   type ImportedInvestigationCoordinator,
@@ -50,7 +51,7 @@ export interface SavingState {
 
 /** An immutable server-verified result, separate from the save form's status. */
 export type VerifiedSavedExportReceipt = Readonly<Pick<SaveInvestigationAnswer,
-  "workspace_id" | "revision" | "bpic19_outputs">>;
+  "workspace_id" | "revision" | "bpic19_outputs" | "bpic19_prepared_outputs">>;
 
 /** The part of the comparison view that saving needs: the comparison shown on a reading, in its saved form. */
 export interface ComparisonSource {
@@ -69,6 +70,13 @@ export interface ScoreSource {
 export interface PipelineSource {
   readyForSave(): boolean;
   savedPipeline(): Bpic19Pipeline | null;
+}
+
+/** Declared assessment references use their own basis, never an incident population. */
+export interface PreparedAssessmentSource {
+  readyForSave(): boolean;
+  savedPreparedAssessments(): SaveInvestigationRequest["bpic19_prepared_assessments"];
+  restore(workspaceId: string, references: readonly Bpic19PreparedAssessmentReference[]): void;
 }
 
 /** What a save of the question shown would hold, or why it cannot be saved now. */
@@ -134,6 +142,7 @@ export class SavingCoordinator {
     /** Where the score run shown is found, so that saving the investigation refers to it. */
     private readonly scores?: ScoreSource,
     private readonly pipeline?: PipelineSource,
+    private readonly prepared?: PreparedAssessmentSource,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -146,7 +155,7 @@ export class SavingCoordinator {
   /** Export only the verified saved revision still shown on this exact reading. */
   verifiedExportReceipt(): VerifiedSavedExportReceipt | null {
     const receipt = this.exportReceipt;
-    if (!receipt?.bpic19_outputs) return null;
+    if (!receipt || (!receipt.bpic19_outputs && !receipt.bpic19_prepared_outputs)) return null;
     const state = this.investigation.getState();
     const { population, selection, saved } = state;
     const target = state.replacement?.asked.target ?? (population.phase === "idle" ? null : population.target);
@@ -169,12 +178,16 @@ export class SavingCoordinator {
     if (!shown || !sameIdentity(shown.answer.identity, receipt.revision.content.selection_identity)) return null;
     if (this.pipeline && (!this.pipeline.readyForSave() ||
         !sameJson(this.pipeline.savedPipeline(), receipt.revision.content.bpic19_pipeline ?? null))) return null;
+    if (this.prepared && (!this.prepared.readyForSave() ||
+        !sameJson(this.prepared.savedPreparedAssessments() ?? null, receipt.revision.content.bpic19_prepared_assessments ?? null))) return null;
     return receipt;
   }
 
   private rememberExportReceipt(answer: SaveInvestigationAnswer | ReopenInvestigationAnswer): void {
-    this.exportReceipt = answer.bpic19_outputs ? structuredClone({
-      workspace_id: answer.workspace_id, revision: answer.revision, bpic19_outputs: answer.bpic19_outputs,
+    this.exportReceipt = answer.bpic19_outputs || answer.bpic19_prepared_outputs ? structuredClone({
+      workspace_id: answer.workspace_id, revision: answer.revision,
+      ...(answer.bpic19_outputs ? { bpic19_outputs: answer.bpic19_outputs } : {}),
+      ...(answer.bpic19_prepared_outputs ? { bpic19_prepared_outputs: answer.bpic19_prepared_outputs } : {}),
     }) : null;
   }
 
@@ -215,6 +228,7 @@ export class SavingCoordinator {
   /** What saving the question shown now would hold, from the investigation's state. */
   draft(investigation: ImportedInvestigationState): SaveDraft {
     const { population, selection, saved } = investigation;
+    if (this.prepared && !this.prepared.readyForSave()) return { ready: false, reason: "Review, run and retain the declared assessment changes, or discard them before saving." };
     if (this.pipeline && !this.pipeline.readyForSave()) return { ready: false, reason: "Review the changed BPIC19 definitions or finish the pending analysis before saving." };
     if (population.phase !== "ready") return { ready: false, reason: "The incidents are not open yet." };
     if (investigation.replacement?.phase === "running") return { ready: false, reason: "Saving is possible once the other incidents asked for are open." };
@@ -234,6 +248,7 @@ export class SavingCoordinator {
 
   /** Saves the question shown under a name and a note; a question saved before gets a new revision. */
   save(name: string, notes: string, view: InvestigationView): void {
+    if (this.prepared && !this.prepared.readyForSave()) return;
     if (this.pipeline && !this.pipeline.readyForSave()) return;
     const investigation = this.investigation.getState();
     const { population, selection, saved, parentCaseIds } = investigation;
@@ -248,6 +263,7 @@ export class SavingCoordinator {
     };
     const scoreReference = this.scores?.savedReference() ?? saved?.content.score_run_ref ?? null;
     const pipeline = this.pipeline?.savedPipeline() ?? (saved && sameIdentity(saved.content.selection_identity, shown.answer.identity) ? saved.content.bpic19_pipeline : null);
+    const prepared = this.prepared ? this.prepared.savedPreparedAssessments() : saved?.content.bpic19_prepared_assessments;
     const question = {
       schema_version: 1 as const,
       message_type: "save_investigation_request" as const,
@@ -271,6 +287,7 @@ export class SavingCoordinator {
       // refers to stays referred to until it is taken away on purpose.
       ...(scoreReference ? { score_run_ref: scoreReference } : {}),
       ...(pipeline ? { bpic19_pipeline: pipeline } : {}),
+      ...(prepared ? { bpic19_prepared_assessments: prepared } : {}),
     };
     // A new investigation names neither an investigation nor the revision it replaces; a new revision names both.
     const request: SaveInvestigationRequest = saved
@@ -367,6 +384,7 @@ export class SavingCoordinator {
     const hand = (): void => {
       this.comparisons?.restore(workspaceId, content.base_identity, content.comparison);
       this.scores?.restore(content.score_run_ref ?? null);
+      this.prepared?.restore(workspaceId, content.bpic19_prepared_assessments ?? []);
     };
     if (accepted()) {
       hand();
@@ -413,6 +431,7 @@ export class SavingCoordinator {
     const currentPipeline = this.pipeline?.savedPipeline() ?? (saved && shown && sameIdentity(saved.content.selection_identity, shown.answer.identity) ? saved.content.bpic19_pipeline : null);
     return (
       (!this.pipeline || (this.pipeline.readyForSave() && sameJson(request.bpic19_pipeline ?? null, currentPipeline ?? null))) &&
+      (!this.prepared || (this.prepared.readyForSave() && sameJson(request.bpic19_prepared_assessments ?? null, this.prepared.savedPreparedAssessments() ?? null))) &&
       population.phase === "ready" &&
       selection.phase === "ready" &&
       shown !== null &&
@@ -516,12 +535,25 @@ function checkEcho<Answer extends Echoed>(request: Echoed, answer: Answer): Savi
   return { ok: true, answer };
 }
 
+function preparedOutputsMatch(answer: SaveInvestigationAnswer | ReopenInvestigationAnswer): boolean {
+  const references = answer.revision.content.bpic19_prepared_assessments;
+  const manifest = answer.bpic19_prepared_outputs;
+  if (!references) return manifest === undefined;
+  return manifest !== undefined && sameJson(manifest.references, references) &&
+    references.every(reference => reference.input_id === manifest.input_id) &&
+    new Set(references.map(reference => reference.view)).size === references.length;
+}
+
 function checkSave(request: SaveInvestigationRequest, answer: SaveInvestigationAnswer): SavingOutcome<SaveInvestigationAnswer> {
   const echoed = checkEcho(request, answer);
   if (!echoed.ok) return echoed;
   const { content, investigation_id } = answer.revision;
   if (request.investigation_id !== null && investigation_id !== request.investigation_id) {
     return mismatch("The reply saved a different investigation.");
+  }
+  if (!sameJson(content.bpic19_prepared_assessments ?? null, request.bpic19_prepared_assessments ?? null) ||
+      !preparedOutputsMatch(answer)) {
+    return mismatch("The reply saved different declared prepared assessments or omitted their verified stored outputs.");
   }
   if (content.selection_identity.population_id !== request.selection_identity.population_id || content.name !== request.name) {
     return mismatch("The reply saved a different question.");
@@ -533,6 +565,7 @@ function checkReopen(request: ReopenInvestigationRequest, answer: ReopenInvestig
   const echoed = checkEcho(request, answer);
   if (!echoed.ok) return echoed;
   if (answer.revision.saved_revision_id !== request.saved_revision_id) return mismatch("The reply reopened a different revision.");
+  if (!preparedOutputsMatch(answer)) return mismatch("The reopened prepared outputs do not match their exact retained input and references.");
   return { ok: true, answer };
 }
 

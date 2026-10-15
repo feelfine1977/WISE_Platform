@@ -36,6 +36,8 @@ import type { Bpic19RecipeComparisonAnswer, RecipeComparisonQuery } from "../gen
 import { Bpic19LiteratureClaims } from "./Bpic19LiteratureClaims";
 import { purchasingReportMarkdown } from "./purchasing-report";
 import type { Bpic19LiteratureClaim } from "../generated/saving";
+import { Bpic19PreparedAssessmentBridge } from "./Bpic19PreparedAssessmentBridge";
+import type { PreparedAssessmentSession } from "./prepared-session";
 import "./workspace.css";
 
 interface Props {
@@ -43,6 +45,7 @@ interface Props {
   comparison: CompareCoordinator;
   saving: SavingCoordinator;
   session: Bpic19Session;
+  prepared?: PreparedAssessmentSession;
   active: boolean;
   onShowData: () => void;
   onShowComparison: () => void;
@@ -59,8 +62,9 @@ function downloadReport(text:string){
 }
 
 /** The purchasing entry point uses the same population, evidence and saved revisions as the map. */
-export function Bpic19Workspace({ investigation, saving, session, active, onShowData }: Props) {
+export function Bpic19Workspace({ investigation, saving, session, prepared, active, onShowData }: Props) {
   const state = useSyncExternalStore(investigation.subscribe, investigation.getState);
+  const preparedReady = useSyncExternalStore(prepared?.subscribe ?? (() => () => {}), () => prepared?.readyForSave() ?? true);
   useSyncExternalStore(saving.subscribe, saving.getState);
   const [profile, setProfile] = useState<Bpic19ProfileAnswer | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -314,11 +318,12 @@ export function Bpic19Workspace({ investigation, saving, session, active, onShow
   const saved = saving.verifiedExportReceipt();
   const inspectorOpen = state.inspected.phase !== "closed" || lineage.state.phase !== "closed";
   return <main className="bpic19-workspace">
-    <div className="bpic19-toolbar"><h1>Purchasing analysis</h1><button onClick={onShowData}>Review source in Data</button><SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} waitingFor={paused || !session.readyForSave() ? "bpic19-save-wait" : undefined} /></div>
+    <div className="bpic19-toolbar"><h1>Purchasing analysis</h1><button onClick={onShowData}>Review source in Data</button><SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} waitingFor={paused || !session.readyForSave() || !preparedReady ? "bpic19-save-wait" : undefined} /></div>
     <p>Source: {population.source.filename}. Selections keep complete PO-item histories across purchasing analysis, the process map and comparisons.</p>
+    {prepared && <Bpic19PreparedAssessmentBridge session={prepared} />}
     <Bpic19Admission session={session} identity={identity} onChange={() => refresh(value=>value+1)} />
     <details><summary>Reported literature claims and report provenance</summary><Bpic19LiteratureClaims key={preparation} claims={session.claims()} runIds={session.declarations().filter(action=>action.operation==='bpic19_score' && typeof action.query.run_id==='string').map(action=>String(action.query.run_id))} onChange={changedLiteratureClaims} onValidityChange={literatureClaimsValid} /></details>
-    {(paused || !session.readyForSave()) && <p id="bpic19-save-wait" role="status">Review the current definitions and wait for the current population before saving or exporting.</p>}
+    {(paused || !session.readyForSave() || !preparedReady) && <p id="bpic19-save-wait" role="status">Review the current definitions and wait for the current population before saving or exporting.</p>}
     {state.selection.phase !== "idle" && <SelectionSteps selection={state.selection} onRemove={step => investigation.removeStep(step)} onClear={() => investigation.clearSteps()} onUndo={() => investigation.undo()} onRedo={() => investigation.redo()} onRetry={() => investigation.retrySelection()} onStay={() => investigation.staySelection()} waitingFor={state.replacement ? "bpic19-save-wait" : undefined} />}
     {saveOpen && <SaveForm saving={saving} investigation={state} view="incidents" onClose={() => setSaveOpen(false)} />}
     {saved?.bpic19_outputs && !paused && session.readyForSave() && saved.revision.saved_revision_id === state.saved?.revisionId && sameJson(session.savedPipeline(), saved.revision.content.bpic19_pipeline) && <button onClick={() => download({ format: "wise-purchasing-investigation", format_version: 1, revision: saved.revision, source: population.source, preparation: population.preparation, manifest: saved.bpic19_outputs })}>Export saved definitions, results and witnesses</button>}

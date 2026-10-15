@@ -24,6 +24,7 @@ import { ExpectationCoordinator } from "./expectation/coordinator";
 import { ExpectationView } from "./expectation/ExpectationView";
 import { Bpic19Workspace } from "./bpic19/Bpic19Workspace";
 import { Bpic19Session } from "./bpic19/session";
+import { PreparedAssessmentSession } from "./bpic19/prepared-session";
 
 interface AppProps {
   importClient?: ImportClient;
@@ -66,9 +67,12 @@ export default function App({
   // Lives above the areas, so that the expectation, its check and its run stay while another area is shown.
   const [expectationCoordinator] = useState(() => new ExpectationCoordinator(scoringClient, importedCoordinator));
   const [bpic19Session] = useState(() => new Bpic19Session());
+  const [preparedSession] = useState(() => new PreparedAssessmentSession(importedCoordinator));
   const [savingCoordinator] = useState(
-    () => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator, expectationCoordinator, bpic19Session),
+    () => new SavingCoordinator(savingClient, importedCoordinator, compareCoordinator, expectationCoordinator, bpic19Session, preparedSession),
   );
+  useEffect(() => { preparedSession.start(); return () => preparedSession.stop(); }, [preparedSession]);
+
   // The start opens a reading by itself and leaves the area the analyst is in as it is.
   const [firstOpen] = useState(
     () =>
@@ -111,6 +115,7 @@ export default function App({
       dataCoordinator.stop();
       importedCoordinator.stop();
       savingCoordinator.stop();
+
     };
   }, [dataCoordinator, importedCoordinator, savingCoordinator]);
 
@@ -152,7 +157,7 @@ export default function App({
         <ServiceStatus checkHealth={checkHealth} />
       </header>
       {area === "data" && <DataArea coordinator={dataCoordinator} onOpenIncidents={openIncidents} />}
-      {purchasingVisited && <div hidden={area !== "purchasing"}><Bpic19Workspace active={area === "purchasing"} investigation={importedCoordinator} comparison={compareCoordinator} saving={savingCoordinator} session={bpic19Session} onShowData={showData} onShowComparison={() => setArea("compare")} /></div>}
+      {purchasingVisited && <div hidden={area !== "purchasing"}><Bpic19Workspace active={area === "purchasing"} investigation={importedCoordinator} comparison={compareCoordinator} saving={savingCoordinator} session={bpic19Session} prepared={preparedSession} onShowData={showData} onShowComparison={() => setArea("compare")} /></div>}
       {area === "investigations" &&
         (incidentsOpen ? (
           <ImportedInvestigation coordinator={importedCoordinator} saving={savingCoordinator} onShowData={showData} />
