@@ -131,3 +131,25 @@ it("moves a re-reviewed current recipe after its same-prefix history while prese
   session.reviewed(recipeA);
   expect(session.savedPipeline()!.actions).toEqual(actions);
 });
+
+
+it("retains a current profile beside its same-population typed ancestor at a different prefix",()=>{
+  const typed={...keep(at(1),1),selection_keep:{...keep(at(1),1).selection_keep!,step_index:1}};
+  const current={...profile(at(1)),selection_prefix_length:2};
+  const session=new Bpic19Session();
+  expect(session.restore(workspaceId,at(1),[first,second],[typed,current],base)).toBe(true);
+  expect(session.savedPipeline()!.actions).toEqual([typed,current]);
+  expect(session.savedPipeline()!.actions[0].selection_keep?.step_index).toBe(1);
+});
+
+it.each([
+  {name:"source null versus numeric zero",parent:base,typedPosition:null,ordinaryPosition:0},
+  {name:"source null versus legacy",parent:base,typedPosition:null,ordinaryPosition:undefined},
+  {name:"numeric zero versus legacy",parent:at(0),typedPosition:0,ordinaryPosition:undefined},
+] as const)("does not suppress a different declared position: $name",({parent,typedPosition,ordinaryPosition})=>{
+  const typed=keep(parent,typedPosition);
+  const ordinary={...profile(parent),...(ordinaryPosition===undefined?{}:{selection_prefix_length:ordinaryPosition})};
+  const session=new Bpic19Session();
+  expect(session.restore(workspaceId,parent,[first],[typed,ordinary],base)).toBe(true);
+  expect(session.savedPipeline()!.actions).toEqual([typed,ordinary]);
+});
