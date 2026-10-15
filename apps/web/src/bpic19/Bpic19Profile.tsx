@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { AnswerIdentity, Bpic19ProfileAnswer, Bpic19ProfileQuery, Bpic19Roles, Bpic19SuggestedRoles, Bpic19TypeCell, Bpic19SourceInterpretation } from "../generated/bpic19-profile";
+import type { AnswerIdentity, Bpic19CategoryLineageQuery, Bpic19ProfileAnswer, Bpic19ProfileQuery, Bpic19Roles, Bpic19SuggestedRoles, Bpic19TypeCell, Bpic19SourceInterpretation } from "../generated/bpic19-profile";
 import type { RecordAttributesAll, SelectionPredicate } from "../generated/selection";
 import { httpBpic19ProfileClient, type Bpic19ProfileClient } from "./profile-client";
 import type { Bpic19ComparisonSide, Bpic19GroupRecipe } from "./profile-types";
@@ -12,6 +12,7 @@ const emptyRoles: Bpic19SuggestedRoles = { item_category: null, item_type: null,
 const number = new Intl.NumberFormat("en");
 const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 });
 const stateName = (state: string) => state.replaceAll("_", " ");
+type CategoryLineageDraft = Omit<Bpic19CategoryLineageQuery, "origin_column_index"> & { origin_column_index: number | null };
 
 export interface Bpic19ProfileProps {
   workspaceId: string;
@@ -34,6 +35,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
   const [roles, setRoles] = useState<Bpic19SuggestedRoles>(emptyRoles);
   const [columns, setColumns] = useState<number[] | null>(null);
   const [source, setSource] = useState<Bpic19SourceInterpretation | null>(null);
+  const [categoryLineage, setCategoryLineage] = useState<CategoryLineageDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [flow, setFlow] = useState("after_gr");
@@ -57,12 +59,12 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
     setBusy(false);
     if (!outcome.ok) { setProblem(outcome.problem.kind === "refusal" ? outcome.problem.refusal.message : outcome.problem.kind === "unreachable" ? "The local service could not be reached. Retry the source profile." : outcome.problem.detail); return; }
     setAnswer(outcome.answer); setRoles(next.roles ?? outcome.answer.suggested_roles);
-    setColumns(next.profile_columns); setSource(outcome.answer.profile?.source_review?.interpretation ?? next.source_interpretation ?? null); setTarget(""); setComparator("");
+    setColumns(next.profile_columns); setSource(outcome.answer.profile?.source_review?.interpretation ?? next.source_interpretation ?? null); setCategoryLineage(next.category_lineage ?? null); setTarget(""); setComparator("");
     if (outcome.answer.profile) onReviewed?.(outcome.answer);
     else onColumns?.(outcome.answer);
   }
   useEffect(() => {
-    validity.current?.(false); setAnswer(null); setRoles(emptyRoles); setColumns(null); setSource(null);
+    validity.current?.(false); setAnswer(null); setRoles(emptyRoles); setColumns(null); setSource(null); setCategoryLineage(null);
     void load(query ?? { roles: null, profile_columns: null, policy_id: policy });
     return () => { validity.current?.(false); ++serial.current; controller.current?.abort(); };
     // Request publication is fenced by source/population/revision, including same-source selection changes.
@@ -70,10 +72,11 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
   }, [workspaceId, identityKey, revision, client, queryKey]);
 
   const profile = answer?.profile ?? null;
-  const draftChanged = profile !== null && answer !== null && (JSON.stringify(roles) !== JSON.stringify(answer.query.roles) || JSON.stringify(columns) !== JSON.stringify(answer.query.profile_columns) || JSON.stringify(source) !== JSON.stringify(profile.source_review?.interpretation ?? null));
+  const draftChanged = profile !== null && answer !== null && (JSON.stringify(roles) !== JSON.stringify(answer.query.roles) || JSON.stringify(columns) !== JSON.stringify(answer.query.profile_columns) || JSON.stringify(source) !== JSON.stringify(profile.source_review?.interpretation ?? null) || JSON.stringify(categoryLineage) !== JSON.stringify(answer.query.category_lineage ?? null));
   const actionsPaused = busy || !!problem || draftChanged;
   useEffect(() => { validity.current?.(profile !== null && !actionsPaused); }, [profile, actionsPaused]);
   const ready = (Object.keys(labels) as (keyof Bpic19Roles)[]).every(key => key === "source_case" || roles[key] !== null);
+  const lineageReady = categoryLineage === null || categoryLineage.origin_preparation_id.trim() !== "" && categoryLineage.provenance.trim() !== "" && categoryLineage.provenance.length <= 2000 && categoryLineage.origin_column_index !== null && Number.isSafeInteger(categoryLineage.origin_column_index) && categoryLineage.origin_column_index >= 0;
   const reviewedRoles = (): Bpic19Roles | null => ready ? { item_category: roles.item_category!, item_type: roles.item_type!, goods_receipt: roles.goods_receipt!, gr_based_iv: roles.gr_based_iv!, purchasing_document: roles.purchasing_document!, item: roles.item!, source_case: roles.source_case } : null;
   function recipe(group: Bpic19GroupRecipe["group"], ids: string[]): Bpic19GroupRecipe {
     if (!profile || !answer) throw new Error("No reviewed profile");
@@ -118,6 +121,16 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
         <option value="">{role === "source_case" ? "No original source case column" : "Choose a source field"}</option>
         {answer.columns.map(column => <option key={column.index} value={column.index}>{column.index}: {column.name || "Unnamed source field"}</option>)}
       </select></label>)}</div>
+      <details><summary>Item Category source lineage</summary>
+        <p>Optionally declare an origin preparation already imported into this workspace. The service checks identical original record positions, raw case cells and raw category cells across the entire source, including records without usable timestamps. Other fields and conversion authorship are not verified; source__ names alone establish no lineage.</p>
+        <label className="bpic19-column-check"><input type="checkbox" disabled={busy} checked={categoryLineage !== null} onChange={event => setCategoryLineage(event.target.checked ? { policy_id: "bpic19.same_position_category_lineage.v1", origin_preparation_id: "", origin_column_index: null, provenance: "" } : null)} />Verify category against an imported origin</label>
+        {categoryLineage && <div className="bpic19-role-grid">
+          <label>Origin preparation ID<input type="text" disabled={busy} value={categoryLineage.origin_preparation_id} onChange={event => setCategoryLineage({ ...categoryLineage, origin_preparation_id: event.target.value })} /></label>
+          <label>Origin Item Category column index<input type="number" min="0" step="1" disabled={busy} value={categoryLineage.origin_column_index ?? ""} onChange={event => setCategoryLineage({ ...categoryLineage, origin_column_index: event.target.value === "" ? null : Number(event.target.value) })} /></label>
+          <label>Category lineage provenance<input type="text" maxLength={2000} disabled={busy} value={categoryLineage.provenance} onChange={event => setCategoryLineage({ ...categoryLineage, provenance: event.target.value })} /></label>
+        </div>}
+        <p>Column indices are zero-based within each source. Review this declaration with the field roles; changing or removing it creates a different definition.</p>
+      </details>
       <details><summary>Additional attributes to profile</summary><p>With no custom selection, all supplied case attributes are profiled. Event-varying fields can be selected explicitly.</p>
         {answer.columns.map(column => <label className="bpic19-column-check" key={column.index}><input type="checkbox" disabled={busy} checked={columns === null ? column.name.startsWith("case ") || column.name.startsWith("source__case ") : columns.includes(column.index)} onChange={event => {
           const current = columns ?? answer.columns.filter(c => c.name.startsWith("case ") || c.name.startsWith("source__case ")).map(c => c.index);
@@ -125,10 +138,20 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
         }} />{column.name || `Column ${column.index}`}</label>)}
       </details>
       {source && <SourceDefinition value={source} disabled={busy} onChange={setSource} />}
-      <button type="button" className="primary" disabled={busy || !ready} onClick={() => { const chosen = reviewedRoles(); if (chosen) void load({ roles: chosen, profile_columns: columns, policy_id: policy, include_zero_cells: true, ...(source ? { source_interpretation: source } : {}) }); }}>Review these field roles</button>
+      <button type="button" className="primary" disabled={busy || !ready || !lineageReady} onClick={() => { const chosen = reviewedRoles(); if (chosen && lineageReady) void load({ roles: chosen, profile_columns: columns, policy_id: policy, include_zero_cells: true, ...(source ? { source_interpretation: source } : {}), ...(categoryLineage && categoryLineage.origin_column_index !== null ? { category_lineage: { ...categoryLineage, origin_column_index: categoryLineage.origin_column_index } } : {}) }); }}>Review these field roles</button>
     </details>}
     {profile && <div className="bpic19-answers" data-stale={actionsPaused ? "true" : undefined}>
       <p className="bpic19-population"><strong>{number.format(profile.population.case_count)} PO items</strong> · {number.format(profile.population.record_count)} original records · {number.format(profile.population.document_count)} purchasing documents</p>
+      {profile.definition.category_lineage && <div className="bpic19-quality">
+        <h3>Verified Item Category correspondence</h3>
+        <p>Origin field: <code>{profile.definition.category_lineage.origin_column_index}: {profile.definition.category_lineage.origin_column_name}</code></p>
+        <p>Reviewed field: <code>{profile.definition.category_lineage.column_index}: {profile.definition.category_lineage.column_name}</code></p>
+        <p>{number.format(profile.definition.category_lineage.verified_record_count)} original records checked across the entire source, independent of this parent.</p>
+        <p>Origin source: <code>{profile.definition.category_lineage.origin_source_id}</code></p>
+        <p>Origin preparation: <code>{profile.definition.category_lineage.origin_preparation_id}</code></p>
+        <p>Declared provenance: {profile.definition.category_lineage.provenance}</p>
+        <p>Policy: <code>{profile.definition.category_lineage.policy_id}</code>. This verifies category correspondence, not other fields or conversion authorship.</p>
+      </div>}
       {profile.source_review && <SourceReview review={profile.source_review} disabled={actionsPaused} onInspect={onInspect} onKeep={(ids,state) => keep(ids, { kind: "source_inclusion", state })} />}
       <p>Four supplied categories partition these items; unknown or changing categories remain separate. Before-GR permits either observed receipt order. Flag checks do not change the category.</p>
       <details><summary>Historical flag-only views · overlapping purchasing flows</summary>

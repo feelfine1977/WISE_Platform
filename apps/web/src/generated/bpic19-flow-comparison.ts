@@ -44,6 +44,7 @@ export interface FlowComparisonQuery {
   page: FlowComparisonPageQuery;
 }
 export interface Bpic19ProfileQuery {
+  category_lineage?: Bpic19CategoryLineageQuery | null;
   roles: Bpic19Roles | null;
   profile_columns: number[] | null;
   policy_id: "bpic19.all_raw_case_attributes.v1";
@@ -51,6 +52,15 @@ export interface Bpic19ProfileQuery {
   attribute_view?: Bpic19AttributeViewQuery | null;
   include_zero_cells?: boolean;
   include_document_siblings?: boolean;
+}
+/**
+ * Explicit category correspondence to another imported preparation in this workspace. Same source positions, raw case cells and raw category cells must agree across every record; other fields and conversion authorship are not verified.
+ */
+export interface Bpic19CategoryLineageQuery {
+  policy_id: "bpic19.same_position_category_lineage.v1";
+  origin_preparation_id: PreparationId;
+  origin_column_index: number;
+  provenance: string;
 }
 export interface Bpic19Roles {
   item_category: number;

@@ -56,7 +56,14 @@ class Bpic19FlowComparisons:
             resolved = resolve_population(self._imports, given)
             if isinstance(resolved, Problem): return _refused(given, resolved.code, resolved.message, resolved.field)
             prepared, population = resolved
-            result = compare_flow_subtypes(prepared, given["query"], population.case_ids)
+            origin = None
+            lineage = given["query"]["profile_query"].get("category_lineage")
+            if lineage is not None:
+                found = self._imports.prepared(given["workspace_id"], lineage["origin_preparation_id"])
+                if not isinstance(found, tuple):
+                    return _refused(given, found.code, found.message, "query.profile_query.category_lineage.origin_preparation_id")
+                origin = found[0]
+            result = compare_flow_subtypes(prepared, given["query"], population.case_ids, origin)
             if isinstance(result, ImportRefusal): return _refused(given, result.code, result.message, result.field)
             answer = {"schema_version": 1, "message_type": "bpic19_flow_comparison_answer", "operation": "bpic19_flow_comparison",
                       "request_id": given["request_id"], "query_revision": given["query_revision"], "workspace_id": given["workspace_id"],

@@ -18,6 +18,7 @@ from .preparation import PreparedData, content_identity
 from .selection import SelectionError, case_ids
 
 POLICY_ID = "bpic19.all_raw_case_attributes.v1"
+CATEGORY_LINEAGE_POLICY_ID = "bpic19.same_position_category_lineage.v1"
 ROLE_NAMES = ("item_category", "item_type", "goods_receipt", "gr_based_iv", "purchasing_document", "item", "source_case")
 ROLE_HEADERS = {
     "item_category": "case Item Category", "item_type": "case Item Type",
@@ -92,16 +93,48 @@ def _support(prepared, ids, documents, denominator):
             "share": len(ids) / denominator if denominator else None, "example_case_ids": ids[:3]}
 
 
+def review_category_lineage(prepared: PreparedData, roles: Mapping, query: Mapping,
+                            origin: PreparedData | None) -> dict | ImportRefusal:
+    field = "query.category_lineage"
+    if query.get("policy_id") != CATEGORY_LINEAGE_POLICY_ID:
+        return ImportRefusal("unsupported_policy", "Choose the supported same-position category lineage policy.", field + ".policy_id")
+    if origin is None or origin.preparation_id != query["origin_preparation_id"]:
+        return ImportRefusal("preparation_unavailable", "Open the declared origin preparation in this workspace.", field + ".origin_preparation_id")
+    index = query["origin_column_index"]
+    if type(index) is not int or not 0 <= index < len(origin.columns):
+        return ImportRefusal("invalid_parameter", "Choose an existing origin category column.", field + ".origin_column_index")
+    if not query["provenance"].strip():
+        return ImportRefusal("invalid_parameter", "Describe the reviewed category correspondence.", field + ".provenance")
+    if len(origin.records) != len(prepared.records):
+        return ImportRefusal("identity_mismatch", "Category lineage requires identical record counts; no subset or row join was inferred.", field)
+    target = roles["item_category"]
+    for original, current in zip(origin.records, prepared.records):
+        if (original.source_position != current.source_position
+                or len(original.original_cells) != len(origin.columns)
+                or len(current.original_cells) != len(prepared.columns)
+                or original.original_cells[origin.mapping["case_column"]] != current.original_cells[prepared.mapping["case_column"]]
+                or original.original_cells[index] != current.original_cells[target]):
+            return ImportRefusal("identity_mismatch", "Category lineage differs at original source position "
+                                 + str(current.source_position) + "; no value was filled or reordered.", field)
+    return {**query, "origin_source_id": origin.source_id, "origin_column_name": origin.columns[index],
+            "column_index": target, "column_name": prepared.columns[target], "verified_record_count": len(prepared.records)}
+
+
 def profile_bpic19(prepared: PreparedData, roles: Mapping[str, int | None],
                    population_case_ids: Iterable[str] | None = None,
                    profile_columns: Iterable[int] | None = None,
                    source_interpretation: Mapping | None = None,
                    attribute_view: Mapping | None = None,
                    include_zero_cells: bool = False,
-                   include_document_siblings: bool = False) -> dict | ImportRefusal:
+                   include_document_siblings: bool = False,
+                   category_lineage: Mapping | None = None,
+                   lineage_origin: PreparedData | None = None) -> dict | ImportRefusal:
     checked = validate_roles(prepared, roles)
     if isinstance(checked, ImportRefusal):
         return checked
+    lineage = None if category_lineage is None else review_category_lineage(prepared, checked, category_lineage, lineage_origin)
+    if isinstance(lineage, ImportRefusal):
+        return lineage
     try:
         parent = case_ids(prepared, population_case_ids)
     except SelectionError as error:
@@ -211,6 +244,8 @@ def profile_bpic19(prepared: PreparedData, roles: Mapping[str, int | None],
                   "category_labels": CATEGORY_LABELS, "category_assignment": "supplied_exact_invariant_category",
                   "flag_policy": "bpic19.category_flags_and_consignment_type.v1", "grain_policy": "bpic19.document_item_underscore.v1",
                   "source_interpretation": source_review["interpretation"]}
+    if lineage is not None:
+        definition["category_lineage"] = lineage
     viewed = None
     if attribute_view is not None:
         viewed = attribute_values(prepared, parent, documents, attribute_view)

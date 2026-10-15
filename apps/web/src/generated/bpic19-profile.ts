@@ -45,6 +45,7 @@ export interface Bpic19ProfileQuery {
   attribute_view?: Bpic19AttributeViewQuery | null;
   include_zero_cells?: boolean;
   include_document_siblings?: boolean;
+  category_lineage?: Bpic19CategoryLineageQuery | null;
 }
 export interface Bpic19Roles {
   item_category: number;
@@ -100,6 +101,15 @@ export interface Bpic19AttributeViewQuery {
   select_value: boolean;
   value: string | null;
 }
+/**
+ * Explicit category correspondence to another imported preparation in this workspace. Same source positions, raw case cells and raw category cells must agree across every record; other fields and conversion authorship are not verified.
+ */
+export interface Bpic19CategoryLineageQuery {
+  policy_id: "bpic19.same_position_category_lineage.v1";
+  origin_preparation_id: PreparationId;
+  origin_column_index: number;
+  provenance: string;
+}
 export interface Bpic19ProfileAnswer {
   schema_version: 1;
   request_id: RequestId;
@@ -153,6 +163,7 @@ export interface Bpic19Definition {
   grain_policy: "bpic19.document_item_underscore.v1";
   source_interpretation?: Bpic19SourceInterpretation;
   attribute_selection?: Bpic19AttributeSelection;
+  category_lineage?: Bpic19CategoryLineage;
 }
 export interface CategoryLabels {
   after_gr: string;
@@ -164,6 +175,17 @@ export interface Bpic19AttributeSelection {
   column_index: number;
   value: string | null;
   policy_id: "bpic19.any_original_record_exact_value.v1";
+}
+export interface Bpic19CategoryLineage {
+  policy_id: "bpic19.same_position_category_lineage.v1";
+  origin_preparation_id: PreparationId;
+  origin_column_index: number;
+  provenance: string;
+  origin_source_id: SourceId;
+  origin_column_name: string;
+  column_index: number;
+  column_name: string;
+  verified_record_count: number;
 }
 export interface Bpic19Population {
   case_count: number;

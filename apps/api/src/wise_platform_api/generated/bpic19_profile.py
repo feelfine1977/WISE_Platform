@@ -94,6 +94,31 @@ class Bpic19SuggestedRoles(BaseModel):
     source_case: conint(ge=0, le=9007199254740991) | None
 
 
+class Bpic19CategoryLineageQuery(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.same_position_category_lineage.v1']
+    origin_preparation_id: PreparationId
+    origin_column_index: conint(ge=0, le=9007199254740991)
+    provenance: constr(min_length=1, max_length=2000)
+
+
+class Bpic19CategoryLineage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.same_position_category_lineage.v1']
+    origin_preparation_id: PreparationId
+    origin_column_index: conint(ge=0, le=9007199254740991)
+    provenance: constr(min_length=1, max_length=2000)
+    origin_source_id: SourceId
+    origin_column_name: str
+    column_index: conint(ge=0, le=9007199254740991)
+    column_name: str
+    verified_record_count: conint(ge=0, le=9007199254740991)
+
+
 class Bpic19Column(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -548,6 +573,7 @@ class Bpic19ProfileQuery(BaseModel):
     attribute_view: Bpic19AttributeViewQuery | None = None
     include_zero_cells: bool | None = None
     include_document_siblings: bool | None = None
+    category_lineage: Bpic19CategoryLineageQuery | None = None
 
 
 class Bpic19Definition(BaseModel):
@@ -563,6 +589,7 @@ class Bpic19Definition(BaseModel):
     grain_policy: Literal['bpic19.document_item_underscore.v1']
     source_interpretation: Bpic19SourceInterpretation | None = None
     attribute_selection: Bpic19AttributeSelection | None = None
+    category_lineage: Bpic19CategoryLineage | None = None
 
 
 class Bpic19Profile(BaseModel):

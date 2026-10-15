@@ -11,7 +11,8 @@ from .selection import SelectionError, case_ids
 POLICY_ID = "bpic19.flow_item_type_comparison.v1"
 
 
-def compare_flow_subtypes(prepared: PreparedData, query: Mapping, population_case_ids=None):
+def compare_flow_subtypes(prepared: PreparedData, query: Mapping, population_case_ids=None,
+                          lineage_origin: PreparedData | None = None):
     """Re-evaluate both declared rules, never interpret the reference as a complement."""
     if query.get("policy_id") != POLICY_ID:
         return ImportRefusal("unsupported_policy", "Choose the finite flow/subtype comparison policy.", "query.policy_id")
@@ -24,7 +25,7 @@ def compare_flow_subtypes(prepared: PreparedData, query: Mapping, population_cas
         return ImportRefusal("invalid_parameter", "Review the source field roles before comparing subtypes.", "query.profile_query.roles")
     profile = profile_bpic19(prepared, profile_query["roles"], parent, profile_query["profile_columns"],
         profile_query.get("source_interpretation"), profile_query.get("attribute_view"), profile_query.get("include_zero_cells", False),
-        profile_query.get("include_document_siblings", False))
+        profile_query.get("include_document_siblings", False), profile_query.get("category_lineage"), lineage_origin)
     if isinstance(profile, ImportRefusal): return profile
     if profile["definition_id"] != query["profile_definition_id"]:
         return ImportRefusal("identity_mismatch", "The reviewed source profile does not belong to this exact parent and definition.", "query.profile_definition_id")
@@ -77,6 +78,8 @@ def compare_flow_subtypes(prepared: PreparedData, query: Mapping, population_cas
         "roles": plain_json(profile["definition"]["roles"]),
         "profile_columns": plain_json(profile["definition"]["profile_columns"]),
         "source_interpretation": plain_json(profile["definition"]["source_interpretation"])}
+    if profile_query.get("category_lineage") is not None:
+        source_meaning["category_lineage"] = plain_json(profile_query["category_lineage"])
     if (profile_query.get("attribute_view") or {}).get("select_value"):
         source_meaning["attribute_view"] = {**plain_json(profile_query["attribute_view"]), "offset": 0, "limit": 1}
     definition = {"policy_id": POLICY_ID, "profile_definition_id": query["profile_definition_id"],

@@ -68,6 +68,16 @@ class CaseId(RootModel[constr(min_length=1, max_length=256)]):
     root: constr(min_length=1, max_length=256) = Field(..., title='CaseId')
 
 
+class Bpic19CategoryLineageQuery(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.same_position_category_lineage.v1']
+    origin_preparation_id: PreparationId
+    origin_column_index: conint(ge=0, le=9007199254740991)
+    provenance: constr(min_length=1, max_length=2000)
+
+
 class Bpic19Roles(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -276,6 +286,7 @@ class Bpic19ProfileQuery(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
+    category_lineage: Bpic19CategoryLineageQuery | None = None
     roles: Bpic19Roles | None
     profile_columns: list[conint(ge=0, le=9007199254740991)] | None
     policy_id: Literal['bpic19.all_raw_case_attributes.v1']

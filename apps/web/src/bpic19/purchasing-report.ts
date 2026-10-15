@@ -68,6 +68,7 @@ function definitionFacts(output: Record<string,unknown>): string {
   let result=scalarFacts(definition);
   for(const key of ["activity_selector","interval_source","interval_target","creation_selector","value_band_edges"]){if(definition[key]!==undefined)result+=`\n${key}: ${escaped(idPreview(definition[key]))}.\n`;}
   if(Object.keys(record(definition.roles)).length)result+="\n**Original-column role bindings**\n\n"+scalarFacts(definition.roles);
+  if(Object.keys(record(definition.category_lineage)).length)result+="\n**Verified Item Category correspondence**\n\n"+scalarFacts(definition.category_lineage)+"\nSame-position raw case and category cells were checked across the entire source, including records without usable timestamps. This does not verify other fields or conversion authorship.\n";
   if(Object.keys(record(definition.category_labels)).length)result+="\n**Exact supplied category labels**\n\n"+scalarFacts(definition.category_labels);
   if(Object.keys(record(definition.calibration)).length)result+="\n**Frozen exposure calibration**\n\n"+scalarFacts(definition.calibration);
   if(Object.keys(settings).length)result+="\n**Frozen native settings**\n\n"+scalarFacts(settings);

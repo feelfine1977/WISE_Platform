@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 
 from pydantic import ValidationError
-from wise_platform_analytics.bpic19_profiles import POLICY_ID, SOURCE_POLICY_ID, profile_bpic19, suggested_roles
+from wise_platform_analytics.bpic19_profiles import CATEGORY_LINEAGE_POLICY_ID, POLICY_ID, SOURCE_POLICY_ID, profile_bpic19, suggested_roles
 from wise_platform_analytics.mapping import ImportRefusal
 
 from .boundary import first_difference, read_object
@@ -54,6 +54,9 @@ class Bpic19Profiles:
         source_query = given.get("query", {}).get("source_interpretation") if isinstance(given.get("query"), dict) else None
         if isinstance(source_query, dict) and isinstance(source_query.get("policy_id"), str) and source_query["policy_id"] != SOURCE_POLICY_ID:
             return _refused(given, "unsupported_policy", "This named source interpretation policy is not supported.", "query.source_interpretation.policy_id")
+        lineage_query = given.get("query", {}).get("category_lineage") if isinstance(given.get("query"), dict) else None
+        if isinstance(lineage_query, dict) and isinstance(lineage_query.get("policy_id"), str) and lineage_query["policy_id"] != CATEGORY_LINEAGE_POLICY_ID:
+            return _refused(given, "unsupported_policy", "This category lineage policy is not supported.", "query.category_lineage.policy_id")
         try:
             parsed = Bpic19ProfileRequest.model_validate_json(json.dumps(given, allow_nan=False), strict=True)
             difference = first_difference(given, parsed.model_dump(mode="json", exclude_unset=True))
@@ -71,9 +74,18 @@ class Bpic19Profiles:
             query = given["query"]
             if query["policy_id"] != POLICY_ID:
                 return _refused(given, "unsupported_policy", "Review the supported all-record case attribute policy.", "query.policy_id")
+            origin = None
+            if query.get("category_lineage") is not None:
+                if query["roles"] is None:
+                    return _refused(given, "invalid_parameter", "Review category roles before checking lineage.", "query.roles")
+                found = self._imports.prepared(given["workspace_id"], query["category_lineage"]["origin_preparation_id"])
+                if not isinstance(found, tuple):
+                    return _refused(given, found.code, found.message, "query.category_lineage.origin_preparation_id")
+                origin = found[0]
             profile = None if query["roles"] is None else profile_bpic19(prepared, query["roles"], population.case_ids,
                 query["profile_columns"], query.get("source_interpretation"), query.get("attribute_view"),
-                query.get("include_zero_cells", False), query.get("include_document_siblings", False))
+                query.get("include_zero_cells", False), query.get("include_document_siblings", False),
+                query.get("category_lineage"), origin)
             if isinstance(profile, ImportRefusal): return _refused(given, profile.code, profile.message, profile.field)
             answer = {"schema_version": 1, "message_type": "bpic19_profile_answer",
                 "request_id": given["request_id"], "query_revision": given["query_revision"], "workspace_id": given["workspace_id"],
