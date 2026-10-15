@@ -2,10 +2,23 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Bpic19Operators, type Bpic19OperatorComparison } from "./Bpic19Operators";
-import type { Bpic19OperatorRequest, OperatorQuery } from "../generated/bpic19-operators";
+import type { Bpic19OperatorAnswer, Bpic19OperatorRequest, OperatorQuery } from "../generated/bpic19-operators";
 import type { Bpic19OperatorClient, Bpic19OperatorOutcome } from "./operators-client";
 import { operatorAnswer, operatorColumns, operatorIdentity, operatorRecipe, operatorRoles } from "./operators-test-fixture";
 import { bpic19OperatorContract } from "./operators-client";
+import { Bpic19Workspace } from "./Bpic19Workspace";
+import { Bpic19Session } from "./session";
+import { CompareCoordinator } from "../compare/coordinator";
+import { ImportedInvestigationCoordinator, shownSelection, type SavedBinding } from "../imported/coordinator";
+import { SavingCoordinator } from "../saved/coordinator";
+import { scriptedComparisonClient } from "../test/comparisons";
+import { populationAnswer, preparationId, earlierPreparationId, scriptedImportClient, workspaceId } from "../test/imports";
+import { everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer } from "../test/selections";
+import { scriptedViewClient } from "../test/views";
+import { firstRevisionId, secondRevisionId, savedContent, savedSummary, reopenAnswer, saveAnswer, scriptedSavingClient } from "../test/saving";
+import { bpic19ProfileContract } from "./profile-client";
+import { bpic19MeasuresContract } from "./measures-client";
+import { measuresAnswer } from "./measures-test-fixture";
 const answering = (request: Bpic19OperatorRequest): Bpic19OperatorOutcome => ({ ok: true, answer: operatorAnswer(request) });
 function setup(client: Bpic19OperatorClient = { operators: vi.fn(async request => answering(request)) }, query?: OperatorQuery, retainedQueries?: OperatorQuery[], restoredComparison?: Bpic19OperatorComparison) {
   const props = { workspaceId: "workspace.v1:literal-fixture", identity: operatorIdentity, revision: 2, roles: operatorRoles, columns: operatorColumns, query, retainedQueries, restoredComparison, client, onInspect: vi.fn(), onKeepCases: vi.fn(), onReviewed: vi.fn(), onRetain: vi.fn(), onCompared: vi.fn(), onComparisonValidityChange: vi.fn(), onValidityChange: vi.fn() };
@@ -395,4 +408,374 @@ describe("explicit comparison-pair persistence boundary", () => {
     await act(async () => release?.(answering(pending[0])));
     expect(props.onCompared).toHaveBeenCalledExactlyOnceWith(next);
   });
+});
+
+// Workspace integration at the real coordinator and HTTP-client seams. The seven
+// source headers and saved recipe are independent frozen input, not a purchasing
+// profile. HTTP answers here are presentation fixtures, not analytical proof.
+
+
+const reachabilityColumns = ["case", "activity", "time", "eventID", "category", "value", "note"].map((name, index) => ({ name, index }));
+const reachabilitySupport = { case_ids: ["C", "N", "T", "E", "U"], case_count: 5, record_count: 13 };
+const reachabilityQuery: OperatorQuery = {"limit": 20, "offset": 0, "policy_id": "bpic19.declared_operators.v1", "recipe": {"flow_scope": "after_gr", "kind": "rule", "left_activities": ["A"], "position": "eventual", "quantifier": "every", "relation": "response", "reuse": "allow", "right_activities": ["B"], "ties": "allow_equal", "vacuity": "not_activated"}, "roles": {"event_id": 3, "item_category": 4, "net_worth": 5}};
+const reachabilitySource = "source.v1:sha256:1ed35b9d9afab39841d8b4561f93f90cbe0350bbb0820f654c36c8d28eb4d74c";
+// Frozen original row identities; this only formats controlled HTTP replies.
+const reachabilityRows = [
+  "row.v1:sha256:993c5999ee1bb0b56ea1403df5172919eddfb85a05011408a9e50c12d0adf643",
+  "row.v1:sha256:67848f2f3fcc55e5f851a1cdc3670b176ee2a35576393d7ef70596175d1b0b9f",
+  "row.v1:sha256:8f22c0c4e701fcfc7cce79c2930f3a5bd80cf20701d162832fa1026c566f24f2",
+  "row.v1:sha256:55f68616c04eadd70443ecceeadd39625921cc7810494a35790750c3da466852",
+  "row.v1:sha256:323013c3104751ea2782775bde9e5f5e3e47a8a81a198486abcff8782f3452cf",
+  "row.v1:sha256:7616a9e07254317a1092d93773eff39aeffba01def916be3c82f54b138388afe",
+  "row.v1:sha256:378939a9c87863b54e8caa301224b8d44561c7115cdcbad1b78905656b34dfb0",
+  "row.v1:sha256:6dd5299eef6620ed09e5641eac355f51321d2fe7625c376b73920652f1eaf63d",
+  "row.v1:sha256:65044f0cb571dcdfe25a4a18f587535eaae037f63589ce470f11216a1411180c",
+  "row.v1:sha256:d08215437a4be00c1938fbfa8e3467d29aadebf629267a971ff1880f9c0a82f6",
+  "row.v1:sha256:bcf4ef6310706767a977db6d6532d0688505b4db7b180f891f59ef5fc3fe98a3",
+  "row.v1:sha256:a077323efe2adf3788b444d37a7ade62f3f9644e0408119b917687fec05a0da9",
+  "row.v1:sha256:f88cc6c365f35c5a4f4ade3ddbc75836c34c5e84986bb13e1e5c5044aebfeb1f",
+];
+const sourceRows = (...positions: number[]) => positions.map(position => reachabilityRows[position]);
+const reachabilityCases: Bpic19OperatorAnswer["cases"] = [
+  {
+    case_id: "C",
+    state: "unknown",
+    reason: "conflicting_case_attribute",
+    record_count: 3,
+    record_row_ids: sourceRows(0, 1, 2),
+    observations: [
+    ],
+    unmatched_row_ids: [],
+    included_row_ids: [],
+    excluded_row_ids: [],
+    unknown_row_ids: [],
+    totals: {},
+    truth: "unknown",
+    activation_count: 1,
+    known_activation_count: 1,
+  },
+  {
+    case_id: "N",
+    state: "evaluated",
+    reason: null,
+    record_count: 4,
+    record_row_ids: sourceRows(3, 4, 5, 6),
+    observations: [
+      {
+        ordinal: 1,
+        state: "matched",
+        reason: null,
+        activation_row_ids: sourceRows(3),
+        response_row_ids: sourceRows(4),
+        candidate_row_ids: sourceRows(4),
+        unknown_row_ids: [],
+        truth: "true",
+        intervals: {},
+        start: null,
+        end: null,
+        native_invoice_id: null,
+        observation_id: "bpic19-observation.v1:sha256:a8dd14ba9558c50bfe11a2bc8459a747163718969b7c476bfc33b872691de728",
+        selected_row_ids: sourceRows(3, 4),
+      },
+      {
+        ordinal: 2,
+        state: "unmatched",
+        reason: "no_recorded_partner",
+        activation_row_ids: sourceRows(5),
+        response_row_ids: [],
+        candidate_row_ids: [],
+        unknown_row_ids: [],
+        truth: "false",
+        intervals: {},
+        start: null,
+        end: null,
+        native_invoice_id: null,
+        observation_id: "bpic19-observation.v1:sha256:e138cc5c7867d3143076ff7e36401fb4d1449f717ba0c78d4f36951f1c27bd32",
+        selected_row_ids: sourceRows(5),
+      },
+    ],
+    unmatched_row_ids: sourceRows(5),
+    included_row_ids: sourceRows(3, 4),
+    excluded_row_ids: [],
+    unknown_row_ids: [],
+    totals: {},
+    truth: "false",
+    activation_count: 2,
+    known_activation_count: 2,
+  },
+  {
+    case_id: "T",
+    state: "evaluated",
+    reason: null,
+    record_count: 3,
+    record_row_ids: sourceRows(7, 8, 9),
+    observations: [
+      {
+        ordinal: 1,
+        state: "matched",
+        reason: null,
+        activation_row_ids: sourceRows(8),
+        response_row_ids: sourceRows(7),
+        candidate_row_ids: sourceRows(7, 9),
+        unknown_row_ids: [],
+        truth: "true",
+        intervals: {},
+        start: null,
+        end: null,
+        native_invoice_id: null,
+        observation_id: "bpic19-observation.v1:sha256:39cb25cd0fc6879dbd91b6dca00e2db5f0755445ceaaa29bee3a2ca7d045071b",
+        selected_row_ids: sourceRows(8, 7),
+      },
+    ],
+    unmatched_row_ids: [],
+    included_row_ids: sourceRows(8, 7),
+    excluded_row_ids: [],
+    unknown_row_ids: [],
+    totals: {},
+    truth: "true",
+    activation_count: 1,
+    known_activation_count: 1,
+  },
+  {
+    case_id: "E",
+    state: "not_activated",
+    reason: "no_known_activation",
+    record_count: 1,
+    record_row_ids: sourceRows(10),
+    observations: [
+    ],
+    unmatched_row_ids: [],
+    included_row_ids: [],
+    excluded_row_ids: [],
+    unknown_row_ids: [],
+    totals: {},
+    truth: null,
+    activation_count: 0,
+    known_activation_count: 0,
+  },
+  {
+    case_id: "U",
+    state: "unknown",
+    reason: "unknown_rule_support",
+    record_count: 2,
+    record_row_ids: sourceRows(11, 12),
+    observations: [
+      {
+        ordinal: 1,
+        state: "unknown",
+        reason: "potential_unknown_partner",
+        activation_row_ids: sourceRows(11),
+        response_row_ids: [],
+        candidate_row_ids: [],
+        unknown_row_ids: sourceRows(12),
+        truth: "unknown",
+        intervals: {},
+        start: null,
+        end: null,
+        native_invoice_id: null,
+        observation_id: "bpic19-observation.v1:sha256:452fa0bb537bc781190dccd3cf94ea145462200ced8a05f39b27556522c3ff02",
+        selected_row_ids: sourceRows(11),
+      },
+    ],
+    unmatched_row_ids: [],
+    included_row_ids: [],
+    excluded_row_ids: [],
+    unknown_row_ids: sourceRows(12),
+    totals: {},
+    truth: "unknown",
+    activation_count: 1,
+    known_activation_count: 1,
+  },
+];
+
+function reachabilityAnswer(request: Bpic19OperatorRequest): Bpic19OperatorAnswer {
+  const answer = operatorAnswer(request);
+  return { ...answer, parent_identity: request.identity,
+    catalogue: { columns: reachabilityColumns, activities: ["A", "B", "Change Price"], clock_kind: "wall_clock", trusted_cutoff: "2018-01-10T00:00:00" },
+    population_case_count: 5, population_record_count: 13,
+    summary: { case_state_counts: { evaluated: 2, unknown: 2, not_activated: 1 }, observation_state_counts: { matched: 2, unmatched: 1, unknown: 1 },
+      truth_case_counts: { true: 1, false: 1, unknown: 2 }, activation_count: 5, known_activation_count: 5, observation_count: 4,
+      interval_distributions: {}, total_distributions: {}, occupancy: null },
+    selection_groups: [
+      { key: "truth_false", label: "truth false", case_ids: ["N"], case_count: 1, record_count: 4 },
+      { key: "truth_true", label: "truth true", case_ids: ["T"], case_count: 1, record_count: 3 },
+      { key: "unknown", label: "unknown", case_ids: ["C", "U"], case_count: 2, record_count: 5 },
+      { key: "not_activated", label: "not activated", case_ids: ["E"], case_count: 1, record_count: 1 },
+    ], cases: request.query.recipe ? structuredClone(reachabilityCases) : [], offset: 0, limit: request.query.limit, next_offset: null,
+  };
+}
+function unavailableMethod(request: Bpic19OperatorRequest) {
+  const body = { schema_version: 1, message_type: "bpic19_operator_refusal", request_id: request.request_id,
+    query_revision: request.query_revision, workspace_id: request.workspace_id, operation: "bpic19_operators",
+    code: "method_binding_unavailable", message: "This recorded-event rule has no admitted actual Method binding for normative grading.", field: "intent", retryable: false,
+    method_context: { intent: "normative_admission", identity: request.identity, query: request.query, definition_id: reachabilityAnswer(request).definition_id } };
+  expect(bpic19OperatorContract.refusal(body)).toBe(true);
+  return new Response(JSON.stringify(body), { status: 409 });
+}
+const reachabilityActive: { stop(): void }[] = [];
+afterEach(() => { for (const coordinator of reachabilityActive.splice(0)) coordinator.stop(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+async function openReachability(saved = false, profileUnavailable = false, deferMethod = false) {
+  const imports = scriptedImportClient(), selections = scriptedSelectionClient(), saves = scriptedSavingClient();
+  const investigation = new ImportedInvestigationCoordinator(imports.client, selections.client, scriptedViewClient().client);
+  const comparison = new CompareCoordinator(scriptedComparisonClient().client), session = new Bpic19Session();
+  const saving = new SavingCoordinator(saves.client, investigation, undefined, undefined, session);
+  reachabilityActive.push(investigation, comparison, saving);
+  const requests: Bpic19OperatorRequest[] = [];
+  const pendingMethod: { request: Bpic19OperatorRequest; signal: AbortSignal | null | undefined; reply: (response: Response) => void }[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (url: unknown, init?: RequestInit) => {
+    const raw: unknown = JSON.parse(String(init?.body));
+    if (url === "/api/investigations/bpic19-profile" && bpic19ProfileContract.request(raw)) {
+      if (profileUnavailable) return new Response("{}", { status: 503 });
+      const answer = { ...raw, message_type: "bpic19_profile_answer", parent_identity: raw.identity,
+        binding_state: "needs_review", columns: reachabilityColumns.map(column => ({ ...column, mapped_context: column.index > 2 })),
+        suggested_roles: { item_category: null, item_type: null, goods_receipt: null, gr_based_iv: null, purchasing_document: null, item: null, source_case: null }, profile: null };
+      expect(bpic19ProfileContract.answer(answer)).toBe(true);
+      return new Response(JSON.stringify(answer), { status: 200 });
+    }
+    if (url === "/api/investigations/bpic19-measures" && bpic19MeasuresContract.request(raw)) {
+      // Supply the independent counts boundary too: default invoice labels are
+      // absent from these original A/B/Change Price rows. No amount/flow role is bound.
+      const answer = { ...measuresAnswer(raw), parent_identity: raw.identity, population_case_count: 5, population_record_count: 13,
+        flow_case_counts: { unknown: 5 }, summaries: {}, cases: [],
+        activity_cohorts: { positive_case_ids: [], zero_case_ids: reachabilitySupport.case_ids, unavailable_case_ids: [],
+          presence_positive_case_ids: [], presence_absent_case_ids: reachabilitySupport.case_ids, presence_unknown_case_ids: [],
+          repeated_positive_case_ids: [], repeated_absent_case_ids: reachabilitySupport.case_ids, repeated_unknown_case_ids: [],
+          population_case_count: 5, presence_fraction: 0, repeated_presence_fraction: 0, denominator: 5, reason: null },
+        representation_groups: { exact: [], first_occurrence: [] }, representation_unavailable_case_ids: [], value_bands: [], value_band_unavailable_case_ids: [] };
+      expect(bpic19MeasuresContract.answer(answer)).toBe(true);
+      return new Response(JSON.stringify(answer), { status: 200 });
+    }
+    if (url === "/api/investigations/bpic19-operators" && bpic19OperatorContract.request(raw)) {
+      requests.push(structuredClone(raw));
+      if (raw.intent === "normative_admission") {
+        if (deferMethod) return new Promise<Response>(reply => pendingMethod.push({ request: raw, signal: init?.signal, reply }));
+        return unavailableMethod(raw);
+      }
+      const answer = reachabilityAnswer(raw);
+      expect(bpic19OperatorContract.answer(answer)).toBe(true);
+      return new Response(JSON.stringify(answer), { status: 200 });
+    }
+    throw new Error("Only source proposal, counts and operator HTTP boundaries are admitted");
+  }));
+  async function answerPopulation(index: number) {
+  await act(async () => {
+    const call = imports.populations[index], answer = populationAnswer(call.request);
+    answer.identity.source_id = reachabilitySource; answer.source.source_id = reachabilitySource; answer.source.filename = "literal.csv";
+    answer.preparation.source_id = reachabilitySource;
+    answer.preparation.mapping.context_columns = [3, 4, 5, 6];
+    answer.preparation.policies.time = { id: "incident.time.wall_clock_as_recorded.v1", parameters: { format: "iso8601", timezone: "none_as_recorded", snapshot_cutoff_local: "2018-01-10T00:00:00" } };
+    answer.population = reachabilitySupport; answer.coverage = { raw_record_count: 13, mapped_record_count: 13, omitted_activity_record_count: 0 };
+    answer.unassigned_record_count = 0;
+    answer.cases = reachabilityCases.map(item => ({ case_id: item.case_id, record_count: item.record_count, mapped_record_count: item.record_count, omitted_activity_record_count: 0, sequence_evaluable: item.case_id !== "U" }));
+    call.reply({ ok: true, answer }); await Promise.resolve(); await Promise.resolve();
+    const selection = selections.selections[index];
+    selection.reply({ ok: true, answer: { ...selectionAnswer(selection.request, { ...everyIncident, kept: reachabilitySupport }), parent: reachabilitySupport } });
+    await Promise.resolve(); await Promise.resolve();
+    const graph = selections.graphs[index]; graph.reply({ ok: true, answer: graphAnswer(graph.request, reachabilitySupport.case_ids) });
+  });
+  }
+  investigation.open({ workspaceId, preparationId });
+  await answerPopulation(0);
+  if (saved) {
+    const current = investigation.getState(), selected = shownSelection(current.selection)!;
+    if (current.population.phase !== "ready") throw new Error("Current source must be ready");
+    const frozen: SavedBinding = { investigationId: "investigation.v1:11111111111141118111111111111111", revisionId: firstRevisionId,
+      content: { ...savedContent, base_identity: current.population.answer.identity, selection_identity: selected.answer.identity,
+        selection_recipe: { parent_case_ids: reachabilitySupport.case_ids, predicates: [] }, comparison: null,
+        bpic19_pipeline: { schema_version: 1, actions: [{ operation: "bpic19_rule", identity: selected.answer.identity,
+          selection_prefix_length: 0, query: { ...reachabilityQuery }, definition_id: operatorAnswer({ schema_version: 1, message_type: "bpic19_operator_request", request_id: "frozen", query_revision: 1, workspace_id: workspaceId, identity: selected.answer.identity, query: reachabilityQuery }).definition_id }] } } };
+    let reopening: Promise<boolean> | undefined;
+    await act(async () => { reopening = saving.reopen({ ...savedSummary, latest_revision_id: firstRevisionId }, workspaceId); });
+    const call = saves.reopens[0], reply = reopenAnswer(call.request);
+    reply.revision.content = frozen.content; reply.restored_comparison_id = null;
+    reply.restored_selection = { identity: selected.answer.identity, parent_identity: selected.answer.parent_identity,
+      parent: reachabilitySupport, kept: reachabilitySupport, removed: { case_ids: [], case_count: 0, record_count: 0 },
+      unevaluable: { case_ids: [], case_count: 0, record_count: 0 }, predicate_results: [] };
+    await act(async () => { call.reply({ ok: true, answer: reply }); });
+    expect(await reopening).toBe(true);
+    await answerPopulation(1);
+  }
+  const props = { investigation, comparison, saving, session, active: true, onShowData: vi.fn(), onShowComparison: vi.fn() };
+  const view = render(<Bpic19Workspace {...props} />);
+  await screen.findByRole("button", { name: profileUnavailable ? "Retry source profile" : "Review these field roles" });
+  return { ...view, ...props, imports, selections, saves, requests, pendingMethod, answerPopulation, user: userEvent.setup() };
+}
+
+describe("Workspace operator reachability without a purchasing profile", () => {
+  it("replays the saved recorded rule and its authoritative original roles without a six-role profile", async () => {
+    const app = await openReachability(true);
+    expect(screen.getByRole("button", { name: "Review these field roles" }).hasAttribute("disabled")).toBe(true);
+    expect(await screen.findByRole("heading", { name: "Review recorded-event matching and waiting" })).toBeTruthy();
+    await screen.findByRole("table", { name: "Complete-item cohorts · observation groups can overlap" });
+    expect(screen.getByRole("combobox", { name: "Original eventID field" })).toHaveProperty("value", "3");
+    expect(screen.getByRole("combobox", { name: "Invariant item category field" })).toHaveProperty("value", "4");
+    expect(screen.getByRole("combobox", { name: "Original source-EUR amount field" })).toHaveProperty("value", "5");
+    expect(app.requests.filter(request => request.query.recipe !== null).every(request => JSON.stringify(request.query) === JSON.stringify(reachabilityQuery))).toBe(true);
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Save$/ }).hasAttribute("disabled")).toBe(false));
+    expect(app.session.savedPipeline()?.actions.filter(action => action.operation === "bpic19_rule")).toMatchObject([{ operation: "bpic19_rule", query: reachabilityQuery }]);
+    await app.user.selectOptions(screen.getByRole("combobox", { name: "Quantifier over activations" }), "some");
+    expect(screen.getByRole("button", { name: /^Save$/ }).hasAttribute("disabled")).toBe(true);
+    act(() => { app.saving.save("Unreviewed draft", "Must not save", "incidents"); });
+    expect(app.saves.saves).toHaveLength(0);
+    await app.user.click(screen.getByRole("button", { name: "Restore reviewed operator" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Save$/ }).hasAttribute("disabled")).toBe(false));
+    const evidence = screen.getByRole("table", { name: "Complete-item cohorts · observation groups can overlap" }).textContent;
+    await app.user.click(screen.getByRole("button", { name: "Check normative Method availability" }));
+    expect((await screen.findByRole("status", { name: "Normative Method availability" })).textContent).toContain("method_binding_unavailable");
+    expect(app.requests.at(-1)).toMatchObject({ intent: "normative_admission", query: reachabilityQuery });
+    expect(screen.getByRole("table", { name: "Complete-item cohorts · observation groups can overlap" }).textContent).toBe(evidence);
+    expect(screen.getByRole("button", { name: "Download reviewed operator receipt" }).hasAttribute("disabled")).toBe(false);
+    await app.user.click(screen.getByRole("button", { name: /^Save$/ }));
+    await app.user.click(screen.getByRole("button", { name: "Save revision" }));
+    expect(app.saves.saves).toHaveLength(1);
+    const saved = app.saves.saves[0];
+    expect(saved.request.bpic19_pipeline?.actions.find(action => action.operation === "bpic19_rule")?.query).toEqual(reachabilityQuery);
+    const reply = saveAnswer(saved.request, secondRevisionId, false);
+    reply.revision.content.bpic19_pipeline = structuredClone(saved.request.bpic19_pipeline);
+    await act(async () => { saved.reply({ ok: true, answer: reply }); });
+    expect(app.investigation.getState().saved?.revisionId).toBe(secondRevisionId);
+    expect(screen.queryByRole("button", { name: "Review completion and inclusion cohorts" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Evaluate purchasing criteria and priorities" })).toBeNull();
+  });
+  it("opens a fresh catalogue with explicit unmapped roles even while the purchasing profile is unavailable", async () => {
+    const app = await openReachability(false, true);
+    await app.user.click(screen.getByRole("button", { name: "Review invoice matches, recorded rules and waiting intervals" }));
+    const eventId = await screen.findByRole("combobox", { name: "Original eventID field" });
+    await waitFor(() => expect(within(eventId).getAllByRole("option")).toHaveLength(8));
+    expect(app.requests).toHaveLength(1);
+    expect(app.requests[0].query).toMatchObject({ recipe: null, roles: { event_id: null, item_category: null, net_worth: null } });
+    for (const label of ["Original eventID field", "Invariant item category field", "Original source-EUR amount field"]) {
+      expect(screen.getByRole("combobox", { name: label })).toHaveProperty("value", "");
+    }
+    expect(within(eventId).getByRole("option", { name: "6: note" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Review and run operator" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.queryByRole("button", { name: "Review completion and inclusion cohorts" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Evaluate purchasing criteria and priorities" })).toBeNull();
+  });
+
+  it("cancels a Method check and fences its old refusal after a semantic preparation change", async () => {
+    const app = await openReachability(true, false, true);
+    await screen.findByRole("table", { name: "Complete-item cohorts · observation groups can overlap" });
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Save$/ }).hasAttribute("disabled")).toBe(false));
+    await app.user.click(screen.getByRole("button", { name: "Check normative Method availability" }));
+    await app.user.click(screen.getByRole("button", { name: "Cancel Method availability check" }));
+    expect(app.pendingMethod[0].signal?.aborted).toBe(true);
+    await act(async () => { app.pendingMethod[0].reply(unavailableMethod(app.pendingMethod[0].request)); });
+    expect(screen.getByRole("status", { name: "Normative Method availability" }).textContent).toContain("cancelled");
+    expect(screen.getByRole("button", { name: /^Save$/ }).hasAttribute("disabled")).toBe(false);
+    await app.user.click(screen.getByRole("button", { name: "Check normative Method availability" }));
+    await act(async () => { app.investigation.open({ workspaceId, preparationId: earlierPreparationId }); });
+    expect(screen.getByRole("button", { name: /^Save$/ }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("heading", { name: "Review recorded-event matching and waiting" }).closest(".bpic19-main")?.hasAttribute("inert")).toBe(true);
+    await app.answerPopulation(2);
+    expect(app.pendingMethod[1].signal?.aborted).toBe(true);
+    await app.user.click(await screen.findByRole("button", { name: "Review invoice matches, recorded rules and waiting intervals" }));
+    await waitFor(() => expect(app.requests.at(-1)?.identity.preparation_id).toBe(earlierPreparationId));
+    expect(app.requests.at(-1)?.query).toMatchObject({ recipe: null, roles: { event_id: 3, item_category: null, net_worth: null } });
+    await act(async () => { app.pendingMethod[1].reply(unavailableMethod(app.pendingMethod[1].request)); });
+    expect(screen.queryByRole("status", { name: "Normative Method availability" })).toBeNull();
+    expect(screen.queryByRole("table", { name: "Complete-item cohorts · observation groups can overlap" })).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Invariant item category field" })).toHaveProperty("value", "");
+  });
+
 });

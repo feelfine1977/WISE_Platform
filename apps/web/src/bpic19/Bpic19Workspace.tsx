@@ -392,18 +392,18 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
         <Bpic19RetainedAssessments workspaceId={population.workspace_id} baseIdentity={population.identity} currentIdentity={identity}
           actions={session.declarations()} revision={revision} labels={saving.nativeRunLabels(savedRevision)}
           onInspect={(parentIdentity,caseId,rowIds,reason)=>{investigation.closeCase();setLayout('side');void lineage.open({identity:parentIdentity,caseId,rowIds,reason});}} />
-        {currentProfile?.profile && <>
+        <>
           {!operatorsEnabled && !queries.current.operators && <button onClick={() => setOperatorsEnabled(true)}>Review invoice matches, recorded rules and waiting intervals</button>}
           {(operatorsEnabled || queries.current.operators) && <Bpic19Operators key={key} workspaceId={population.workspace_id} identity={identity} revision={revision}
-            roles={{ event_id: currentProfile.columns.filter(column => column.name === "eventID" || column.name === "source__eventID").length === 1
-                ? currentProfile.columns.find(column => column.name === "eventID" || column.name === "source__eventID")!.index : null,
-              item_category: currentProfile.profile.definition.roles.item_category, net_worth: roles.net_worth ?? null }}
+            roles={{ event_id: currentProfile?.columns.filter(column => column.name === "eventID" || column.name === "source__eventID").length === 1
+                ? currentProfile?.columns.find(column => column.name === "eventID" || column.name === "source__eventID")!.index : null,
+              item_category: currentProfile?.profile?.definition.roles.item_category ?? null, net_worth: roles.net_worth ?? null }}
             query={queries.current.operators} retainedQueries={session.retainedActions().filter(action=>["bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"].includes(action.operation)).map(action=>action.query as unknown as OperatorQuery)}
-            columns={currentProfile.columns} onReviewed={reviewedOperators} onRetain={retainOperator} onValidityChange={operatorsValid} onInspect={inspect}
+            columns={currentProfile?.columns} onReviewed={reviewedOperators} onRetain={retainOperator} onValidityChange={operatorsValid} onInspect={inspect}
             restoredComparison={recipeComparisons.bpic19_operator_comparison?{...recipeComparisons.bpic19_operator_comparison.query,identity:recipeComparisons.bpic19_operator_comparison.identity} as unknown as Bpic19OperatorComparison:undefined}
             onCompared={comparedOperators} onComparisonValidityChange={operatorComparisonDraftValid}
             onKeepCases={caseIds => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }} />}
-        </>}
+        </>
         {currentProfile?.profile && <>
           {!scoreEnabled && !currentSavedRunId && <button onClick={() => setScoreEnabled(true)}>Evaluate purchasing criteria and priorities</button>}
           {(scoreEnabled || currentSavedRunId && state.selection.phase === "ready") && <Bpic19SavedScore key={key} revision={revision} savedRunId={currentSavedRunId}
