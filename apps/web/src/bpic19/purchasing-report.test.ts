@@ -23,7 +23,49 @@ function literal():{revision:SavedRevision;manifest:Bpic19PipelineManifest}{
       snapshot:{artifacts:[{kind:"report",filename,sha256:digest,byte_count:40},{kind:"cases",filename:"b".repeat(64)+".json.gz",sha256:"b".repeat(64),byte_count:50}]},stale_directory_inventory:["z-old.png"]}},
   ]};return {revision,manifest};
 }
+function expectSubtypeSection(md:string,step:number,definition:string,swapped:boolean){
+  const sections=md.replaceAll("\\_","_").split(/(?=^#{2,3} )/m);
+  const matches=sections.filter(section=>section.startsWith(`### Step ${step}: bpic19_flow_comparison\n`));
+  expect(matches).toHaveLength(1);const section=matches[0];
+  expect(section).toContain(`\nDefinition ${definition}. Output SHA-256 `);
+  const block=(heading:string)=>{const parts=section.split(heading+"\n\n");expect(parts).toHaveLength(2);return parts[1].split(/\n(?:\*\*|[a-z_]+:)/)[0];};
+  expect(block("**Target subgroup predicate**")).toContain(`| item_type_value | ${swapped?"Service":"Standard"} |`);
+  expect(block("**Comparator subgroup predicate**")).toContain(`| item_type_value | ${swapped?"Standard":"Service"} |`);
+  expect(block("**Original-column role bindings**")).toContain("| item_type | 5 |");
+  for(const [role,ids,records] of [["target",swapped?"D1_1, X_2":"D4_1, X_1",swapped?4:2],["reference",swapped?"D4_1, X_1":"D1_1, X_2",swapped?2:4]] as const){
+    expect(section.split("\n")).toContain(`${role} complete-item IDs: ${ids}.`);
+    for(const [field,value] of [["case_count",2],["record_count",records],["document_count",2]])expect(block(role+":")).toContain(`| ${field} | ${value} |`);
+  }
+  expect(section.split("\n")).toContain("outside complete-item IDs: Y_1.");
+  expect(section.split("\n")).toContain("unavailable complete-item IDs: Z_1.");
+  expect(section.split("\n")).toContain("overlap_document_ids: X.");
+  expect(block("**Recorded limitations**")).toContain("- Literal count comparison; document supports overlap, not a causal effect.");
+}
 describe("human-readable frozen purchasing report",()=>{
+  it("scopes A and current B predicates, supports and limitations to their own action/definition",()=>{
+    const {revision,manifest}=literal();
+    const query={policy_id:"bpic19.flow_item_type_comparison.v1"};
+    for(const swapped of [false,true]){
+      const definition_id=swapped?"subtype-B":"subtype-A";
+      revision.content.bpic19_pipeline!.actions.push({operation:"bpic19_flow_comparison",identity:baseIdentity,query,definition_id});
+      manifest.outputs.push({operation:"bpic19_flow_comparison",definition_id,sha256:(swapped?"4":"3").repeat(64),output:{identity:baseIdentity,query,
+        definition:{target:{flow_id:"after_gr",item_type_state:"invariant",item_type_value:swapped?"Service":"Standard"},reference:{flow_id:"after_gr",item_type_state:"invariant",item_type_value:swapped?"Standard":"Service"},profile_query:{roles:{item_category:4,item_type:5},policy_id:"bpic19.all_raw_case_attributes.v1"}},
+        comparison:{target:{case_ids:swapped?["D1_1","X_2"]:["D4_1","X_1"],case_count:2,record_count:swapped?4:2,document_count:2},
+          reference:{case_ids:swapped?["D4_1","X_1"]:["D1_1","X_2"],case_count:2,record_count:swapped?2:4,document_count:2},outside:{case_ids:["Y_1"]},unavailable:{case_ids:["Z_1"]},documents:{overlap_document_ids:["X"]},
+          limitations:["Literal count comparison; document supports overlap, not a causal effect."]}}});
+    }
+    const md=purchasingReportMarkdown(revision,manifest);
+    expectSubtypeSection(md,3,"subtype-A",false);expectSubtypeSection(md,4,"subtype-B",true);
+    const b=md.slice(md.indexOf("### Step 4:"),md.indexOf("\n## Reported literature"));
+    expect(b.length).toBeGreaterThan(100);
+    expect(()=>expectSubtypeSection(md.replace(b,""),4,"subtype-B",true)).toThrow();
+    const stalePredicate=b.replace("| item\\_type\\_value | Service |","| item\\_type\\_value | Standard |");
+    expect(stalePredicate).not.toBe(b);
+    expect(()=>expectSubtypeSection(md.replace(b,stalePredicate),4,"subtype-B",true)).toThrow();
+    const staleMembers=b.replace("target complete-item IDs: D1\\_1, X\\_2.","target complete-item IDs: D4\\_1, X\\_1.");
+    expect(staleMembers).not.toBe(b);
+    expect(()=>expectSubtypeSection(md.replace(b,staleMembers),4,"subtype-B",true)).toThrow();
+  });
   it("names the verified selection-step association and exact category labels without retrofitting legacy origins",()=>{
     const {revision,manifest}=literal();
     revision.content.bpic19_pipeline!.actions[0].selection_keep={policy_id:"bpic19.profile_group_keep.v1",step_index:0,group:{kind:"flow",flow_id:"before_gr"}};

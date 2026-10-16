@@ -66,6 +66,10 @@ const tools:Record<string,string>={bpic19_profile:"WISE all-original-record sour
 function definitionFacts(output: Record<string,unknown>): string {
   const definition=record(output.definition ?? record(output.profile).definition),report=record(output.report),settings=record(report.settings);
   let result=scalarFacts(definition);
+  if(Object.keys(record(definition.profile_query)).length){
+    result+="\n**Reviewed comparison source profile**\n\n"+definitionFacts({definition:definition.profile_query});
+    for(const [key,title]of [["target","Target subgroup predicate"],["reference","Comparator subgroup predicate"]])result+=`\n**${title}**\n\n`+scalarFacts(definition[key]);
+  }
   for(const key of ["activity_selector","interval_source","interval_target","creation_selector","value_band_edges"]){if(definition[key]!==undefined)result+=`\n${key}: ${escaped(idPreview(definition[key]))}.\n`;}
   if(Object.keys(record(definition.roles)).length)result+="\n**Original-column role bindings**\n\n"+scalarFacts(definition.roles);
   if(Object.keys(record(definition.category_lineage)).length)result+="\n**Verified Item Category correspondence**\n\n"+scalarFacts(definition.category_lineage)+"\nSame-position raw case and category cells were checked across the entire source, including records without usable timestamps. This does not verify other fields or conversion authorship.\n";
@@ -101,6 +105,10 @@ function computedResults(operation: string, output: Record<string,unknown>): str
   if(Object.keys(record(output.summaries)).length)result+="\n**Raw measure distributions; unavailable values are separate from zero**\n\n"+table(["Measure","Eligible items","Known zero","Unavailable","Minimum","Median","Mean","Maximum"],Object.entries(record(output.summaries)).map(([key,value])=>{const summary=record(value);return [key,summary.available_case_count,summary.zero_case_count,summary.unavailable_case_count,summary.minimum,summary.median,summary.mean,summary.maximum];}));
   if(Object.keys(cohorts).length){result+="\n**Cohort original support**\n\n"+scalarFacts(cohorts.original);for(const [key,value]of Object.entries(record(cohorts.inclusion)))if(["retained","excluded","unknown"].includes(key))result+=`\nInclusion ${key}:\n\n`+scalarFacts(value);result+=scalarRows(cohorts.completion_groups,"Recorded completion states");for(const [key,value]of Object.entries(record(cohorts.retention)))result+=`\nAnalysis ${key}:\n\n`+scalarFacts(value);}
   if(Object.keys(comparison).length){result+="\n**Explicit comparison support**\n\n"+scalarFacts(comparison.parent);for(const key of ["target","reference","outside","unavailable","shares","documents"])if(comparison[key]!==undefined){result+=`\n${key}:\n\n`+scalarFacts(comparison[key]);const summary=record(comparison[key]).summary;if(summary)result+="\n"+scalarFacts(summary);const reasons=record(comparison[key]).unavailable_reasons;if(reasons)result+="\nLocal unavailable reasons:\n\n"+scalarFacts(reasons);}
+    if(operation==="bpic19_flow_comparison"){
+      for(const key of ["parent","flow_parent","comparison_parent","target","reference","outside","unavailable","scope_unavailable"])result+=`\n${escaped(key)} complete-item IDs: ${escaped(idPreview(record(comparison[key]).case_ids))}.\n`;
+      for(const key of ["union_document_ids","overlap_document_ids","unknown_document_case_ids"])result+=`\n${escaped(key)}: ${escaped(idPreview(record(comparison.documents)[key]))}.\n`;
+    }
     result+=scalarRows(comparison.transitions ?? comparison.completion_transitions,"Recorded state transitions")+scalarRows(comparison.same_state_groups,"Recorded same-state support");
     const differences=records(comparison.support_differences);
     if(differences.length)result+="\n**Recipe support differences; memberships remain in the machine export**\n\n"+table(["Support","Both recipes","Target only","Reference only"],differences.map(value=>[value.support,Array.isArray(value.both)?value.both.length:null,Array.isArray(value.target_only)?value.target_only.length:null,Array.isArray(value.reference_only)?value.reference_only.length:null]));
