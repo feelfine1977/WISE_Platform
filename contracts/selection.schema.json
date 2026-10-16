@@ -305,6 +305,9 @@
         },
         {
           "$ref": "#/$defs/MaxRawGapAtLeast"
+        },
+        {
+          "$ref": "#/$defs/RecordAttributesAll"
         }
       ]
     },
@@ -324,6 +327,9 @@
         },
         "unevaluable": {
           "$ref": "#/$defs/PopulationSupport"
+        },
+        "record_evidence": {
+          "$ref": "#/$defs/RecordAttributeEvidence"
         }
       },
       "required": [
@@ -1342,6 +1348,121 @@
         "kind",
         "hours",
         "negate"
+      ]
+    },
+    "RecordAttributeCondition": {
+      "title": "RecordAttributeCondition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "column_index",
+        "values"
+      ]
+    },
+    "RecordAttributesAll": {
+      "title": "RecordAttributesAll",
+      "description": "OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "record_attributes_all"
+        },
+        "policy_id": {
+          "type": "string",
+          "const": "incident.raw.same_record_all.v1"
+        },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/RecordAttributeCondition"
+          }
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "policy_id",
+        "conditions",
+        "negate"
+      ]
+    },
+    "RecordAttributeCaseEvidence": {
+      "title": "RecordAttributeCaseEvidence",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "matching_row_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RowId"
+          }
+        },
+        "unevaluable_row_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RowId"
+          }
+        }
+      },
+      "required": [
+        "case_id",
+        "matching_row_ids",
+        "unevaluable_row_ids"
+      ]
+    },
+    "RecordAttributeEvidence": {
+      "title": "RecordAttributeEvidence",
+      "description": "Nonempty matching or unknown original-row support before optional negation, ordered by case ID then original source position. Absence is evaluated over the complete history; not-matching rows are never deleted.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.raw.same_record_all.v1"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecordAttributeCaseEvidence"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "cases"
       ]
     }
   }

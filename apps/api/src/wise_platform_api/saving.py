@@ -27,17 +27,22 @@ module compares what it computes with what was saved.
 from __future__ import annotations
 
 import logging
+import hashlib
+import json
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from pydantic import BaseModel, ValidationError
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
-from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare
+from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare, content_identity, PARSER_VERSION
 from wise_platform_analytics.selection import SelectionError, SelectionResult, select_cases
 from wise_platform_analytics.version import IMPLEMENTATION_VERSION
 
 from . import __version__
 from .boundary import SCHEMA_VERSION
+from .bpic19_pipeline import replay_pipeline
+from .bpic19_prepared_runs import retained_prepared_manifest
 from .comparisons import compared, keep_comparison
 from .generated.saving import (
     ListSavedAnswer,
@@ -45,6 +50,8 @@ from .generated.saving import (
     PresentationRecovery,
     ReopenInvestigationAnswer,
     ReopenInvestigationRequest,
+    RecoverInvestigationMetadataRequest,
+    RecoverInvestigationMetadataAnswer,
     SaveInvestigationAnswer,
     SaveInvestigationRequest1,
     SavingRefusal,
@@ -55,6 +62,7 @@ from .saved_store import Conflict, SavedInvestigations, StoredRevision
 from .saving_boundary import (
     LIST_SAVED,
     REOPEN,
+    RECOVER_METADATA,
     SAVE,
     STATUS,
     parse_saving_body,
@@ -112,12 +120,68 @@ class Saving:
     def reopen(self, body: bytes) -> SavingReply:
         return _answering(REOPEN, parse_saving_body(body, ReopenInvestigationRequest, REOPEN), self._reopen)
 
+    def recover_metadata(self, body: bytes) -> SavingReply:
+        return _answering(RECOVER_METADATA, parse_saving_body(body, RecoverInvestigationMetadataRequest, RECOVER_METADATA), self._recover_metadata)
+
     # Use cases ----------------------------------------------------------------------------
+
+    def _recover_metadata(self, request: RecoverInvestigationMetadataRequest, given: dict) -> SavingReply:
+        """Read bounded saved notes/references without replay, selection restoration or writes.
+
+        The content hash is checked by the revision store. Source bytes and analytical
+        artifacts are intentionally not admitted here: any original history is fetched
+        independently through the normal source-evidence route.
+        """
+        workspace = self._imports.opened_workspace(given["workspace_id"])
+        if isinstance(workspace, Problem):
+            return _problem(RECOVER_METADATA, workspace, given)
+        revision = SavedInvestigations(workspace).revision(given["saved_revision_id"])
+        if isinstance(revision, Problem):
+            return _problem(RECOVER_METADATA, revision, given)
+        content = revision.content
+        page = given["page"]
+        def paged(items, offset, limit):
+            end = min(offset + limit, len(items))
+            return {"offset": offset, "total": len(items), "items": items[offset:end],
+                    "next_offset": end if end < len(items) else None}
+        note = content["notes"]
+        offset = page["notes_offset"]
+        end = min(offset + 4000, len(note))
+        # Python string offsets are Unicode code points; the client follows the
+        # supplied next offset rather than guessing from UTF-16 string length.
+        notes = {"offset": offset, "total": len(note), "text": note[offset:end],
+                 "next_offset": end if end < len(note) else None}
+        bookmarks = paged(content["bookmarks"], page["bookmarks_offset"], 20)
+        bookmarks["items"] = [{**bookmark, "label": bookmark["label"][:256],
+            "label_truncated": len(bookmark["label"]) > 256,
+            "note": bookmark["note"][:4000], "note_truncated": len(bookmark["note"]) > 4000,
+            "row_ids": bookmark["row_ids"][:200], "row_count": len(bookmark["row_ids"]),
+            "row_ids_complete": len(bookmark["row_ids"]) <= 200} for bookmark in bookmarks["items"]]
+        claims = paged((content.get("bpic19_pipeline") or {}).get("literature_claims", []), page["claims_offset"], 10)
+        return _answer(RecoverInvestigationMetadataAnswer, _envelope("recover_investigation_metadata_answer", given) | {
+            "saved_revision_id": revision.saved_revision_id, "investigation_id": revision.investigation_id,
+            "status": "historical_metadata_only", "metadata_integrity": "saved_content_hash_verified",
+            "outputs_restored": False, "selection_restored": False, "source_verified": False,
+            "metadata": {"name": content["name"][:256], "name_truncated": len(content["name"]) > 256,
+                "base_identity": content["base_identity"], "selection_identity": content["selection_identity"],
+                "notes": notes, "bookmarks": bookmarks, "literature_claims": claims}})
 
     def _save(self, request: SaveInvestigationRequest1, given: dict) -> SavingReply:
         workspace = self._imports.opened_workspace(given["workspace_id"])
         if isinstance(workspace, Problem):
             return _problem(SAVE, workspace, given)
+        if given.get("bpic19_pipeline") is not None and given.get("expected_revision_id") is not None:
+            store = SavedInvestigations(workspace)
+            head = store.head(given["investigation_id"])
+            # Publication still decides stale/foreign expected revisions using
+            # the established conflict contract. Inspect only the actual head.
+            if not isinstance(head, Problem) and head.latest_revision_id == given["expected_revision_id"]:
+                prior = store.revision(given["expected_revision_id"])
+                if isinstance(prior, Problem): return _problem(SAVE, prior, given)
+                integrity = _retained_pipeline_integrity(prior)
+                if integrity is not None: return _problem(SAVE, integrity, given)
+        prepared_manifest = retained_prepared_manifest(workspace, given.get("bpic19_prepared_assessments"))
+        if isinstance(prepared_manifest, Problem): return _problem(SAVE, prepared_manifest, given)
         reference = given.get("score_run_ref")
         unreferable = _score_reference_problem(workspace, reference, given["base_identity"])
         if unreferable is not None:
@@ -134,9 +198,16 @@ class Saving:
             "bookmarks": given["bookmarks"],
             "score_run_ref": reference,
         }
+        if given.get("bpic19_pipeline") is not None:
+            content["bpic19_pipeline"] = given["bpic19_pipeline"]
+        if given.get("bpic19_prepared_assessments") is not None:
+            content["bpic19_prepared_assessments"] = given["bpic19_prepared_assessments"]
         question = self._question(workspace, content, None)
         if isinstance(question, Problem):
             return _problem(SAVE, question, given)
+        pipeline = self._pipeline(workspace.workspace_id, content, question)
+        if isinstance(pipeline, Problem):
+            return _problem(SAVE, pipeline, given)
         presentation = given.get("presentation_state")
         published = SavedInvestigations(workspace).publish(
             given["investigation_id"],
@@ -147,7 +218,8 @@ class Saving:
                 "analytics_version": IMPLEMENTATION_VERSION,
                 "source": dict(question.source),
                 "preparation": dict(question.preparation.descriptor),
-                "results": _results(question),
+                "results": {**_results(question), **({"bpic19_pipeline": pipeline} if pipeline is not None else {}),
+                            **({"bpic19_prepared_assessments": prepared_manifest} if prepared_manifest is not None else {})},
                 "presentation_state": presentation,
             },
         )
@@ -175,6 +247,8 @@ class Saving:
                 "created_investigation": published.created_investigation,
                 "semantic_change": published.semantic_change,
                 "recovery": {"presentation_state": presentation, "warnings": []},
+                **({"bpic19_outputs": pipeline} if pipeline is not None else {}),
+                **({"bpic19_prepared_outputs": prepared_manifest} if prepared_manifest is not None else {}),
             },
         )
 
@@ -219,6 +293,12 @@ class Saving:
                 given,
                 "saved_revision_id",
             )
+        integrity = _retained_pipeline_integrity(revision)
+        if integrity is not None: return _problem(REOPEN, integrity, given)
+        prepared_manifest = retained_prepared_manifest(workspace, revision.content.get("bpic19_prepared_assessments"))
+        if isinstance(prepared_manifest, Problem): return _problem(REOPEN, prepared_manifest, given)
+        if revision.results.get("bpic19_prepared_assessments") != prepared_manifest:
+            return _problem(REOPEN, Problem("checksum_mismatch", "The saved prepared manifest differs from its immutable references. Nothing was scored again.", "saved_revision_id"), given)
         unreferable = _score_reference_problem(
             workspace, revision.content.get("score_run_ref"), revision.content["base_identity"]
         )
@@ -226,10 +306,21 @@ class Saving:
             return _problem(REOPEN, Problem(unreferable.code, unreferable.message, "saved_revision_id"), given)
         question = self._question(workspace, revision.content, revision)
         if isinstance(question, Problem):
-            return _problem(REOPEN, Problem(question.code, question.message, "saved_revision_id"), given)
+            # Preserve the actual source reference for scoped BPIC integrity
+            # failures; generic import/Resolution reopen fields stay unchanged.
+            source_integrity = (revision.content.get("bpic19_pipeline") is not None
+                                and question.field == "base_identity.source_id"
+                                and question.code in {"artifact_unavailable", "checksum_mismatch"})
+            return _problem(REOPEN, Problem(question.code, question.message,
+                                           question.field if source_integrity else "saved_revision_id"), given)
         differs = _differing_results(revision, question)
         if differs is not None:
             return _problem(REOPEN, Problem(differs.code, differs.message, "saved_revision_id"), given)
+        pipeline = self._pipeline(workspace.workspace_id, revision.content, question)
+        if isinstance(pipeline, Problem):
+            return _problem(REOPEN, pipeline, given)
+        if revision.results.get("bpic19_pipeline") != pipeline:
+            return _problem(REOPEN, Problem("identity_mismatch", "The saved pipeline output differs from its source replay. The saved revision was not overwritten.", "saved_revision_id"), given)
         registry = self._imports.selections
         registry.keep(workspace.workspace_id, question.parent)
         registry.keep(workspace.workspace_id, question.selection)
@@ -241,6 +332,8 @@ class Saving:
             _envelope("reopen_investigation_answer", given)
             | {
                 "revision": revision.revision(),
+                **({"bpic19_outputs": pipeline} if pipeline is not None else {}),
+                **({"bpic19_prepared_outputs": prepared_manifest} if prepared_manifest is not None else {}),
                 "restored_selection": {
                     "identity": selected["identity"],
                     "parent_identity": question.parent.identity_dict(),
@@ -274,10 +367,11 @@ class Saving:
                     f"({named[name]} instead of {base[name]}). Select the incidents of this preparation again.",
                     f"selection_identity.{name}",
                 )
-        source = self._source(workspace, str(base["source_id"]), saved)
+        bpic = content.get("bpic19_pipeline") is not None
+        source = self._source(workspace, str(base["source_id"]), saved, bpic=bpic)
         if isinstance(source, Problem):
             return source
-        preparation = self._preparation(workspace, base, saved)
+        preparation = self._preparation(workspace, base, saved, bpic=bpic)
         if isinstance(preparation, Problem):
             return preparation
         found = self._imports.prepared_snapshot(workspace, str(base["preparation_id"]), "base_identity.preparation_id")
@@ -330,9 +424,53 @@ class Saving:
             return problem
         return Question(prepared, source, preparation, parent, selection, comparison)
 
+    def _pipeline(self, workspace_id: str, content: dict, question: Question):
+        registry = self._imports.selections
+        prefixes = [question.parent]
+        pipeline = content.get("bpic19_pipeline")
+        recipe = content["selection_recipe"]
+        if pipeline is not None:
+            try:
+                predicates = [package_predicate(item) for item in recipe["predicates"]]
+                prefixes.extend(select_cases(question.prepared, predicates[:length], recipe["parent_case_ids"])
+                                for length in range(1, len(predicates)))
+            except SelectionError as error:
+                return Problem("selection_mismatch", f"An intermediate selection prefix cannot be replayed: {error}", "selection_recipe")
+        if recipe["predicates"]: prefixes.append(question.selection)
+        if pipeline is not None:
+            for index, action in enumerate(pipeline["actions"]):
+                if "selection_prefix_length" not in action: continue
+                length = action["selection_prefix_length"]
+                field = f"bpic19_pipeline.actions.{index}.selection_prefix_length"
+                if length is None:
+                    computed = question.prepared.identity_dict()
+                elif type(length) is int and 0 <= length < len(prefixes):
+                    computed = prefixes[length].identity_dict()
+                else:
+                    return Problem("identity_mismatch", "The declared selection-prefix position is outside this saved recipe.", field)
+                if action["identity"] != computed:
+                    return Problem("identity_mismatch", "The action identity differs from its declared, replayed selection prefix.", field)
+        # Only populations computed from this frozen parent and these exact steps
+        # enter the registry. Caller-supplied action identities are never registered.
+        for selection in prefixes: registry.keep(workspace_id, selection)
+        return replay_pipeline(self._imports, workspace_id, content.get("bpic19_pipeline"),
+                               [question.prepared.identity_dict(), *[selection.identity_dict() for selection in prefixes]],
+                               selection_recipe=recipe,
+                               selection_prefix_identities=[selection.identity_dict() for selection in prefixes],
+                               selection_prefix_supports=([{"case_ids": selection.kept.case_ids,
+                                   "case_count": selection.kept.case_count, "record_count": selection.kept.record_count} for selection in prefixes]
+                                   if pipeline is not None and any("selection_keep" in action for action in pipeline["actions"]) else None))
+
     def _source(
-        self, workspace: Workspace, source_id: str, saved: StoredRevision | None
+        self, workspace: Workspace, source_id: str, saved: StoredRevision | None, *, bpic: bool = False
     ) -> Mapping[str, object] | Problem:
+        if bpic:
+            integrity = workspace.reference_integrity("source", source_id)
+            if integrity.state != "available":
+                code = "checksum_mismatch" if integrity.state == "checksum_invalid" else "artifact_unavailable"
+                return Problem(code, f"The saved BPIC source reference {source_id} is {integrity.state}. Original import/source-history refusals are unchanged; nothing was rebound or repaired.", "base_identity.source_id")
+            assert integrity.record is not None
+            return integrity.record
         state = workspace.source_bytes_state(source_id)
         name = f"the file {saved.source.get('filename')!s} " if saved is not None else "the source file "
         if state == "missing":
@@ -355,15 +493,32 @@ class Saving:
         return record.to_dict()
 
     def _preparation(
-        self, workspace: Workspace, base: Mapping[str, object], saved: StoredRevision | None
+        self, workspace: Workspace, base: Mapping[str, object], saved: StoredRevision | None, *, bpic: bool = False
     ) -> StoredPreparation | Problem:
         """The kept preparation of the base identity; when reopening, prepared again from the saved recipe if gone."""
         preparation_id = str(base["preparation_id"])
         record = workspace.preparation(preparation_id)
+        if bpic and isinstance(record, Problem) and record.code == "preparation_unavailable":
+            path = workspace.path / "preparations" / (preparation_id.rsplit(":", 1)[-1] + ".json")
+            if path.exists():
+                try: path.read_bytes()
+                except OSError:
+                    return Problem("artifact_unavailable", "The saved BPIC preparation record cannot be read. Nothing was repaired.", "base_identity.preparation_id")
+                return Problem("checksum_mismatch", "The saved BPIC preparation record is malformed. Its recipe was not replaced from defaults or metadata.", "base_identity.preparation_id")
         if isinstance(record, Problem) and record.code == "preparation_unavailable" and saved is not None:
             record = _prepared_again(workspace, base, saved)
         if isinstance(record, Problem):
             return Problem(record.code, record.message, "base_identity.preparation_id")
+        if bpic:
+            descriptor = record.descriptor
+            try:
+                expected = content_identity("preparation", {"format_version": 1, "source_id": descriptor["source_id"],
+                    "parser_version": PARSER_VERSION, "dialect": descriptor.get("dialect"), "mapping": descriptor.get("mapping"),
+                    "policies": descriptor.get("policies"), "implementation_version": IMPLEMENTATION_VERSION})
+            except (KeyError, ValueError, TypeError):
+                expected = None
+            if expected != preparation_id:
+                return Problem("checksum_mismatch", "The saved BPIC preparation descriptor no longer matches its content identity. Nothing was rebound, cached or repaired.", "base_identity.preparation_id")
         if record.source_id != base["source_id"]:
             return Problem(
                 "identity_mismatch",
@@ -656,6 +811,32 @@ def _answer(model: type[BaseModel], body: dict) -> SavingReply:
             f"{'.'.join(str(part) for part in first['loc'])}: {first['msg']}"
         ) from None
     return SavingReply(200, body)
+
+
+def _retained_pipeline_integrity(revision: StoredRevision) -> Problem | None:
+    """Verify recorded canonical output receipts before any operator replay."""
+    pipeline = revision.content.get("bpic19_pipeline")
+    if pipeline is None: return None
+    manifest = revision.results.get("bpic19_pipeline")
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("outputs"), list):
+        return Problem("artifact_unavailable", "The saved BPIC output manifest is missing. Nothing was computed again.", "saved_revision_id")
+    expected = [(action["operation"], action["definition_id"]) for action in pipeline["actions"] if action["operation"] != "bpic19_method_gate"]
+    present = []
+    for index, entry in enumerate(manifest["outputs"]):
+        field = f"results.bpic19_pipeline.outputs.{index}"
+        if not isinstance(entry, dict) or not isinstance(entry.get("output"), dict):
+            return Problem("artifact_unavailable", "A saved BPIC output reference is missing.", field)
+        digest = entry.get("sha256")
+        try:
+            raw = json.dumps(entry["output"], ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+        except (ValueError, TypeError):
+            return Problem("checksum_mismatch", "A saved BPIC output is not its recorded canonical payload.", field)
+        if not isinstance(digest, str) or not re.fullmatch("[a-f0-9]{64}", digest) or hashlib.sha256(raw).hexdigest() != digest:
+            return Problem("checksum_mismatch", "A saved BPIC output failed its recorded canonical checksum. Notes remain historical metadata only.", field)
+        present.append((entry.get("operation"), entry.get("definition_id")))
+    if present != expected:
+        return Problem("artifact_unavailable", "The saved BPIC manifest is missing an ordered output reference or names another definition.", "results.bpic19_pipeline.outputs")
+    return None
 
 
 def _score_reference_problem(

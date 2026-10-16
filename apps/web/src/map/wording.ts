@@ -60,6 +60,13 @@ export function stepWording(step: SelectionPredicate): string {
           : `Keep incidents where the first record does not have ${values} in ${columnWording(step.column_index)}`
         : `Keep incidents where ${anchor} has ${values} in ${columnWording(step.column_index)}`;
     }
+    case "record_attributes_all": {
+      const conditions = step.conditions.map(condition => {
+        const values = condition.values.map(value => value === null ? "a blank cell" : quoted(value)).join(" or ");
+        return `${columnWording(condition.column_index)} is ${values}`;
+      }).join(" AND ");
+      return `Keep incidents where ${step.negate ? "no" : "at least one"} original record satisfies all conditions on that same record: ${conditions}`;
+    }
     case "observed_span_at_least":
     case "max_raw_gap_at_least": {
       const measure = step.kind === "observed_span_at_least" ? "recorded span" : "longest adjacent recorded gap";

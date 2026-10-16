@@ -1,0 +1,621 @@
+{
+  "schema_version": 1,
+  "kind": "independently_declared_prepared_arithmetic",
+  "case_id": "prepared-DF1",
+  "flow": "DF1",
+  "authority": "Approved T25 source clauses38-45/table221-250/AC07:291",
+  "raw_event_claim": false,
+  "horizon_policy": "No execution horizon is defined for these finite historical metric attributes. No cutoff or paper timestamp filter is invented.",
+  "rules": [
+    {
+      "criterion_id": "c_l1_invoice_present",
+      "layer": 1,
+      "within_layer_weight": "1.2",
+      "threshold": "1",
+      "width": "1",
+      "direction": "low",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Record Invoice Receipt + Vendor creates invoice",
+      "declared_measurement_ref": "prepared-attribute:c_l1_invoice_present",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l1_clear_invoice_present",
+      "layer": 1,
+      "within_layer_weight": "1.4",
+      "threshold": "1",
+      "width": "1",
+      "direction": "low",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Clear Invoice",
+      "declared_measurement_ref": "prepared-attribute:c_l1_clear_invoice_present",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l1_goods_or_ses_present",
+      "layer": 1,
+      "within_layer_weight": "1.1",
+      "threshold": "1",
+      "width": "1",
+      "direction": "low",
+      "flows": [
+        "DF1",
+        "DF2"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Record Goods Receipt + Record Service Entry Sheet",
+      "declared_measurement_ref": "prepared-attribute:c_l1_goods_or_ses_present",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l2_df1_invoice_after_goods",
+      "layer": 2,
+      "within_layer_weight": "1.4",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1"
+      ],
+      "raw": 1,
+      "semantic_unit": "binary",
+      "selector_or_measure": "invoice minimum precedes receipt minimum",
+      "declared_measurement_ref": "prepared-attribute:c_l2_df1_invoice_after_goods",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l2_df2_release_after_goods",
+      "layer": 2,
+      "within_layer_weight": "1.5",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF2"
+      ],
+      "raw": 0,
+      "semantic_unit": "binary",
+      "selector_or_measure": "release minimum precedes receipt minimum",
+      "declared_measurement_ref": "prepared-attribute:c_l2_df2_release_after_goods",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l2_2way_no_goods_expected",
+      "layer": 2,
+      "within_layer_weight": "1.2",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "two_way"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "GR / SES",
+      "declared_measurement_ref": "prepared-attribute:c_l2_2way_no_goods_expected",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l2_consignment_no_clear_invoice",
+      "layer": 2,
+      "within_layer_weight": ".8",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "Consignment"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Clear Invoice",
+      "declared_measurement_ref": "prepared-attribute:c_l2_consignment_no_clear_invoice",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l3_df1_goods_to_invoice_days",
+      "layer": 3,
+      "within_layer_weight": "1.3",
+      "threshold": "10",
+      "width": "20",
+      "direction": "high",
+      "flows": [
+        "DF1"
+      ],
+      "raw": 20,
+      "semantic_unit": "elapsed_days",
+      "selector_or_measure": "independent parsed receipt minimum -> invoice-any minimum",
+      "declared_measurement_ref": "prepared-attribute:c_l3_df1_goods_to_invoice_days",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l3_invoice_to_clear_days",
+      "layer": 3,
+      "within_layer_weight": "1.5",
+      "threshold": "30",
+      "width": "60",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way"
+      ],
+      "raw": 60,
+      "semantic_unit": "elapsed_days",
+      "selector_or_measure": "independent parsed invoice-any minimum -> clearing minimum",
+      "declared_measurement_ref": "prepared-attribute:c_l3_invoice_to_clear_days",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l3_df2_goods_to_rpb_days",
+      "layer": 3,
+      "within_layer_weight": "1.2",
+      "threshold": "2",
+      "width": "10",
+      "direction": "high",
+      "flows": [
+        "DF2"
+      ],
+      "raw": 0,
+      "semantic_unit": "elapsed_days",
+      "selector_or_measure": "independent parsed receipt minimum -> Remove Payment Block minimum",
+      "declared_measurement_ref": "prepared-attribute:c_l3_df2_goods_to_rpb_days",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l3_df2_rpb_to_clear_days",
+      "layer": 3,
+      "within_layer_weight": "1.2",
+      "threshold": "5",
+      "width": "20",
+      "direction": "high",
+      "flows": [
+        "DF2"
+      ],
+      "raw": 0,
+      "semantic_unit": "elapsed_days",
+      "selector_or_measure": "independent parsed Remove Payment Block minimum -> clearing minimum",
+      "declared_measurement_ref": "prepared-attribute:c_l3_df2_rpb_to_clear_days",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l4_goods_fragmentation",
+      "layer": 4,
+      "within_layer_weight": "1.2",
+      "threshold": "2",
+      "width": "3",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "Consignment"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "GR / SES",
+      "declared_measurement_ref": "prepared-attribute:c_l4_goods_fragmentation",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l4_change_approval_repeats",
+      "layer": 4,
+      "within_layer_weight": "1.2",
+      "threshold": "0",
+      "width": "2",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 0,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Change Approval for Purchase Order",
+      "declared_measurement_ref": "prepared-attribute:c_l4_change_approval_repeats",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l4_repeated_invoice_receipt",
+      "layer": 4,
+      "within_layer_weight": "1",
+      "threshold": "1",
+      "width": "2",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Record Invoice Receipt",
+      "declared_measurement_ref": "prepared-attribute:c_l4_repeated_invoice_receipt",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l4_change_payment_terms_repeats",
+      "layer": 4,
+      "within_layer_weight": "1",
+      "threshold": "0",
+      "width": "2",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 0,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Change Payment Terms exact plural; not singular",
+      "declared_measurement_ref": "prepared-attribute:c_l4_change_payment_terms_repeats",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l5_cancel_invoice_receipt",
+      "layer": 5,
+      "within_layer_weight": "1.2",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way"
+      ],
+      "raw": 0,
+      "semantic_unit": "binary",
+      "selector_or_measure": "Cancel Invoice Receipt",
+      "declared_measurement_ref": "prepared-attribute:c_l5_cancel_invoice_receipt",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l5_cancel_goods_receipt",
+      "layer": 5,
+      "within_layer_weight": "1",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "Consignment"
+      ],
+      "raw": 0,
+      "semantic_unit": "binary",
+      "selector_or_measure": "Cancel Goods Receipt",
+      "declared_measurement_ref": "prepared-attribute:c_l5_cancel_goods_receipt",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l5_delete_item",
+      "layer": 5,
+      "within_layer_weight": "1.1",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 0,
+      "semantic_unit": "binary",
+      "selector_or_measure": "Delete Purchase Order Item",
+      "declared_measurement_ref": "prepared-attribute:c_l5_delete_item",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l5_debit_memo",
+      "layer": 5,
+      "within_layer_weight": "1.3",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 1,
+      "semantic_unit": "binary",
+      "selector_or_measure": "Vendor creates debit memo",
+      "declared_measurement_ref": "prepared-attribute:c_l5_debit_memo",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l5_credit_memo",
+      "layer": 5,
+      "within_layer_weight": "1.1",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 0,
+      "semantic_unit": "binary",
+      "selector_or_measure": "Vendor creates credit memo",
+      "declared_measurement_ref": "prepared-attribute:c_l5_credit_memo",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l6_change_price",
+      "layer": 6,
+      "within_layer_weight": "1.4",
+      "threshold": "0",
+      "width": "2",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Change Price",
+      "declared_measurement_ref": "prepared-attribute:c_l6_change_price",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l6_change_quantity",
+      "layer": 6,
+      "within_layer_weight": "1.2",
+      "threshold": "0",
+      "width": "2",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 1,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "Change Quantity",
+      "declared_measurement_ref": "prepared-attribute:c_l6_change_quantity",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l6_high_exposure_memo",
+      "layer": 6,
+      "within_layer_weight": "1.2",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": ".25",
+      "semantic_unit": "normalized_proxy",
+      "selector_or_measure": "any debit/credit memo occurrence * declared normalized exposure",
+      "declared_measurement_ref": "prepared-attribute:c_l6_high_exposure_memo",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l6_high_exposure_price_change",
+      "layer": 6,
+      "within_layer_weight": "1",
+      "threshold": "0",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": ".25",
+      "semantic_unit": "normalized_proxy",
+      "selector_or_measure": "any Change Price occurrence * declared normalized exposure",
+      "declared_measurement_ref": "prepared-attribute:c_l6_high_exposure_price_change",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l6_bal_networth_volatility",
+      "layer": 6,
+      "within_layer_weight": "1",
+      "threshold": ".5",
+      "width": "1",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way"
+      ],
+      "raw": 1,
+      "semantic_unit": "ratio",
+      "selector_or_measure": "sample SD / mean clipped below1e-6",
+      "declared_measurement_ref": "prepared-attribute:c_l6_bal_networth_volatility",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l7_manual_touches",
+      "layer": 7,
+      "within_layer_weight": "1.4",
+      "threshold": "4",
+      "width": "6",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 7,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "historical nonempty/nonunknown/nonbatch resource count",
+      "declared_measurement_ref": "prepared-attribute:c_l7_manual_touches",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l7_distinct_human_resources",
+      "layer": 7,
+      "within_layer_weight": "1.1",
+      "threshold": "2",
+      "width": "4",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 4,
+      "semantic_unit": "identity_count",
+      "selector_or_measure": "historical raw resource strings distinct",
+      "declared_measurement_ref": "prepared-attribute:c_l7_distinct_human_resources",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l7_total_events",
+      "layer": 7,
+      "within_layer_weight": "1",
+      "threshold": "10",
+      "width": "15",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": 25,
+      "semantic_unit": "event_count",
+      "selector_or_measure": "all original-event count declared attribute; no rows fabricated",
+      "declared_measurement_ref": "prepared-attribute:c_l7_total_events",
+      "original_row_ids": []
+    },
+    {
+      "criterion_id": "c_l7_manual_share",
+      "layer": 7,
+      "within_layer_weight": ".9",
+      "threshold": ".5",
+      "width": ".5",
+      "direction": "high",
+      "flows": [
+        "DF1",
+        "DF2",
+        "two_way",
+        "Consignment"
+      ],
+      "raw": ".75",
+      "semantic_unit": "ratio",
+      "selector_or_measure": "manual event count / total event count",
+      "declared_measurement_ref": "prepared-attribute:c_l7_manual_share",
+      "original_row_ids": []
+    }
+  ],
+  "expected_layer_penalties": [
+    "0",
+    "1",
+    "1/2",
+    "0",
+    "13/57",
+    "47/116",
+    "27/44"
+  ],
+  "view_weights": {
+    "Finance": [
+      ".24",
+      ".08",
+      ".24",
+      ".06",
+      ".08",
+      ".24",
+      ".06"
+    ],
+    "Logistics": [
+      ".08",
+      ".24",
+      ".22",
+      ".22",
+      ".08",
+      ".04",
+      ".12"
+    ],
+    "Compliance": [
+      ".12",
+      ".30",
+      ".10",
+      ".06",
+      ".26",
+      ".06",
+      ".10"
+    ],
+    "Automation": [
+      ".06",
+      ".08",
+      ".10",
+      ".28",
+      ".06",
+      ".08",
+      ".34"
+    ]
+  },
+  "flow_evaluated_counts": {
+    "DF1": 24,
+    "DF2": 25,
+    "two_way": 20,
+    "Consignment": 16
+  },
+  "unavailable_boundary_cases": [
+    {
+      "id": "missing-order-endpoint",
+      "criterion_id": "c_l2_df1_invoice_after_goods",
+      "raw": null,
+      "declared_state": "unavailable",
+      "reason": "missing_endpoint"
+    },
+    {
+      "id": "missing-duration",
+      "criterion_id": "c_l3_df1_goods_to_invoice_days",
+      "raw": null,
+      "declared_state": "unavailable",
+      "reason": "missing_endpoint"
+    },
+    {
+      "id": "reversed-duration",
+      "criterion_id": "c_l3_df1_goods_to_invoice_days",
+      "raw": "-1",
+      "declared_state": "unavailable",
+      "reason": "negative_interval"
+    },
+    {
+      "id": "equal-duration",
+      "criterion_id": "c_l3_df1_goods_to_invoice_days",
+      "raw": "0",
+      "declared_state": "available",
+      "reason": null
+    },
+    {
+      "id": "finite-long-duration-no-invented-horizon",
+      "criterion_id": "c_l3_df1_goods_to_invoice_days",
+      "raw": "1000000",
+      "declared_state": "available",
+      "reason": null
+    }
+  ]
+}

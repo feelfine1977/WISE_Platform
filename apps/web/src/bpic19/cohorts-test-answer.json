@@ -1,0 +1,453 @@
+{
+  "schema_version": 1,
+  "message_type": "bpic19_cohorts_answer",
+  "request_id": "cohorts-test",
+  "query_revision": 1,
+  "workspace_id": "workspace.v1:11111111-1111-1111-1111-111111111111",
+  "identity": {
+    "source_id": "source.v1:sha256:ea62eb04a0df117579c362112dafca9861168b17335d50e438edb9f1b06abf56",
+    "preparation_id": "preparation.v1:sha256:70a78e65c86913d870d26dbdcc997f00fea0027fb1f90e1f67a855a88f452bab",
+    "representation_id": "representation.v1:sha256:ef1d92e8049e5417039e0e2fc3e9cec3e09c3f53267033ffe0cb4afff29a72fc",
+    "case_dictionary_id": "case-dictionary.v1:sha256:dc230490e94c30f80837a04c84943c6f504a7c948257fa11f65a723510cd2a4c",
+    "population_id": "population.v1:sha256:76b20d25c82e227eb1541b7914bfcf79aac3bc2f73747c74faaffcd7f7438430",
+    "implementation_version": "0.1.0"
+  },
+  "parent_identity": {
+    "source_id": "source.v1:sha256:ea62eb04a0df117579c362112dafca9861168b17335d50e438edb9f1b06abf56",
+    "preparation_id": "preparation.v1:sha256:70a78e65c86913d870d26dbdcc997f00fea0027fb1f90e1f67a855a88f452bab",
+    "representation_id": "representation.v1:sha256:ef1d92e8049e5417039e0e2fc3e9cec3e09c3f53267033ffe0cb4afff29a72fc",
+    "case_dictionary_id": "case-dictionary.v1:sha256:dc230490e94c30f80837a04c84943c6f504a7c948257fa11f65a723510cd2a4c",
+    "population_id": "population.v1:sha256:76b20d25c82e227eb1541b7914bfcf79aac3bc2f73747c74faaffcd7f7438430",
+    "implementation_version": "0.1.0"
+  },
+  "query": {
+    "policy_id": "bpic19.flow_completion_cohorts.v1",
+    "roles": {
+      "item_category": 3,
+      "purchasing_document": 4
+    },
+    "inclusion": {
+      "kind": "all_items",
+      "timestamp_kind": "wall_clock",
+      "start_inclusive": null,
+      "end_exclusive": null
+    },
+    "completion": {
+      "recipe": "flow_presence",
+      "receipt": "goods_only",
+      "tie_policy": "unknown"
+    },
+    "retain": "all_included",
+    "horizon": {
+      "timestamp_kind": "wall_clock",
+      "value": null,
+      "provenance": null
+    },
+    "page": {
+      "offset": 0,
+      "limit": 50
+    }
+  },
+  "definition_id": "bpic19-cohorts.v1:sha256:86fa6ba0e85865126527658d98fea67e4c18738285a3e30890fde78abb14afd5",
+  "definition": {
+    "policy_id": "bpic19.flow_completion_cohorts.v1",
+    "roles": {
+      "item_category": 3,
+      "purchasing_document": 4
+    },
+    "inclusion": {
+      "kind": "all_items",
+      "timestamp_kind": "wall_clock",
+      "start_inclusive": null,
+      "end_exclusive": null
+    },
+    "completion": {
+      "recipe": "flow_presence",
+      "receipt": "goods_only",
+      "tie_policy": "unknown"
+    },
+    "retain": "all_included",
+    "horizon": {
+      "timestamp_kind": "wall_clock",
+      "value": null,
+      "provenance": null
+    }
+  },
+  "cohorts": {
+    "definition_id": "bpic19-cohorts.v1:sha256:86fa6ba0e85865126527658d98fea67e4c18738285a3e30890fde78abb14afd5",
+    "definition": {
+      "policy_id": "bpic19.flow_completion_cohorts.v1",
+      "roles": {
+        "item_category": 3,
+        "purchasing_document": 4
+      },
+      "inclusion": {
+        "kind": "all_items",
+        "timestamp_kind": "wall_clock",
+        "start_inclusive": null,
+        "end_exclusive": null
+      },
+      "completion": {
+        "recipe": "flow_presence",
+        "receipt": "goods_only",
+        "tie_policy": "unknown"
+      },
+      "retain": "all_included",
+      "horizon": {
+        "timestamp_kind": "wall_clock",
+        "value": null,
+        "provenance": null
+      }
+    },
+    "original": {
+      "case_count": 9,
+      "record_count": 13,
+      "document_count": 9,
+      "document_unknown_case_count": 0
+    },
+    "inclusion": {
+      "before": {
+        "case_count": 9,
+        "record_count": 13,
+        "document_count": 9,
+        "document_unknown_case_count": 0
+      },
+      "retained": {
+        "case_count": 9,
+        "record_count": 13,
+        "document_count": 9,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "K",
+          "L",
+          "Missing",
+          "P",
+          "Q",
+          "R",
+          "S",
+          "T",
+          "U"
+        ]
+      },
+      "excluded": {
+        "case_count": 0,
+        "record_count": 0,
+        "document_count": 0,
+        "document_unknown_case_count": 0,
+        "case_ids": []
+      },
+      "unknown": {
+        "case_count": 0,
+        "record_count": 0,
+        "document_count": 0,
+        "document_unknown_case_count": 0,
+        "case_ids": []
+      }
+    },
+    "completion_groups": [
+      {
+        "state": "observed_closed",
+        "case_count": 4,
+        "record_count": 8,
+        "document_count": 4,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "K",
+          "L",
+          "P",
+          "T"
+        ]
+      },
+      {
+        "state": "open_recorded",
+        "case_count": 3,
+        "record_count": 3,
+        "document_count": 3,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "Q",
+          "R",
+          "S"
+        ]
+      },
+      {
+        "state": "unknown",
+        "case_count": 2,
+        "record_count": 2,
+        "document_count": 2,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "Missing",
+          "U"
+        ]
+      }
+    ],
+    "retention": {
+      "before": {
+        "case_count": 9,
+        "record_count": 13,
+        "document_count": 9,
+        "document_unknown_case_count": 0
+      },
+      "retained": {
+        "case_count": 9,
+        "record_count": 13,
+        "document_count": 9,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "K",
+          "L",
+          "Missing",
+          "P",
+          "Q",
+          "R",
+          "S",
+          "T",
+          "U"
+        ]
+      },
+      "excluded": {
+        "case_count": 0,
+        "record_count": 0,
+        "document_count": 0,
+        "document_unknown_case_count": 0,
+        "case_ids": []
+      },
+      "unknown": {
+        "case_count": 2,
+        "record_count": 2,
+        "document_count": 2,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "Missing",
+          "U"
+        ]
+      }
+    },
+    "selection": {
+      "kind": "case_id_in",
+      "case_ids": [
+        "K",
+        "L",
+        "Missing",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "U"
+      ],
+      "negate": false
+    },
+    "partition": {
+      "covers_included": true,
+      "is_disjoint": true
+    },
+    "page": {
+      "offset": 0,
+      "limit": 50,
+      "total": 9,
+      "items": [
+        {
+          "case_id": "K",
+          "flow_id": "consignment",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "observed_closed",
+          "reasons": [
+            "required_recorded_milestones_present"
+          ],
+          "witness_row_ids": [
+            "row.v1:sha256:a69d9f6311d8b2892f538843ef9ab82f8ed62f8ece4fe09183abe05c4820a0ec"
+          ],
+          "required_activity_sets": [
+            [
+              "Record Goods Receipt"
+            ]
+          ],
+          "record_count": 2,
+          "document": "DK",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        },
+        {
+          "case_id": "L",
+          "flow_id": "two_way",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "observed_closed",
+          "reasons": [
+            "required_recorded_milestones_present"
+          ],
+          "witness_row_ids": [
+            "row.v1:sha256:fc69183692146b91e1faeb12fd44e5e65bc6b38b57887cd39612c67a23bb7e46"
+          ],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 2,
+          "document": "DL",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        },
+        {
+          "case_id": "Missing",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "unknown",
+          "reasons": [
+            "missing_activity_label"
+          ],
+          "witness_row_ids": [],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 1,
+          "document": "DM",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        },
+        {
+          "case_id": "P",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "observed_closed",
+          "reasons": [
+            "required_recorded_milestones_present"
+          ],
+          "witness_row_ids": [
+            "row.v1:sha256:91e4e905c6255ddfe9de0f5e1c07b92bcfcf433c5082843bd60d21f9e2dc8468"
+          ],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 2,
+          "document": "DP",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        },
+        {
+          "case_id": "Q",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "open_recorded",
+          "reasons": [
+            "missing_recorded_milestone:Clear Invoice"
+          ],
+          "witness_row_ids": [],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 1,
+          "document": "DQ",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        },
+        {
+          "case_id": "R",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "open_recorded",
+          "reasons": [
+            "missing_recorded_milestone:Clear Invoice"
+          ],
+          "witness_row_ids": [],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 1,
+          "document": "DR",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        },
+        {
+          "case_id": "S",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "open_recorded",
+          "reasons": [
+            "missing_recorded_milestone:Clear Invoice"
+          ],
+          "witness_row_ids": [],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 1,
+          "document": "DS",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        },
+        {
+          "case_id": "T",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "observed_closed",
+          "reasons": [
+            "required_recorded_milestones_present"
+          ],
+          "witness_row_ids": [
+            "row.v1:sha256:9a2bdb6265073c2aa0c0dfd39252d17d5cbbebba6a12b6c9f0d04ac5afe45fa3"
+          ],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 2,
+          "document": "DT",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        },
+        {
+          "case_id": "U",
+          "flow_id": null,
+          "category_state": "unrecognized",
+          "inclusion_state": "retained",
+          "inclusion_reason": "all_original_items",
+          "completion_state": "unknown",
+          "reasons": [
+            "category_unrecognized"
+          ],
+          "witness_row_ids": [],
+          "required_activity_sets": [],
+          "record_count": 1,
+          "document": "DU",
+          "due_state": "unavailable",
+          "inclusion_witnesses": []
+        }
+      ]
+    },
+    "limitations": [
+      "Recorded completion is not compliance, payment receipt or a due-obligation judgement.",
+      "The declared horizon is retained as reviewed provenance; no payment terms are supplied, so due assessment is unavailable.",
+      "Document supports overlap across item cohorts; document inclusion uses siblings within the frozen parent.",
+      "All selected items retain complete original histories; no event projection is applied."
+    ]
+  }
+}

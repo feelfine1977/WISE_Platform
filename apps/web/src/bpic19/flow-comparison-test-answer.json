@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "message_type": "bpic19_flow_comparison_answer",
+  "operation": "bpic19_flow_comparison",
+  "request_id": "fixture",
+  "query_revision": 1,
+  "workspace_id": "workspace.v1:literal-fixture",
+  "identity": {
+    "source_id": "source.v1:sha256:c2da323e7e2f40a07276e365ebec2b89ca9e8cca6656bf6e2a04d03c4ae15e99",
+    "preparation_id": "preparation.v1:sha256:fb44234103b247511f78de042da8b19f28339e358996220db394e0c3aa189bb1",
+    "representation_id": "representation.v1:sha256:4c774ff94c05b3afc1ff3be818a499889239b17ae2f9238a7a0cbad2b4c67ba9",
+    "case_dictionary_id": "case-dictionary.v1:sha256:afca892ab1caae49c27a66b157128d3ee0530b069e4eea89ff246aa217d6386a",
+    "population_id": "population.v1:sha256:322a74b0b8f88917c44e81858f1818ca5d247870e37702c6fbf2d8dd8b675e68",
+    "implementation_version": "0.1.0"
+  },
+  "parent_identity": {
+    "source_id": "source.v1:sha256:c2da323e7e2f40a07276e365ebec2b89ca9e8cca6656bf6e2a04d03c4ae15e99",
+    "preparation_id": "preparation.v1:sha256:fb44234103b247511f78de042da8b19f28339e358996220db394e0c3aa189bb1",
+    "representation_id": "representation.v1:sha256:4c774ff94c05b3afc1ff3be818a499889239b17ae2f9238a7a0cbad2b4c67ba9",
+    "case_dictionary_id": "case-dictionary.v1:sha256:afca892ab1caae49c27a66b157128d3ee0530b069e4eea89ff246aa217d6386a",
+    "population_id": "population.v1:sha256:322a74b0b8f88917c44e81858f1818ca5d247870e37702c6fbf2d8dd8b675e68",
+    "implementation_version": "0.1.0"
+  },
+  "query": {
+    "policy_id": "bpic19.flow_item_type_comparison.v1",
+    "profile_definition_id": "bpic19-profile.v1:sha256:355d9642c250e0df9c28f198fb92cfbf2bf3549750c6e33166baa1aca7f963dc",
+    "profile_query": {
+      "roles": {
+        "item_category": 3,
+        "item_type": 4,
+        "goods_receipt": 5,
+        "gr_based_iv": 6,
+        "purchasing_document": 7,
+        "item": 8,
+        "source_case": 9
+      },
+      "profile_columns": null,
+      "policy_id": "bpic19.all_raw_case_attributes.v1"
+    },
+    "target": {
+      "flow_id": "after_gr",
+      "item_type_state": "invariant",
+      "item_type_value": "Standard"
+    },
+    "reference": {
+      "flow_id": "after_gr",
+      "item_type_state": "invariant",
+      "item_type_value": "Service"
+    },
+    "page": {
+      "role": "reference",
+      "offset": 0,
+      "limit": 50
+    }
+  },
+  "definition_id": "bpic19-flow-comparison.v1:sha256:a56e9df12980fc85faf7d7b381f0b4c49eb9a274d7cc020896203377f76c0c1f",
+  "definition": {
+    "policy_id": "bpic19.flow_item_type_comparison.v1",
+    "profile_definition_id": "bpic19-profile.v1:sha256:355d9642c250e0df9c28f198fb92cfbf2bf3549750c6e33166baa1aca7f963dc",
+    "profile_query": {
+      "policy_id": "bpic19.all_raw_case_attributes.v1",
+      "roles": {
+        "item_category": 3,
+        "item_type": 4,
+        "goods_receipt": 5,
+        "gr_based_iv": 6,
+        "purchasing_document": 7,
+        "item": 8,
+        "source_case": 9
+      },
+      "profile_columns": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "source_interpretation": {
+        "profile_name": "All original records",
+        "policy_id": "bpic19.raw_source_interpretation.v1",
+        "inclusion": {
+          "kind": "all_source",
+          "timestamp_kind": "wall_clock",
+          "start_inclusive": null,
+          "end_exclusive": null
+        },
+        "horizon": {
+          "timestamp_kind": "wall_clock",
+          "value": null,
+          "provenance": null
+        },
+        "discrepancies": []
+      }
+    },
+    "target": {
+      "flow_id": "after_gr",
+      "item_type_state": "invariant",
+      "item_type_value": "Standard"
+    },
+    "reference": {
+      "flow_id": "after_gr",
+      "item_type_state": "invariant",
+      "item_type_value": "Service"
+    },
+    "membership_policy": "exact_invariant_category_and_reviewed_item_type_state",
+    "document_policy": "all_record_invariant_document_overlap_preserved"
+  },
+  "comparison": {
+    "definition_id": "bpic19-flow-comparison.v1:sha256:a56e9df12980fc85faf7d7b381f0b4c49eb9a274d7cc020896203377f76c0c1f",
+    "definition": {
+      "policy_id": "bpic19.flow_item_type_comparison.v1",
+      "profile_definition_id": "bpic19-profile.v1:sha256:355d9642c250e0df9c28f198fb92cfbf2bf3549750c6e33166baa1aca7f963dc",
+      "profile_query": {
+        "policy_id": "bpic19.all_raw_case_attributes.v1",
+        "roles": {
+          "item_category": 3,
+          "item_type": 4,
+          "goods_receipt": 5,
+          "gr_based_iv": 6,
+          "purchasing_document": 7,
+          "item": 8,
+          "source_case": 9
+        },
+        "profile_columns": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "source_interpretation": {
+          "profile_name": "All original records",
+          "policy_id": "bpic19.raw_source_interpretation.v1",
+          "inclusion": {
+            "kind": "all_source",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "discrepancies": []
+        }
+      },
+      "target": {
+        "flow_id": "after_gr",
+        "item_type_state": "invariant",
+        "item_type_value": "Standard"
+      },
+      "reference": {
+        "flow_id": "after_gr",
+        "item_type_state": "invariant",
+        "item_type_value": "Service"
+      },
+      "membership_policy": "exact_invariant_category_and_reviewed_item_type_state",
+      "document_policy": "all_record_invariant_document_overlap_preserved"
+    },
+    "parent": {
+      "case_ids": [
+        "B_1",
+        "C_1",
+        "D1_1",
+        "D1_2",
+        "D1_3",
+        "D2_1",
+        "D3_1",
+        "F_1",
+        "G_1",
+        "M_1",
+        "U_1",
+        "Z_1"
+      ],
+      "case_count": 12,
+      "record_count": 16,
+      "document_count": 9,
+      "share": 1.0,
+      "example_case_ids": [
+        "B_1",
+        "C_1",
+        "D1_1"
+      ]
+    },
+    "flow_parent": {
+      "case_ids": [
+        "D1_1",
+        "D1_3",
+        "Z_1"
+      ],
+      "case_count": 3,
+      "record_count": 4,
+      "document_count": 2,
+      "share": 0.25,
+      "example_case_ids": [
+        "D1_1",
+        "D1_3",
+        "Z_1"
+      ]
+    },
+    "comparison_parent": {
+      "case_ids": [
+        "D1_1",
+        "D1_3"
+      ],
+      "case_count": 2,
+      "record_count": 3,
+      "document_count": 1,
+      "share": 0.6666666666666666,
+      "example_case_ids": [
+        "D1_1",
+        "D1_3"
+      ]
+    },
+    "target": {
+      "case_ids": [
+        "D1_3"
+      ],
+      "case_count": 1,
+      "record_count": 1,
+      "document_count": 1,
+      "share": 0.5,
+      "example_case_ids": [
+        "D1_3"
+      ]
+    },
+    "reference": {
+      "case_ids": [
+        "D1_1"
+      ],
+      "case_count": 1,
+      "record_count": 2,
+      "document_count": 1,
+      "share": 0.5,
+      "example_case_ids": [
+        "D1_1"
+      ]
+    },
+    "outside": {
+      "case_ids": [
+        "Z_1"
+      ],
+      "case_count": 1,
+      "record_count": 1,
+      "document_count": 1,
+      "share": 0.3333333333333333,
+      "example_case_ids": [
+        "Z_1"
+      ]
+    },
+    "outside_flow": {
+      "case_ids": [
+        "B_1",
+        "C_1",
+        "D1_2",
+        "D2_1",
+        "D3_1",
+        "F_1",
+        "G_1",
+        "M_1",
+        "U_1"
+      ],
+      "case_count": 9,
+      "record_count": 12,
+      "document_count": 8,
+      "share": 0.75,
+      "example_case_ids": [
+        "B_1",
+        "C_1",
+        "D1_2"
+      ]
+    },
+    "unavailable": {
+      "case_ids": [
+        "Z_1"
+      ],
+      "case_count": 1,
+      "record_count": 1,
+      "document_count": 1,
+      "share": 0.3333333333333333,
+      "example_case_ids": [
+        "Z_1"
+      ]
+    },
+    "scope_unavailable": {
+      "case_ids": [
+        "C_1",
+        "M_1",
+        "U_1"
+      ],
+      "case_count": 3,
+      "record_count": 4,
+      "document_count": 3,
+      "share": 0.25,
+      "example_case_ids": [
+        "C_1",
+        "M_1",
+        "U_1"
+      ]
+    },
+    "shares": {
+      "item_denominator": 2,
+      "record_denominator": 3,
+      "target_item_share": 0.5,
+      "reference_item_share": 0.5,
+      "target_record_share": 0.3333333333333333,
+      "reference_record_share": 0.6666666666666666,
+      "reason": null
+    },
+    "documents": {
+      "union_document_ids": [
+        "D1"
+      ],
+      "overlap_document_ids": [
+        "D1"
+      ],
+      "union_document_count": 1,
+      "overlap_document_count": 1,
+      "target_document_count": 1,
+      "reference_document_count": 1,
+      "unknown_document_case_ids": [],
+      "supports_overlap": true
+    },
+    "page": {
+      "role": "reference",
+      "offset": 0,
+      "limit": 50,
+      "total": 1,
+      "items": [
+        {
+          "case_id": "D1_1",
+          "role": "reference",
+          "document": "D1",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "record_count": 2,
+          "witness_row_ids": [
+            "row.v1:sha256:dc3f474a0d1773c79ba98162891fadfe022d2e5dd91ba25bcaadcee5ecf5dc87",
+            "row.v1:sha256:c64e0e21a62d268654b3488322c750244820824e07eb2b3bcea1be62e808a347"
+          ],
+          "reason": "exact_invariant_flow_and_subtype"
+        }
+      ],
+      "next_offset": null
+    },
+    "limitations": [
+      "This is a descriptive count comparison; it does not estimate a causal subtype effect.",
+      "Item and record shares use the named union comparison parent, not the entire source or target complement.",
+      "Document memberships can overlap; their summed supports are not a count of distinct documents.",
+      "Amount and interval comparisons require their separately admitted measure definitions."
+    ]
+  }
+}

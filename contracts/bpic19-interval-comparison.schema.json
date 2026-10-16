@@ -1,0 +1,1061 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/bpic19-interval-comparison.v1.schema.json",
+  "title": "Bpic19IntervalComparisonBoundary",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Bpic19IntervalComparisonRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19IntervalComparisonAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19IntervalComparisonRefusal"
+    }
+  ],
+  "$defs": {
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "Milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timestamp": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "selected_row_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "candidate_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "unparseable_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "unknown_activity_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "later_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "endpoint_state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "available",
+        "reason",
+        "timestamp",
+        "selected_row_id",
+        "row_ids",
+        "candidate_row_ids",
+        "unparseable_row_ids",
+        "unknown_activity_row_ids",
+        "later_row_ids",
+        "endpoint_state"
+      ],
+      "title": "Milestone"
+    },
+    "RawMeasure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "unit": {
+          "type": "string"
+        },
+        "reducer": {
+          "type": "string"
+        },
+        "policy_id": {
+          "type": "string"
+        },
+        "activation_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "response_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "activation_timestamp": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "response_timestamp": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recorded_difference_days": {
+          "type": "number"
+        },
+        "invalid_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "missing_fill_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "ddof": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "calibration_id": {
+          "type": "string"
+        },
+        "lower_bound": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unknown_label_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unknown_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "absence_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "interval_state": {
+          "type": "string"
+        },
+        "candidate_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "winner_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "available",
+        "reason",
+        "row_ids"
+      ],
+      "title": "RawMeasure"
+    },
+    "Summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "available_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unavailable_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimum": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "maximum": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "mean": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "median": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "zero_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "available_case_count",
+        "unavailable_case_count",
+        "minimum",
+        "maximum",
+        "mean",
+        "median",
+        "zero_case_count",
+        "reason"
+      ],
+      "title": "Summary"
+    },
+    "IntervalSideRecipe": {
+      "title": "IntervalSideRecipe",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "complete_case_ids"
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "kind",
+        "case_ids"
+      ]
+    },
+    "IntervalSide": {
+      "title": "IntervalSide",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "recipe": {
+          "$ref": "#/$defs/IntervalSideRecipe"
+        }
+      },
+      "required": [
+        "label",
+        "recipe"
+      ]
+    },
+    "IntervalPageQuery": {
+      "title": "IntervalPageQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "target",
+            "reference"
+          ]
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "role",
+        "offset",
+        "limit"
+      ]
+    },
+    "IntervalComparisonQuery": {
+      "title": "IntervalComparisonQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.interval_distribution_comparison.v1"
+        },
+        "interval_policy": {
+          "type": "string",
+          "const": "independent_minimum"
+        },
+        "interval_source": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "interval_target": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "target": {
+          "$ref": "#/$defs/IntervalSide"
+        },
+        "reference": {
+          "$ref": "#/$defs/IntervalSide"
+        },
+        "page": {
+          "$ref": "#/$defs/IntervalPageQuery"
+        }
+      },
+      "required": [
+        "policy_id",
+        "interval_policy",
+        "interval_source",
+        "interval_target",
+        "target",
+        "reference",
+        "page"
+      ]
+    },
+    "IntervalDefinition": {
+      "title": "IntervalDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.interval_distribution_comparison.v1"
+        },
+        "time_policy_id": {
+          "type": "string",
+          "const": "bpic19.paper.independent_parsed_minima.2017_2020.v1"
+        },
+        "membership_policy_id": {
+          "type": "string",
+          "const": "bpic19.explicit_complete_case_ids.v1"
+        },
+        "interval_policy": {
+          "type": "string",
+          "const": "independent_minimum"
+        },
+        "interval_source": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "interval_target": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "target": {
+          "$ref": "#/$defs/IntervalSide"
+        },
+        "reference": {
+          "$ref": "#/$defs/IntervalSide"
+        },
+        "parent_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "activity_column": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "clock_kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "clock_policy_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "endpoint_admissibility": {
+          "type": "string",
+          "const": "select_parsed_minimum_then_2017_inclusive_2020_exclusive"
+        },
+        "direction_policy": {
+          "type": "string",
+          "const": "nonnegative_recorded_difference"
+        },
+        "elapsed_unit": {
+          "type": "string",
+          "const": "days"
+        },
+        "source_representation": {
+          "type": "string",
+          "const": "complete_original_item_histories"
+        }
+      },
+      "required": [
+        "policy_id",
+        "time_policy_id",
+        "membership_policy_id",
+        "interval_policy",
+        "interval_source",
+        "interval_target",
+        "target",
+        "reference",
+        "parent_case_ids",
+        "activity_column",
+        "clock_kind",
+        "clock_policy_id",
+        "endpoint_admissibility",
+        "direction_policy",
+        "elapsed_unit",
+        "source_representation"
+      ]
+    },
+    "IntervalCaseEvidence": {
+      "title": "IntervalCaseEvidence",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "uniqueItems": true
+        },
+        "source": {
+          "$ref": "#/$defs/Milestone"
+        },
+        "target": {
+          "$ref": "#/$defs/Milestone"
+        },
+        "interval": {
+          "$ref": "#/$defs/RawMeasure"
+        }
+      },
+      "required": [
+        "case_id",
+        "record_count",
+        "record_row_ids",
+        "source",
+        "target",
+        "interval"
+      ]
+    },
+    "IntervalSideSupport": {
+      "title": "IntervalSideSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "available_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "zero_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "unavailable_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "unavailable_reasons": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "summary": {
+          "$ref": "#/$defs/Summary"
+        }
+      },
+      "required": [
+        "label",
+        "case_ids",
+        "case_count",
+        "record_count",
+        "available_case_ids",
+        "zero_case_ids",
+        "unavailable_case_ids",
+        "unavailable_reasons",
+        "summary"
+      ]
+    },
+    "IntervalParentSupport": {
+      "title": "IntervalParentSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "case_ids",
+        "case_count",
+        "record_count"
+      ]
+    },
+    "IntervalPageAnswer": {
+      "title": "IntervalPageAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "target",
+            "reference"
+          ]
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/IntervalCaseEvidence"
+          },
+          "maxItems": 100
+        },
+        "next_offset": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": [
+        "role",
+        "offset",
+        "limit",
+        "total",
+        "items",
+        "next_offset"
+      ]
+    },
+    "IntervalComparisonResult": {
+      "title": "IntervalComparisonResult",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-interval-comparison\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "definition": {
+          "$ref": "#/$defs/IntervalDefinition"
+        },
+        "parent": {
+          "$ref": "#/$defs/IntervalParentSupport"
+        },
+        "target": {
+          "$ref": "#/$defs/IntervalSideSupport"
+        },
+        "reference": {
+          "$ref": "#/$defs/IntervalSideSupport"
+        },
+        "union_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "overlap_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "outside_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "page": {
+          "$ref": "#/$defs/IntervalPageAnswer"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "required": [
+        "definition_id",
+        "definition",
+        "parent",
+        "target",
+        "reference",
+        "union_case_ids",
+        "overlap_case_ids",
+        "outside_case_ids",
+        "page",
+        "limitations"
+      ]
+    },
+    "Bpic19IntervalComparisonRequest": {
+      "title": "Bpic19IntervalComparisonRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_interval_comparison_request"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/IntervalComparisonQuery"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "query"
+      ]
+    },
+    "Bpic19IntervalComparisonAnswer": {
+      "title": "Bpic19IntervalComparisonAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_interval_comparison_answer"
+        },
+        "operation": {
+          "type": "string",
+          "const": "bpic19_interval_comparison"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/IntervalComparisonQuery"
+        },
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-interval-comparison\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "definition": {
+          "$ref": "#/$defs/IntervalDefinition"
+        },
+        "comparison": {
+          "$ref": "#/$defs/IntervalComparisonResult"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "operation",
+        "identity",
+        "parent_identity",
+        "query",
+        "definition_id",
+        "definition",
+        "comparison"
+      ]
+    },
+    "Bpic19IntervalComparisonRefusal": {
+      "title": "Bpic19IntervalComparisonRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_interval_comparison_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "bpic19_interval_comparison"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_parent",
+            "unknown_case",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

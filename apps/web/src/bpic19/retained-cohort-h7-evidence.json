@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "message_type": "imported_case_evidence_answer",
+  "request_id": "request-1",
+  "query_revision": 1,
+  "workspace_id": "workspace.v1:literal-h7-fixture",
+  "identity": {
+    "source_id": "source.v1:sha256:5bd7cbe70fa8df8bfe8c2ff4fa7d9355f4959c2145b35f0ec0bbf26d527b4ab2",
+    "preparation_id": "preparation.v1:sha256:51e7c7b67744a66578bb0d11667f68bf4b86cf1937facf3f0104270f3ded19d5",
+    "representation_id": "representation.v1:sha256:96212a3daecd5ad6e19b154a1a6a113511c7358478726292cd3fa5ce86a95a17",
+    "case_dictionary_id": "case-dictionary.v1:sha256:d20e0aba45e65027ec276679235c7936c820517b205ce5ee78d7546446ba81de",
+    "population_id": "population.v1:sha256:b6abbb6154fe36c72f4bbc7e9f1fb64d3846da188de0e1236a8c5f0c4fab149a",
+    "implementation_version": "0.1.0"
+  },
+  "case_id": "A",
+  "coverage": {
+    "raw_record_count": 3,
+    "mapped_record_count": 3,
+    "omitted_activity_record_count": 0
+  },
+  "columns": [
+    {
+      "index": 0,
+      "name": "case"
+    },
+    {
+      "index": 1,
+      "name": "activity"
+    },
+    {
+      "index": 2,
+      "name": "time"
+    },
+    {
+      "index": 3,
+      "name": "category"
+    },
+    {
+      "index": 4,
+      "name": "document"
+    }
+  ],
+  "sequence_evaluable": true,
+  "records": [
+    {
+      "row_id": "row.v1:sha256:c9df96e902e85072e40e10516898034514c58ab2bab164264a4a56d0cc8e6bd0",
+      "source_position": 0,
+      "source_sequence": null,
+      "activity": "Vendor creates invoice",
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "1948-01-01T00:00:00",
+      "timestamp_status": "usable",
+      "context": [
+        {
+          "column_index": 3,
+          "value": "3-way match, invoice before GR"
+        },
+        {
+          "column_index": 4,
+          "value": "D"
+        }
+      ],
+      "original_cells": [
+        "A",
+        "Vendor creates invoice",
+        "1948-01-01T00:00:00",
+        "3-way match, invoice before GR",
+        "D"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:6edc78ead2ae20a16ff62e396d57eb75eab0a62c0550850818406295e9dc9eb7",
+      "source_position": 1,
+      "source_sequence": null,
+      "activity": "Create Purchase Order Item",
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "2018-01-01T00:00:00",
+      "timestamp_status": "usable",
+      "context": [
+        {
+          "column_index": 3,
+          "value": "3-way match, invoice before GR"
+        },
+        {
+          "column_index": 4,
+          "value": "D"
+        }
+      ],
+      "original_cells": [
+        "A",
+        "Create Purchase Order Item",
+        "2018-01-01T00:00:00",
+        "3-way match, invoice before GR",
+        "D"
+      ]
+    },
+    {
+      "row_id": "row.v1:sha256:b7f0f12d88c0a0d4dcaf43d2fa71bea5cdb756aff133337d9117e1b17b440b95",
+      "source_position": 2,
+      "source_sequence": null,
+      "activity": "Clear Invoice",
+      "timestamp_kind": "wall_clock",
+      "utc_instant": null,
+      "local_timestamp": "2020-01-02T00:00:00",
+      "timestamp_status": "usable",
+      "context": [
+        {
+          "column_index": 3,
+          "value": "3-way match, invoice before GR"
+        },
+        {
+          "column_index": 4,
+          "value": "D"
+        }
+      ],
+      "original_cells": [
+        "A",
+        "Clear Invoice",
+        "2020-01-02T00:00:00",
+        "3-way match, invoice before GR",
+        "D"
+      ]
+    }
+  ],
+  "mapped_row_ids": [
+    "row.v1:sha256:c9df96e902e85072e40e10516898034514c58ab2bab164264a4a56d0cc8e6bd0",
+    "row.v1:sha256:6edc78ead2ae20a16ff62e396d57eb75eab0a62c0550850818406295e9dc9eb7",
+    "row.v1:sha256:b7f0f12d88c0a0d4dcaf43d2fa71bea5cdb756aff133337d9117e1b17b440b95"
+  ],
+  "omitted_activity_row_ids": [],
+  "incident_time": {
+    "policy_id": "incident.time_diagnostics.full_raw_declared_order.v1",
+    "timestamp_kind": "wall_clock",
+    "duration_basis": "recorded_wall_clock",
+    "clock_limitation": "recorded_wall_duration_may_differ_from_physical_elapsed",
+    "summary": {
+      "status": "available",
+      "timestamp_kind": "wall_clock",
+      "first_recorded_timestamp": "1948-01-01T00:00:00",
+      "last_recorded_timestamp": "2020-01-02T00:00:00",
+      "first_recorded_activity": "Vendor creates invoice",
+      "last_recorded_activity": "Clear Invoice",
+      "observed_span_hours": 631176.0,
+      "observed_span_unavailable_reason": null,
+      "maximum_adjacent_raw_gap_hours": 613632.0,
+      "maximum_adjacent_raw_gap_unavailable_reason": null,
+      "maximum_gap_witness": {
+        "from_row_id": "row.v1:sha256:c9df96e902e85072e40e10516898034514c58ab2bab164264a4a56d0cc8e6bd0",
+        "to_row_id": "row.v1:sha256:6edc78ead2ae20a16ff62e396d57eb75eab0a62c0550850818406295e9dc9eb7",
+        "from_activity": "Vendor creates invoice",
+        "to_activity": "Create Purchase Order Item",
+        "from_offset_hours": 0.0,
+        "share_of_observed_span": 0.9722042663219134,
+        "share_unavailable_reason": null
+      },
+      "usable_gap_count": 2,
+      "tied_timestamp_group_count": 0
+    },
+    "observed_span_microseconds": "2272233600000000",
+    "maximum_adjacent_raw_gap_microseconds": "2209075200000000",
+    "maximum_gap_equal_count": 1,
+    "records": [
+      {
+        "row_id": "row.v1:sha256:c9df96e902e85072e40e10516898034514c58ab2bab164264a4a56d0cc8e6bd0",
+        "timestamp_key": "1948-01-01T00:00:00",
+        "clock_microseconds": "-694310400000000",
+        "offset_from_first_record_microseconds": "0",
+        "gap_before": {
+          "status": "unavailable",
+          "reason": "first_record",
+          "from_row_id": null,
+          "microseconds": null,
+          "hours": null
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:6edc78ead2ae20a16ff62e396d57eb75eab0a62c0550850818406295e9dc9eb7",
+        "timestamp_key": "2018-01-01T00:00:00",
+        "clock_microseconds": "1514764800000000",
+        "offset_from_first_record_microseconds": "2209075200000000",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:c9df96e902e85072e40e10516898034514c58ab2bab164264a4a56d0cc8e6bd0",
+          "microseconds": "2209075200000000",
+          "hours": 613632.0
+        }
+      },
+      {
+        "row_id": "row.v1:sha256:b7f0f12d88c0a0d4dcaf43d2fa71bea5cdb756aff133337d9117e1b17b440b95",
+        "timestamp_key": "2020-01-02T00:00:00",
+        "clock_microseconds": "1577923200000000",
+        "offset_from_first_record_microseconds": "2272233600000000",
+        "gap_before": {
+          "status": "available",
+          "from_row_id": "row.v1:sha256:6edc78ead2ae20a16ff62e396d57eb75eab0a62c0550850818406295e9dc9eb7",
+          "microseconds": "63158400000000",
+          "hours": 17544.0
+        }
+      }
+    ]
+  }
+}

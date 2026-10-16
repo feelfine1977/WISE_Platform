@@ -36,7 +36,8 @@ export type SelectionPredicate =
   | OpeningAttributeIn
   | RecordAttributeIn
   | ObservedSpanAtLeast
-  | MaxRawGapAtLeast;
+  | MaxRawGapAtLeast
+  | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
 export type LocalTimestamp = string;
@@ -161,6 +162,26 @@ export interface MaxRawGapAtLeast {
   kind: "max_raw_gap_at_least";
   hours: number;
   negate: boolean;
+}
+/**
+ * OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.
+ */
+export interface RecordAttributesAll {
+  kind: "record_attributes_all";
+  policy_id: "incident.raw.same_record_all.v1";
+  /**
+   * @minItems 1
+   * @maxItems 32
+   */
+  conditions: [RecordAttributeCondition, ...RecordAttributeCondition[]];
+  negate: boolean;
+}
+export interface RecordAttributeCondition {
+  column_index: number;
+  /**
+   * @minItems 1
+   */
+  values: [string | null, ...(string | null)[]];
 }
 export interface ExplicitCaseGroupDefinition {
   kind: "explicit_case_ids";

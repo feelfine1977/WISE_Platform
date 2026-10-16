@@ -1,0 +1,2 @@
+export type { AnswerIdentity, Bpic19OperatorAnswer, Bpic19OperatorRequest, Bpic19OperatorRefusal, OperatorRecipe, OperatorQuery, OperatorRoles, OrdinalRecipe, FifoRecipe, CancellationRecipe, RuleRecipe, WaitingRecipe, OperatorCase, OperatorObservation, OperatorMeasure, OperatorSummary, OccupancySummary } from "../generated/bpic19-operators";
+export type { Bpic19OperatorClient, Bpic19OperatorOutcome, Bpic19OperatorProblem } from "./operators-client";

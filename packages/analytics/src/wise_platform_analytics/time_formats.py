@@ -10,16 +10,17 @@ import re
 from .mapping import ImportRefusal, exact_object
 
 FORMATS = ("iso8601", "dmy_dot_minute", "mdy_dot_minute", "dmy_slash_minute", "mdy_slash_minute",
-           "dmy_dot_second", "mdy_dot_second", "dmy_slash_second", "mdy_slash_second",
+           "dmy_dot_second", "mdy_dot_second", "dmy_slash_second", "mdy_slash_second", "dmy_dash_second",
            "mdy_slash_12h_minute", "mdy_slash_12h_second")
 _STRPTIME = {"dmy_dot_minute": "%d.%m.%Y %H:%M", "mdy_dot_minute": "%m.%d.%Y %H:%M",
              "dmy_slash_minute": "%d/%m/%Y %H:%M", "mdy_slash_minute": "%m/%d/%Y %H:%M",
              "dmy_dot_second": "%d.%m.%Y %H:%M:%S", "mdy_dot_second": "%m.%d.%Y %H:%M:%S",
-             "dmy_slash_second": "%d/%m/%Y %H:%M:%S", "mdy_slash_second": "%m/%d/%Y %H:%M:%S"}
+             "dmy_slash_second": "%d/%m/%Y %H:%M:%S", "mdy_slash_second": "%m/%d/%Y %H:%M:%S",
+             "dmy_dash_second": "%d-%m-%Y %H:%M:%S"}
 # Keep guards broader than strptime's legitimate one-digit/space-padded day fields.
 # Impossible labels/IDs do not need an exception-driven date parse during inspection.
-_NUMERIC = {name: re.compile(r" ?\d{1,2}" + (r"\." if "_dot_" in name else "/") +
-                           r" ?\d{1,2}" + (r"\." if "_dot_" in name else "/") +
+_NUMERIC = {name: re.compile(r" ?\d{1,2}" + (r"\." if "_dot_" in name else "-" if "_dash_" in name else "/") +
+                           r" ?\d{1,2}" + (r"\." if "_dot_" in name else "-" if "_dash_" in name else "/") +
                            r"\d{4}\s+\d{1,2}:\d{1,2}" +
                            (r":\d{1,2}(?:\.\d{1,6})?" if name.endswith("_second") else ""))
             for name in _STRPTIME}

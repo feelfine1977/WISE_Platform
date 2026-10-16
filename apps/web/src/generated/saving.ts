@@ -15,7 +15,9 @@ export type SavingMessage =
   | ListSavedAnswer
   | ReopenInvestigationRequest
   | ReopenInvestigationAnswer
-  | SavingRefusal;
+  | SavingRefusal
+  | RecoverInvestigationMetadataRequest
+  | RecoverInvestigationMetadataAnswer;
 export type SaveInvestigationRequest = SaveInvestigationRequest1 & SaveInvestigationRequest2;
 export type SaveInvestigationRequest1 =
   | {
@@ -51,7 +53,8 @@ export type SelectionPredicate =
   | OpeningAttributeIn
   | RecordAttributeIn
   | ObservedSpanAtLeast
-  | MaxRawGapAtLeast;
+  | MaxRawGapAtLeast
+  | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
 export type LocalTimestamp = string;
@@ -67,6 +70,18 @@ export type PeriodComparisonDefinition = UtcPeriodComparisonDefinition | WallPer
 export type RowId = string;
 export type ScoreRunId = string;
 export type CalibrationId = string;
+export type Bpic19ProfileKeepGroup =
+  | FlowKeepGroup
+  | InvariantSubtypeKeepGroup
+  | UnavailableSubtypeKeepGroup
+  | UnresolvedKeepGroup
+  | CrossCheckKeepGroup
+  | GrainIssueKeepGroup
+  | SourceInclusionKeepGroup
+  | AttributeValueKeepGroup;
+export type PreparedInputId = string;
+export type PreparedDefinitionId = string;
+export type PreparedRunId = string;
 export type SavingRefusal = SavingRefusal1;
 
 export interface SaveInvestigationRequest2 {
@@ -87,6 +102,23 @@ export interface SaveInvestigationRequest2 {
   bookmarks: EvidenceBookmark[];
   score_run_ref?: ScoreRunReference | null;
   presentation_state?: PresentationRecovery | null;
+  bpic19_pipeline?: Bpic19Pipeline | null;
+  /**
+   * Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.
+   *
+   * @minItems 1
+   * @maxItems 4
+   */
+  bpic19_prepared_assessments?:
+    | [Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference
+      ];
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -179,6 +211,26 @@ export interface MaxRawGapAtLeast {
   kind: "max_raw_gap_at_least";
   hours: number;
   negate: boolean;
+}
+/**
+ * OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.
+ */
+export interface RecordAttributesAll {
+  kind: "record_attributes_all";
+  policy_id: "incident.raw.same_record_all.v1";
+  /**
+   * @minItems 1
+   * @maxItems 32
+   */
+  conditions: [RecordAttributeCondition, ...RecordAttributeCondition[]];
+  negate: boolean;
+}
+export interface RecordAttributeCondition {
+  column_index: number;
+  /**
+   * @minItems 1
+   */
+  values: [string | null, ...(string | null)[]];
 }
 export interface SavedGroupComparison {
   kind: "group";
@@ -294,6 +346,131 @@ export interface PositionPoint {
   x: number;
   y: number;
 }
+export interface Bpic19Pipeline {
+  schema_version: 1;
+  /**
+   * @minItems 1
+   * @maxItems 32
+   */
+  actions: [Bpic19PipelineAction, ...Bpic19PipelineAction[]];
+  /**
+   * Explicit partial mode omits only registered unresolved source-method gates; it never omits a failed admitted operation.
+   */
+  replay_mode?: "require_all" | "partial";
+  /**
+   * @maxItems 100
+   */
+  literature_claims?: Bpic19LiteratureClaim[];
+}
+export interface Bpic19PipelineAction {
+  operation:
+    | "bpic19_profile"
+    | "bpic19_measures"
+    | "bpic19_cohorts"
+    | "bpic19_score"
+    | "bpic19_ordinal"
+    | "bpic19_fifo"
+    | "bpic19_cancellation"
+    | "bpic19_rule"
+    | "bpic19_waiting"
+    | "bpic19_flow_comparison"
+    | "bpic19_method_gate"
+    | "bpic19_interval_comparison"
+    | "bpic19_operator_comparison"
+    | "bpic19_cohort_comparison";
+  identity: AnswerIdentity;
+  /**
+   * Validated against the registered operation request before save or replay.
+   */
+  query: {
+    [k: string]: unknown;
+  };
+  definition_id: string;
+  /**
+   * Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position.
+   */
+  selection_prefix_length?: number | null;
+  selection_keep?: Bpic19SelectionKeep;
+}
+/**
+ * Exact complete-case selection step justified by this frozen parent profile. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
+ */
+export interface Bpic19SelectionKeep {
+  policy_id: "bpic19.profile_group_keep.v1";
+  step_index: number;
+  group: Bpic19ProfileKeepGroup;
+}
+export interface FlowKeepGroup {
+  kind: "flow";
+  flow_id: "after_gr" | "before_gr" | "two_way" | "consignment";
+}
+export interface InvariantSubtypeKeepGroup {
+  kind: "flow_item_type";
+  flow_id: "after_gr" | "before_gr" | "two_way" | "consignment";
+  state: "invariant";
+  item_type_value: string;
+}
+export interface UnavailableSubtypeKeepGroup {
+  kind: "flow_item_type";
+  flow_id: "after_gr" | "before_gr" | "two_way" | "consignment";
+  state: "missing" | "conflicting";
+  item_type_value: null;
+}
+export interface UnresolvedKeepGroup {
+  kind: "unresolved";
+  state: "missing" | "conflicting" | "unrecognized";
+}
+export interface CrossCheckKeepGroup {
+  kind: "cross_check";
+  state: "valid" | "unavailable" | "flag_disagreement";
+}
+export interface GrainIssueKeepGroup {
+  kind: "grain_issue";
+  state:
+    "missing_document_or_item" | "conflicting_document_or_item" | "source_case_mismatch" | "duplicate_document_item";
+}
+export interface SourceInclusionKeepGroup {
+  kind: "source_inclusion";
+  state: "retained";
+}
+export interface AttributeValueKeepGroup {
+  kind: "attribute_value";
+  column_index: number;
+  value: string | null;
+}
+export interface Bpic19LiteratureClaim {
+  claim_id: string;
+  report_id:
+    | "R01"
+    | "R02"
+    | "R03"
+    | "R04"
+    | "R05"
+    | "R06"
+    | "R07"
+    | "R08"
+    | "R09"
+    | "R10"
+    | "R11"
+    | "R12"
+    | "R13"
+    | "R14"
+    | "R15"
+    | "notebook"
+    | "wise-paper";
+  source_locator: string;
+  claim: string;
+  claim_level: "reported_not_rerun";
+  compared_run_id: string | null;
+}
+export interface Bpic19PreparedAssessmentReference {
+  basis_kind: "declared_prepared_attributes";
+  input_id: PreparedInputId;
+  definition_id: PreparedDefinitionId;
+  run_id: PreparedRunId;
+  view: "Finance" | "Logistics" | "Compliance" | "Automation";
+  output_sha256: string;
+}
 export interface SaveInvestigationAnswer {
   schema_version: 1;
   message_type: "save_investigation_answer";
@@ -304,6 +481,8 @@ export interface SaveInvestigationAnswer {
   created_investigation: boolean;
   semantic_change: boolean;
   recovery: RecoveryAnswer;
+  bpic19_outputs?: Bpic19PipelineManifest;
+  bpic19_prepared_outputs?: Bpic19PreparedAssessmentManifest;
 }
 export interface SavedRevision {
   investigation_id: InvestigationId;
@@ -321,6 +500,23 @@ export interface SavedInvestigationContent {
   notes: string;
   bookmarks: EvidenceBookmark[];
   score_run_ref: ScoreRunReference | null;
+  bpic19_pipeline?: Bpic19Pipeline | null;
+  /**
+   * Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.
+   *
+   * @minItems 1
+   * @maxItems 4
+   */
+  bpic19_prepared_assessments?:
+    | [Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference
+      ];
 }
 export interface RecoveryAnswer {
   presentation_state: PresentationRecovery | null;
@@ -329,6 +525,76 @@ export interface RecoveryAnswer {
 export interface RecoveryWarning {
   code: "presentation_unavailable" | "presentation_invalid" | "layout_version_mismatch";
   message: string;
+}
+export interface Bpic19PipelineManifest {
+  schema_version: 1;
+  /**
+   * @minItems 1
+   * @maxItems 32
+   */
+  outputs: [Bpic19PipelineOutput, ...Bpic19PipelineOutput[]];
+  claim_level?: "complete_registered_pipeline" | "partial";
+  run_id?: string;
+  /**
+   * @maxItems 32
+   */
+  omissions?: Bpic19PipelineOmission[];
+  /**
+   * @maxItems 100
+   */
+  literature_claims?: Bpic19LiteratureClaim[];
+}
+export interface Bpic19PipelineOutput {
+  operation:
+    | "bpic19_profile"
+    | "bpic19_measures"
+    | "bpic19_cohorts"
+    | "bpic19_score"
+    | "bpic19_ordinal"
+    | "bpic19_fifo"
+    | "bpic19_cancellation"
+    | "bpic19_rule"
+    | "bpic19_waiting"
+    | "bpic19_flow_comparison"
+    | "bpic19_interval_comparison"
+    | "bpic19_operator_comparison"
+    | "bpic19_cohort_comparison";
+  definition_id: string;
+  sha256: string;
+  output: {
+    [k: string]: unknown;
+  };
+}
+export interface Bpic19PipelineOmission {
+  step: number;
+  operation: "bpic19_method_gate";
+  definition_id: string;
+  method_id: string;
+  source_locator: string;
+  gate_reason: string;
+  identity: AnswerIdentity;
+}
+export interface Bpic19PreparedAssessmentManifest {
+  basis_kind: "declared_prepared_attributes";
+  input_id: PreparedInputId;
+  /**
+   * @maxItems 1000
+   */
+  assessment_item_ids: CaseId[];
+  /**
+   * @maxItems 4
+   */
+  references:
+    | []
+    | [Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference, Bpic19PreparedAssessmentReference]
+    | [
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference,
+        Bpic19PreparedAssessmentReference
+      ];
 }
 export interface ListSavedRequest {
   schema_version: 1;
@@ -375,6 +641,8 @@ export interface ReopenInvestigationAnswer {
   restored_selection: RestoredSelection;
   restored_comparison_id: ComparisonId | null;
   recovery: RecoveryAnswer;
+  bpic19_outputs?: Bpic19PipelineManifest;
+  bpic19_prepared_outputs?: Bpic19PreparedAssessmentManifest;
 }
 export interface RestoredSelection {
   identity: AnswerIdentity;
@@ -395,6 +663,19 @@ export interface PredicateResult {
   kept: PopulationSupport;
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
+  record_evidence?: RecordAttributeEvidence;
+}
+/**
+ * Nonempty matching or unknown original-row support before optional negation, ordered by case ID then original source position. Absence is evaluated over the complete history; not-matching rows are never deleted.
+ */
+export interface RecordAttributeEvidence {
+  policy_id: "incident.raw.same_record_all.v1";
+  cases: RecordAttributeCaseEvidence[];
+}
+export interface RecordAttributeCaseEvidence {
+  case_id: CaseId;
+  matching_row_ids: RowId[];
+  unevaluable_row_ids: RowId[];
 }
 export interface SavingRefusal1 {
   schema_version: 1;
@@ -402,7 +683,7 @@ export interface SavingRefusal1 {
   request_id: RequestId | null;
   query_revision: QueryRevision | null;
   workspace_id: WorkspaceId | null;
-  operation: "save_investigation" | "list_saved" | "reopen_investigation";
+  operation: "save_investigation" | "list_saved" | "reopen_investigation" | "recover_investigation_metadata";
   code:
     | "invalid_request"
     | "unsupported_schema"
@@ -427,11 +708,376 @@ export interface SavingRefusal1 {
     | "malformed_saved_revision"
     | "incompatible_saved_revision"
     | "publication_failed"
-    | "computation_failed";
+    | "computation_failed"
+    | "unsupported_action"
+    | "artifact_unavailable"
+    | "checksum_mismatch";
   message: string;
   field: string | null;
   retryable: boolean;
   investigation_id?: InvestigationId | null;
   expected_revision_id?: SavedRevisionId | null;
   current_revision_id?: SavedRevisionId | null;
+}
+export interface RecoverInvestigationMetadataRequest {
+  schema_version: 1;
+  message_type: "recover_investigation_metadata_request";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  saved_revision_id: SavedRevisionId;
+  page: MetadataRecoveryPage;
+}
+export interface MetadataRecoveryPage {
+  notes_offset: number;
+  bookmarks_offset: number;
+  claims_offset: number;
+}
+export interface RecoverInvestigationMetadataAnswer {
+  schema_version: 1;
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  saved_revision_id: SavedRevisionId;
+  message_type: "recover_investigation_metadata_answer";
+  investigation_id: InvestigationId;
+  status: "historical_metadata_only";
+  metadata_integrity: "saved_content_hash_verified";
+  outputs_restored: false;
+  selection_restored: false;
+  source_verified: false;
+  metadata: HistoricalInvestigationMetadata;
+}
+export interface HistoricalInvestigationMetadata {
+  name: string;
+  name_truncated: boolean;
+  base_identity: AnswerIdentity;
+  selection_identity: AnswerIdentity;
+  notes: RecoveredNotesPage;
+  bookmarks: RecoveredBookmarkPage;
+  literature_claims: RecoveredClaimPage;
+}
+export interface RecoveredNotesPage {
+  offset: number;
+  total: number;
+  text: string;
+  next_offset: number | null;
+}
+export interface RecoveredBookmarkPage {
+  offset: number;
+  total: number;
+  /**
+   * @maxItems 20
+   */
+  items:
+    | []
+    | [RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark, RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark]
+    | [RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark, RecoveredBookmark]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ]
+    | [
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark,
+        RecoveredBookmark
+      ];
+  next_offset: number | null;
+}
+export interface RecoveredBookmark {
+  label: string;
+  identity: AnswerIdentity;
+  case_id: CaseId;
+  /**
+   * @maxItems 200
+   */
+  row_ids: RowId[];
+  note: string;
+  label_truncated: boolean;
+  row_count: number;
+  row_ids_complete: boolean;
+  note_truncated: boolean;
+}
+export interface RecoveredClaimPage {
+  offset: number;
+  total: number;
+  /**
+   * @maxItems 10
+   */
+  items:
+    | []
+    | [Bpic19LiteratureClaim]
+    | [Bpic19LiteratureClaim, Bpic19LiteratureClaim]
+    | [Bpic19LiteratureClaim, Bpic19LiteratureClaim, Bpic19LiteratureClaim]
+    | [Bpic19LiteratureClaim, Bpic19LiteratureClaim, Bpic19LiteratureClaim, Bpic19LiteratureClaim]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ]
+    | [
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim,
+        Bpic19LiteratureClaim
+      ];
+  next_offset: number | null;
 }

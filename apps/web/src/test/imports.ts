@@ -215,6 +215,7 @@ export function narrowInspectionAnswer(request: InspectCsvRequest): CsvInspectio
  * 3 filled cells of 2 distinct values; Zeit and Team 4 of 2; Nr 4 of 4, all whole numbers.
  */
 export function unreadableInspectionAnswer(request: InspectCsvRequest): CsvInspectionAnswer {
+  const noneRead = [...noMatches, { format: "dmy_dash_second" as const, parsed_count: 0 }];
   return {
     ...inspectionAnswer(request),
     dialect_candidates: [{ encoding: "utf-8", delimiter: ",", quotechar: '"', header: "first_record" }],
@@ -227,16 +228,16 @@ export function unreadableInspectionAnswer(request: InspectCsvRequest): CsvInspe
       { source_position: 3, cells: ["T-2", "", "spät", "Büro", "4"] },
     ],
     role_suggestions: [
-      { column_index: 0, roles: ["context", "case_id", "activity"], nonempty_count: 3, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
-      { column_index: 1, roles: ["context"], nonempty_count: 0, distinct_nonempty_count: 0, timestamp_matches: [...noMatches] },
-      { column_index: 2, roles: ["context", "case_id", "activity"], nonempty_count: 4, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
-      { column_index: 3, roles: ["context", "case_id", "activity"], nonempty_count: 4, distinct_nonempty_count: 2, timestamp_matches: [...noMatches] },
+      { column_index: 0, roles: ["context", "case_id", "activity"], nonempty_count: 3, distinct_nonempty_count: 2, timestamp_matches: [...noneRead] },
+      { column_index: 1, roles: ["context"], nonempty_count: 0, distinct_nonempty_count: 0, timestamp_matches: [...noneRead] },
+      { column_index: 2, roles: ["context", "case_id", "activity"], nonempty_count: 4, distinct_nonempty_count: 2, timestamp_matches: [...noneRead] },
+      { column_index: 3, roles: ["context", "case_id", "activity"], nonempty_count: 4, distinct_nonempty_count: 2, timestamp_matches: [...noneRead] },
       {
         column_index: 4,
         roles: ["context", "case_id", "activity", "source_sequence"],
         nonempty_count: 4,
         distinct_nonempty_count: 4,
-        timestamp_matches: [...noMatches],
+        timestamp_matches: [...noneRead],
       },
     ],
     unresolved: ["Confirm the proposed encoding, separator and column roles."],

@@ -39,6 +39,7 @@ export type TimestampFormat =
   | "mdy_slash_minute"
   | "mdy_dot_minute"
   | "dmy_dot_second"
+  | "dmy_dash_second"
   | "mdy_dot_second"
   | "dmy_slash_second"
   | "mdy_slash_second"

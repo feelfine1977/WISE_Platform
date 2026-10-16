@@ -40,6 +40,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
+from typing import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,16 @@ class Problem:
     code: str
     message: str
     field: str | None = None
+
+
+@dataclass(frozen=True)
+class ReferenceIntegrity:
+    """Read-only reference state; existing import/Resolution refusals stay unchanged."""
+
+    state: Literal["available", "unavailable", "checksum_invalid", "invalid_reference"]
+    reference_id: str
+    path: str
+    record: Mapping[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -310,6 +321,54 @@ class Workspace:
         except OSError:
             return "missing"
         return "stored" if _holds(data_path, digest, size) else "changed"
+
+    def reference_integrity(self, kind: Literal["source", "definition", "run"], reference_id: str) -> ReferenceIntegrity:
+        """Inspect only a declared source or immutable native reference, without repair.
+
+        Callers decide their public refusal vocabulary. Resolution continues to
+        use source/run/definition and their established failure codes.
+        """
+        folder, pattern = {"source": (SOURCES, _SOURCE_ID), "definition": (DEFINITIONS, _DEFINITION_ID),
+                           "run": (SCORE_RUNS, _RUN_ID)}[kind]
+        match = pattern.fullmatch(reference_id) if isinstance(reference_id, str) else None
+        if match is None:
+            return ReferenceIntegrity("invalid_reference", reference_id, folder)
+        digest = match.group(1)
+        path = self.path / folder / (digest + ".json")
+        try:
+            encoded = path.read_bytes()
+        except OSError:
+            return ReferenceIntegrity("unavailable", reference_id, str(path))
+        try:
+            stored = json.loads(encoded)
+        except (ValueError, UnicodeError, RecursionError):
+            # A source descriptor has no recorded checksum of its own. Its id
+            # authenticates CSV bytes, unlike immutable native record wrappers.
+            return ReferenceIntegrity("unavailable" if kind == "source" else "checksum_invalid", reference_id, str(path))
+        if kind == "source":
+            if (not isinstance(stored, dict) or stored.get("source_id") != reference_id
+                    or not isinstance(stored.get("filename"), str) or not stored["filename"]
+                    or type(stored.get("byte_count")) is not int or stored["byte_count"] < 0
+                    or not isinstance(stored.get("stored_utc"), str)):
+                return ReferenceIntegrity("unavailable", reference_id, str(path))
+            record = StoredSource(reference_id, stored["filename"], stored["byte_count"], stored["stored_utc"])
+            path = self.path / folder / (digest + ".csv")
+            try:
+                hasher, size = hashlib.sha256(), 0
+                with path.open("rb") as stream:
+                    for block in iter(lambda: stream.read(1 << 20), b""):
+                        size += len(block)
+                        hasher.update(block)
+            except OSError:
+                return ReferenceIntegrity("unavailable", reference_id, str(path))
+            if hasher.hexdigest() != digest or size != record.byte_count:
+                return ReferenceIntegrity("checksum_invalid", reference_id, str(path))
+            return ReferenceIntegrity("available", reference_id, str(path), record.to_dict())
+        record = stored.get("record") if isinstance(stored, dict) else None
+        checksum = _checksum_or_none(record) if isinstance(record, dict) else None
+        if not isinstance(stored, dict) or stored.get("id") != reference_id or checksum is None or stored.get("sha256") != checksum:
+            return ReferenceIntegrity("checksum_invalid", reference_id, str(path))
+        return ReferenceIntegrity("available", reference_id, str(path), record)
 
     def sources(self) -> list[StoredSource]:
         """Every complete stored source, oldest first."""

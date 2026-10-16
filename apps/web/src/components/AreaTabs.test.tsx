@@ -49,6 +49,7 @@ describe("the area tabs of the app bar", () => {
     expect(states()).toEqual([
       { name: "Data", current: null, disabled: null, reason: null },
       { name: "Investigations", current: "page", disabled: null, reason: null },
+      { name: "Purchasing analysis", current: null, disabled: null, reason: null },
       { name: "Compare", current: null, disabled: null, reason: null },
       { name: "Expectation", current: null, disabled: null, reason: null },
       { name: "Saved", current: null, disabled: null, reason: null },
@@ -56,23 +57,23 @@ describe("the area tabs of the app bar", () => {
 
     // Before incidents are open, an area that needs them says so instead of refusing to open.
     await app.user.click(tab("Compare"));
-    expect(states().map((item) => item.current)).toEqual([null, null, "page", null, null]);
+    expect(states().map((item) => item.current)).toEqual([null, null, null, "page", null, null]);
     expect(screen.getByRole("heading", { name: "Compare" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Go to the Data area" })).toBeTruthy();
 
     await app.user.click(tab("Expectation"));
-    expect(states().map((item) => item.current)).toEqual([null, null, null, "page", null]);
+    expect(states().map((item) => item.current)).toEqual([null, null, null, null, "page", null]);
     expect(screen.getByRole("heading", { name: "Expectation" })).toBeTruthy();
     expect(screen.getByText(/An expectation is scored for the incidents an investigation shows\./)).toBeTruthy();
 
     await app.user.click(tab("Saved"));
-    expect(states().map((item) => item.current)).toEqual([null, null, null, null, "page"]);
+    expect(states().map((item) => item.current)).toEqual([null, null, null, null, null, "page"]);
 
     await app.user.click(tab("Data"));
-    expect(states().map((item) => item.current)).toEqual(["page", null, null, null, null]);
+    expect(states().map((item) => item.current)).toEqual(["page", null, null, null, null, null]);
 
     await app.user.click(tab("Investigations"));
-    expect(states().map((item) => item.current)).toEqual([null, "page", null, null, null]);
+    expect(states().map((item) => item.current)).toEqual([null, "page", null, null, null, null]);
   });
 
   it("are reached and chosen with the keyboard", async () => {
@@ -82,6 +83,10 @@ describe("the area tabs of the app bar", () => {
     expect(tab("Data").getAttribute("aria-current")).toBe("page");
     await app.user.tab();
     expect(document.activeElement).toBe(tab("Investigations"));
+    await app.user.tab();
+    expect(document.activeElement).toBe(tab("Purchasing analysis"));
+    await app.user.keyboard("{Enter}");
+    expect(screen.getByRole("heading", { name: "Purchasing analysis" })).toBeTruthy();
     await app.user.tab();
     expect(document.activeElement).toBe(tab("Compare"));
     await app.user.keyboard("{Enter}");

@@ -1,0 +1,4790 @@
+{
+  "first": {
+    "schema_version": 1,
+    "message_type": "bpic19_profile_answer",
+    "request_id": "fixture",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:literal-fixture",
+    "identity": {
+      "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+      "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+      "representation_id": "representation.v1:sha256:48a1791c6405ba15d2f49d91d23ce31cf71bbcad7f26efae0a259de7275183b0",
+      "case_dictionary_id": "case-dictionary.v1:sha256:648ecc09d0d14043cf440011ec467af9e5949f4cd0f96da3c015b3c50c083548",
+      "population_id": "population.v1:sha256:9b781b37b8ef17fdaa82b527265f6a43cbfbabe26f6ba1c9cbbcb4566c435f73",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+      "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+      "representation_id": "representation.v1:sha256:48a1791c6405ba15d2f49d91d23ce31cf71bbcad7f26efae0a259de7275183b0",
+      "case_dictionary_id": "case-dictionary.v1:sha256:648ecc09d0d14043cf440011ec467af9e5949f4cd0f96da3c015b3c50c083548",
+      "population_id": "population.v1:sha256:9b781b37b8ef17fdaa82b527265f6a43cbfbabe26f6ba1c9cbbcb4566c435f73",
+      "implementation_version": "0.1.0"
+    },
+    "query": {
+      "roles": {
+        "item_category": 3,
+        "item_type": 4,
+        "goods_receipt": 5,
+        "gr_based_iv": 6,
+        "purchasing_document": 7,
+        "item": 8,
+        "source_case": 9
+      },
+      "profile_columns": [
+        10
+      ],
+      "policy_id": "bpic19.all_raw_case_attributes.v1",
+      "attribute_view": {
+        "column_index": 10,
+        "offset": 0,
+        "limit": 12,
+        "select_value": false,
+        "value": null
+      },
+      "include_zero_cells": true,
+      "source_interpretation": {
+        "profile_name": "Independent synthetic source review",
+        "policy_id": "bpic19.raw_source_interpretation.v1",
+        "inclusion": {
+          "kind": "all_source",
+          "timestamp_kind": "wall_clock",
+          "start_inclusive": null,
+          "end_exclusive": null
+        },
+        "horizon": {
+          "timestamp_kind": "wall_clock",
+          "value": null,
+          "provenance": null
+        },
+        "discrepancies": [
+          {
+            "reference": "Synthetic report claim: reported all cases versus category table",
+            "reported_total": 251734,
+            "reported_subtotal": 251347
+          }
+        ],
+        "reported_populations": [
+          {
+            "label": "Complete",
+            "count": 190283,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Authors' reported complete population",
+            "parent_label": null
+          },
+          {
+            "label": "Compliant model-training",
+            "count": 189584,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete"
+          },
+          {
+            "label": "Complete but incompliant",
+            "count": 699,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete"
+          }
+        ]
+      }
+    },
+    "binding_state": "reviewed",
+    "columns": [
+      {
+        "index": 0,
+        "name": "case_id",
+        "mapped_context": false
+      },
+      {
+        "index": 1,
+        "name": "activity",
+        "mapped_context": false
+      },
+      {
+        "index": 2,
+        "name": "time",
+        "mapped_context": false
+      },
+      {
+        "index": 3,
+        "name": "case Item Category",
+        "mapped_context": true
+      },
+      {
+        "index": 4,
+        "name": "case Item Type",
+        "mapped_context": true
+      },
+      {
+        "index": 5,
+        "name": "case Goods Receipt",
+        "mapped_context": true
+      },
+      {
+        "index": 6,
+        "name": "case GR-Based Inv. Verif.",
+        "mapped_context": true
+      },
+      {
+        "index": 7,
+        "name": "case Purchasing Document",
+        "mapped_context": true
+      },
+      {
+        "index": 8,
+        "name": "case Item",
+        "mapped_context": true
+      },
+      {
+        "index": 9,
+        "name": "case concept:name",
+        "mapped_context": true
+      },
+      {
+        "index": 10,
+        "name": "event reviewed attribute",
+        "mapped_context": true
+      }
+    ],
+    "suggested_roles": {
+      "item_category": 3,
+      "item_type": 4,
+      "goods_receipt": 5,
+      "gr_based_iv": 6,
+      "purchasing_document": 7,
+      "item": 8,
+      "source_case": 9
+    },
+    "profile": {
+      "definition_id": "bpic19-profile.v1:sha256:9cbc09c44442aa1faa03603634061d4e75d8e34013b8ff3790eff04996e2aa11",
+      "definition": {
+        "policy_id": "bpic19.all_raw_case_attributes.v1",
+        "roles": {
+          "item_category": 3,
+          "item_type": 4,
+          "goods_receipt": 5,
+          "gr_based_iv": 6,
+          "purchasing_document": 7,
+          "item": 8,
+          "source_case": 9
+        },
+        "profile_columns": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "category_labels": {
+          "after_gr": "3-way match, invoice after GR",
+          "before_gr": "3-way match, invoice before GR",
+          "two_way": "2-way match",
+          "consignment": "Consignment"
+        },
+        "category_assignment": "supplied_exact_invariant_category",
+        "flag_policy": "bpic19.category_flags_and_consignment_type.v1",
+        "grain_policy": "bpic19.document_item_underscore.v1",
+        "source_interpretation": {
+          "profile_name": "Independent synthetic source review",
+          "policy_id": "bpic19.raw_source_interpretation.v1",
+          "inclusion": {
+            "kind": "all_source",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "discrepancies": [
+            {
+              "reference": "Synthetic report claim: reported all cases versus category table",
+              "reported_total": 251734,
+              "reported_subtotal": 251347
+            }
+          ],
+          "reported_populations": [
+            {
+              "label": "Complete",
+              "count": 190283,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Authors' reported complete population",
+              "parent_label": null
+            },
+            {
+              "label": "Compliant model-training",
+              "count": 189584,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            },
+            {
+              "label": "Complete but incompliant",
+              "count": 699,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            }
+          ]
+        }
+      },
+      "population": {
+        "case_count": 13,
+        "record_count": 26,
+        "document_count": 13,
+        "document_unknown_case_count": 0
+      },
+      "flows": [
+        {
+          "flow_id": "after_gr",
+          "label": "Three-way: invoice after goods receipt",
+          "category_value": "3-way match, invoice after GR",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "label": "Three-way: invoice may precede goods receipt",
+          "category_value": "3-way match, invoice before GR",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "flow_id": "two_way",
+          "label": "Two-way: no goods receipt required",
+          "category_value": "2-way match",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "label": "Consignment",
+          "category_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "unresolved": [
+        {
+          "state": "missing",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "conflicting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "unrecognized",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "cross_checks": [
+        {
+          "state": "valid",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "state": "unavailable",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "flag_disagreement",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "partition": {
+        "classified_case_count": 13,
+        "unresolved_case_count": 0,
+        "is_disjoint": true,
+        "covers_parent": true
+      },
+      "grain": {
+        "mixed_flow_document_count": 0,
+        "mixed_flow_document_examples": [],
+        "identity_issues": [
+          {
+            "state": "missing_document_or_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "conflicting_document_or_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "source_case_mismatch",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "duplicate_document_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          }
+        ]
+      },
+      "source_review": {
+        "interpretation": {
+          "profile_name": "Independent synthetic source review",
+          "policy_id": "bpic19.raw_source_interpretation.v1",
+          "inclusion": {
+            "kind": "all_source",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "discrepancies": [
+            {
+              "reference": "Synthetic report claim: reported all cases versus category table",
+              "reported_total": 251734,
+              "reported_subtotal": 251347
+            }
+          ],
+          "reported_populations": [
+            {
+              "label": "Complete",
+              "count": 190283,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Authors' reported complete population",
+              "parent_label": null
+            },
+            {
+              "label": "Compliant model-training",
+              "count": 189584,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            },
+            {
+              "label": "Complete but incompliant",
+              "count": 699,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            }
+          ]
+        },
+        "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+        "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+        "parser_time_policy": "incident.time.wall_clock_as_recorded.v1",
+        "parser_cutoff": "2027-01-01T00:00:00",
+        "clock_kind": "wall_clock",
+        "observed_raw_minimum": "2018-01-01T00:00:00",
+        "observed_raw_maximum": "2018-01-02T00:00:00",
+        "horizon_state": "unknown",
+        "due_assessment": "unavailable",
+        "due_assessment_reason": "observation_horizon_unknown",
+        "raw_support": {
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        "retained": {
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        "excluded": {
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        "unavailable": {
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        "projection": null,
+        "inclusion_evidence": [],
+        "omitted_inclusion_evidence_count": 0,
+        "anomalies": [],
+        "discrepancies": [
+          {
+            "reference": "Synthetic report claim: reported all cases versus category table",
+            "reported_total": 251734,
+            "reported_subtotal": 251347,
+            "difference": 387,
+            "measured_parent_case_count": 13
+          }
+        ],
+        "reported_populations": [
+          {
+            "label": "Complete",
+            "count": 190283,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Authors' reported complete population",
+            "parent_label": null,
+            "claim_status": "reported_source_claim"
+          },
+          {
+            "label": "Compliant model-training",
+            "count": 189584,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete",
+            "claim_status": "reported_source_claim"
+          },
+          {
+            "label": "Complete but incompliant",
+            "count": 699,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete",
+            "claim_status": "reported_source_claim"
+          }
+        ]
+      },
+      "attributes": [
+        {
+          "column_index": 3,
+          "column_name": "case Item Category",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "3-way match, invoice before GR",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 4,
+          "column_name": "case Item Type",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "Standard",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 5,
+          "column_name": "case Goods Receipt",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "true",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 6,
+          "column_name": "case GR-Based Inv. Verif.",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "false",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 7,
+          "column_name": "case Purchasing Document",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "D0",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D0_1"
+              ]
+            },
+            {
+              "value": "D1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "D10",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "D11",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            },
+            {
+              "value": "D12",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D12_1"
+              ]
+            },
+            {
+              "value": "D2",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "D3",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "D4",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "D5",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "D6",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "D7",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "D8",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 8,
+          "column_name": "case Item",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "1",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 9,
+          "column_name": "case concept:name",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "D0_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D0_1"
+              ]
+            },
+            {
+              "value": "D10_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "D11_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            },
+            {
+              "value": "D12_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D12_1"
+              ]
+            },
+            {
+              "value": "D1_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "D2_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "D3_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "D4_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "D5_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "D6_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "D7_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "D8_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 10,
+          "column_name": "event reviewed attribute",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 12,
+          "missing_case_count": 0,
+          "conflicting_case_count": 1,
+          "invariant_document_count": 12,
+          "missing_document_count": 0,
+          "conflicting_document_count": 1,
+          "document_conflict_examples": [
+            {
+              "document": "D12",
+              "case_ids": [
+                "D12_1"
+              ]
+            }
+          ],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [
+            "D12_1"
+          ],
+          "conflicting_witnesses": [
+            {
+              "case_id": "D12_1",
+              "rows": [
+                {
+                  "row_id": "row.v1:sha256:10a12c208e7dcdc0745c8f8a925a7f251b82212425ffc815a304957147c9f7b0",
+                  "source_position": 24,
+                  "value": "z-singleton"
+                },
+                {
+                  "row_id": "row.v1:sha256:d2f40df292ba162f288b9232afc520790ac6af2aae4f76c3868a44edfd2cd2c2",
+                  "source_position": 25,
+                  "value": "common-00"
+                }
+              ]
+            }
+          ],
+          "values": [
+            {
+              "value": "common-00",
+              "case_count": 2,
+              "record_count": 3,
+              "document_count": 2,
+              "example_case_ids": [
+                "D0_1",
+                "D12_1"
+              ]
+            },
+            {
+              "value": "common-01",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "common-02",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "common-03",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "common-04",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "common-05",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "common-06",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "common-07",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "common-08",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            },
+            {
+              "value": "common-09",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D9_1"
+              ]
+            },
+            {
+              "value": "common-10",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "common-11",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": true
+        }
+      ],
+      "flow_item_types": [
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "item_type_totals": [
+        {
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Standard",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "attribute_view": {
+        "column_index": 10,
+        "column_name": "event reviewed attribute",
+        "policy_id": "bpic19.any_original_record_exact_value.v1",
+        "offset": 0,
+        "limit": 12,
+        "total_value_count": 13,
+        "distinct_nonmissing_value_count": 13,
+        "next_offset": 12,
+        "values": [
+          {
+            "value": "common-00",
+            "case_count": 2,
+            "record_count": 3,
+            "document_count": 2,
+            "example_case_ids": [
+              "D0_1",
+              "D12_1"
+            ]
+          },
+          {
+            "value": "common-01",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D1_1"
+            ]
+          },
+          {
+            "value": "common-02",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D2_1"
+            ]
+          },
+          {
+            "value": "common-03",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D3_1"
+            ]
+          },
+          {
+            "value": "common-04",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D4_1"
+            ]
+          },
+          {
+            "value": "common-05",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D5_1"
+            ]
+          },
+          {
+            "value": "common-06",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D6_1"
+            ]
+          },
+          {
+            "value": "common-07",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D7_1"
+            ]
+          },
+          {
+            "value": "common-08",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D8_1"
+            ]
+          },
+          {
+            "value": "common-09",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D9_1"
+            ]
+          },
+          {
+            "value": "common-10",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D10_1"
+            ]
+          },
+          {
+            "value": "common-11",
+            "case_count": 1,
+            "record_count": 2,
+            "document_count": 1,
+            "example_case_ids": [
+              "D11_1"
+            ]
+          }
+        ],
+        "selection": null
+      }
+    }
+  },
+  "last": {
+    "schema_version": 1,
+    "message_type": "bpic19_profile_answer",
+    "request_id": "fixture",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:literal-fixture",
+    "identity": {
+      "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+      "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+      "representation_id": "representation.v1:sha256:48a1791c6405ba15d2f49d91d23ce31cf71bbcad7f26efae0a259de7275183b0",
+      "case_dictionary_id": "case-dictionary.v1:sha256:648ecc09d0d14043cf440011ec467af9e5949f4cd0f96da3c015b3c50c083548",
+      "population_id": "population.v1:sha256:9b781b37b8ef17fdaa82b527265f6a43cbfbabe26f6ba1c9cbbcb4566c435f73",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+      "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+      "representation_id": "representation.v1:sha256:48a1791c6405ba15d2f49d91d23ce31cf71bbcad7f26efae0a259de7275183b0",
+      "case_dictionary_id": "case-dictionary.v1:sha256:648ecc09d0d14043cf440011ec467af9e5949f4cd0f96da3c015b3c50c083548",
+      "population_id": "population.v1:sha256:9b781b37b8ef17fdaa82b527265f6a43cbfbabe26f6ba1c9cbbcb4566c435f73",
+      "implementation_version": "0.1.0"
+    },
+    "query": {
+      "roles": {
+        "item_category": 3,
+        "item_type": 4,
+        "goods_receipt": 5,
+        "gr_based_iv": 6,
+        "purchasing_document": 7,
+        "item": 8,
+        "source_case": 9
+      },
+      "profile_columns": [
+        10
+      ],
+      "policy_id": "bpic19.all_raw_case_attributes.v1",
+      "attribute_view": {
+        "column_index": 10,
+        "offset": 12,
+        "limit": 12,
+        "select_value": false,
+        "value": null
+      },
+      "include_zero_cells": true,
+      "source_interpretation": {
+        "profile_name": "Independent synthetic source review",
+        "policy_id": "bpic19.raw_source_interpretation.v1",
+        "inclusion": {
+          "kind": "all_source",
+          "timestamp_kind": "wall_clock",
+          "start_inclusive": null,
+          "end_exclusive": null
+        },
+        "horizon": {
+          "timestamp_kind": "wall_clock",
+          "value": null,
+          "provenance": null
+        },
+        "discrepancies": [
+          {
+            "reference": "Synthetic report claim: reported all cases versus category table",
+            "reported_total": 251734,
+            "reported_subtotal": 251347
+          }
+        ],
+        "reported_populations": [
+          {
+            "label": "Complete",
+            "count": 190283,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Authors' reported complete population",
+            "parent_label": null
+          },
+          {
+            "label": "Compliant model-training",
+            "count": 189584,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete"
+          },
+          {
+            "label": "Complete but incompliant",
+            "count": 699,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete"
+          }
+        ]
+      }
+    },
+    "binding_state": "reviewed",
+    "columns": [
+      {
+        "index": 0,
+        "name": "case_id",
+        "mapped_context": false
+      },
+      {
+        "index": 1,
+        "name": "activity",
+        "mapped_context": false
+      },
+      {
+        "index": 2,
+        "name": "time",
+        "mapped_context": false
+      },
+      {
+        "index": 3,
+        "name": "case Item Category",
+        "mapped_context": true
+      },
+      {
+        "index": 4,
+        "name": "case Item Type",
+        "mapped_context": true
+      },
+      {
+        "index": 5,
+        "name": "case Goods Receipt",
+        "mapped_context": true
+      },
+      {
+        "index": 6,
+        "name": "case GR-Based Inv. Verif.",
+        "mapped_context": true
+      },
+      {
+        "index": 7,
+        "name": "case Purchasing Document",
+        "mapped_context": true
+      },
+      {
+        "index": 8,
+        "name": "case Item",
+        "mapped_context": true
+      },
+      {
+        "index": 9,
+        "name": "case concept:name",
+        "mapped_context": true
+      },
+      {
+        "index": 10,
+        "name": "event reviewed attribute",
+        "mapped_context": true
+      }
+    ],
+    "suggested_roles": {
+      "item_category": 3,
+      "item_type": 4,
+      "goods_receipt": 5,
+      "gr_based_iv": 6,
+      "purchasing_document": 7,
+      "item": 8,
+      "source_case": 9
+    },
+    "profile": {
+      "definition_id": "bpic19-profile.v1:sha256:9cbc09c44442aa1faa03603634061d4e75d8e34013b8ff3790eff04996e2aa11",
+      "definition": {
+        "policy_id": "bpic19.all_raw_case_attributes.v1",
+        "roles": {
+          "item_category": 3,
+          "item_type": 4,
+          "goods_receipt": 5,
+          "gr_based_iv": 6,
+          "purchasing_document": 7,
+          "item": 8,
+          "source_case": 9
+        },
+        "profile_columns": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "category_labels": {
+          "after_gr": "3-way match, invoice after GR",
+          "before_gr": "3-way match, invoice before GR",
+          "two_way": "2-way match",
+          "consignment": "Consignment"
+        },
+        "category_assignment": "supplied_exact_invariant_category",
+        "flag_policy": "bpic19.category_flags_and_consignment_type.v1",
+        "grain_policy": "bpic19.document_item_underscore.v1",
+        "source_interpretation": {
+          "profile_name": "Independent synthetic source review",
+          "policy_id": "bpic19.raw_source_interpretation.v1",
+          "inclusion": {
+            "kind": "all_source",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "discrepancies": [
+            {
+              "reference": "Synthetic report claim: reported all cases versus category table",
+              "reported_total": 251734,
+              "reported_subtotal": 251347
+            }
+          ],
+          "reported_populations": [
+            {
+              "label": "Complete",
+              "count": 190283,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Authors' reported complete population",
+              "parent_label": null
+            },
+            {
+              "label": "Compliant model-training",
+              "count": 189584,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            },
+            {
+              "label": "Complete but incompliant",
+              "count": 699,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            }
+          ]
+        }
+      },
+      "population": {
+        "case_count": 13,
+        "record_count": 26,
+        "document_count": 13,
+        "document_unknown_case_count": 0
+      },
+      "flows": [
+        {
+          "flow_id": "after_gr",
+          "label": "Three-way: invoice after goods receipt",
+          "category_value": "3-way match, invoice after GR",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "label": "Three-way: invoice may precede goods receipt",
+          "category_value": "3-way match, invoice before GR",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "flow_id": "two_way",
+          "label": "Two-way: no goods receipt required",
+          "category_value": "2-way match",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "label": "Consignment",
+          "category_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "unresolved": [
+        {
+          "state": "missing",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "conflicting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "unrecognized",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "cross_checks": [
+        {
+          "state": "valid",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "state": "unavailable",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "flag_disagreement",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "partition": {
+        "classified_case_count": 13,
+        "unresolved_case_count": 0,
+        "is_disjoint": true,
+        "covers_parent": true
+      },
+      "grain": {
+        "mixed_flow_document_count": 0,
+        "mixed_flow_document_examples": [],
+        "identity_issues": [
+          {
+            "state": "missing_document_or_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "conflicting_document_or_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "source_case_mismatch",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "duplicate_document_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          }
+        ]
+      },
+      "source_review": {
+        "interpretation": {
+          "profile_name": "Independent synthetic source review",
+          "policy_id": "bpic19.raw_source_interpretation.v1",
+          "inclusion": {
+            "kind": "all_source",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "discrepancies": [
+            {
+              "reference": "Synthetic report claim: reported all cases versus category table",
+              "reported_total": 251734,
+              "reported_subtotal": 251347
+            }
+          ],
+          "reported_populations": [
+            {
+              "label": "Complete",
+              "count": 190283,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Authors' reported complete population",
+              "parent_label": null
+            },
+            {
+              "label": "Compliant model-training",
+              "count": 189584,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            },
+            {
+              "label": "Complete but incompliant",
+              "count": 699,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            }
+          ]
+        },
+        "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+        "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+        "parser_time_policy": "incident.time.wall_clock_as_recorded.v1",
+        "parser_cutoff": "2027-01-01T00:00:00",
+        "clock_kind": "wall_clock",
+        "observed_raw_minimum": "2018-01-01T00:00:00",
+        "observed_raw_maximum": "2018-01-02T00:00:00",
+        "horizon_state": "unknown",
+        "due_assessment": "unavailable",
+        "due_assessment_reason": "observation_horizon_unknown",
+        "raw_support": {
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        "retained": {
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        "excluded": {
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        "unavailable": {
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        "projection": null,
+        "inclusion_evidence": [],
+        "omitted_inclusion_evidence_count": 0,
+        "anomalies": [],
+        "discrepancies": [
+          {
+            "reference": "Synthetic report claim: reported all cases versus category table",
+            "reported_total": 251734,
+            "reported_subtotal": 251347,
+            "difference": 387,
+            "measured_parent_case_count": 13
+          }
+        ],
+        "reported_populations": [
+          {
+            "label": "Complete",
+            "count": 190283,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Authors' reported complete population",
+            "parent_label": null,
+            "claim_status": "reported_source_claim"
+          },
+          {
+            "label": "Compliant model-training",
+            "count": 189584,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete",
+            "claim_status": "reported_source_claim"
+          },
+          {
+            "label": "Complete but incompliant",
+            "count": 699,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete",
+            "claim_status": "reported_source_claim"
+          }
+        ]
+      },
+      "attributes": [
+        {
+          "column_index": 3,
+          "column_name": "case Item Category",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "3-way match, invoice before GR",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 4,
+          "column_name": "case Item Type",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "Standard",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 5,
+          "column_name": "case Goods Receipt",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "true",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 6,
+          "column_name": "case GR-Based Inv. Verif.",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "false",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 7,
+          "column_name": "case Purchasing Document",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "D0",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D0_1"
+              ]
+            },
+            {
+              "value": "D1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "D10",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "D11",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            },
+            {
+              "value": "D12",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D12_1"
+              ]
+            },
+            {
+              "value": "D2",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "D3",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "D4",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "D5",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "D6",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "D7",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "D8",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 8,
+          "column_name": "case Item",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "1",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 9,
+          "column_name": "case concept:name",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "D0_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D0_1"
+              ]
+            },
+            {
+              "value": "D10_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "D11_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            },
+            {
+              "value": "D12_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D12_1"
+              ]
+            },
+            {
+              "value": "D1_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "D2_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "D3_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "D4_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "D5_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "D6_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "D7_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "D8_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 10,
+          "column_name": "event reviewed attribute",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 12,
+          "missing_case_count": 0,
+          "conflicting_case_count": 1,
+          "invariant_document_count": 12,
+          "missing_document_count": 0,
+          "conflicting_document_count": 1,
+          "document_conflict_examples": [
+            {
+              "document": "D12",
+              "case_ids": [
+                "D12_1"
+              ]
+            }
+          ],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [
+            "D12_1"
+          ],
+          "conflicting_witnesses": [
+            {
+              "case_id": "D12_1",
+              "rows": [
+                {
+                  "row_id": "row.v1:sha256:10a12c208e7dcdc0745c8f8a925a7f251b82212425ffc815a304957147c9f7b0",
+                  "source_position": 24,
+                  "value": "z-singleton"
+                },
+                {
+                  "row_id": "row.v1:sha256:d2f40df292ba162f288b9232afc520790ac6af2aae4f76c3868a44edfd2cd2c2",
+                  "source_position": 25,
+                  "value": "common-00"
+                }
+              ]
+            }
+          ],
+          "values": [
+            {
+              "value": "common-00",
+              "case_count": 2,
+              "record_count": 3,
+              "document_count": 2,
+              "example_case_ids": [
+                "D0_1",
+                "D12_1"
+              ]
+            },
+            {
+              "value": "common-01",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "common-02",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "common-03",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "common-04",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "common-05",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "common-06",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "common-07",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "common-08",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            },
+            {
+              "value": "common-09",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D9_1"
+              ]
+            },
+            {
+              "value": "common-10",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "common-11",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": true
+        }
+      ],
+      "flow_item_types": [
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "item_type_totals": [
+        {
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Standard",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "attribute_view": {
+        "column_index": 10,
+        "column_name": "event reviewed attribute",
+        "policy_id": "bpic19.any_original_record_exact_value.v1",
+        "offset": 12,
+        "limit": 12,
+        "total_value_count": 13,
+        "distinct_nonmissing_value_count": 13,
+        "next_offset": null,
+        "values": [
+          {
+            "value": "z-singleton",
+            "case_count": 1,
+            "record_count": 1,
+            "document_count": 1,
+            "example_case_ids": [
+              "D12_1"
+            ]
+          }
+        ],
+        "selection": null
+      }
+    }
+  },
+  "selected": {
+    "schema_version": 1,
+    "message_type": "bpic19_profile_answer",
+    "request_id": "fixture",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:literal-fixture",
+    "identity": {
+      "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+      "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+      "representation_id": "representation.v1:sha256:48a1791c6405ba15d2f49d91d23ce31cf71bbcad7f26efae0a259de7275183b0",
+      "case_dictionary_id": "case-dictionary.v1:sha256:648ecc09d0d14043cf440011ec467af9e5949f4cd0f96da3c015b3c50c083548",
+      "population_id": "population.v1:sha256:9b781b37b8ef17fdaa82b527265f6a43cbfbabe26f6ba1c9cbbcb4566c435f73",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+      "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+      "representation_id": "representation.v1:sha256:48a1791c6405ba15d2f49d91d23ce31cf71bbcad7f26efae0a259de7275183b0",
+      "case_dictionary_id": "case-dictionary.v1:sha256:648ecc09d0d14043cf440011ec467af9e5949f4cd0f96da3c015b3c50c083548",
+      "population_id": "population.v1:sha256:9b781b37b8ef17fdaa82b527265f6a43cbfbabe26f6ba1c9cbbcb4566c435f73",
+      "implementation_version": "0.1.0"
+    },
+    "query": {
+      "roles": {
+        "item_category": 3,
+        "item_type": 4,
+        "goods_receipt": 5,
+        "gr_based_iv": 6,
+        "purchasing_document": 7,
+        "item": 8,
+        "source_case": 9
+      },
+      "profile_columns": [
+        10
+      ],
+      "policy_id": "bpic19.all_raw_case_attributes.v1",
+      "attribute_view": {
+        "column_index": 10,
+        "offset": 12,
+        "limit": 12,
+        "select_value": true,
+        "value": "z-singleton"
+      },
+      "include_zero_cells": true,
+      "source_interpretation": {
+        "profile_name": "Independent synthetic source review",
+        "policy_id": "bpic19.raw_source_interpretation.v1",
+        "inclusion": {
+          "kind": "all_source",
+          "timestamp_kind": "wall_clock",
+          "start_inclusive": null,
+          "end_exclusive": null
+        },
+        "horizon": {
+          "timestamp_kind": "wall_clock",
+          "value": null,
+          "provenance": null
+        },
+        "discrepancies": [
+          {
+            "reference": "Synthetic report claim: reported all cases versus category table",
+            "reported_total": 251734,
+            "reported_subtotal": 251347
+          }
+        ],
+        "reported_populations": [
+          {
+            "label": "Complete",
+            "count": 190283,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Authors' reported complete population",
+            "parent_label": null
+          },
+          {
+            "label": "Compliant model-training",
+            "count": 189584,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete"
+          },
+          {
+            "label": "Complete but incompliant",
+            "count": 699,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete"
+          }
+        ]
+      }
+    },
+    "binding_state": "reviewed",
+    "columns": [
+      {
+        "index": 0,
+        "name": "case_id",
+        "mapped_context": false
+      },
+      {
+        "index": 1,
+        "name": "activity",
+        "mapped_context": false
+      },
+      {
+        "index": 2,
+        "name": "time",
+        "mapped_context": false
+      },
+      {
+        "index": 3,
+        "name": "case Item Category",
+        "mapped_context": true
+      },
+      {
+        "index": 4,
+        "name": "case Item Type",
+        "mapped_context": true
+      },
+      {
+        "index": 5,
+        "name": "case Goods Receipt",
+        "mapped_context": true
+      },
+      {
+        "index": 6,
+        "name": "case GR-Based Inv. Verif.",
+        "mapped_context": true
+      },
+      {
+        "index": 7,
+        "name": "case Purchasing Document",
+        "mapped_context": true
+      },
+      {
+        "index": 8,
+        "name": "case Item",
+        "mapped_context": true
+      },
+      {
+        "index": 9,
+        "name": "case concept:name",
+        "mapped_context": true
+      },
+      {
+        "index": 10,
+        "name": "event reviewed attribute",
+        "mapped_context": true
+      }
+    ],
+    "suggested_roles": {
+      "item_category": 3,
+      "item_type": 4,
+      "goods_receipt": 5,
+      "gr_based_iv": 6,
+      "purchasing_document": 7,
+      "item": 8,
+      "source_case": 9
+    },
+    "profile": {
+      "definition_id": "bpic19-profile.v1:sha256:d8134bed6df8a5cc05fbd7a0cccae4e634dd6655d28cf0fdfafb6864b078091c",
+      "definition": {
+        "policy_id": "bpic19.all_raw_case_attributes.v1",
+        "roles": {
+          "item_category": 3,
+          "item_type": 4,
+          "goods_receipt": 5,
+          "gr_based_iv": 6,
+          "purchasing_document": 7,
+          "item": 8,
+          "source_case": 9
+        },
+        "profile_columns": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "category_labels": {
+          "after_gr": "3-way match, invoice after GR",
+          "before_gr": "3-way match, invoice before GR",
+          "two_way": "2-way match",
+          "consignment": "Consignment"
+        },
+        "category_assignment": "supplied_exact_invariant_category",
+        "flag_policy": "bpic19.category_flags_and_consignment_type.v1",
+        "grain_policy": "bpic19.document_item_underscore.v1",
+        "source_interpretation": {
+          "profile_name": "Independent synthetic source review",
+          "policy_id": "bpic19.raw_source_interpretation.v1",
+          "inclusion": {
+            "kind": "all_source",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "discrepancies": [
+            {
+              "reference": "Synthetic report claim: reported all cases versus category table",
+              "reported_total": 251734,
+              "reported_subtotal": 251347
+            }
+          ],
+          "reported_populations": [
+            {
+              "label": "Complete",
+              "count": 190283,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Authors' reported complete population",
+              "parent_label": null
+            },
+            {
+              "label": "Compliant model-training",
+              "count": 189584,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            },
+            {
+              "label": "Complete but incompliant",
+              "count": 699,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            }
+          ]
+        },
+        "attribute_selection": {
+          "column_index": 10,
+          "value": "z-singleton",
+          "policy_id": "bpic19.any_original_record_exact_value.v1"
+        }
+      },
+      "population": {
+        "case_count": 13,
+        "record_count": 26,
+        "document_count": 13,
+        "document_unknown_case_count": 0
+      },
+      "flows": [
+        {
+          "flow_id": "after_gr",
+          "label": "Three-way: invoice after goods receipt",
+          "category_value": "3-way match, invoice after GR",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "label": "Three-way: invoice may precede goods receipt",
+          "category_value": "3-way match, invoice before GR",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "flow_id": "two_way",
+          "label": "Two-way: no goods receipt required",
+          "category_value": "2-way match",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "label": "Consignment",
+          "category_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "unresolved": [
+        {
+          "state": "missing",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "conflicting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "unrecognized",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "cross_checks": [
+        {
+          "state": "valid",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "state": "unavailable",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "state": "flag_disagreement",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "partition": {
+        "classified_case_count": 13,
+        "unresolved_case_count": 0,
+        "is_disjoint": true,
+        "covers_parent": true
+      },
+      "grain": {
+        "mixed_flow_document_count": 0,
+        "mixed_flow_document_examples": [],
+        "identity_issues": [
+          {
+            "state": "missing_document_or_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "conflicting_document_or_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "source_case_mismatch",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          },
+          {
+            "state": "duplicate_document_item",
+            "case_ids": [],
+            "case_count": 0,
+            "record_count": 0,
+            "document_count": 0,
+            "share": 0.0,
+            "example_case_ids": []
+          }
+        ]
+      },
+      "source_review": {
+        "interpretation": {
+          "profile_name": "Independent synthetic source review",
+          "policy_id": "bpic19.raw_source_interpretation.v1",
+          "inclusion": {
+            "kind": "all_source",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "discrepancies": [
+            {
+              "reference": "Synthetic report claim: reported all cases versus category table",
+              "reported_total": 251734,
+              "reported_subtotal": 251347
+            }
+          ],
+          "reported_populations": [
+            {
+              "label": "Complete",
+              "count": 190283,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Authors' reported complete population",
+              "parent_label": null
+            },
+            {
+              "label": "Compliant model-training",
+              "count": 189584,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            },
+            {
+              "label": "Complete but incompliant",
+              "count": 699,
+              "grain": "po_item",
+              "reference": "Meyer et al., merged PDF82",
+              "denominator": "Subset of Complete",
+              "parent_label": "Complete"
+            }
+          ]
+        },
+        "source_id": "source.v1:sha256:f6521c34e83c316ec5682f8637740c96c72aae7eafb9cf32d8f5c6406b7a8fd1",
+        "preparation_id": "preparation.v1:sha256:81b54d50b10ec7d0f52a147cf0c3b9564c01131f788dd4f85dd806544b6a3ff7",
+        "parser_time_policy": "incident.time.wall_clock_as_recorded.v1",
+        "parser_cutoff": "2027-01-01T00:00:00",
+        "clock_kind": "wall_clock",
+        "observed_raw_minimum": "2018-01-01T00:00:00",
+        "observed_raw_maximum": "2018-01-02T00:00:00",
+        "horizon_state": "unknown",
+        "due_assessment": "unavailable",
+        "due_assessment_reason": "observation_horizon_unknown",
+        "raw_support": {
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        "retained": {
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        "excluded": {
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        "unavailable": {
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        "projection": null,
+        "inclusion_evidence": [],
+        "omitted_inclusion_evidence_count": 0,
+        "anomalies": [],
+        "discrepancies": [
+          {
+            "reference": "Synthetic report claim: reported all cases versus category table",
+            "reported_total": 251734,
+            "reported_subtotal": 251347,
+            "difference": 387,
+            "measured_parent_case_count": 13
+          }
+        ],
+        "reported_populations": [
+          {
+            "label": "Complete",
+            "count": 190283,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Authors' reported complete population",
+            "parent_label": null,
+            "claim_status": "reported_source_claim"
+          },
+          {
+            "label": "Compliant model-training",
+            "count": 189584,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete",
+            "claim_status": "reported_source_claim"
+          },
+          {
+            "label": "Complete but incompliant",
+            "count": 699,
+            "grain": "po_item",
+            "reference": "Meyer et al., merged PDF82",
+            "denominator": "Subset of Complete",
+            "parent_label": "Complete",
+            "claim_status": "reported_source_claim"
+          }
+        ]
+      },
+      "attributes": [
+        {
+          "column_index": 3,
+          "column_name": "case Item Category",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "3-way match, invoice before GR",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 4,
+          "column_name": "case Item Type",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "Standard",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 5,
+          "column_name": "case Goods Receipt",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "true",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 6,
+          "column_name": "case GR-Based Inv. Verif.",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "false",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 7,
+          "column_name": "case Purchasing Document",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "D0",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D0_1"
+              ]
+            },
+            {
+              "value": "D1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "D10",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "D11",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            },
+            {
+              "value": "D12",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D12_1"
+              ]
+            },
+            {
+              "value": "D2",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "D3",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "D4",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "D5",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "D6",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "D7",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "D8",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 8,
+          "column_name": "case Item",
+          "distinct_nonmissing_value_count": 1,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "1",
+              "case_count": 13,
+              "record_count": 26,
+              "document_count": 13,
+              "example_case_ids": [
+                "D0_1",
+                "D10_1",
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 0,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 9,
+          "column_name": "case concept:name",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 13,
+          "missing_case_count": 0,
+          "conflicting_case_count": 0,
+          "invariant_document_count": 13,
+          "missing_document_count": 0,
+          "conflicting_document_count": 0,
+          "document_conflict_examples": [],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [],
+          "conflicting_witnesses": [],
+          "values": [
+            {
+              "value": "D0_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D0_1"
+              ]
+            },
+            {
+              "value": "D10_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "D11_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            },
+            {
+              "value": "D12_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D12_1"
+              ]
+            },
+            {
+              "value": "D1_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "D2_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "D3_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "D4_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "D5_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "D6_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "D7_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "D8_1",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": false
+        },
+        {
+          "column_index": 10,
+          "column_name": "event reviewed attribute",
+          "distinct_nonmissing_value_count": 13,
+          "missing_record_count": 0,
+          "invariant_case_count": 12,
+          "missing_case_count": 0,
+          "conflicting_case_count": 1,
+          "invariant_document_count": 12,
+          "missing_document_count": 0,
+          "conflicting_document_count": 1,
+          "document_conflict_examples": [
+            {
+              "document": "D12",
+              "case_ids": [
+                "D12_1"
+              ]
+            }
+          ],
+          "missing_example_case_ids": [],
+          "conflicting_example_case_ids": [
+            "D12_1"
+          ],
+          "conflicting_witnesses": [
+            {
+              "case_id": "D12_1",
+              "rows": [
+                {
+                  "row_id": "row.v1:sha256:10a12c208e7dcdc0745c8f8a925a7f251b82212425ffc815a304957147c9f7b0",
+                  "source_position": 24,
+                  "value": "z-singleton"
+                },
+                {
+                  "row_id": "row.v1:sha256:d2f40df292ba162f288b9232afc520790ac6af2aae4f76c3868a44edfd2cd2c2",
+                  "source_position": 25,
+                  "value": "common-00"
+                }
+              ]
+            }
+          ],
+          "values": [
+            {
+              "value": "common-00",
+              "case_count": 2,
+              "record_count": 3,
+              "document_count": 2,
+              "example_case_ids": [
+                "D0_1",
+                "D12_1"
+              ]
+            },
+            {
+              "value": "common-01",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D1_1"
+              ]
+            },
+            {
+              "value": "common-02",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D2_1"
+              ]
+            },
+            {
+              "value": "common-03",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D3_1"
+              ]
+            },
+            {
+              "value": "common-04",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D4_1"
+              ]
+            },
+            {
+              "value": "common-05",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D5_1"
+              ]
+            },
+            {
+              "value": "common-06",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D6_1"
+              ]
+            },
+            {
+              "value": "common-07",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D7_1"
+              ]
+            },
+            {
+              "value": "common-08",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D8_1"
+              ]
+            },
+            {
+              "value": "common-09",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D9_1"
+              ]
+            },
+            {
+              "value": "common-10",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D10_1"
+              ]
+            },
+            {
+              "value": "common-11",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "example_case_ids": [
+                "D11_1"
+              ]
+            }
+          ],
+          "omitted_distinct_value_count": 1,
+          "value_membership_overlaps": true
+        }
+      ],
+      "flow_item_types": [
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "after_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "before_gr",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "two_way",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Standard",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "flow_id": "consignment",
+          "item_type_state": "invariant",
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "item_type_totals": [
+        {
+          "item_type_value": "Consignment",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Limit",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Service",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Standard",
+          "case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1",
+            "D12_1",
+            "D1_1",
+            "D2_1",
+            "D3_1",
+            "D4_1",
+            "D5_1",
+            "D6_1",
+            "D7_1",
+            "D8_1",
+            "D9_1"
+          ],
+          "case_count": 13,
+          "record_count": 26,
+          "document_count": 13,
+          "share": 1.0,
+          "example_case_ids": [
+            "D0_1",
+            "D10_1",
+            "D11_1"
+          ]
+        },
+        {
+          "item_type_value": "Subcontracting",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        },
+        {
+          "item_type_value": "Third-party",
+          "case_ids": [],
+          "case_count": 0,
+          "record_count": 0,
+          "document_count": 0,
+          "share": 0.0,
+          "example_case_ids": []
+        }
+      ],
+      "attribute_view": {
+        "column_index": 10,
+        "column_name": "event reviewed attribute",
+        "policy_id": "bpic19.any_original_record_exact_value.v1",
+        "offset": 12,
+        "limit": 12,
+        "total_value_count": 13,
+        "distinct_nonmissing_value_count": 13,
+        "next_offset": null,
+        "values": [
+          {
+            "value": "z-singleton",
+            "case_count": 1,
+            "record_count": 1,
+            "document_count": 1,
+            "example_case_ids": [
+              "D12_1"
+            ]
+          }
+        ],
+        "selection": {
+          "value": "z-singleton",
+          "case_ids": [
+            "D12_1"
+          ],
+          "case_count": 1,
+          "record_count": 2,
+          "document_count": 1,
+          "share": 0.07692307692307693,
+          "example_case_ids": [
+            "D12_1"
+          ],
+          "witnesses": [
+            {
+              "case_id": "D12_1",
+              "row_ids": [
+                "row.v1:sha256:10a12c208e7dcdc0745c8f8a925a7f251b82212425ffc815a304957147c9f7b0"
+              ]
+            }
+          ],
+          "omitted_witness_case_count": 0
+        }
+      }
+    }
+  }
+}

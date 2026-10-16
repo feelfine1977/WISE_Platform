@@ -24,6 +24,12 @@
     },
     {
       "$ref": "#/$defs/SavingRefusal"
+    },
+    {
+      "$ref": "#/$defs/RecoverInvestigationMetadataRequest"
+    },
+    {
+      "$ref": "#/$defs/RecoverInvestigationMetadataAnswer"
     }
   ],
   "$defs": {
@@ -155,6 +161,9 @@
         },
         "unevaluable": {
           "$ref": "#/$defs/PopulationSupport"
+        },
+        "record_evidence": {
+          "$ref": "#/$defs/RecordAttributeEvidence"
         }
       },
       "required": [
@@ -199,6 +208,9 @@
         },
         {
           "$ref": "#/$defs/MaxRawGapAtLeast"
+        },
+        {
+          "$ref": "#/$defs/RecordAttributesAll"
         }
       ]
     },
@@ -1178,6 +1190,25 @@
               "type": "null"
             }
           ]
+        },
+        "bpic19_pipeline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19Pipeline"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bpic19_prepared_assessments": {
+          "type": "array",
+          "maxItems": 4,
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Bpic19PreparedAssessmentReference"
+          },
+          "description": "Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items."
         }
       },
       "required": [
@@ -1412,6 +1443,25 @@
               "type": "null"
             }
           ]
+        },
+        "bpic19_pipeline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bpic19Pipeline"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bpic19_prepared_assessments": {
+          "type": "array",
+          "maxItems": 4,
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Bpic19PreparedAssessmentReference"
+          },
+          "description": "Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items."
         }
       },
       "required": [
@@ -1487,6 +1537,12 @@
         },
         "recovery": {
           "$ref": "#/$defs/RecoveryAnswer"
+        },
+        "bpic19_outputs": {
+          "$ref": "#/$defs/Bpic19PipelineManifest"
+        },
+        "bpic19_prepared_outputs": {
+          "$ref": "#/$defs/Bpic19PreparedAssessmentManifest"
         }
       },
       "required": [
@@ -1645,6 +1701,12 @@
         },
         "recovery": {
           "$ref": "#/$defs/RecoveryAnswer"
+        },
+        "bpic19_outputs": {
+          "$ref": "#/$defs/Bpic19PipelineManifest"
+        },
+        "bpic19_prepared_outputs": {
+          "$ref": "#/$defs/Bpic19PreparedAssessmentManifest"
         }
       },
       "required": [
@@ -1707,7 +1769,8 @@
           "enum": [
             "save_investigation",
             "list_saved",
-            "reopen_investigation"
+            "reopen_investigation",
+            "recover_investigation_metadata"
           ]
         },
         "code": {
@@ -1736,7 +1799,10 @@
             "malformed_saved_revision",
             "incompatible_saved_revision",
             "publication_failed",
-            "computation_failed"
+            "computation_failed",
+            "unsupported_action",
+            "artifact_unavailable",
+            "checksum_mismatch"
           ]
         },
         "message": {
@@ -2024,6 +2090,1080 @@
         "kind",
         "hours",
         "negate"
+      ]
+    },
+    "Bpic19PipelineAction": {
+      "title": "Bpic19PipelineAction",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "bpic19_profile",
+            "bpic19_measures",
+            "bpic19_cohorts",
+            "bpic19_score",
+            "bpic19_ordinal",
+            "bpic19_fifo",
+            "bpic19_cancellation",
+            "bpic19_rule",
+            "bpic19_waiting",
+            "bpic19_flow_comparison",
+            "bpic19_method_gate",
+            "bpic19_interval_comparison",
+            "bpic19_operator_comparison",
+            "bpic19_cohort_comparison"
+          ]
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "type": "object",
+          "description": "Validated against the registered operation request before save or replay."
+        },
+        "definition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selection_prefix_length": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position."
+        },
+        "selection_keep": {
+          "$ref": "#/$defs/Bpic19SelectionKeep",
+          "description": "Exact complete-case selection step justified by this frozen parent profile. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
+        }
+      },
+      "required": [
+        "operation",
+        "identity",
+        "query",
+        "definition_id"
+      ]
+    },
+    "Bpic19Pipeline": {
+      "title": "Bpic19Pipeline",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/Bpic19PipelineAction"
+          }
+        },
+        "replay_mode": {
+          "type": "string",
+          "enum": [
+            "require_all",
+            "partial"
+          ],
+          "description": "Explicit partial mode omits only registered unresolved source-method gates; it never omits a failed admitted operation."
+        },
+        "literature_claims": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/Bpic19LiteratureClaim"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "actions"
+      ]
+    },
+    "Bpic19PipelineOutput": {
+      "title": "Bpic19PipelineOutput",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "bpic19_profile",
+            "bpic19_measures",
+            "bpic19_cohorts",
+            "bpic19_score",
+            "bpic19_ordinal",
+            "bpic19_fifo",
+            "bpic19_cancellation",
+            "bpic19_rule",
+            "bpic19_waiting",
+            "bpic19_flow_comparison",
+            "bpic19_interval_comparison",
+            "bpic19_operator_comparison",
+            "bpic19_cohort_comparison"
+          ]
+        },
+        "definition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "definition_id",
+        "sha256",
+        "output"
+      ]
+    },
+    "Bpic19PipelineManifest": {
+      "title": "Bpic19PipelineManifest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "outputs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/Bpic19PipelineOutput"
+          }
+        },
+        "claim_level": {
+          "type": "string",
+          "enum": [
+            "complete_registered_pipeline",
+            "partial"
+          ]
+        },
+        "run_id": {
+          "type": "string",
+          "pattern": "^bpic19-pipeline\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "omissions": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/Bpic19PipelineOmission"
+          }
+        },
+        "literature_claims": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/Bpic19LiteratureClaim"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "outputs"
+      ]
+    },
+    "Bpic19PipelineOmission": {
+      "title": "Bpic19PipelineOmission",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "operation": {
+          "type": "string",
+          "const": "bpic19_method_gate"
+        },
+        "definition_id": {
+          "type": "string"
+        },
+        "method_id": {
+          "type": "string"
+        },
+        "source_locator": {
+          "type": "string"
+        },
+        "gate_reason": {
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        }
+      },
+      "required": [
+        "step",
+        "operation",
+        "definition_id",
+        "method_id",
+        "source_locator",
+        "gate_reason",
+        "identity"
+      ]
+    },
+    "RecordAttributesAll": {
+      "title": "RecordAttributesAll",
+      "description": "OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "record_attributes_all"
+        },
+        "policy_id": {
+          "type": "string",
+          "const": "incident.raw.same_record_all.v1"
+        },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/RecordAttributeCondition"
+          }
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "policy_id",
+        "conditions",
+        "negate"
+      ]
+    },
+    "RecordAttributeCondition": {
+      "title": "RecordAttributeCondition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "column_index",
+        "values"
+      ]
+    },
+    "RecordAttributeEvidence": {
+      "title": "RecordAttributeEvidence",
+      "description": "Nonempty matching or unknown original-row support before optional negation, ordered by case ID then original source position. Absence is evaluated over the complete history; not-matching rows are never deleted.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "incident.raw.same_record_all.v1"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecordAttributeCaseEvidence"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "cases"
+      ]
+    },
+    "RecordAttributeCaseEvidence": {
+      "title": "RecordAttributeCaseEvidence",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "matching_row_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RowId"
+          }
+        },
+        "unevaluable_row_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/RowId"
+          }
+        }
+      },
+      "required": [
+        "case_id",
+        "matching_row_ids",
+        "unevaluable_row_ids"
+      ]
+    },
+    "Bpic19LiteratureClaim": {
+      "title": "Bpic19LiteratureClaim",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "report_id": {
+          "type": "string",
+          "enum": [
+            "R01",
+            "R02",
+            "R03",
+            "R04",
+            "R05",
+            "R06",
+            "R07",
+            "R08",
+            "R09",
+            "R10",
+            "R11",
+            "R12",
+            "R13",
+            "R14",
+            "R15",
+            "notebook",
+            "wise-paper"
+          ]
+        },
+        "source_locator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "\\S"
+        },
+        "claim": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000,
+          "pattern": "\\S"
+        },
+        "claim_level": {
+          "type": "string",
+          "const": "reported_not_rerun"
+        },
+        "compared_run_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      },
+      "required": [
+        "claim_id",
+        "report_id",
+        "source_locator",
+        "claim",
+        "claim_level",
+        "compared_run_id"
+      ]
+    },
+    "MetadataRecoveryPage": {
+      "title": "MetadataRecoveryPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notes_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "bookmarks_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "claims_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "notes_offset",
+        "bookmarks_offset",
+        "claims_offset"
+      ]
+    },
+    "RecoverInvestigationMetadataRequest": {
+      "title": "RecoverInvestigationMetadataRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "recover_investigation_metadata_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "saved_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        },
+        "page": {
+          "$ref": "#/$defs/MetadataRecoveryPage"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "saved_revision_id",
+        "page"
+      ]
+    },
+    "RecoveredBookmark": {
+      "title": "RecoveredBookmark",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          },
+          "uniqueItems": true,
+          "maxItems": 200
+        },
+        "note": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 4000
+        },
+        "label_truncated": {
+          "type": "boolean"
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "row_ids_complete": {
+          "type": "boolean"
+        },
+        "note_truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label",
+        "identity",
+        "case_id",
+        "row_ids",
+        "note",
+        "label_truncated",
+        "row_count",
+        "row_ids_complete",
+        "note_truncated"
+      ]
+    },
+    "RecoveredBookmarkPage": {
+      "title": "RecoveredBookmarkPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/RecoveredBookmark"
+          }
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "offset",
+        "total",
+        "items",
+        "next_offset"
+      ]
+    },
+    "RecoveredClaimPage": {
+      "title": "RecoveredClaimPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "$ref": "#/$defs/Bpic19LiteratureClaim"
+          }
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "offset",
+        "total",
+        "items",
+        "next_offset"
+      ]
+    },
+    "RecoveredNotesPage": {
+      "title": "RecoveredNotesPage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "offset",
+        "total",
+        "text",
+        "next_offset"
+      ]
+    },
+    "HistoricalInvestigationMetadata": {
+      "title": "HistoricalInvestigationMetadata",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "name_truncated": {
+          "type": "boolean"
+        },
+        "base_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "selection_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "notes": {
+          "$ref": "#/$defs/RecoveredNotesPage"
+        },
+        "bookmarks": {
+          "$ref": "#/$defs/RecoveredBookmarkPage"
+        },
+        "literature_claims": {
+          "$ref": "#/$defs/RecoveredClaimPage"
+        }
+      },
+      "required": [
+        "name",
+        "name_truncated",
+        "base_identity",
+        "selection_identity",
+        "notes",
+        "bookmarks",
+        "literature_claims"
+      ]
+    },
+    "RecoverInvestigationMetadataAnswer": {
+      "title": "RecoverInvestigationMetadataAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "saved_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "recover_investigation_metadata_answer"
+        },
+        "investigation_id": {
+          "$ref": "#/$defs/InvestigationId"
+        },
+        "status": {
+          "type": "string",
+          "const": "historical_metadata_only"
+        },
+        "metadata_integrity": {
+          "type": "string",
+          "const": "saved_content_hash_verified"
+        },
+        "outputs_restored": {
+          "type": "boolean",
+          "const": false
+        },
+        "selection_restored": {
+          "type": "boolean",
+          "const": false
+        },
+        "source_verified": {
+          "type": "boolean",
+          "const": false
+        },
+        "metadata": {
+          "$ref": "#/$defs/HistoricalInvestigationMetadata"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "saved_revision_id",
+        "message_type",
+        "investigation_id",
+        "status",
+        "metadata_integrity",
+        "outputs_restored",
+        "selection_restored",
+        "source_verified",
+        "metadata"
+      ]
+    },
+    "Bpic19ProfileKeepGroup": {
+      "title": "Bpic19ProfileKeepGroup",
+      "oneOf": [
+        {
+          "title": "FlowKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "flow"
+            },
+            "flow_id": {
+              "type": "string",
+              "enum": [
+                "after_gr",
+                "before_gr",
+                "two_way",
+                "consignment"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "flow_id"
+          ]
+        },
+        {
+          "title": "InvariantSubtypeKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "flow_item_type"
+            },
+            "flow_id": {
+              "type": "string",
+              "enum": [
+                "after_gr",
+                "before_gr",
+                "two_way",
+                "consignment"
+              ]
+            },
+            "state": {
+              "type": "string",
+              "const": "invariant"
+            },
+            "item_type_value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "flow_id",
+            "state",
+            "item_type_value"
+          ]
+        },
+        {
+          "title": "UnavailableSubtypeKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "flow_item_type"
+            },
+            "flow_id": {
+              "type": "string",
+              "enum": [
+                "after_gr",
+                "before_gr",
+                "two_way",
+                "consignment"
+              ]
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "missing",
+                "conflicting"
+              ]
+            },
+            "item_type_value": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "kind",
+            "flow_id",
+            "state",
+            "item_type_value"
+          ]
+        },
+        {
+          "title": "UnresolvedKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "unresolved"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "missing",
+                "conflicting",
+                "unrecognized"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        },
+        {
+          "title": "CrossCheckKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "cross_check"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "valid",
+                "unavailable",
+                "flag_disagreement"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        },
+        {
+          "title": "GrainIssueKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "grain_issue"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "missing_document_or_item",
+                "conflicting_document_or_item",
+                "source_case_mismatch",
+                "duplicate_document_item"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        },
+        {
+          "title": "SourceInclusionKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "source_inclusion"
+            },
+            "state": {
+              "type": "string",
+              "const": "retained"
+            }
+          },
+          "required": [
+            "kind",
+            "state"
+          ]
+        },
+        {
+          "title": "AttributeValueKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "attribute_value"
+            },
+            "column_index": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "column_index",
+            "value"
+          ]
+        }
+      ]
+    },
+    "Bpic19SelectionKeep": {
+      "title": "Bpic19SelectionKeep",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "const": "bpic19.profile_group_keep.v1"
+        },
+        "step_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99
+        },
+        "group": {
+          "$ref": "#/$defs/Bpic19ProfileKeepGroup"
+        }
+      },
+      "required": [
+        "policy_id",
+        "step_index",
+        "group"
+      ]
+    },
+    "PreparedInputId": {
+      "type": "string",
+      "pattern": "^bpic19-prepared-input\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparedDefinitionId": {
+      "type": "string",
+      "pattern": "^bpic19-prepared-definition\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparedRunId": {
+      "type": "string",
+      "pattern": "^score-run\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "Bpic19PreparedAssessmentReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basis_kind": {
+          "const": "declared_prepared_attributes"
+        },
+        "input_id": {
+          "$ref": "#/$defs/PreparedInputId"
+        },
+        "definition_id": {
+          "$ref": "#/$defs/PreparedDefinitionId"
+        },
+        "run_id": {
+          "$ref": "#/$defs/PreparedRunId"
+        },
+        "view": {
+          "enum": [
+            "Finance",
+            "Logistics",
+            "Compliance",
+            "Automation"
+          ]
+        },
+        "output_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "basis_kind",
+        "input_id",
+        "definition_id",
+        "run_id",
+        "view",
+        "output_sha256"
+      ]
+    },
+    "Bpic19PreparedAssessmentManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basis_kind": {
+          "const": "declared_prepared_attributes"
+        },
+        "input_id": {
+          "$ref": "#/$defs/PreparedInputId"
+        },
+        "assessment_item_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "maxItems": 1000
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Bpic19PreparedAssessmentReference"
+          },
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "basis_kind",
+        "input_id",
+        "assessment_item_ids",
+        "references"
       ]
     }
   }

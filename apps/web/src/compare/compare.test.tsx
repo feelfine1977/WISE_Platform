@@ -437,7 +437,7 @@ describe("the areas of the application", () => {
     const user = userEvent.setup();
     render(<App importClient={scriptedImportClient().client} checkHealth={healthy} comparisonClient={scriptedComparisonClient().client} />);
     const areas = screen.getByRole("navigation", { name: "Areas" });
-    expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Compare", "Expectation", "Saved"]);
+    expect(within(areas).getAllByRole("button").map((button) => button.textContent)).toEqual(["Data", "Investigations", "Purchasing analysis", "Compare", "Expectation", "Saved"]);
     const compare = within(areas).getByRole("button", { name: "Compare" });
     expect(compare.getAttribute("aria-disabled")).toBeNull();
     await user.click(compare);
