@@ -30,6 +30,9 @@ class Record:
     timestamp_kind: str = "utc_instant"
     source_sequence: int | None = None
 
+    def context_value(self, column_index):
+        return next((item.value for item in self.context if item.column_index == column_index), None)
+
 
 @dataclass(frozen=True)
 class Prepared:

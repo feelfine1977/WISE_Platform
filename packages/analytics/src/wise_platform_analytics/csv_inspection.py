@@ -36,6 +36,36 @@ class SourceRecord:
                 "original_cells": list(self.cells), "original_text": self.original_text}
 
 
+_SHARING_PROBE_RECORDS = 4096
+
+
+class _CellSharing:
+    """Equal cell text in one column becomes one shared string, so a value repeated across a large source is held once.
+
+    A column whose values are mostly distinct stops sharing at the next power-of-two record count, so its table
+    never grows with the source. Sharing changes no cell's text or type, only how many copies are held."""
+
+    __slots__ = ("tables", "seen")
+
+    def __init__(self, width: int) -> None:
+        self.tables: list[dict[str, str] | None] = [{} for _ in range(width)]
+        self.seen = 0
+
+    def cells(self, row: list[str]) -> tuple[str, ...]:
+        tables = self.tables
+        width = len(tables)
+        shared = tuple(
+            cell if index >= width or (table := tables[index]) is None else table.setdefault(cell, cell)
+            for index, cell in enumerate(row))
+        self.seen += 1
+        seen = self.seen
+        if seen >= _SHARING_PROBE_RECORDS and seen & (seen - 1) == 0:
+            for index, table in enumerate(tables):
+                if table is not None and len(table) * 2 > seen:
+                    tables[index] = None
+        return shared
+
+
 @dataclass(frozen=True)
 class CsvData:
     columns: tuple[str, ...]
@@ -73,6 +103,7 @@ def read_csv(raw: bytes, dialect: Mapping[str, str], *, tolerant: bool = False) 
     except (csv.Error, UnicodeError) as error:
         return ImportRefusal("malformed_source", f"Header at physical lines 1..{max(reader.line_num, 1)} is unreadable: {error}.", "source")
     records = []
+    sharing = _CellSharing(len(header))
     blanks = ragged = position = 0
     while True:
         offset, line_start = stream.tell(), reader.line_num + 1
@@ -89,7 +120,7 @@ def read_csv(raw: bytes, dialect: Mapping[str, str], *, tolerant: bool = False) 
                 if not tolerant:
                     return ImportRefusal("malformed_source", f"Source record {position}, physical lines {line_start}..{reader.line_num} has {len(row)} cells; expected {len(header)}. No row was discarded.", "source")
                 ragged += 1
-            records.append(SourceRecord(position, line_start, reader.line_num, tuple(row), text[offset:stream.tell()]))
+            records.append(SourceRecord(position, line_start, reader.line_num, sharing.cells(row), text[offset:stream.tell()]))
         position += 1
     # Compare integer supports exactly: one of twenty is accepted; one of nineteen is not.
     if tolerant and ragged * 20 > len(records):
