@@ -126,16 +126,32 @@ def load_origin(name: str, declared: dict) -> Origin:
 
 # Browser -------------------------------------------------------------------------------------
 
-def browse(args, folder: Path, journey: Journey, case_id: str) -> dict:
+def browser_expectations(expected: dict, native_source_id: str) -> dict:
+    """The texts the profile view must show, written as the browser writes them, and the witnesses to open."""
+    texts = [f"{expected['case_count']:,} PO items", f"{expected['record_count']:,} original records",
+             f"{expected['record_count']:,} original records checked across the entire source", native_source_id]
+    if expected.get("document_count") is not None:
+        texts.append(f"{expected['document_count']:,} purchasing documents")
+    review = expected.get("source_review")
+    states = []
+    if review is not None:
+        horizon = review["interpretation"]["horizon"]["value"]
+        texts += [f"Raw parsed range: {review['raw_minimum_prefix']}", f"Observation horizon: {'unknown' if horizon is None else horizon}"]
+        texts += [f"Source discrepancy: {entry['reported_total'] - entry['reported_subtotal']:,} items" for entry in review["interpretation"]["discrepancies"]]
+        states = list(review.get("witness_states", []))
+    return {"texts": texts, "witness_states": states}
+
+
+def browse(args, folder: Path, journey: Journey, case_id: str, phase: str, expected: Path) -> dict:
     """Open the reopened investigation's population, profile and evidence views in the built browser.
 
     The browser's process tree is sampled throughout; each view's peak is read from the samples taken between
     the moments the script reports for it."""
     samples: list[tuple[float, int]] = []
-    output = folder / "browser.json"
+    output = folder / f"browser-{phase}.json"
     command = [args.node, str(ROOT / "tools/qualify_full_sources.mjs"), f"http://127.0.0.1:{journey.service.port}", str(journey.workspace),
-               journey.saved_name, case_id, str(output), args.playwright, args.chrome]
-    with (folder / "browser.log").open("wb") as log:
+               journey.saved_name, case_id, str(output), args.playwright, args.chrome, phase, str(expected)]
+    with (folder / f"browser-{phase}.log").open("wb") as log:
         process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     done = threading.Event()
 
@@ -161,13 +177,13 @@ def browse(args, folder: Path, journey: Journey, case_id: str) -> dict:
             os.killpg(process.pid, 9)
         except ProcessLookupError:
             pass
-    result = {"exit": code, "pid": process.pid, "views": {}}
+    result = {"exit": code, "pid": process.pid, "views": {}, "downloads": [], "witnesses": []}
     if code == 0 and output.exists():
         reported = json.loads(output.read_text())
-        for view in BROWSER_VIEWS:
-            start, end = reported[view]["start"], reported[view]["end"]
-            within = [value for moment, value in samples if start <= moment <= end + 0.1]
-            result["views"][view] = {"seconds": round(end - start, 3), "peak_browser_rss_bytes": max(within, default=None)}
+        for view, moments in reported["views"].items():
+            within = [value for moment, value in samples if moments["start"] <= moment <= moments["end"] + 0.1]
+            result["views"][view] = {"seconds": round(moments["end"] - moments["start"], 3), "peak_browser_rss_bytes": max(within, default=None)}
+        result["downloads"], result["witnesses"] = reported["downloads"], reported["witnesses"]
     result["peak_browser_rss_bytes"] = max((value for _, value in samples), default=None)
     return result
 
@@ -255,26 +271,41 @@ def main() -> int:
     browser: dict = {"status": "not_run"}
 
     def after_reopen(journey: Journey, wid: str, revision: str, case_id: str) -> None:
+        """Review, save and export in the browser; then reopen in a new service process and a fresh browser."""
         if args.no_browser:
             return
-        browser.update(browse(args, folder, journey, case_id))
-        browser["status"] = "passed" if browser["exit"] == 0 and len(browser["views"]) == len(BROWSER_VIEWS) else "failed"
-        journey.check("browser_views", browser["status"] == "passed", browser.get("exit"))
+        texts = folder / "browser-expected.json"
+        texts.write_text(json.dumps(browser_expectations(expected, "source.v1:sha256:" + config["native"]["sha256"])))
+        review = browse(args, folder, journey, case_id, "review", texts)
+        browser.update(review=review, pid=review["pid"])
+        journey.check("browser_review", review["exit"] == 0 and set(BROWSER_VIEWS) <= set(review["views"]), review["exit"])
+        journey.restart()
+        reopen = browse(args, folder, journey, case_id, "reopen", texts)
+        browser.update(reopen=reopen, pids=[review["pid"], reopen["pid"]])
+        journey.check("browser_reopen", reopen["exit"] == 0, reopen["exit"])
+        journey.check("browser_exports_identical_after_restart", reopen["downloads"] == review["downloads"]
+                      and len(review["downloads"]) == 2, (review["downloads"], reopen["downloads"]))
+        browser.update(status="passed", views=review["views"], downloads=review["downloads"],
+                       peak_browser_rss_bytes=max(review["peak_browser_rss_bytes"] or 0, reopen["peak_browser_rss_bytes"] or 0))
 
     journey = Journey(folder, native, prepared, config["prepared_roles"], config["measure_roles"], config["lineage_origin_column"],
-                      Expectations(expected["case_count"], expected["record_count"]), limit=limit,
+                      Expectations(expected["case_count"], expected["record_count"], document_count=expected.get("document_count"),
+                                   source_review=expected.get("source_review")), limit=limit,
                       deadline=args.deadline_minutes * 60, score=not args.no_scoring, after_reopen=after_reopen)
     started = time.monotonic()
     result = journey.run()
-    owned = result["service_pids"] + ([browser["pid"]] if "pid" in browser else [])
+    owned = result["service_pids"] + browser.get("pids", [browser["pid"]] if "pid" in browser else [])
     left = surviving(owned)
     cleanup = {"owned_pids": owned, "surviving_pids": left, "ports_closed": all(e.get("port_closed") for e in result["service_exits"])}
     status = "passed" if result["status"] == "passed" and not left and cleanup["ports_closed"] else "failed"
     for key in ("identities", "saved_payload_sha256"):
         result.pop(key, None)
+    if browser["status"] != "not_run" and result["status"] != "passed":
+        browser["status"] = "failed"
     return finish(status, reason=result.get("reason") or (None if status == "passed" else "cleanup incomplete"),
                   elapsed_seconds=round(time.monotonic() - started, 1), journey=result, browser=browser, cleanup=cleanup,
-                  counts={"records_per_source": expected["record_count"], "cases": expected["case_count"]})
+                  counts={"records_per_source": expected["record_count"], "cases": expected["case_count"],
+                          "documents": expected.get("document_count")})
 
 
 if __name__ == "__main__":
