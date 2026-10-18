@@ -191,8 +191,9 @@ def event_log(prepared: PreparedData, case_ids: Sequence[str], clock: Clock) -> 
             columns[_ORDER].append(order)
             columns[_ROW].append(row.row_id)
             order += 1
-        for value in history[0].context if history else ():
-            opening.setdefault(f"opening_column_{value.column_index}", {})[case_id] = value.value
+        first = history[0] if history else None
+        for index in first.context_columns if first is not None else ():
+            opening.setdefault(f"opening_column_{index}", {})[case_id] = first.original_cells[index] or None
     log = wise.EventLog(
         pandas.DataFrame(columns),
         case_col=_CASE,

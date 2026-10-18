@@ -24,7 +24,7 @@ def _opening_values(prepared: PreparedData, ids: tuple[str, ...], column: int
         if not rows or not prepared.sequence_evaluable(case):
             unavailable.append(case)
             continue
-        matches = [entry.value for entry in rows[0].context if entry.column_index == column]
+        matches = [rows[0].original_cells[index] or None for index in rows[0].context_columns if index == column]
         if len(matches) != 1 or (matches[0] is not None and not isinstance(matches[0], str)):
             return ImportRefusal("computation_failed", "The confirmed opening context is inconsistent with its mapped column.", "context_column_index")
         values[case] = matches[0]
