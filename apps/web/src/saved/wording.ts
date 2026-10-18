@@ -13,6 +13,7 @@ const remedies: Record<SavingRefusal["code"], string> = {
   workspace_unavailable: "Open the workspace folder again in the Data area, then try again.",
   workspace_not_writable: "Get write permission for the workspace folder, then save again.",
   source_unavailable: "Add the same source file again in the Data area; it is recognised by its bytes. Then reopen.",
+  memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   source_changed: "Add the original source file again in the Data area, then reopen. A changed file is a new source.",
   preparation_unavailable: "Read the source again with the same choices in the Data area, then reopen.",
   preparation_changed: "Read the source again in the Data area and save the investigation anew; the saved revision keeps its meaning.",

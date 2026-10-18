@@ -57,6 +57,7 @@ STATUS: dict[str, int] = {
     "workspace_unavailable": 404,
     "workspace_not_writable": 403,
     "source_unavailable": 404,
+    "memory_unavailable": 503,
     "source_changed": 409,
     "preparation_unavailable": 404,
     "preparation_changed": 409,
@@ -77,7 +78,7 @@ STATUS: dict[str, int] = {
     "artifact_unavailable": 409,
     "checksum_mismatch": 409,
 }
-RETRYABLE = frozenset({"workspace_unavailable", "publication_failed", "computation_failed"})
+RETRYABLE = frozenset({"workspace_unavailable", "publication_failed", "memory_unavailable", "computation_failed"})
 """Codes for a state of this computer rather than of the request: the same request can succeed later."""
 
 _ALTERNATIVES = alternatives_of(saving_models)

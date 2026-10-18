@@ -637,6 +637,7 @@ class ScoringRefusal(BaseModel):
         'method_unavailable',
         'run_unavailable',
         'case_not_found',
+        'memory_unavailable',
         'computation_failed',
     ]
     message: constr(min_length=1)

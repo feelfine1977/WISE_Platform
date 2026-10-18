@@ -551,4 +551,5 @@ def test_the_registry_keeps_each_selection_under_its_workspace_and_population_id
 def test_every_code_of_the_contract_has_a_status():
     codes = set(SCHEMA["$defs"]["SelectionRefusal"]["properties"]["code"]["enum"])
     assert set(STATUS) == codes
-    assert all(400 <= status < 500 for code, status in STATUS.items() if code != "computation_failed")
+    assert all(400 <= status < 500 for code, status in STATUS.items() if code not in {"computation_failed", "memory_unavailable"})
+    assert STATUS["memory_unavailable"] == 503

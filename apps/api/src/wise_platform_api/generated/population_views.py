@@ -230,6 +230,7 @@ class RefusalCode(
             'invalid_parent',
             'unknown_case',
             'no_context_columns',
+            'memory_unavailable',
             'computation_failed',
         ]
     ]
@@ -247,6 +248,7 @@ class RefusalCode(
         'invalid_parent',
         'unknown_case',
         'no_context_columns',
+        'memory_unavailable',
         'computation_failed',
     ] = Field(..., title='RefusalCode')
 

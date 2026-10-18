@@ -2290,6 +2290,7 @@
             "identity_mismatch",
             "native_unavailable",
             "publication_failed",
+            "memory_unavailable",
             "computation_failed"
           ]
         },

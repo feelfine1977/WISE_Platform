@@ -1854,6 +1854,7 @@ class Bpic19PreparedRefusal(BaseModel):
         'identity_mismatch',
         'native_unavailable',
         'publication_failed',
+        'memory_unavailable',
         'computation_failed',
     ]
     message: str

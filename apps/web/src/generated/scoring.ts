@@ -519,6 +519,7 @@ export interface ScoringRefusal1 {
     | "method_unavailable"
     | "run_unavailable"
     | "case_not_found"
+    | "memory_unavailable"
     | "computation_failed";
   message: string;
   field: string | null;

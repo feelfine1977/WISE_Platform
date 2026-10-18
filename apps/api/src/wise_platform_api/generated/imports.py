@@ -668,6 +668,7 @@ class ImportRefusal(BaseModel):
         'interpretation_not_ready',
         'case_not_found',
         'identity_mismatch',
+        'memory_unavailable',
         'computation_failed',
     ]
     message: constr(min_length=1)

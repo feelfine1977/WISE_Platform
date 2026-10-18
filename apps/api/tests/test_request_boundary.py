@@ -362,6 +362,7 @@ def test_every_refusal_code_has_its_status():
         "invalid_parameter": 400,
         "invalid_request": 400,
         "source_unavailable": 404,
+        "memory_unavailable": 503,
         "malformed_source": 422,
         "case_not_found": 404,
         "case_not_in_population": 409,

@@ -30,6 +30,7 @@ const remedies: Record<PopulationViewRefusal["code"], string> = {
   workspace_not_writable: "Get write permission for the workspace folder, then open it again in the Data area.",
   workspace_incompatible: "Open the workspace again in the Data area; the folder no longer holds this workspace.",
   source_unavailable: "Add the file again in the Data area; the workspace no longer holds these bytes.",
+  memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   preparation_unavailable: "Read the source again with the same choices in the Data area.",
   identity_mismatch: "The source or its reading changed. Open the incidents again from the Data area.",
   population_unavailable: "Open the incidents again from the Data area.",

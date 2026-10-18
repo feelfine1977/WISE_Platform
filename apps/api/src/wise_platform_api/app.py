@@ -26,6 +26,7 @@ from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
 from .expectations import Expectations, ScoringReply
 from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
+from .memory_budget import BudgetScope, MemoryBudget
 from .investigations import Investigations, Reply
 from .population_views import PopulationViews, ViewReply
 from .rule_groups import RuleGroups
@@ -51,17 +52,22 @@ class _BrowserFiles(StaticFiles):
 
 
 def create_app(
-    static_dir: Path | None = None, examples_dir: Path | None = None, *, workspace_path: Path | None = None
+    static_dir: Path | None = None, examples_dir: Path | None = None, *, workspace_path: Path | None = None,
+    memory_budget_bytes: int | None = None,
 ) -> FastAPI:
     """Build the application; ``examples_dir`` replaces the packaged synthetic examples.
 
     Workspaces are refused inside the program's own folders, so that nothing is written there.
-    The selections made are held in ``application.state.selections``.
+    The selections made are held in ``application.state.selections``. Memory-heavy work is admitted against
+    one budget, ``memory_budget_bytes`` or the configured default, held in ``application.state.memory``.
     """
     application = FastAPI(title="WISE Platform", version=__version__)
+    budget = MemoryBudget(memory_budget_bytes)
+    application.add_middleware(BudgetScope, budget=budget)
+    application.state.memory = budget
     examples = examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
     investigations = Investigations(examples)
-    imports = Imports(forbidden=program_folders(), workspace_path=workspace_path)
+    imports = Imports(forbidden=program_folders(), workspace_path=workspace_path, budget=budget)
     selections = Selections(imports)
     views = PopulationViews(imports)
     case_lists = CaseLists(imports)

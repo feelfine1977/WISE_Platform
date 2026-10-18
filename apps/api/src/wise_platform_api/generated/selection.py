@@ -328,6 +328,7 @@ class SelectionRefusal(BaseModel):
         'inconsistent_sequence',
         'mixed_time_kinds',
         'inconsistent_time_kind',
+        'memory_unavailable',
         'computation_failed',
         'case_outside_parent',
     ]

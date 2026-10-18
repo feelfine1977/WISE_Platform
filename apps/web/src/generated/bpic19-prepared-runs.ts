@@ -646,6 +646,7 @@ export interface Bpic19PreparedRefusal {
     | "identity_mismatch"
     | "native_unavailable"
     | "publication_failed"
+    | "memory_unavailable"
     | "computation_failed";
   message: string;
   field: string | null;
