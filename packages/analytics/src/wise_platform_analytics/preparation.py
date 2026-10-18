@@ -25,7 +25,7 @@ def content_identity(prefix: str, parts: Mapping[str, object]) -> str:
     return prefix + ".v1:sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ContextValue:
     column_index: int
     value: str | None
@@ -34,7 +34,7 @@ class ContextValue:
         return {"column_index": self.column_index, "value": self.value}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PreparedRecord:
     row_id: str
     source_position: int
