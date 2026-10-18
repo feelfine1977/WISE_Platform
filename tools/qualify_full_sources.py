@@ -126,7 +126,7 @@ def load_origin(name: str, declared: dict) -> Origin:
 
 # Browser -------------------------------------------------------------------------------------
 
-def browse(args, folder: Path, journey: Journey, wid: str, revision: str, case_id: str) -> dict:
+def browse(args, folder: Path, journey: Journey, case_id: str) -> dict:
     """Open the reopened investigation's population, profile and evidence views in the built browser.
 
     The browser's process tree is sampled throughout; each view's peak is read from the samples taken between
@@ -134,7 +134,7 @@ def browse(args, folder: Path, journey: Journey, wid: str, revision: str, case_i
     samples: list[tuple[float, int]] = []
     output = folder / "browser.json"
     command = [args.node, str(ROOT / "tools/qualify_full_sources.mjs"), f"http://127.0.0.1:{journey.service.port}", str(journey.workspace),
-               journey.saved_name, revision, case_id, str(output), args.playwright, args.chrome]
+               journey.saved_name, case_id, str(output), args.playwright, args.chrome]
     with (folder / "browser.log").open("wb") as log:
         process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     done = threading.Event()
@@ -257,7 +257,7 @@ def main() -> int:
     def after_reopen(journey: Journey, wid: str, revision: str, case_id: str) -> None:
         if args.no_browser:
             return
-        browser.update(browse(args, folder, journey, wid, revision, case_id))
+        browser.update(browse(args, folder, journey, case_id))
         browser["status"] = "passed" if browser["exit"] == 0 and len(browser["views"]) == len(BROWSER_VIEWS) else "failed"
         journey.check("browser_views", browser["status"] == "passed", browser.get("exit"))
 
