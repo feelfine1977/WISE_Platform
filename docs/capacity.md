@@ -48,11 +48,11 @@ The full profile, with every stage, its fitted bytes per record and the run's ch
 ### Assumptions and limits
 
 - Each stage's peak and retained memory is fitted as a line in records per source and projected beyond the measured sizes.
-- The invented sources repeat values the way the full sources do. A real-source run must confirm the projection within 20 percent; a larger gap changes the fixture's shape, not the threshold. That confirmation is a receipt from the full-source qualification below and is pending.
+- The invented sources repeat values the way the full sources do. A real-source run must confirm the projection within 20 percent; a larger gap changes the fixture's shape, not the threshold. The full-source receipt below confirms it: a journey peak of 6.11 GB against 6.52 projected, 4.96 GB retained after both populations against 5.22, and a cold-reopen peak of 5.15 GB against 5.11.
 - Peaks are sampled every 50 ms from the process table, so a shorter spike can be missed.
 - Service memory per prepared record is 1.68 times the tracemalloc measurement of the same record: 1,577 against 938 bytes. Allocator overhead and memory Python does not return account for the difference.
-- Uploading keeps about 590 bytes per record resident, about 1 GB for both full sources. Streaming the upload to storage would remove it; the journey fits without it.
-- Method scoring has its own admission limit on cases and records, which may refuse the full population before memory is reached. Its projection is close to the budget, so the full paper workflow should be qualified with scoring measured, not assumed.
+- These figures predate streamed upload and storage. Uploading then kept about 590 bytes per record resident, about 1 GB for both full sources; the full-source results below show the journey after it.
+- The fixture overstates Method scoring: it projects 13.8 GB, while scoring the full sources measured 8.0 GB. Scoring is therefore budgeted at its measured full-source cost, below.
 
 ## Full-source qualification
 
@@ -100,3 +100,29 @@ The receipt, format `wise.full_source_receipt.v1`, holds no source path and no r
 | `browser` | Each view's time and the browser's peak memory |
 | `cleanup` | Owned process ids, any that survived, and whether every port closed |
 | `counts`, `elapsed_seconds` | Records per source, cases and run time |
+
+## Full-source results
+
+The same machine, with the complete native and prepared BPIC19 sources, 1,595,923 records each and 251,734 cases. Each run passed every journey check and the browser views, with every owned process gone afterwards.
+
+| Service memory | Before streamed sources and the budget | After |
+| --- | --- | --- |
+| Retained after both populations | 5.05 GB | 3.18 GB |
+| Journey peak, without scoring | 6.24 GB | 4.43 GB |
+| Method scoring peak | 8.00 GB | 6.17 GB |
+| Cold reopen peak | 5.15 GB | 3.97 GB |
+
+A run takes about ten minutes. For the native and prepared sources, inspection takes 19 s and 44 s, the cutoff proposal 28 s and 35 s, and the confirmation that reuses its parse 6 s and 8 s. The lineage profile takes 26 s, default measures 31 s, Save 28 s, Method scoring 184 s and a cold reopen 88 s. The browser takes 71 s and peaks at 1.6 GB to show the 251,734-case population.
+
+## Memory budget
+
+The service admits memory-heavy work against one byte budget, 10 GiB by default and set with `WISE_MEMORY_BUDGET_BYTES`. It counts what it keeps — preparations, a parse held for its confirmation, selections and measure and operator summaries — and the estimated peak of the work it admits:
+
+| Work | Estimated peak | Measured on the full sources |
+| --- | --- | --- |
+| Reading a source | 3.0 bytes per stored byte | 2.2 for the prepared and 2.7 for the native source |
+| A population operation | 700 bytes per record | The process graph, the costliest |
+| Method scoring | 1,800 bytes per scored record | 2.8 GB for 1,595,923 records |
+
+Kept entries are estimated from samples of their records and multiplied by 1.7, the measured ratio of service memory to estimated bytes. To admit work, the service evicts kept entries no running request uses, least recently used first; an evicted preparation is prepared again from its stored source when it is next used. Work that still cannot fit is refused before it starts with `memory_unavailable`, which states the estimate and the budget, and the service keeps serving.
+
