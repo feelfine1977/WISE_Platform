@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 
-const [base, workspace, savedName, revision, caseId, output, playwright, chrome] = process.argv.slice(2);
+const [base, workspace, savedName, caseId, output, playwright, chrome] = process.argv.slice(2);
 const {chromium} = await import(pathToFileURL(playwright).href);
 const browser = await chromium.launch({headless: true, executablePath: chrome});
 process.once('SIGTERM', async () => { await browser.close(); process.exit(1); });
@@ -22,12 +22,13 @@ async function view(name, action) {
   views[name] = {start, end: Date.now() / 1000};
 }
 
+// Only the status is read: a full population's replies run to tens of megabytes, more than the browser keeps
+// for inspection. The service journey has already checked their contents over HTTP.
 async function answered(route, action) {
   const pending = page.waitForResponse(response => response.url().endsWith(route) && response.request().method() === 'POST');
   await action();
   const response = await pending;
   assert.equal(response.status(), 200, route);
-  return response.json();
 }
 
 const incident = () => page.getByRole('button', {name: caseId, exact: true}).first();
@@ -40,9 +41,7 @@ try {
     await page.getByLabel('Folder path').fill(workspace);
     await answered('/api/workspaces/open', () => page.getByRole('button', {name: 'Open workspace', exact: true}).click());
     await areas.getByRole('button', {name: 'Saved', exact: true}).click();
-    const reopened = await answered('/api/investigations/reopen', () =>
-      page.getByRole('button', {name: 'Reopen ' + savedName, exact: true}).click());
-    assert.equal(reopened.revision.saved_revision_id, revision);
+    await answered('/api/investigations/reopen', () => page.getByRole('button', {name: 'Reopen ' + savedName, exact: true}).click());
     await areas.getByRole('button', {name: 'Investigations', exact: true}).click();
     await incident().waitFor();
   });
