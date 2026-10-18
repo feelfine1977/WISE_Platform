@@ -2,11 +2,11 @@
 
 WISE_Platform is a local web application with a Python analytical backend and a TypeScript browser workspace. The first delivery target is Windows 11. One Python process serves the API and the built browser application. Node is needed to develop and build the browser application; a release containing those built assets is intended to need only its documented Python runtime and native dependencies.
 
-## Current foundation and target application
+## Current candidate and target application
 
-M0 establishes the application entry, health contract, generated client boundary and development tests. It is not a complete incident-analysis application. Import, analytical queries, interactive investigation, scoring and durable findings belong to the M1 implementation and qualification gates in the [roadmap](roadmap.md).
+The candidate implements CSV import, canonical descriptive queries, whole-incident selection, map/paths/variants, recorded-span and start-period charts, context and period comparison, one timing expectation, and durable investigations. M0 is historical foundation scope; the health contract still reports `stage: foundation` for compatibility, not as a current capability inventory. M1 remains incomplete: the transition matrix, the full linked-view and scoring journey, Windows human qualification and a measured supported capacity tier are open gates. [Current status](status.md) separates implementation from qualification; the [roadmap](roadmap.md) remains the target.
 
-The application has three user-facing areas: Data, Investigations and optional Expectations. An analyst can explore before defining any rule. A question keeps its source, interpretation, complete-incident population and comparison direction while the analyst switches between charts, map, matrix, variants and evidence.
+The current navigation has Data, Investigations, Compare, Expectation and Saved areas. An analyst can explore before defining any expectation. Queries bind source, interpretation and complete-incident populations across the implemented views; the matrix is a target view, not an available screen.
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,7 @@ flowchart LR
 
 ![Target module architecture](diagrams/overview.svg)
 
-The complete [design perspectives](design.md), [requirements](requirements.md), [domain glossary](../GLOSSARY.md) and [decision records](adr/README.md) expand this overview. These distinguish target design from implemented foundation.
+The [design perspectives](design.md), [requirements](requirements.md), [domain glossary](../GLOSSARY.md) and [decision records](adr/README.md) expand the target design. Consult [status](status.md) for implemented scope rather than treating target diagrams as completed capabilities.
 
 ## Ownership and dependencies
 
@@ -33,7 +33,7 @@ The complete [design perspectives](design.md), [requirements](requirements.md), 
 - **Flow library:** renders supplied versioned scenes and emits typed intents. It receives prepared scenes, not an unrestricted raw log.
 - **Contracts:** one authoritative platform schema source generates Python models and TypeScript types. External library formats are referenced at their exact version rather than copied into a second independent specification.
 
-Method and Flow remain independently released dependencies. Exact eligible release pins are an integration gate; M0 does not claim that analytical or rendering dependencies are ready. The descriptive analytics package is introduced with its first tested implementation, rather than as an empty directory.
+Method and Flow have independent release lifecycles. This candidate composes exact vendored unreleased builds, identified by commit and hash in `vendor/manifest.json`; eligible released pins remain a release gate. `packages/analytics` contains the tested canonical implementation and depends only on the Python standard library and itself.
 
 ## Analytical contracts
 
@@ -47,11 +47,11 @@ A transition matrix distinguishes distinct incident support, passage occurrences
 
 ## Local state and coherent publication
 
-Runtime source files, databases, analytical artifacts, findings and diagnostics belong in a selected workspace outside program files and tracked source. SQLite metadata and immutable analytical files are planned storage adapters; their transaction, backup and compatibility behavior must be qualified.
+Runtime source files, analytical artifacts, findings and diagnostics live in an external local workspace. The implemented adapter uses a versioned JSON manifest, content-addressed source bytes and preparation recipes, immutable definition/score-run files, and saved-revision files with head pointers. Writes use temporary files and atomic replacement; saved publication has a cross-process lock and expected-revision conflict checks. There is no workspace SQLite database in this candidate. Transactional metadata remains a possible future adapter, not an installed dependency or a completed migration path.
 
-Every answer carries source/preparation/representation/population/definition identity and a query revision. A single publication boundary prevents stale success, error or pagination replies from replacing the current question. A failed query leaves a visibly coherent previous answer and offers retry/cancel.
+Analytical answers carry the relevant source/preparation/representation/population identities and query revision; definitions and score runs add their own identities. Browser coordinators guard publication against stale replies and retain a visibly coherent previous answer on selection/replacement failure. Aborting a browser request does not guarantee interruption of Python computation already executing in a worker thread.
 
-Saved investigations retain exact populations, comparison roles, context policies, definitions, notes and complete evidence. Norm and score references are optional. Unscored exploration can be saved and reopened. Refreshing a changed source creates a new revision rather than silently changing an existing finding.
+Saved investigations retain selection recipes and exact membership, comparison roles, context policies, notes, bookmarks and optional score-run references. Reopening reconstructs preparations from preserved source bytes and checks their identities. Changed source bytes or incompatible state are refused. General source refresh and workspace migration are not implemented. Browser-local stages are presentation convenience state and are not included in a saved investigation or workspace backup. A stopped-workspace copy/restore is exercised by the [capacity tool](capacity.md); live backup and power-loss recovery are not thereby qualified.
 
 Local expectation authoring produces a versioned draft or reviewed definition with scope, endpoints, clock, target and missingness. Method evaluates it. Authoring and score-to-scene projection are separate: map marks must identify actual evaluated results, coverage and witnesses.
 

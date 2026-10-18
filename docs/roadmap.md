@@ -4,6 +4,8 @@ The first complete application is a private, local incident-investigation worksp
 
 These are capability gates, not delivery dates. A foundation or component test does not qualify the complete application.
 
+For the implemented candidate and named automated evidence, see [current status](status.md). Time charts, comparisons, one timing expectation and durable saved questions now exist, but partial M1 capability is not completion of the gates below.
+
 ## Delivery gates
 
 | Gate | Outcome | Completion evidence |
@@ -84,6 +86,6 @@ A missing resolution record does not establish an unresolved business incident. 
 
 The linked-views gate requires an eligible Flow release whose tests/reference rendering and host integration are qualified. Readable labels for removed activities and attribute filters, stable activity positions across refinements, explicit rearrangement, and accessible evidence actions are acceptance conditions.
 
-First Windows qualification uses a source checkout or source download with documented locked dependency installation and a browser build, on a machine with compatible Python and Node. Check installed versions and approved setup before implementation assumes a runtime. A prebuilt-assets wheel with offline dependencies or a portable runtime for machines without development tools is a later packaging decision, not required to prove the initial incident journey.
+Windows source qualification uses the documented locked dependency installation and browser build with compatible Python and Node. CI also builds an offline-installable Windows x64 bundle with built assets, runtime wheels and the official Python installer. Its automatic installed HTTP checks are artifact evidence, not a completed human journey. Follow the [release checklist](release-qualification.md) for actual installation, browser/offline, recovery and capacity receipts; those gates remain pending.
 
 Scored selections retain their named run population/calibration and Method applicability; subset rescoring creates a new run. Graded values and library-defined affected support remain distinct from descriptive threshold partitions.

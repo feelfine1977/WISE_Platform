@@ -52,7 +52,7 @@ For the optional browser development loop, run the API host and `npm run dev` in
 - `tests` contains synthetic cross-layer fixtures and acceptance checks.
 - `docs` contains product/developer instructions matched to current status.
 
-Introduce `packages/analytics` with its first tested pure implementation. It owns canonical descriptive representations, selection, graph/variant/context queries and answers. No web/database/UI application imports belong in its core. A faster execution adapter must agree with canonical expected results before use. Add additional packages only when real responsibilities and reuse require them.
+`packages/analytics` owns the tested canonical descriptive representations, selection, graph/variant/context/time queries and answers. No web/database/UI application imports belong in its core. A faster execution adapter must agree with canonical expected results before use. Add additional packages only when real responsibilities and reuse require them.
 
 ## Dependency and module discipline
 
@@ -68,6 +68,10 @@ Keep runtime CSVs, databases, artifacts, investigations, diagnostics, environmen
 
 A program upgrade and workspace upgrade are separate operations. Refresh creates new source/result revisions; it does not silently reinterpret old findings. Qualification must cover incompatible schemas, stale or relocated sources, atomic publication and database-aware backup/restoration before those workflows are advertised.
 
+The current filesystem adapter refuses unsupported workspace formats; it has no migration or source-refresh command. For this adapter, back up only a stopped workspace as a complete directory, not selected JSON files. The [release checklist](release-qualification.md) gives the safe operator procedure and exclusions. A future database adapter would require its own database-aware procedure.
+
 Update the status and guide when a capability becomes available. A placeholder screen or type declaration is not a completed customer journey. See [testing](testing.md) and [roadmap](roadmap.md) for evidence required at each gate.
 
 On Windows there are two ways in. The source setup above needs Python, Node.js and access to the package registries. The download that the workflow's Windows job builds needs none of them; [INSTALL-WINDOWS.md](INSTALL-WINDOWS.md) describes it. Neither has been qualified on Windows by a person yet.
+
+For repeatable CLI/HTTP timing, disk usage and stopped-workspace restoration on synthetic input, run the [capacity benchmark](capacity.md). Its small real-process smoke test is part of `npm test`. Measurements never certify a release or a supported data size by themselves.

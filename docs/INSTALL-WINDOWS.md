@@ -4,6 +4,8 @@ This guide is for the Windows bundle: one folder that holds everything the appli
 
 The bundle is a candidate build, not a release. `manifest.json` in the folder names the commit it was built from and the checks it passed. The process map and the scoring use library versions that have not been released yet; the application says so where it shows them.
 
+The Windows 11 human journey and a supported capacity tier remain unqualified. Before disconnecting for qualification, operators should obtain `docs/release-qualification.md` and `docs/capacity.md` from the source revision named in the bundle manifest. These operator procedures are not included in the bundle. They cover literal synthetic browser checks, stopped-workspace backup/restore and measurement; the bundle's automatic HTTP checks do not replace those steps.
+
 ## What the folder holds
 
 | Path | What it is |
