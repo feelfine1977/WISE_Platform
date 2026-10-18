@@ -66,11 +66,11 @@ class MemorySampler(threading.Thread):
         self.current = self.peak = self.overall = 0
         self.breach: int | None = None
         self.samples = 0
-        self._stop = threading.Event()
+        self._halt = threading.Event()
         self._lock = threading.Lock()
 
     def run(self) -> None:
-        while not self._stop.is_set():
+        while not self._halt.is_set():
             try:
                 value = tree_rss(self.pid)
             except (OSError, subprocess.SubprocessError, ValueError):
@@ -84,7 +84,7 @@ class MemorySampler(threading.Thread):
                 self.breach = value
                 if self.on_breach is not None:
                     self.on_breach()
-            self._stop.wait(self.interval)
+            self._halt.wait(self.interval)
 
     def mark(self) -> None:
         with self._lock:
@@ -97,7 +97,7 @@ class MemorySampler(threading.Thread):
             return self.peak, self.current
 
     def stop(self) -> None:
-        self._stop.set()
+        self._halt.set()
 
 
 class Service:
