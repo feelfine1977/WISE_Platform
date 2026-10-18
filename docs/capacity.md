@@ -48,8 +48,55 @@ The full profile, with every stage, its fitted bytes per record and the run's ch
 ### Assumptions and limits
 
 - Each stage's peak and retained memory is fitted as a line in records per source and projected beyond the measured sizes.
-- The invented sources repeat values the way the full sources do. A real-source run must confirm the projection within 20 percent; a larger gap changes the fixture's shape, not the threshold. That confirmation needs an in-repository real-source qualification and is pending.
+- The invented sources repeat values the way the full sources do. A real-source run must confirm the projection within 20 percent; a larger gap changes the fixture's shape, not the threshold. That confirmation is a receipt from the full-source qualification below and is pending.
 - Peaks are sampled every 50 ms from the process table, so a shorter spike can be missed.
 - Service memory per prepared record is 1.68 times the tracemalloc measurement of the same record: 1,577 against 938 bytes. Allocator overhead and memory Python does not return account for the difference.
 - Uploading keeps about 590 bytes per record resident, about 1 GB for both full sources. Streaming the upload to storage would remove it; the journey fits without it.
 - Method scoring has its own admission limit on cases and records, which may refuse the full population before memory is reached. Its projection is close to the budget, so the full paper workflow should be qualified with scoring measured, not assumed.
+
+## Full-source qualification
+
+The owner qualifies the same journey on the complete local sources with one command, which writes one receipt:
+
+```text
+python tools/qualify_full_sources.py --config ~/wise-full-sources.json --output receipt.json \
+    --node NODE --playwright PLAYWRIGHT_INDEX_MJS --chrome CHROME
+```
+
+It needs the browser build (`npm run build`). `--no-browser` runs the service journey only, and the receipt then says the browser did not run.
+
+### Configuration
+
+The configuration is a local JSON file kept outside the repository. It names each source and how it is read:
+
+| Field | Meaning |
+| --- | --- |
+| `native`, `prepared` | Each has `path`, `sha256`, `dialect`, `mapping`, `policies` and optional inspection `hints` |
+| `prepared_roles` | The profile roles of the prepared source |
+| `measure_roles` | The measure and scoring roles of the prepared source |
+| `lineage_origin_column` | The native column the category lineage compares with |
+| `expected` | `record_count` per source and `case_count` |
+
+### How a run is guarded
+
+1. Both sources are hashed and must equal the configured digests.
+2. Admission requires the memory limit plus the reserve, 14 GiB and 8 GiB by default, to be available without memory pressure. On macOS that means the kernel's memory-pressure level is normal, and its free percentage of physical memory covers the requirement; file cache the system reclaims on demand counts as available. Linux uses `MemAvailable` and refuses while reclaim stalls. Windows uses available physical memory.
+3. The service runs on an ephemeral loopback port. It is killed if its process tree exceeds the memory limit or the run passes its deadline, 30 minutes by default.
+4. After the cold reopen, the built browser opens the reopened investigation's population, profile and evidence views.
+5. Every owned process must be gone and every port closed.
+
+### Receipt
+
+The receipt, format `wise.full_source_receipt.v1`, holds no source path and no record contents.
+
+| Field | Content |
+| --- | --- |
+| `status`, `reason` | `passed`, `failed` or `refused`, and why |
+| `provenance` | Commit, whether it had uncommitted changes, Python, platform and a digest of the browser build |
+| `source_sha256` | Both sources' digests |
+| `admission` | The reading, the required bytes and the decision |
+| `memory_limit_bytes`, `reserve_bytes`, `transport` | The guard and how the service was reached |
+| `journey` | Every stage's wall time, peak and retained service memory and reply size; the checks that passed; idle and peak memory; any breach |
+| `browser` | Each view's time and the browser's peak memory |
+| `cleanup` | Owned process ids, any that survived, and whether every port closed |
+| `counts`, `elapsed_seconds` | Records per source, cases and run time |

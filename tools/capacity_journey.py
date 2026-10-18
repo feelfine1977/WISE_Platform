@@ -161,39 +161,59 @@ class Origin:
     """One source of the journey: its bytes and the confirmed interpretation."""
 
     name: str
-    raw: bytes
+    raw: bytes | Path
+    """The source bytes, or a file streamed on upload so the caller never holds a full source."""
     dialect: dict
     mapping: dict
     policies: dict
     hints: dict | None = None
+
+    def sha256(self) -> str:
+        if isinstance(self.raw, bytes):
+            return hashlib.sha256(self.raw).hexdigest()
+        digest = hashlib.sha256()
+        with self.raw.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1 << 22), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
 
 
 @dataclass
 class Expectations:
     """What the caller knows independently about the population; each is checked when the answer arrives."""
 
-    case_ids: list[str]
+    case_count: int
     record_count: int
+    case_ids: list[str] | None = None
+    """Every case identifier, when known independently; otherwise only the counts are checked."""
     evidence: dict[str, list[list[str]]] = field(default_factory=dict)
     """Original cells of a few cases' records, in any order."""
 
 
 class Failed(Exception):
-    pass
+    """A failed check or stage. Its message names the check only; the detail goes to the journey's private log."""
 
 
 class Journey:
     """Runs the stages in order against one service and records each."""
 
+    saved_name = "Capacity journey"
+
     def __init__(self, folder: Path, native: Origin, prepared: Origin, prepared_roles: dict, measure_roles: dict,
-                 lineage_origin_column: int, expected: Expectations, *, limit: int | None = None, score: bool = True) -> None:
+                 lineage_origin_column: int, expected: Expectations, *, limit: int | None = None, deadline: float | None = None,
+                 score: bool = True, after_reopen=None) -> None:
         self.folder = folder
         self.native, self.prepared = native, prepared
         self.prepared_roles, self.measure_roles = prepared_roles, measure_roles
         self.lineage_origin_column = lineage_origin_column
         self.expected = expected
         self.limit = limit
+        self.deadline = deadline
+        """Seconds the whole journey may take; past it the service is killed and the journey fails."""
         self.score = score
+        self.after_reopen = after_reopen
+        """Called with the running service, workspace id, saved revision and a case id after the cold reopen."""
+        self.timed_out = False
         self.workspace = folder / "workspace"
         self.workspace.mkdir(mode=0o700)
         self.service = Service(self.workspace, folder / "service.log")
@@ -220,7 +240,9 @@ class Journey:
 
     def check(self, name: str, condition: bool, detail: object = None) -> None:
         if not condition:
-            raise Failed(f"{name}: {detail!r}"[:2000])
+            with (self.folder / "journey-detail.log").open("a") as log:
+                log.write(f"{name}: {detail!r}\n")
+            raise Failed(name)
         self.checks.append(name)
 
     def stage(self, name: str, request) -> dict:
@@ -231,22 +253,33 @@ class Journey:
             response = request(self.service.client)
         except httpx.TransportError as error:
             if self.sampler.breach is not None:
-                raise Failed(f"memory_limit: {name} exceeded {self.limit} bytes at {self.sampler.breach}") from error
+                raise Failed(f"memory_limit during {name}") from error
+            if self.timed_out:
+                raise Failed(f"deadline during {name}") from error
             raise
         seconds = time.perf_counter() - started
         peak, retained = self.sampler.settled(3 * self.sampler.interval)
         self.stages.append({"stage": name, "seconds": round(seconds, 4), "peak_rss_bytes": peak, "retained_rss_bytes": retained,
                             "reply_bytes": len(response.content), "status": response.status_code})
-        self.check(f"{name}_succeeds", response.status_code == 200, response.text[:500])
+        self.check(f"{name}_succeeds", response.status_code == 200, response.text[:2000])
         return response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
 
     def post(self, route: str, message: str, **fields):
         return lambda client: client.post("/api/" + route, json=envelope(message, **fields))
 
+    def _expire(self) -> None:
+        self.timed_out = True
+        self.service.kill()
+
     # Journey -------------------------------------------------------------------------------
 
     def run(self) -> dict:
         result: dict = {"status": "failed", "stages": self.stages, "checks": self.checks, "service_exits": self.exits}
+        timer = None
+        if self.deadline is not None:
+            timer = threading.Timer(self.deadline, self._expire)
+            timer.daemon = True
+            timer.start()
         try:
             self._start()
             result["idle_rss_bytes"] = self.sampler.settled(0.3)[1]
@@ -255,7 +288,13 @@ class Journey:
         except Failed as error:
             result["reason"] = str(error)
         finally:
+            if timer is not None:
+                timer.cancel()
             self._stop()
+            if self.sampler is not None and self.sampler.breach is not None:
+                result.update(status="failed", reason=result.get("reason") or "memory_limit", breach_rss_bytes=self.sampler.breach)
+            result["memory_limit_bytes"] = self.limit
+            result["service_pids"] = [exit_record["pid"] for exit_record in self.exits]
             result["peak_rss_bytes"] = max((stage["peak_rss_bytes"] for stage in self.stages), default=0)
             result["cleanup_verified"] = all(exit_record.get("port_closed") and exit_record.get("exit") is not None
                                              for exit_record in self.exits)
@@ -268,11 +307,18 @@ class Journey:
         populations = {}
         for origin in (self.native, self.prepared):
             name = origin.name
-            uploaded = self.stage(f"{name}_upload", lambda client, origin=origin: client.put(
-                "/api/sources", params=envelope("upload_source_metadata", workspace_id=wid, filename=f"{name}.csv"),
-                content=origin.raw, headers={"Content-Type": "application/octet-stream"}))
+            def upload(client, origin=origin, name=name):
+                content = origin.raw if isinstance(origin.raw, bytes) else origin.raw.open("rb")
+                try:
+                    return client.put("/api/sources", params=envelope("upload_source_metadata", workspace_id=wid, filename=f"{name}.csv"),
+                                      content=content, headers={"Content-Type": "application/octet-stream"})
+                finally:
+                    if not isinstance(content, bytes):
+                        content.close()
+
+            uploaded = self.stage(f"{name}_upload", upload)
             source_id = uploaded["source"]["source_id"]
-            self.check(f"{name}_source_identity", source_id == "source.v1:sha256:" + hashlib.sha256(origin.raw).hexdigest())
+            self.check(f"{name}_source_identity", source_id == "source.v1:sha256:" + origin.sha256())
             hints = {} if origin.hints is None else {"hints": origin.hints}
             inspected = self.stage(f"{name}_inspection", self.post("sources/inspect", "inspect_csv_request", workspace_id=wid,
                                                                      source_id=source_id, **hints))
@@ -293,7 +339,7 @@ class Journey:
             opened = self.stage(f"{name}_population", self.post("investigations/open-population", "open_population_request",
                                                                workspace_id=wid, preparation_id=prepared_ids[name]))
             population = opened["population"]
-            self.check(f"{name}_population_count", population["case_count"] == len(self.expected.case_ids)
+            self.check(f"{name}_population_count", population["case_count"] == self.expected.case_count
                        and population["record_count"] == self.expected.record_count, population.get("case_count"))
             populations[name] = opened["identity"]
         base = populations[self.prepared.name]
@@ -303,8 +349,10 @@ class Journey:
             self.check("case_evidence_exact", sorted(entry["original_cells"] for entry in answer["records"]) == sorted(rows), case_id)
         selected = self.stage("selection", self.post("investigations/select-cases", "select_cases_request", workspace_id=wid,
                                                     identity=base, parent_case_ids=None, predicates=[]))
-        self.check("selection_keeps_all", sorted(selected["kept"]["case_ids"]) == sorted(self.expected.case_ids))
-        subset = sorted(self.expected.case_ids)[: max(1, len(self.expected.case_ids) // 10)]
+        kept = sorted(selected["kept"]["case_ids"])
+        self.check("selection_keeps_all", kept == sorted(self.expected.case_ids) if self.expected.case_ids is not None
+                   else len(kept) == self.expected.case_count)
+        subset = kept[: max(1, len(kept) // 10)]
         narrowed = self.stage("selection_predicate", self.post(
             "investigations/select-cases", "select_cases_request", workspace_id=wid, identity=base, parent_case_ids=None,
             predicates=[{"kind": "case_id_in", "case_ids": subset, "negate": False}]))
@@ -315,7 +363,7 @@ class Journey:
         query = {"roles": self.prepared_roles, "profile_columns": None, "policy_id": PROFILE_POLICY}
         profiled = self.stage("attribute_profile", self.post("investigations/bpic19-profile", "bpic19_profile_request",
                                                              workspace_id=wid, identity=identity, query=query))
-        self.check("profile_population", profiled["profile"]["population"]["case_count"] == len(self.expected.case_ids))
+        self.check("profile_population", profiled["profile"]["population"]["case_count"] == self.expected.case_count)
         lineage_query = {**query, "category_lineage": lineage}
         reviewed = self.stage("lineage_profile", self.post("investigations/bpic19-profile", "bpic19_profile_request",
                                                            workspace_id=wid, identity=identity, query=lineage_query))
@@ -330,7 +378,7 @@ class Journey:
         self.stage("variants", self.post("investigations/variants", "variants_request", workspace_id=wid, identity=identity))
         saved = self.stage("save", self.post(
             "investigations/save", "save_investigation_request", workspace_id=wid, investigation_id=None, expected_revision_id=None,
-            name="Capacity journey", base_identity=base, selection_identity=identity,
+            name=self.saved_name, base_identity=base, selection_identity=identity,
             selection_recipe={"parent_case_ids": selected["parent"]["case_ids"], "predicates": []}, context_policy=CONTEXT_POLICY,
             comparison=None, notes="Synthetic capacity measurement", bookmarks=[], bpic19_pipeline={"schema_version": 1, "actions": [
                 {"operation": "bpic19_profile", "identity": identity, "query": lineage_query,
@@ -350,6 +398,8 @@ class Journey:
         again = self.stage("cold_population", self.post("investigations/open-population", "open_population_request",
                                                         workspace_id=wid, preparation_id=prepared_ids[self.prepared.name]))
         self.check("cold_population_identity", again["identity"] == base)
+        if self.after_reopen is not None:
+            self.after_reopen(self, wid, revision, kept[0])
         result["identities"] = {"native": populations[self.native.name], "prepared": base}
         result["saved_payload_sha256"] = saved_digest
 

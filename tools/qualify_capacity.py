@@ -40,7 +40,7 @@ def expectations(rows: int) -> Expectations:
     witnesses = {0, cases // 2, cases - 1}
     evidence = {case_ids[case]: [cells(position) for position in range(case * EVENTS_PER_CASE, (case + 1) * EVENTS_PER_CASE)]
                 for case in sorted(witnesses)}
-    return Expectations(case_ids, rows, evidence)
+    return Expectations(cases, rows, case_ids, evidence)
 
 
 def origins(rows: int) -> tuple[Origin, Origin]:
