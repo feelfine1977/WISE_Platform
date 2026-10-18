@@ -202,6 +202,7 @@ def test_h7_stopped_disposable_artifact_fault_refuses_without_overwriting(tmp_pa
     assert {p.name:p.read_bytes() for p in revisions.glob('*.json')}==before
 
 
+@pytest.mark.skipif(os.name!='posix',reason='The H7 qualification tool and its ps shim use the POSIX process table and process groups.')
 @pytest.mark.parametrize('mode',['primary','success'])
 @pytest.mark.parametrize('ps_failure',[False,True])
 def test_h7_cleanup_diagnostic_fault_preserves_primary_and_reaps_actual_service(tmp_path,mode,ps_failure):
