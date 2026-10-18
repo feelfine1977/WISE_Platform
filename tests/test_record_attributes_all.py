@@ -27,7 +27,7 @@ def source():
         for index, row in enumerate(cells, 1))
     histories = {case: tuple(row for row in records if row.case_id == case) for case in sorted({row[0] for row in cells})}
     identity = [prefix + ".v1:sha256:" + "a" * 64 for prefix in ["source", "preparation", "representation", "case-dictionary", "population"]]
-    return PreparedData(b"literal", *identity, "0.1.0", ("item", "GR", "IV"), records, histories, {},
+    return PreparedData(*identity, "0.1.0", ("item", "GR", "IV"), records, histories, {},
         {"context_columns": ()}, {"time": {"id": "incident.time.wall_clock_as_recorded.v1"}}, {})
 
 

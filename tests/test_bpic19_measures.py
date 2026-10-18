@@ -20,7 +20,7 @@ def snapshot(events):
                              time, "usable" if moment else "missing", (), cells, moment)
         rows.append(row)
         histories.setdefault(case, []).append(row)
-    return PreparedData(b"immutable", "source", "preparation", "representation", "dictionary", "population", "0.1.0",
+    return PreparedData("source", "preparation", "representation", "dictionary", "population", "0.1.0",
                         columns, tuple(rows), {key: tuple(value) for key, value in histories.items()}, {}, {}, {}, {})
 
 

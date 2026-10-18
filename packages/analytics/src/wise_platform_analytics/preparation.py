@@ -10,7 +10,7 @@ import json
 import re
 from types import MappingProxyType
 
-from .csv_inspection import SourceRecord, read_csv, source_id, validate_dialect
+from .csv_inspection import Source, SourceFile, SourceRecord, read_csv, source_id, validate_dialect
 from .mapping import ImportRefusal, ROWS_V2_ID, freeze_json, plain_json, validate_mapping, validate_policies
 from .time_formats import TimeInterpretation, iso_local, iso_utc, parse_format, validate_time_policy
 from .version import IMPLEMENTATION_VERSION
@@ -79,7 +79,8 @@ class PreparedRecord:
 
 @dataclass(frozen=True)
 class PreparedData:
-    source: bytes = field(repr=False)
+    """A prepared source. It holds its records, not the source bytes; those stay in the workspace under ``source_id``."""
+
     source_id: str
     preparation_id: str
     representation_id: str
@@ -160,16 +161,16 @@ def _reading_key(sid: str, dialect: Mapping[str, object], mapping: Mapping[str, 
     return json.dumps(plain_json(shaping), sort_keys=True, separators=(",", ":"))
 
 
-def read_for_preparation(raw: bytes, dialect: Mapping[str, object], mapping: Mapping[str, object], policies: Mapping[str, object],
+def read_for_preparation(raw: Source, dialect: Mapping[str, object], mapping: Mapping[str, object], policies: Mapping[str, object],
                          reuse: SourceReading | None = None) -> SourceReading | ImportRefusal:
     """Parse a source for preparation, or return ``reuse`` when it was read under the same shaping choices."""
     found = _read(raw, dialect, mapping, policies, reuse)
     return found if isinstance(found, ImportRefusal) else found[0]
 
 
-def _read(raw: bytes, dialect: Mapping[str, object], mapping: Mapping[str, object], policies: Mapping[str, object],
+def _read(raw: Source, dialect: Mapping[str, object], mapping: Mapping[str, object], policies: Mapping[str, object],
           reuse: SourceReading | None) -> tuple[SourceReading, dict, dict, dict, TimeInterpretation] | ImportRefusal:
-    if not isinstance(raw, bytes):
+    if not isinstance(raw, (bytes, SourceFile)):
         return ImportRefusal("invalid_request", "The source must be unchanged CSV bytes.", "source")
     checked_dialect = validate_dialect(dialect)
     if isinstance(checked_dialect, ImportRefusal):
@@ -278,12 +279,12 @@ def _read(raw: bytes, dialect: Mapping[str, object], mapping: Mapping[str, objec
     return reading, checked_dialect, checked_mapping, checked_policies, clock
 
 
-def prepare(raw: bytes, dialect: Mapping[str, object], mapping: Mapping[str, object], policies: Mapping[str, object],
+def prepare(raw: Source, dialect: Mapping[str, object], mapping: Mapping[str, object], policies: Mapping[str, object],
             accept_report_issues: bool = False, *, reading: SourceReading | None = None) -> PreparationResult | ImportRefusal:
     """Confirm an interpretation; row issues need acknowledgment before publication.
 
     A ``reading`` from an earlier proposal or confirmation of the same source is reused when its shaping choices match."""
-    if not isinstance(raw, bytes):
+    if not isinstance(raw, (bytes, SourceFile)):
         return ImportRefusal("invalid_request", "The source must be unchanged CSV bytes.", "source")
     if type(accept_report_issues) is not bool:
         return ImportRefusal("invalid_parameter", "Row-issue confirmation must be a Boolean.", "accept_report_issues")
@@ -316,7 +317,7 @@ def prepare(raw: bytes, dialect: Mapping[str, object], mapping: Mapping[str, obj
     rid = content_identity("representation", {"format_version": 1, "preparation_id": pid, "activity_projection": checked_policies["activity_projection"]})
     did = content_identity("case-dictionary", {"format_version": 1, "preparation_id": pid, "case_ids": sorted(histories)})
     popid = content_identity("population", {"format_version": 1, "representation_id": rid, "case_dictionary_id": did, "case_ids": sorted(histories)})
-    prepared = PreparedData(raw, sid, pid, rid, did, popid, IMPLEMENTATION_VERSION, reading.columns, records, histories,
+    prepared = PreparedData(sid, pid, rid, did, popid, IMPLEMENTATION_VERSION, reading.columns, records, histories,
                             checked_dialect, checked_mapping, checked_policies, report)
     return PreparationResult("ready", sid, prepared, report)
 

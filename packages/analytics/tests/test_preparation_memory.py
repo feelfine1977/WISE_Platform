@@ -44,7 +44,7 @@ def test_public_preparation_retains_complete_context_with_bounded_wrapper_cost(r
                       "with_context": with_context, "context_increment": overhead,
                       "peak_traced": peak, "current_rss": rss, "rss_status": "measured" if rss is not None else "unavailable: ps not supported",
                       "identity": prepared.identity_dict()}, sort_keys=True))
-    assert prepared.source == raw
+    assert not hasattr(prepared, "source")
     assert prepared.source_id == "source.v1:sha256:" + hashlib.sha256(raw).hexdigest()
     # Compatibility pins captured from the passing evidence checks on the original implementation.
     assert prepared.preparation_id == "preparation.v1:sha256:" + {

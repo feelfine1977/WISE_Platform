@@ -1,7 +1,9 @@
 """Serve the local API and the built browser application."""
 
+from collections.abc import Iterator
 from pathlib import Path
 
+import anyio
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
@@ -117,13 +119,24 @@ def create_app(
 
     @application.put("/api/sources")
     async def upload_source(request: Request) -> JSONResponse:
-        raw = await request.body()
+        body = request.stream()
+
+        def chunks() -> Iterator[bytes]:
+            # The worker thread pulls the body as it stores it, so no whole source is held in memory.
+            while True:
+                try:
+                    chunk = anyio.from_thread.run(body.__anext__)
+                except StopAsyncIteration:
+                    return
+                if chunk:
+                    yield chunk
+
         return _sent_import(
             await run_in_threadpool(
                 imports.upload_source,
                 request.query_params.multi_items(),
                 request.headers.get("content-type"),
-                raw,
+                chunks(),
             )
         )
 

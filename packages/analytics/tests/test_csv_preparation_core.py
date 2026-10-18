@@ -54,7 +54,7 @@ def test_windows_encoding_spaced_duplicate_headers_and_literal_values():
            ' A-01 ;Prüfung;09.10.2026 08:00;0;False\r\n'
            'A-01;Übernahme;09.10.2026 09:00;;Unknown\r\n').encode("cp1252")
     prepared = ready(raw, encoding="windows-1252", mapping=roles(context=(3, 4)))
-    assert prepared.source == raw
+    assert prepared.source_id == "source.v1:sha256:" + hashlib.sha256(raw).hexdigest() and not hasattr(prepared, "source")
     assert prepared.source_id == "source.v1:sha256:" + hashlib.sha256(raw).hexdigest()
     assert prepared.columns == (" Ticket ", " Event ", " At ", " Desk ", " Desk ")
     assert list(prepared.histories) == ["A-01"]

@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from collections import Counter, deque
 from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 import codecs
 import csv
 import hashlib
 import io
+from pathlib import Path
 
 from .mapping import ImportRefusal, exact_object
 from .time_formats import FORMATS, parse_format
@@ -77,8 +79,26 @@ class CsvData:
     ragged_record_count: int = 0
 
 
-def source_id(raw: bytes) -> str:
-    return "source.v1:sha256:" + hashlib.sha256(raw).hexdigest()
+class SourceChanged(Exception):
+    """A stored source file no longer holds the bytes of its identity, or cannot be read."""
+
+
+@dataclass(frozen=True)
+class SourceFile:
+    """A stored source, read from its file as it is parsed instead of being held whole.
+
+    Its digest is computed over exactly the bytes read. Reading it raises ``SourceChanged`` when they do not
+    reproduce ``source_id``, so no answer is ever given for bytes other than the identified ones."""
+
+    path: Path
+    source_id: str
+
+
+Source = bytes | SourceFile
+
+
+def source_id(raw: Source) -> str:
+    return raw.source_id if isinstance(raw, SourceFile) else "source.v1:sha256:" + hashlib.sha256(raw).hexdigest()
 
 
 def validate_dialect(value: object) -> dict[str, str] | ImportRefusal:
@@ -103,22 +123,82 @@ def _undecodable() -> ImportRefusal:
     return ImportRefusal("malformed_source", "The source cannot be decoded with the confirmed encoding.", "dialect.encoding")
 
 
-def _decodes(raw: bytes, codec: str) -> bool:
+class _Digesting(io.RawIOBase):
+    """A file whose bytes are hashed as they are read."""
+
+    def __init__(self, handle) -> None:
+        self.handle = handle
+        self.digest = hashlib.sha256()
+
+    def readable(self) -> bool:
+        return True
+
+    def readinto(self, buffer) -> int:
+        count = self.handle.readinto(buffer)
+        if count:
+            self.digest.update(memoryview(buffer)[:count])
+        return count
+
+
+@contextmanager
+def _binary(raw: Source) -> Iterator[io.BufferedIOBase]:
+    """The source as a binary stream. A file's digest covers every byte once: the bytes read while parsing and,
+    when parsing stops early, the rest; a mismatch raises ``SourceChanged`` whatever the reading concluded."""
+    if isinstance(raw, bytes):
+        yield io.BytesIO(raw)
+        return
+    try:
+        handle = raw.path.open("rb", buffering=0)
+    except OSError as error:
+        raise SourceChanged(raw.source_id) from error
+    with handle:
+        digesting = _Digesting(handle)
+        try:
+            yield io.BufferedReader(digesting, _DECODE_CHUNK)
+        finally:
+            rest = bytearray(_DECODE_CHUNK)
+            while digesting.readinto(rest):
+                pass
+            if "source.v1:sha256:" + digesting.digest.hexdigest() != raw.source_id:
+                raise SourceChanged(raw.source_id)
+
+
+def _chunks(raw: Source) -> Iterator[bytes]:
+    if isinstance(raw, bytes):
+        view = memoryview(raw)
+        for start in range(0, len(view), _DECODE_CHUNK):
+            yield view[start:start + _DECODE_CHUNK]
+        return
+    with _binary(raw) as binary:
+        while chunk := binary.read(_DECODE_CHUNK):
+            yield chunk
+
+
+def _starts_with_bom(raw: Source) -> bool:
+    if isinstance(raw, bytes):
+        return raw.startswith(codecs.BOM_UTF8)
+    try:
+        with raw.path.open("rb") as handle:
+            return handle.read(len(codecs.BOM_UTF8)) == codecs.BOM_UTF8
+    except OSError as error:
+        raise SourceChanged(raw.source_id) from error
+
+
+def _decodes(raw: Source, codec: str) -> bool:
     """Whether the whole source decodes, checked in chunks so that no whole-file text exists."""
     decoder = codecs.getincrementaldecoder(codec)("strict")
-    view = memoryview(raw)
     try:
-        for start in range(0, len(view), _DECODE_CHUNK):
-            decoder.decode(view[start:start + _DECODE_CHUNK])
+        for chunk in _chunks(raw):
+            decoder.decode(chunk)
         decoder.decode(b"", final=True)
     except UnicodeDecodeError:
         return False
     return True
 
 
-def _lines(raw: bytes, codec: str) -> Iterator[str]:
+def _lines(binary: io.BufferedIOBase, codec: str) -> Iterator[str]:
     # Lines end at CR LF, CR or LF and keep their ending, exactly as a text buffer opened with newline="" splits them.
-    return io.TextIOWrapper(io.BytesIO(raw), encoding=codec, errors="strict", newline="")
+    return io.TextIOWrapper(binary, encoding=codec, errors="strict", newline="")
 
 
 class _Taken:
@@ -183,30 +263,32 @@ def _records(lines: Iterator[str], delimiter: str, tolerant: bool,
     return blanks, ragged
 
 
-def read_csv(raw: bytes, dialect: Mapping[str, str], *, tolerant: bool = False, case_column: int | None = None) -> CsvData | ImportRefusal:
+def read_csv(raw: Source, dialect: Mapping[str, str], *, tolerant: bool = False, case_column: int | None = None) -> CsvData | ImportRefusal:
     """Read one dialect in a single streamed pass. An undecodable source is refused on its encoding before any structural defect.
 
-    A record keeps its exact text only if it is ragged or, given ``case_column``, has a blank case identifier."""
+    A record keeps its exact text only if it is ragged or, given ``case_column``, has a blank case identifier. A
+    ``SourceFile`` whose bytes no longer match its identity raises ``SourceChanged``."""
     def keep_text(row: list[str], width: int) -> bool:
         return len(row) != width or (case_column is not None and case_column < width and not row[case_column].strip())
 
     codec = _CODECS[dialect["encoding"]]
     records = []
-    try:
-        reading = _records(_lines(raw, codec), dialect["delimiter"], tolerant, keep_text)
-        header = next(reading)
-        sharing = _CellSharing(len(header))
-        while True:
-            try:
-                position, line_start, line_end, row, text = next(reading)
-            except StopIteration as stop:
-                blanks, ragged = stop.value
-                break
-            records.append(SourceRecord(position, line_start, line_end, sharing.cells(row), text))
-    except UnicodeError:
-        return _undecodable()
-    except _Refused as refused:
-        return refused.refusal if _decodes(raw, codec) else _undecodable()
+    with _binary(raw) as binary:
+        try:
+            reading = _records(_lines(binary, codec), dialect["delimiter"], tolerant, keep_text)
+            header = next(reading)
+            sharing = _CellSharing(len(header))
+            while True:
+                try:
+                    position, line_start, line_end, row, text = next(reading)
+                except StopIteration as stop:
+                    blanks, ragged = stop.value
+                    break
+                records.append(SourceRecord(position, line_start, line_end, sharing.cells(row), text))
+        except UnicodeError:
+            return _undecodable()
+        except _Refused as refused:
+            return refused.refusal if _decodes(raw, codec) else _undecodable()
     return CsvData(tuple(header), tuple(record.cells for record in records), tuple(records), blanks, ragged)
 
 
@@ -291,24 +373,25 @@ class _Candidate:
         return True
 
 
-def _inspect_dialects(raw: bytes, encoding: str, separators: list[str], collect: Callable[[list[str]], bool]) -> list[_Candidate]:
+def _inspect_dialects(raw: Source, encoding: str, separators: list[str], collect: Callable[[list[str]], bool]) -> list[_Candidate]:
     """Evaluate every separator for one encoding in a single streamed pass over the source."""
     codec = _CODECS[encoding]
-    shared = _SharedLines(_lines(raw, codec))
-    candidates = [_Candidate({"encoding": encoding, "delimiter": separator, "quotechar": '"', "header": "first_record"}, shared, collect)
-                  for separator in separators]
-    active = list(candidates)
-    try:
-        while active:
-            candidate = min(active, key=lambda each: each.cursor.index)
-            if not candidate.step():
-                active.remove(candidate)
-            shared.release(min((each.cursor.index for each in active), default=candidate.cursor.index))
-    except UnicodeError:
-        for candidate in candidates:
-            if not candidate.finished:
-                candidate.refusal = _undecodable()
-        return candidates
+    with _binary(raw) as binary:
+        shared = _SharedLines(_lines(binary, codec))
+        candidates = [_Candidate({"encoding": encoding, "delimiter": separator, "quotechar": '"', "header": "first_record"}, shared, collect)
+                      for separator in separators]
+        active = list(candidates)
+        try:
+            while active:
+                candidate = min(active, key=lambda each: each.cursor.index)
+                if not candidate.step():
+                    active.remove(candidate)
+                shared.release(min((each.cursor.index for each in active), default=candidate.cursor.index))
+        except UnicodeError:
+            for candidate in candidates:
+                if not candidate.finished:
+                    candidate.refusal = _undecodable()
+            return candidates
     if any(candidate.refusal is not None for candidate in candidates) and not _decodes(raw, codec):
         for candidate in candidates:
             if candidate.refusal is not None:
@@ -316,8 +399,9 @@ def _inspect_dialects(raw: bytes, encoding: str, separators: list[str], collect:
     return candidates
 
 
-def inspect_csv(raw: bytes, hints: Mapping[str, object] | None = None) -> dict[str, object] | ImportRefusal:
-    if not isinstance(raw, bytes):
+def inspect_csv(raw: Source, hints: Mapping[str, object] | None = None) -> dict[str, object] | ImportRefusal:
+    """Propose dialects and roles for a source. A ``SourceFile`` whose bytes no longer match raises ``SourceChanged``."""
+    if not isinstance(raw, (bytes, SourceFile)):
         return ImportRefusal("invalid_request", "The source must be unchanged CSV bytes.", "source")
     hints = {} if hints is None else hints
     if not isinstance(hints, Mapping) or set(hints) - {"encoding", "delimiter"}:
@@ -326,7 +410,7 @@ def inspect_csv(raw: bytes, hints: Mapping[str, object] | None = None) -> dict[s
         return ImportRefusal("invalid_dialect", "A dialect hint is unsupported.", "hints")
     if "encoding" in hints:
         encodings = [hints["encoding"]]
-    elif raw.startswith(b"\xef\xbb\xbf"):
+    elif _starts_with_bom(raw):
         encodings = ["utf-8-sig"]
     else:
         encodings = ["utf-8"] if _decodes(raw, "utf-8") else ["windows-1252"]
