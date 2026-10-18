@@ -45,6 +45,7 @@ STATUS: dict[str, int] = {
     "unsupported_definition": 422,
     "workspace_unavailable": 404,
     "source_unavailable": 404,
+    "memory_unavailable": 503,
     "preparation_unavailable": 404,
     "identity_mismatch": 409,
     "population_unavailable": 404,
@@ -62,6 +63,7 @@ RETRYABLE = frozenset(
     {
         "workspace_unavailable",
         "source_unavailable",
+        "memory_unavailable",
         "preparation_unavailable",
         "population_unavailable",
         "method_unavailable",
@@ -78,6 +80,7 @@ RECOVERY: dict[str, tuple[str, ...]] = {
     "unevaluable_sequence": ("inspect_quality", "choose_qualified_named_population"),
     "empty_population": ("choose_qualified_named_population",),
     "source_unavailable": ("restore_source",),
+    "memory_unavailable": ("retry",),
     "workspace_unavailable": ("retry",),
     "preparation_unavailable": ("retry",),
     "population_unavailable": ("retry",),

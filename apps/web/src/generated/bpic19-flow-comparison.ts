@@ -232,6 +232,7 @@ export interface Bpic19FlowComparisonRefusal {
     | "population_unavailable"
     | "invalid_parent"
     | "unknown_case"
+    | "memory_unavailable"
     | "computation_failed";
   message: string;
   field: string | null;

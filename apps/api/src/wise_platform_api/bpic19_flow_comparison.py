@@ -23,12 +23,12 @@ logger = logging.getLogger(__name__)
 
 
 def _refused(given, code, message, field=None):
-    allowed = {"invalid_request", "unsupported_schema", "unsupported_policy", "invalid_parameter", "workspace_unavailable", "workspace_not_writable", "workspace_incompatible", "source_unavailable", "preparation_unavailable", "identity_mismatch", "population_unavailable", "invalid_parent", "unknown_case", "computation_failed"}
+    allowed = {"invalid_request", "unsupported_schema", "unsupported_policy", "invalid_parameter", "workspace_unavailable", "workspace_not_writable", "workspace_incompatible", "source_unavailable", "preparation_unavailable", "identity_mismatch", "population_unavailable", "invalid_parent", "unknown_case", "memory_unavailable", "computation_failed"}
     if code not in allowed: code = "computation_failed"
-    status = 400 if code == "invalid_request" else 422 if code in {"unsupported_schema", "unsupported_policy", "invalid_parameter", "invalid_parent", "unknown_case"} else 500 if code == "computation_failed" else 409
+    status = 503 if code == "memory_unavailable" else 400 if code == "invalid_request" else 422 if code in {"unsupported_schema", "unsupported_policy", "invalid_parameter", "invalid_parent", "unknown_case"} else 500 if code == "computation_failed" else 409
     body = {"schema_version": 1, "message_type": "bpic19_flow_comparison_refusal", **import_echo(given),
             "operation": "bpic19_flow_comparison", "code": code, "message": message, "field": field,
-            "retryable": code in {"computation_failed", "workspace_unavailable", "source_unavailable", "preparation_unavailable", "population_unavailable"}}
+            "retryable": code in {"memory_unavailable", "computation_failed", "workspace_unavailable", "source_unavailable", "preparation_unavailable", "population_unavailable"}}
     Bpic19FlowComparisonRefusal.model_validate_json(json.dumps(body), strict=True)
     return ImportReply(status, body)
 
@@ -53,11 +53,15 @@ class Bpic19FlowComparisons:
             field = ".".join(map(str, error.errors()[0]["loc"])) if isinstance(error, ValidationError) else None
             return _refused(given, "invalid_request", "The flow comparison request does not match its registered contract.", field)
         try:
+            lineage = given["query"]["profile_query"].get("category_lineage")
+            if lineage is not None:
+                # Both sources are admitted together, before either is read.
+                refused = self._imports.admit_preparations(given["workspace_id"], (given["identity"]["preparation_id"], lineage["origin_preparation_id"]))
+                if refused is not None: return _refused(given, refused.code, refused.message, refused.field)
             resolved = resolve_population(self._imports, given)
             if isinstance(resolved, Problem): return _refused(given, resolved.code, resolved.message, resolved.field)
             prepared, population = resolved
             origin = None
-            lineage = given["query"]["profile_query"].get("category_lineage")
             if lineage is not None:
                 found = self._imports.prepared(given["workspace_id"], lineage["origin_preparation_id"])
                 if not isinstance(found, tuple):

@@ -16,6 +16,7 @@ from wise_platform_analytics.bpic19_operators import (
     evaluate_operator_case,
     operator_population,
 )
+from wise_platform_analytics.footprint import report_footprint
 from wise_platform_analytics.mapping import ImportRefusal
 from wise_platform_analytics.preparation import content_identity
 
@@ -76,7 +77,7 @@ def _refused(
     *,
     method_context: dict | None = None,
 ) -> Bpic19OperatorReply:
-    status = (
+    status = 503 if code == "memory_unavailable" else (
         400
         if code
         in {
@@ -111,6 +112,7 @@ def _refused(
         "field": field,
         "retryable": code
         in {
+            "memory_unavailable",
             "computation_failed",
             "workspace_unavailable",
             "source_unavailable",
@@ -170,6 +172,10 @@ class Bpic19Operators:
         self._imports = imports
         self._summaries: OrderedDict[str, dict] = OrderedDict()
         self._lock = RLock()
+
+    def _forget(self, key: str) -> None:
+        with self._lock:
+            self._summaries.pop(key, None)
 
     def operators(self, body: bytes) -> Bpic19OperatorReply:
         given = read_object(body)
@@ -284,8 +290,10 @@ class Bpic19Operators:
                 }
                 with self._lock:
                     self._summaries[key] = cached
-                    while len(self._summaries) > 2:
-                        self._summaries.popitem(last=False)
+                    dropped = [self._summaries.popitem(last=False)[0] for _ in range(len(self._summaries) - 2)]
+                for old in dropped:
+                    self._imports.budget.forget(("operators", old))
+                self._imports.budget.hold(("operators", key), report_footprint(cached), lambda key=key: self._forget(key))
             else:
                 definition = cached["definition"]
                 recipe = definition["recipe"]

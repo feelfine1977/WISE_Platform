@@ -708,6 +708,7 @@ export interface SavingRefusal1 {
     | "malformed_saved_revision"
     | "incompatible_saved_revision"
     | "publication_failed"
+    | "memory_unavailable"
     | "computation_failed"
     | "unsupported_action"
     | "artifact_unavailable"

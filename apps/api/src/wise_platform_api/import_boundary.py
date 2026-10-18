@@ -51,6 +51,7 @@ STATUS: dict[str, int] = {
     "workspace_not_writable": 403,
     "workspace_incompatible": 409,
     "source_unavailable": 404,
+    "memory_unavailable": 503,
     "invalid_dialect": 422,
     "invalid_mapping": 422,
     "unsupported_timezone": 422,
@@ -69,6 +70,7 @@ RETRYABLE = frozenset(
         "workspace_unavailable",
         "workspace_not_writable",
         "source_unavailable",
+        "memory_unavailable",
         "preparation_unavailable",
         "computation_failed",
     }

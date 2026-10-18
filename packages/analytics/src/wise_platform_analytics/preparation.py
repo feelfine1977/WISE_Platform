@@ -161,6 +161,17 @@ def _reading_key(sid: str, dialect: Mapping[str, object], mapping: Mapping[str, 
     return json.dumps(plain_json(shaping), sort_keys=True, separators=(",", ":"))
 
 
+def reuses(reading: SourceReading | None, raw: Source, dialect: Mapping[str, object], mapping: Mapping[str, object],
+           policies: Mapping[str, object]) -> bool:
+    """Whether preparing ``raw`` under these choices would reuse ``reading`` instead of reading the source."""
+    if reading is None or not isinstance(mapping, Mapping):
+        return False
+    checked_dialect, checked_policies = validate_dialect(dialect), validate_policies(policies)
+    if isinstance(checked_dialect, ImportRefusal) or isinstance(checked_policies, ImportRefusal):
+        return False
+    return reading.key == _reading_key(source_id(raw), checked_dialect, mapping, checked_policies)
+
+
 def read_for_preparation(raw: Source, dialect: Mapping[str, object], mapping: Mapping[str, object], policies: Mapping[str, object],
                          reuse: SourceReading | None = None) -> SourceReading | ImportRefusal:
     """Parse a source for preparation, or return ``reuse`` when it was read under the same shaping choices."""

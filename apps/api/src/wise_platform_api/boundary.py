@@ -48,13 +48,14 @@ STATUS: dict[str, int] = {
     "invalid_parameter": 400,
     "invalid_request": 400,
     "source_unavailable": 404,
+    "memory_unavailable": 503,
     "malformed_source": 422,
     "case_not_found": 404,
     "case_not_in_population": 409,
     "identity_mismatch": 409,
     "computation_failed": 500,
 }
-RETRYABLE = frozenset({"source_unavailable", "computation_failed"})
+RETRYABLE = frozenset({"source_unavailable", "memory_unavailable", "computation_failed"})
 """Codes for a state of this computer rather than of the request: the same request can succeed later."""
 
 _REQUEST_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")

@@ -69,9 +69,9 @@ def _refused(given: dict, problem: Problem) -> PreparedReply:
     body = {"schema_version": 1, "message_type": "bpic19_prepared_refusal", **echo_of(given),
             "workspace_id": given.get("workspace_id") if is_workspace_id(given.get("workspace_id")) else None,
             "code": problem.code, "message": problem.message, "field": problem.field,
-            "retryable": problem.code in {"workspace_unavailable", "publication_failed", "computation_failed"}}
+            "retryable": problem.code in {"workspace_unavailable", "publication_failed", "memory_unavailable", "computation_failed"}}
     generated.Bpic19PreparedRefusal.model_validate(body)
-    status = 400 if problem.code in {"invalid_request", "unsupported_schema", "unsupported_policy", "input_limit_exceeded"} else 404 if problem.code in {"workspace_unavailable", "input_unavailable", "run_unavailable"} else 403 if problem.code == "workspace_not_writable" else 500 if problem.code == "computation_failed" else 409
+    status = 503 if problem.code == "memory_unavailable" else 400 if problem.code in {"invalid_request", "unsupported_schema", "unsupported_policy", "input_limit_exceeded"} else 404 if problem.code in {"workspace_unavailable", "input_unavailable", "run_unavailable"} else 403 if problem.code == "workspace_not_writable" else 500 if problem.code == "computation_failed" else 409
     return PreparedReply(status, body)
 
 

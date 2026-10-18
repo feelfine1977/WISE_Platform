@@ -24,6 +24,7 @@ const refusalReasons: Record<Refusal["code"], string> = {
   invalid_parameter: "A policy parameter was not accepted.",
   invalid_request: "The request was not accepted.",
   source_unavailable: "The example source is not available on this computer.",
+  memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   malformed_source: "The example source could not be read as an event history.",
   case_not_found: "This incident is not recorded in the source.",
   case_not_in_population: "This incident is outside the current population.",
