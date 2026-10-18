@@ -42,7 +42,7 @@ from pydantic import BaseModel, ValidationError
 from wise_platform_analytics.csv_inspection import inspect_csv
 from wise_platform_analytics.incident_time import incident_time_diagnostics
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
-from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare
+from wise_platform_analytics.preparation import PreparationResult, PreparedData, SourceReading, prepare, read_for_preparation
 from wise_platform_analytics.prepared_operations import open_prepared_case, open_prepared_population
 from wise_platform_analytics.selection import open_selected_case
 
@@ -112,6 +112,9 @@ class Imports:
         self._workspaces: dict[str, Workspace] = {}
         self._prepared: OrderedDict[str, PreparedData] = OrderedDict()
         self._inspections: OrderedDict[tuple[str, str | None, str | None], dict] = OrderedDict()
+        # One source's parse, shared by a cutoff proposal and the confirmations that follow it. It is released by a
+        # ready confirmation, which then holds the same records, and before any other source is read.
+        self._reading: tuple[str, SourceReading] | None = None
         self._lock = Lock()
         self._preparing = Lock()
 
@@ -228,6 +231,7 @@ class Imports:
         with self._lock:
             inspection = self._inspections.get(key)
         if inspection is None:
+            self._held_reading(source_id)
             raw = workspace.read_source(source_id)
             if isinstance(raw, Problem):
                 return _problem(INSPECT_CSV, raw, given)
@@ -249,14 +253,12 @@ class Imports:
         workspace = self._workspace(CONFIRM_MAPPING, given)
         if isinstance(workspace, ImportReply):
             return workspace
-        raw = workspace.read_source(given["source_id"])
-        if isinstance(raw, Problem):
-            return _problem(CONFIRM_MAPPING, raw, given)
-        result = prepare(raw, given["dialect"], given["mapping"], given["policies"], given["accept_report_issues"])
-        if isinstance(result, PackageRefusal):
-            return _from_package(CONFIRM_MAPPING, result, given)
+        result = self._prepare_held(workspace, given)
+        if isinstance(result, ImportReply):
+            return result
         interpretation = result.to_dict()
         if result.preparation is not None:
+            self._release_reading(given["source_id"])
             prepared = result.preparation
             stored = workspace.store_preparation(
                 interpretation["preparation"], prepared.identity_dict(), interpretation["report"]
@@ -271,12 +273,9 @@ class Imports:
         workspace = self._workspace(CONFIRM_MAPPING, given)
         if isinstance(workspace, ImportReply):
             return workspace
-        raw = workspace.read_source(given["source_id"])
-        if isinstance(raw, Problem):
-            return _problem(CONFIRM_MAPPING, raw, given)
-        result = prepare(raw, given["dialect"], given["mapping"], given["policies"], given["accept_report_issues"])
-        if isinstance(result, PackageRefusal):
-            return _from_package(CONFIRM_MAPPING, result, given)
+        result = self._prepare_held(workspace, given)
+        if isinstance(result, ImportReply):
+            return result
         report = result.report
         wall = report["timestamp_kind"] == "wall_clock"
         last = report["last_usable_local_timestamp"] if wall else report["last_usable_utc_instant"]
@@ -406,7 +405,37 @@ class Imports:
                         _keep(self._prepared, preparation_id, prepared, _PREPARED_KEPT)
         return prepared, source.to_dict()
 
+    def _prepare_held(self, workspace: Workspace, given: dict) -> PreparationResult | ImportReply:
+        """Prepare under the request's choices, reading the source again only if its held parse does not fit them."""
+        source_id = given["source_id"]
+        held = self._held_reading(source_id)
+        raw = workspace.read_source(source_id)
+        if isinstance(raw, Problem):
+            return _problem(CONFIRM_MAPPING, raw, given)
+        reading = read_for_preparation(raw, given["dialect"], given["mapping"], given["policies"], held)
+        if isinstance(reading, PackageRefusal):
+            return _from_package(CONFIRM_MAPPING, reading, given)
+        with self._lock:
+            self._reading = (source_id, reading)
+        result = prepare(raw, given["dialect"], given["mapping"], given["policies"], given["accept_report_issues"], reading=reading)
+        if isinstance(result, PackageRefusal):
+            return _from_package(CONFIRM_MAPPING, result, given)
+        return result
+
+    def _held_reading(self, source_id: str) -> SourceReading | None:
+        """The held parse of this source; a parse of any other source is released before this one is read."""
+        with self._lock:
+            if self._reading is not None and self._reading[0] != source_id:
+                self._reading = None
+            return None if self._reading is None else self._reading[1]
+
+    def _release_reading(self, source_id: str) -> None:
+        with self._lock:
+            if self._reading is not None and self._reading[0] == source_id:
+                self._reading = None
+
     def _prepare_again(self, workspace: Workspace, record: StoredPreparation) -> PreparedData | Problem | PackageRefusal:
+        self._held_reading(record.source_id)
         raw = workspace.read_source(record.source_id)
         if isinstance(raw, Problem):
             return raw

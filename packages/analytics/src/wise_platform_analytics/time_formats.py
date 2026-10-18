@@ -86,7 +86,10 @@ class TimeInterpretation:
     cutoff: datetime
 
     def parse(self, value: str) -> datetime | None | ImportRefusal:
-        parsed = parse_format(value, self.format_name)
+        return self.interpret(parse_format(value, self.format_name))
+
+    def interpret(self, parsed: datetime | None) -> datetime | None | ImportRefusal:
+        """Apply this clock to a value already parsed with ``format_name``."""
         if parsed is None:
             return None
         aware = parsed.tzinfo is not None
