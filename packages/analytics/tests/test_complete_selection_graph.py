@@ -229,11 +229,13 @@ def test_wall_clock_lags_are_labelled_and_mixed_time_kinds_refuse():
         build_process_graph(data({"X": (replace(row("X", 0, "A", 0), timestamp_kind="wall_clock"), row("X", 1, "B", 1))}))
 
 
-def real_prepared(raw=None):
+REAL_SOURCE = (b"Case;Activity;Time;Group\r\nX;A;2026-10-09T00:00:00Z;\r\n"
+               b"X;;2026-10-09T00:30:00Z;West\r\nX;B;2026-10-09T01:00:00Z;West\r\n"
+               b"Y;B;2026-10-09T02:00:00Z;Unknown\r\n")
+
+
+def real_prepared(raw=REAL_SOURCE):
     from wise_platform_analytics.preparation import prepare
-    raw = raw or (b"Case;Activity;Time;Group\r\nX;A;2026-10-09T00:00:00Z;\r\n"
-                  b"X;;2026-10-09T00:30:00Z;West\r\nX;B;2026-10-09T01:00:00Z;West\r\n"
-                  b"Y;B;2026-10-09T02:00:00Z;Unknown\r\n")
     policy = {
         "time": {"id": "incident.time.explicit_format_timezone_utc.v1", "parameters": {"format": "iso8601", "timezone": {"mode": "from_values"}, "snapshot_cutoff_utc": "2027-01-01T00:00:00Z"}},
         "order": {"id": "incident.order.declared_time_optional_sequence_source_position.v1", "parameters": {"primary": "usable_declared_time_ascending", "secondary": "mapped_sequence_or_source_position", "tie_breaker": "source_position_ascending", "unavailable_timestamp": "presentation_tail_source_position", "unavailable_timestamp_case_sequence": "unevaluable"}},
@@ -270,13 +272,13 @@ def test_real_prepared_selected_evidence_keeps_all_rows_and_selection_identity()
     for field in supplied:
         wrong = {**supplied, field: "different"}
         assert open_selected_case(prepared, selection, wrong, "X").code == "identity_mismatch"
-    changed = real_prepared(prepared.source.replace(b"X;A;", b"X;C;"))
+    changed = real_prepared(REAL_SOURCE.replace(b"X;A;", b"X;C;"))
     assert open_selected_case(changed, selection, supplied, "X").code == "identity_mismatch"
 
 
 def test_presence_selection_can_open_complete_evidence_when_chronology_is_unknown():
     from wise_platform_analytics.selection import open_selected_case
-    prepared = real_prepared(real_prepared().source.replace(b"Y;B;2026-10-09T02:00:00Z;", b"Y;B;not-a-time;"))
+    prepared = real_prepared(REAL_SOURCE.replace(b"Y;B;2026-10-09T02:00:00Z;", b"Y;B;not-a-time;"))
     selection = select_cases(prepared, [ContainsActivity("B")])
     assert selection.kept.case_ids == ("X", "Y") and selection.unevaluable.case_ids == ()
     result = open_selected_case(prepared, selection, selection.identity_dict(), "Y")

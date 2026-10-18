@@ -39,7 +39,7 @@ from pathlib import Path
 from threading import Lock
 
 from pydantic import BaseModel, ValidationError
-from wise_platform_analytics.csv_inspection import inspect_csv
+from wise_platform_analytics.csv_inspection import SourceChanged, inspect_csv
 from wise_platform_analytics.incident_time import incident_time_diagnostics
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
 from wise_platform_analytics.preparation import PreparationResult, PreparedData, SourceReading, prepare, read_for_preparation
@@ -75,7 +75,7 @@ from .import_boundary import (
 from .incident_time_boundary import validate_incident_time_answer
 from .registry import SelectionRegistry
 from .strict_reading import instant_failures
-from .workspace import Problem, StoredPreparation, Workspace
+from .workspace import Problem, StoredPreparation, Workspace, source_changed
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ class Imports:
             self._open_default_workspace,
         )
 
-    def upload_source(self, query: Iterable[tuple[str, str]], content_type: str | None, raw: bytes) -> ImportReply:
+    def upload_source(self, query: Iterable[tuple[str, str]], content_type: str | None, raw: bytes | Iterable[bytes]) -> ImportReply:
         message = upload_message(query)
         if isinstance(message, str):
             return _refused(import_refusal(UPLOAD_SOURCE, "invalid_request", message))
@@ -205,7 +205,7 @@ class Imports:
             },
         )
 
-    def _upload_source(self, request: UploadSourceMetadata, given: dict, raw: bytes) -> ImportReply:
+    def _upload_source(self, request: UploadSourceMetadata, given: dict, raw: bytes | Iterable[bytes]) -> ImportReply:
         workspace = self._workspace(UPLOAD_SOURCE, given)
         if isinstance(workspace, ImportReply):
             return workspace
@@ -232,10 +232,13 @@ class Imports:
             inspection = self._inspections.get(key)
         if inspection is None:
             self._held_reading(source_id)
-            raw = workspace.read_source(source_id)
+            raw = workspace.source_file(source_id)
             if isinstance(raw, Problem):
                 return _problem(INSPECT_CSV, raw, given)
-            found = inspect_csv(raw, hints)
+            try:
+                found = inspect_csv(raw, hints)
+            except SourceChanged:
+                return _problem(INSPECT_CSV, source_changed(), given)
             if isinstance(found, PackageRefusal):
                 return _from_package(INSPECT_CSV, found, given)
             inspection = found
@@ -409,10 +412,18 @@ class Imports:
         """Prepare under the request's choices, reading the source again only if its held parse does not fit them."""
         source_id = given["source_id"]
         held = self._held_reading(source_id)
-        raw = workspace.read_source(source_id)
+        # A held parse reads no bytes, so the stored file is checked for it; a new parse checks the bytes it reads.
+        changed = None if held is None else workspace.source_unchanged(source_id)
+        if changed is not None:
+            self._release_reading(source_id)
+            return _problem(CONFIRM_MAPPING, changed, given)
+        raw = workspace.source_file(source_id)
         if isinstance(raw, Problem):
             return _problem(CONFIRM_MAPPING, raw, given)
-        reading = read_for_preparation(raw, given["dialect"], given["mapping"], given["policies"], held)
+        try:
+            reading = read_for_preparation(raw, given["dialect"], given["mapping"], given["policies"], held)
+        except SourceChanged:
+            return _problem(CONFIRM_MAPPING, source_changed(), given)
         if isinstance(reading, PackageRefusal):
             return _from_package(CONFIRM_MAPPING, reading, given)
         with self._lock:
@@ -436,11 +447,14 @@ class Imports:
 
     def _prepare_again(self, workspace: Workspace, record: StoredPreparation) -> PreparedData | Problem | PackageRefusal:
         self._held_reading(record.source_id)
-        raw = workspace.read_source(record.source_id)
+        raw = workspace.source_file(record.source_id)
         if isinstance(raw, Problem):
             return raw
         descriptor = record.descriptor
-        result = prepare(raw, descriptor["dialect"], descriptor["mapping"], descriptor["policies"], True)
+        try:
+            result = prepare(raw, descriptor["dialect"], descriptor["mapping"], descriptor["policies"], True)
+        except SourceChanged:
+            return source_changed()
         if isinstance(result, PackageRefusal):
             return result
         if not isinstance(result, PreparationResult) or result.preparation is None:

@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
 from wise_platform_api.app import create_app
 from import_requests import envelope, wall_policies
-from test_bpic19_profiles import source, ROLES, h7_prepared, source_definition
+from test_bpic19_profiles import source, ROLES, h7_prepared, h7_source, source_definition
 
 ROOT = Path(__file__).resolve().parents[3]
 VALIDATOR = Draft202012Validator(json.loads((ROOT / "contracts/bpic19-profile.schema.json").read_text()))
@@ -93,7 +93,7 @@ def test_h7_public_http_reviews_source_overlay_distinct_grains_and_original_excl
     workspace = tmp_path / "source-policy-workspace"; workspace.mkdir()
     literal = h7_prepared()
     with TestClient(create_app()) as client:
-        wid, identity = prepare_source(client, workspace, literal.source, literal.descriptor()["policies"])
+        wid, identity = prepare_source(client, workspace, h7_source(), literal.descriptor()["policies"])
         given = request(wid, identity); given["query"]["source_interpretation"] = source_definition("document_start", horizon="2019-01-28T00:00:00Z", provenance="Synthetic extraction contract")
         response = client.post(ROUTE, json=given)
         assert response.status_code == 200, response.text

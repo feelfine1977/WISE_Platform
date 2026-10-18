@@ -34,6 +34,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from pydantic import BaseModel, ValidationError
+from wise_platform_analytics.csv_inspection import SourceChanged
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
 from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare, content_identity, PARSER_VERSION
 from wise_platform_analytics.selection import SelectionError, SelectionResult, select_cases
@@ -70,7 +71,7 @@ from .saving_boundary import (
     saving_refusal,
 )
 from .selections import package_predicate
-from .workspace import Problem, StoredPreparation, Workspace
+from .workspace import Problem, StoredPreparation, Workspace, source_changed
 
 logger = logging.getLogger(__name__)
 
@@ -540,7 +541,7 @@ class Saving:
 def _prepared_again(workspace: Workspace, base: Mapping[str, object], saved: StoredRevision) -> StoredPreparation | Problem:
     """Prepare the stored source again with the saved recipe, and keep the preparation when it is the same."""
     recipe = saved.preparation
-    raw = workspace.read_source(str(base["source_id"]))
+    raw = workspace.source_file(str(base["source_id"]))
     if isinstance(raw, Problem):
         return raw
     if not all(isinstance(recipe.get(part), dict) for part in ("dialect", "mapping", "policies")):
@@ -549,7 +550,10 @@ def _prepared_again(workspace: Workspace, base: Mapping[str, object], saved: Sto
             "The preparation is no longer kept in the workspace, and the saved recipe is incomplete. "
             "Confirm the interpretation of the source again.",
         )
-    result = prepare(raw, recipe["dialect"], recipe["mapping"], recipe["policies"], True)
+    try:
+        result = prepare(raw, recipe["dialect"], recipe["mapping"], recipe["policies"], True)
+    except SourceChanged:
+        return source_changed()
     if isinstance(result, PackageRefusal) or not isinstance(result, PreparationResult) or result.preparation is None:
         reason = result.message if isinstance(result, PackageRefusal) else "the saved recipe gives no ready preparation"
         return Problem(
