@@ -184,6 +184,7 @@ const remedies: Partial<Record<string, string>> = {
   run_unavailable: "Score the expectation again.",
   workspace_unavailable: "Open the workspace again in the Data area.",
   source_unavailable: "Add the source file to the workspace again.",
+  memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   preparation_unavailable: "Confirm the interpretation of the source again in the Data area.",
   identity_mismatch: "Open the incidents of the preparation again.",
   computation_failed: "Try again; if it fails again, the application needs to be repaired.",

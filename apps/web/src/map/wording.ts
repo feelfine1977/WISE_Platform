@@ -204,6 +204,7 @@ const remedies: Record<SelectionRefusal["code"], string> = {
   invalid_parameter: "This screen asked for a selection the local service does not support. Reload the page or restart the application.",
   workspace_unavailable: "Open the workspace again in the Data area.",
   source_unavailable: "Add the file again in the Data area; the workspace no longer holds these bytes.",
+  memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   preparation_unavailable: "Read the source again with the same choices in the Data area.",
   identity_mismatch: "The source or its reading changed. Open the incidents again from the Data area.",
   population_unavailable: "Try again; the selection is made again from the incidents of the preparation.",

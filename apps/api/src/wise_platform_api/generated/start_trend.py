@@ -306,6 +306,7 @@ class StartTrendRefusal(BaseModel):
         'unknown_case',
         'inconsistent_sequence',
         'inconsistent_time_kind',
+        'memory_unavailable',
         'computation_failed',
     ]
     message: constr(min_length=1)

@@ -34,6 +34,7 @@ from .bpic19_measures import Bpic19Measures
 from .bpic19_method import evaluate_features, paper_norm_document, representation_key, _historical_binding
 from .generated import bpic19_scoring as generated
 from .imports import Imports
+from .memory_budget import SCORING_PEAK_PER_RECORD
 from .population_views import resolve_population
 from .strict_reading import alternatives_of, read_strictly, version_failures
 from .workspace import Problem, Workspace, is_workspace_id, write_atomically
@@ -82,11 +83,12 @@ def _refusal(given: dict, problem: Problem) -> Bpic19ScoringReply:
             "query_revision": revision if type(revision) is int and 1 <= revision <= 2**53 - 1 else None,
             "workspace_id": given.get("workspace_id") if is_workspace_id(given.get("workspace_id")) else None,
             "code": problem.code, "message": problem.message, "field": problem.field,
-            "retryable": problem.code in {"workspace_unavailable", "source_unavailable", "computation_failed"}}
+            "retryable": problem.code in {"workspace_unavailable", "source_unavailable", "memory_unavailable", "computation_failed"}}
     status = 400 if problem.code in {"invalid_request", "unsupported_schema", "unsupported_policy", "invalid_parameter",
                                       "invalid_count", "context_conflict"} else 404 if problem.code in {
         "workspace_unavailable", "source_unavailable", "preparation_unavailable", "run_unavailable"} else 409
     if problem.code == "computation_failed": status = 500
+    if problem.code == "memory_unavailable": status = 503
     return Bpic19ScoringReply(status, body)
 
 
@@ -242,6 +244,11 @@ class Bpic19Scoring:
                 f"the declared admission limits are {self.max_cases} items and {self.max_retained_records} records "
                 f"under {_WORKLOAD_POLICY}. No items or records were dropped and no native result was published.",
                 "named_population"))
+        # The declared limits are a workload policy; whether the work fits this computer's memory is a separate check.
+        refused = self.imports.budget.admit(record_count * SCORING_PEAK_PER_RECORD, keys=(("preparation", prepared.preparation_id),),
+                                            work="scoring this population")
+        if refused is not None:
+            raise _Refused(Problem(refused.code, refused.message, "named_population"))
         return {"policy_id": _WORKLOAD_POLICY, "max_cases": self.max_cases,
                 "max_retained_records": self.max_retained_records,
                 "admitted_case_count": len(members), "admitted_record_count": record_count,

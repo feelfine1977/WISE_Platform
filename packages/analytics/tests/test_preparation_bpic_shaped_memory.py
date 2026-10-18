@@ -34,7 +34,7 @@ def test_bpic_shaped_preparation_fits_the_retained_budget_per_record():
 
 def test_shared_values_keep_every_record_exact():
     prepared = prepare(source(600), *arguments(), True).preparation
-    assert prepared.source == source(600)
+    assert not hasattr(prepared, "source")
     for position, record in enumerate(prepared.records):
         expected = cells(position)
         assert record.original_cells == tuple(expected)

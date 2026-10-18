@@ -119,7 +119,7 @@ def test_missing_and_changing_subtypes_and_duplicate_compound_ids_keep_explicit_
     assert a["partition"]["classified_case_count"] == 3
 
 
-def h7_prepared():
+def h7_source():
     rows = [
         ["A", "Vendor creates invoice", "1948-01-01T00:00:00Z", "3-way match, invoice before GR", "Standard", "true", "false", "D", "1", "A"],
         ["A", "Create Purchase Order Item", "2018-01-01T00:00:00Z", "3-way match, invoice before GR", "Standard", "true", "false", "D", "1", "A"],
@@ -130,7 +130,11 @@ def h7_prepared():
         ["C", "Clear Invoice", "2018-01-04T00:00:00Z", "3-way match, invoice before GR", "Standard", "true", "false", "E", "1", "C"],
     ]
     stream = io.StringIO(); writer = csv.writer(stream); writer.writerow(HEADERS); writer.writerows(rows)
-    return ready(stream.getvalue().encode(), delimiter=",", policies=choices("recorded", "iso8601"),
+    return stream.getvalue().encode()
+
+
+def h7_prepared():
+    return ready(h7_source(), delimiter=",", policies=choices("recorded", "iso8601"),
                  mapping={"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": None, "context_columns": list(range(3,10))})
 
 

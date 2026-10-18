@@ -418,6 +418,7 @@ export interface ComparisonRefusal {
     | "unmapped_context_column"
     | "invalid_window"
     | "clock_mismatch"
+    | "memory_unavailable"
     | "computation_failed";
   message: string;
   field: string | null;

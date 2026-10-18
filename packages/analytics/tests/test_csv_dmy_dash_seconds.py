@@ -1,4 +1,5 @@
 """Native BPIC19 day-month-year clock; literals are synthetic, never executed source code."""
+import hashlib
 import csv
 import io
 from datetime import datetime
@@ -55,7 +56,7 @@ def test_native22_is_inspected_and_prepared_without_conversion_or_event_trimming
     matches={m['format']:m['parsed_count'] for m in inspected['role_suggestions'][21]['timestamp_matches']}
     assert matches['dmy_dash_second']==7 and matches['iso8601']==0
     p=ready(raw,encoding="windows-1252",delimiter=",",mapping=MAPPING,policies=choices('wall','dmy_dash_second'))
-    assert p.source==raw and list(p.columns)==HEADERS and len(p.records)==7 and len(p.histories)==4
+    assert p.source_id=='source.v1:sha256:'+hashlib.sha256(raw).hexdigest() and not hasattr(p,'source') and list(p.columns)==HEADERS and len(p.records)==7 and len(p.histories)==4
     assert all(r.timestamp_status=='usable' for r in p.records)
     assert p.histories['D1_1'][0].local_timestamp=='1948-01-26T23:59:00'
     assert p.histories['D1_1'][1].local_timestamp=='2018-01-01T08:00:00.001000'

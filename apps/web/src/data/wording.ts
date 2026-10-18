@@ -33,6 +33,7 @@ const remedies: Record<ImportRefusal["code"], string> = {
   workspace_not_writable: "Choose a folder you may write to, or get write permission for this one.",
   workspace_incompatible: "Choose an empty folder for a new workspace, or a folder that already is a workspace. A folder of the program itself cannot be used.",
   source_unavailable: "Add the file again; the workspace no longer holds these bytes.",
+  memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   invalid_dialect: "Choose one of the offered encodings and delimiters.",
   invalid_mapping: "Choose a different column for each of incident, activity, time and sequence.",
   unsupported_timezone: "Choose “as recorded”, the offsets written in the values, or one fixed offset.",

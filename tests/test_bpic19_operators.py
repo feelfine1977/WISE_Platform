@@ -44,7 +44,6 @@ def snapshot(events, cutoff="2018-01-21T00:00:00"):
         records.append(row)
         histories.setdefault(case, []).append(row)
     return PreparedData(
-        b"unchanged",
         "source",
         "prepared",
         "representation",

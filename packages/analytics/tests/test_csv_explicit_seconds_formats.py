@@ -1,4 +1,5 @@
 """Explicit precision and locale-independent clocks over actual generic CSV rows."""
+import hashlib
 from datetime import datetime
 
 import pytest
@@ -61,7 +62,7 @@ def test_cp1252_semicolon_seconds_are_inspected_then_prepared_with_exact_raw_pre
     counts={m['format']:m['parsed_count'] for m in inspected['role_suggestions'][2]['timestamp_matches']}
     assert counts['dmy_dot_second']==2 and counts['dmy_dot_minute']==0
     prepared=ready(raw,encoding='windows-1252',mapping=roles(context=(3,)),policies=choices(format_name='dmy_dot_second'))
-    assert prepared.source==raw and prepared.sequence_evaluable('DE-01')
+    assert prepared.source_id=='source.v1:sha256:'+hashlib.sha256(raw).hexdigest() and not hasattr(prepared,'source') and prepared.sequence_evaluable('DE-01')
     first,second=prepared.histories['DE-01']
     assert first.local_timestamp=='2026-10-13T08:00:01.700000' and first.utc_instant is None
     assert second.local_timestamp=='2026-10-13T08:00:02.123456'

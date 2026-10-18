@@ -285,7 +285,6 @@ def test_retained_original_records_cross_native_seam_without_harmonizing_invoice
         for i, (activity, time, resource) in enumerate(original, 1)
     )
     prepared = PreparedData(
-        b"literal records",
         "source",
         "preparation",
         "representation",

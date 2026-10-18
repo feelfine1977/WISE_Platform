@@ -839,6 +839,7 @@ export interface ImportRefusal {
     | "interpretation_not_ready"
     | "case_not_found"
     | "identity_mismatch"
+    | "memory_unavailable"
     | "computation_failed";
   message: string;
   field: string | null;

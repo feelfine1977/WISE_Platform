@@ -13,10 +13,10 @@ from .strict_reading import alternatives_of, read_strictly, version_failures
 
 STATUS = {"invalid_request": 400, "unsupported_schema": 400, "unsupported_policy": 400, "invalid_parameter": 400,
           "workspace_unavailable": 404, "workspace_not_writable": 403, "workspace_incompatible": 409,
-          "source_unavailable": 404, "preparation_unavailable": 404, "identity_mismatch": 409,
+          "source_unavailable": 404, "memory_unavailable": 503, "preparation_unavailable": 404, "identity_mismatch": 409,
           "population_unavailable": 404, "invalid_parent": 422, "unknown_case": 422,
           "inconsistent_sequence": 422, "inconsistent_time_kind": 422, "computation_failed": 500}
-RETRYABLE = frozenset({"workspace_unavailable", "workspace_not_writable", "source_unavailable", "preparation_unavailable", "population_unavailable", "computation_failed"})
+RETRYABLE = frozenset({"workspace_unavailable", "workspace_not_writable", "source_unavailable", "memory_unavailable", "preparation_unavailable", "population_unavailable", "computation_failed"})
 
 
 @dataclass(frozen=True)
