@@ -248,5 +248,16 @@ def issue129(client, workspace: Path) -> dict:
         "D42200.53000Unavailable", "This stored run uses generic source value units."]}
 
 
-SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue119(client, workspace: Path) -> dict:
+    import test_issue119_variants_signature_tcp as literal
+    wid, base, identity, profile = profiled(client, literal, workspace)
+    given, answer, _ = literal.measured(client, wid, identity, representation_policy="exact")
+    saved = save(client, wid, base, None, "T17 variants and signature", [profile, measures_action(given, answer)])
+    # Rows: recorded path, items, records. The signature merges L's loop and T's repeat into A → B.
+    return {"name": "T17 variants and signature", "saved": saved, "texts": [
+        "5 PO items · 14 original records", "preserves all 14 original records. 2 items have unavailable representations.",
+        "Exact baseline3 groups", "A → B → B → A14", "A → B → B13", "A → X → B13", "First-occurrence signature2 groups", "A → B27"]}
+
+
+SCENARIOS = {"issue112": issue112, "issue119": issue119, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
