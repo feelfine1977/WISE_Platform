@@ -2,19 +2,19 @@
  "schema_version": 1,
  "message_type": "bpic19_cohorts_answer",
  "identity": {
-  "source_id": "source.v1:sha256:12abdc50edcfd01782a7789f02488edb0ddd9aef73fd7d6ab11b04e1119bece6",
-  "preparation_id": "preparation.v1:sha256:c71adb3d77ca9b51590831cab0705679e1be945f2be93253780cf66fd4af9e92",
-  "representation_id": "representation.v1:sha256:6341c61d9b8d40cc4ce16b15deb81453391d09b07cb3cb31f4ad910dc5456795",
-  "case_dictionary_id": "case-dictionary.v1:sha256:ea694c8d60b53f10a6a0f060d990897a94751cd2fc4469c46feb2fd578c453e9",
-  "population_id": "population.v1:sha256:355ab24a62297b02c97629434c835f58518935c331b0fd1c6eabb038b5f35de3",
+  "source_id": "source.v1:sha256:a987984f1017699a6c6d4790e2d0425a3ce22f957bb56500902f75d3b06e2940",
+  "preparation_id": "preparation.v1:sha256:be8174b9202d0f0213b57971a10a0bed30bde84484e1d96b30135d151db74c70",
+  "representation_id": "representation.v1:sha256:4c81c443142386c6bc2d6010a4e6bd1511d59f91655b0aaea5c1ca49f0ae62b8",
+  "case_dictionary_id": "case-dictionary.v1:sha256:2ecb2a2325c1e6ab0783ed6d369b0283ac2681c0056a8bf91e82620bcb4599ba",
+  "population_id": "population.v1:sha256:b4106ac5c9523ce97c835acd0b4bd7ba5bd9c06e8f4d27e08e1f94af096bc4cc",
   "implementation_version": "0.1.0"
  },
  "parent_identity": {
-  "source_id": "source.v1:sha256:12abdc50edcfd01782a7789f02488edb0ddd9aef73fd7d6ab11b04e1119bece6",
-  "preparation_id": "preparation.v1:sha256:c71adb3d77ca9b51590831cab0705679e1be945f2be93253780cf66fd4af9e92",
-  "representation_id": "representation.v1:sha256:6341c61d9b8d40cc4ce16b15deb81453391d09b07cb3cb31f4ad910dc5456795",
-  "case_dictionary_id": "case-dictionary.v1:sha256:ea694c8d60b53f10a6a0f060d990897a94751cd2fc4469c46feb2fd578c453e9",
-  "population_id": "population.v1:sha256:355ab24a62297b02c97629434c835f58518935c331b0fd1c6eabb038b5f35de3",
+  "source_id": "source.v1:sha256:a987984f1017699a6c6d4790e2d0425a3ce22f957bb56500902f75d3b06e2940",
+  "preparation_id": "preparation.v1:sha256:be8174b9202d0f0213b57971a10a0bed30bde84484e1d96b30135d151db74c70",
+  "representation_id": "representation.v1:sha256:4c81c443142386c6bc2d6010a4e6bd1511d59f91655b0aaea5c1ca49f0ae62b8",
+  "case_dictionary_id": "case-dictionary.v1:sha256:2ecb2a2325c1e6ab0783ed6d369b0283ac2681c0056a8bf91e82620bcb4599ba",
+  "population_id": "population.v1:sha256:b4106ac5c9523ce97c835acd0b4bd7ba5bd9c06e8f4d27e08e1f94af096bc4cc",
   "implementation_version": "0.1.0"
  },
  "query": {
@@ -45,7 +45,7 @@
    "limit": 50
   }
  },
- "definition_id": "bpic19-cohorts.v1:sha256:c7a254d6179769d0698f9dea3c3611eb7a5262ed19253362f0f1d5ae743abe45",
+ "definition_id": "bpic19-cohorts.v1:sha256:64a3c3a89b22bd579708ba5a79aeafaa3a83392e5ff25cf31f97ab3a41007a98",
  "definition": {
   "policy_id": "bpic19.flow_completion_cohorts.v1",
   "roles": {
@@ -71,7 +71,7 @@
   }
  },
  "cohorts": {
-  "definition_id": "bpic19-cohorts.v1:sha256:c7a254d6179769d0698f9dea3c3611eb7a5262ed19253362f0f1d5ae743abe45",
+  "definition_id": "bpic19-cohorts.v1:sha256:64a3c3a89b22bd579708ba5a79aeafaa3a83392e5ff25cf31f97ab3a41007a98",
   "definition": {
    "policy_id": "bpic19.flow_completion_cohorts.v1",
    "roles": {
@@ -240,7 +240,7 @@
       "required_recorded_milestones_present"
      ],
      "witness_row_ids": [
-      "row.v1:sha256:f5e748df49cd9345b6d61fa095482fea0700e35f88e84382abc2a0f7660521aa"
+      "row.v1:sha256:19f02c79206da95e755b17f2af0bdd68166319ba36ffbeb594a565f4b60cb723"
      ],
      "required_activity_sets": [
       [
@@ -263,7 +263,7 @@
       "required_recorded_milestones_present"
      ],
      "witness_row_ids": [
-      "row.v1:sha256:964e6b1a432c7a6fa15870cf2489e83b5e238bfe72902a2f7d08155a7a008677"
+      "row.v1:sha256:5853b6019f0aa650ab41e5b4670a3ba0d6ac780c0aaa6c8cfb2efea0a38096b8"
      ],
      "required_activity_sets": [
       [
@@ -307,7 +307,7 @@
       "required_recorded_milestones_present"
      ],
      "witness_row_ids": [
-      "row.v1:sha256:ee05165a89c947ba0bb503c31481962ccbaa7d990c2886a2f10fe29888ba016d"
+      "row.v1:sha256:63b524081737469f017cac0da5376cab1ecbc0fe2986aef1515491e2654628d1"
      ],
      "required_activity_sets": [
       [

@@ -16,16 +16,17 @@ from wise_platform_analytics.bpic19_cohorts import default_query
 from import_requests import envelope
 from test_bpic19_measures_http import prepare_source
 from test_bpic19_pipeline_http import start_process
+from literal_profile_columns import with_profile_columns
 
 BEFORE, AFTER = "3-way match, invoice before GR", "3-way match, invoice after GR"
-LITERAL = ("case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text\n"
+LITERAL = with_profile_columns(("case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text\n"
            + "".join(f'{case},{activity},2018-01-0{day}T00:00:00,"{flow}",user_1,10,D{case},1,Packaging\n' for case, flow, activities in (
                ("M", BEFORE, ["Create Purchase Order Item", "Record Invoice Receipt", "Record Goods Receipt", "Clear Invoice"]),
                ("N", BEFORE, ["Create Purchase Order Item", "Record Goods Receipt", "Record Invoice Receipt", "Clear Invoice"]),
                ("O", BEFORE, ["Create Purchase Order Item", "Record Invoice Receipt"]),
                ("P", AFTER, ["Create Purchase Order Item", "Record Goods Receipt", "Record Invoice Receipt", "Clear Invoice"]),
                ("Q", AFTER, ["Create Purchase Order Item", ""]))
-               for day, activity in enumerate(activities, start=1))).encode()
+               for day, activity in enumerate(activities, start=1))).encode())
 ROUTE = "/api/investigations/bpic19-cohorts"
 ROLES = {"item_category": 3, "purchasing_document": 6}
 BROWSER_ANSWER = Path(__file__).resolve().parents[3] / "apps/web/src/bpic19/t06-cohorts-answer.json"

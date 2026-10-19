@@ -204,6 +204,14 @@ def surviving(pids: list[int]) -> list[int]:
     return alive
 
 
+def build_is_current(web: Path = ROOT / "apps/web", built: Path = ROOT / "apps/api/src/wise_platform_api/static") -> bool:
+    """Whether every built browser file is newer than every web source it is built from."""
+    sources = [path for folder in ("src", "public") for path in (web / folder).rglob("*") if path.is_file()]
+    sources += [path for name in ("index.html", "package.json", "vite.config.ts") if (path := web / name).is_file()]
+    outputs = [path for path in built.rglob("*") if path.is_file()]
+    return bool(outputs) and (not sources or min(path.stat().st_mtime for path in outputs) >= max(path.stat().st_mtime for path in sources))
+
+
 def provenance() -> dict:
     def git(*command: str) -> str:
         return subprocess.check_output(["git", *command], cwd=ROOT, text=True).strip()
@@ -214,7 +222,8 @@ def provenance() -> dict:
             assets.update(str(path.relative_to(ROOT)).encode() + b"\0" + hashlib.sha256(path.read_bytes()).digest())
     return {"head": git("rev-parse", "HEAD"), "uncommitted_changes": bool(git("status", "--porcelain", "--untracked-files=no")),
             "python": platform.python_version(), "platform": platform.platform(),
-            "built_assets_sha256": assets.hexdigest() if any(path.is_file() for path in built) else None}
+            "built_assets_sha256": assets.hexdigest() if any(path.is_file() for path in built) else None,
+            "build_is_current": build_is_current()}
 
 
 # Command -------------------------------------------------------------------------------------
@@ -257,6 +266,8 @@ def main() -> int:
     receipt["source_sha256"] = digests
     if not args.no_browser and receipt["provenance"]["built_assets_sha256"] is None:
         return finish("refused", reason="the browser build is missing; run npm run build")
+    if not args.no_browser and not receipt["provenance"]["build_is_current"]:
+        return finish("refused", reason="the browser build is older than the web sources; run npm run build")
     reading = MemoryReading(**json.loads(args.recorded_reading.read_text())) if args.recorded_reading else read_memory()
     admitted, why = admit(reading, limit + reserve)
     receipt["admission"] = {"admitted": admitted, "reason": why, "required_bytes": limit + reserve, "reading": reading.__dict__}
