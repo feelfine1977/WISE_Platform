@@ -1,0 +1,10 @@
+{
+ "about": "Hand-written expectations for #48/#49 (tools/qualify_first_map.py): the whole population of the packaged synthetic example S0 (tests/fixtures/incidents/S0.csv), 14 incidents and 28 records, counted by hand from the file. Paths join adjacent labelled records of each incident; starts and ends are the activities of its first and last record. Never read by product code.",
+ "incidents": 14,
+ "records": 28,
+ "paths": {"Opened > Assigned": 6, "Opened > Resolved": 4, "Assigned > Resolved": 4},
+ "starts": {"Opened": 14},
+ "ends": {"Resolved": 8, "Assigned": 2, "Opened": 4},
+ "step": {"source": "Opened", "target": "Assigned", "kept": ["INC02", "INC03", "INC05", "INC07", "INC08", "INC10"], "kept_records": 16},
+ "activities": ["Assigned", "Opened", "Resolved"]
+}

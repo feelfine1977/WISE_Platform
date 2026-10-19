@@ -607,6 +607,7 @@ function DataDetails({ answer, revision }: { answer: ImportedPopulationAnswer; r
     ["Context columns", mapping.context_columns.length === 0 ? "none" : mapping.context_columns.map((index) => `column ${index}`).join(", ")],
     ["Document reference", mapping.document_reference_column == null ? "none" : `column ${mapping.document_reference_column}`],
     ["Time policy", preparation.policies.time.id],
+    ["Export taken at", exportTakenAt(answer)],
     ["Row rule", preparation.policies.rows.id],
     ["Source", identity.source_id],
     ["Preparation", identity.preparation_id],
@@ -644,4 +645,10 @@ function observationOf(answer: ImportedPopulationAnswer | null): Observation | u
   return time.id === "incident.time.wall_clock_as_recorded.v1"
     ? { timestamp_kind: "wall_clock", cutoff: time.parameters.snapshot_cutoff_local }
     : { timestamp_kind: "utc_instant", cutoff: time.parameters.snapshot_cutoff_utc };
+}
+
+/** The cutoff of the reading in words, on its clock: no record after it was in the export. */
+function exportTakenAt(answer: ImportedPopulationAnswer): string {
+  const observation = observationOf(answer)!;
+  return observation.timestamp_kind === "wall_clock" ? `${observation.cutoff.replace("T", " ")}, as recorded` : observation.cutoff.replace("T", " ").replace("Z", " UTC");
 }

@@ -125,6 +125,14 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Undo and Redo restore exact identities.
   - The investigation is saved, then reopened after an actual restart with the same window, identity and membership.
 
+- `tools/qualify_first_map.py` (#48, #49): from a first launch over an empty workspace to the map of every incident of the packaged S0, against `tests/fixtures/first-map/expected.json`.
+  - First phase:
+    - the example is read through the ordinary operations;
+    - the data row names the cutoff, and the paths list counts as the oracle;
+    - a path step is previewed and applied with exact support; Undo and Redo;
+    - the incidents, Compare and the Expectation are reached, and the investigation is saved.
+  - After an actual restart, with a stale remembered reading in the browser: the listed reading opens, the example is not read again, and the saved investigation reopens on its view.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.
