@@ -1,7 +1,8 @@
 """#2 and #3: the synthetic examples against their independent fixture, and the workspace's stored sources.
 
 Every expected value is read from the independent fixture files (tests/fixtures/incidents/expected.json and
-threshold_expected.json), which are never read by product code; the answers come from the product's public routes.
+threshold_expected.json), which are never read by product code
+the answers come from the product's public routes.
 """
 
 import csv
@@ -65,7 +66,8 @@ def test_each_synthetic_example_answers_its_independent_fixture(client, example)
 
 def test_the_exact_four_hour_threshold_is_strict_in_the_product_and_inclusive_by_name(tmp_path):
     from test_scoring_acceptance import definition, ready, score
-    folder = tmp_path / "workspace"; folder.mkdir()
+    folder = tmp_path / "workspace"
+    folder.mkdir()
     with TestClient(create_app(static_dir=tmp_path / "unbuilt")) as active:
         opened = active.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(folder))).json()
         source = upload(active, opened, (FIXTURES / THRESHOLD["fixture"]).read_bytes(), THRESHOLD["fixture"])
@@ -97,7 +99,8 @@ def store(client, workspace, raw, filename):
 
 
 def test_a_different_source_under_the_same_name_is_a_different_source(client, tmp_path):
-    folder = tmp_path / "workspace"; folder.mkdir()
+    folder = tmp_path / "workspace"
+    folder.mkdir()
     workspace = client.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(folder))).json()
     first = store(client, workspace, (FIXTURES / "S0.csv").read_bytes(), "incidents.csv")
     second = store(client, workspace, (FIXTURES / "S1.csv").read_bytes(), "incidents.csv")
@@ -110,7 +113,8 @@ def test_a_different_source_under_the_same_name_is_a_different_source(client, tm
 def test_changing_the_program_examples_does_not_change_a_stored_source(tmp_path):
     examples = tmp_path / "examples"
     shutil.copytree(ROOT / "apps/api/src/wise_platform_api/examples", examples)
-    folder = tmp_path / "workspace"; folder.mkdir()
+    folder = tmp_path / "workspace"
+    folder.mkdir()
     with TestClient(create_app(static_dir=tmp_path / "unbuilt", examples_dir=examples)) as active:
         workspace = active.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(folder))).json()
         raw = active.get("/api/examples/S0/source").content
@@ -128,7 +132,9 @@ def test_changing_the_program_examples_does_not_change_a_stored_source(tmp_path)
 
 @pytest.mark.skipif(os.name != "posix" or os.geteuid() == 0, reason="needs a system that honours folder permissions for its owner")
 def test_a_read_only_and_a_locked_location_are_refused_without_a_workspace(client, tmp_path):
-    read_only = tmp_path / "read-only"; read_only.mkdir(); read_only.chmod(0o500)
+    read_only = tmp_path / "read-only"
+    read_only.mkdir()
+    read_only.chmod(0o500)
     try:
         refused = client.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(read_only)))
         assert refused.json()["code"] == "workspace_not_writable", refused.text
@@ -136,7 +142,8 @@ def test_a_read_only_and_a_locked_location_are_refused_without_a_workspace(clien
     finally:
         read_only.chmod(0o700)
     # A workspace whose manifest another process holds unreadable: refused by name; nothing is recreated over it.
-    locked = tmp_path / "locked"; locked.mkdir()
+    locked = tmp_path / "locked"
+    locked.mkdir()
     opened = client.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(locked))).json()
     manifest = locked / "wise-platform-workspace.json"
     before = manifest.read_bytes()
@@ -161,7 +168,8 @@ def prepared_example(client, folder, example):
 
 
 def test_a_copied_workspace_resolves_its_relative_references(client, tmp_path):
-    folder = tmp_path / "workspace"; folder.mkdir()
+    folder = tmp_path / "workspace"
+    folder.mkdir()
     workspace, base = prepared_example(client, folder, "S2")
     listed = client.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(folder))).json()
     moved = tmp_path / "elsewhere" / "workspace"
@@ -181,7 +189,8 @@ def test_the_synthetic_examples_survive_a_second_process(tmp_path):
     with socket.socket() as reserving:
         reserving.bind(("127.0.0.1", 0))
         port = reserving.getsockname()[1]
-    folder = tmp_path / "workspace"; folder.mkdir()
+    folder = tmp_path / "workspace"
+    folder.mkdir()
     first, client = start_process(port)
     try:
         answers = {example: prepared_example(client, folder, example) for example in ("S0", "S1", "S2", "S3")}
