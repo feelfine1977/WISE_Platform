@@ -108,6 +108,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - An incident of the tail opens with both endpoint records, and the focus returns to the button it was opened with.
   - Undo restores the exact parent; the strict tail leaves exactly four hours out.
 
+- `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
+  - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
+  - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
+  - Kept against removed are compared.
+  - The investigation is saved and reopened after an actual restart.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.
