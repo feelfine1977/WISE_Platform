@@ -20,6 +20,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 import platform
 import subprocess
@@ -204,6 +205,13 @@ def surviving(pids: list[int]) -> list[int]:
     return alive
 
 
+def keep_awake() -> None:
+    """Keep the computer from sleeping while this process runs: a sleep stops the service and browser clocks
+    differently, so an unattended run would fail for no reason of its own (macOS only; elsewhere a no-op)."""
+    if sys.platform == "darwin" and shutil.which("caffeinate"):
+        subprocess.Popen(["caffeinate", "-dimsu", "-w", str(os.getpid())], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 def build_is_current(web: Path = ROOT / "apps/web", built: Path = ROOT / "apps/api/src/wise_platform_api/static") -> bool:
     """Whether every built browser file is newer than every web source it is built from."""
     sources = [path for folder in ("src", "public") for path in (web / folder).rglob("*") if path.is_file()]
@@ -276,6 +284,7 @@ def main() -> int:
     if os.name != "posix":
         return finish("refused", reason="the run reads process memory with ps and needs a POSIX system")
 
+    keep_awake()
     folder = Path(tempfile.mkdtemp(prefix="wise-full-sources-"))
     native, prepared = load_origin("native", config["native"]), load_origin("prepared", config["prepared"])
     expected = config["expected"]

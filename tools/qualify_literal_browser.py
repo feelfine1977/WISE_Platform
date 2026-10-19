@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "tools"), str(ROOT / "apps/api/tests"), str(ROOT / "packages/analytics/tests")]
 
 from capacity_journey import Service  # noqa: E402
-from qualify_full_sources import build_is_current, provenance  # noqa: E402
+from qualify_full_sources import build_is_current, keep_awake, provenance  # noqa: E402
 import literal_scenarios  # noqa: E402
 
 
@@ -57,6 +57,7 @@ def main() -> int:
     if not build_is_current():
         print(json.dumps({"status": "refused", "reason": "the browser build is older than the web sources; run npm run build"}))
         return 1
+    keep_awake()
     folder = Path(tempfile.mkdtemp(prefix="wise-literal-browser-"))
     (folder / "workspace").mkdir()
     checks: list[dict] = []
