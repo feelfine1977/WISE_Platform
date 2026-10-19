@@ -39,7 +39,7 @@ import type { Bpic19Session } from "./session";
 import { Bpic19RecipeComparison } from "./Bpic19RecipeComparison";
 import type { Bpic19RecipeComparisonAnswer, RecipeComparisonQuery } from "../generated/bpic19-recipe-comparison";
 import { Bpic19LiteratureClaims } from "./Bpic19LiteratureClaims";
-import { purchasingReportMarkdown } from "./purchasing-report";
+import { frozenScope, purchasingReportMarkdown } from "./purchasing-report";
 import type { Bpic19LiteratureClaim } from "../generated/saving";
 import { Bpic19PreparedAssessmentBridge } from "./Bpic19PreparedAssessmentBridge";
 import type { PreparedAssessmentSession } from "./prepared-session";
@@ -340,6 +340,9 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
   }
   const paused = state.selection.phase !== "ready" || state.replacement !== null;
   const saved = saving.verifiedExportReceipt();
+  // The service's own selection answer for exactly the saved selection supplies the exported scope; nothing is inferred from predicates.
+  const exportScope = saved && population && shown && sameJson(shown.answer.identity, saved.revision.content.selection_identity)
+    ? frozenScope(population, shown.answer) : undefined;
   const inspectorOpen = state.inspected.phase !== "closed" || lineage.state.phase !== "closed";
   return <main className="bpic19-workspace">
     <div className="bpic19-toolbar"><h1>Purchasing analysis</h1><button onClick={onShowData}>Review source in Data</button><SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} waitingFor={paused || !session.readyForSave() || !preparedReady ? "bpic19-save-wait" : undefined} /></div>
@@ -350,8 +353,9 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
     {(paused || !session.readyForSave() || !preparedReady) && <p id="bpic19-save-wait" role="status">Review the current definitions and wait for the current population before saving or exporting.</p>}
     {state.selection.phase !== "idle" && <SelectionSteps selection={state.selection} onRemove={step => investigation.removeStep(step)} onClear={() => investigation.clearSteps()} onUndo={() => investigation.undo()} onRedo={() => investigation.redo()} onRetry={() => investigation.retrySelection()} onStay={() => investigation.staySelection()} waitingFor={state.replacement ? "bpic19-save-wait" : undefined} />}
     {saveOpen && <SaveForm saving={saving} investigation={state} view="incidents" onClose={() => setSaveOpen(false)} />}
-    {saved?.bpic19_outputs && !paused && session.readyForSave() && saved.revision.saved_revision_id === state.saved?.revisionId && sameJson(session.savedPipeline(), saved.revision.content.bpic19_pipeline) && <button onClick={() => download({ format: "wise-purchasing-investigation", format_version: 1, revision: saved.revision, source: population.source, preparation: population.preparation, manifest: saved.bpic19_outputs })}>Export saved definitions, results and witnesses</button>}
-    {saved?.bpic19_outputs && !paused && session.readyForSave() && saved.revision.saved_revision_id === state.saved?.revisionId && sameJson(session.savedPipeline(),saved.revision.content.bpic19_pipeline) && <button onClick={()=>downloadReport(purchasingReportMarkdown(saved.revision,saved.bpic19_outputs!))}>Export readable purchasing analysis report</button>}
+    {saved?.bpic19_outputs && !paused && session.readyForSave() && saved.revision.saved_revision_id === state.saved?.revisionId && sameJson(session.savedPipeline(), saved.revision.content.bpic19_pipeline) && <button onClick={() => download({ format: "wise-purchasing-investigation", format_version: 1, revision: saved.revision, source: population.source, preparation: population.preparation,
+      ...(exportScope ? { scope: exportScope } : {}), manifest: saved.bpic19_outputs })}>Export saved definitions, results and witnesses</button>}
+    {saved?.bpic19_outputs && !paused && session.readyForSave() && saved.revision.saved_revision_id === state.saved?.revisionId && sameJson(session.savedPipeline(),saved.revision.content.bpic19_pipeline) && <button onClick={()=>downloadReport(purchasingReportMarkdown(saved.revision,saved.bpic19_outputs!,exportScope))}>Export readable purchasing analysis report</button>}
     <div className="bpic19-content" data-inspector={inspectorOpen ? layout : "none"}>
       <div className="bpic19-main" hidden={inspectorOpen && layout === "full"} inert={paused || undefined}>
         <Bpic19Profile key={key} workspaceId={population.workspace_id} identity={identity} revision={revision} query={profileQuery} onReviewed={reviewedProfile} onColumns={availableColumns} onValidityChange={profileValid} onInspect={inspect}

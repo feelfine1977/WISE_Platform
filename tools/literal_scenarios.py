@@ -11,7 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-def save(client, wid: str, base: dict, parent_case_ids: list[str] | None, name: str, actions: list[dict], predicates=()) -> dict:
+def save(client, wid: str, base: dict, parent_case_ids: list[str] | None, name: str, actions: list[dict], predicates=(), claims=()) -> dict:
     """Save the actions on the selected population that the built browser reopens."""
     from import_requests import envelope
     selected = client.post("/api/investigations/select-cases", json=envelope("select_cases_request", workspace_id=wid,
@@ -21,7 +21,8 @@ def save(client, wid: str, base: dict, parent_case_ids: list[str] | None, name: 
         selection_recipe={"parent_case_ids": selected["parent"]["case_ids"], "predicates": list(predicates)},
         context_policy="incident.context.first_record_in_declared_order.v1", comparison=None,
         notes="Synthetic literal qualified in the built browser", bookmarks=[],
-        bpic19_pipeline={"schema_version": 1, "actions": [action(selected["identity"]) for action in actions]}))
+        bpic19_pipeline={"schema_version": 1, "actions": [action(selected["identity"]) for action in actions],
+                         **({"literature_claims": list(claims)} if claims else {})}))
     assert saved.status_code == 200, saved.text
     return saved.json()
 
@@ -428,5 +429,35 @@ def issue124(client, workspace: Path) -> dict:
         "Item E · evaluated · 1 original records", "Item F · unknown · 2 original records", "Item G · reversed · 2 original records"]}
 
 
-SCENARIOS = {"issue124": issue124, "issue123": issue123, "issue128": issue128, "issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue125(client, workspace: Path) -> dict:
+    import test_issue125_frozen_pipeline_tcp as literal
+    wid, base, selected, query, profile = literal.frozen(client, workspace)
+    run = literal.score(client, wid, base, selected)
+    steps = literal.actions(selected, query, profile, run)
+    claim = {**literal.CLAIM, "compared_run_id": run["run_id"]}
+    saved = save(client, wid, base, None, "T23 frozen pipeline", [lambda current, step=step: step for step in steps],
+                 predicates=[literal.KEEP_A], claims=[claim])
+    # By hand: parent [A, B], kept [A]; A has all three Completion milestones, so 1 of 1 item scores 1 with coverage 1.
+    return {"name": "T23 frozen pipeline", "saved": saved, "texts": [
+        "1 of 1 items scored · mean score 1 · mean evidence coverage 1", "3 criteria compiled for Balanced"],
+        "export_json": [
+            (["scope", "source", "source_id"], base["source_id"]), (["scope", "preparation_id"], base["preparation_id"]),
+            (["scope", "grain"], "complete PO item: one purchasing document item with its whole original event history"),
+            (["scope", "parent", "case_ids"], ["A", "B"]), (["scope", "selected", "case_ids"], ["A"]),
+            (["scope", "selected", "record_count"], 4), (["scope", "time_policy"], "incident.time.explicit_format_timezone_utc.v1"),
+            (["scope", "time_parameters", "snapshot_cutoff_utc"], "2027-01-01T00:00:00Z"),
+            (["revision", "content", "base_identity", "source_id"], base["source_id"]),
+            (["revision", "content", "bpic19_pipeline", "actions", 0, "definition_id"], profile["definition_id"]),
+            (["revision", "content", "bpic19_pipeline", "actions", 1, "query", "run_id"], run["run_id"]),
+            (["manifest", "outputs", 1, "output", "run_id"], run["run_id"]),
+            (["manifest", "outputs", 1, "output", "report", "case_page", "cases", 0, "case_id"], "A"),
+            (["manifest", "literature_claims", 0, "claim_level"], "reported_not_rerun")],
+        "report_texts": [
+            "Frozen scope supplied by the service for this revision", "| Parent item IDs | A, B |", "| Selected item IDs | A |",
+            "| Selected items / records | 1 / 4 |", "| Time policy snapshot\\_cutoff\\_utc | 2027-01-01T00:00:00Z |", base["source_id"], base["preparation_id"], profile["definition_id"], run["definition_id"],
+            "Native run " + run["run_id"], "| Grain | complete PO item: one purchasing document item with its whole original event history |",
+            "WISE\\_12\\_10\\_2026.pdf, PDF page 26, Table 4", "reported\\_not\\_rerun"]}
+
+
+SCENARIOS = {"issue125": issue125, "issue124": issue124, "issue123": issue123, "issue128": issue128, "issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}

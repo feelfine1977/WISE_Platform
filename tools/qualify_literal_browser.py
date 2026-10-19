@@ -40,7 +40,18 @@ def browse(args, folder: Path, service: Service, scenario: dict, phase: str) -> 
                                stdout=log, stderr=subprocess.STDOUT, timeout=600)
     result = json.loads(output.read_text()) if code == 0 else {}
     exported = json.loads((folder / f"browser-{phase}.json.json").read_text()) if code == 0 else None
-    return {"exit": code, "pid": service.process.pid, **result, "exported": exported}
+    report = (folder / f"browser-{phase}.json.md").read_text(encoding="utf-8") if code == 0 else None
+    return {"exit": code, "pid": service.process.pid, **result, "exported": exported, "report": report}
+
+
+def at(value, path: list):
+    """The value at a JSON path of keys and list positions, or a marker when it is absent."""
+    for key in path:
+        try:
+            value = value[key]
+        except (KeyError, IndexError, TypeError):
+            return "<absent>"
+    return value
 
 
 def main() -> int:
@@ -78,6 +89,12 @@ def main() -> int:
             check("browser_reran_the_http_outputs", all(exported.get((entry["operation"], entry["definition_id"])) == entry
                                                          for entry in scenario["saved"]["bpic19_outputs"]["outputs"]),
                   sorted(exported))
+        if "export_json" in scenario or "report_texts" in scenario:
+            # What the downloaded machine export and readable report declare, against the scenario's hand-written values.
+            exported, report = review["exported"] or {}, review["report"] or ""
+            wrong = [[path, expected, at(exported, path)] for path, expected in scenario.get("export_json", []) if at(exported, path) != expected]
+            missing = [text for text in scenario.get("report_texts", []) if text not in report]
+            check("browser_exports_declare_the_frozen_scope", review["exported"] is not None and not wrong and not missing, {"json": wrong, "report": missing})
         first = service.process.pid
         receipt["service_exits"] = [service.stop()]
         service.start()
@@ -88,6 +105,7 @@ def main() -> int:
               [review.get("downloads"), reopen.get("downloads")])
         for result in (review, reopen):
             result.pop("exported", None)
+            result.pop("report", None)
         receipt.update(review=review, reopen=reopen, texts=scenario["texts"], saved_revision_id=scenario["saved"]["revision"]["saved_revision_id"])
     finally:
         receipt.setdefault("service_exits", []).append(service.stop())

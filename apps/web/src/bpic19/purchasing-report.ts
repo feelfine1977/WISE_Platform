@@ -151,12 +151,41 @@ function artifactRefs(output: Record<string,unknown>): string {
   return result;
 }
 
+interface Support { case_ids: string[]; case_count: number; record_count: number }
+/** The frozen scope of one saved revision, taken from the service's own population and selection answers. */
+export interface FrozenScope {
+  grain: string; source: { source_id: string; filename: string | null; byte_count: number | null }; preparation_id: string | null;
+  time_policy: string | null; time_parameters: Record<string, unknown>; selection_identity: AnswerIdentity; parent: Support; selected: Support;
+}
+const GRAIN = "complete PO item: one purchasing document item with its whole original event history";
+
+export function frozenScope(population: { source: unknown; preparation?: unknown }, selection: { identity: AnswerIdentity; parent: Support; kept: Support }): FrozenScope {
+  const source = record(population.source), preparation = record(population.preparation), time = record(record(preparation.policies).time);
+  return { grain: GRAIN, source: { source_id: String(source.source_id), filename: typeof source.filename === "string" ? source.filename : null,
+      byte_count: typeof source.byte_count === "number" ? source.byte_count : null },
+    preparation_id: typeof preparation.preparation_id === "string" ? preparation.preparation_id : selection.identity.preparation_id,
+    time_policy: typeof time.id === "string" ? time.id : null, time_parameters: record(time.parameters), selection_identity: selection.identity,
+    parent: { case_ids: [...selection.parent.case_ids], case_count: selection.parent.case_count, record_count: selection.parent.record_count },
+    selected: { case_ids: [...selection.kept.case_ids], case_count: selection.kept.case_count, record_count: selection.kept.record_count } };
+}
+
+function scopeSection(scope: FrozenScope): string {
+  const parameters = Object.entries(scope.time_parameters).filter(([key]) => /timestamp_kind|timezone|cutoff|first_usable|last_usable/.test(key));
+  return "\n**Frozen scope supplied by the service for this revision**\n\n" + table(["Scope field", "Frozen value"], [
+    ["Grain", scope.grain], ["Source ID (SHA-256 of the original bytes)", scope.source.source_id], ["Source file / bytes", `${text(scope.source.filename)} / ${text(scope.source.byte_count)}`],
+    ["Reviewed preparation", scope.preparation_id], ["Clock and time policy", scope.time_policy], ...parameters.map(([key, value]) => [`Time policy ${key}`, value]),
+    ["Selected population", scope.selection_identity.population_id],
+    ["Parent items / records", `${scope.parent.case_count} / ${scope.parent.record_count}`], ["Parent item IDs", idPreview(scope.parent.case_ids)],
+    ["Selected items / records", `${scope.selected.case_count} / ${scope.selected.record_count}`], ["Selected item IDs", idPreview(scope.selected.case_ids)]]);
+}
+
 /** Pure deterministic rendering of a server-verified saved revision and its matching output manifest. */
-export function purchasingReportMarkdown(revision: SavedRevision, manifest: Bpic19PipelineManifest): string {
+export function purchasingReportMarkdown(revision: SavedRevision, manifest: Bpic19PipelineManifest, scope?: FrozenScope): string {
   const checked=checkedOutputs(revision,manifest),content=revision.content,pipeline=content.bpic19_pipeline!;
   let result=`# ${escaped(content.name)}\n\nSaved purchasing investigation: ${escaped(revision.saved_revision_id)}. Investigation: ${escaped(revision.investigation_id)}.\n\n`;
   result+=`Pipeline run: ${escaped(manifest.run_id)}. Claim level: ${escaped(manifest.claim_level)}. Replay admission: ${escaped(pipeline.replay_mode ?? "require_all")}.\n\nComplete registered pipeline means only its declared admitted operations; it does not establish reproduction of every human report, external method or source publication.\n\n`;
   result+="## Frozen source and selected population\n\n**Source/base identity**\n\n"+identities(content.base_identity)+"\n**Current selected-population identity**\n\n"+identities(content.selection_identity);
+  if(scope&&sameJson(scope.selection_identity,content.selection_identity))result+=scopeSection(scope);
   result+=`\nGrain: complete PO items/cases; original event records and purchasing documents remain separate supports. Frozen selection parent: ${content.selection_recipe.parent_case_ids.length} explicit item IDs. Bounded parent IDs: ${escaped(idPreview(content.selection_recipe.parent_case_ids))}.\n\nExact parent/selected membership and all field predicates remain in the [machine investigation export](purchasing-investigation.json). Final selected membership is supplied by the service, not inferred here from predicate syntax.\n\nSaved generic context policy: ${escaped(content.context_policy)}. Each registered operator additionally declares its own raw-field reducer, clock, scope and units.\n\n`;
   result+="## Recorded analyst steps and actual tools\n\n"+table(["Step","Registered operation / actual tool","Definition","Population","Output SHA-256"],pipeline.actions.map((action,index)=>[index+1,`${action.operation} / ${tools[action.operation] ?? "WISE finite registered operator"}`,action.definition_id,action.identity.population_id,checked.find(value=>value.step===index+1)?.entry.sha256 ?? "omitted source-method gate"]));
   result+="\n**Complete-item selection declarations**\n\n"+(content.selection_recipe.predicates.length?content.selection_recipe.predicates.map((value,index)=>`${index+1}. ${escaped(predicateLabel(value))}`).join("\n"):"No additional selection predicates.")+"\n";
