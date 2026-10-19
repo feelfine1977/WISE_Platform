@@ -44,7 +44,8 @@ export type TimestampFormat =
   | "dmy_slash_second"
   | "mdy_slash_second"
   | "mdy_slash_12h_minute"
-  | "mdy_slash_12h_second";
+  | "mdy_slash_12h_second"
+  | "ymd_slash_second";
 /**
  * Optional declared role: one of the context columns whose value names the record's document in the workspace's local document folder. Absent when no document reference is mapped; it is part of the preparation and its identity only when present.
  */

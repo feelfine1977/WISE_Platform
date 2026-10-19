@@ -77,6 +77,15 @@ describe("#4 what WISE understood, before the incidents open", () => {
     expect(onOpenIncidents).toHaveBeenCalledWith(preparationId);
   });
 
+  it("says when no record has a usable time that no order, path, variant or duration can follow, and where to change it", () => {
+    const sent = request(false);
+    const base = interpretationAnswer(sent);
+    report({ ...base, report: { ...base.report, usable_timestamp_record_count: 0, unavailable_timestamp_record_count: 4 } }, sent);
+    const note = screen.getByRole("note");
+    expect(note.textContent).toContain("No record has a usable time with these choices, so the order of no incident is known");
+    expect(note.textContent).toContain("choose one that reads them");
+  });
+
   it("says nothing of the shape when only a blocked reading came back", () => {
     const sent = request(false);
     report({ ...interpretationAnswer(sent), state: "blocked", preparation: null }, sent);

@@ -151,6 +151,7 @@ class TimestampFormat(
             'mdy_slash_second',
             'mdy_slash_12h_minute',
             'mdy_slash_12h_second',
+            'ymd_slash_second',
         ]
     ]
 ):
@@ -167,6 +168,7 @@ class TimestampFormat(
         'mdy_slash_second',
         'mdy_slash_12h_minute',
         'mdy_slash_12h_second',
+        'ymd_slash_second',
     ] = Field(..., title='TimestampFormat')
 
 

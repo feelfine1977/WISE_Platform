@@ -56,7 +56,7 @@ def test_exact_authority_and_unchanged_shared_summary_definitions():
     source = ROOT / "contracts/import.schema.json"
     # The explicit native BPIC19 dash/seconds format extends only TimestampFormat; memory_unavailable extends only the refusal codes;
     # the optional document reference role (#132) extends only Mapping.
-    assert hashlib.sha256(source.read_bytes()).hexdigest() == "596fdc5694c0c0146c0edbc00132a7805d8908c82ccba7195c576c069ee9b83c"
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == "10acbc46dd51c3a4202b6a40b5a8705d4ef83266c3aad8b38564b0c2cc982a89"
     definitions = json.loads(source.read_text(encoding="utf-8"))["$defs"]
     listed = json.loads((ROOT / "contracts/case-list.schema.json").read_text(encoding="utf-8"))["$defs"]
     for name in ("CaseTimeSummary", "AvailableUtcCaseTimeSummary", "AvailableWallCaseTimeSummary",

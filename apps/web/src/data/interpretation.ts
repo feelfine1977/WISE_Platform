@@ -84,6 +84,7 @@ export const timeFormats: readonly TimestampFormat[] = [
   "mdy_slash_second",
   "mdy_slash_12h_minute",
   "mdy_slash_12h_second",
+  "ymd_slash_second",
 ];
 
 export const formatLabels: Record<TimestampFormat, string> = {
@@ -99,6 +100,7 @@ export const formatLabels: Record<TimestampFormat, string> = {
   mdy_slash_second: "Month/Day/Year, 24-hour clock with seconds (12/31/2026 17:45:10)",
   mdy_slash_12h_minute: "Month/Day/Year, 12-hour clock (12/31/2026 5:45 PM)",
   mdy_slash_12h_second: "Month/Day/Year, 12-hour clock with seconds (12/31/2026 5:45:10 PM)",
+  ymd_slash_second: "Year/Month/Day, 24-hour clock with seconds and optional fractional seconds (2026/12/31 17:45:10.123)",
 };
 
 /** The two registered row rules with the parameters the contract fixes for each. */

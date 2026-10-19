@@ -81,11 +81,11 @@ export function sourceAnswer(metadata: UploadSourceMetadata, byteCount: number):
 
 type Matches = CsvInspectionAnswer["role_suggestions"][number]["timestamp_matches"];
 
-/** The inspection's evidence for all eleven formats, in the order the inspection lists them; unnamed formats read nothing. */
+/** The inspection's evidence for the formats it lists, in the order the inspection lists them; unnamed formats read nothing. */
 function matches(read: Partial<Record<Matches[number]["format"], number>> = {}): Matches {
   const formats = [
     "iso8601", "dmy_dot_minute", "mdy_dot_minute", "dmy_slash_minute", "mdy_slash_minute", "dmy_dot_second",
-    "mdy_dot_second", "dmy_slash_second", "mdy_slash_second", "mdy_slash_12h_minute", "mdy_slash_12h_second",
+    "mdy_dot_second", "dmy_slash_second", "mdy_slash_second", "mdy_slash_12h_minute", "mdy_slash_12h_second", "ymd_slash_second",
   ] as const;
   return formats.map((format) => ({ format, parsed_count: read[format] ?? 0 }));
 }

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { importContract } from "../data/client";
 import { caseSummaries, evidenceAnswer, importRefusal, populationAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import { scriptedSelectionClient } from "../test/selections";
@@ -169,5 +169,31 @@ describe("the investigation of an imported preparation", () => {
     expect(screen.queryByRole("table")).toBeNull();
     await deliver(() => app.populations[1].reply({ ok: true, answer: populationAnswer(app.populations[1].request) }));
     expect(shownIncidents()).toEqual(["A-1", "B-2"]);
+  });
+});
+
+describe("#52 a reading whose every incident has an unknown order", () => {
+  it("says why there are no paths, variants or durations, and leads to the Data area to change how the times are read", async () => {
+    const scripted = scriptedImportClient();
+    const coordinator = new ImportedInvestigationCoordinator(scripted.client, scriptedSelectionClient().client, scriptedViewClient().client);
+    const onShowData = vi.fn();
+    render(<ImportedInvestigation coordinator={coordinator} initialView="incidents" onShowData={onShowData} />);
+    act(() => coordinator.open({ workspaceId, preparationId }));
+    const unordered = caseSummaries(3).map((summary) => ({ ...summary, sequence_evaluable: false }));
+    await deliver(() => scripted.populations[0].reply({ ok: true, answer: populationAnswer(scripted.populations[0].request, unordered) }));
+    const note = screen.getByRole("note");
+    expect(note.textContent).toContain("The order of no incident is known");
+    expect(note.textContent).toContain("no paths, no variants and no durations");
+    await userEvent.setup().click(within(note).getByRole("button", { name: "Change how the times are read, in the Data area" }));
+    expect(onShowData).toHaveBeenCalledTimes(1);
+  });
+
+  it("says nothing of it while some incident has a known order", async () => {
+    const scripted = scriptedImportClient();
+    const coordinator = new ImportedInvestigationCoordinator(scripted.client, scriptedSelectionClient().client, scriptedViewClient().client);
+    render(<ImportedInvestigation coordinator={coordinator} initialView="incidents" onShowData={() => undefined} />);
+    act(() => coordinator.open({ workspaceId, preparationId }));
+    await deliver(() => scripted.populations[0].reply({ ok: true, answer: populationAnswer(scripted.populations[0].request) }));
+    expect(screen.queryByText(/The order of no incident is known/)).toBeNull();
   });
 });

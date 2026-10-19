@@ -222,6 +222,7 @@ describe("the Data area", () => {
       "Month/Day/Year, 24-hour clock with seconds (12/31/2026 17:45:10) — reads 0 filled cells of 4 filled cells",
       "Month/Day/Year, 12-hour clock (12/31/2026 5:45 PM) — reads 0 filled cells of 4 filled cells",
       "Month/Day/Year, 12-hour clock with seconds (12/31/2026 5:45:10 PM) — reads 0 filled cells of 4 filled cells",
+      "Year/Month/Day, 24-hour clock with seconds and optional fractional seconds (2026/12/31 17:45:10.123) — reads 0 filled cells of 4 filled cells",
     ]);
     expect((within(question).getAllByRole("radio") as HTMLInputElement[]).some((choice) => choice.checked)).toBe(false);
     expect(within(question).getByText(/^No format reads every filled cell, so none is proposed\./)).toBeTruthy();
@@ -410,6 +411,7 @@ describe("the Data area", () => {
       "Month/Day/Year, 24-hour clock with seconds (12/31/2026 17:45:10) — reads 0 filled cells of 3 filled cells",
       "Month/Day/Year, 12-hour clock (12/31/2026 5:45 PM) — reads 0 filled cells of 3 filled cells",
       "Month/Day/Year, 12-hour clock with seconds (12/31/2026 5:45:10 PM) — reads 0 filled cells of 3 filled cells",
+      "Year/Month/Day, 24-hour clock with seconds and optional fractional seconds (2026/12/31 17:45:10.123) — reads 0 filled cells of 3 filled cells",
     ]);
     expect(within(group).getByRole("radio", { checked: true }).parentElement?.textContent).toMatch(
       /^Day\.Month\.Year, 24-hour clock with seconds \(31\.12\.2026 17:45:10\)/,
@@ -797,7 +799,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
 
     const formats = screen.getByRole("group", { name: "Time format" });
     const choices = formatChoices(formats);
-    expect(choices).toHaveLength(12);
+    expect(choices).toHaveLength(13);
     expect(choices[0]).toBe("Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45) — reads 0 filled cells of 4 filled cells");
     expect(choices.filter(choice => !choice.endsWith("— not inspected")).every((choice) => choice.endsWith("— reads 0 filled cells of 4 filled cells"))).toBe(true);
     expect(within(formats).queryByRole("radio", { checked: true })).toBeNull();
