@@ -225,5 +225,28 @@ def issue118(client, workspace: Path) -> dict:
         "A PI of 0 means the group's mean is at or above that reference; it is not compliance"]}
 
 
-SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue129(client, workspace: Path) -> dict:
+    import test_issue129_exposure_priority_tcp as literal
+    from import_requests import envelope
+    wid, base = literal.prepare(client, workspace, literal.SOURCE)
+    identity = literal.subset(client, wid, base, ["S1", "S2"])
+    roles = {"item_category": 3, "item_type": 6, "goods_receipt": 4, "gr_based_iv": 5, "purchasing_document": 1, "item": 2, "source_case": 0}
+    query = {"roles": roles, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
+    profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
+        identity=identity, query=query)).json()["profile"]
+    scored = literal.exposure(client, wid, base, identity, "creation_unique_value").json()
+    saved = save(client, wid, base, None, "T27 exposure priority", [
+        lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
+                         "selection_prefix_length": 1},
+        lambda current: {"operation": "bpic19_score", "identity": current, "definition_id": scored["definition_id"],
+                         "query": {"run_id": scored["run_id"], "case_offset": 0, "case_limit": 50, "group_offset": 0, "group_limit": 50},
+                         "selection_prefix_length": 1}], [{"kind": "case_id_in", "case_ids": ["S1", "S2"], "negate": False}])
+    # By hand: S1 meets all three completion checks (1), S2 has only its creation (0); D4's creation exposure is
+    # 10 + 20 = 30. Document row: document, scored, members, unscored, mean, volume, PI, stable PI, share.
+    return {"name": "T27 exposure priority", "saved": saved, "texts": [
+        "2 of 2 items scored · mean score 0.5", "Purchasing document priorities · 1 shown of 1 · scored items per document",
+        "D42200.53000Unavailable", "This stored run uses generic source value units."]}
+
+
+SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
