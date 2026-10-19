@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ImportedSourceRecord } from "../generated/imports";
-import { observationLine, orderRule } from "./ImportedInspector";
+import { focusLine, observationLine, orderRule } from "./ImportedInspector";
 
 const record = (source_sequence: number | null) => ({ source_sequence }) as ImportedSourceRecord;
 
@@ -19,5 +19,12 @@ describe("#11 how long an incident was observed", () => {
     expect(observationLine([timed("2026-04-01T08:00:00Z"), timed("2026-04-03T08:00:00Z"), timed(null, "invalid")], { timestamp_kind: "utc_instant", cutoff: "2026-04-10T08:00:00Z" }))
       .toBe("The export was taken at 2026-04-10 08:00:00 UTC, 7 days after the last usable time of this incident; records after the export are not in it, so this is no sign that the incident was complete.");
     expect(observationLine([timed(null, "invalid")], { timestamp_kind: "utc_instant", cutoff: "2026-04-10T08:00:00Z" })).toContain("how long it was observed is not known");
+  });
+});
+
+describe("#59 the incident read and the selection it comes from", () => {
+  it("says that reading one incident changes no step, with or without steps", () => {
+    expect(focusLine({ kept: 6, parent: 14, steps: 1 })).toBe("You are reading one incident of the 6 incidents the selection keeps of 14 incidents (1 step); reading it changes no step.");
+    expect(focusLine({ kept: 14, parent: 14, steps: 0 })).toBe("You are reading one incident of all 14 incidents; no step is taken, and reading it takes none.");
   });
 });

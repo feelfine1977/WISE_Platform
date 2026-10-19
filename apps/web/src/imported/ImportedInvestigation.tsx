@@ -479,6 +479,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onReturn={returnToIncidents}
             onRetry={() => coordinator.retryCase()}
             observation={observationOf(answer)}
+            selection={shown ? { kept: shown.answer.kept.case_count, parent: shown.answer.parent.case_count, steps: shown.answer.predicate_results.length } : undefined}
             waitingFor={waitingFor}
             headingRef={inspectorHeading}
             documents={answer.preparation.mapping.document_reference_column != null
