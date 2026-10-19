@@ -676,6 +676,25 @@ class Bpic19ProfileKeepGroup9(BaseModel):
     )
 
 
+class Bpic19ProfileKeepGroup10(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['completion_cohort']
+    support: Literal[
+        'inclusion_retained',
+        'inclusion_excluded',
+        'inclusion_unknown',
+        'observed_closed',
+        'open_recorded',
+        'completion_unknown',
+        'retention_retained',
+    ] = Field(
+        ...,
+        description='One whole-item stage or recorded-completion state of the reviewed cohort answer over the complete frozen parent.',
+    )
+
+
 class Bpic19ProfileKeepGroup(
     RootModel[
         Bpic19ProfileKeepGroup1
@@ -687,6 +706,7 @@ class Bpic19ProfileKeepGroup(
         | Bpic19ProfileKeepGroup7
         | Bpic19ProfileKeepGroup8
         | Bpic19ProfileKeepGroup9
+        | Bpic19ProfileKeepGroup10
     ]
 ):
     root: (
@@ -699,6 +719,7 @@ class Bpic19ProfileKeepGroup(
         | Bpic19ProfileKeepGroup7
         | Bpic19ProfileKeepGroup8
         | Bpic19ProfileKeepGroup9
+        | Bpic19ProfileKeepGroup10
     ) = Field(..., title='Bpic19ProfileKeepGroup')
 
 
@@ -707,10 +728,12 @@ class Bpic19SelectionKeep(BaseModel):
         extra='forbid',
     )
     policy_id: Literal[
-        'bpic19.profile_group_keep.v1', 'bpic19.measure_cohort_keep.v1'
+        'bpic19.profile_group_keep.v1',
+        'bpic19.measure_cohort_keep.v1',
+        'bpic19.completion_cohort_keep.v1',
     ] = Field(
         ...,
-        description='Profile groups use the profile policy; activity cohorts of a reviewed measures answer use the measure cohort policy.',
+        description='Profile groups use the profile policy; activity cohorts of a reviewed measures answer and stages of a reviewed completion-cohort answer use their own policies.',
     )
     step_index: conint(ge=0, le=99)
     group: Bpic19ProfileKeepGroup
@@ -851,7 +874,7 @@ class Bpic19PipelineAction(BaseModel):
     )
     selection_keep: Bpic19SelectionKeep | None = Field(
         None,
-        description='Exact complete-case selection step justified by this frozen parent profile or reviewed activity-measure cohort. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
+        description='Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort or completion-cohort stage. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
     )
 
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AnswerIdentity, Bpic19CohortsAnswer, Bpic19CohortsRequest, CohortQuery, CohortRoles, CohortTotals } from "../generated/bpic19-cohorts";
 import { sameJson } from "../data/coordinator";
 import { answersCohorts, cohortsContract, httpCohortsClient, type CohortsClient, type CohortsOutcome } from "./cohorts-client";
+import type { CompletionSupport } from "./cohort-keep";
 import "./cohorts.css";
 
 export interface Bpic19CohortsProps {
@@ -14,6 +15,8 @@ export interface Bpic19CohortsProps {
   onCompared?: (comparison: Bpic19CohortComparison) => void;
   onComparisonValidityChange?: (current: boolean) => void;
   onInspect: (caseId: string, rowIds?: string[]) => void; onKeepCases: (ids: string[]) => void;
+  /** Keeps one reviewed stage or completion state as a typed selection step; without it, stages are kept as plain item lists. */
+  onKeepSupport?: (answer: Bpic19CohortsAnswer, support: CompletionSupport) => void;
 }
 export interface Bpic19CohortComparison {
   policy_id: "bpic19.same_parent_completion_comparison.v1";
@@ -34,7 +37,7 @@ function recipeLabel(query: CohortQuery) { return `${query.completion.recipe ===
 function cohortMeaning({page:_page,...definition}:CohortQuery){return definition;}
 
 /** Presentation emits existing complete-item and evidence intents; it never computes membership. */
-export function Bpic19Cohorts({ workspaceId, identity, revision, roles, timestampKind, query, client = httpCohortsClient, onReviewed, onValidityChange, onRetain, retainedQueries = [], restoredComparison, onCompared, onComparisonValidityChange, onInspect, onKeepCases }: Bpic19CohortsProps) {
+export function Bpic19Cohorts({ workspaceId, identity, revision, roles, timestampKind, query, client = httpCohortsClient, onReviewed, onValidityChange, onRetain, retainedQueries = [], restoredComparison, onCompared, onComparisonValidityChange, onInspect, onKeepCases, onKeepSupport }: Bpic19CohortsProps) {
   const [draft, setDraft] = useState<CohortQuery>(() => query ?? defaultCohortQuery(roles, timestampKind));
   const [answer, setAnswer] = useState<Bpic19CohortsAnswer | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
@@ -69,7 +72,7 @@ export function Bpic19Cohorts({ workspaceId, identity, revision, roles, timestam
     catch { result={ok:false,problem:{kind:"unreachable"}}; }
     if (serial.current !== token || controller.signal.aborted) return;
     setBusy(false);
-    if (!result.ok) { setError(result.problem.kind === "refusal" ? result.problem.refusal.message : result.problem.kind === "unreachable" ? "The local service could not be reached. Retry this cohort." : result.problem.detail); return; }
+    if (!result.ok) { setError(result.problem.kind === "refusal" ? `${result.problem.refusal.message} (${result.problem.refusal.code}${result.problem.refusal.field ? ` · ${result.problem.refusal.field}` : ""})` : result.problem.kind === "unreachable" ? "The local service could not be reached. Retry this cohort." : result.problem.detail); return; }
     if(!answersCohorts(request,result.answer)){setError("The cohort answer belongs to a different source, parent or recipe.");return;}
     setAnswer(result.answer); setDraft(next); reviewed.current?.(result.answer);
   }
@@ -99,7 +102,10 @@ export function Bpic19Cohorts({ workspaceId, identity, revision, roles, timestam
   useEffect(() => { valid.current?.(!paused); }, [paused]);
   const result = answer?.cohorts;
   const update = (next: CohortQuery) => { invalidateComparison();valid.current?.(false); setDraft(next); };
-  function keep(ids: string[]) { if (!paused && ids.length) onKeepCases(ids); }
+  function keep(ids: string[], support: CompletionSupport) {
+    if (paused || !ids.length || !answer) return;
+    if (onKeepSupport) onKeepSupport(answer, support); else onKeepCases(ids);
+  }
   const choices=new Map([...retainedQueries.map(value=>[value.definition_id,value] as const),...Object.values(retained).map(value=>[value.definition_id,value] as const)]);
   if(restoredComparison && sameJson(restoredComparison.identity,identity))for(const side of [restoredComparison.target,restoredComparison.reference])choices.set(side.definition_id,{definition_id:side.definition_id,label:side.name,query:side.query});
   function retain(){if(answer && !paused){setRetained(current=>({...current,[answer.definition_id]:{definition_id:answer.definition_id,label:recipeLabel(answer.query),query:structuredClone(answer.query)}}));onRetain?.(answer);}}
@@ -149,7 +155,7 @@ export function Bpic19Cohorts({ workspaceId, identity, revision, roles, timestam
       {!!choices.size && <div><label>Previously retained cohort<select disabled={busy} value={retainedChoice} onChange={event=>setRetainedChoice(event.target.value)}><option value="">Choose a retained definition</option>{[...choices.values()].map(value=><option key={value.definition_id} value={value.definition_id}>{value.label}</option>)}</select></label><button type="button" disabled={busy || !choices.has(retainedChoice)} onClick={()=>{const choice=choices.get(retainedChoice);if(choice)void load(structuredClone(choice.query));}}>Read retained cohort</button></div>}
       <p><strong>Original parent:</strong> {counts(result.original)}</p>
       <table className="plain-table"><caption>Whole-item stages and recorded completion</caption><thead><tr><th>Stage / state</th><th>Exact original support</th><th>Evidence / selection</th></tr></thead><tbody>
-        {[{ name: "Included", support: result.inclusion.retained }, { name: "Excluded by inclusion", support: result.inclusion.excluded }, { name: "Inclusion unknown", support: result.inclusion.unknown }, ...result.completion_groups.map(g => ({ name: label(g.state), support: g })), { name: "Retained for analysis", support: result.retention.retained }].map(group => <tr key={group.name}><th scope="row">{group.name}</th><td>{counts(group.support)}</td><td><button disabled={paused || !group.support.case_count} onClick={() => keep(group.support.case_ids)}>Keep {group.name}</button>{group.support.case_ids[0] && <button disabled={paused} onClick={() => onInspect(group.support.case_ids[0])}>Inspect {group.name}</button>}</td></tr>)}
+        {[{ name: "Included", support: result.inclusion.retained, key: "inclusion_retained" as CompletionSupport }, { name: "Excluded by inclusion", support: result.inclusion.excluded, key: "inclusion_excluded" as CompletionSupport }, { name: "Inclusion unknown", support: result.inclusion.unknown, key: "inclusion_unknown" as CompletionSupport }, ...result.completion_groups.map(g => ({ name: label(g.state), support: g, key: (g.state === "unknown" ? "completion_unknown" : g.state) as CompletionSupport })), { name: "Retained for analysis", support: result.retention.retained, key: "retention_retained" as CompletionSupport }].map(group => <tr key={group.name}><th scope="row">{group.name}</th><td>{counts(group.support)}</td><td><button disabled={paused || !group.support.case_count} onClick={() => keep(group.support.case_ids, group.key)}>Keep {group.name}</button>{group.support.case_ids[0] && <button disabled={paused} onClick={() => onInspect(group.support.case_ids[0])}>Inspect {group.name}</button>}</td></tr>)}
       </tbody></table>
       <p>Completion groups partition included items. Unknown completion can be retained by the all-items recipe; it is never silently declared closed or overdue.</p>
       <table className="plain-table"><caption>Complete-item evidence · {result.page.total ? `${result.page.offset + 1}–${Math.min(result.page.offset + result.page.limit, result.page.total)} of ${result.page.total}` : "no parent items"}</caption><thead><tr><th>PO item</th><th>Inclusion</th><th>Recorded completion</th><th>Required milestones / reason</th><th>Evidence</th></tr></thead><tbody>{result.page.items.map(item => <tr key={item.case_id}><th scope="row">{item.case_id}</th><td>{item.inclusion_state}: {item.inclusion_reason}{item.inclusion_witnesses.map(w => <button key={w.case_id} disabled={paused} onClick={() => onInspect(w.case_id, w.row_ids)}>Inspect inclusion witness {w.case_id}</button>)}</td><td>{label(item.completion_state)}</td><td>{item.required_activity_sets.map(a => a.join(" or ")).join("; ")}<br />{item.reasons.join("; ")}<br />Due assessment unavailable</td><td><button disabled={paused} onClick={() => onInspect(item.case_id, item.witness_row_ids)}>Inspect {item.case_id}</button></td></tr>)}</tbody></table>

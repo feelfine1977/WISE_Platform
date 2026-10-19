@@ -275,6 +275,7 @@ class Bpic19CohortsRefusal(BaseModel):
         'population_unavailable',
         'invalid_parent',
         'unknown_case',
+        'memory_unavailable',
         'computation_failed',
     ]
     message: str

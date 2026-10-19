@@ -258,6 +258,31 @@ class Journey:
             raise Failed(name)
         self.checks.append(name)
 
+    def _check_completion_cohorts(self, wid: str, identity: dict, result: dict) -> None:
+        """Completion is displayed with no exclusion chosen: every item, record and document is retained, open and
+        unknown completions included."""
+        clock = "utc_instant" if _utc(self.prepared.policies) else "wall_clock"
+        query = {"policy_id": "bpic19.flow_completion_cohorts.v1",
+                 "roles": {"item_category": self.prepared_roles["item_category"], "purchasing_document": self.prepared_roles["purchasing_document"]},
+                 "inclusion": {"kind": "all_items", "timestamp_kind": clock, "start_inclusive": None, "end_exclusive": None},
+                 "completion": {"recipe": "flow_presence", "receipt": "goods_only", "tie_policy": "unknown"},
+                 "retain": "all_included", "horizon": {"timestamp_kind": clock, "value": None, "provenance": None},
+                 "page": {"offset": 0, "limit": 20}}
+        answer = self.stage("completion_cohorts", self.post("investigations/bpic19-cohorts", "bpic19_cohorts_request",
+                                                            workspace_id=wid, identity=identity, query=query))
+        cohorts = answer["cohorts"]
+        retained = cohorts["retention"]["retained"]
+        groups = {group["state"]: group["case_count"] for group in cohorts["completion_groups"]}
+        summary = {"original": cohorts["original"], "retained": {key: retained[key] for key in ("case_count", "record_count", "document_count")},
+                   "completion_case_counts": groups}
+        result["completion_cohorts"] = summary
+        expected_documents = self.expected.document_count
+        self.check("completion_retains_every_item", (retained["case_count"], retained["record_count"]) == (self.expected.case_count, self.expected.record_count)
+                   and (expected_documents is None or retained["document_count"] == expected_documents)
+                   and cohorts["inclusion"]["excluded"]["case_count"] == 0, summary)
+        self.check("completion_partitions_items", sum(groups.values()) == self.expected.case_count and cohorts["partition"]["is_disjoint"], summary)
+        self.check("completion_keeps_open_and_unknown_items", groups.get("open_recorded", 0) + groups.get("unknown", 0) > 0, summary)
+
     def stage(self, name: str, request) -> dict:
         """Run one request as a measured stage; the reply must be a success."""
         self.sampler.mark()
@@ -397,8 +422,13 @@ class Journey:
         measures_query = {"policy_id": "bpic19.source_witnessed_measures.v1", "measure_profile": "paper_v1", "roles": self.measure_roles,
                           "offset": 0, "limit": 100, "value_reducer": "unique_creation_value", "value_unit": "EUR",
                           "calibration_population": "selected", "value_band_edges": []}
-        self.stage("default_measures", self.post("investigations/bpic19-measures", "bpic19_measures_request", workspace_id=wid,
-                                                 identity=identity, query=measures_query))
+        self._check_completion_cohorts(wid, identity, result)
+        measured = self.stage("default_measures", self.post("investigations/bpic19-measures", "bpic19_measures_request", workspace_id=wid,
+                                                            identity=identity, query=measures_query))
+        # Showing completion excludes nothing: the paper counts after it run on every item.
+        self.check("measures_after_completion_unfiltered", measured.get("population_case_count") == self.expected.case_count
+                   and measured.get("population_record_count") == self.expected.record_count,
+                   {key: measured.get(key) for key in ("population_case_count", "population_record_count")})
         self.stage("process_graph", self.post("investigations/process-graph", "process_graph_request", workspace_id=wid, identity=identity))
         self.stage("variants", self.post("investigations/variants", "variants_request", workspace_id=wid, identity=identity))
         saved = self.stage("save", self.post(

@@ -2139,7 +2139,7 @@
         },
         "selection_keep": {
           "$ref": "#/$defs/Bpic19SelectionKeep",
-          "description": "Exact complete-case selection step justified by this frozen parent profile or reviewed activity-measure cohort. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
+          "description": "Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort or completion-cohort stage. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
         }
       },
       "required": [
@@ -3082,6 +3082,34 @@
             "kind",
             "cohort"
           ]
+        },
+        {
+          "title": "CompletionCohortKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "completion_cohort"
+            },
+            "support": {
+              "type": "string",
+              "enum": [
+                "inclusion_retained",
+                "inclusion_excluded",
+                "inclusion_unknown",
+                "observed_closed",
+                "open_recorded",
+                "completion_unknown",
+                "retention_retained"
+              ],
+              "description": "One whole-item stage or recorded-completion state of the reviewed cohort answer over the complete frozen parent."
+            }
+          },
+          "required": [
+            "kind",
+            "support"
+          ]
         }
       ]
     },
@@ -3094,9 +3122,10 @@
           "type": "string",
           "enum": [
             "bpic19.profile_group_keep.v1",
-            "bpic19.measure_cohort_keep.v1"
+            "bpic19.measure_cohort_keep.v1",
+            "bpic19.completion_cohort_keep.v1"
           ],
-          "description": "Profile groups use the profile policy; activity cohorts of a reviewed measures answer use the measure cohort policy."
+          "description": "Profile groups use the profile policy; activity cohorts of a reviewed measures answer and stages of a reviewed completion-cohort answer use their own policies."
         },
         "step_index": {
           "type": "integer",

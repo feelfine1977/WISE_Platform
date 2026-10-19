@@ -65,3 +65,12 @@ def test_http_contract_whole_items_refusals_and_durable_source_recomputation(tmp
     with TestClient(app(fresh)) as client:
         replay=client.post(ROUTE,json=request);assert replay.status_code==200,replay.text
         assert replay.json()==answer
+
+
+def test_a_memory_refusal_is_a_typed_retryable_503():
+    # The budget refuses reading an evicted preparation with memory_unavailable; the cohort refusal must carry it.
+    from wise_platform_api.bpic19_cohorts import _refused
+    reply = _refused({"request_id": "cohorts-1", "query_revision": 1, "workspace_id": "workspace.v1:literal"},
+                     "memory_unavailable", "Reading this preparation needs more memory than the service may use now.")
+    assert reply.status == 503
+    assert (reply.body["code"], reply.body["retryable"], reply.body["operation"]) == ("memory_unavailable", True, "bpic19_cohorts")
