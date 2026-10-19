@@ -1,0 +1,14 @@
+{
+ "about": "Hand-written expectations for #11 (tests/test_issue11_start_period.py and tools/qualify_start_period.py). Invented incidents. The start is the first raw record in declared order (time, then Seq), not the first labelled activity; periods are half-open [start, end). S-UNTIMED has a record without a usable time, so its first record is not known. Never read by product code.",
+ "file": "starts.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": [4]},
+ "cutoff_utc": "2026-03-31T00:00:00Z",
+ "window": {"timestamp_kind": "utc_instant", "start_inclusive": "2026-03-02T00:00:00Z", "end_exclusive": "2026-03-09T00:00:00Z"},
+ "in_window": {"kept": ["S-IN", "S-LOW", "S-NOLABEL"], "removed": ["S-BEFORE", "S-HIGH"], "unevaluable": ["S-UNTIMED"]},
+ "outside_window": {"kept": ["S-BEFORE", "S-HIGH"], "unevaluable": ["S-UNTIMED"]},
+ "edges": ["2026-02-16T00:00:00Z", "2026-02-23T00:00:00Z", "2026-03-02T00:00:00Z", "2026-03-09T00:00:00Z", "2026-03-16T00:00:00Z"],
+ "bins": [1, 0, 3, 1],
+ "unevaluable": 1,
+ "later_record": {"case": "S-LOW", "records": 3, "outside_period_position": 4},
+ "week_index_in_browser": 2
+}

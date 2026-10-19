@@ -91,3 +91,47 @@ describe("the column of time beside the map", () => {
     expect(screen.getByRole("group", { name: "Incidents by recorded span" })).toBeTruthy();
   });
 });
+
+describe("#11 a start period previewed before it is taken, explained, and expanded as a table", () => {
+  function previewing() {
+    const onStep = vi.fn();
+    const previewStep = vi.fn(async () => ({ ok: true as const, parent: 10, kept: 4, removed: 6, unevaluable: 0, keptIds: [] }));
+    render(<TimeColumn workspaceId="workspace-1" revision={3} identity={kept} onStep={onStep} previewStep={previewStep} caseLists={caseListsAnswering({})} trends={trendsAnswering({})} />);
+    return { onStep, previewStep, user: userEvent.setup() };
+  }
+  const week = { kind: "case_start_in_window", window: { timestamp_kind: "utc_instant", start_inclusive: "2025-03-03T00:00:00Z", end_exclusive: "2025-03-10T00:00:00Z" }, negate: false };
+
+  it("previews a band from the chart and applies it only on request", async () => {
+    const { onStep, previewStep, user } = previewing();
+    const starts = await chart("Incident starts per week");
+    starts.focus();
+    await user.keyboard("{ArrowRight}{Enter}");
+    expect(onStep).not.toHaveBeenCalled();
+    expect(previewStep).toHaveBeenCalledWith(week, expect.any(AbortSignal));
+    const pending = screen.getByRole("group", { name: "Step from the time charts not yet applied" });
+    expect(await within(pending).findByText(/^Preview: would keep 4 incidents of 10 incidents/)).toBeTruthy();
+    await user.click(within(pending).getByRole("button", { name: "Apply" }));
+    expect(onStep).toHaveBeenCalledWith(week);
+  });
+
+  it("names the anchor, the half-open periods, the clock and cutoff, and warns about short recent follow-up", async () => {
+    previewing();
+    await chart("Incident starts per week");
+    expect(screen.getByText(/^Each incident counts once, at the time of its first record in the declared order, not at its first labelled activity\. A period includes its start\s+and excludes its end, in UTC; the export was taken at/)).toBeTruthy();
+    expect(screen.getByText(/a recent period with fewer late records does\s+not by itself show an improvement/)).toBeTruthy();
+  });
+
+  it("expands the same answer as a table whose rows give the same step as the chart, and returns the focus on closing", async () => {
+    const { previewStep, user } = previewing();
+    await chart("Incident starts per week");
+    const expand = screen.getByRole("button", { name: "Expand the starts" });
+    await user.click(expand);
+    const expanded = screen.getByRole("region", { name: "Incident starts per week, expanded" });
+    const rows = within(expanded).getAllByRole("row").slice(1);
+    expect(rows.length).toBeGreaterThan(1);
+    await user.click(within(expanded).getByRole("button", { name: "Keep incidents that start in 3 Mar 2025 to 9 Mar 2025" }));
+    expect(previewStep).toHaveBeenLastCalledWith(week, expect.any(AbortSignal));
+    expect(screen.queryByRole("region", { name: "Incident starts per week, expanded" })).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "Expand the starts" })));
+  });
+});

@@ -1,10 +1,12 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { InfoPopover } from "../components/InfoPopover";
 import { countOf } from "../data/wording";
 import type { CaseListAnswer, CaseListRequest } from "../generated/case-list";
 import type { AnswerIdentity, SelectionPredicate } from "../generated/selection";
 import type { StartTrendAnswer, StartTrendRequest } from "../generated/start-trend";
 import { answersCaseList, type CaseListClient, httpCaseListClient } from "../filters/client";
+import { StepPreviewLine, type StepPreviewer } from "../map/StepPreviewLine";
+import { stepWording } from "../map/wording";
 import { answersStartTrend, httpStartTrendClient, type StartTrendClient } from "./client";
 import { type ChartBin, ColumnChart } from "./ColumnChart";
 import { dayName, hoursName, type Periods, periodName, SPAN_EDGES_HOURS, spanBinLabel, startPeriods } from "./periods";
@@ -16,6 +18,8 @@ interface TimeColumnProps {
   /** The identity of the kept incidents; their parent is the one they are kept of. */
   identity: AnswerIdentity;
   onStep: (step: SelectionPredicate) => void;
+  /** Counts what a step would keep before it is taken; with it a column or band is previewed and applied on request. */
+  previewStep?: StepPreviewer;
   waitingFor?: string;
   caseLists?: CaseListClient;
   trends?: StartTrendClient;
@@ -28,10 +32,13 @@ const problemText = (refusal: { message: string } | null) => refusal?.message ??
 /**
  * Beside the map, what selects by time: the recorded spans of the incidents and the periods their
  * first records lie in, each the parent pale and the kept incidents solid, in bins the parent
- * fixes. A column or a band taken from a chart is a step, applied at once.
+ * fixes. A column or a band taken from a chart is a step: previewed first where a preview can be counted, then applied.
  */
-export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor, caseLists = httpCaseListClient, trends = httpStartTrendClient }: TimeColumnProps) {
+export function TimeColumn({ workspaceId, revision, identity, onStep, previewStep, waitingFor, caseLists = httpCaseListClient, trends = httpStartTrendClient }: TimeColumnProps) {
   const asked = useId();
+  const previewId = useId();
+  const [pending, setPending] = useState<SelectionPredicate | null>(null);
+  const propose = (step: SelectionPredicate) => (previewStep ? setPending(step) : onStep(step));
   const [spans, setSpans] = useState<Loaded<CaseListAnswer>>({ phase: "loading" });
   const [starts, setStarts] = useState<Loaded<StartTrendAnswer>>({ phase: "loading" });
   // A failed question is asked again on request, for the same kept incidents: nothing of the selection changes.
@@ -119,8 +126,19 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, waitingFor
           </section>
         </InfoPopover>
       </div>
-      <SpanChart state={spans} onStep={onStep} waitingFor={waitingFor} onRetry={retry} />
-      <StartsChart state={startsState(spans, range, periods, starts)} per={per} onStep={onStep} waitingFor={waitingFor} onRetry={retry} />
+      <SpanChart state={spans} onStep={propose} waitingFor={waitingFor} onRetry={retry} />
+      <StartsChart state={startsState(spans, range, periods, starts)} per={per} onStep={propose} waitingFor={waitingFor} onRetry={retry} />
+      {pending && previewStep && (
+        <div className="filter-preview" role="group" aria-label="Step from the time charts not yet applied">
+          <p>{stepWording(pending)}</p>
+          <StepPreviewLine id={previewId} step={pending} previewer={previewStep} />
+          <button type="button" className="primary" disabled={waitingFor !== undefined} aria-describedby={[waitingFor, previewId].filter(Boolean).join(" ")}
+            onClick={() => { onStep(pending); setPending(null); }}>
+            Apply
+          </button>
+          <button type="button" onClick={() => setPending(null)}>Cancel</button>
+        </div>
+      )}
     </section>
   );
 }
@@ -192,6 +210,13 @@ function SpanChart({ state, onStep, waitingFor, onRetry }: { state: Loaded<CaseL
 
 function StartsChart({ state, per, onStep, waitingFor, onRetry }: { state: Loaded<StartTrendAnswer> | { phase: "unasked"; message: string }; per: string; onStep: (step: SelectionPredicate) => void; waitingFor?: string; onRetry: () => void }) {
   const title = useId();
+  const [expanded, setExpanded] = useState(false);
+  const expand = useRef<HTMLButtonElement>(null);
+  const close = () => {
+    setExpanded(false);
+    // Closing the expanded view returns the focus to the control that opened it.
+    requestAnimationFrame(() => expand.current?.focus());
+  };
   const answer = state.phase === "ready" ? state.answer : null;
   const bins: ChartBin[] = (answer?.bins ?? []).map((bin) => ({
     label: periodName(bin.start_inclusive, bin.end_exclusive),
@@ -236,6 +261,44 @@ function StartsChart({ state, per, onStep, waitingFor, onRetry }: { state: Loade
             <p className="time-chart-limit">{countOf(answer.unevaluable.kept_support.case_count, "incident")} without a first time</p>
           )}
           {outside > 0 && <p className="time-chart-limit">{countOf(outside, "incident")} start outside these periods</p>}
+          <p className="muted time-chart-note">
+            Each incident counts once, at the time of its first record in the declared order, not at its first labelled activity. A period includes its start
+            and excludes its end, {answer.clock.timestamp_kind === "wall_clock" ? "on the wall clock as recorded" : "in UTC"}; the export was taken at{" "}
+            {answer.clock.timestamp_kind === "wall_clock" ? answer.clock.snapshot_cutoff.replace("T", " ") : answer.clock.snapshot_cutoff.replace("T", " ").replace("Z", " UTC")}.
+          </p>
+          <p className="muted time-chart-note">
+            Incidents that started shortly before the export have had little time to be resolved or reopened: a recent period with fewer late records does
+            not by itself show an improvement.
+          </p>
+          <button type="button" ref={expand} aria-expanded={expanded} onClick={() => setExpanded(true)}>
+            Expand the starts
+          </button>
+          {expanded && (
+            <section className="time-expanded" aria-label={`Incident starts per ${per}, expanded`}>
+              <table className="plain-table compact-table">
+                <caption className="caption">Incident starts per {per}, with these incidents and the parent</caption>
+                <thead>
+                  <tr><th scope="col">Period</th><th scope="col" className="number">These incidents</th><th scope="col" className="number">Parent</th><th scope="col">Step</th></tr>
+                </thead>
+                <tbody>
+                  {answer.bins.map((bin, place) => (
+                    <tr key={bin.start_inclusive}>
+                      <th scope="row">{periodName(bin.start_inclusive, bin.end_exclusive)}</th>
+                      <td className="number">{bin.kept_support.case_count}</td>
+                      <td className="number">{bin.parent_support.case_count}</td>
+                      <td>
+                        <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor}
+                          onClick={() => { const step = window(place, place); if (step !== null) { onStep(step); close(); } }}>
+                          Keep incidents that start in {periodName(bin.start_inclusive, bin.end_exclusive)}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button type="button" onClick={close}>Close the expanded starts</button>
+            </section>
+          )}
         </>
       )}
     </section>

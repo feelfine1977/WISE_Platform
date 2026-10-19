@@ -114,6 +114,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Kept against removed are compared.
   - The investigation is saved and reopened after an actual restart.
 
+- `tools/qualify_start_period.py` (#11): a period of first records in the invented `tests/fixtures/starts` file, against its own `expected.json`.
+  - It checks what the chart of starts says of anchor, periods, clock, cutoff and short recent follow-up.
+  - A week band by keyboard is previewed and cancelled; the expanded table gives the same step and returns the focus on closing.
+  - Applied, the step keeps the oracle's incidents with their later records and the cutoff in evidence. Undo is exact.
+  - The date form with the same bounds gives the same identity.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.
