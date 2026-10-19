@@ -1,11 +1,11 @@
-.history-layout.with-document { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 1fr); gap: 1rem; align-items: start; }
-.history-layout.with-document .document-pane { position: sticky; top: 0; max-height: 100vh; overflow: auto; }
-.document-pane { border: 1px solid var(--line, #c8c8c8); border-radius: 6px; padding: 0.75rem 1rem; background: var(--surface, #fff); }
-.document-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; align-items: baseline; }
-.document-steps { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.document-masked { font-weight: 600; border-left: 4px solid #b26b00; padding-left: 0.5rem; }
-.document-cut { border-left: 4px solid #555; padding-left: 0.5rem; }
-.document-kind { text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.04em; margin-bottom: 0; }
+.history-layout.with-document { display: grid; grid-template-columns: minmax(0, 1fr) minmax(var(--size-document-pane), 1fr); gap: var(--space-4); align-items: start; }
+.history-layout.with-document .document-pane { position: sticky; top: 0; max-height: var(--size-viewport-height); overflow: auto; }
+.document-pane { border: var(--line-width) solid var(--color-line); border-radius: var(--radius); padding: var(--space-3) var(--space-4); background: var(--color-surface); }
+.document-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); align-items: baseline; }
+.document-steps { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.document-masked { font-weight: var(--font-weight-strong); border-left: var(--bar-width) solid var(--color-attention); padding-left: var(--space-2); }
+.document-cut { border-left: var(--bar-width) solid var(--color-ink-muted); padding-left: var(--space-2); }
+.document-kind { text-transform: uppercase; font-size: var(--font-size-label); letter-spacing: var(--letter-spacing-label); margin-bottom: 0; }
 .document-paragraph { white-space: pre-wrap; overflow-wrap: anywhere; }
 .document-unavailable { font-style: italic; }
-@media (max-width: 60rem) { .history-layout.with-document { grid-template-columns: 1fr; } }
+@media (max-width: 960px) { .history-layout.with-document { grid-template-columns: 1fr; } }
