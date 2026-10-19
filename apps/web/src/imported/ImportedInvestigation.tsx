@@ -145,6 +145,12 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   }, [inspectorOpen, returnToIncidents]);
 
   const addStep = useCallback((step: SelectionPredicate) => coordinator.addStep(step), [coordinator]);
+  const shownRevision = state.selection.phase === "ready" ? state.selection.revision : null;
+  // A new previewer for each selection shown, so that every preview counts from the selection on screen.
+  const previewStep = useCallback(
+    (step: SelectionPredicate, signal: AbortSignal) => coordinator.previewStep(step, signal),
+    [coordinator, shownRevision], // eslint-disable-line react-hooks/exhaustive-deps
+  );
   const answer = population.phase === "ready" ? population.answer : null;
   const shown = shownSelection(state.selection);
   const kept = useMemo(() => keptCases(answer, shown), [answer, shown]);
@@ -318,6 +324,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   shown={shown}
                   parentGraph={state.parentGraph}
                   onStep={addStep}
+                  previewStep={previewStep}
                   waitingFor={waitingFor}
                   initiallyInPlace={mapInPlace}
                   showing={view}

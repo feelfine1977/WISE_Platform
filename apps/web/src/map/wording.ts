@@ -17,7 +17,7 @@ export function nameContextColumns(names: ReadonlyMap<number, string>): void {
 
 function columnWording(index: number): string {
   const name = contextColumnNames.get(index)?.trim();
-  return name ? `the column ${quoted(name)}` : `column ${index}`;
+  return name ? `the column ${quoted(name)}` : `column ${index} (its name is not known)`;
 }
 
 /** What a step keeps, in words. */
@@ -101,6 +101,48 @@ export function stepCounts(result: PredicateResult): [string, string][] {
     ["Removed", supportText(result.removed)],
     ["Not evaluable", supportText(result.unevaluable)],
   ];
+}
+
+/**
+ * Why a step leaves an incident not evaluable, by the kind of step, as the local service evaluates it; null for the
+ * kinds that every incident answers (an activity, an incident id, a value in any record).
+ */
+export function unevaluableReason(step: SelectionPredicate): string | null {
+  switch (step.kind) {
+    case "directly_follows":
+    case "starts_with_activity":
+    case "ends_with_activity":
+      return "the order of their records is not known, as a record has no usable time";
+    case "opening_attribute_equals":
+    case "opening_attribute_in":
+      return "the order of their records is not known, so their first recorded observation is not known either";
+    case "case_start_in_window":
+      return "the order of their records is not known, or their first record has no usable time";
+    case "observed_span_at_least":
+    case "max_raw_gap_at_least":
+      return "the order of their records is not known, or no span or gap can be measured from their times";
+    case "record_attributes_all":
+      return "a record lacks a cell of a named column, so whether it matches cannot be told";
+    case "contains_activity":
+    case "case_id_in":
+    case "record_attribute_in":
+      return null;
+    default:
+      return "the local service could not evaluate them";
+  }
+}
+
+/** How the steps combine, and what is not offered. */
+export const COMBINATION =
+  "An incident is kept only if it meets every step (and). Within one step, the values listed are alternatives (or); a step that keeps " +
+  "incidents without something removes those with it (not). Other combinations, such as or between steps, are not offered.";
+
+/** What all the steps keep together, over the parent. */
+export function combinedLine(parent: PopulationSupport, kept: PopulationSupport, removed: PopulationSupport, unevaluable: PopulationSupport): string {
+  return (
+    `All steps together keep ${countOf(kept.case_count, "incident")} of ${countOf(parent.case_count, "incident")}; ` +
+    `${removed.case_count.toLocaleString("en")} removed, ${unevaluable.case_count.toLocaleString("en")} not evaluable.`
+  );
 }
 
 /** Why the counts of the steps do not add up to the incidents removed by all of them. */

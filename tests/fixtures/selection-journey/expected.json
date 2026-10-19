@@ -1,0 +1,8 @@
+{
+ "about": "Hand-written expectations for #6 (tools/qualify_selection.py) over tests/fixtures/explorer/core-v1.csv, read with Seq as the sequence number and opening_context as context. Mapped sequences: A Request>Ack>Reminder, B Request>Reply, C Request>(no label)>Reply, D Request, E order unknown (invalid time), F (no label), G Request>Followup, H Request>(no label)>Reply. Never read by product code.",
+ "source": "tests/fixtures/explorer/core-v1.csv",
+ "parent": 8,
+ "follows": {"source": "Request", "target": "Reply", "kept": ["B", "C", "H"], "removed": ["A", "D", "F", "G"], "unevaluable": ["E"], "bridged": true},
+ "both": {"kept": [], "removed": ["A", "B", "C", "D", "F", "G", "H"], "unevaluable": ["E"]},
+ "opened": {"case": "C", "records": 3, "unlabelled": 1}
+}

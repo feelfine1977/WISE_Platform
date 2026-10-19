@@ -233,10 +233,13 @@ interface Call<Request, Answer> {
 /** A selection client whose replies the test delivers. */
 export function scriptedSelectionClient() {
   const selections: Call<SelectCasesRequest, SelectionAnswer>[] = [];
+  // A preview counts a step before it is taken; it is kept apart from the selections taken.
+  const previews: Call<SelectCasesRequest, SelectionAnswer>[] = [];
   const graphs: Call<ProcessGraphRequest, ProcessGraphAnswer>[] = [];
   const client: SelectionClient = {
-    selectCases: (request, signal) => new Promise((reply) => selections.push({ request, signal, reply })),
+    selectCases: (request, signal) =>
+      new Promise((reply) => (request.request_id.startsWith("preview-") ? previews : selections).push({ request, signal, reply })),
     processGraph: (request, signal) => new Promise((reply) => graphs.push({ request, signal, reply })),
   };
-  return { client, selections, graphs };
+  return { client, selections, previews, graphs };
 }

@@ -91,6 +91,11 @@ interface Pending {
 }
 
 /** A selection the local service answered together with the map of exactly its kept incidents. */
+/** What one more step would keep, counted by the service without changing the selection shown. */
+export type StepPreview =
+  | { ok: true; parent: number; kept: number; removed: number; unevaluable: number }
+  | { ok: false; problem: SelectionProblem };
+
 export interface ShownSelection {
   /** The query revision the selection and its map were answered under. */
   revision: number;
@@ -195,6 +200,11 @@ export class ImportedInvestigationCoordinator {
   private shownHistory: StepHistory = noSteps;
   /** The identity the first selection of a reopened investigation must have, until it is answered. */
   private restoredIdentity: AnswerIdentity | null = null;
+  /** The identity each list of steps was answered with under the population shown; undo and redo must find it again. */
+  private answeredIdentities = new Map<string, AnswerIdentity>();
+  /** The identity the selection being asked for must have, and what is said when it does not; set by undo and redo. */
+  private expectedIdentity: AnswerIdentity | null = null;
+  private previews = 0;
   private readonly listeners = new Set<() => void>();
 
   constructor(
@@ -337,12 +347,39 @@ export class ImportedInvestigationCoordinator {
     this.changeSteps(withoutSteps);
   }
 
+  /** Goes back one step: the selection must come back with exactly the identity it had, not merely as many incidents. */
   undo(): void {
-    this.changeSteps(undone);
+    this.changeSteps(undone, true);
   }
 
   redo(): void {
-    this.changeSteps(redone);
+    this.changeSteps(redone, true);
+  }
+
+  /**
+   * Counts what one more step would keep from the selection shown, by asking the service for that selection under the
+   * shown revision. Nothing is published: the selection, its steps and its undo stay as they are until the step is taken.
+   */
+  async previewStep(step: SelectionPredicate, signal: AbortSignal): Promise<StepPreview> {
+    const population = this.state.population;
+    const selection = this.state.selection;
+    if (population.phase !== "ready" || selection.phase !== "ready") return { ok: false, problem: { kind: "unreachable" } };
+    this.previews += 1;
+    const request: SelectCasesRequest = {
+      schema_version: 1,
+      message_type: "select_cases_request",
+      request_id: `preview-${selection.revision}-${this.previews}`,
+      query_revision: selection.revision,
+      workspace_id: population.answer.workspace_id,
+      identity: population.answer.identity,
+      parent_case_ids: this.state.parentCaseIds === null ? null : [...this.state.parentCaseIds],
+      predicates: [...selection.history.present, step],
+    };
+    const outcome = await this.selectionClient.selectCases(request, signal).catch(() => selectionUnreachable);
+    const checked = outcome.ok ? checkSelection(request, population.answer, outcome.answer) : checkSelectionProblem(request, outcome.problem);
+    if (!checked.ok) return { ok: false, problem: checked.problem };
+    const { parent, kept, removed, unevaluable } = checked.answer;
+    return { ok: true, parent: parent.case_count, kept: kept.case_count, removed: removed.case_count, unevaluable: unevaluable.case_count };
   }
 
   /** Gives up steps that could not be selected: the selection shown stays, with the steps and undo it was answered under. */
@@ -385,17 +422,26 @@ export class ImportedInvestigationCoordinator {
     this.cancelViewRequests();
   }
 
-  private changeSteps(change: (history: StepHistory) => StepHistory): void {
+  private changeSteps(change: (history: StepHistory) => StepHistory, exact = false): void {
     const selection = this.state.selection;
     if (selection.phase === "idle" || this.replacing()) return;
     const history = change(selection.history);
-    if (history !== selection.history) this.select(history);
+    if (history === selection.history) return;
+    this.select(history);
+    // Set after asking: the new request has dropped any expectation of an earlier one.
+    if (exact) this.expectedIdentity = this.answeredIdentities.get(this.stepsKey(history.present)) ?? null;
+  }
+
+  private stepsKey(steps: Steps): string {
+    const population = this.state.population;
+    return JSON.stringify([population.phase === "ready" ? population.answer.identity : null, this.state.parentCaseIds, steps]);
   }
 
   /** Asks for the incidents the steps keep and then for the map of exactly those, under one new revision. */
   private select(history: StepHistory): void {
     const population = this.state.population;
     if (population.phase !== "ready") return;
+    this.expectedIdentity = null;
     this.revision = this.nextRevision();
     const revision = this.revision;
     this.cancelSelectionRequest();
@@ -430,10 +476,16 @@ export class ImportedInvestigationCoordinator {
     if (request.query_revision !== this.revision) return;
     const restored = this.restoredIdentity;
     this.restoredIdentity = null;
+    const expected = this.expectedIdentity;
+    this.expectedIdentity = null;
     let checked = outcome.ok ? checkSelection(request, population, outcome.answer) : checkSelectionProblem(request, outcome.problem);
     if (checked.ok && restored !== null && !sameJson(checked.answer.identity, restored)) {
       checked = mismatch("The incidents selected now are not those of the saved investigation.");
     }
+    if (checked.ok && expected !== null && !sameJson(checked.answer.identity, expected)) {
+      checked = mismatch("The incidents selected now are not exactly those these steps kept before.");
+    }
+    if (checked.ok) this.answeredIdentities.set(this.stepsKey(history.present), checked.answer.identity);
     if (!checked.ok) {
       this.failSelection(request.query_revision, history, checked.problem);
       return;

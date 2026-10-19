@@ -70,6 +70,13 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - It is read first with a format that reads none of its times. The summary and the investigation say why no order, path or variant follows, and lead back to the Data area.
   - There, the year-first format is offered with how many values it reads. The new reading is compared with the first and published; it has paths, and its original cells keep their fractional seconds.
 
+- `tools/qualify_selection.py` (#6): the invented `tests/fixtures/explorer/core-v1.csv` against the hand-written `tests/fixtures/selection-journey/expected.json`.
+  - A highlighted path's step is previewed with what it would keep, before anything is taken.
+  - Taken, it shows the whole selection's counts, how steps combine and why some incidents are not evaluable. The preview and the step share one identity.
+  - An incident is opened by keyboard, and the focus returns to it.
+  - A second step keeps nothing and says so.
+  - Undo twice restores exactly the earlier identities.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.

@@ -484,3 +484,34 @@ describe("the map of the kept incidents", () => {
     expect(within(detail).getByRole("slider", { name: "Paths" }).getAttribute("aria-valuetext")).toBe("19 of 39");
   });
 });
+
+describe("#6 a step previewed before it is taken, and the selection in words", () => {
+  it("previews what a step would keep under its button, takes nothing until it is pressed, and says how steps combine and why some are not evaluable", async () => {
+    const app = await renderInvestigation();
+    const map = await openMap(app, [opened, closed]);
+    await app.user.click(screen.getByRole("button", { name: "Table view" }));
+    fireEvent.click(within(map).getAllByRole("row").find((row) => row.textContent?.startsWith(`${opened}${closed}`))!);
+    // Highlighting a path asks for previews of its two steps; nothing is selected yet.
+    expect(app.selecting.previews.map((call) => call.request.predicates)).toEqual([[follows(opened, closed)], [follows(opened, closed, true)]]);
+    expect(app.selecting.selections).toHaveLength(1);
+    const keep = screen.getByRole("button", { name: "Keep incidents where “Geschlossen” directly follows “Eröffnet”" });
+    expect(screen.getByText("Counting what this step would keep…", { selector: `#${keep.getAttribute("aria-describedby")}` })).toBeTruthy();
+    const figures = { population: "7", kept: support(["A-1"], 2), removed: support([], 0), unevaluable: support(["B-2"], 1),
+      results: [{ kept: support(["A-1"], 2), removed: support([], 0), unevaluable: support(["B-2"], 1) }] };
+    await deliver(() => app.selecting.previews[0].reply({ ok: true, answer: selectionAnswer(app.selecting.previews[0].request, figures) }));
+    expect(document.getElementById(keep.getAttribute("aria-describedby")!)?.textContent).toBe(
+      "Preview: would keep 1 incident of 2 incidents; 0 removed, 1 not evaluable. Nothing changes until the step is taken.",
+    );
+    expect(app.selecting.selections).toHaveLength(1);
+
+    // Taken, the step is a chip; the whole selection is counted and said to combine by and; the unevaluable say why.
+    await app.user.click(keep);
+    expect(app.selecting.selections[1].request.predicates).toEqual([follows(opened, closed)]);
+    await answer(app, 1, figures);
+    expect(screen.getByText(/^All steps together keep/).textContent).toBe("All steps together keep 1 incident of 2 incidents; 0 removed, 1 not evaluable.");
+    expect(screen.getByText(/^An incident is kept only if it meets every step \(and\)/)).toBeTruthy();
+    expect(screen.getByText(/^Not evaluable because/).textContent).toBe(
+      "Not evaluable because the order of their records is not known, as a record has no usable time.",
+    );
+  });
+});

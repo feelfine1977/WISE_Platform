@@ -5,7 +5,7 @@ import type { Replacement } from "../replacement/replacement";
 import { ReplacementNotice } from "../replacement/ReplacementNotice";
 import type { SelectionProblem } from "./client";
 import { canRedo, canUndo, type StepHistory } from "./steps";
-import { describeSelectionProblem, overlapLine, stepCounts, stepWording } from "./wording";
+import { COMBINATION, combinedLine, describeSelectionProblem, overlapLine, stepCounts, stepWording, unevaluableReason } from "./wording";
 
 interface SelectionStepsProps {
   selection: ImportedSelectionState;
@@ -72,6 +72,9 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
                     </div>
                   ))}
                 </dl>
+                {result.unevaluable.case_count > 0 && unevaluableReason(result.predicate) !== null && (
+                  <p className="chip-reason">Not evaluable because {unevaluableReason(result.predicate)}.</p>
+                )}
                 <button
                   type="button"
                   className="chip-remove"
@@ -87,6 +90,10 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
           })}
         </ul>
       )}
+      {shown && results.length > 0 && (
+        <p className="combined-line">{combinedLine(shown.answer.parent, shown.answer.kept, shown.answer.removed, shown.answer.unevaluable)}</p>
+      )}
+      {shown && results.length > 0 && <p className="muted combination-line">{COMBINATION}</p>}
       {shown && results.length > 1 && <p className="muted overlap-line">{overlapLine(shown.answer.parent)}</p>}
       {replacement && (
         <ReplacementNotice

@@ -17,6 +17,7 @@ import { mapArrangement, type MapDirection, OPENING_DIRECTION, parentArrangement
 import { CANVAS_FROM, mapDetail, WHOLE_DETAIL } from "./detail";
 import { DetailStrip } from "./DetailStrip";
 import { elementOf, selectedElement, stepChoices } from "./elements";
+import { StepPreviewLine, type StepPreviewer } from "./StepPreviewLine";
 import { elementTitle } from "./elementTitle";
 import { fitToFrame } from "./FitToFrame";
 import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
@@ -104,6 +105,8 @@ interface MapViewProps {
   /** The map of every incident of the parent; its arrangement places every map of a selection. */
   parentGraph: SuppliedGraph;
   onStep: (step: SelectionPredicate) => void;
+  /** Counts what a step would keep before it is taken; without it the steps are offered without a preview. */
+  previewStep?: StepPreviewer;
   /** The id of the text saying why no step can be taken now; while it is given, the map offers none. */
   waitingFor?: string;
   /** Whether the map starts with every activity kept in the place the whole parent's map gives it. */
@@ -137,7 +140,7 @@ const NOT_ARRANGED_IN_FULL =
  * know about it opens over it, and the steps of a selected element or the editor of the stages
  * stand beside it.
  */
-export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPlace = false, showing = "map", aside }: MapViewProps) {
+export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, initiallyInPlace = false, showing = "map", aside }: MapViewProps) {
   // The stages the analyst defined for the reading shown; the map draws its activities in them.
   const workspaceId = shown.answer.workspace_id;
   const preparationId = shown.answer.identity.preparation_id;
@@ -443,11 +446,18 @@ export function MapView({ shown, parentGraph, onStep, waitingFor, initiallyInPla
         )}
         {choices.length > 0 && (
           <div className="map-choices">
-            {choices.map((choice) => (
-              <button key={choice.label} type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={() => onStep(choice.step)}>
-                {choice.label}
-              </button>
-            ))}
+            {choices.map((choice, index) => {
+              const previewId = `step-preview-${index}`;
+              const describedBy = [waitingFor, previewStep && !waitingFor ? previewId : undefined].filter(Boolean).join(" ") || undefined;
+              return (
+                <div key={choice.label} className="map-choice">
+                  <button type="button" disabled={waitingFor !== undefined} aria-describedby={describedBy} onClick={() => onStep(choice.step)}>
+                    {choice.label}
+                  </button>
+                  {previewStep && !waitingFor && <StepPreviewLine id={previewId} step={choice.step} previewer={previewStep} />}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
