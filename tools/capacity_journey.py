@@ -652,11 +652,13 @@ class Journey:
         self.restart(env={"WISE_MEMORY_BUDGET_BYTES": str(budget)})
         settings = {"profile": "paper", "criteria_family": "full", "view": "Completion", "mode": "layer_balanced", "gamma": 20,
                     "group_by": ["company", "spend_area"], "min_cases": 1, "volume": "cases", "exposure_policy": "max_absolute_p95"}
+        # A fresh process knows the opened source population, not a selection that was never replayed in it.
         refused = self.measured("workload_limit_refusal", lambda client: client.post("/api/investigations/bpic19-score", json=envelope(
-            "bpic19_score_request", workspace_id=wid, base_identity=base, named_population={"name": "Paper workflow", "identity": identity},
+            "bpic19_score_request", workspace_id=wid, base_identity=base, named_population={"name": "Paper workflow", "identity": base},
             roles=self.measure_roles, settings=settings, case_offset=0, case_limit=50)))
         body = refused.json() if refused.headers.get("content-type", "").startswith("application/json") else {}
-        self.check("workload_limit_refused", refused.status_code == 503 and body.get("code") == "memory_unavailable", (refused.status_code, body.get("code")))
+        self.check("workload_limit_refused", refused.status_code == 503 and body.get("code") == "memory_unavailable",
+                   (refused.status_code, body.get("code"), body.get("field"), body.get("message")))
         after = sorted(path.name for path in runs.rglob("*")) if runs.exists() else []
         self.check("workload_limit_published_nothing", after == before, len(after) - len(before))
         self.workload_refusal = {"budget_bytes": budget, "code": body.get("code"), "field": body.get("field"), "message": body.get("message")}
