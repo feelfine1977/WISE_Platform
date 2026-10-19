@@ -8,6 +8,7 @@ grades user events with threshold 5 and width 10; C10 grades distinct users with
 """
 
 import csv
+from copy import deepcopy
 import io
 import socket
 
@@ -155,3 +156,37 @@ def test_t12_saved_run_reopens_unevaluated_in_a_different_process(tmp_path):
     finally:
         second.terminate()
         second.wait(timeout=15)
+
+
+def test_t12_findings_record_repetition_with_rows_and_infer_nothing_further(tmp_path):
+    workspace = tmp_path / "workspace"; workspace.mkdir()
+    with TestClient(create_app(static_dir=tmp_path / "unbuilt")) as client:
+        wid, identity = prepare(client, workspace, literal())
+        answer, cases = scored(client, wid, identity)
+        # The checks are named after the recorded events, not after a judgement of avoidable work.
+        descriptions = {entry["id"]: entry["description"] for entry in answer["report"]["norm"]["constraints"]}
+        assert (descriptions["C06"], descriptions["C07"], descriptions["C08"]) == (
+            "No invoice cancellation", "Price and quantity changes", "Repeated invoice receipts")
+        receipts = criterion(cases["Z4"], "C08")["row_ids"]
+        assert len(receipts) == 4
+        evidence = {"case_ids": ["Z4"], "row_ids": receipts, "criterion_ids": ["C08"]}
+        empty = {"case_ids": [], "row_ids": [], "criterion_ids": []}
+        review = {"policy_id": "bpic19.user_entered_interpretation.v1",
+                  "mandatory_controls": [{"criterion_id": "C06", "mandatory": True, "rationale": "Supplied control owner rule", "evidence": empty}],
+                  "findings": [{"id": "z4-receipts", "title": "Recorded repetition: four invoice receipts",
+                                "observation": {"status": "observed", "note": "Four Record Invoice Receipt records", "evidence": evidence},
+                                "proposed_change": {"status": "not_proposed", "note": "", "evidence": empty},
+                                "adoption": {"status": "unknown", "note": "", "evidence": empty},
+                                "tested_outcome": {"status": "untested", "note": "", "evidence": empty}}]}
+        reply = client.post("/api/investigations/bpic19-review", json=envelope("bpic19_review_request", workspace_id=wid,
+            run_id=answer["run_id"], review=review, case_offset=0, case_limit=100))
+        assert reply.status_code == 200, reply.text
+        recorded = reply.json()["report"]["analysis_review"]
+        assert recorded == review
+        # The native numbers stay frozen; the finding only adds what the analyst stated, linked to its rows.
+        assert reply.json()["report"]["case_page"] == answer["report"]["case_page"]
+        foreign = deepcopy(review)
+        foreign["findings"][0]["observation"]["evidence"]["row_ids"] = criterion(cases["Z2"], "C08")["row_ids"]
+        refused = client.post("/api/investigations/bpic19-review", json=envelope("bpic19_review_request", workspace_id=wid,
+            run_id=answer["run_id"], review=foreign, case_offset=0, case_limit=100))
+        assert refused.status_code >= 400, refused.text
