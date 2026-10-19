@@ -284,5 +284,30 @@ def issue120(client, workspace: Path) -> dict:
         "stage 2 to 3 / per episode5 / 12.220", "stage 2 to 3 / per item mean4 / 22.2520"]}
 
 
-SCENARIOS = {"issue112": issue112, "issue119": issue119, "issue120": issue120, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue121(client, workspace: Path) -> dict:
+    import test_issue121_fifo_matches_tcp as literal
+    from import_requests import envelope
+    wid, base = literal.prepare(client, workspace, literal.RAW)
+    identity = selection(client, wid, base, None)
+    query = {"roles": literal.PROFILE_ROLES, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
+    profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
+        identity=identity, query=query)).json()["profile"]
+    given = literal.comparison_request(client, wid, identity)
+    compared = client.post(literal.COMPARE, json=given).json()
+    saved = save(client, wid, base, None, "T19 FIFO and ordinal", [
+        lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
+                         "selection_prefix_length": 0},
+        lambda current: {"operation": "bpic19_operator_comparison", "identity": current, "query": given["query"],
+                         "definition_id": compared["definition_id"], "selection_prefix_length": 0}])
+    # By hand. Ordinal (eventID kth): P two reversed cycles and an unmatched third clearing, Q and K matched, W unknown
+    # (IR time missing); 15 endpoint events; stage 1→2 lags 1, 1, 0, 1 (mean .75); stage 2→3 only Q 1 and K 2 (mean 1.5).
+    # FIFO (timestamp): P two matched triples and c0 unmatched, Q and K matched, W unknown chronology; 12 endpoint events;
+    # stage 1→2 1, 1, 0, 1 (mean .75); stage 2→3 1, 1, 1, 2 (mean 1.25), per item P 1, Q 1, K 2 (mean 1.333333).
+    return {"name": "T19 FIFO and ordinal", "saved": saved, "texts": [
+        "Ordinal4 / 17evaluated 4matched 2 · reversed 2 · unmatched 1 · unknown 11150.75 (4 available, 2 not) / 0.666667 (3 items)1.5 (2 available, 4 not) / 1.5 (2 items)",
+        "FIFO4 / 17evaluated 3 · unknown 1matched 41120.75 (4 available, 0 not) / 0.666667 (3 items)1.25 (4 available, 0 not) / 1.333333 (3 items)",
+        "A smaller mean under one recipe describes different matched support; it is not a proven process improvement."]}
+
+
+SCENARIOS = {"issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
