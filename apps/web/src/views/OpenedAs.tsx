@@ -1,7 +1,9 @@
+import { type ReactNode, useEffect, useState } from "react";
 import { sameJson } from "../data/coordinator";
 import { countOf } from "../data/wording";
 import type { SelectionPredicate } from "../generated/selection";
-import type { ViewState } from "../imported/coordinator";
+import type { StepPreview, ViewState } from "../imported/coordinator";
+import { StepPreviewLine, type StepPreviewer } from "../map/StepPreviewLine";
 import type { CategoryShare, ContextCategory, ContextColumn, ContextRemainder, OpeningContextAnswer } from "./messages";
 import { ViewProblemNotice } from "./ViewProblemNotice";
 import { percent, points, shareOf } from "./wording";
@@ -11,14 +13,27 @@ interface OpenedAsProps {
   onRetry: () => void;
   /** The id of the text saying why trying again has to wait, while it has to. */
   waitingFor?: string;
-  /** Takes a step that keeps the incidents first recorded with a value; without it the values are only shown. */
+  /** Takes a step that keeps the incidents first recorded with the values chosen; without it the values are only shown. */
   onStep?: (step: SelectionPredicate) => void;
+  /** Counts, before anything is taken, what a step would keep; with it a choice is previewed and applied on request, and a value can be inspected. */
+  previewStep?: StepPreviewer;
+  /** Opens one incident with its whole history beside the panel. */
+  onOpenCase?: (caseId: string) => void;
+}
+
+/** What the panel can do with a value, beyond showing it. */
+interface Actions {
+  onStep: (step: SelectionPredicate) => void;
+  previewStep?: StepPreviewer;
+  onOpenCase?: (caseId: string) => void;
+  waitingFor?: string;
 }
 
 const ANCHOR = "incident.context.first_record_in_declared_order.v1";
 
 /** Each context column's value at the first recorded observation of the incidents, beside the parent. */
-export function OpenedAs({ state, onRetry, waitingFor, onStep }: OpenedAsProps) {
+export function OpenedAs({ state, onRetry, waitingFor, onStep, previewStep, onOpenCase }: OpenedAsProps) {
+  const actions = onStep ? { onStep, previewStep, onOpenCase, waitingFor } : undefined;
   return (
     <section className="view-panel" aria-labelledby="opened-as-title" aria-busy={state.phase === "loading"}>
       <h3 id="opened-as-title" className="view-title">
@@ -26,12 +41,12 @@ export function OpenedAs({ state, onRetry, waitingFor, onStep }: OpenedAsProps) 
       </h3>
       {state.phase === "loading" && <p className="working-text">Reading the first record of every incident…</p>}
       {state.phase === "failed" && <ViewProblemNotice title="The first recorded observations cannot be shown" problem={state.problem} onRetry={onRetry} waitingFor={waitingFor} />}
-      {state.phase === "ready" && <Opening answer={state.answer} onStep={onStep} waitingFor={waitingFor} />}
+      {state.phase === "ready" && <Opening answer={state.answer} actions={actions} />}
     </section>
   );
 }
 
-function Opening({ answer, onStep, waitingFor }: { answer: OpeningContextAnswer; onStep?: (step: SelectionPredicate) => void; waitingFor?: string }) {
+function Opening({ answer, actions }: { answer: OpeningContextAnswer; actions?: Actions }) {
   const { population, parent, columns } = answer.opening_context;
   const isParent = sameJson(answer.identity, answer.parent_identity);
   return (
@@ -39,6 +54,9 @@ function Opening({ answer, onStep, waitingFor }: { answer: OpeningContextAnswer;
       <p className="muted view-hint">
         The value of each context column at the first recorded observation of every incident, in the declared order. It is the first record, not a
         business event such as an opening, and not the first value that is filled in: a value recorded later does not count.
+      </p>
+      <p className="muted view-hint">
+        Policy: <code className="identifier">{answer.opening_context.anchor_policy}</code>
       </p>
       <ul className="share-legend" aria-label="Bars">
         <li>
@@ -73,39 +91,166 @@ function Opening({ answer, onStep, waitingFor }: { answer: OpeningContextAnswer;
         hold several values over its records, so their shares would overlap.
       </p>
       {columns.map((column) => (
-        <OpeningColumn key={column.column_index} column={column} evaluable={population.evaluable_case_count} onStep={onStep} waitingFor={waitingFor} />
+        <OpeningColumn key={`${column.column_index}:${JSON.stringify(answer.identity)}`} column={column} evaluable={population.evaluable_case_count} actions={actions} />
       ))}
     </>
   );
 }
 
-function OpeningColumn({ column, evaluable, onStep, waitingFor }: {
-  column: ContextColumn;
-  evaluable: number;
-  onStep?: (step: SelectionPredicate) => void;
-  waitingFor?: string;
-}) {
+/** The key of a value: a missing value and the text "missing" are never the same. */
+function keyOf(category: ContextCategory): string {
+  return category.kind === "missing" ? "missing" : `value:${category.value}`;
+}
+
+function OpeningColumn({ column, evaluable, actions }: { column: ContextColumn; evaluable: number; actions?: Actions }) {
   const titleId = `opened-as-column-${column.column_index}`;
   const name = column.column_name.trim() === "" ? `Column ${column.column_index}` : column.column_name;
+  const [view, setView] = useState<"bars" | "table">("bars");
+  const [chosen, setChosen] = useState<string[]>([]);
+  const [pending, setPending] = useState<SelectionPredicate | null>(null);
+  const [inspected, setInspected] = useState<ContextCategory | null>(null);
+  const categories = column.categories;
+  const chosenCategories = categories.filter((category) => chosen.includes(keyOf(category)));
+  const fixed = categories.length === 1 && column.remainder === null && categories[0].parent.share === 1;
+  const stepOf = (picked: ContextCategory[]): SelectionPredicate => ({
+    kind: "opening_attribute_in",
+    column_index: column.column_index,
+    values: picked.map((category) => category.value) as [string | null, ...(string | null)[]],
+    negate: false,
+    anchor_policy: ANCHOR,
+  });
+  const toggle = (category: ContextCategory) => {
+    setPending(null);
+    setChosen((current) => (current.includes(keyOf(category)) ? current.filter((key) => key !== keyOf(category)) : [...current, keyOf(category)]));
+  };
+  const rowActions = (category: ContextCategory) =>
+    actions && (
+      <span className="opening-actions">
+        <label className="check">
+          <input type="checkbox" checked={chosen.includes(keyOf(category))} onChange={() => toggle(category)} />
+          Choose {label(category).text}
+        </label>
+        {actions.previewStep && (
+          <button type="button" onClick={() => setInspected(category)} aria-pressed={inspected !== null && keyOf(inspected) === keyOf(category)}>
+            Inspect {label(category).text}
+          </button>
+        )}
+      </span>
+    );
   return (
     <section className="opening-column" aria-labelledby={titleId}>
       <h4 id={titleId} className="opening-column-title">
         {name} <span className="muted">· {countOf(column.distinct_value_count, "recorded value")}</span>
       </h4>
-      <ol className="opening-values" aria-label={`Opening values of ${name}, most frequent first`}>
-        {column.categories.map((category) => (
-          <ShareRow
-            key={category.kind === "missing" ? "missing" : `value:${category.value}`}
-            entry={category}
-            keep={onStep && { column: name, waitingFor, take: () => onStep({ kind: "opening_attribute_equals", column_index: column.column_index, value: category.value, negate: false, anchor_policy: ANCHOR }) }}
-          />
-        ))}
-        {column.remainder && <ShareRow entry={column.remainder} />}
-      </ol>
+      <div className="view-switch" role="group" aria-label={`View of ${name}`}>
+        <button type="button" aria-pressed={view === "bars"} onClick={() => setView("bars")}>
+          Bars
+        </button>
+        <button type="button" aria-pressed={view === "table"} onClick={() => setView("table")}>
+          Table
+        </button>
+      </div>
+      {fixed && (
+        <p className="muted view-hint">
+          Fixed in the parent: every incident with a readable first record has {label(categories[0]).text} here, so this column cannot tell incidents apart.
+        </p>
+      )}
+      {view === "bars" ? (
+        <ol className="opening-values" aria-label={`Opening values of ${name}, most frequent first`}>
+          {categories.map((category) => (
+            <ShareRow key={keyOf(category)} entry={category} chosen={chosen.includes(keyOf(category))}>
+              {rowActions(category)}
+            </ShareRow>
+          ))}
+          {column.remainder && <ShareRow entry={column.remainder} />}
+        </ol>
+      ) : (
+        <table className="plain-table compact-table opening-table" aria-label={`Opening values of ${name}, as a table`}>
+          <thead>
+            <tr>
+              <th scope="col">Value</th>
+              <th scope="col" className="number">These incidents</th>
+              <th scope="col" className="number">Parent population</th>
+              <th scope="col" className="number">Difference</th>
+              {actions && <th scope="col">Choose or inspect</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {[...categories, ...(column.remainder ? [column.remainder] : [])].map((entry) => (
+              <tr key={"kind" in entry ? keyOf(entry) : "remainder"}>
+                <th scope="row" className={label(entry).quiet ? "missing-text" : undefined}>{label(entry).text}</th>
+                <td className="number">{shareOf(entry.population)}</td>
+                <td className="number">{shareOf(entry.parent)}</td>
+                <td className="number">{entry.difference_percentage_points === null ? "–" : points(entry.difference_percentage_points, "points")}</td>
+                {actions && <td>{"kind" in entry ? rowActions(entry) : <span className="muted">several values: none can be chosen</span>}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <p className="muted view-hint">
         Each incident with a readable first record has exactly one value here: the values listed
         {column.remainder ? " and the other values" : ""} add up to {countOf(sum(column), "incident")} of {countOf(evaluable, "incident")}.
       </p>
+      {actions && inspected && actions.previewStep && (
+        <Inspection category={inspected} name={name} step={stepOf([inspected])} previewer={actions.previewStep} onOpenCase={actions.onOpenCase} onClose={() => setInspected(null)} />
+      )}
+      {actions && chosenCategories.length > 0 && !pending && (
+        <div className="opening-choice">
+          <p>
+            Chosen: {chosenCategories.map((category) => label(category).text).join(" or ")}. Values chosen together are alternatives (or); the step joins any
+            other step by and.
+          </p>
+          <button type="button" disabled={actions.waitingFor !== undefined} aria-describedby={actions.waitingFor}
+            onClick={() => (actions.previewStep ? setPending(stepOf(chosenCategories)) : (actions.onStep(stepOf(chosenCategories)), setChosen([])))}>
+            {actions.previewStep ? "Preview keeping incidents first recorded with these values" : "Keep incidents first recorded with these values"}
+          </button>
+        </div>
+      )}
+      {actions && pending && actions.previewStep && (
+        <div className="filter-preview" role="group" aria-label={`Values of ${name} not yet applied`}>
+          <StepPreviewLine id={`${titleId}-preview`} step={pending} previewer={actions.previewStep} />
+          <button type="button" className="primary" disabled={actions.waitingFor !== undefined} aria-describedby={[actions.waitingFor, `${titleId}-preview`].filter(Boolean).join(" ")}
+            onClick={() => { actions.onStep(pending); setPending(null); setChosen([]); }}>
+            Apply
+          </button>
+          <button type="button" onClick={() => setPending(null)}>Cancel</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** The incidents of the selection shown that are first recorded with one value; looking at them changes nothing. */
+function Inspection({ category, name, step, previewer, onOpenCase, onClose }: {
+  category: ContextCategory; name: string; step: SelectionPredicate; previewer: StepPreviewer; onOpenCase?: (caseId: string) => void; onClose: () => void;
+}) {
+  const [found, setFound] = useState<StepPreview | null>(null);
+  const key = JSON.stringify(step);
+  useEffect(() => {
+    const controller = new AbortController();
+    setFound(null);
+    previewer(step, controller.signal).then((outcome) => !controller.signal.aborted && setFound(outcome));
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, previewer]);
+  const title = `Incidents first recorded with ${name} ${label(category).text}`;
+  return (
+    <section className="opening-inspection" aria-label={title}>
+      <p className="label-text-strong">{title}</p>
+      <p className="muted">Inspecting changes nothing: the selection and its steps stay as they are.</p>
+      {found === null && <p className="muted">Finding these incidents…</p>}
+      {found !== null && !found.ok && <p className="muted">These incidents cannot be found now.</p>}
+      {found !== null && found.ok && (
+        <ul aria-label={title}>
+          {found.keptIds.map((caseId) => (
+            <li key={caseId}>
+              {onOpenCase ? <button type="button" onClick={() => onOpenCase(caseId)}>{caseId}</button> : caseId}
+            </li>
+          ))}
+        </ul>
+      )}
+      <button type="button" onClick={onClose}>Stop inspecting</button>
     </section>
   );
 }
@@ -126,14 +271,14 @@ function sum(column: ContextColumn): number {
 }
 
 /** One value: its two thin bars, its counts, and the same with denominators for the tooltip and screen readers. */
-function ShareRow({ entry, keep }: { entry: ContextCategory | ContextRemainder; keep?: { column: string; waitingFor?: string; take: () => void } }) {
+function ShareRow({ entry, chosen = false, children }: { entry: ContextCategory | ContextRemainder; chosen?: boolean; children?: ReactNode }) {
   const { text, quiet } = label(entry);
   const difference = entry.difference_percentage_points;
   const described =
     `${text}. These incidents: ${shareOf(entry.population)}. Parent population: ${shareOf(entry.parent)}.` +
     (difference === null ? "" : ` Difference ${points(difference, "percentage points")}.`);
   return (
-    <li className="opening-value" title={described}>
+    <li className={chosen ? "opening-value opening-chosen" : "opening-value"} title={described}>
       <span className={quiet ? "opening-label missing-text" : "opening-label"} aria-hidden="true">
         {text}
       </span>
@@ -147,11 +292,7 @@ function ShareRow({ entry, keep }: { entry: ContextCategory | ContextRemainder; 
         {figure(entry.population)} <span className="muted">· {figure(entry.parent)}</span>
       </span>
       <span className="visually-hidden">{described}</span>
-      {keep && (
-        <button type="button" className="opening-keep" disabled={keep.waitingFor !== undefined} aria-describedby={keep.waitingFor} onClick={keep.take}>
-          Keep incidents first recorded with {keep.column} {"kind" in entry && entry.value === null ? "not recorded" : text}
-        </button>
-      )}
+      {children}
     </li>
   );
 }

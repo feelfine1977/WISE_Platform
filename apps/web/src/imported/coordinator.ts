@@ -93,7 +93,7 @@ interface Pending {
 /** A selection the local service answered together with the map of exactly its kept incidents. */
 /** What one more step would keep, counted by the service without changing the selection shown. */
 export type StepPreview =
-  | { ok: true; parent: number; kept: number; removed: number; unevaluable: number }
+  | { ok: true; parent: number; kept: number; removed: number; unevaluable: number; keptIds: string[] }
   | { ok: false; problem: SelectionProblem };
 
 export interface ShownSelection {
@@ -379,7 +379,7 @@ export class ImportedInvestigationCoordinator {
     const checked = outcome.ok ? checkSelection(request, population.answer, outcome.answer) : checkSelectionProblem(request, outcome.problem);
     if (!checked.ok) return { ok: false, problem: checked.problem };
     const { parent, kept, removed, unevaluable } = checked.answer;
-    return { ok: true, parent: parent.case_count, kept: kept.case_count, removed: removed.case_count, unevaluable: unevaluable.case_count };
+    return { ok: true, parent: parent.case_count, kept: kept.case_count, removed: removed.case_count, unevaluable: unevaluable.case_count, keptIds: [...kept.case_ids] };
   }
 
   /** Gives up steps that could not be selected: the selection shown stays, with the steps and undo it was answered under. */

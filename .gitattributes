@@ -2,6 +2,7 @@ tests/fixtures/imports/*.csv -text
 tests/fixtures/import-journey/*.csv -text
 tests/fixtures/chronology/*.csv -text
 tests/fixtures/ymd-slash/*.csv -text
+tests/fixtures/categories/*.csv -text
 tests/fixtures/comparisons/*.csv -text
 tests/fixtures/expectations/*.csv -text
 vendor/*.tgz binary

@@ -1,0 +1,13 @@
+Ticket,Status,At,Seq,Team,Tenant
+K-1,Opened,2026-03-02T08:00:00Z,1,Service Desk,Nord
+K-1,Assigned,2026-03-02T09:00:00Z,2,Second-level application support for invoicing and procurement interfaces (Europe),Nord
+K-1,Resolved,2026-03-02T12:00:00Z,3,,Nord
+K-2,Opened,2026-03-03T08:00:00Z,1,,Nord
+K-2,Assigned,2026-03-03T08:30:00Z,2,Service Desk,Nord
+K-3,Opened,2026-03-04T08:00:00Z,1,Unknown,Nord
+K-3,Resolved,2026-03-04T10:00:00Z,2,Unknown,Nord
+K-4,Opened,2026-03-05T08:00:00Z,1,Second-level application support for invoicing and procurement interfaces (Europe),Nord
+K-5,Opened,2026-03-06T08:00:00Z,1,Service Desk,Nord
+K-5,Closed,2026-03-06T09:00:00Z,2,Service Desk,Nord
+K-6,Opened,not a time,1,Service Desk,Nord
+K-6,Closed,2026-03-07T09:00:00Z,2,Service Desk,Nord
