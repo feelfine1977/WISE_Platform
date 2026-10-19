@@ -54,8 +54,9 @@ def validator(schema=None):
 
 def test_exact_authority_and_unchanged_shared_summary_definitions():
     source = ROOT / "contracts/import.schema.json"
-    # The explicit native BPIC19 dash/seconds format extends only TimestampFormat; memory_unavailable extends only the refusal codes.
-    assert hashlib.sha256(source.read_bytes()).hexdigest() == "538f3af50e4495305e92890880c30cea5bdf6119969b84bf6c74a59d1ec4179a"
+    # The explicit native BPIC19 dash/seconds format extends only TimestampFormat; memory_unavailable extends only the refusal codes;
+    # the optional document reference role (#132) extends only Mapping.
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == "596fdc5694c0c0146c0edbc00132a7805d8908c82ccba7195c576c069ee9b83c"
     definitions = json.loads(source.read_text(encoding="utf-8"))["$defs"]
     listed = json.loads((ROOT / "contracts/case-list.schema.json").read_text(encoding="utf-8"))["$defs"]
     for name in ("CaseTimeSummary", "AvailableUtcCaseTimeSummary", "AvailableWallCaseTimeSummary",

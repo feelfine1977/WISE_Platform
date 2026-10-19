@@ -42,7 +42,7 @@ python -m wise_platform_api --port 8765
 
 The root Python project finds the API package under `apps/api/src`; there is no separate API-project install. The first line installs the packed method library from `vendor/`. `npm test` runs `python -m pytest`: the analytics package's tests, the API's tests and the contract acceptance tests through the real operations. `npm run check` checks the types and runs the browser's component tests. `npm run build` builds the browser files and collects the notices of the packages they contain. See [test groups](../tests/README.md). Open `http://127.0.0.1:8765` after the build. The health endpoint is `/api/health`; Ctrl+C stops the host. A health response is a foundation result, not an analytical result.
 
-For the optional browser development loop, run the API host and `npm run dev` in separate terminals. The browser development server runs at `http://127.0.0.1:5173` and proxies API requests to port 8765. The finished local deployment still uses one Python host and built files.
+For the optional browser development loop, run the API host and `npm run dev` in separate terminals. The browser development server runs at `http://127.0.0.1:5173` and proxies API requests to port 8765. The finished local deployment still uses one Python host and built files. The document routes answer only the platform's own page; for the development loop, start the API host with `WISE_TRUSTED_WEB_ORIGINS=http://127.0.0.1:5173` so that the development server's page is trusted explicitly.
 
 ## Target responsibilities
 

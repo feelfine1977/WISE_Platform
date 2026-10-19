@@ -447,6 +447,9 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onRetry={() => coordinator.retryCase()}
             waitingFor={waitingFor}
             headingRef={inspectorHeading}
+            documents={answer.preparation.mapping.document_reference_column != null
+              ? { workspaceId: answer.workspace_id, identity: answer.identity, column: answer.preparation.mapping.document_reference_column }
+              : undefined}
           />
         )}
       </div>
@@ -568,6 +571,7 @@ function DataDetails({ answer, revision }: { answer: ImportedPopulationAnswer; r
     ["Time column", `column ${mapping.timestamp_column}`],
     ["Sequence column", mapping.sequence_column === null ? "none" : `column ${mapping.sequence_column}`],
     ["Context columns", mapping.context_columns.length === 0 ? "none" : mapping.context_columns.map((index) => `column ${index}`).join(", ")],
+    ["Document reference", mapping.document_reference_column == null ? "none" : `column ${mapping.document_reference_column}`],
     ["Time policy", preparation.policies.time.id],
     ["Row rule", preparation.policies.rows.id],
     ["Source", identity.source_id],

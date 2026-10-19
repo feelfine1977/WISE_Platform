@@ -6,6 +6,7 @@ import { ImportProblemNotice } from "./ImportProblemNotice";
 import { ReadingChoices } from "./ReadingChoices";
 import { byteSize } from "./wording";
 import { Working } from "./Working";
+import { DocumentFolderSetting } from "../documents/DocumentFolderSetting";
 
 interface DataAreaProps {
   coordinator: DataCoordinator;
@@ -94,6 +95,7 @@ function WorkspaceStep({ state, coordinator }: { state: DataState; coordinator: 
           {otherFolder}
           {!workspace.own && ownFolder}
         </details>
+        <DocumentFolderSetting key={workspace.answer.workspace_id} workspaceId={workspace.answer.workspace_id} />
       </section>
     );
   }

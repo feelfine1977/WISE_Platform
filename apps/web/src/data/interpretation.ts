@@ -28,6 +28,8 @@ export interface Draft {
   timestampColumn: ColumnIndex | null;
   sequenceColumn: ColumnIndex | null;
   contextColumns: ColumnIndex[];
+  /** The context column naming each record's document in the workspace's document folder, if the analyst declares one. */
+  documentColumn: ColumnIndex | null;
   timeFormat: TimestampFormat | null;
   zone: ZoneChoice | null;
   offsetMinutes: number;
@@ -46,6 +48,7 @@ export const emptyDraft: Draft = {
   timestampColumn: null,
   sequenceColumn: null,
   contextColumns: [],
+  documentColumn: null,
   timeFormat: null,
   zone: null,
   offsetMinutes: 0,
@@ -456,6 +459,8 @@ function readingOf(
       timestamp_column: draft.timestampColumn,
       sequence_column: draft.sequenceColumn,
       context_columns: [...draft.contextColumns].sort((left, right) => left - right),
+      // The document reference is a declared role only when chosen, and only among the context columns.
+      ...(draft.documentColumn !== null && draft.contextColumns.includes(draft.documentColumn) ? { document_reference_column: draft.documentColumn } : {}),
     },
     policies: { time: timePolicy(draft, draft.timeFormat, cutoff), rows: rowPolicies[draft.rowRule], ...fixedPolicies },
     accept_report_issues: acceptReportIssues,

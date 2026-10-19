@@ -26,17 +26,21 @@ interface IncidentTimelineProps {
   timeline: Timeline;
   /** Moves the focus to the record at this place of the list. */
   onShowRecord: (place: number) => void;
+  /** The places of the records that name a document, and the way to open one beside the timeline. */
+  documentPlaces?: ReadonlySet<number>;
+  onOpenDocument?: (place: number) => void;
 }
 
 /** The elapsed time of one incident above its history: the strip of its recorded times, its longest gap, and what the numbers rest on. */
-export function IncidentTimeline({ caseId, records, timeline, onShowRecord }: IncidentTimelineProps) {
+export function IncidentTimeline({ caseId, records, timeline, onShowRecord, documentPlaces, onOpenDocument }: IncidentTimelineProps) {
   const { strip, longest, withheld } = timeline;
   // Elapsed times are given only where the order is known: then the line says where they come from.
   const supplied = withheld === null && (strip.kind === "axis" || timeline.gaps.some((gap) => gap.kind === "elapsed"));
   return (
     <section className="timeline" aria-label={`Elapsed time of incident ${caseId}`}>
       {strip.kind === "axis" ? (
-        <TimeStrip caseId={caseId} records={records} strip={strip} longest={longest} ordered={withheld === null} onShowRecord={onShowRecord} />
+        <TimeStrip caseId={caseId} records={records} strip={strip} longest={longest} ordered={withheld === null} onShowRecord={onShowRecord}
+          documentPlaces={documentPlaces} onOpenDocument={onOpenDocument} />
       ) : (
         <p>{noAxisLine(strip, records.length, strip.kind === "one_time" ? timeText(records[strip.mark.records[0]]) : "")}</p>
       )}
@@ -79,18 +83,23 @@ interface TimeStripProps {
   /** Whether the order of the records is known. Where it is not, the service gives no span and no offset, and the strip says neither. */
   ordered: boolean;
   onShowRecord: (place: number) => void;
+  documentPlaces?: ReadonlySet<number>;
+  onOpenDocument?: (place: number) => void;
 }
 
 /**
  * The recorded times on a linear axis from the earliest to the latest: one mark per distinct time.
  * Only one mark is a tab stop, so Tab passes the strip; the arrow keys, Home and End move between the marks.
  */
-function TimeStrip({ caseId, records, strip, longest, ordered, onShowRecord }: TimeStripProps) {
+function TimeStrip({ caseId, records, strip, longest, ordered, onShowRecord, documentPlaces, onOpenDocument }: TimeStripProps) {
   const { marks } = strip;
   const last = marks.length - 1;
   const [stop, setStop] = useState(0);
   const controls = useRef(new Map<number, SVGGElement>()).current;
-  const labels = marks.map((mark) => markLabel(timeText(records[mark.records[0]]), mark.records.length, ordered ? Number(mark.time - marks[0].time) : null));
+  /** The first record of a mark that names a document, if any: the mark offers to open it. */
+  const documentOf = (place: number) => onOpenDocument && documentPlaces ? marks[place].records.find((record) => documentPlaces.has(record)) : undefined;
+  const labels = marks.map((mark, place) => markLabel(timeText(records[mark.records[0]]), mark.records.length, ordered ? Number(mark.time - marks[0].time) : null)
+    + (documentOf(place) !== undefined ? "; a document is available, press D to open it" : ""));
   const positionOf = (place: number) => marks.find((mark) => mark.records.includes(place))?.position ?? 0;
 
   const moves: Record<string, (place: number) => number> = {
@@ -101,6 +110,12 @@ function TimeStrip({ caseId, records, strip, longest, ordered, onShowRecord }: T
   };
 
   function onKeyDown(event: KeyboardEvent<SVGGElement>, place: number) {
+    const documented = documentOf(place);
+    if ((event.key === "d" || event.key === "D") && documented !== undefined && onOpenDocument) {
+      event.preventDefault();
+      onOpenDocument(documented);
+      return;
+    }
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       onShowRecord(marks[place].records[0]);
@@ -167,6 +182,13 @@ function TimeStrip({ caseId, records, strip, longest, ordered, onShowRecord }: T
         <span>{timeText(records[marks[0].records[0]])}</span>
         <span>{timeText(records[marks[last].records[0]])}</span>
       </p>
+      {documentOf(Math.min(stop, last)) !== undefined && (
+        <p className="timeline-document">
+          <button type="button" className="link-button" onClick={() => onOpenDocument?.(documentOf(Math.min(stop, last))!)}>
+            Open document at {timeText(records[marks[Math.min(stop, last)].records[0]])}
+          </button>
+        </p>
+      )}
       <p className="timeline-note" id="timeline-hint">
         {STRIP_HINT}
       </p>

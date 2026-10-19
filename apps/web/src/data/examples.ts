@@ -43,6 +43,7 @@ export const exampleReading: Draft = {
   timestampColumn: 4,
   sequenceColumn: 2,
   contextColumns: [5, 6],
+  documentColumn: null,
   timeFormat: "iso8601",
   zone: "from_values",
   offsetMinutes: 0,

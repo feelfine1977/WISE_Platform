@@ -43,6 +43,10 @@ def exact_object(value: object, keys: set[str], field: str) -> ImportRefusal | N
 
 def validate_mapping(value: object, column_count: int) -> dict[str, object] | ImportRefusal:
     keys = {"case_column", "activity_column", "timestamp_column", "sequence_column", "context_columns"}
+    # The document reference is an optional declared role. It enters the mapping, and so the preparation
+    # identity, only when one is chosen; a mapping without it keeps its earlier identity.
+    if isinstance(value, Mapping) and "document_reference_column" in value:
+        keys = keys | {"document_reference_column"}
     refusal = exact_object(value, keys, "mapping")
     if refusal is not None:
         return refusal
@@ -61,6 +65,10 @@ def validate_mapping(value: object, column_count: int) -> dict[str, object] | Im
         return ImportRefusal("invalid_mapping", "Every context column must be a supported index.", "mapping.context_columns")
     if len(set(context)) != len(context):
         return ImportRefusal("invalid_mapping", "Context column indexes must be unique.", "mapping.context_columns")
+    if "document_reference_column" in value and (type(value["document_reference_column"]) is not int
+                                                 or value["document_reference_column"] not in context):
+        return ImportRefusal("invalid_mapping", "The document reference must be one of the mapped context columns.",
+                             "mapping.document_reference_column")
     return {**value, "context_columns": list(context)}
 
 

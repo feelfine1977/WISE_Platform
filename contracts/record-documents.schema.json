@@ -1,0 +1,969 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/record-documents.v1.schema.json",
+  "title": "RecordDocumentMessage",
+  "description": "Reading the email, note or object card behind a record from the workspace's local document folder. Nothing of a document is stored, exported or logged.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/DocumentFolderRequest"
+    },
+    {
+      "$ref": "#/$defs/DocumentFolderAnswer"
+    },
+    {
+      "$ref": "#/$defs/RecordDocumentRequest"
+    },
+    {
+      "$ref": "#/$defs/RecordDocumentAnswer"
+    },
+    {
+      "$ref": "#/$defs/AttachmentOpenRequest"
+    },
+    {
+      "$ref": "#/$defs/AttachmentOpenAnswer"
+    },
+    {
+      "$ref": "#/$defs/RecordDocumentRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "MaxDocumentBytes": {
+      "title": "MaxDocumentBytes",
+      "description": "The stated size limit: a document file larger than this many bytes is refused as too large to show, never truncated.",
+      "type": "integer",
+      "const": 1048576
+    },
+    "OpenableAttachmentType": {
+      "title": "OpenableAttachmentType",
+      "description": "The stated list of attachment types the platform may ask the operating system to open, each checked by its extension, its declared media type and its content signature together. Every other type, above all programs, scripts, shortcuts and archives, is never opened.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "pdf"
+            },
+            "media_type": {
+              "const": "application/pdf"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "png"
+            },
+            "media_type": {
+              "const": "image/png"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "jpg"
+            },
+            "media_type": {
+              "const": "image/jpeg"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "jpeg"
+            },
+            "media_type": {
+              "const": "image/jpeg"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "gif"
+            },
+            "media_type": {
+              "const": "image/gif"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "txt"
+            },
+            "media_type": {
+              "const": "text/plain"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "docx"
+            },
+            "media_type": {
+              "const": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "xlsx"
+            },
+            "media_type": {
+              "const": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "pptx"
+            },
+            "media_type": {
+              "const": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "doc"
+            },
+            "media_type": {
+              "const": "application/msword"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "xls"
+            },
+            "media_type": {
+              "const": "application/vnd.ms-excel"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "ppt"
+            },
+            "media_type": {
+              "const": "application/vnd.ms-powerpoint"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "odt"
+            },
+            "media_type": {
+              "const": "application/vnd.oasis.opendocument.text"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "ods"
+            },
+            "media_type": {
+              "const": "application/vnd.oasis.opendocument.spreadsheet"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "const": "odp"
+            },
+            "media_type": {
+              "const": "application/vnd.oasis.opendocument.presentation"
+            }
+          },
+          "required": [
+            "extension",
+            "media_type"
+          ]
+        }
+      ]
+    },
+    "DocumentReference": {
+      "title": "DocumentReference",
+      "description": "A plain document name: letters, digits, '-', '_' and '.', not a path, drive or reserved Windows name.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]{1,200}$"
+    },
+    "RecordDocument": {
+      "title": "RecordDocument",
+      "description": "wise.record_document.v1: one document behind a record, written by the work side's masking step and only read by the platform. Every value is plain text.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "wise.record_document.v1"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "email, note, object, status or another kind the document names"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "fields": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "value": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            },
+            "required": [
+              "label",
+              "value"
+            ]
+          }
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        "masked": {
+          "type": "boolean"
+        },
+        "cut": {
+          "type": "boolean",
+          "description": "The work side shortened this document itself."
+        },
+        "attachments": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "type": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "name",
+              "type",
+              "size",
+              "path"
+            ]
+          }
+        },
+        "changes": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "old": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 1048576
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "new": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 1048576
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "time": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "field",
+              "old",
+              "new",
+              "time"
+            ]
+          }
+        }
+      },
+      "required": [
+        "format",
+        "kind",
+        "title",
+        "fields",
+        "text",
+        "masked",
+        "attachments",
+        "changes"
+      ]
+    },
+    "DocumentFolderRequest": {
+      "title": "DocumentFolderRequest",
+      "description": "Read the workspace's document folder, or change it when change is given (folder null clears it).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "document_folder_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "change": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "folder": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "folder"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "change"
+      ]
+    },
+    "DocumentFolderAnswer": {
+      "title": "DocumentFolderAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "document_folder_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "folder": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state": {
+          "enum": [
+            "not_set",
+            "available",
+            "missing",
+            "not_a_folder"
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "folder",
+        "state"
+      ]
+    },
+    "RecordDocumentRequest": {
+      "title": "RecordDocumentRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "record_document_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "row_id": {
+          "type": "string",
+          "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "case_id",
+        "row_id"
+      ]
+    },
+    "RecordDocumentAnswer": {
+      "title": "RecordDocumentAnswer",
+      "description": "The record's document, or why it is not available. A refusal names the rule, never the content.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "record_document_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "case_id": {
+          "type": "string"
+        },
+        "row_id": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "available",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "no_reference",
+                "folder_not_set",
+                "folder_missing",
+                "not_a_valid_reference",
+                "outside_folder",
+                "file_missing",
+                "unreadable",
+                "too_large",
+                "invalid_json",
+                "unknown_format_version",
+                "invalid_document"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_document_bytes": {
+          "$ref": "#/$defs/MaxDocumentBytes"
+        },
+        "document": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecordDocument"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "openable_attachments": {
+          "type": "array",
+          "items": {
+            "type": "boolean"
+          },
+          "description": "For each listed attachment, whether its declared name and type are on the stated list; its file is checked again when it is opened."
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "case_id",
+        "row_id",
+        "state",
+        "reason",
+        "size_bytes",
+        "max_document_bytes",
+        "document",
+        "openable_attachments"
+      ]
+    },
+    "AttachmentOpenRequest": {
+      "title": "AttachmentOpenRequest",
+      "description": "A deliberate request to open one attachment with the computer's default program.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "attachment_open_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "case_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "row_id": {
+          "type": "string",
+          "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "attachment_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 199
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "case_id",
+        "row_id",
+        "attachment_index"
+      ]
+    },
+    "AttachmentOpenAnswer": {
+      "title": "AttachmentOpenAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "attachment_open_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "opened": {
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "document_unavailable",
+                "no_such_attachment",
+                "not_an_allowed_type",
+                "type_mismatch",
+                "invalid_path",
+                "outside_folder",
+                "file_missing",
+                "unsupported_system",
+                "open_failed"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "opened",
+        "reason"
+      ]
+    },
+    "RecordDocumentRefusal": {
+      "title": "RecordDocumentRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "record_document_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "code": {
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "forbidden_origin",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "population_unavailable",
+            "identity_mismatch",
+            "unknown_case",
+            "unknown_record",
+            "invalid_folder"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}
