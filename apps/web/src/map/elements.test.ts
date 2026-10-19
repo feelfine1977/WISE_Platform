@@ -55,6 +55,10 @@ describe("the element selected on the map", () => {
       { label: "Keep incidents where “Geschlossen” directly follows “Eröffnet”", step: follows(opened, closed) },
       { label: "Keep incidents where it never does", step: follows(opened, closed, true) },
     ]);
+    // #5: a path over records without activity label says that it passes over them.
+    expect(stepChoices({ kind: "path", source: opened, target: closed, passages: 2, bridged: 1 })[0].label).toBe(
+      "Keep incidents where “Geschlossen” directly follows “Eröffnet” in the activity sequence, records without activity label between them passed over",
+    );
   });
 
   it("names a flow the map adds from Start or to End by the activity incidents begin or end with", () => {

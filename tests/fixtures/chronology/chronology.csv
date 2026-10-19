@@ -1,0 +1,12 @@
+Ticket,Status,At,Seq,Desk
+T-1,Opened,2026-04-03T09:00:00Z,9,East
+T-1,Assigned,2026-04-03T10:00:00Z,3,East
+T-1,Commented,2026-04-03T10:00:00Z,1,West
+T-1,Resolved,2026-04-03T10:00:00Z,2,West
+T-2,Opened,2026-04-04T08:00:00Z,1,East
+T-2,,2026-04-04T09:00:00Z,2,East
+T-2,Resolved,2026-04-04T10:00:00Z,3,
+T-2,,2026-04-04T11:00:00Z,4,West
+T-3,Opened,2026-04-05T08:00:00Z,1,East
+T-3,Assigned,2026-04-05,2,East
+T-3,Resolved,2026-04-05T12:00:00Z,3,East

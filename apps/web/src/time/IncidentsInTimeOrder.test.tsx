@@ -16,7 +16,7 @@ const ids = Array.from({ length: 250 }, (_, place) => `I-${String(place).padStar
 const keptCases: ImportedCaseSummary[] = ids.map((case_id) => ({ case_id, record_count: 3, mapped_record_count: 3, omitted_activity_record_count: 0, sequence_evaluable: true }) as ImportedCaseSummary);
 
 /** A case list that orders the incidents by their place, the last the longest, and has no time for the first one. */
-function ordering() {
+function ordering(clock: "utc_instant" | "wall_clock" = "utc_instant") {
   return {
     list: vi.fn(async (request: CaseListRequest): Promise<CaseListOutcome> => {
       const longestFirst = [...ids].reverse();
@@ -25,7 +25,7 @@ function ordering() {
         const hours = ids.indexOf(case_id);
         const time_summary = hours === 0
           ? { status: "unavailable", reason: "order_unknown" }
-          : { status: "available", timestamp_kind: "utc_instant", observed_span_hours: hours, maximum_adjacent_raw_gap_hours: hours / 2 };
+          : { status: "available", timestamp_kind: clock, observed_span_hours: hours, maximum_adjacent_raw_gap_hours: hours / 2 };
         return { case_id, record_count: 3, mapped_record_count: 3, omitted_activity_record_count: 0, sequence_evaluable: hours !== 0, time_summary, maximum_gap_context: null } as unknown as ExplorerCaseSummary;
       });
       const next = request.query.offset + rows.length;
@@ -61,8 +61,8 @@ function evidenceOf(answering: (request: ImportedCaseEvidenceRequest, answer: Im
   };
 }
 
-function setup(order: "observed_span_hours" | "maximum_adjacent_raw_gap_hours" = "observed_span_hours", evidence = evidenceOf()) {
-  const caseLists = ordering();
+function setup(order: "observed_span_hours" | "maximum_adjacent_raw_gap_hours" = "observed_span_hours", evidence = evidenceOf(), clock: "utc_instant" | "wall_clock" = "utc_instant") {
+  const caseLists = ordering(clock);
   const onOpen = vi.fn();
   render(
     <>
@@ -83,6 +83,18 @@ describe("the kept incidents in an order by time", () => {
     expect(within(first).getByRole("button").textContent).toBe("I-249");
     expect(within(first).getAllByRole("cell").map((cell) => cell.textContent).slice(4, 6)).toEqual(["10.4 d", "5.2 d"]);
     expect(screen.getByText("200 incidents of 250")).toBeTruthy();
+  });
+
+  it("says under the table that wall-clock spans and gaps may differ from the physical elapsed time", async () => {
+    setup("observed_span_hours", evidenceOf(), "wall_clock");
+    await screen.findByRole("table", { name: "Kept incidents" });
+    expect(screen.getByText(/^Wall clock: span and longest gap are differences between times as recorded/)).toBeTruthy();
+  });
+
+  it("shows no wall-clock note for instants", async () => {
+    setup();
+    await screen.findByRole("table", { name: "Kept incidents" });
+    expect(screen.queryByText(/^Wall clock: span and longest gap/)).toBeNull();
   });
 
   it("loads the next page under the list, and offers no more after the last one", async () => {

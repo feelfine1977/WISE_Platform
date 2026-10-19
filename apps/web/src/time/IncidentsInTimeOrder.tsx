@@ -122,6 +122,12 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
         extra={{ head: `Records over time, 0 to ${durationName(axisHours)}`, cell: (caseId) => <RecordMarks caseId={caseId} loader={loader} axisHours={axisHours} /> }}
         {...table}
       />
+      {rows.some((row) => "timestamp_kind" in row.time_summary && row.time_summary.timestamp_kind === "wall_clock") && (
+        <p className="muted">
+          Wall clock: span and longest gap are differences between times as recorded, without a time zone; across a clock change they may differ
+          from the physical elapsed time.
+        </p>
+      )}
       <div className="incident-more">
         <span className="muted">
           {countOf(cases.length, "incident")} of {total.toLocaleString("en")}

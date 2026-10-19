@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import type { ConfirmMappingRequest, ExcludedSourceRecord, InterpretationAnswer, PreparationId, RowIssue } from "../generated/imports";
+import type { EarlierReading } from "./coordinator";
 import { oneRecordPerIncident, Understood } from "./Understood";
 import { countOf, excludedReasonLabels, issueLabels, severityLabels, utcText, wallText } from "./wording";
 
@@ -13,6 +14,10 @@ interface ReportProps {
   request: ConfirmMappingRequest;
   answer: InterpretationAnswer;
   filename?: string;
+  /** Whether the analyst entered the cutoff rather than taking the one proposed from the data. */
+  cutoffEntered?: boolean;
+  /** The reading of the same source with other choices before this one, to show what the change does. */
+  previous?: EarlierReading;
   /** Column names by index, as the inspection read them. */
   names: Map<number, string>;
   onAccept: () => void;
@@ -20,7 +25,7 @@ interface ReportProps {
 }
 
 /** The interpretation report exactly as supplied, and what can be done next. */
-export function Report({ request, answer, filename, names, onAccept, onOpenIncidents }: ReportProps) {
+export function Report({ request, answer, filename, cutoffEntered, previous, names, onAccept, onOpenIncidents }: ReportProps) {
   const { report } = answer;
   const confirmId = useId();
   const singleId = useId();
@@ -121,7 +126,8 @@ export function Report({ request, answer, filename, names, onAccept, onOpenIncid
           </ul>
         </details>
       )}
-      {answer.state !== "blocked" && <Understood request={request} answer={answer} names={names} filename={filename} />}
+      {previous !== undefined && <Compared previous={previous} report={report} />}
+      {answer.state !== "blocked" && <Understood request={request} answer={answer} names={names} filename={filename} cutoffEntered={cutoffEntered} />}
       {answer.state === "needs_confirmation" && (
         <div className="confirm">
           <label className="check" htmlFor={confirmId}>
@@ -141,7 +147,14 @@ export function Report({ request, answer, filename, names, onAccept, onOpenIncid
               Open them as incidents of one record each.
             </label>
           )}
-          <button type="button" className="primary" disabled={single && !singleAccepted} onClick={() => onOpenIncidents(answer.preparation!.preparation_id)}>
+          <button
+            type="button"
+            className="primary"
+            data-open-preparation={answer.preparation.preparation_id}
+            data-open-place="report"
+            disabled={single && !singleAccepted}
+            onClick={() => onOpenIncidents(answer.preparation!.preparation_id)}
+          >
             Open incidents
           </button>
         </div>
@@ -249,6 +262,52 @@ function Issues({ issues }: { issues: RowIssue[] }) {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/** The support of a reading that a change of choices can move, by label. */
+const COMPARED: [string, (report: InterpretationAnswer["report"]) => number, string][] = [
+  ["With a usable time", (report) => report.usable_timestamp_record_count, "record"],
+  ["Without a usable time", (report) => report.unavailable_timestamp_record_count, "record"],
+  ["With an incident id", (report) => report.identified_record_count, "record"],
+  ["Outside every incident", (report) => report.unassigned_record_count, "record"],
+  ["Incidents", (report) => report.case_count, "incident"],
+  ["Incidents in a known order", (report) => report.sequence_evaluable_case_count, "incident"],
+  ["Records without activity label", (report) => report.omitted_activity_record_count, "record"],
+  ["Records sharing a time within an incident", (report) => report.tied_timestamp_record_count, "record"],
+];
+
+/** What a change of choices does to the support, beside the previous reading of the same source, which stays as it was. */
+function Compared({ previous, report }: { previous: EarlierReading; report: InterpretationAnswer["report"] }) {
+  const signed = (value: number) => (value === 0 ? "no change" : `${value > 0 ? "+" : "−"}${Math.abs(value).toLocaleString("en")}`);
+  return (
+    <div className="compared">
+      <table className="plain-table compact-table">
+        <caption className="caption">Compared with the previous reading of this source</caption>
+        <thead>
+          <tr>
+            <th scope="col">Support</th>
+            <th scope="col" className="number">Previous reading</th>
+            <th scope="col" className="number">This reading</th>
+            <th scope="col" className="number">Change</th>
+          </tr>
+        </thead>
+        <tbody>
+          {COMPARED.map(([label, of, unit]) => (
+            <tr key={label}>
+              <th scope="row">{label}</th>
+              <td className="number">{countOf(of(previous.report), unit)}</td>
+              <td className="number">{countOf(of(report), unit)}</td>
+              <td className="number">{signed(of(report) - of(previous.report))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="muted">
+        The previous reading stays as it was{previous.preparationId !== null ? `, as preparation ${previous.preparationId}` : ""}, with everything saved on
+        it; this reading becomes a preparation of its own once it is ready.
+      </p>
     </div>
   );
 }

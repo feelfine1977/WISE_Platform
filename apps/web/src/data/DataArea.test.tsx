@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import App from "../App";
 import { healthy } from "../test/answers";
 import { everyIncident, graphAnswer, scriptedSelectionClient, selectionAnswer } from "../test/selections";
-import type { CsvInspectionAnswer, InspectCsvRequest } from "../generated/imports";
+import type { CsvInspectionAnswer, InspectCsvRequest, InterpretationAnswer } from "../generated/imports";
 import {
   bothWaysInspectionAnswer,
   commaInspectionAnswer,
@@ -926,5 +926,77 @@ describe("choosing columns and time formats the inspection did not suggest", () 
       "The activity column has no filled cell: no activity is mapped; every record stays as raw evidence.",
       NO_TIME,
     ]);
+  });
+});
+
+function currentArea(): string | null {
+  const areas = within(screen.getByRole("navigation", { name: "Areas" })).getAllByRole("button");
+  return areas.find((button) => button.getAttribute("aria-current") === "page")?.textContent ?? null;
+}
+
+describe("#5 changing a reading, and the way back to it", () => {
+  /** The service's answer to a reading that is ready at once, with the support given. */
+  function ready(request: Parameters<typeof interpretationAnswer>[0], support: { usable: number; unavailable: number }, id: string): InterpretationAnswer {
+    const answer = interpretationAnswer({ ...request, accept_report_issues: true });
+    return {
+      ...answer,
+      preparation: { ...answer.preparation!, preparation_id: `preparation.v1:sha256:${id.repeat(64)}` },
+      report: { ...answer.report, usable_timestamp_record_count: support.usable, unavailable_timestamp_record_count: support.unavailable },
+    } as InterpretationAnswer;
+  }
+
+  it("shows what a change of choices does to the support, beside the previous reading, and returns the focus to where incidents were opened", async () => {
+    const app = renderApp();
+    await openWorkspace(app);
+    await addSource(app);
+    await chooseReading(app);
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    const first = app.imports.confirmations.at(-1)!;
+    await deliver(() => first.reply({ ok: true, answer: ready(first.request, { usable: 3, unavailable: 1 }, "a") }));
+    expect(screen.queryByRole("table", { name: "Compared with the previous reading of this source" })).toBeNull();
+
+    // Another offset: the reading is previewed with what it changes, and the previous one is named as kept.
+    await app.user.selectOptions(screen.getByLabelText("Offset from UTC"), "60");
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    const second = app.imports.confirmations.at(-1)!;
+    expect(second.request.policies.time).not.toEqual(first.request.policies.time);
+    await deliver(() => second.reply({ ok: true, answer: ready(second.request, { usable: 2, unavailable: 2 }, "b") }));
+    const compared = screen.getByRole("table", { name: "Compared with the previous reading of this source" });
+    const usable = within(compared).getByRole("rowheader", { name: "With a usable time" }).closest("tr")!;
+    expect([...usable.querySelectorAll("td")].map((cell) => cell.textContent)).toEqual(["3 records", "2 records", "−1"]);
+    expect(compared.parentElement?.textContent).toContain(`The previous reading stays as it was, as preparation preparation.v1:sha256:${"a".repeat(64)}`);
+
+    // Opened from the report, the incidents are shown; coming back to the Data area returns the focus to that control.
+    await app.user.click(screen.getByRole("button", { name: "Open incidents" }));
+    expect(currentArea()).toBe("Investigations");
+    await app.user.click(within(screen.getByRole("navigation", { name: "Areas" })).getByRole("button", { name: "Data" }));
+    expect(document.activeElement?.getAttribute("data-open-place")).toBe("report");
+    expect(document.activeElement?.getAttribute("data-open-preparation")).toBe(`preparation.v1:sha256:${"b".repeat(64)}`);
+  });
+
+  it("keeps the earlier preparations and a visible way on while a reading waits, is stopped or fails", async () => {
+    const app = renderApp();
+    await openWorkspace(app, true);
+    await addSource(app);
+    await chooseReading(app);
+    const listed = () => within(screen.getByRole("table", { name: "Prepared readings in this workspace" })).getAllByRole("row").length;
+    const before = listed();
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    // Pending: the earlier preparation stays listed and can be opened; waiting can be stopped.
+    expect(listed()).toBe(before);
+    await app.user.click(screen.getByRole("button", { name: "Stop waiting" }));
+    expect(app.imports.confirmations.at(-1)!.signal?.aborted).toBe(true);
+    expect((screen.getByRole("button", { name: "Read the source with these choices" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(listed()).toBe(before);
+    // A failed reading says so with Try again; nothing earlier is lost.
+    await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
+    const failed = app.imports.confirmations.at(-1)!;
+    await deliver(() => failed.reply(importRefusal(failed.request, "confirm_mapping", "computation_failed", "The reading could not be completed.")));
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("The source cannot be read with these choices");
+    expect(within(alert).getByRole("button", { name: "Try again" })).toBeTruthy();
+    expect(listed()).toBe(before);
+    await app.user.click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(app.imports.confirmations.at(-1)!.request.policies).toEqual(failed.request.policies);
   });
 });

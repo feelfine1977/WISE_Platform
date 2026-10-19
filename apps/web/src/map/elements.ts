@@ -103,7 +103,15 @@ export function stepChoices(element: SelectedElement | null): StepChoice[] {
   if (element?.kind === "path") {
     const path = { kind: "directly_follows" as const, source_activity: element.source, target_activity: element.target };
     return [
-      { label: `Keep incidents where “${element.target}” directly follows “${element.source}”`, step: { ...path, negate: false } },
+      {
+        // A path that passes over records without activity label joins the labelled records around them; its step says so,
+        // so that it is not read as the two records directly following each other in the file.
+        label:
+          element.bridged > 0
+            ? `Keep incidents where “${element.target}” directly follows “${element.source}” in the activity sequence, records without activity label between them passed over`
+            : `Keep incidents where “${element.target}” directly follows “${element.source}”`,
+        step: { ...path, negate: false },
+      },
       { label: "Keep incidents where it never does", step: { ...path, negate: true } },
     ];
   }

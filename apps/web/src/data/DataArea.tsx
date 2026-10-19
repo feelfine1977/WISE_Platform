@@ -1,4 +1,4 @@
-import { type FormEvent, useId, useState, useSyncExternalStore } from "react";
+import { type FormEvent, useEffect, useId, useState, useSyncExternalStore } from "react";
 import type { PreparationTarget } from "../imported/coordinator";
 import type { DataCoordinator, DataState } from "./coordinator";
 import { workspaceExamples } from "./examples";
@@ -17,6 +17,19 @@ interface DataAreaProps {
 /** Adding a source and confirming how it is read, in the workspace in use. */
 export function DataArea({ coordinator, onOpenIncidents }: DataAreaProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
+  // Coming back from the incidents, the focus returns to the control they were opened from.
+  useEffect(() => {
+    const opened = coordinator.takeOpened();
+    if (opened === null) return;
+    const control = [...document.querySelectorAll<HTMLElement>(`[data-open-place="${opened.place}"]`)].find(
+      (element) => element.dataset.openPreparation === opened.preparationId,
+    );
+    control?.focus();
+  }, [coordinator]);
+  const openFrom = (place: "report" | "table") => (target: PreparationTarget) => {
+    coordinator.noteOpened(target.preparationId, place);
+    onOpenIncidents(target);
+  };
   return (
     <main className="data-area" aria-labelledby="data-title">
       <div className="toolbar">
@@ -28,10 +41,10 @@ export function DataArea({ coordinator, onOpenIncidents }: DataAreaProps) {
       <div className="data-steps">
         <WorkspaceStep state={state} coordinator={coordinator} />
         {state.workspace.phase === "open" && (
-          <SourceStep state={state} coordinator={coordinator} onOpenIncidents={onOpenIncidents} />
+          <SourceStep state={state} coordinator={coordinator} onOpenIncidents={openFrom("table")} />
         )}
         {state.workspace.phase === "open" && state.source.phase === "stored" && (
-          <ReadingChoices state={state} coordinator={coordinator} onOpenIncidents={onOpenIncidents} />
+          <ReadingChoices state={state} coordinator={coordinator} onOpenIncidents={openFrom("report")} />
         )}
       </div>
     </main>
@@ -263,6 +276,8 @@ function SourceStep({
                   <td>
                     <button
                       type="button"
+                      data-open-preparation={item.preparation_id}
+                      data-open-place="table"
                       onClick={() =>
                         onOpenIncidents({ workspaceId: workspace.answer.workspace_id, preparationId: item.preparation_id, sourceName: names.get(item.source_id) })
                       }
