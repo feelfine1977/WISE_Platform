@@ -99,6 +99,21 @@ describe("human-readable frozen purchasing report",()=>{
     expect(staleMembers).not.toBe(b);
     expect(()=>expectSubtypeSection(md.replace(b,staleMembers),4,"subtype-B",true)).toThrow();
   });
+  it("reports only the current profile run B: its roles, totals and definition, never revision A's",()=>{
+    const a=literal().manifest.outputs[0];
+    const {revision,manifest}=literal();
+    const action=revision.content.bpic19_pipeline!.actions[0],output=manifest.outputs[0];
+    action.definition_id=output.definition_id="profile-definition-B";output.sha256="5".repeat(64);
+    const profile=(output.output as {profile:{definition:{roles:Record<string,number>};population:Record<string,number>}}).profile;
+    profile.definition.roles.item_category=16;profile.population.case_count=5;profile.population.record_count=8;
+    const md=purchasingReportMarkdown(revision,manifest);
+    expect(md).toContain("profile-definition-B");expect(md).not.toContain(profileId);
+    expect(md).toContain("| item\\_category | 16 |");expect(md).not.toContain("| item\\_category | 9 |");
+    expect(md).toContain("| case\\_count | 5 |");expect(md).toContain("| record\\_count | 8 |");
+    // A's figures offered for B's definition are refused, not reported.
+    manifest.outputs[0]={...structuredClone(a),definition_id:"profile-definition-A"};
+    expect(()=>purchasingReportMarkdown(revision,manifest)).toThrow(/match/);
+  });
   it("names the verified selection-step association and exact category labels without retrofitting legacy origins",()=>{
     const {revision,manifest}=literal();
     revision.content.bpic19_pipeline!.actions[0].selection_keep={policy_id:"bpic19.profile_group_keep.v1",step_index:0,group:{kind:"flow",flow_id:"before_gr"}};
