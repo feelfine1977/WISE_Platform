@@ -259,5 +259,30 @@ def issue119(client, workspace: Path) -> dict:
         "Exact baseline3 groups", "A → B → B → A14", "A → B → B13", "A → X → B13", "First-occurrence signature2 groups", "A → B27"]}
 
 
-SCENARIOS = {"issue112": issue112, "issue119": issue119, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue120(client, workspace: Path) -> dict:
+    import test_issue120_ordinal_episodes_tcp as literal
+    from import_requests import envelope
+    wid, base = literal.prepare(client, workspace, literal.RAW)
+    identity = selection(client, wid, base, None)
+    query = {"roles": literal.PROFILE_ROLES, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
+    profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
+        identity=identity, query=query)).json()["profile"]
+    given = literal.request(wid, identity, literal.ORDINAL, limit=100)
+    answer = client.post(literal.ROUTE, json=given).json()
+    saved = save(client, wid, base, None, "T18 ordinal episodes", [
+        lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
+                         "selection_prefix_length": 0},
+        lambda current: {"operation": "bpic19_ordinal", "identity": current, "query": given["query"], "definition_id": answer["definition_id"],
+                         "selection_prefix_length": 0}])
+    # By hand. Cohorts (state, items, records): evaluated R, Z, V, M, K 5/19; matched R, Z, K 3/14; reversed V 1/3;
+    # unmatched M 1/2; unknown A 1/2. Stage 1→2 lags per episode 1, 1, 0, 1, 1 (V reversed): 5 available, 1 not,
+    # mean .8, median 1, one zero; per item R 1, Z 0, K 1, M 1: mean .75. Stage 2→3 per episode 2, 2, 2, 2, 3 (M none):
+    # mean 2.2; per item R 2, Z 2, K 2, V 3: mean 2.25.
+    return {"name": "T18 ordinal episodes", "saved": saved, "texts": [
+        "evaluated519", "observation matched314", "observation reversed13", "observation unmatched12", "unknown12",
+        "stage 1 to 2 / per episode5 / 10.811", "stage 1 to 2 / per item mean4 / 20.7511",
+        "stage 2 to 3 / per episode5 / 12.220", "stage 2 to 3 / per item mean4 / 22.2520"]}
+
+
+SCENARIOS = {"issue112": issue112, "issue119": issue119, "issue120": issue120, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}

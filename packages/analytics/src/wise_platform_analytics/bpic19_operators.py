@@ -137,11 +137,11 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
         },
     }
     if not isinstance(kind, str) or kind not in fields or set(r) != fields[kind]:
-        raise ValueError("This recipe has missing or unsupported parameters.")
+        raise _RecipeRefusal("invalid_parameter", "This recipe has missing or unsupported parameters.", "query.recipe")
 
     def enum(name, choices):
         if not isinstance(r[name], str) or r[name] not in choices:
-            raise ValueError(f"Unsupported {name} choice.")
+            raise _RecipeRefusal("invalid_parameter", f"Unsupported {name} choice.", "query.recipe." + name)
 
     if kind in {"ordinal", "fifo"}:
         enum(
@@ -168,17 +168,14 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
             ),
         )
         if r["order"] == "numeric_event_id" and roles["event_id"] is None:
-            raise ValueError(
-                "Numeric-eventID ordinals require an explicitly reviewed event_id column."
-            )
+            raise _RecipeRefusal("invalid_parameter",
+                "Numeric-eventID ordinals require an explicitly reviewed event_id column.", "query.roles.event_id")
         if r["order"] == "timestamp_numeric_event_id" and roles["event_id"] is None:
-            raise ValueError(
-                "Timestamp/numeric-eventID FIFO requires an explicitly reviewed event_id column."
-            )
+            raise _RecipeRefusal("invalid_parameter",
+                "Timestamp/numeric-eventID FIFO requires an explicitly reviewed event_id column.", "query.roles.event_id")
         if r["stages"] == "auto_flow" and roles["item_category"] is None:
-            raise ValueError(
-                "Automatic flow stages require a reviewed invariant category field."
-            )
+            raise _RecipeRefusal("invalid_parameter",
+                "Automatic flow stages require a reviewed invariant category field.", "query.roles.item_category")
     elif kind == "cancellation":
         _labels(r["target_activities"])
         _labels(r["cancellation_activities"])
