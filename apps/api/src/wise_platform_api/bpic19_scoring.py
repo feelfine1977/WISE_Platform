@@ -390,7 +390,10 @@ class Bpic19Scoring:
             if problem is not None: raise _Refused(problem)
             if settings["profile"] == "historical" and (settings["mode"] != "layer_balanced" or settings["criteria_family"] != "full"):
                 raise _Refused(Problem("unsupported_policy", "The historical profile requires its complete 29-criterion layer-balanced definition.", "settings"))
-            norm = paper_norm_document(settings["mode"], settings["criteria_family"]) if settings["profile"] == "paper" else _historical_binding()[0]
+            if settings.get("historical_corrections") and settings["profile"] != "historical":
+                raise _Refused(Problem("unsupported_policy", "Historical corrections apply only to the historical notebook profile.", "settings.historical_corrections"))
+            norm = (paper_norm_document(settings["mode"], settings["criteria_family"]) if settings["profile"] == "paper"
+                    else _historical_binding(tuple(settings.get("historical_corrections", ())))[0])
             if settings["view"] not in {view["name"] for view in norm["views"]}:
                 raise _Refused(Problem("unsupported_policy", "That stakeholder view belongs to another source profile.", "settings.view"))
             scoped_exposure = self._exposure_reference_scope(given, prepared, population)

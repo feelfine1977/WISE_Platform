@@ -143,7 +143,22 @@ def verified_historical_catalogue() -> dict:
     }}
 
 
-def _historical_binding() -> tuple[dict, list[dict], dict[str, dict]]:
+# Separately reviewed corrections of the frozen historical catalogue. Each one is a new norm and profile identity;
+# the frozen catalogue itself is never edited or aliased.
+HISTORICAL_CORRECTIONS = {
+    "singular_change_payment_term": {
+        "criterion_id": "c_l4_change_payment_terms_repeats", "frozen_activity": "Change Payment Terms",
+        "corrected_activity": "Change payment term",
+        "reason": "The source records the singular label; the frozen plural selector matches none of it.",
+    },
+}
+
+
+def _historical_binding(corrections: Sequence[str] = ()) -> tuple[dict, list[dict], dict[str, dict]]:
+    unknown = [name for name in corrections if name not in HISTORICAL_CORRECTIONS]
+    if unknown or len(set(corrections)) != len(corrections):
+        raise SettingError("Choose distinct registered historical corrections.", "settings.historical_corrections")
+    applied = {HISTORICAL_CORRECTIONS[name]["criterion_id"]: HISTORICAL_CORRECTIONS[name] for name in corrections}
     catalogue = verified_historical_catalogue()
     source = catalogue["source"]
     constraints, omitted, bindings = [], [], {}
@@ -165,6 +180,8 @@ def _historical_binding() -> tuple[dict, list[dict], dict[str, dict]]:
         kind, params, key = criterion["type"], criterion["params"], criterion["id"]
         if kind in {"presence", "presence_any", "absence", "absence_any", "count_excess"}:
             activities = params.get("activities_any_of", [params.get("activity")])
+            if key in applied:
+                activities = [applied[key]["corrected_activity"]]
             binding = {"activities": activities, "selector_policy": "historical_slug_v1"}
             target = params.get("min_count", 1) if kind.startswith("presence") else params.get("allowed_count", 0)
             width = params.get("saturation_width", 1)
@@ -204,7 +221,8 @@ def _historical_binding() -> tuple[dict, list[dict], dict[str, dict]]:
     document = {
         "schema_version": 3,
         "missing_values": "three_valued",
-        "name": HISTORICAL_PROFILE.replace(".partial", "") if not omitted else HISTORICAL_PROFILE,
+        "name": (HISTORICAL_PROFILE.replace(".partial", "") if not omitted else HISTORICAL_PROFILE).replace(
+            ".v1", "".join(".corrected." + name for name in sorted(corrections)) + ".v1"),
         "version": "1",
         "scoring_mode": "layer_balanced",
         "layers": [{"id": key} for key in source["layers"]],
@@ -223,6 +241,7 @@ def _historical_binding() -> tuple[dict, list[dict], dict[str, dict]]:
             "timestamp_policy": "independent_parsed_minima_without_paper_range_filter; reversed_elapsed_interval_unavailable; tie_zero",
             "resource_policy": "outer_trim_lower_for_classification; exclude_empty_nan_none_null_and_batch_prefix; distinct_original_labels",
             "value_policy": "sample_SD_ddof1_divided_by_mean_clipped_at_1e-6; item_maxabs_global_linear_P95; explicit_legacy_missing_fill_zero",
+            "corrections": [{"correction_id": name, **HISTORICAL_CORRECTIONS[name]} for name in sorted(corrections)],
         },
     }
     return document, omitted, bindings
@@ -406,7 +425,10 @@ class Bpic19Assessment:
 
     @cached_property
     def historical_bindings(self) -> dict:
-        return _historical_binding()[2] if self.norm_document["name"].startswith("bpic19.notebook") else {}
+        if not self.norm_document["name"].startswith("bpic19.notebook"):
+            return {}
+        corrections = [entry["correction_id"] for entry in self.norm_document.get("metadata", {}).get("corrections", [])]
+        return _historical_binding(corrections)[2]
 
     @cached_property
     def native_tables(self) -> dict:
@@ -610,6 +632,8 @@ class Bpic19Assessment:
                 "volume": self.volume,
                 "min_cases": self.min_cases,
                 "association_min_support": self.association_min_support,
+                **({"historical_corrections": corrections} if (corrections := [entry["correction_id"] for entry in
+                    self.norm_document.get("metadata", {}).get("corrections", [])]) else {}),
             },
             "exposure_calibration": self.exposure_receipt,
             "population_case_count": len(ids),
@@ -680,7 +704,9 @@ class Bpic19Assessment:
         if not self.norm_document["name"].startswith("bpic19.notebook"): return []
         observed = sum(count for feature in self.features.values() for label,count in feature.get("activity_counts",{}).items()
                        if _slug(label) == "change_payment_term")
-        if not observed: return []
+        corrected = any(entry["criterion_id"] == "c_l4_change_payment_terms_repeats"
+                        for entry in self.norm_document.get("metadata", {}).get("corrections", []))
+        if not observed or corrected: return []
         return [{"criterion_id":"c_l4_change_payment_terms_repeats","selected_label":"Change Payment Terms",
                  "observed_alternate_label":"Change payment term","observed_occurrence_count":observed,
                  "policy":"historical_slug_v1_preserve_plural_difference",
@@ -849,6 +875,7 @@ def evaluate_features(
     exposure_calibration: Mapping | None = None,
     exposure_provenance: Mapping | None = None,
     association_min_support: int = 1,
+    historical_corrections: Sequence[str] = (),
 ) -> Bpic19Assessment:
     """Bind reviewed raw features to native Method; no application score formula."""
     problem = method.method_problem()
@@ -881,6 +908,8 @@ def evaluate_features(
         raise ValueError("Association minimum support must be a positive integer.")
     _mode(mode)
     bindings, omitted = None, []
+    if historical_corrections and profile != "historical":
+        raise SettingError("Historical corrections apply only to the historical notebook profile.", "settings.historical_corrections")
     if profile == "paper":
         document = paper_norm_document(mode, criteria_family)
         omitted = [
@@ -893,7 +922,7 @@ def evaluate_features(
             raise ValueError("The historical profile uses its full separate 29-criterion catalogue.")
         if mode != "layer_balanced":
             raise ValueError("The historical compatibility profile requires layer_balanced mode.")
-        document, omitted, bindings = _historical_binding()
+        document, omitted, bindings = _historical_binding(tuple(historical_corrections))
     else:
         raise ValueError("Choose paper or historical profile.")
     wise, pandas = method._wise(), method._pandas()

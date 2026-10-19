@@ -327,6 +327,17 @@
         "association_min_support": {
           "type": "integer",
           "minimum": 1
+        },
+        "historical_corrections": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 1,
+          "items": {
+            "enum": [
+              "singular_change_payment_term"
+            ]
+          },
+          "description": "Separately reviewed corrections of the frozen historical notebook catalogue, for the historical profile only. Each correction is a new norm and profile identity; the frozen catalogue is never edited."
         }
       },
       "required": [
@@ -836,6 +847,16 @@
             "association_min_support": {
               "type": "integer",
               "minimum": 1
+            },
+            "historical_corrections": {
+              "type": "array",
+              "uniqueItems": true,
+              "maxItems": 1,
+              "items": {
+                "enum": [
+                  "singular_change_payment_term"
+                ]
+              }
             }
           },
           "required": [

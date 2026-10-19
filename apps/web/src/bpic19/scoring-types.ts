@@ -117,6 +117,10 @@ export interface Settings {
     | "creation_first_source_position";
   criteria_family: "completion" | "completion_timing" | "completion_rework_effort" | "full";
   association_min_support?: number;
+  /**
+   * Separately reviewed corrections of the frozen historical notebook catalogue, for the historical profile only. Each correction is a new norm and profile identity; the frozen catalogue is never edited.
+   */
+  historical_corrections?: "singular_change_payment_term"[];
 }
 /**
  * An exact server-verified raw-measures recipe reference; contains no trusted client amounts. Its identity is the named population or exact frozen parent.
@@ -240,6 +244,7 @@ export interface Report {
     min_cases: number;
     criteria_family: "completion" | "completion_timing" | "completion_rework_effort" | "full";
     association_min_support?: number;
+    historical_corrections?: "singular_change_payment_term"[];
   };
   exposure_calibration: {
     [k: string]: unknown;

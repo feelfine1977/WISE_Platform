@@ -52,6 +52,7 @@ function restoredSettings(answer?: Bpic19ScoreAnswer): Settings {
     mode: stored.mode === "layer_balanced" ? "layer_balanced" : "flat", gamma: stored.gamma,
     group_by: stored.group_by as Settings["group_by"], min_cases: stored.min_cases,
     association_min_support: stored.association_min_support ?? 1,
+    ...(stored.historical_corrections?.length ? { historical_corrections: [...stored.historical_corrections] } : {}),
     volume: stored.volume === "exposure" ? "exposure" : "cases",
     exposure_policy: (["creation_value", "creation_unique_event", "creation_unique_value", "creation_first_source_position"].includes(String(answer.report.exposure_calibration?.policy)) ?
       answer.report.exposure_calibration?.policy : "max_absolute_p95") as Settings["exposure_policy"] };
@@ -103,6 +104,16 @@ function sameRoles(a: unknown, b: Roles): boolean {
   const roles = a as Record<string, unknown>;
   const keys = [...new Set([...Object.keys(roles), ...Object.keys(b)])];
   return keys.every(key => roles[key] === b[key as keyof Roles]);
+}
+/** The actual native binding of a criterion in the current run, as its norm records it; before a run none is claimed. */
+function nativeBinding(report: Bpic19ScoreAnswer["report"] | null, criterionId: string): string {
+  const metadata = report?.norm && typeof report.norm === "object" ? (report.norm as { metadata?: { raw_bindings?: Record<string, Record<string, unknown>> } }).metadata : undefined;
+  const binding = metadata?.raw_bindings?.[criterionId];
+  if (!report) return "Bound when the run is reviewed";
+  if (!binding) return "Native paper measure";
+  if (Array.isArray(binding.activities)) return `${binding.activities.join(" | ")} · ${String(binding.selector_policy ?? "exact")}`;
+  if (typeof binding.measure === "string") return binding.measure;
+  return binding.record_count ? "all original records" : JSON.stringify(binding);
 }
 function recipeText(norm: PreviewNorm, criterionId: string): string {
   const catalogue = norm.metadata?.raw_binding_recipe ?? norm.metadata?.source_operators;
@@ -269,11 +280,13 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
     <h2>Criteria and priorities</h2><p>Assess {subject.named_population.name} at PO item grain, then inspect business groups and purchasing documents.</p>
     {readOnly && <p>Frozen assessment: {settings.view} · {settings.mode === "flat" ? "flat criterion weights" : "layer balanced"} · gamma {settings.gamma}. Reading members and exporting preserves this run and its original population.</p>}
     {!readOnly && <form className="bpic19-controls" onSubmit={event => { event.preventDefault(); void run(); }}>
-      <label>Reference profile<select value={settings.profile} onChange={e => update(e.target.value === "paper" ? { profile: "paper", criteria_family: "full", view: "Balanced", mode: "flat", gamma: 0 } : { profile: "historical", criteria_family: "full", view: "Finance", mode: "layer_balanced", gamma: 20 })}>
+      <label>Reference profile<select value={settings.profile} onChange={e => update(e.target.value === "paper" ? { profile: "paper", criteria_family: "full", view: "Balanced", mode: "flat", gamma: 0, historical_corrections: undefined } : { profile: "historical", criteria_family: "full", view: "Finance", mode: "layer_balanced", gamma: 20 })}>
         <option value="paper">WISE paper · 10 criteria</option><option value="historical">Historical notebook · 29 criteria</option></select></label>
       {settings.profile === "paper" && <label>Criterion assembly<select value={settings.criteria_family} onChange={e => update({ criteria_family: e.target.value as Settings["criteria_family"] })}>
         <option value="completion">Completion · C01–C03</option><option value="completion_timing">Completion and timing · C01–C05</option>
         <option value="completion_rework_effort">Completion, rework and effort · 8 criteria</option><option value="full">Full paper · C01–C10</option></select></label>}
+      {settings.profile === "historical" && <label><input type="checkbox" checked={!!settings.historical_corrections?.includes("singular_change_payment_term")}
+        onChange={e => update({ historical_corrections: e.target.checked ? ["singular_change_payment_term"] : undefined })} /> Corrected singular Change payment term selector · a separate reviewed profile; the frozen catalogue stays unchanged</label>}
       <label>Stakeholder view<select value={settings.view} onChange={e => update({ view: e.target.value as Settings["view"] })}>{(settings.profile === "paper" ? paperViews : historicalViews).map(v => <option key={v}>{v}</option>)}</select></label>
       <label>Scoring mode<select value={settings.mode} disabled={settings.profile === "historical"} onChange={e => update({ mode: e.target.value as Settings["mode"] })}><option value="flat">Flat criterion weights</option><option value="layer_balanced">Layer balanced</option></select></label>
       <label>Group by<select value={settings.group_by.join(",")} onChange={e => update({ group_by: e.target.value.split(",") as Settings["group_by"] })}>
@@ -295,9 +308,11 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
     {!readOnly && <details className="bpic19-definition-preview"><summary>Review criterion definitions and stakeholder weights before running</summary>
       <p>{settings.profile === "paper" ? "WISE_12_10_2026.pdf · Table B2, PDF page 35; weights Table B3, PDF page 36." : "Historical notebook norm bpic19_norm_v1.json · version 1.0-paper-aligned, 7 March 2026."}
         {` ${preview.constraints.length} criteria compiled for ${settings.view}. Thresholds are researcher screening choices.`}</p>
-      <div className="bpic19-table-wrap"><table><caption>Selected native definitions</caption><thead><tr><th>Criterion</th><th>Meaning</th><th>Raw measurement</th><th>Scope</th><th>Direction</th><th>Threshold</th><th>Width</th><th>Raw weight</th><th>Supplied mandatory control</th></tr></thead>
-        <tbody>{preview.constraints.map(c => <tr key={c.id}><td>{c.id}</td><td>{c.description}</td><td>{c.params.attribute}<small>{recipeText(preview,c.id)}</small></td><td>{c.applicability.flow?.join(", ") ?? "All flows"}</td>
-          <td>{c.params.direction}</td><td>{c.params.threshold}</td><td>{c.params.width}</td><td>{previewView?.constraint_weights ? number(previewView.constraint_weights[c.id]) : `${number(c.weight)} within layer; ${number(previewView?.layer_weights?.[c.layer])} layer weight`}</td><td>{answer?.report.analysis_review?.mandatory_controls.find(control=>control.criterion_id===c.id)?.mandatory === undefined ? "No flag supplied" : answer.report.analysis_review.mandatory_controls.find(control=>control.criterion_id===c.id)?.mandatory ? "Mandatory" : "Not mandatory"}</td></tr>)}</tbody></table></div>
+      <div className="bpic19-table-wrap"><table><caption>Selected native definitions</caption><thead><tr><th>Criterion</th><th>Meaning</th><th>Raw measurement</th><th>Scope</th><th>Direction</th><th>Threshold</th><th>Width</th><th>Raw weight</th><th>Supplied mandatory control</th><th>Native binding</th></tr></thead>
+        <tbody>{preview.constraints.map(c => <tr key={c.id}><td>{c.id}</td><td>{c.description}</td><td>{c.params.attribute}<small>{recipeText(preview,c.id)}</small>
+          {settings.profile === "historical" && settings.historical_corrections?.includes("singular_change_payment_term") && c.id === "c_l4_change_payment_terms_repeats" &&
+            <small>Reviewed correction: selects the singular source label Change payment term; the frozen catalogue keeps Change Payment Terms.</small>}</td><td>{c.applicability.flow?.join(", ") ?? "All flows"}</td>
+          <td>{c.params.direction}</td><td>{c.params.threshold}</td><td>{c.params.width}</td><td>{previewView?.constraint_weights ? number(previewView.constraint_weights[c.id]) : `${number(c.weight)} within layer; ${number(previewView?.layer_weights?.[c.layer])} layer weight`}</td><td>{answer?.report.analysis_review?.mandatory_controls.find(control=>control.criterion_id===c.id)?.mandatory === undefined ? "No flag supplied" : answer.report.analysis_review.mandatory_controls.find(control=>control.criterion_id===c.id)?.mandatory ? "Mandatory" : "Not mandatory"}</td><td>{nativeBinding(report, c.id)}</td></tr>)}</tbody></table></div>
       <p>Paper timing selects independent parsed minima in 2017–2019. Paper resource measures require every record to match a user or batch identity. Historical recipes retain their separate invoice union, timestamp, attribution and frozen exposure rules.</p>
     </details>}
     <p className="bpic19-muted">Gamma changes ranking stability. Priorities use the arithmetic mean of scored items; exposure changes the multiplier. Associations and effort measures describe proxies.</p>

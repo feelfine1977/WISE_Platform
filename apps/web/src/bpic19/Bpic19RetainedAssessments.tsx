@@ -40,7 +40,8 @@ function supportedSettings(answer: Bpic19ScoreAnswer): boolean {
     full: "bpic19.paper.2026-10-12.v1",
   };
   const paper = answer.report.profile_id === paperProfiles[settings.criteria_family];
-  const historical = ["bpic19.notebook.1.0-paper-aligned.v1", "bpic19.notebook.1.0-paper-aligned.partial.v1"].includes(answer.report.profile_id);
+  const historical = ["bpic19.notebook.1.0-paper-aligned.v1", "bpic19.notebook.1.0-paper-aligned.partial.v1",
+    "bpic19.notebook.1.0-paper-aligned.corrected.singular_change_payment_term.v1"].includes(answer.report.profile_id);
   return (paper || historical && settings.criteria_family === "full" && settings.mode === "layer_balanced") &&
     (paper ? ["Balanced", "Completion", "Operations"] : ["Finance", "Logistics", "Compliance", "Automation"]).includes(settings.view) &&
     ["flat", "layer_balanced"].includes(settings.mode) && Number.isFinite(settings.gamma) && settings.gamma >= 0 &&
