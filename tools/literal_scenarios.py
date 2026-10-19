@@ -186,5 +186,17 @@ def issue115(client, workspace: Path) -> dict:
         "G20.92520.050.050.95", "Inspect members of G", "A PI of 0 means the group's mean is at or above that reference; it is not compliance"]}
 
 
-SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue116(client, workspace: Path) -> dict:
+    import test_issue116_signed_drivers_tcp as literal
+    saved = scored_scenario(client, workspace, literal, "completion_timing", "T14 signed drivers", literal.DRIVERS,
+                            group_by=["company"], min_cases=1)
+    # By hand: G (90, 60 days) mean .85, PI 2 × (.8625 − .85) = .025 from Completion −.125 and Timing +.15;
+    # H (30 days, never cleared) mean .875, PI 0 from Completion +.125 and Timing −.15.
+    return {"name": "T14 signed drivers", "saved": saved, "texts": [
+        "4 of 4 items scored · mean score 0.8625", "G20.8520.0250.0250.8625", "H20.875200",
+        "G-0.0625-0.125-0.125", "0.0750.150.15", "0.06250.1250.125", "-0.075-0.15-0.15",
+        "Timing exemplarsW60 · all-evaluable median 75 days · evaluated support 2 · positive candidates 2."]}
+
+
+SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue116": issue116, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}

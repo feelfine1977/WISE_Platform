@@ -282,6 +282,18 @@ class Journey:
         cases = scored.get("report", {}).get("case_page", {}).get("cases", [])
         c04 = next((entry for entry in cases[0]["criteria"] if entry["criterion_id"] == "C04"), {}) if cases else {}
         self.check("exemplar_c04_deviation", c04.get("deviation") is not None and abs(c04["deviation"] - exemplar["deviation"]) < 1e-6)
+        if "group_values" in exemplar:
+            # The group's timing exemplar: the positive item nearest the median of every C04-evaluable member.
+            grouped = self.stage("exemplar_group_score", self.post("investigations/bpic19-score", "bpic19_score_request", workspace_id=wid,
+                base_identity=base, named_population={"name": "Timing exemplar groups", "identity": base}, roles=self.measure_roles,
+                settings={**settings, "group_by": sorted(exemplar["group_values"])}, case_offset=0, case_limit=1))
+            rows = [row for row in grouped.get("report", {}).get("exemplars", [])
+                    if all(row.get(key) == value for key, value in exemplar["group_values"].items())]
+            chosen = rows[0] if len(rows) == 1 else {}
+            self.check("exemplar_is_the_group_timing_witness", chosen.get("case_id") == exemplar["case_id"]
+                       and abs((chosen.get("measurement_days") or 0) - exemplar["days"]) < 1e-6
+                       and abs((chosen.get("reference_median_days") or 0) - exemplar["days"]) < 1e-6
+                       and chosen.get("row_ids") == interval.get("row_ids") and len(chosen.get("row_ids", [])) == 2)
 
     def _check_completion_cohorts(self, wid: str, identity: dict, result: dict) -> None:
         """Completion is displayed with no exclusion chosen: every item, record and document is retained, open and
