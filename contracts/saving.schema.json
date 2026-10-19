@@ -2139,7 +2139,7 @@
         },
         "selection_keep": {
           "$ref": "#/$defs/Bpic19SelectionKeep",
-          "description": "Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage, interval-comparison side or native association set. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
+          "description": "Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage, interval-comparison side, native association set or recorded-event operator group. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
         }
       },
       "required": [
@@ -3206,6 +3206,28 @@
             "state"
           ],
           "description": "One named set of a reviewed native association comparison, exactly as its read filter names it: a population's items, a criterion's eligible, positive or unavailable items, or a target pair's intersection, union or jointly eligible items."
+        },
+        {
+          "title": "OperatorGroupKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "operator_group"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "The reviewed recorded-event operator answer's selection group key, for example a state, a truth value or the earliest occupancy peak."
+            }
+          },
+          "required": [
+            "kind",
+            "key"
+          ],
+          "description": "One complete-item selection group of a reviewed recorded-event operator answer (ordinal, FIFO, cancellation, rule or waiting)."
         }
       ]
     },
@@ -3221,9 +3243,10 @@
             "bpic19.measure_cohort_keep.v1",
             "bpic19.completion_cohort_keep.v1",
             "bpic19.interval_side_keep.v1",
-            "bpic19.association_set_keep.v1"
+            "bpic19.association_set_keep.v1",
+            "bpic19.operator_group_keep.v1"
           ],
-          "description": "Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts, an interval comparison or a native association comparison."
+          "description": "Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts, an interval comparison, a native association comparison or a recorded-event operator."
         },
         "step_index": {
           "type": "integer",

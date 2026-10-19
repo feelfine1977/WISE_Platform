@@ -396,5 +396,37 @@ def issue123(client, workspace: Path) -> dict:
         "A / B310.51.5acceptednot_established · A / B"]}
 
 
-SCENARIOS = {"issue123": issue123, "issue128": issue128, "issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue124(client, workspace: Path) -> dict:
+    import test_issue124_waiting_occupancy_tcp as literal
+    from import_requests import envelope
+    wid, base = literal.prepare(client, workspace, literal.RAW)
+    identity = selection(client, wid, base, None)
+    query = {"roles": literal.PROFILE_ROLES, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
+    profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
+        identity=identity, query=query)).json()["profile"]
+    given = literal.request(wid, identity, literal.CENSORED, limit=100)
+    answer = client.post(literal.ROUTE, json=given).json()
+    saved = save(client, wid, base, None, "T22 waiting occupancy", [
+        lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
+                         "selection_prefix_length": 0},
+        lambda current: {"operation": "bpic19_waiting", "identity": current, "query": given["query"], "definition_id": answer["definition_id"],
+                         "selection_prefix_length": 0}])
+    # By hand (first A to first B, right censored at the trusted day-6 horizon): A [0,2), B [2,4), C [1,3), D zero at day 2,
+    # E open [1,6); F's response has no time (unknown), G is reversed. Cohorts (items/records): evaluated A-E 5/11,
+    # matched A, B, C 3/8, censored E 1/1, zero D, reversed G and unknown F 1/2 each; peak A, C, E 3/7 (with A's and C's
+    # Change Price). Durations 2, 2, 2, 0, 5: mean 2.2, median 2. Segments 1, 3, 3, 2, 1 over [0,1), [1,2), [2,3), [3,4),
+    # [4,6): 11 item-days over 6 days, mean 1.8333, lower median 1 (count 1 holds 3 of 6 days).
+    return {"name": "T22 waiting occupancy", "saved": saved, "texts": [
+        "7 complete PO items · 15 original records · 7 inferred observations · Waiting intervals and occupancy.",
+        "evaluated511", "observation censored11", "observation matched38", "observation reversed12", "observation unknown12",
+        "observation zero12", "earliest peak occupancy37", "waiting duration / per episode5 / 22.221",
+        "Right-censored occupancy over [2018-01-01T00:00:00, 2018-01-07T00:00:00) on the source's wall-clock clock: items with a known absent response stay open until the trusted horizon; an unknown response time stays unknown. This reads a finite snapshot, not the live queue.",
+        "Cutoff receipt: horizon end 2018-01-07T00:00:00 · provenance Independent literal source snapshot; reviewed day6 observation cutoff · preparation trusted cutoff 2018-01-21T00:00:00 · outside the horizon: refused. Neither reading is an overdue or breach judgement: no obligation or due date is supplied.",
+        "5 available intervals · 4 positive · 1 zero. Peak 3 PO items at [2018-01-02T00:00:00, 2018-01-03T00:00:00).",
+        "11 item-days over 6 horizon days · duration-weighted mean 1.8333 items · lower median 1 items.",
+        "2018-01-01T00:00:002018-01-02T00:00:0012018-01-02T00:00:002018-01-03T00:00:0032018-01-03T00:00:002018-01-04T00:00:0032018-01-04T00:00:002018-01-05T00:00:0022018-01-05T00:00:002018-01-07T00:00:001",
+        "Item E · evaluated · 1 original records", "Item F · unknown · 2 original records", "Item G · reversed · 2 original records"]}
+
+
+SCENARIOS = {"issue124": issue124, "issue123": issue123, "issue128": issue128, "issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
