@@ -110,8 +110,10 @@ def test_the_document_folder_is_a_workspace_setting_only(opened):
         selection_recipe={"parent_case_ids": selected["parent"]["case_ids"], "predicates": []},
         context_policy="incident.context.first_record_in_declared_order.v1", comparison=None, notes="", bookmarks=[]))
     assert saved.status_code == 200, saved.text
-    assert str(documents) not in saved.text
-    holders = [path for path in workspace.rglob("*") if path.is_file() and str(documents).encode() in path.read_bytes()]
+    # The folder is looked for as written and as JSON writes it (on Windows its backslashes are doubled there).
+    forms = {str(documents), json.dumps(str(documents))[1:-1]}
+    assert not any(form in saved.text for form in forms)
+    holders = [path for path in workspace.rglob("*") if path.is_file() and any(form.encode() in path.read_bytes() for form in forms)]
     assert [path.relative_to(workspace).as_posix() for path in holders] == ["settings/document-folder.json"]
     assert folder(c, wid, None).json()["state"] == "not_set"
 
@@ -180,7 +182,8 @@ def test_nothing_of_a_document_is_written_or_logged(opened, caplog):
         for row in rows(c, wid, identity, case).values():
             replies.append(read(c, wid, identity, case, row))
             replies.append(open_attachment(c, wid, identity, case, row, 0))
-    secrets = [MARKER, "Invented Sender", "Invented letter.pdf", "letter-0001", "files/", str(documents)]
+    # The folder as written and as JSON writes it: on Windows its backslashes are doubled in a reply or a stored file.
+    secrets = [MARKER, "Invented Sender", "Invented letter.pdf", "letter-0001", "files/", str(documents), json.dumps(str(documents))[1:-1]]
     logged = caplog.text
     assert not [secret for secret in secrets if secret in logged]
     # Refusals and unavailable states name the rule, never the reference or the content.
