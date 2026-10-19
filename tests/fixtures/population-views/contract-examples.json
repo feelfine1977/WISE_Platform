@@ -45,7 +45,8 @@
         "unevaluable_case_count": 1,
         "unevaluable_case_ids": [
           "U"
-        ]
+        ],
+        "tied_first_record_case_count": 0
       },
       "parent": {
         "case_count": 3,
@@ -53,7 +54,8 @@
         "unevaluable_case_count": 1,
         "unevaluable_case_ids": [
           "U"
-        ]
+        ],
+        "tied_first_record_case_count": 0
       },
       "columns": [
         {
@@ -220,7 +222,8 @@
         "case_count": 1,
         "evaluable_case_count": 1,
         "unevaluable_case_count": 0,
-        "unevaluable_case_ids": []
+        "unevaluable_case_ids": [],
+        "tied_first_record_case_count": 0
       },
       "parent": {
         "case_count": 3,
@@ -228,7 +231,8 @@
         "unevaluable_case_count": 1,
         "unevaluable_case_ids": [
           "U"
-        ]
+        ],
+        "tied_first_record_case_count": 0
       },
       "columns": [
         {
@@ -403,13 +407,15 @@
         "case_count": 0,
         "evaluable_case_count": 0,
         "unevaluable_case_count": 0,
-        "unevaluable_case_ids": []
+        "unevaluable_case_ids": [],
+        "tied_first_record_case_count": 0
       },
       "parent": {
         "case_count": 0,
         "evaluable_case_count": 0,
         "unevaluable_case_count": 0,
-        "unevaluable_case_ids": []
+        "unevaluable_case_ids": [],
+        "tied_first_record_case_count": 0
       },
       "columns": [
         {
@@ -513,7 +519,8 @@
         "unevaluable_case_count": 1,
         "unevaluable_case_ids": [
           "U"
-        ]
+        ],
+        "tied_first_record_case_count": 0
       },
       "parent": {
         "case_count": 3,
@@ -521,7 +528,8 @@
         "unevaluable_case_count": 1,
         "unevaluable_case_ids": [
           "U"
-        ]
+        ],
+        "tied_first_record_case_count": 0
       },
       "columns": [
         {

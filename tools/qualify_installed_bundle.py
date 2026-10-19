@@ -136,10 +136,11 @@ def population_views(base, workspace, identity, parent_identity):
     assert opening['parent_identity'] == parent_identity
     profile = opening['opening_context']
     assert profile['anchor_policy'] == CONTEXT
+    # B4's ties lie after T-01's first record (09:00), so no first record is tied.
     assert profile['population'] == {'case_count': 1, 'evaluable_case_count': 1,
-        'unevaluable_case_count': 0, 'unevaluable_case_ids': []}
+        'unevaluable_case_count': 0, 'unevaluable_case_ids': [], 'tied_first_record_case_count': 0}
     assert profile['parent'] == {'case_count': 2, 'evaluable_case_count': 2,
-        'unevaluable_case_count': 0, 'unevaluable_case_ids': []}
+        'unevaluable_case_count': 0, 'unevaluable_case_ids': [], 'tied_first_record_case_count': 0}
     assert len(profile['columns']) == 1
     column = profile['columns'][0]
     assert column['column_index'] == 4 and column['column_name'] == 'Desk'

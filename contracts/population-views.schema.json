@@ -339,13 +339,18 @@
             "$ref": "#/$defs/CaseId"
           },
           "uniqueItems": true
+        },
+        "tied_first_record_case_count": {
+          "$ref": "#/$defs/Count",
+          "description": "Incidents whose first record shares its usable time with the next record; the declared order (time, then the sequence number, then the place in the file) chose their first record."
         }
       },
       "required": [
         "case_count",
         "evaluable_case_count",
         "unevaluable_case_count",
-        "unevaluable_case_ids"
+        "unevaluable_case_ids",
+        "tied_first_record_case_count"
       ]
     },
     "OpeningContext": {

@@ -1,0 +1,16 @@
+{
+ "about": "Hand-written expectations for #7 over tests/fixtures/explorer/core-v1.csv (Seq as the sequence number, opening_context as context) and tests/fixtures/incidents/S3.csv. The first recorded observation is the first record in declared order: usable time, then the sequence number, then the place in the file. Never read by product code.",
+ "core": {
+  "source": "tests/fixtures/explorer/core-v1.csv",
+  "column": "opening_context",
+  "column_index": 4,
+  "incidents": 8,
+  "evaluable": 7,
+  "unevaluable": ["E"],
+  "tied_first_record": 1,
+  "values": {"West": ["B", "F", "H"], "East": ["A"], "North": ["G"], "Unknown": ["D"]},
+  "missing": ["C"],
+  "changes_of": {"case": "H", "context": ["West", null, "Unknown"]}
+ },
+ "s3": {"source": "tests/fixtures/incidents/S3.csv", "column_index": 6, "values": {"Unknown": ["S3A"]}, "missing": ["S3B"]}
+}

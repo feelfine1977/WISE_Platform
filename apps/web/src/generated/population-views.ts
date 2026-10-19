@@ -19,6 +19,10 @@ export type ImplementationVersion = string;
 export type PositiveCount = number;
 export type Count = number;
 export type CaseId = string;
+/**
+ * Incidents whose first record shares its usable time with the next record; the declared order (time, then the sequence number, then the place in the file) chose their first record.
+ */
+export type Count1 = number;
 export type ContextCategory = ValueContextCategory | MissingContextCategory;
 export type Share = number;
 export type Difference = number;
@@ -89,6 +93,7 @@ export interface GroupCoverage {
   evaluable_case_count: Count;
   unevaluable_case_count: Count;
   unevaluable_case_ids: CaseId[];
+  tied_first_record_case_count: Count1;
 }
 export interface ContextColumn {
   column_index: Count;

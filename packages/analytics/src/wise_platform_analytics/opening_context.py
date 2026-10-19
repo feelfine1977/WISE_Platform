@@ -117,6 +117,8 @@ class GroupCoverage:
 
     case_count: int
     unevaluable_case_ids: tuple[str, ...]
+    # Incidents whose first record shares its time with the next: the declared order chose their first record.
+    tied_first_record_case_count: int = 0
 
     @property
     def evaluable_case_count(self) -> int:
@@ -125,7 +127,8 @@ class GroupCoverage:
     def to_dict(self) -> dict[str, object]:
         return {"case_count": self.case_count, "evaluable_case_count": self.evaluable_case_count,
                 "unevaluable_case_count": len(self.unevaluable_case_ids),
-                "unevaluable_case_ids": list(self.unevaluable_case_ids)}
+                "unevaluable_case_ids": list(self.unevaluable_case_ids),
+                "tied_first_record_case_count": self.tied_first_record_case_count}
 
 
 @dataclass(frozen=True)
@@ -165,8 +168,9 @@ def opening_context(prepared: PreparedData, population_ids: Iterable[str], paren
                              "No context column is mapped in this preparation, so there is no opening value to show.",
                              "mapping.context_columns")
     openings = {case_id: _opening(prepared, case_id, columns) for case_id in parent}
-    population_coverage = _coverage(population, openings)
-    parent_coverage = _coverage(parent, openings)
+    tied = {case_id for case_id in parent if openings[case_id] is not None and _tied_first(prepared, case_id)}
+    population_coverage = _coverage(population, openings, tied)
+    parent_coverage = _coverage(parent, openings, tied)
     answered = []
     for position, index in enumerate(columns):
         in_population = Counter(openings[case_id][position] for case_id in population if openings[case_id] is not None)
@@ -186,8 +190,14 @@ def _opening(prepared: PreparedData, case_id: str, columns: Sequence[int]) -> tu
     return tuple(_MISSING if (value := first.context_value(index)) is None else value for index in columns)
 
 
-def _coverage(ids: tuple[str, ...], openings: Mapping[str, tuple[object, ...] | None]) -> GroupCoverage:
-    return GroupCoverage(len(ids), tuple(case_id for case_id in ids if openings[case_id] is None))
+def _tied_first(prepared: PreparedData, case_id: str) -> bool:
+    """Whether the first record shares its usable time with the second, so that the declared order chose it."""
+    records = prepared.histories[case_id]
+    return len(records) > 1 and records[0].time_value is not None and records[0].time_value == records[1].time_value
+
+
+def _coverage(ids: tuple[str, ...], openings: Mapping[str, tuple[object, ...] | None], tied: set[str]) -> GroupCoverage:
+    return GroupCoverage(len(ids), tuple(case_id for case_id in ids if openings[case_id] is None), sum(case_id in tied for case_id in ids))
 
 
 def _column(name: str, index: int, in_population: Counter, in_parent: Counter, population_total: int,

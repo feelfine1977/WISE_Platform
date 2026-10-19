@@ -150,6 +150,7 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
             {population.preparation.mapping.context_columns.map((index) => <option key={index} value={index}>{columns.find((item) => item.column_index === index)?.column_name || `Column ${index}`}</option>)}
           </select></label>
           <label>Where to look<select value={anchor} onChange={(event) => setAnchor(event.target.value as typeof anchor)}><option value="any">Any raw record</option><option value="opening">First raw record</option></select></label>
+          {anchor === "any" && <p className="muted">With any raw record, an incident counts for every value any of its records holds, so incidents kept by different values can overlap.</p>}
           {selectedColumn && <fieldset><legend>Suggestions from first records</legend>{selectedColumn.categories.map((category) => {
             const checked = category.value === null ? missing : suggested.includes(category.value);
             return <label className="filter-value" key={category.value === null ? "missing" : `value:${category.value}`}><input type="checkbox" checked={checked} onChange={(event) => {

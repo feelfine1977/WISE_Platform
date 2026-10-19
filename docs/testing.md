@@ -84,6 +84,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Kept against removed in Compare names the same groups.
   - The investigation is saved, then reopened after an actual restart with the same chip and identity. Clear all and Undo return exactly.
 
+- `tools/qualify_opening_context.py` (#7): the Context panel over `core-v1.csv`, against `tests/fixtures/selection-journey/opening-context.json`.
+  - It checks each value, with a missing value apart from the text Unknown.
+  - It checks what is said of unreadable and tied first records, of the totals, and of the latest and "ever" choices not offered.
+  - A missing value, the text Unknown and a recorded value are kept by keyboard; a kept incident opens with all its context changes.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.
