@@ -4,6 +4,7 @@ import type { AnswerIdentity, Bpic19ReadRequest, Bpic19ScoreAnswer, Bpic19ScoreR
 import "./scoring.css";
 import reference from "./scoring-reference.json";
 import { Bpic19Associations } from "./Bpic19Associations";
+import type { AssociationSet } from "./association-keep";
 import { Bpic19Review } from "./Bpic19Review";
 import { sameJson } from "../data/coordinator";
 
@@ -32,6 +33,8 @@ export interface Bpic19ScoringProps {
   onReviewed?: (answer: Bpic19ScoreAnswer) => void;
   onValidityChange?: (current: boolean) => void;
   onKeepCases?: (caseIds: string[], label: string) => void;
+  /** Keeps one named association set as a typed selection step tied to its native association run. */
+  onKeepAssociationSet?: (answer: Bpic19ScoreAnswer, set: AssociationSet, members: string[]) => void;
   readOnly?: boolean;
   /** Explicit current/retained server-reviewed measure recipes, never transported amounts. */
   exposureReviews?: readonly ExposureReview[];
@@ -165,7 +168,7 @@ function NativeTable({ caption, rows, columns, onDocument, onMembers }: { captio
     {rows.length === 0 && <p>No eligible groups for these settings.</p>}</div>;
 }
 export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun, onRun, onInspect, onInspectDocument, revision,
-  onReviewed, onValidityChange, onKeepCases, readOnly = false, exposureReviews = [] }: Bpic19ScoringProps) {
+  onReviewed, onValidityChange, onKeepCases, onKeepAssociationSet, readOnly = false, exposureReviews = [] }: Bpic19ScoringProps) {
   const [settings, setSettings] = useState<Settings>(() => restoredSettings(initialRun));
   const [exposureReview, setExposureReview] = useState<ExposureReview | undefined>(() => frozenExposureReview(initialRun));
   const [answer, setAnswer] = useState<Bpic19ScoreAnswer | null>(initialRun ?? null);
@@ -333,7 +336,7 @@ export function Bpic19Scoring({ subject, client = localBpic19Client, initialRun,
         onMembers={row => void run(0,{criterion_id:String(row.left),right_criterion_id:String(row.right),criterion_state:"positive"})} /></details>}
       {!readOnly && client.associate && answer && <Bpic19Associations key={answer.run_id} answer={answer} client={client} revision={revision}
         onReviewed={next=>{setAnswer(next);setResultSettings(settingsKey);setResultSubject(subjectKey);onRun?.(next);callbacks.current.onReviewed?.(next);}}
-        onValidityChange={valid=>callbacks.current.onValidityChange?.(valid)} onMembers={filter=>void run(0,filter)} />}
+        onValidityChange={valid=>callbacks.current.onValidityChange?.(valid)} onMembers={filter=>void run(0,filter)} onKeepSet={onKeepAssociationSet} />}
       {!readOnly && client.review && answer && <Bpic19Review key={answer.run_id+":review"} answer={answer} client={client} revision={revision}
         onReviewed={next=>{setAnswer(next);setResultSettings(settingsKey);setResultSubject(subjectKey);onRun?.(next);callbacks.current.onReviewed?.(next);}}
         onValidityChange={valid=>callbacks.current.onValidityChange?.(valid)} />}

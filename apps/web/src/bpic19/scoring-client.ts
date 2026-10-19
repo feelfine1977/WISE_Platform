@@ -50,7 +50,7 @@ async function post(route: string, request: Bpic19ScoreRequest | Bpic19ReadReque
   }
   let payload: unknown;
   try { payload = await response.json(); } catch { return { ok: false, message: "The service returned an unreadable answer." }; }
-  if (isRefusal(payload)) return { ok: false, message: payload.request_id === request.request_id && payload.query_revision === request.query_revision && payload.workspace_id === request.workspace_id ? payload.message : "The refusal belongs to another analysis request." };
+  if (isRefusal(payload)) return { ok: false, message: payload.request_id === request.request_id && payload.query_revision === request.query_revision && payload.workspace_id === request.workspace_id ? `${payload.message} (${payload.code}${payload.field ? ` · ${payload.field}` : ""})` : "The refusal belongs to another analysis request." };
   if (!response.ok) return { ok: false, message: `The analysis service returned HTTP ${response.status}.` };
   if (!isAnswer(payload)) return { ok: false, message: "The answer does not match the BPIC19 analysis contract." };
   if (payload.request_id !== request.request_id || payload.query_revision !== request.query_revision || payload.workspace_id !== request.workspace_id)

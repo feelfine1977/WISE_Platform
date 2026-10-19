@@ -186,6 +186,23 @@ def _bounded_analysis(value, limit=200):
     return value
 
 
+def _association_members(report: dict, selection: dict, field: str) -> list[str]:
+    """The complete members of one named set of a stored association comparison."""
+    analysis=report.get("association_analysis")
+    if not analysis:raise _Refused(Problem("invalid_parameter","This frozen run has no reviewed association comparison.",field))
+    if selection.get("pair"):
+        pair=selection["pair"]
+        row=next((row for row in analysis["accepted_pairs"]+analysis["suppressed_pairs"] if
+            row["left"]==pair["left"] and row["right"]==pair["right"]),None)
+        if row is None:raise _Refused(Problem("invalid_parameter","That pair is not in this association definition.",field+".pair"))
+        return list(row[pair["set"]+"_case_ids"])
+    population=analysis["populations"][selection["population"]]
+    if selection["state"]=="all":return list(population["case_ids"])
+    criterion=population["criteria"].get(selection.get("criterion_id"))
+    if criterion is None:raise _Refused(Problem("invalid_parameter","That criterion is not in this association definition.",field+".criterion_id"))
+    return list(criterion[selection["state"]+"_case_ids"])
+
+
 def _complete_report(assessment, case_count: int) -> dict:
     """Materialize every admitted group through Method's bounded report pages.
 
@@ -526,6 +543,17 @@ class Bpic19Scoring:
         code = "checksum_mismatch" if integrity.state == "checksum_invalid" else "artifact_unavailable"
         raise _Refused(Problem(code, f"The saved native {kind} reference {reference_id} is {integrity.state}. Nothing was rebound or computed again.", field))
 
+    def association_members(self, workspace_id: str, run_id: str, selection: dict, field: str) -> tuple[list[str], list[str]] | Problem:
+        """A stored association set's complete members and its run's complete item population, from the saved artifacts."""
+        try:
+            workspace, run = self._stored({"workspace_id": workspace_id, "run_id": run_id}, saved_reference=True)
+            refs = run["snapshot"]["artifacts"]
+            report = _load_artifact(workspace, next(r for r in refs if r["kind"] == "report"))
+            index = _load_artifact(workspace, next(r for r in refs if r["kind"] == "membership"))
+            return _association_members(report, selection, field), list(index["case_ids"])
+        except _Refused as error:
+            return error.problem
+
     def _read_run(self, given: dict) -> dict:
         workspace, run = self._stored(given)
         return self._page(workspace, run, given)
@@ -566,29 +594,32 @@ class Bpic19Scoring:
                     query[name]["selector"]["case_ids"]=sorted(query[name]["selector"]["case_ids"])
             order={constraint["id"]:i for i,constraint in enumerate(parent["definition_version"]["norm"]["constraints"])}
             query["criteria"]=sorted(query["criteria"],key=lambda key:order.get(key,len(order)))
-            def resolve(selector: dict,target_ids=None):
+            def resolve(name: str,target_ids=None):
+                selector=query[name]["selector"]
+                field=f"query.{name}.selector"
                 kind=selector["kind"]
                 if kind=="outside_target":
-                    if target_ids is None: raise ValueError("The target cannot be defined as outside itself.")
+                    if target_ids is None: raise bpic19_associations.AssociationError("The target cannot be defined as outside itself.",field+".kind")
                     kept=set(target_ids);return [cid for cid in index["case_ids"] if cid not in kept]
                 if kind=="all":return list(index["case_ids"])
                 if kind=="case_ids":
                     ids=selector["case_ids"]
                     if len(set(ids))!=len(ids) or set(ids)-set(index["case_ids"]):
-                        raise ValueError("Association items must belong once to the selected frozen run.")
+                        raise bpic19_associations.AssociationError("Association items must belong once to the selected frozen run.",field+".case_ids")
                     return sorted(ids)
                 keys=selector["group_values"]
                 excluded = selector.get("exclude_group_values", {})
                 admitted = set(next(iter(index["contexts"].values()), {})) & {"document", "flow", "company", "spend_area", "item_type"}
                 if (set(keys) | set(excluded)) - admitted:
-                    raise ValueError("That context field was not recorded in this frozen run. Evaluate a new identified run with that context receipt.")
-                _refuse_legacy_group_labels(report, index, keys, "query")
-                _refuse_legacy_group_labels(report, index, excluded, "query")
+                    raise bpic19_associations.AssociationError("That context field was not recorded in this frozen run. Evaluate a new identified run with that context receipt.",
+                        field+(".group_values" if set(keys)-admitted else ".exclude_group_values"))
+                _refuse_legacy_group_labels(report, index, keys, field+".group_values")
+                _refuse_legacy_group_labels(report, index, excluded, field+".exclude_group_values")
                 def matches(cid, values):
                     return all(index["contexts"][cid].get(key)==value for key,value in values.items())
                 return [cid for cid in index["case_ids"] if matches(cid, keys) and (not excluded or not matches(cid, excluded))]
-            target=resolve(query["target"]["selector"])
-            comparator=resolve(query["comparator"]["selector"],target)
+            target=resolve("target")
+            comparator=resolve("comparator",target)
             selected=set(target)|set(comparator)
             cases={}
             for ref in refs:
@@ -684,22 +715,7 @@ class Bpic19Scoring:
                 raise _Refused(Problem("invalid_parameter", "That representation group is not in this frozen run.", "case_filter.representation_group"))
             ids = [cid for cid in ids if index["contexts"][cid].get(key) == group["group_id"]]
         if "association_set" in filter_:
-            analysis=report.get("association_analysis")
-            if not analysis:raise _Refused(Problem("invalid_parameter","This frozen run has no reviewed association comparison."))
-            selection=filter_["association_set"]
-            if selection.get("pair"):
-                pair=selection["pair"]
-                row=next((row for row in analysis["accepted_pairs"]+analysis["suppressed_pairs"] if
-                    row["left"]==pair["left"] and row["right"]==pair["right"]),None)
-                if row is None:raise _Refused(Problem("invalid_parameter","That pair is not in this association definition."))
-                selected=set(row[pair["set"]+"_case_ids"])
-            else:
-                population=analysis["populations"][selection["population"]]
-                if selection["state"]=="all":selected=set(population["case_ids"])
-                else:
-                    criterion=population["criteria"].get(selection.get("criterion_id"))
-                    if criterion is None:raise _Refused(Problem("invalid_parameter","That criterion is not in this association definition."))
-                    selected=set(criterion[selection["state"]+"_case_ids"])
+            selected=set(_association_members(report,filter_["association_set"],"case_filter.association_set"))
             ids=[cid for cid in ids if cid in selected]
         offset, limit = given["case_offset"], given["case_limit"]
         selected = ids[offset:offset + limit]
