@@ -108,6 +108,19 @@ def test_t17_saved_exact_and_signature_answers_survive_a_different_process(tmp_p
             identity=base, parent_case_ids=None, predicates=[])).json()
         actions = [{"operation": "bpic19_measures", "identity": base, "query": query["query"], "definition_id": answer["definition_id"]}
                    for query, answer in ((exact_query, exact), (signature_query, signature))]
+        # A native run over the same items, whose representation scores join the exact paths without rescoring.
+        roles = {"item_category": 3, "purchasing_document": 6, "item_type": 9, "goods_receipt": 10, "gr_based_iv": 11, "item": 12,
+                 "company": 7, "spend_area": 8, "resource": 4, "net_worth": 5, "value": 5}
+        settings = {"profile": "paper", "criteria_family": "completion", "view": "Balanced", "mode": "flat", "gamma": 0,
+                    "group_by": ["company"], "min_cases": 1, "volume": "cases", "exposure_policy": "max_absolute_p95"}
+        run = client.post("/api/investigations/bpic19-score", json=envelope("bpic19_score_request", workspace_id=wid, base_identity=base,
+            named_population={"name": "T17 items", "identity": base}, roles=roles, settings=settings, case_offset=0, case_limit=50))
+        assert run.status_code == 200, run.text
+        run = run.json()
+        exact_scores = {tuple(row["sequence"]): row for row in run["report"]["representation_scores"]["exact"]}
+        assert exact_scores[("A", "B", "B", "A")]["member_count"] == 1
+        actions.append({"operation": "bpic19_score", "identity": base, "definition_id": run["definition_id"],
+                        "query": {"run_id": run["run_id"], "case_offset": 0, "case_limit": 50, "group_offset": 0, "group_limit": 50}})
         saved = client.post("/api/investigations/save", json=envelope("save_investigation_request", workspace_id=wid,
             investigation_id=None, expected_revision_id=None, name="Exact and signature", base_identity=base,
             selection_identity=selected["identity"], selection_recipe={"parent_case_ids": selected["parent"]["case_ids"], "predicates": []},
@@ -129,7 +142,9 @@ def test_t17_saved_exact_and_signature_answers_survive_a_different_process(tmp_p
         assert reopened.json()["bpic19_outputs"] == saved["bpic19_outputs"]
         # T17-AC06: the loop's suppressed rows and both recipes come back exactly.
         outputs = [output["output"] for output in reopened.json()["bpic19_outputs"]["outputs"]]
-        assert [output["definition"]["representation_policy"] for output in outputs] == ["exact", "first_occurrence"]
+        assert [output["definition"]["representation_policy"] for output in outputs[:2]] == ["exact", "first_occurrence"]
+        assert outputs[2]["run_id"] == run["run_id"]
+        assert outputs[2]["report"]["representation_scores"] == run["report"]["representation_scores"]
         loop = next(case for case in outputs[0]["cases"] if case["case_id"] == "L")["representations"]
         r = rows()
         assert (loop["exact_sequence"], loop["signature_suppressed_row_ids"]) == (["A", "B", "B", "A"], [r[3], r[4]])
