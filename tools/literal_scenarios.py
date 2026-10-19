@@ -183,7 +183,7 @@ def issue115(client, workspace: Path) -> dict:
     # By hand: scores .9, .95, 1 and one unscored Consignment item; G has 2 items, mean .925 and PI 2 × (.95 − .925).
     return {"name": "T13 group priority", "saved": saved, "texts": [
         "3 of 4 items scored · mean score 0.95 · mean evidence coverage 1", "Business group priorities · 1 shown of 1",
-        "G20.92520.050.050.95", "Inspect members of G"]}
+        "G20.92520.050.050.95", "Inspect members of G", "A PI of 0 means the group's mean is at or above that reference; it is not compliance"]}
 
 
 SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
