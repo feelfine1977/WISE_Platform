@@ -109,14 +109,15 @@ class Service:
         self.client: httpx.Client | None = None
         self.port = 0
 
-    def start(self) -> None:
+    def start(self, env: dict | None = None) -> None:
+        """Start on a fresh port; ``env`` adds settings for this process only, such as a lower memory budget."""
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", 0))
             self.port = sock.getsockname()[1]
         code = ("from pathlib import Path; import uvicorn; from wise_platform_api.app import create_app; "
                 f"uvicorn.run(create_app(workspace_path=Path({str(self.workspace)!r})),host='127.0.0.1',port={self.port},log_level='error')")
         env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1",
-               "PYTHONPATH": os.pathsep.join(str(ROOT / part) for part in ("apps/api/src", "packages/analytics/src"))}
+               "PYTHONPATH": os.pathsep.join(str(ROOT / part) for part in ("apps/api/src", "packages/analytics/src")), **(env or {})}
         with self.log.open("ab") as log:
             self.process = subprocess.Popen([sys.executable, "-B", "-c", code], env=env, stdout=log, stderr=subprocess.STDOUT)
         self.client = httpx.Client(base_url=f"http://127.0.0.1:{self.port}", timeout=None, trust_env=False)
@@ -195,6 +196,11 @@ class Expectations:
     ``{"interpretation": {...}, "raw_minimum_prefix": "1948-", "raw_maximum_prefix": "2020-"}``."""
     ranking_shared_counts: dict | None = None
     """Groups shared by the gamma-0 top ten and each other policy's top ten: ``{"mean_penalty": 6, ...}``."""
+    paper_workflow: dict | None = None
+    """The paper's full ten-criterion workflow and its printed targets, checked at their printed rounding:
+    ``{"views": ["Balanced", ...], "reference_mean_penalty": .101358, "mean_coverage": .7876,
+    "groups": [{"company": "0000", "spend_area": "Packaging", "n_cases": 109199, "mean_penalty": .117624, "PI": 1776.19}],
+    "refusal_budget_bytes": 4294967296}``. The Balanced run is saved, reopened and shown in the browser."""
     timing_exemplar: dict | None = None
     """A named item's independently known C04 interval:
     ``{"case_id": ..., "invoice_date": "2018-02-16", "clearing_date": "2018-04-26", "days": 69.040972, "deviation": 0.650683}``."""
@@ -224,6 +230,9 @@ class Journey:
         self.after_reopen = after_reopen
         """Called with the running service, workspace id, saved revision and a case id after the cold reopen."""
         self.timed_out = False
+        self.paper_shown: dict | None = None
+        """What the browser must show of the saved paper run, rendered from its HTTP answer."""
+        self.workload_refusal: dict | None = None
         self.workspace = folder / "workspace"
         self.workspace.mkdir(mode=0o700)
         self.service = Service(self.workspace, folder / "service.log")
@@ -234,8 +243,8 @@ class Journey:
 
     # Mechanics -----------------------------------------------------------------------------
 
-    def _start(self) -> None:
-        self.service.start()
+    def _start(self, env: dict | None = None) -> None:
+        self.service.start(env)
         self.sampler = MemorySampler(self.service.process.pid, limit=self.limit, on_breach=self.service.kill)
         self.sampler.start()
         time.sleep(0.2)
@@ -248,11 +257,11 @@ class Journey:
         if exit_record:
             self.exits.append(exit_record)
 
-    def restart(self) -> None:
+    def restart(self, env: dict | None = None) -> None:
         """Stop the service, wait for its exit, and open the workspace again in a new process."""
         first_pid = self.service.process.pid
         self._stop()
-        self._start()
+        self._start(env)
         self.check("restart_is_a_new_process", self.service.process.pid != first_pid)
         self.stage("restart_open_workspace", self.post("workspaces/open", "open_workspace_request", path=str(self.workspace)))
 
@@ -340,6 +349,24 @@ class Journey:
                             "reply_bytes": len(response.content), "status": response.status_code})
         self.check(f"{name}_succeeds", response.status_code == 200, response.text[:2000])
         return response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
+
+    def measured(self, name: str, request) -> httpx.Response:
+        """Run one request as a measured stage and return its response, whatever its status."""
+        self.sampler.mark()
+        started = time.perf_counter()
+        try:
+            response = request(self.service.client)
+        except httpx.TransportError as error:
+            if self.sampler.breach is not None:
+                raise Failed(f"memory_limit during {name}") from error
+            if self.timed_out:
+                raise Failed(f"deadline during {name}") from error
+            raise
+        seconds = time.perf_counter() - started
+        peak, retained = self.sampler.settled(3 * self.sampler.interval)
+        self.stages.append({"stage": name, "seconds": round(seconds, 4), "peak_rss_bytes": peak, "retained_rss_bytes": retained,
+                            "reply_bytes": len(response.content), "status": response.status_code})
+        return response
 
     def post(self, route: str, message: str, **fields):
         return lambda client: client.post("/api/" + route, json=envelope(message, **fields))
@@ -470,6 +497,8 @@ class Journey:
         self.check("measures_after_completion_unfiltered", measured.get("population_case_count") == self.expected.case_count
                    and measured.get("population_record_count") == self.expected.record_count,
                    {key: measured.get(key) for key in ("population_case_count", "population_record_count")})
+        paper = self.score and self.expected.paper_workflow is not None
+        balanced = self._paper_workflow(wid, base, identity, result) if paper else None
         self.stage("process_graph", self.post("investigations/process-graph", "process_graph_request", workspace_id=wid, identity=identity))
         self.stage("variants", self.post("investigations/variants", "variants_request", workspace_id=wid, identity=identity))
         saved = self.stage("save", self.post(
@@ -478,13 +507,16 @@ class Journey:
             selection_recipe={"parent_case_ids": selected["parent"]["case_ids"], "predicates": []}, context_policy=CONTEXT_POLICY,
             comparison=None, notes="Synthetic capacity measurement", bookmarks=[], bpic19_pipeline={"schema_version": 1, "actions": [
                 {"operation": "bpic19_profile", "identity": identity, "query": lineage_query,
-                 "definition_id": reviewed["profile"]["definition_id"], "selection_prefix_length": 0}]}))
+                 "definition_id": reviewed["profile"]["definition_id"], "selection_prefix_length": 0},
+                *([{"operation": "bpic19_score", "identity": identity, "definition_id": balanced["definition_id"], "selection_prefix_length": 0,
+                    "query": {"run_id": balanced["run_id"], "case_offset": 0, "case_limit": 50, "group_offset": 0, "group_limit": 50}}]
+                  if balanced is not None else [])]}))
         revision = saved["revision"]["saved_revision_id"]
         saved_digest = digest({key: saved[key] for key in ("revision", "bpic19_outputs")})
-        if self.score:
+        if self.score and not paper:
             self._score(wid, base)
-            if getattr(self, "ranking", None) is not None:
-                result["ranking_comparisons"] = self.ranking
+        if getattr(self, "ranking", None) is not None:
+            result["ranking_comparisons"] = self.ranking
         self.restart()
         reopened = self.stage("cold_reopen", self.post("investigations/reopen", "reopen_investigation_request", workspace_id=wid,
                                                       saved_revision_id=revision))
@@ -494,6 +526,9 @@ class Journey:
         self.check("cold_population_identity", again["identity"] == base)
         if self.after_reopen is not None:
             self.after_reopen(self, wid, revision, kept[0])
+        if paper:
+            self._workload_refusal(wid, identity, base)
+            result["workload_refusal"] = self.workload_refusal
         result["identities"] = {"native": populations[self.native.name], "prepared": base}
         result["saved_payload_sha256"] = saved_digest
 
@@ -518,23 +553,135 @@ class Journey:
                                    "discrepancies": [{key: entry[key] for key in ("reference", "reported_total", "reported_subtotal", "difference", "measured_parent_case_count")}
                                                      for entry in answer["discrepancies"]]}
 
-    def _score(self, wid: str, base: dict) -> None:
+    def _paper_workflow(self, wid: str, base: dict, identity: dict, result: dict) -> dict:
+        """The paper's ten criteria in each declared view on every item, its printed targets and the workload measured
+        around it: a warm repeat, group queries, deep paging, the page limit, the native export and an abandoned request.
+        Returns the Balanced run, which the journey saves, reopens and shows in the browser."""
+        paper = self.expected.paper_workflow
         settings = {"profile": "paper", "criteria_family": "full", "view": "Balanced", "mode": "flat", "gamma": 0,
                     "group_by": ["company", "spend_area"], "min_cases": 1, "volume": "cases", "exposure_policy": "max_absolute_p95"}
-        self.sampler.mark()
+
+        def score(**change):
+            return self.post("investigations/bpic19-score", "bpic19_score_request", workspace_id=wid, base_identity=base,
+                             named_population={"name": "Paper workflow", "identity": identity}, roles=self.measure_roles,
+                             settings={**settings, **change}, case_offset=0, case_limit=50)
+
+        def read(run_id: str, **fields):
+            return self.post("investigations/bpic19-read", "bpic19_read_request", workspace_id=wid, run_id=run_id,
+                             group_offset=0, group_limit=50, **{"case_offset": 0, "case_limit": 50, **fields})
+
+        answers = {view: self.stage(f"paper_scoring_{view.lower()}", score(view=view)) for view in paper["views"]}
+        for view, answer in answers.items():
+            report = answer["report"]
+            self.check(f"paper_{view.lower()}_keeps_every_item", report["population_case_count"] == self.expected.case_count, report["population_case_count"])
+            self.check(f"paper_{view.lower()}_ten_criteria", report["requested_criterion_count"] == 10 and report["profile_complete"] is True,
+                       (report["requested_criterion_count"], report["profile_complete"]))
+        self.check("paper_views_are_distinct_runs", len({answer["run_id"] for answer in answers.values()}) == len(answers))
+        balanced = answers["Balanced"]
+        report = balanced["report"]
+        self.check("paper_reference_mean_penalty", abs(1 - report["mean_score"] - paper["reference_mean_penalty"]) <= 5e-7, report["mean_score"])
+        self.check("paper_mean_coverage", abs(report["mean_coverage"] - paper["mean_coverage"]) <= 5e-5, report["mean_coverage"])
+        if "group_count" in paper:
+            self.check("paper_group_count", report["group_page"]["total"] == paper["group_count"], report["group_page"]["total"])
+        rows = {(row.get("company"), row.get("spend_area")): row for row in report["groups"]}
+        exemplars = {(entry.get("company"), entry.get("spend_area")): entry for entry in report.get("exemplars", [])}
+        shown = {"summary": f"{shown_number(report['scored_case_count'])} of {shown_number(report['population_case_count'])} items scored · "
+                            f"mean score {shown_number(report['mean_score'])} · mean evidence coverage {shown_number(report['mean_coverage'])}",
+                 "groups": []}
+        summary = {"run_ids": {view: answer["run_id"] for view, answer in answers.items()}, "groups": []}
+        for target in paper["groups"]:
+            key = (target["company"], target["spend_area"])
+            slug = "_".join(part for part in "".join(c if c.isalnum() else " " for c in target["spend_area"].lower()).split())
+            row = rows.get(key)
+            self.check(f"paper_group_{slug}", row is not None and row["n_cases"] == target["n_cases"]
+                       and abs(1 - row["mean_score"] - target["mean_penalty"]) <= 5e-7 and abs(row["PI"] - target["PI"]) <= 5e-3,
+                       None if row is None else {k: row[k] for k in ("n_cases", "mean_score", "PI")})
+            members = self.stage(f"group_query_{slug}", read(balanced["run_id"], case_filter={"group_values": dict(zip(("company", "spend_area"), key))}))
+            total = members["report"]["case_page"]["total"]
+            self.check(f"group_query_{slug}_members", total >= row["n_cases"], total)
+            exemplar = exemplars.get(key)
+            shown["groups"].append({"label": " · ".join(key), "members": total, "exemplar": None if exemplar is None else exemplar["case_id"],
+                                    "row": "".join(shown_number(row[column]) for column in ("company", "spend_area", "n_cases", "mean_score", "volume", "PI", "stable_PI", "global_mean"))})
+            summary["groups"].append({"group": list(key), "n_cases": row["n_cases"], "members": total, "mean_penalty": 1 - row["mean_score"], "PI": row["PI"],
+                                      "exemplar": None if exemplar is None else {k: exemplar[k] for k in ("case_id", "deviation", "reference_median_days")}})
+        warm = self.stage("paper_scoring_warm", score())
+        self.check("paper_warm_is_the_same_run", warm["run_id"] == balanced["run_id"], warm["run_id"])
+        last = self.stage("case_paging_last", read(balanced["run_id"], case_offset=self.expected.case_count - 100, case_limit=200))
+        self.check("case_paging_last_page", len(last["report"]["case_page"]["cases"]) == 100 and last["report"]["case_page"]["total"] == self.expected.case_count,
+                   last["report"]["case_page"]["total"])
+        limited = self.measured("page_limit_refusal", read(balanced["run_id"], case_limit=201))
+        self.check("page_limit_refused", limited.status_code == 400 and limited.json().get("field") == "case_limit", limited.text[:500])
+        exported = self.measured("native_export", lambda client: client.post("/api/investigations/bpic19-export", json=envelope(
+            "bpic19_export_request", workspace_id=wid, run_id=balanced["run_id"], case_offset=0, case_limit=50)))
+        import io
+        import zipfile
+        self.check("native_export_succeeds", exported.status_code == 200, exported.text[:500] if exported.status_code != 200 else None)
+        with zipfile.ZipFile(io.BytesIO(exported.content)) as archive:
+            names = archive.namelist()
+        artifacts = balanced["snapshot"]["artifacts"]
+        self.check("native_export_is_exactly_the_run", len(names) == 1 + len(artifacts) and "manifest.json" in names, len(names))
+        summary["export"] = {"bytes": len(exported.content), "files": len(names), "artifact_bytes": sum(ref.get("byte_count", 0) for ref in artifacts)}
+        # An abandoned request: the client stops waiting; the service must stay up and answer the same request later.
+        abandoned = {"settings": {"view": "Operations", "gamma": 20}}
         started = time.perf_counter()
-        response = self.service.client.post("/api/investigations/bpic19-score", json=envelope(
-            "bpic19_score_request", workspace_id=wid, base_identity=base,
-            named_population={"name": "Capacity journey", "identity": base}, roles=self.measure_roles, settings=settings,
-            case_offset=0, case_limit=200))
-        seconds = time.perf_counter() - started
-        peak, retained = self.sampler.settled(3 * self.sampler.interval)
-        body = response.json()
-        # Scoring has its own admission; a refusal is measured and recorded, not a journey failure.
-        self.stages.append({"stage": "method_scoring", "seconds": round(seconds, 4), "peak_rss_bytes": peak, "retained_rss_bytes": retained,
-                            "reply_bytes": len(response.content), "status": response.status_code,
-                            "refusal": None if response.status_code == 200 else {"code": body.get("code"), "message": body.get("message")}})
-        if response.status_code == 200 and self.expected.ranking_shared_counts is not None:
+        try:
+            with httpx.Client(base_url=f"http://127.0.0.1:{self.service.port}", timeout=2.0, trust_env=False) as impatient:
+                impatient.post("/api/investigations/bpic19-score", json=envelope(
+                    "bpic19_score_request", workspace_id=wid, base_identity=base, named_population={"name": "Paper workflow", "identity": identity},
+                    roles=self.measure_roles, settings={**settings, "view": "Operations", "gamma": 20}, case_offset=0, case_limit=50))
+            abandoned["client_abandoned"] = False
+        except httpx.TimeoutException:
+            abandoned["client_abandoned"] = True
+        abandoned["abandoned_after_seconds"] = round(time.perf_counter() - started, 3)
+        health = self.measured("health_after_abandon", lambda client: client.get("/api/health"))
+        self.check("service_answers_after_abandon", health.status_code == 200 and self.service.process.poll() is None, health.status_code)
+        repeated = self.stage("abandoned_request_repeated", score(view="Operations", gamma=20))
+        abandoned["repeated_run_id"] = repeated["run_id"]
+        summary["abandoned_request"] = abandoned
+        if self.expected.ranking_shared_counts is not None:
+            self._score(wid, base, balanced)
+        result["paper_workflow"] = summary
+        self.paper_shown = shown
+        return balanced
+
+    def _workload_refusal(self, wid: str, identity: dict, base: dict) -> None:
+        """A fresh process under a lower stated memory budget must refuse new scoring explicitly and publish nothing."""
+        budget = self.expected.paper_workflow["refusal_budget_bytes"]
+        runs = self.workspace / "runs"
+        before = sorted(path.name for path in runs.rglob("*")) if runs.exists() else []
+        self.restart(env={"WISE_MEMORY_BUDGET_BYTES": str(budget)})
+        settings = {"profile": "paper", "criteria_family": "full", "view": "Completion", "mode": "layer_balanced", "gamma": 20,
+                    "group_by": ["company", "spend_area"], "min_cases": 1, "volume": "cases", "exposure_policy": "max_absolute_p95"}
+        refused = self.measured("workload_limit_refusal", lambda client: client.post("/api/investigations/bpic19-score", json=envelope(
+            "bpic19_score_request", workspace_id=wid, base_identity=base, named_population={"name": "Paper workflow", "identity": identity},
+            roles=self.measure_roles, settings=settings, case_offset=0, case_limit=50)))
+        body = refused.json() if refused.headers.get("content-type", "").startswith("application/json") else {}
+        self.check("workload_limit_refused", refused.status_code == 503 and body.get("code") == "memory_unavailable", (refused.status_code, body.get("code")))
+        after = sorted(path.name for path in runs.rglob("*")) if runs.exists() else []
+        self.check("workload_limit_published_nothing", after == before, len(after) - len(before))
+        self.workload_refusal = {"budget_bytes": budget, "code": body.get("code"), "field": body.get("field"), "message": body.get("message")}
+
+    def _score(self, wid: str, base: dict, answer: dict | None = None) -> None:
+        settings = {"profile": "paper", "criteria_family": "full", "view": "Balanced", "mode": "flat", "gamma": 0,
+                    "group_by": ["company", "spend_area"], "min_cases": 1, "volume": "cases", "exposure_policy": "max_absolute_p95"}
+        if answer is None:
+            self.sampler.mark()
+            started = time.perf_counter()
+            response = self.service.client.post("/api/investigations/bpic19-score", json=envelope(
+                "bpic19_score_request", workspace_id=wid, base_identity=base,
+                named_population={"name": "Capacity journey", "identity": base}, roles=self.measure_roles, settings=settings,
+                case_offset=0, case_limit=200))
+            seconds = time.perf_counter() - started
+            peak, retained = self.sampler.settled(3 * self.sampler.interval)
+            body = response.json()
+            # Scoring has its own admission; a refusal is measured and recorded, not a journey failure.
+            self.stages.append({"stage": "method_scoring", "seconds": round(seconds, 4), "peak_rss_bytes": peak, "retained_rss_bytes": retained,
+                                "reply_bytes": len(response.content), "status": response.status_code,
+                                "refusal": None if response.status_code == 200 else {"code": body.get("code"), "message": body.get("message")}})
+            succeeded = response.status_code == 200
+        else:
+            body, succeeded = answer, True
+        if succeeded and self.expected.ranking_shared_counts is not None:
             policies = body["report"]["ranking_comparisons"]["group_policies"]
             keys = lambda rows: [tuple(row.get(key) for key in settings["group_by"]) for row in rows]
             primary = keys(policies["PI_gamma_0"])
@@ -542,6 +689,21 @@ class Journey:
             self.ranking = {"shared_with_PI_gamma_0_top_ten": shared, "same_first_rank": {name: keys(policies[name])[:1] == primary[:1] for name in shared},
                             "same_order": {name: keys(policies[name]) == primary for name in shared}, "top_ten_size": len(primary)}
             self.check("ranking_shared_counts", shared == self.expected.ranking_shared_counts, self.ranking)
+
+
+def shown_number(value) -> str:
+    """A number as the purchasing view shows it: en-US grouping and at most six decimals, halves away from zero."""
+    from decimal import ROUND_HALF_UP, Decimal
+    if value is None:
+        return "Unavailable"
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return str(value)
+    # The shortest decimal form, as JavaScript rounds it, not the binary value's exact expansion.
+    exact = Decimal(repr(value)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+    whole, _, fraction = format(abs(exact), "f").partition(".")
+    fraction = fraction.rstrip("0")
+    text = f"{int(whole):,}" + (f".{fraction}" if fraction else "")
+    return ("-" if exact < 0 else "") + text
 
 
 def _utc(policies: dict) -> bool:

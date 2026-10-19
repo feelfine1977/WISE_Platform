@@ -134,3 +134,12 @@ def test_a_build_older_than_any_web_source_is_not_current(tmp_path):
     assert not build_is_current(web, built)
     output.unlink()
     assert not build_is_current(web, built)
+
+
+def test_numbers_render_as_the_purchasing_view_shows_them():
+    """Pairs taken from Node's toLocaleString('en-US', {maximumFractionDigits: 6}), which the score view uses."""
+    from capacity_journey import shown_number
+    pairs = [(109199, "109,199"), (0.8823764999999, "0.882376"), (0.1234565, "0.123457"), (1776.1949999999, "1,776.195"),
+             (2.5e-07, "0"), (5e-07, "0.000001"), (1595923, "1,595,923"), (12.3456789, "12.345679"), (1.5e-06, "0.000002"),
+             (664.6100000001, "664.61"), (-0.0625, "-0.0625"), (0, "0"), (None, "Unavailable"), ("0000", "0000")]
+    assert [shown_number(value) for value, _ in pairs] == [text for _, text in pairs]
