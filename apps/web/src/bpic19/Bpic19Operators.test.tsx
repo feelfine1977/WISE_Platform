@@ -265,9 +265,25 @@ describe("visible finite recorded-event operators", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: "Recorded-event operator" }), "waiting");
     await user.click(screen.getByRole("button", { name: "Review and run operator" }));
     expect((await screen.findByRole("alert")).textContent).toContain(code);
+    expect(screen.getByRole("alert").textContent).toContain("query.recipe.horizon_end");
     expect(props.onReviewed).not.toHaveBeenCalled();
     expect(props.onValidityChange).toHaveBeenLastCalledWith(false);
     expect(screen.queryByRole("button", { name: "Download reviewed operator receipt" })).toBeNull();
+  });
+  it("names the unmapped amount role when an amount-filtered cancellation link is refused (#122 E02)", async () => {
+    const client: Bpic19OperatorClient = { operators: vi.fn(async (request): Promise<Bpic19OperatorOutcome> => request.query.recipe?.kind !== "cancellation" ? answering(request) : { ok: false, problem: { kind: "refusal", refusal: {
+      schema_version: 1, message_type: "bpic19_operator_refusal", request_id: request.request_id, query_revision: request.query_revision, workspace_id: request.workspace_id,
+      operation: "bpic19_operators", code: "invalid_parameter", message: "Amount-dependent matching requires a reviewed value field.", field: "query.roles.net_worth", retryable: false,
+    } } }) };
+    const { user, props } = setup(client);
+    await waitFor(() => expect(vi.mocked(client.operators)).toHaveBeenCalledTimes(1));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Recorded-event operator" }), "cancellation");
+    await user.click(screen.getByRole("button", { name: "Review and run operator" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("invalid_parameter");
+    expect(alert.textContent).toContain("query.roles.net_worth");
+    expect(props.onReviewed).not.toHaveBeenCalled();
+    expect(screen.queryByRole("table", { name: "Complete-item cohorts · observation groups can overlap" })).toBeNull();
   });
   it("accepts a reviewed-query feedback without duplicate replay, then auto-replays a fresh saved revision", async () => {
     const { user, props, client, rerender } = setup();await run(user);

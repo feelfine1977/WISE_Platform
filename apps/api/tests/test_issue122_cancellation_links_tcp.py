@@ -60,8 +60,16 @@ def test_t20_latest_preceding_links_ties_and_reuse(tmp_path):
         _, _, reused = links(client, wid, identity, reuse="allow")
         assert [state for state, *_ in reused["D"]] == ["matched", "matched"]
         # A one-day link falls outside a half-day window.
-        _, _, windowed = links(client, wid, identity, max_window_days=0.5)
+        _, windowed_answer, windowed = links(client, wid, identity, max_window_days=0.5)
         assert windowed["C"][0][0] == "unmatched"
+        # 20-E05: reuse, window, tie and ambiguity rules are meaning-bearing; each gives a new definition.
+        _, reuse_answer, _ = links(client, wid, identity, reuse="allow")
+        _, ties_answer, _ = links(client, wid, identity, ties="allow_equal_source_before")
+        _, first_answer, first = links(client, wid, identity, ambiguity="source_position")
+        assert len({answer["definition_id"], reuse_answer["definition_id"], windowed_answer["definition_id"],
+                    ties_answer["definition_id"], first_answer["definition_id"]}) == 5
+        # Choosing the first source position for T's tie is a declared rule, not a silent default.
+        assert first["T"][0][0] == "matched" and found["T"][0][0] == "ambiguous"
         summary = answer["summary"]["observation_state_counts"]
         assert summary == {"matched": 4, "ambiguous": 1, "unmatched": 2}
 
@@ -82,8 +90,17 @@ def test_t20_amount_filters_are_explicit_with_their_tolerance(tmp_path):
         assert opposed["Z"][0][0] == "unmatched"
         _, _, tolerant = links(client, wid, identity, amount_filter="opposite", tolerance=5)
         assert tolerant["Z"][0][:4] == ("matched", None, [r[9]], [r[8]])
-        # A receipt without an amount cannot be certified by an amount rule.
-        assert opposed["M"][0][0] != "matched"
+        # A receipt without an amount cannot be certified by an amount rule: it is unknown, with that receipt as witness.
+        assert opposed["M"][0][:4] == ("unknown", "unknown_target_value", [r[14]], [])
+        assert next(c for c in opposite["cases"] if c["case_id"] == "M")["observations"][0]["unknown_row_ids"] == [r[13]]
+        # 20-B03: sum, average and creation-value equations are not admitted; they are refused, not inferred from a label.
+        for unadmitted in ("sum", "average", "creation_value"):
+            refused = client.post(ROUTE, json=request(wid, identity, {**CANCELLATION, "amount_filter": unadmitted}, limit=100))
+            assert (refused.status_code, refused.json()["field"]) == (400, "query.recipe.amount_filter"), refused.text
+        # 20-E05: a page is presentation; it keeps the analytical identity.
+        page = request(wid, identity, CANCELLATION, limit=2)
+        page["query"]["offset"] = 2
+        assert client.post(ROUTE, json=page).json()["definition_id"] == ignore["definition_id"]
 
 
 def test_t20_refusals_name_their_field(tmp_path):
@@ -121,6 +138,21 @@ def test_t20_saved_links_survive_a_different_process(tmp_path):
                 "query": given["query"], "definition_id": answer["definition_id"]}]}))
         assert saved.status_code == 200, saved.text
         saved = saved.json()
+        # 20-E07: a later revision B with the plain temporal link replaces A only with the current expected revision.
+        plain, plain_answer, plain_found = links(client, wid, identity)
+        later = envelope("save_investigation_request", workspace_id=wid,
+            investigation_id=saved["revision"]["investigation_id"], expected_revision_id=saved["revision"]["saved_revision_id"],
+            name="T20 cancellation links", base_identity=identity, selection_identity=selected["identity"],
+            selection_recipe={"parent_case_ids": selected["parent"]["case_ids"], "predicates": []},
+            context_policy="incident.context.first_record_in_declared_order.v1", comparison=None, notes="Synthetic T20 rows, plain links",
+            bookmarks=[], bpic19_pipeline={"schema_version": 1, "actions": [{"operation": "bpic19_cancellation", "identity": identity,
+                "query": plain["query"], "definition_id": plain_answer["definition_id"]}]})
+        b = client.post("/api/investigations/save", json=later)
+        assert b.status_code == 200, b.text
+        b = b.json()
+        outdated = client.post("/api/investigations/save", json={**later, "notes": "Written against revision A"})
+        assert outdated.status_code == 409, outdated.text
+        assert [o["output"]["definition_id"] for o in b["bpic19_outputs"]["outputs"]] == [plain_answer["definition_id"]]
     finally:
         first.terminate()
         first.wait(timeout=15)
@@ -137,6 +169,14 @@ def test_t20_saved_links_survive_a_different_process(tmp_path):
         assert (output["definition"]["recipe"]["amount_filter"], output["definition"]["recipe"]["tolerance"]) == ("opposite", 5)
         assert {case["case_id"]: [(o["state"], o["reason"], o["activation_row_ids"], o["response_row_ids"]) for o in case["observations"]]
                 for case in output["cases"]} == found
+        # Revision B reopens with B's definition and links only; A is still reopenable with its own.
+        latest = fresh.post("/api/investigations/reopen", json=envelope("reopen_investigation_request",
+            workspace_id=wid, saved_revision_id=b["revision"]["saved_revision_id"]))
+        assert latest.status_code == 200, latest.text
+        assert latest.json()["bpic19_outputs"] == b["bpic19_outputs"]
+        assert latest.json()["bpic19_outputs"]["outputs"][0]["output"]["definition"]["recipe"]["amount_filter"] == "ignore"
+        assert {case["case_id"]: [(o["state"], o["reason"], o["activation_row_ids"], o["response_row_ids"]) for o in case["observations"]]
+                for case in latest.json()["bpic19_outputs"]["outputs"][0]["output"]["cases"]} == plain_found
     finally:
         second.terminate()
         second.wait(timeout=15)
