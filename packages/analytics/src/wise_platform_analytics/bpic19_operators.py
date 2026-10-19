@@ -49,7 +49,7 @@ def _stamp(value: datetime | None) -> str | None:
 
 def _parse(text: str, kind: str, field: str = "query.recipe.horizon") -> datetime:
     if not isinstance(text, str) or _ISO.fullmatch(text) is None:
-        raise ValueError("Horizon boundaries require ISO timestamps with seconds.")
+        raise _RecipeRefusal("invalid_parameter", "Horizon boundaries require ISO timestamps with seconds.", field)
     value = datetime.fromisoformat(text.replace("Z", "+00:00"))
     if (value.tzinfo is None) != (kind == "wall_clock"):
         raise _RecipeRefusal(
@@ -66,29 +66,35 @@ def checked_roles(prepared: PreparedData, roles: Mapping) -> dict:
         "item_category",
         "net_worth",
     }:
-        raise ValueError(
-            "Review event_id, item_category and net_worth original-column roles."
+        raise _RecipeRefusal(
+            "invalid_parameter",
+            "Review event_id, item_category and net_worth original-column roles.",
+            "query.roles",
         )
     result = dict(roles)
     for name, column in result.items():
         if column is not None and (
             type(column) is not int or not 0 <= column < len(prepared.columns)
         ):
-            raise ValueError(
-                f"The {name} role must identify an original column or null."
+            raise _RecipeRefusal(
+                "invalid_parameter",
+                f"The {name} role must identify an original column or null.",
+                "query.roles." + name,
             )
     return result
 
 
-def _labels(value: object) -> None:
+def _labels(value: object, field: str) -> None:
     if (
         not isinstance(value, list)
         or not 1 <= len(value) <= 8
         or any(not isinstance(v, str) or not v or len(v) > 256 for v in value)
         or len(set(value)) != len(value)
     ):
-        raise ValueError(
-            "Activity selectors require 1–8 distinct nonempty exact labels."
+        raise _RecipeRefusal(
+            "invalid_parameter",
+            "Activity selectors require 1–8 distinct nonempty exact labels.",
+            field,
         )
 
 
@@ -177,8 +183,8 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
             raise _RecipeRefusal("invalid_parameter",
                 "Automatic flow stages require a reviewed invariant category field.", "query.roles.item_category")
     elif kind == "cancellation":
-        _labels(r["target_activities"])
-        _labels(r["cancellation_activities"])
+        _labels(r["target_activities"], "query.recipe.target_activities")
+        _labels(r["cancellation_activities"], "query.recipe.cancellation_activities")
         if set(r["target_activities"]) & set(r["cancellation_activities"]):
             raise _RecipeRefusal("invalid_parameter", "Receipt and cancellation label sets must be disjoint.", "query.recipe.cancellation_activities")
         enum("reuse", {"allow", "consume"})
@@ -197,8 +203,8 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
         if r["amount_filter"] != "ignore" and roles["net_worth"] is None:
             raise _RecipeRefusal("invalid_parameter", "Amount-dependent matching requires a reviewed value field.", "query.roles.net_worth")
     elif kind == "rule":
-        _labels(r["left_activities"])
-        _labels(r["right_activities"])
+        _labels(r["left_activities"], "query.recipe.left_activities")
+        _labels(r["right_activities"], "query.recipe.right_activities")
         enum("relation", {"response", "precedence"})
         enum("position", {"raw_direct", "eventual"})
         enum("quantifier", {"some", "every"})
@@ -207,10 +213,10 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
         enum("vacuity", {"not_activated", "logical"})
         enum("flow_scope", {"all", *FLOW_LABELS.values()})
         if r["flow_scope"] != "all" and roles["item_category"] is None:
-            raise ValueError("A flow-scoped rule requires the reviewed category field.")
+            raise _RecipeRefusal("invalid_parameter", "A flow-scoped rule requires the reviewed category field.", "query.roles.item_category")
     else:
-        _labels(r["activation_activities"])
-        _labels(r["response_activities"])
+        _labels(r["activation_activities"], "query.recipe.activation_activities")
+        _labels(r["response_activities"], "query.recipe.response_activities")
         enum("endpoints", {"first_first", "first_last", "first_after"})
         enum("completion", {"completed_only", "right_censored"})
         enum("horizon_policy", {"refuse_outside", "clip"})
@@ -237,17 +243,23 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
             or not provenance.strip()
             or len(provenance) > 1000
         ):
-            raise ValueError(
-                "Horizon provenance must name the reviewed source authority in 1–1,000 characters or be null."
+            raise _RecipeRefusal(
+                "invalid_parameter",
+                "Horizon provenance must name the reviewed source authority in 1–1,000 characters or be null.",
+                "query.recipe.horizon_provenance",
             )
         if r["completion"] == "right_censored":
             if provenance is None:
-                raise ValueError(
-                    "Right censoring requires explicit reviewed observation-horizon provenance."
+                raise _RecipeRefusal(
+                    "invalid_parameter",
+                    "Right censoring requires explicit reviewed observation-horizon provenance.",
+                    "query.recipe.horizon_provenance",
                 )
             if cutoff_text is None:
-                raise ValueError(
-                    "Right censoring requires the preparation's explicitly trusted snapshot cutoff."
+                raise _RecipeRefusal(
+                    "invalid_parameter",
+                    "Right censoring requires the preparation's explicitly trusted snapshot cutoff.",
+                    "query.recipe.completion",
                 )
             if end > _parse(cutoff_text, kind_clock):
                 raise _RecipeRefusal(
@@ -256,8 +268,10 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
                     "query.recipe.horizon_end",
                 )
         if r["calendar"] == "daily_snapshots" and (end - start).days > 36600:
-            raise ValueError(
-                "Daily snapshots support a reviewed horizon of at most 100 years."
+            raise _RecipeRefusal(
+                "invalid_parameter",
+                "Daily snapshots support a reviewed horizon of at most 100 years.",
+                "query.recipe.calendar",
             )
     return r
 
@@ -1583,8 +1597,10 @@ def operator_population(
             or type(limit) is not int
             or not 1 <= limit <= 100
         ):
-            raise ValueError(
-                "Review a nonnegative page offset and a limit from 1 to 100."
+            raise _RecipeRefusal(
+                "invalid_parameter",
+                "Review a nonnegative page offset and a limit from 1 to 100.",
+                "query.offset" if type(offset) is not int or offset < 0 else "query.limit",
             )
         r = None if recipe is None else checked_recipe(prepared, recipe, chosen)
     except _RecipeRefusal as exc:
