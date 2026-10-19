@@ -193,6 +193,8 @@ class Expectations:
     source_review: dict | None = None
     """A reviewed source interpretation to profile with, and what its review must show:
     ``{"interpretation": {...}, "raw_minimum_prefix": "1948-", "raw_maximum_prefix": "2020-"}``."""
+    ranking_shared_counts: dict | None = None
+    """Groups shared by the gamma-0 top ten and each other policy's top ten: ``{"mean_penalty": 6, ...}``."""
     timing_exemplar: dict | None = None
     """A named item's independently known C04 interval:
     ``{"case_id": ..., "invoice_date": "2018-02-16", "clearing_date": "2018-04-26", "days": 69.040972, "deviation": 0.650683}``."""
@@ -481,6 +483,8 @@ class Journey:
         saved_digest = digest({key: saved[key] for key in ("revision", "bpic19_outputs")})
         if self.score:
             self._score(wid, base)
+            if getattr(self, "ranking", None) is not None:
+                result["ranking_comparisons"] = self.ranking
         self.restart()
         reopened = self.stage("cold_reopen", self.post("investigations/reopen", "reopen_investigation_request", workspace_id=wid,
                                                       saved_revision_id=revision))
@@ -530,6 +534,14 @@ class Journey:
         self.stages.append({"stage": "method_scoring", "seconds": round(seconds, 4), "peak_rss_bytes": peak, "retained_rss_bytes": retained,
                             "reply_bytes": len(response.content), "status": response.status_code,
                             "refusal": None if response.status_code == 200 else {"code": body.get("code"), "message": body.get("message")}})
+        if response.status_code == 200 and self.expected.ranking_shared_counts is not None:
+            policies = body["report"]["ranking_comparisons"]["group_policies"]
+            keys = lambda rows: [tuple(row.get(key) for key in settings["group_by"]) for row in rows]
+            primary = keys(policies["PI_gamma_0"])
+            shared = {name: len(set(primary) & set(keys(policies[name]))) for name in self.expected.ranking_shared_counts}
+            self.ranking = {"shared_with_PI_gamma_0_top_ten": shared, "same_first_rank": {name: keys(policies[name])[:1] == primary[:1] for name in shared},
+                            "same_order": {name: keys(policies[name]) == primary for name in shared}, "top_ten_size": len(primary)}
+            self.check("ranking_shared_counts", shared == self.expected.ranking_shared_counts, self.ranking)
 
 
 def _utc(policies: dict) -> bool:

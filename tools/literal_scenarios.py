@@ -198,5 +198,20 @@ def issue116(client, workspace: Path) -> dict:
         "Timing exemplarsW60 · all-evaluable median 75 days · evaluated support 2 · positive candidates 2."]}
 
 
-SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue116": issue116, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue117(client, workspace: Path) -> dict:
+    import test_issue117_ranking_settings_tcp as literal
+    saved = scored_scenario(client, workspace, literal, "completion_timing", "T15 ranking settings", literal.RANKING,
+                            group_by=["company"], min_cases=1)
+    # By hand (see the HTTP test): gamma 0 ranks S (.148) before L (.112); gamma 20 ranks L (.018667) before S
+    # (.007048); mean penalty puts S first (.2), total penalty L first (.32). Rows: group, count, then values.
+    head = "companyn casesmean penaltypenalty massmean scoreglobal meanPIstable PI"
+    return {"name": "T15 ranking settings", "saved": saved, "texts": [
+        "10 of 10 items scored · mean score 0.948",
+        "PI gamma 0" + head + "S1UnavailableUnavailable0.80.9480.1480.148L4UnavailableUnavailable0.920.9480.1120.112",
+        "PI gamma 20" + head + "L4UnavailableUnavailable0.920.9480.1120.018667S1UnavailableUnavailable0.80.9480.1480.007048",
+        "mean penalty" + head + "S10.20.2", "total penalty" + head + "L40.080.32",
+        "Empty unions have unavailable overlap."]}
+
+
+SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
