@@ -38,10 +38,10 @@ export class Bpic19Session implements PipelineSource {
 
   /** Capture meaning before selection; publish it only after that exact child succeeds. */
   recordKeep(action:Bpic19PipelineAction,predicate:unknown):boolean {
-    const current=this.actions.get("bpic19_profile"),keep=action.selection_keep;
+    const current=this.actions.get(action.operation),keep=action.selection_keep;
     const position=current?.selection_prefix_length;
     const exactBase=position===null && this.baseIdentity!==undefined && sameJson(action.identity,this.baseIdentity);
-    if(!current || this.validity.get("bpic19_profile")!==true || !keep || this.path===undefined ||
+    if(!current || this.validity.get(action.operation)!==true || !keep || this.path===undefined ||
       this.path.some(step=>sameJson(step,predicate)) ||
       keep.step_index!==this.path.length || action.selection_prefix_length!==position ||
       !(position===this.path.length || exactBase && this.path.length===0) ||

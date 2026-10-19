@@ -665,6 +665,17 @@ class Bpic19ProfileKeepGroup8(BaseModel):
     value: str | None
 
 
+class Bpic19ProfileKeepGroup9(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['activity_cohort']
+    cohort: Literal['positive', 'zero', 'unavailable'] = Field(
+        ...,
+        description="The reviewed activity operator's cohort over the complete frozen parent.",
+    )
+
+
 class Bpic19ProfileKeepGroup(
     RootModel[
         Bpic19ProfileKeepGroup1
@@ -675,6 +686,7 @@ class Bpic19ProfileKeepGroup(
         | Bpic19ProfileKeepGroup6
         | Bpic19ProfileKeepGroup7
         | Bpic19ProfileKeepGroup8
+        | Bpic19ProfileKeepGroup9
     ]
 ):
     root: (
@@ -686,6 +698,7 @@ class Bpic19ProfileKeepGroup(
         | Bpic19ProfileKeepGroup6
         | Bpic19ProfileKeepGroup7
         | Bpic19ProfileKeepGroup8
+        | Bpic19ProfileKeepGroup9
     ) = Field(..., title='Bpic19ProfileKeepGroup')
 
 
@@ -693,7 +706,12 @@ class Bpic19SelectionKeep(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    policy_id: Literal['bpic19.profile_group_keep.v1']
+    policy_id: Literal[
+        'bpic19.profile_group_keep.v1', 'bpic19.measure_cohort_keep.v1'
+    ] = Field(
+        ...,
+        description='Profile groups use the profile policy; activity cohorts of a reviewed measures answer use the measure cohort policy.',
+    )
     step_index: conint(ge=0, le=99)
     group: Bpic19ProfileKeepGroup
 
@@ -833,7 +851,7 @@ class Bpic19PipelineAction(BaseModel):
     )
     selection_keep: Bpic19SelectionKeep | None = Field(
         None,
-        description='Exact complete-case selection step justified by this frozen parent profile. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
+        description='Exact complete-case selection step justified by this frozen parent profile or reviewed activity-measure cohort. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
     )
 
 

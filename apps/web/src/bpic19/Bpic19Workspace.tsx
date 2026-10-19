@@ -21,6 +21,7 @@ import { Bpic19Operators, type Bpic19OperatorComparison } from "./Bpic19Operator
 import { Bpic19Admission } from "./Bpic19Admission";
 import { Bpic19FlowComparison, flowComparisonQuery } from "./Bpic19FlowComparison";
 import { profileKeepAction } from "./profile-keep";
+import { measureKeepAction } from "./measure-keep";
 import { Bpic19RetainedFlowComparisons, retainedFlowComparisonRequest, type RecordedFlowReturn } from "./Bpic19RetainedFlowComparisons";
 import type { Bpic19FlowComparisonAnswer, FlowComparisonQuery } from "../generated/bpic19-flow-comparison";
 import type { AnswerIdentity, Bpic19PipelineAction } from "../generated/saving";
@@ -356,8 +357,8 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
           }} />
         {profileKeepProblem && <p role="alert">{profileKeepProblem}</p>}
         {session.reviewedDeclarations().some(action=>action.selection_keep) && <details className="bpic19-profile"><summary>Reviewed purchasing selection recipes</summary>
-          <p>Each typed Keep is tied to its recorded selection step and reviewed parent. The saved profile supplies its exact field roles, category labels, reducer, policies and separate item, record and document supports.</p>
-          <ol>{session.reviewedDeclarations().filter(action=>action.selection_keep).map((action,index)=><li key={index}>Selection step {action.selection_keep!.step_index+1}: {JSON.stringify(action.selection_keep!.group)}. Parent {action.identity.population_id}. Profile {action.definition_id}.</li>)}</ol>
+          <p>Each typed Keep is tied to its recorded selection step and reviewed parent. The saved profile or measures answer supplies its exact field roles, definitions, policies and supports.</p>
+          <ol>{session.reviewedDeclarations().filter(action=>action.selection_keep).map((action,index)=><li key={index}>Selection step {action.selection_keep!.step_index+1}: {JSON.stringify(action.selection_keep!.group)}. Parent {action.identity.population_id}. {action.operation === "bpic19_measures" ? "Measures" : "Profile"} {action.definition_id}.</li>)}</ol>
         </details>}
         {flowComparison && sameJson(flowComparison.identity,identity) && <Bpic19FlowComparison key={JSON.stringify(flowComparison)} workspaceId={population.workspace_id}
           identity={flowComparison.identity} revision={revision} query={flowComparison.query} recordedDefinitionId={flowComparison.definitionId} onReviewed={reviewedFlowComparison} onValidityChange={flowComparisonValid}
@@ -371,7 +372,19 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
           }} />
         {currentProfile && <Bpic19Measures workspaceId={population.workspace_id} identity={identity} revision={revision} roles={roles} columns={currentProfile.columns} query={measuresQuery} onReviewed={reviewedMeasures} onValidityChange={measuresValid} onInspect={inspect}
           onRetain={retainMeasures} retainedQueries={session.retainedActions().filter(action=>action.operation==='bpic19_measures').map(action=>({definition_id:action.definition_id,label:`${String(action.query.measure_profile)} · ${action.definition_id}`,query:action.query as unknown as MeasureQuery}))}
-          onKeepCases={(caseIds) => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }} />}
+          onKeepCases={(caseIds) => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }}
+          onKeepCohort={(answer, cohort) => {
+            const members = answer.activity_cohorts[`${cohort}_case_ids`];
+            if (!members.length || !shown) return;
+            const predicate = { kind: "case_id_in" as const, case_ids: [members[0], ...members.slice(1)] as [string, ...string[]], negate: false };
+            if (shown.steps.some(step => sameJson(step, predicate))) return;
+            const action = measureKeepAction(answer, cohort, predicate, shown.steps.length,
+              sameJson(answer.identity, population.identity) ? null : shown.steps.length);
+            if (!action || !session.recordKeep(action, predicate)) {
+              setProfileKeepProblem("Review this activity cohort on the current purchasing parent before keeping it."); return;
+            }
+            setProfileKeepProblem(null); investigation.addStep(predicate);
+          }} />}
         {currentProfile && !intervalComparison && <button onClick={()=>{
           const sides=flowIntervalSides.current && sameJson(flowIntervalSides.current.identity,identity) ? flowIntervalSides.current :
             {target:{label:'Target complete PO items',recipe:{kind:'complete_case_ids' as const,case_ids:[]}},reference:{label:'Comparator complete PO items',recipe:{kind:'complete_case_ids' as const,case_ids:[]}}};

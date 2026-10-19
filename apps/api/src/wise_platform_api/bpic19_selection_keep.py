@@ -1,11 +1,14 @@
-"""Bind one finite profile subgroup to its actual whole-case selection step.
+"""Bind one finite profile subgroup or activity cohort to its actual whole-case selection step.
 
-The profile request owns field/reducer/policy interpretation. This module only
-checks its supplied supports against a saved selection; it adds no evaluator.
+The profile and measures requests own field/reducer/policy interpretation. This module only
+checks their supplied supports against a saved selection; it adds no evaluator.
 """
 from __future__ import annotations
 
 from .workspace import Problem
+
+PROFILE_KEEP_POLICY = "bpic19.profile_group_keep.v1"
+MEASURE_KEEP_POLICY = "bpic19.measure_cohort_keep.v1"
 
 
 def keep_step_problem(action: dict, recipe: dict | None, prefix_identities: list[dict] | None,
@@ -15,8 +18,11 @@ def keep_step_problem(action: dict, recipe: dict | None, prefix_identities: list
         if "selection_keep" in action:
             return Problem("invalid_parameter", "A declared profile Keep is a complete association, not null.", field)
         return None
-    if action["operation"] != "bpic19_profile":
-        return Problem("invalid_parameter", "A profile group Keep belongs only to its reviewed source profile.", field)
+    cohort = keep["group"]["kind"] == "activity_cohort"
+    if cohort != (action["operation"] == "bpic19_measures") or (not cohort and action["operation"] != "bpic19_profile"):
+        return Problem("invalid_parameter", "A profile group Keep belongs only to its reviewed source profile, and an activity cohort Keep only to its reviewed measures.", field)
+    if keep["policy_id"] != (MEASURE_KEEP_POLICY if cohort else PROFILE_KEEP_POLICY):
+        return Problem("unsupported_policy", "This Keep names another group's policy.", field + ".policy_id")
     position = keep["step_index"]
     declared = action.get("selection_prefix_length", "absent")
     exact_base = declared is None and position == 0 and action["identity"] == source_base_identity
@@ -56,11 +62,30 @@ def profile_keep_support(profile: dict, group: dict) -> dict | None:
     return None
 
 
+def measure_keep_problem(answer: dict, keep: dict, recipe: dict | None,
+                         prefix_supports: list[dict] | None, field: str) -> Problem | None:
+    """The kept step holds exactly the replayed cohort, taken from exactly the measured parent."""
+    members = answer["activity_cohorts"][keep["group"]["cohort"] + "_case_ids"]
+    position = keep["step_index"]
+    if recipe is None or prefix_supports is None or position + 1 >= len(prefix_supports):
+        return Problem("identity_mismatch", "The actual activity cohort Keep step is unavailable.", field + ".step_index")
+    if sorted(members) != sorted(recipe["predicates"][position]["case_ids"]):
+        return Problem("selection_mismatch", "The complete item IDs differ from the replayed activity cohort. No membership was substituted.", f"selection_recipe.predicates.{position}.case_ids")
+    parent, selected = prefix_supports[position], prefix_supports[position + 1]
+    if (parent["case_count"], parent["record_count"]) != (answer["population_case_count"], answer["population_record_count"]):
+        return Problem("selection_mismatch", "The activity cohort Keep denominator differs from its exact replayed parent.", field + ".group")
+    if sorted(selected["case_ids"]) != sorted(members) or selected["case_count"] != len(members):
+        return Problem("selection_mismatch", "The activity cohort differs from the complete histories in the replayed step.", field + ".group")
+    return None
+
+
 def profile_keep_problem(action: dict, answer: dict, recipe: dict | None,
                          prefix_supports: list[dict] | None, field: str) -> Problem | None:
     keep = action.get("selection_keep")
     if keep is None:
         return None
+    if keep["group"]["kind"] == "activity_cohort":
+        return measure_keep_problem(answer, keep, recipe, prefix_supports, field)
     profile = answer.get("profile")
     support = None if profile is None else profile_keep_support(profile, keep["group"])
     if support is None:
