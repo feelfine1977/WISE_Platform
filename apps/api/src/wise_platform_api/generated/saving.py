@@ -695,6 +695,18 @@ class Bpic19ProfileKeepGroup10(BaseModel):
     )
 
 
+class Bpic19ProfileKeepGroup11(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['interval_side']
+    side: Literal['target', 'reference']
+    support: Literal['items', 'zero', 'unavailable'] = Field(
+        ...,
+        description="All of the side's items, its known zero-day items, or its items without an admitted interval.",
+    )
+
+
 class Bpic19ProfileKeepGroup(
     RootModel[
         Bpic19ProfileKeepGroup1
@@ -707,6 +719,7 @@ class Bpic19ProfileKeepGroup(
         | Bpic19ProfileKeepGroup8
         | Bpic19ProfileKeepGroup9
         | Bpic19ProfileKeepGroup10
+        | Bpic19ProfileKeepGroup11
     ]
 ):
     root: (
@@ -720,6 +733,7 @@ class Bpic19ProfileKeepGroup(
         | Bpic19ProfileKeepGroup8
         | Bpic19ProfileKeepGroup9
         | Bpic19ProfileKeepGroup10
+        | Bpic19ProfileKeepGroup11
     ) = Field(..., title='Bpic19ProfileKeepGroup')
 
 
@@ -731,9 +745,10 @@ class Bpic19SelectionKeep(BaseModel):
         'bpic19.profile_group_keep.v1',
         'bpic19.measure_cohort_keep.v1',
         'bpic19.completion_cohort_keep.v1',
+        'bpic19.interval_side_keep.v1',
     ] = Field(
         ...,
-        description='Profile groups use the profile policy; activity cohorts of a reviewed measures answer and stages of a reviewed completion-cohort answer use their own policies.',
+        description='Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts or an interval comparison.',
     )
     step_index: conint(ge=0, le=99)
     group: Bpic19ProfileKeepGroup
@@ -874,7 +889,7 @@ class Bpic19PipelineAction(BaseModel):
     )
     selection_keep: Bpic19SelectionKeep | None = Field(
         None,
-        description='Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort or completion-cohort stage. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
+        description='Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage or interval-comparison side. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
     )
 
 

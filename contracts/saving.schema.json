@@ -2139,7 +2139,7 @@
         },
         "selection_keep": {
           "$ref": "#/$defs/Bpic19SelectionKeep",
-          "description": "Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort or completion-cohort stage. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
+          "description": "Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage or interval-comparison side. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
         }
       },
       "required": [
@@ -3110,6 +3110,38 @@
             "kind",
             "support"
           ]
+        },
+        {
+          "title": "IntervalSideKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "interval_side"
+            },
+            "side": {
+              "type": "string",
+              "enum": [
+                "target",
+                "reference"
+              ]
+            },
+            "support": {
+              "type": "string",
+              "enum": [
+                "items",
+                "zero",
+                "unavailable"
+              ],
+              "description": "All of the side's items, its known zero-day items, or its items without an admitted interval."
+            }
+          },
+          "required": [
+            "kind",
+            "side",
+            "support"
+          ]
         }
       ]
     },
@@ -3123,9 +3155,10 @@
           "enum": [
             "bpic19.profile_group_keep.v1",
             "bpic19.measure_cohort_keep.v1",
-            "bpic19.completion_cohort_keep.v1"
+            "bpic19.completion_cohort_keep.v1",
+            "bpic19.interval_side_keep.v1"
           ],
-          "description": "Profile groups use the profile policy; activity cohorts of a reviewed measures answer and stages of a reviewed completion-cohort answer use their own policies."
+          "description": "Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts or an interval comparison."
         },
         "step_index": {
           "type": "integer",

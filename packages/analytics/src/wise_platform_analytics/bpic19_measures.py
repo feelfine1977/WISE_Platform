@@ -110,6 +110,14 @@ def _context(records: tuple[PreparedRecord, ...], column: int | None) -> dict:
             "row_ids": [records[0].row_id] if records else []}
 
 
+class DefinitionError(ValueError):
+    """An unsupported recipe value, naming the query field that holds it."""
+
+    def __init__(self, message: str, name: str) -> None:
+        super().__init__(message)
+        self.field = "query." + name
+
+
 def checked_measure_definition(given: Mapping[str, object] | None = None) -> dict:
     """Canonical finite recipes; display order and duplicate labels have no meaning."""
     given = {} if given is None else given
@@ -120,17 +128,17 @@ def checked_measure_definition(given: Mapping[str, object] | None = None) -> dic
                 "representation_policy": {"exact", "first_occurrence"}}
     for name, choices in admitted.items():
         if resolved[name] not in choices:
-            raise ValueError(f"Unsupported {name}: {resolved[name]}.")
+            raise DefinitionError(f"Unsupported {name}: {resolved[name]}.", name)
     if not isinstance(resolved["value_unit"], str) or not resolved["value_unit"].strip():
-        raise ValueError("The value_unit must name a reviewed source unit.")
+        raise DefinitionError("The value_unit must name a reviewed source unit.", "value_unit")
     edges = resolved["value_band_edges"]
     if not isinstance(edges, (list, tuple)) or any(type(edge) not in {int, float} or not math.isfinite(edge) for edge in edges) or any(a >= b for a, b in zip(edges, edges[1:])):
-        raise ValueError("Value band boundaries must be finite and strictly increasing.")
+        raise DefinitionError("Value band boundaries must be finite and strictly increasing.", "value_band_edges")
     resolved["value_band_edges"] = list(edges)
     for name in ("activity_selector", "interval_source", "interval_target"):
         values = resolved[name]
         if not isinstance(values, (list, tuple)) or not values or any(not isinstance(value, str) or not value for value in values):
-            raise ValueError(f"The {name} must contain exact nonempty activity labels.")
+            raise DefinitionError(f"The {name} must contain exact nonempty activity labels.", name)
         resolved[name] = sorted(set(values))
     return resolved
 
@@ -558,7 +566,7 @@ def measure_population(prepared: PreparedData, case_ids: Iterable[str], roles: M
     try:
         recipe = checked_measure_definition(definition)
     except (ValueError, TypeError) as error:
-        return ImportRefusal("unsupported_definition", str(error), "query")
+        return ImportRefusal("unsupported_definition", str(error), getattr(error, "field", "query"))
     calibration = None
     if measure_profile == "historical_v1":
         try:
