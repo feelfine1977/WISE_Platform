@@ -20,7 +20,7 @@ import zipfile
 from fastapi import FastAPI, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, Response
-from wise_platform_analytics.bpic19_measures import (
+from wise_platform_analytics.bpic19_measures import (RoleError,
     build_historical_features, build_paper_features, derive_case_measures,
     checked_measure_roles, add_historical_measures, historical_exposure_calibration,
 )
@@ -351,7 +351,7 @@ class Bpic19Scoring:
         except ValueError as error:
             text = str(error)
             code = "invalid_count" if text.startswith("invalid_count:") else "context_conflict" if text.startswith("context_conflict:") else "invalid_parameter"
-            return _refusal(given, Problem(code, text))
+            return _refusal(given, Problem(code, text, "roles." + error.role if isinstance(error, RoleError) else None))
         except Exception:
             logger.exception("BPIC19 native assessment failed")
             return _refusal(given, Problem("computation_failed", "The native assessment could not be completed. The previous stored run remains unchanged."))

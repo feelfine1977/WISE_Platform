@@ -54,6 +54,8 @@ try {
   await settled();
   // Texts may sit in collapsed sections; they are in the page as the analyst can expand them.
   const shown = await workspaceView.textContent();
+  // Authoring aid for synthetic literals only: WISE_BROWSER_DUMP_TEXT names a file to keep the view's text in.
+  if (process.env.WISE_BROWSER_DUMP_TEXT) await writeFile(process.env.WISE_BROWSER_DUMP_TEXT, shown);
   const missing = expected.texts.filter(text => !shown.includes(text));
   assert.deepEqual(missing, [], 'expected texts missing from the purchasing view');
   if (phase === 'review') {
