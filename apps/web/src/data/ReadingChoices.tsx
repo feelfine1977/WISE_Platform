@@ -428,7 +428,9 @@ function Choices({
           )}
         {interpretation.phase === "answered" && (
           <Report
+            request={interpretation.request}
             answer={interpretation.answer}
+            filename={state.source.phase === "stored" ? state.source.source.filename : undefined}
             names={names}
             onAccept={() => coordinator.confirm(true)}
             onOpenIncidents={(preparationId) =>

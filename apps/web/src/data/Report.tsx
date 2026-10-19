@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
-import type { ExcludedSourceRecord, InterpretationAnswer, PreparationId, RowIssue } from "../generated/imports";
+import type { ConfirmMappingRequest, ExcludedSourceRecord, InterpretationAnswer, PreparationId, RowIssue } from "../generated/imports";
+import { oneRecordPerIncident, Understood } from "./Understood";
 import { countOf, excludedReasonLabels, issueLabels, severityLabels, utcText, wallText } from "./wording";
 
 /** How many source positions are listed for one reason; the counts above say how many rows there are. */
@@ -8,7 +9,10 @@ const POSITIONS_SHOWN = 20;
 const EXCLUDED_SHOWN = 50;
 
 interface ReportProps {
+  /** The reading the report answers, exactly as it was sent. */
+  request: ConfirmMappingRequest;
   answer: InterpretationAnswer;
+  filename?: string;
   /** Column names by index, as the inspection read them. */
   names: Map<number, string>;
   onAccept: () => void;
@@ -16,10 +20,14 @@ interface ReportProps {
 }
 
 /** The interpretation report exactly as supplied, and what can be done next. */
-export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps) {
+export function Report({ request, answer, filename, names, onAccept, onOpenIncidents }: ReportProps) {
   const { report } = answer;
   const confirmId = useId();
+  const singleId = useId();
   const [accepted, setAccepted] = useState(false);
+  // A file whose every incident has one record is opened only once the analyst has chosen to read it that way.
+  const single = oneRecordPerIncident(answer);
+  const [singleAccepted, setSingleAccepted] = useState(false);
   const wall = report.timestamp_kind === "wall_clock";
   const period = (value: string | null) => (value === null ? "none" : wall ? wallText(value) : utcText(value));
   const cutoff = wall ? report.snapshot_cutoff_local : report.snapshot_cutoff_utc;
@@ -113,6 +121,7 @@ export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps
           </ul>
         </details>
       )}
+      {answer.state !== "blocked" && <Understood request={request} answer={answer} names={names} filename={filename} />}
       {answer.state === "needs_confirmation" && (
         <div className="confirm">
           <label className="check" htmlFor={confirmId}>
@@ -125,9 +134,17 @@ export function Report({ answer, names, onAccept, onOpenIncidents }: ReportProps
         </div>
       )}
       {answer.state === "ready" && answer.preparation !== null && (
-        <button type="button" className="primary" onClick={() => onOpenIncidents(answer.preparation!.preparation_id)}>
-          Open incidents
-        </button>
+        <div className="confirm">
+          {single && (
+            <label className="check" htmlFor={singleId}>
+              <input id={singleId} type="checkbox" checked={singleAccepted} onChange={(event) => setSingleAccepted(event.target.checked)} />
+              Open them as incidents of one record each.
+            </label>
+          )}
+          <button type="button" className="primary" disabled={single && !singleAccepted} onClick={() => onOpenIncidents(answer.preparation!.preparation_id)}>
+            Open incidents
+          </button>
+        </div>
       )}
     </div>
   );

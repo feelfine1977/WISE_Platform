@@ -1,0 +1,9 @@
+Ticket;Status;Zeitpunkt;Gruppe;Zuständige Organisationseinheit laut Quellsystem zum Zeitpunkt der Erfassung des Vorgangs einschließlich aller Unterabteilungen
+INC-1;Eröffnet;03.04.2026 08:00;Service Desk;0
+INC-1;Zugewiesen;03.04.2026 09:30;Netzwerk;False
+INC-1;Gelöst;14.04.2026 16:45;Netzwerk;Unknown
+INC-2;Eröffnet;05.04.2026 07:15;;0
+INC-2;Zugewiesen;31.02.2026 10:00;Service Desk;
+;Eröffnet;06.04.2026 11:00;Service Desk;False
+INC-3;;20.04.2026 13:00;Netzwerk;Unknown
+INC-3;Gelöst;21.04.2026 08:05;Netzwerk;0

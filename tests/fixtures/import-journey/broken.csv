@@ -1,0 +1,6 @@
+Ticket;Status;Zeitpunkt;Gruppe
+INC-1;Eröffnet;03.04.2026 08:00;Service Desk
+INC-1;Zugewiesen;03.04.2026 09:30;Netzwerk;Rest
+INC-2;Eröffnet;05.04.2026 07:15;Netzwerk;Rest
+INC-2;Gelöst;06.04.2026 10:00;Netzwerk;Rest
+INC-3;Eröffnet;07.04.2026 11:00;Service Desk
