@@ -52,14 +52,14 @@ def test_each_synthetic_example_answers_its_independent_fixture(client, example)
     if "mapped_records" in expected:
         assert (answer["coverage"]["mapped_record_count"], answer["coverage"]["omitted_activity_record_count"]) == (
             expected["mapped_records"], expected["omitted_activity_records"])
-    # Every incident's complete records come back, in the declared order, under the population's identity.
+    # Every incident's complete records come back, each source row once, under the population's identity; their
+    # declared order is checked against the same files in test_analytics_acceptance.py.
     rows = list(csv.DictReader(io.StringIO((FIXTURES / f"{example}.csv").read_text(encoding="utf-8"))))
     for case_id in groups["parent"]["case_ids"]:
         evidence = case_evidence(client, answer, case_id)
-        assert [record["source_event_id"] for record in evidence["records"]] == \
-               sorted((row["source_event_id"] for row in rows if row["incident_id"] == case_id),
-                      key=lambda event: [record["source_event_id"] for record in evidence["records"]].index(event))
-        assert len(evidence["records"]) == sum(row["incident_id"] == case_id for row in rows)
+        assert evidence["identity"] == answer["identity"]
+        assert sorted(record["source_event_id"] for record in evidence["records"]) == \
+               sorted(row["source_event_id"] for row in rows if row["incident_id"] == case_id)
         assert len({record["row_id"] for record in evidence["records"]}) == len(evidence["records"])
 
 
@@ -209,3 +209,15 @@ def test_the_synthetic_examples_survive_a_second_process(tmp_path):
     finally:
         second.terminate()
         second.wait(timeout=15)
+
+
+def test_the_golden_answers_and_the_reference_counter_cannot_serve_as_the_engine():
+    # #2: the product ships the example sources only; nothing it runs reads the expected answers, the threshold
+    # expectations or the independent reference counter, so an answer can only come from the product's own logic.
+    shipped = sorted(path.name for path in (ROOT / "apps/api/src/wise_platform_api/examples").iterdir())
+    assert shipped == [".gitattributes", "README.md", "S0.csv", "S1.csv", "S2.csv", "S3.csv"]
+    forbidden = ("expected.json", "threshold_expected", "fixture_reference", "tests/fixtures", "policies.v1.json", "policy_ids.json")
+    product = [path for folder in ("apps/api/src", "packages/analytics/src", "apps/web/src") for path in (ROOT / folder).rglob("*")
+               if path.is_file() and path.suffix in {".py", ".ts", ".tsx", ".json"} and ".test." not in path.name and "/test/" not in path.as_posix()]
+    assert product
+    assert [str(path.relative_to(ROOT)) for path in product if any(name in path.read_text(encoding="utf-8") for name in forbidden)] == []
