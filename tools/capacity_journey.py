@@ -193,6 +193,9 @@ class Expectations:
     source_review: dict | None = None
     """A reviewed source interpretation to profile with, and what its review must show:
     ``{"interpretation": {...}, "raw_minimum_prefix": "1948-", "raw_maximum_prefix": "2020-"}``."""
+    timing_exemplar: dict | None = None
+    """A named item's independently known C04 interval:
+    ``{"case_id": ..., "invoice_date": "2018-02-16", "clearing_date": "2018-04-26", "days": 69.040972, "deviation": 0.650683}``."""
 
 
 class Failed(Exception):
@@ -257,6 +260,28 @@ class Journey:
                 log.write(f"{name}: {detail!r}\n")
             raise Failed(name)
         self.checks.append(name)
+
+    def _check_timing_exemplar(self, wid: str, base: dict, exemplar: dict) -> None:
+        """The named item's independent invoice and clearing minima, their days, and the native C04 deviation."""
+        selected = self.stage("exemplar_selection", self.post("investigations/select-cases", "select_cases_request", workspace_id=wid,
+            identity=base, parent_case_ids=None, predicates=[{"kind": "case_id_in", "case_ids": [exemplar["case_id"]], "negate": False}]))
+        identity = selected["identity"]
+        query = {"policy_id": "bpic19.source_witnessed_measures.v1", "measure_profile": "paper_v1", "roles": self.measure_roles,
+                 "offset": 0, "limit": 1, "calibration_population": "parent"}
+        measured = self.stage("exemplar_measures", self.post("investigations/bpic19-measures", "bpic19_measures_request",
+                                                             workspace_id=wid, identity=identity, query=query))
+        interval = measured["cases"][0]["measures"]["invoice_to_clearing_days"]
+        self.check("exemplar_c04_endpoints", (interval.get("activation_timestamp") or "")[:10] == exemplar["invoice_date"]
+                   and (interval.get("response_timestamp") or "")[:10] == exemplar["clearing_date"])
+        self.check("exemplar_c04_days", interval["value"] is not None and abs(interval["value"] - exemplar["days"]) < 1e-6)
+        settings = {"profile": "paper", "criteria_family": "completion_timing", "view": "Balanced", "mode": "flat", "gamma": 0,
+                    "group_by": ["company", "spend_area"], "min_cases": 1, "volume": "cases", "exposure_policy": "max_absolute_p95"}
+        scored = self.stage("exemplar_timing_score", self.post("investigations/bpic19-score", "bpic19_score_request", workspace_id=wid,
+            base_identity=base, named_population={"name": "Timing exemplar", "identity": identity}, roles=self.measure_roles,
+            settings=settings, case_offset=0, case_limit=1))
+        cases = scored.get("report", {}).get("case_page", {}).get("cases", [])
+        c04 = next((entry for entry in cases[0]["criteria"] if entry["criterion_id"] == "C04"), {}) if cases else {}
+        self.check("exemplar_c04_deviation", c04.get("deviation") is not None and abs(c04["deviation"] - exemplar["deviation"]) < 1e-6)
 
     def _check_completion_cohorts(self, wid: str, identity: dict, result: dict) -> None:
         """Completion is displayed with no exclusion chosen: every item, record and document is retained, open and
@@ -423,6 +448,8 @@ class Journey:
                           "offset": 0, "limit": 100, "value_reducer": "unique_creation_value", "value_unit": "EUR",
                           "calibration_population": "selected", "value_band_edges": []}
         self._check_completion_cohorts(wid, identity, result)
+        if self.expected.timing_exemplar is not None:
+            self._check_timing_exemplar(wid, base, self.expected.timing_exemplar)
         measured = self.stage("default_measures", self.post("investigations/bpic19-measures", "bpic19_measures_request", workspace_id=wid,
                                                             identity=identity, query=measures_query))
         # Showing completion excludes nothing: the paper counts after it run on every item.

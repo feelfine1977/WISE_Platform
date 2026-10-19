@@ -301,7 +301,8 @@ def main() -> int:
 
     journey = Journey(folder, native, prepared, config["prepared_roles"], config["measure_roles"], config["lineage_origin_column"],
                       Expectations(expected["case_count"], expected["record_count"], document_count=expected.get("document_count"),
-                                   source_review=expected.get("source_review")), limit=limit,
+                                   source_review=expected.get("source_review"),
+                                   timing_exemplar=expected.get("timing_exemplar")), limit=limit,
                       deadline=args.deadline_minutes * 60, score=not args.no_scoring, after_reopen=after_reopen)
     started = time.monotonic()
     result = journey.run()
