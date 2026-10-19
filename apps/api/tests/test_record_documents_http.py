@@ -140,7 +140,8 @@ def test_reading_every_kind_and_every_unavailable_reason(opened):
         "Too large": ("unavailable", "too_large"), "Invalid json": ("unavailable", "invalid_json"),
         "Old version": ("unavailable", "unknown_format_version"),
         "Escaping link": ("unavailable", "outside_folder" if LINKS["escape"] else "file_missing"),
-        "Cut document": ("available", None), "Largest allowed": ("available", None), "Markup document": ("available", None)}
+        "Cut document": ("available", None), "Largest allowed": ("available", None), "Markup document": ("available", None),
+        "Unreadable file": ("unavailable", "unreadable") if LINKS["locked"] else ("available", None)}
     # Too large is refused with its size, never truncated; the work side's own cut is shown as such.
     assert reasons["Too large"]["size_bytes"] == (documents / "large-0001.json").stat().st_size > MAX and reasons["Too large"]["document"] is None
     assert reasons["Cut document"]["document"]["cut"] is True and reasons["Largest allowed"]["size_bytes"] == MAX

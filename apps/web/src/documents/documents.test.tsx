@@ -93,7 +93,7 @@ describe("#132 the reading pane", () => {
     const expectations: [string, RegExp][] = [
       ["Path reference", /Not a valid document reference\./], ["Device reference", /Not a valid document reference\./],
       ["Missing file", /missing from the document folder/], ["Invalid json", /not valid JSON/], ["Old version", /unknown format version/],
-      ["Escaping link", /outside the document folder/], ["Too large", /Too large to show: 1,048,58\d bytes; the stated limit is 1,048,576 bytes\. Nothing was cut\./]];
+      ["Escaping link", /outside the document folder/], ["Unreadable file", /cannot be read/], ["Too large", /Too large to show: 1,048,58\d bytes; the stated limit is 1,048,576 bytes\. Nothing was cut\./]];
     for (const [activity, words] of expectations) {
       const { view } = pane("I-3", place(activity));
       expect((await screen.findByText(/^Not available:/)).textContent).toMatch(words);

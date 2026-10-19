@@ -35,6 +35,7 @@ ROWS = [
     ("I-3", "Cut document", "2001-01-03T08:08:00Z", "cut-0001"),
     ("I-3", "Largest allowed", "2001-01-03T08:09:00Z", "full-0001"),
     ("I-3", "Markup document", "2001-01-03T08:10:00Z", "markup-0001"),
+    ("I-3", "Unreadable file", "2001-01-03T08:11:00Z", "locked-0001"),
 ]
 # Text that would be markup, a script, a link and a remote image if it were ever rendered as HTML; it must stay text.
 MARKUP = "<b>Invented bold</b> <script>alert(1)</script> <a href=\"http://example.invalid/\">Invented link</a> <img src=\"http://example.invalid/x.png\">"
@@ -118,6 +119,11 @@ def write_folder(root: Path) -> Path:
     write("full-0001", full)
     assert (folder / "full-0001.json").stat().st_size == MAX and (folder / "large-0001.json").stat().st_size > MAX
     LINKS["escape"] = link(root / "outside-0001.json", folder / "escape-0001.json")
+    write("locked-0001", document("note", "Invented locked note", "Never read."))
+    # Where the system honours it, the file cannot be read by its owner; elsewhere it stays readable.
+    LINKS["locked"] = os.name == "posix" and os.geteuid() != 0
+    if LINKS["locked"]:
+        os.chmod(folder / "locked-0001.json", 0)
     (folder / "files" / "letter-0001.pdf").write_bytes(PDF)
     (folder / "files" / "photo-0001.png").write_bytes(PNG)
     (folder / "files" / "contract-0001.docx").write_bytes(docx())
