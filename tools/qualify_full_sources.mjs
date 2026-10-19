@@ -16,9 +16,17 @@ const {chromium} = await import(pathToFileURL(playwright).href);
 const browser = await chromium.launch({headless: true, executablePath: chrome});
 process.once('SIGTERM', async () => { await browser.close(); process.exit(1); });
 const page = await browser.newPage({viewport: {width: 1440, height: 1000}, acceptDownloads: true});
-page.setDefaultTimeout(Number(process.env.WISE_BROWSER_TIMEOUT_MS ?? 300000));
+const timeout = Number(process.env.WISE_BROWSER_TIMEOUT_MS ?? 300000);
+page.setDefaultTimeout(timeout);
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
+// Every service request the page makes, by route and time only; WISE_BROWSER_REQUEST_LOG names a file to keep them in.
+const requestLog = [];
+let inFlight = 0;
+const route = request => new URL(request.url()).pathname;
+page.on('request', request => { if (route(request).startsWith('/api/')) inFlight++, requestLog.push([Date.now() / 1000, 'start', request.method(), route(request)]); });
+page.on('requestfinished', request => { if (route(request).startsWith('/api/')) inFlight--, requestLog.push([Date.now() / 1000, 'end', request.method(), route(request)]); });
+page.on('requestfailed', request => { if (route(request).startsWith('/api/')) inFlight--, requestLog.push([Date.now() / 1000, 'failed', request.method(), route(request)]); });
 const areas = page.getByRole('navigation', {name: 'Areas'});
 const profileRegion = page.getByRole('region', {name: 'Understand the purchasing flows', exact: true});
 const views = {}, downloads = [], witnesses = [];
@@ -32,10 +40,19 @@ async function view(name, action) {
 // Only the status is read: a full population's replies run to tens of megabytes, more than the browser keeps
 // for inspection. The service journey has already checked their contents over HTTP.
 async function answered(route, action) {
-  const pending = page.waitForResponse(response => response.url().endsWith(route) && response.request().method() === 'POST');
-  await action();
-  const response = await pending;
+  const [response] = await Promise.all([
+    page.waitForResponse(response => response.url().endsWith(route) && response.request().method() === 'POST'), action()]);
   assert.equal(response.status(), 200, route);
+}
+
+// A view is settled when none of its requests is in flight for a second. Acting earlier races the
+// application: a control enabled now may be disabled by the answer still arriving, and a click on it is lost.
+async function settled() {
+  const deadline = Date.now() + timeout;
+  for (let quiet = 0; quiet < 10; quiet = inFlight === 0 ? quiet + 1 : 0) {
+    if (Date.now() > deadline) throw new Error(`the view did not settle within ${timeout} ms`);
+    await page.waitForTimeout(100);
+  }
 }
 
 async function openSourceReview() {
@@ -54,13 +71,12 @@ async function showProfile() {
   await page.waitForLoadState('networkidle');
   await openSourceReview();
   for (const text of expected.texts) await profileRegion.getByText(text, {exact: false}).first().waitFor();
+  await settled();
 }
 
 async function exportAll() {
   for (const [kind, label] of [['json', 'Export saved definitions, results and witnesses'], ['md', 'Export readable purchasing analysis report']]) {
-    const pending = page.waitForEvent('download');
-    await page.getByRole('button', {name: label, exact: true}).click();
-    const download = await pending;
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', {name: label, exact: true}).click()]);
     const path = `${output}.${phase}.${kind}`;
     await download.saveAs(path);
     const bytes = await readFile(path);
@@ -101,7 +117,9 @@ try {
       witnesses.push({state, opened: true});
     }
     await showProfile();
+    await page.locator('#bpic19-save-wait').waitFor({state: 'detached'});
     await page.getByRole('button', {name: 'Save', exact: true}).first().click();
+    await page.getByRole('heading', {name: 'Save a new revision', exact: true}).waitFor();
     await answered('/api/investigations/save', () => page.getByRole('button', {name: 'Save revision', exact: true}).click());
     await page.getByRole('button', {name: 'Close', exact: true}).click();
   }
@@ -109,6 +127,18 @@ try {
   assert.deepEqual(errors, []);
   for (const name of Object.keys(views)) views[name].phase = phase;
   await writeFile(output, JSON.stringify({views, downloads, witnesses}));
+} catch (error) {
+  // Interface state only: the save form's texts and the save controls' states, never record contents.
+  const state = await page.evaluate(() => ({
+    form: document.querySelector('#saved-form')?.innerText ?? null,
+    wait: document.querySelector('#bpic19-save-wait')?.innerText ?? null,
+    buttons: [...document.querySelectorAll('button')].filter(b => /^(Save|Save revision|Close)$/.test(b.textContent.trim()))
+      .map(b => ({name: b.textContent.trim(), disabled: b.disabled})),
+    nameFilled: (document.querySelector('#saved-form input[type=text]')?.value ?? '').trim() !== '',
+  })).catch(reason => ({unavailable: String(reason)}));
+  console.error('interface state at failure', JSON.stringify(state));
+  throw error;
 } finally {
+  if (process.env.WISE_BROWSER_REQUEST_LOG) await writeFile(process.env.WISE_BROWSER_REQUEST_LOG, JSON.stringify(requestLog));
   await browser.close();
 }
