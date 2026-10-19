@@ -351,7 +351,8 @@ class Bpic19Scoring:
         except ValueError as error:
             text = str(error)
             code = "invalid_count" if text.startswith("invalid_count:") else "context_conflict" if text.startswith("context_conflict:") else "invalid_parameter"
-            return _refusal(given, Problem(code, text, "roles." + error.role if isinstance(error, RoleError) else None))
+            field = "roles." + error.role if isinstance(error, RoleError) else "settings.group_by" if code == "context_conflict" else None
+            return _refusal(given, Problem(code, text, field))
         except Exception:
             logger.exception("BPIC19 native assessment failed")
             return _refusal(given, Problem("computation_failed", "The native assessment could not be completed. The previous stored run remains unchanged."))
