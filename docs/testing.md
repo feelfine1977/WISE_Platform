@@ -77,6 +77,13 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - A second step keeps nothing and says so.
   - Undo twice restores exactly the earlier identities.
 
+- `tools/qualify_incident_numbers.py` (#57): keeping incidents by their numbers in `core-v1.csv`, against `tests/fixtures/selection-journey/incident-numbers.json`.
+  - An unknown or a repeated number refuses the whole entry, and nothing is asked.
+  - An entry is previewed and taken: the chip, the counts, and every record of the kept incidents, the unlabelled ones included.
+  - Another order of the same numbers gives the same identity.
+  - Kept against removed in Compare names the same groups.
+  - The investigation is saved, then reopened after an actual restart with the same chip and identity. Clear all and Undo return exactly.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.
