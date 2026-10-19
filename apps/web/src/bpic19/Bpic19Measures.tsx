@@ -83,6 +83,23 @@ function Endpoint({ label, endpoint, disabled, inspect }: { label: string; endpo
       <button type="button" disabled={disabled || !endpoint.candidate_row_ids.length} onClick={() => inspect(endpoint.candidate_row_ids)}>Inspect {label.toLowerCase()} candidates</button></td></tr>;
 }
 
+/** Actor attribution of the items shown, with the reason full effort is or is not available. */
+function ResourceAttribution({ cases, disabled, onInspect, onKeepCases }: { cases: CaseFeatures[]; disabled: boolean;
+  onInspect: Bpic19MeasuresProps["onInspect"]; onKeepCases: Bpic19MeasuresProps["onKeepCases"] }) {
+  if (!cases.length) return null;
+  const kind = (feature: CaseFeatures) => feature.actor_summary.unknown_event_count ? "unknown-containing" :
+    feature.actor_summary.known_user_event_count === 0 && feature.actor_summary.batch_event_count > 0 ? "batch-only" : "attributed";
+  return <><h3>Resource attribution of these items</h3>
+    <p>Strict paper attribution: a whole cell is a user or a batch identity, or it is unknown. An unknown actor makes full user effort unavailable for its item, while its classified records stay a lower bound; batch-only items have a known zero.</p>
+    <div className="bpic19-measures-scroll"><table className="plain-table"><caption>Resource attribution by item</caption><thead><tr><th>PO item</th><th>Attribution</th><th>Known user events</th><th>Distinct users</th><th>Batch events</th><th>Unknown events</th><th>Full effort</th><th>Full-history actions</th></tr></thead><tbody>
+      {cases.map(feature => { const actors = feature.actor_summary; return <tr key={feature.case_id}><th scope="row">{feature.case_id}</th><td>{kind(feature)}</td>
+        <td>{number.format(actors.known_user_event_count)}</td><td>{number.format(actors.distinct_normalized_user_count)}</td><td>{number.format(actors.batch_event_count)}</td><td>{number.format(actors.unknown_event_count)}</td>
+        <td>{actors.available ? "available" : `unavailable · ${reason(actors.reason)}`}</td>
+        <td><button type="button" disabled={disabled || !feature.actor_records.length} onClick={() => onInspect(feature.case_id, feature.actor_records.map(actor => actor.row_id))}>Inspect actor records of {feature.case_id}</button>
+          {onKeepCases && <button type="button" disabled={disabled} onClick={() => onKeepCases([feature.case_id], `Resource attribution: ${feature.case_id}`)}>Keep resource item {feature.case_id}</button>}</td></tr>; })}
+    </tbody></table></div></>;
+}
+
 function RepresentationSupport({ representation, groups, reviewed, disabled, onInspect, onKeepCases }: {
   representation: "exact" | "first_occurrence"; groups: RepresentationGroup[]; reviewed: boolean; disabled: boolean;
   onInspect: Bpic19MeasuresProps["onInspect"]; onKeepCases: Bpic19MeasuresProps["onKeepCases"];
@@ -277,6 +294,7 @@ export function Bpic19Measures({ workspaceId, identity, revision, roles, columns
       <p>The representation changes grouping and preserves all {number.format(answer.population_record_count)} original records. {number.format(answer.representation_unavailable_case_ids.length)} items have unavailable representations. Scored support and penalty mass require a native Method score-run join, which is unavailable in this view.</p>
       <div className="bpic19-measures-grid bpic19-representations">{(["exact", "first_occurrence"] as const).map(representation => <RepresentationSupport key={`${answer.result_id}-${representation}`} representation={representation} groups={answer.representation_groups[representation]} reviewed={representation === answer.definition.representation_policy} disabled={paused} onInspect={onInspect} onKeepCases={onKeepCases} />)}</div>
       {!!answer.representation_unavailable_case_ids.length && <button type="button" disabled={paused} onClick={() => onInspect(answer.representation_unavailable_case_ids[0])}>Inspect unavailable representation</button>}
+      <ResourceAttribution cases={answer.cases} disabled={paused} onInspect={onInspect} onKeepCases={onKeepCases} />
       <h3>Source witnesses and complete item histories</h3>
       {answer.population_case_count === 0 && <p>No PO items in this population. Distribution values and rates are unavailable where their denominator is empty.</p>}
       {answer.cases.map(feature => <ItemEvidence key={`${answer.result_id}-${feature.case_id}`} feature={feature} disabled={paused} onInspect={onInspect} onKeepCases={onKeepCases} />)}
