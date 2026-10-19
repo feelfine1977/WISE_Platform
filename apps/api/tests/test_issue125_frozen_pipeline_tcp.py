@@ -11,6 +11,7 @@ import hashlib
 import io
 import json
 import socket
+import zipfile
 
 import httpx
 from fastapi.testclient import TestClient
@@ -76,10 +77,12 @@ def save_request(wid, base, selected, pipeline, notes, previous=None, presentati
 
 
 def native_zip(port, wid, run_id):
+    """The exported archive's members and their digests: the frozen bytes, not the archive's own write times."""
     reply = httpx.post(f"http://127.0.0.1:{port}/api/investigations/bpic19-export", json=envelope("bpic19_export_request",
                        workspace_id=wid, run_id=run_id, case_offset=0, case_limit=50), timeout=60)
     assert reply.status_code == 200, reply.text
-    return reply.content
+    with zipfile.ZipFile(io.BytesIO(reply.content)) as archive:
+        return {name: hashlib.sha256(archive.read(name)).hexdigest() for name in sorted(archive.namelist())}
 
 
 def test_t23_every_artifact_declares_one_frozen_revision_and_identities_follow_meaning(tmp_path):
@@ -161,7 +164,7 @@ def test_t23_revision_b_replaces_a_and_both_replay_exactly_in_a_different_proces
         assert (stale.status_code, stale.json()["code"], stale.json()["field"]) == (409, "revision_conflict", "expected_revision_id")
         assert [entry["definition_id"] for entry in b["bpic19_outputs"]["outputs"]] == [profile["definition_id"], run_b["definition_id"]]
         assert b["bpic19_outputs"]["outputs"][1]["output"]["run_id"] == run_b["run_id"]
-        zips = {run["run_id"]: hashlib.sha256(native_zip(port, wid, run["run_id"])).hexdigest() for run in (run_a, run_b)}
+        zips = {run["run_id"]: native_zip(port, wid, run["run_id"]) for run in (run_a, run_b)}
     finally:
         first.terminate()
         first.wait(timeout=15)
@@ -170,13 +173,13 @@ def test_t23_revision_b_replaces_a_and_both_replay_exactly_in_a_different_proces
     try:
         assert second.pid != first.pid
         assert fresh.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(workspace))).status_code == 200
-        # 23-B05 and E04: both revisions replay with identical revisions, outputs and native archive bytes.
+        # 23-B05 and E04: both revisions replay with identical revisions, outputs and native archive members.
         for saved in (a, b):
             reopened = fresh.post("/api/investigations/reopen", json=envelope("reopen_investigation_request",
                 workspace_id=wid, saved_revision_id=saved["revision"]["saved_revision_id"]))
             assert reopened.status_code == 200, reopened.text
             assert (reopened.json()["revision"], reopened.json()["bpic19_outputs"]) == (saved["revision"], saved["bpic19_outputs"])
-        assert {run_id: hashlib.sha256(native_zip(port, wid, run_id)).hexdigest() for run_id in zips} == zips
+        assert {run_id: native_zip(port, wid, run_id) for run_id in zips} == zips
     finally:
         second.terminate()
         second.wait(timeout=15)
