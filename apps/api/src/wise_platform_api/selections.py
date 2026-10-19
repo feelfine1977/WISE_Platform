@@ -33,6 +33,7 @@ from wise_platform_analytics.selection import (
     RecordAttributeCondition,
     RecordAttributesAll,
     ObservedSpanAtLeast,
+    IntervalThreshold,
     MaxRawGapAtLeast,
     DirectlyFollows,
     EndsWithActivity,
@@ -210,6 +211,10 @@ def package_predicate(given: Mapping[str, object]) -> Predicate:
     if kind in ("observed_span_at_least", "max_raw_gap_at_least"):
         constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
         return constructor(given["hours"], negate)
+    if kind == "interval_threshold":
+        interval = given["interval"]
+        return IntervalThreshold(str(interval["start_activity"]), str(interval["response_activity"]), str(given["operator"]), given["hours"],
+                                 negate, str(interval["policy"]))
     if kind == "contains_activity":
         return ContainsActivity(str(given["activity"]), negate)
     if kind == "starts_with_activity":

@@ -32,6 +32,7 @@ export type SelectionPredicate =
   | RecordAttributeIn
   | ObservedSpanAtLeast
   | MaxRawGapAtLeast
+  | IntervalThreshold
   | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
@@ -151,6 +152,21 @@ export interface MaxRawGapAtLeast {
   kind: "max_raw_gap_at_least";
   hours: number;
   negate: boolean;
+}
+/**
+ * Keeps the incidents whose interval from the first record of the start activity to the first record of the response activity at or after it (the registered pairing policy) exceeds (gt) or reaches (ge) a number of hours on the preparation's clock. An incident without that interval (order not known, no start, no response at or after it) is not evaluable.
+ */
+export interface IntervalThreshold {
+  kind: "interval_threshold";
+  interval: IntervalDefinition;
+  operator: "gt" | "ge";
+  hours: number;
+  negate: boolean;
+}
+export interface IntervalDefinition {
+  policy: "incident.interval.first_start_first_response_at_or_after.v1";
+  start_activity: string;
+  response_activity: string;
 }
 /**
  * OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.

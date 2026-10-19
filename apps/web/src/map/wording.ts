@@ -72,6 +72,10 @@ export function stepWording(step: SelectionPredicate): string {
       const measure = step.kind === "observed_span_at_least" ? "recorded span" : "longest adjacent recorded gap";
       return `Keep incidents with ${measure} ${step.negate ? "less than" : "at least"} ${step.hours} hours`;
     }
+    case "interval_threshold": {
+      const relation = step.operator === "gt" ? (step.negate ? "at most" : "more than") : step.negate ? "less than" : "at least";
+      return `Keep incidents whose interval from the first ${quoted(step.interval.start_activity)} to the first ${quoted(step.interval.response_activity)} at or after it is ${relation} ${step.hours} hours`;
+    }
     case "starts_with_activity":
       return step.negate
         ? `Keep incidents that do not begin with ${quoted(step.activity)}`
@@ -123,6 +127,8 @@ export function unevaluableReason(step: SelectionPredicate): string | null {
       return "the order of their records is not known, or no span or gap can be measured from their times";
     case "record_attributes_all":
       return "a record lacks a cell of a named column, so whether it matches cannot be told";
+    case "interval_threshold":
+      return "they have no such interval: their order is not known, the start is missing, or no response follows at or after it";
     case "contains_activity":
     case "case_id_in":
     case "record_attribute_in":
