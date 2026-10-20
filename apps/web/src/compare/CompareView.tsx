@@ -157,6 +157,7 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
           ) : (
             <PeriodsSetup coordinator={coordinator} draft={draft} clock={state.basis.clock} activities={activities} />
           )}
+          {draft.mode === "groups" && <StratumChoice coordinator={coordinator} investigation={investigation} openings={openings} parentCaseIds={investigated.parentCaseIds} />}
           <ColumnChoice
             columns={state.basis.contextColumns}
             chosen={draft.column}
@@ -659,6 +660,13 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor, onInspect }: C
       <p className="compare-roles">
         <strong>A</strong> is {kind} {names[0]}; <strong>B</strong> is {kind} {names[1]}. {roleDefinitions(shown)}
       </p>
+      <p className="compare-muted">
+        In a parent of {countOf(answer.parent.case_count, "incident")}: A has {countOf(answer.target.included.case_count, "incident")} and B{" "}
+        {countOf(answer.reference.included.case_count, "incident")}
+        {answer.target.included.case_count !== answer.reference.included.case_count && ", so their sizes differ: every share is of a group's own incidents"}. The context
+        compared is the value of {columnName} at each incident's first record in the declared order ({answer.context_policy}), common to both groups; values recorded later
+        or last are not offered.
+      </p>
       <div className="compare-actions">
         <button type="button" aria-pressed={ratio} onClick={() => setRatio(!ratio)}>
           {ratio ? "Hide the ratio of shares" : "Show the ratio of shares"}
@@ -1045,5 +1053,65 @@ function SideIncidents({ shown, investigation, inspected = null }: { shown: Extr
         </section>
       )}
     </section>
+  );
+}
+
+/**
+ * Compares within one stratum: the incidents of the parent first recorded with one value of a context column, for
+ * example one priority. The stratum is a frozen parent like any other, said in the parent line, and undone the same way.
+ */
+function StratumChoice({ coordinator, investigation, openings, parentCaseIds }: {
+  coordinator: CompareCoordinator; investigation: ImportedInvestigationCoordinator; openings: OpeningChoice[]; parentCaseIds: string[] | null;
+}) {
+  const [column, setColumn] = useState<number | null>(null);
+  const [value, setValue] = useState<number | null>(null);
+  const [state, setState] = useState<"idle" | "working" | string>("idle");
+  const opening = openings.find((item) => item.index === column) ?? null;
+  if (openings.length === 0) return null;
+  async function within() {
+    if (opening === null || value === null) return;
+    const chosen = opening.values[value];
+    const step: SelectionPredicate = { kind: "opening_attribute_equals", column_index: opening.index, value: chosen, negate: false, anchor_policy: contextPolicy };
+    setState("working");
+    const kept = await investigation.keptBy([step], new AbortController().signal, parentCaseIds ?? undefined);
+    if (!kept.ok) {
+      setState(kept.problem.kind === "refusal" ? kept.problem.refusal.message : "The stratum could not be selected; try again.");
+      return;
+    }
+    setState("idle");
+    coordinator.freeze({ caseIds: kept.keptIds, retained: [step], count: kept.keptIds.length, eligibilityUnknown: kept.unevaluable });
+  }
+  return (
+    <fieldset className="compare-stratum">
+      <legend className="compare-label">Within a stratum</legend>
+      <p className="compare-muted">
+        Compare only the incidents first recorded with one value, for example one priority or one service. A difference within a stratum is still an
+        association of this log: not the quality of a team, and not a cause.
+      </p>
+      <label>
+        Stratum column
+        <select value={column ?? ""} onChange={(event) => { setColumn(event.target.value === "" ? null : Number(event.target.value)); setValue(null); }}>
+          <option value="">Choose a column</option>
+          {openings.map((item) => (
+            <option key={item.index} value={item.index}>{item.name}</option>
+          ))}
+        </select>
+      </label>
+      {opening && (
+        <label>
+          Stratum value
+          <select value={value ?? ""} onChange={(event) => setValue(event.target.value === "" ? null : Number(event.target.value))}>
+            <option value="">Choose a value</option>
+            {opening.values.map((item, index) => (
+              <option key={index} value={index}>{item === null ? NOT_RECORDED : item}</option>
+            ))}
+          </select>
+        </label>
+      )}
+      <button type="button" disabled={opening === null || value === null || state === "working"} onClick={() => void within()}>
+        Compare within this stratum
+      </button>
+      {state !== "idle" && state !== "working" && <p role="alert">{state}</p>}
+    </fieldset>
   );
 }

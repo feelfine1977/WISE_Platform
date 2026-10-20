@@ -79,7 +79,9 @@ function emptyReason(reason: "empty_target_profile" | "empty_reference_profile" 
 /** What a group is, in words: the steps of a selection, or a list that claims no reason. */
 export function groupWording(definition: NamedGroupDefinition): string {
   if (definition.kind === "explicit_case_ids") {
-    return `${countOf(definition.case_ids.length, "listed incident id")}; the list says nothing about why these incidents belong together`;
+    const shown = definition.case_ids.slice(0, 10);
+    const rest = definition.case_ids.length - shown.length;
+    return `${countOf(definition.case_ids.length, "listed incident id")} (${shown.join(", ")}${rest > 0 ? ` and ${rest} more` : ""}); the list says nothing about why these incidents belong together`;
   }
   if (definition.predicates.length === 0) return "every incident of the parent (a selection without steps)";
   return definition.predicates.map(stepWording).join("; and ");
@@ -90,12 +92,12 @@ export function overlapSentences(pair: PairSupport, [a, b]: [string, string], ki
   const sentences: string[] = [];
   if (pair.overlap.case_count > 0) {
     sentences.push(
-      `${countOf(pair.overlap.case_count, "incident")} with ${countOf(pair.overlap.record_count, "record")} ` +
+      `Membership: overlapping. ${countOf(pair.overlap.case_count, "incident")} with ${countOf(pair.overlap.record_count, "record")} ` +
         `${pair.overlap.case_count === 1 ? "is" : "are"} in both ${a} and ${b}. ` +
         "They are counted in each group, so the counts and records of the two groups overlap and cannot be added.",
     );
   } else {
-    sentences.push(`No incident is in both ${a} and ${b}.`);
+    sentences.push(`Membership: disjoint. No incident is in both ${a} and ${b}.`);
   }
   if (pair.unevaluable.case_count > 0) {
     sentences.push(
@@ -136,7 +138,7 @@ const remedies: Record<ComparisonRefusal["code"], string> = {
   invalid_predicate: "Take the group again from a selection in Investigations.",
   invalid_parent: "Open the incidents again from the Data area.",
   unknown_case: "Take the group again from the incidents of this preparation.",
-  case_outside_parent: "Take the group again from the incidents of this preparation.",
+  case_outside_parent: "A group lists incidents outside the parent: take the group again from the incidents of the parent, or use every incident as the parent.",
   unmapped_context_column: "Choose one of the context columns of this preparation.",
   invalid_window: "Pick a last day on or after the first day of each period.",
   clock_mismatch: "Open the incidents again from the Data area, then pick the periods again.",

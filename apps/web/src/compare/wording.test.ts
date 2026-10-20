@@ -58,7 +58,7 @@ describe("the wording of a comparison", () => {
       unevaluable: support(["P-5"], 2),
     };
     expect(overlapSentences(pair, names, "period")).toEqual([
-      "No incident is in both Early and Late.",
+      "Membership: disjoint. No incident is in both Early and Late.",
       "1 incident of the parent cannot be placed in or outside Early or Late, as what decides their membership cannot be evaluated; they are counted in neither period.",
       "2 incidents of the parent are in neither period.",
     ]);
