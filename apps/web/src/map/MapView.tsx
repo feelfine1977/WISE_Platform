@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
+import { abstract, type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
 import { emptySelection, ProcessMap, type Selection } from "wise-flow/react";
 // The page has unlayered base rules, so the library's styles come unlayered too, after React Flow's.
 import "wise-flow/react-flow.css";
@@ -13,14 +13,14 @@ import { StagesEditor } from "../stages/StagesEditor";
 import { type StagedReading, useStages } from "../stages/store";
 import { AboutMap } from "./AboutMap";
 import { ActivityTimesCard } from "./ActivityTimesCard";
-import { mapArrangement, type MapDirection, OPENING_DIRECTION, parentArrangement } from "./arrange";
+import { mapArrangement, type MapDirection, OPENING_DIRECTION, parentArrangement, TOP_TO_BOTTOM } from "./arrange";
 import { CANVAS_FROM, mapDetail, WHOLE_DETAIL } from "./detail";
 import { DetailStrip } from "./DetailStrip";
 import { elementOf, selectedElement, stepChoices } from "./elements";
 import { StepPreviewLine, type StepPreviewer } from "./StepPreviewLine";
 import { elementTitle } from "./elementTitle";
 import { fitToFrame } from "./FitToFrame";
-import { flowCoverage, leastFlowIncidents, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
+import { flowCoverage, leastFlowIncidents, PATH_RANK, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
 import { MAP_THEME, nodeSize } from "./look";
 import "./look.css";
 import { MapToolbar } from "./MapToolbar";
@@ -109,7 +109,7 @@ interface MapViewProps {
   previewStep?: StepPreviewer;
   /** The id of the text saying why no step can be taken now; while it is given, the map offers none. */
   waitingFor?: string;
-  /** Whether the map starts with every activity kept in the place the whole parent's map gives it. */
+  /** Whether the map starts with every activity in the place the parent's arrangement gives it; the investigation starts it so. */
   initiallyInPlace?: boolean;
   /**
    * What stands in the frame: the map, or the list of every path of the kept incidents. The list
@@ -205,13 +205,19 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
   /** Whether the map is shown as the map library's table of its activities and paths; the detail controls switch it. */
   const [view, setView] = useState<"map" | "table">("map");
   /**
-   * How the map is arranged. By default it is arranged anew, compactly, for exactly what is shown:
-   * the activities and paths the detail leaves out do not shape the picture. On request every
-   * activity keeps the place the whole parent's map gives it, so that selections can be compared
-   * by eye; hidden paths then still decide the places and the routes.
+   * How the map is arranged. By default every activity keeps the place one arrangement of the parent gives it, so that
+   * previews, steps, Undo and the detail move nothing that stays on the map. That arrangement is computed once for each
+   * parent from its map thinned to the paths the map opens on, with every activity, so that the paths the detail
+   * leaves out do not shape it and every activity that comes back has its place. Rearranging for the view shown, on
+   * request, arranges the map anew and compactly for exactly what is shown, and again after each change, until the
+   * parent's places are asked for again. Neither changes an incident or a number.
    */
   const [inPlace, setInPlace] = useState(initiallyInPlace);
-  const arrangement = useParentArrangement(parentGraph, parent, stages, direction, inPlace);
+  const arrangedParent = useMemo(
+    () => (opening !== undefined && (opening.pathDetail ?? 1) < 1 ? abstract(parent, { pathDetail: opening.pathDetail, activityDetail: 1, edgeMetric: PATH_RANK }) : parent),
+    [parent, opening],
+  );
+  const arrangement = useParentArrangement(parentGraph, arrangedParent, stages, direction, inPlace);
   const positions = useMemo(
     () => (inPlace && arrangement.phase === "ready" ? filterPositions(arrangement.positions, graph) : undefined),
     [inPlace, arrangement, graph],
@@ -301,6 +307,17 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
           </button>
         </p>
       )}
+      {!listed && (
+      <p className="map-arrangement">
+        {inPlace
+          ? `Places from the map of the parent's ${countOf(parentGraph.meta.selected_case_count, "incident")}; they stay through previews, steps, Undo and the detail.`
+          : "Arranged anew for what is shown; places change with each step or detail."}{" "}
+        {direction === TOP_TO_BOTTOM ? "Runs top to bottom." : "Runs left to right."}{" "}
+        <button type="button" className="link-button" onClick={() => setInPlace(!inPlace)}>
+          {inPlace ? "Rearrange for this view" : "Back to the parent's places"}
+        </button>
+      </p>
+      )}
       {inPlace && arrangement.phase === "unavailable" && (
         <p className="map-limit" title={NOT_ARRANGED_IN_FULL}>
           {NOT_ARRANGED}
@@ -320,8 +337,6 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
         picture={!listed}
         direction={direction}
         onDirection={setDirection}
-        inPlace={inPlace}
-        onInPlace={setInPlace}
         overview={overview}
         onOverview={setOverview}
         editingStages={editingStages}

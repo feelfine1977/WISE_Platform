@@ -72,6 +72,7 @@ describe("the place of the detail controls", () => {
     expect(screen.getByRole("group", { name: "Map tools" }).parentElement?.className).toBe("map-detail");
     expect(Array.from(screen.getByRole("group", { name: "Map tools" }).parentElement!.children, (part) => part.className)).toEqual([
       "measure-switch",
+      "map-arrangement",
       "map-basis",
       "icon-toolbar map-toolbar",
     ]);
