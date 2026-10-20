@@ -47,6 +47,10 @@ class BackUpWorkspaceRequest(BaseModel):
     query_revision: QueryRevision
     workspace_id: WorkspaceId
     destination: constr(min_length=1, max_length=4096)
+    preview_only: bool | None = Field(
+        None,
+        description='Check the destination and say what the backup would hold, without writing anything.',
+    )
 
 
 class BackUpWorkspaceAnswer(BaseModel):
@@ -65,6 +69,10 @@ class BackUpWorkspaceAnswer(BaseModel):
     omitted: list[str] = Field(
         ...,
         description='Files of the workspace not backed up: machine settings that name folders of this computer.',
+    )
+    written: bool | None = Field(
+        None,
+        description='Whether the backup was written; false for a preview, which writes nothing.',
     )
 
 

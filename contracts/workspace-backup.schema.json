@@ -115,6 +115,10 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 4096
+        },
+        "preview_only": {
+          "type": "boolean",
+          "description": "Check the destination and say what the backup would hold, without writing anything."
         }
       },
       "required": [
@@ -172,6 +176,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "written": {
+          "type": "boolean",
+          "description": "Whether the backup was written; false for a preview, which writes nothing."
         }
       },
       "required": [
