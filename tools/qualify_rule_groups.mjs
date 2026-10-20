@@ -78,7 +78,7 @@ try {
 
   // The other rules, each as the oracle groups the parent.
   for (const [label, name] of [['Last activity', 'last_raw_activity'], ['Exact sequence of activities', 'exact_mapped_sequence'], ['Number of records', 'raw_record_count_bands'],
-    [`With or without ${expected.parent.activity_presence.activity}`, 'activity_presence'], ['Same Ref', 'shared_reference']]) {
+    [`With or without ${expected.parent.activity_presence.activity}`, 'activity_presence'], ['Same Ref, on any record', 'shared_reference']]) {
     const answer = await choose(label);
     const shown = (await listed()).filter(([, count]) => count > 0);
     check(`${name}_groups`, same(shown, wanted(name)) && same(answer.parent_coverage.unevaluable.case_ids, expected.parent[name].unevaluable), [shown, wanted(name)]);

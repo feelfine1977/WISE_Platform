@@ -168,8 +168,10 @@ def checked_answer(body: dict) -> RuleGroupsReply:
         )
     rule_kind = body["query"]["rule"]["kind"]
     shared = rule_kind == "shared_reference"
+    # Only a shared reference read on any record lets an incident be in several groups (#51).
+    overlaps = shared and body["query"]["rule"].get("policy", "any_record") == "any_record"
     if (
-        body["group_membership_overlaps"] != shared
+        body["group_membership_overlaps"] != overlaps
         or (body["shared_reference_coverage"] is not None) != shared
     ):
         raise ValueError("Reference coverage and overlap must match the stated rule.")

@@ -17,6 +17,13 @@ from .variants import ACTIVITY_PROJECTION_POLICY, variant_id
 RULE_POLICY = "incident.rule_groups.stated_rules.v1"
 MAX_SAFE_INTEGER = 9007199254740991
 _ORDERED_RULES = {"first_raw_activity", "last_raw_activity", "exact_mapped_sequence"}
+# Which values of an incident a shared reference reads: every record's (an incident can be in several groups), the first
+# record's in the declared order, or the latest record's that has a value; the last two need the order to be known.
+REFERENCE_POLICIES = ("any_record", "first_record", "latest_record")
+
+
+def _ordered(rule: Mapping[str, object]) -> bool:
+    return rule["kind"] in _ORDERED_RULES or (rule["kind"] == "shared_reference" and rule.get("policy", "any_record") != "any_record")
 _RULE_FIELDS = {
     "first_raw_activity": {"kind"},
     "last_raw_activity": {"kind"},
@@ -74,7 +81,9 @@ def validate_rule_groups_query(query: object) -> ImportRefusal | None:
     ):
         return invalid("The rule kind is not supported.", "query.rule.kind")
     kind = rule["kind"]
-    if set(rule) != _RULE_FIELDS[kind]:
+    # A shared reference names, optionally, which values of an incident it reads (#51); without it, every record's.
+    optional = {"policy"} if kind == "shared_reference" else set()
+    if not _RULE_FIELDS[kind] <= set(rule) <= _RULE_FIELDS[kind] | optional:
         return invalid(
             "The rule must contain exactly its stated parameters.", "query.rule"
         )
@@ -106,6 +115,11 @@ def validate_rule_groups_query(query: object) -> ImportRefusal | None:
             return invalid(
                 "A shared reference needs at least two parent incidents.",
                 "query.rule.minimum_parent_case_count",
+            )
+        if rule.get("policy", "any_record") not in REFERENCE_POLICIES:
+            return invalid(
+                "The values read are those of the first record, the latest record with a value, or any record.",
+                "query.rule.policy",
             )
     if not _edges_valid(query["distribution_edges_hours"]):
         return invalid(
@@ -190,6 +204,9 @@ def _catalogue(
         grouped = {False: [], True: []}
     missing_records: dict[str, int] = {}
     for c in parent:
+        if kind == "shared_reference":
+            # Records without a value are counted for every incident of the parent, also one a reading cannot evaluate.
+            missing_records[c] = sum(record.context_value(rule["column_index"]) is None for record in prepared.histories[c])
         if c not in eligible:
             continue
         records = prepared.histories[c]
@@ -205,12 +222,15 @@ def _catalogue(
             )
             grouped.setdefault(sequence, []).append(c)
         else:
-            values = set()
-            missing_records[c] = 0
-            for record in records:
-                value = record.context_value(rule["column_index"])
-                values.add(value)
-                missing_records[c] += value is None
+            column = rule["column_index"]
+            cells = [record.context_value(column) for record in records]
+            policy = rule.get("policy", "any_record")
+            if policy == "any_record":
+                values = set(cells)
+            elif policy == "first_record":
+                values = {cells[0] if cells else None}
+            else:
+                values = {next((value for value in reversed(cells) if value is not None), None)}
             for value in values:
                 grouped.setdefault(value, []).append(c)
     if kind == "shared_reference":
@@ -394,7 +414,7 @@ def rule_groups(
         eligible = {
             c
             for c in parent
-            if rule["kind"] not in _ORDERED_RULES
+            if not _ordered(rule)
             or summaries[c]["status"] == "available"
         }
         catalogue, reference_coverage = _catalogue(
@@ -463,7 +483,7 @@ def rule_groups(
             "activity_projection_policy": ACTIVITY_PROJECTION_POLICY,
             "catalogue_scope": "frozen_parent",
             "timestamp_kind": kind,
-            "group_membership_overlaps": rule["kind"] == "shared_reference",
+            "group_membership_overlaps": rule["kind"] == "shared_reference" and rule.get("policy", "any_record") == "any_record",
             "population_coverage": population_coverage,
             "parent_coverage": parent_coverage,
             "shared_reference_coverage": reference_coverage,

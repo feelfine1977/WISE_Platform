@@ -1,0 +1,13 @@
+{
+ "about": "Hand-written expectations for #51 (tests/test_issue51_grouping.py and tools/qualify_grouping.py). Invented incidents; Desk is an invented context column with a literal value Unknown and empty cells. G-6 has a record without a time, so its order is not known. A value in fewer than two incidents of the parent forms no group. Never read by product code.",
+ "file": "grouping.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": [4]},
+ "column": 4,
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "groups": {
+  "first_record": {"overlaps": false, "unevaluable": ["G-6"], "in_no_group": ["G-4"], "groups": [["North", ["G-1", "G-2"]], ["Unknown", ["G-5", "G-7"]], [null, ["G-3"]]]},
+  "latest_record": {"overlaps": false, "unevaluable": ["G-6"], "in_no_group": ["G-2"], "groups": [["South", ["G-1", "G-4", "G-7"]], ["Unknown", ["G-3", "G-5"]]]},
+  "any_record": {"overlaps": true, "unevaluable": [], "in_no_group": [], "groups": [["North", ["G-1", "G-2", "G-6"]], ["South", ["G-1", "G-4", "G-7"]], ["Unknown", ["G-3", "G-5", "G-7"]], [null, ["G-3", "G-4"]]]}
+ },
+ "compare": {"group": "Unknown", "policy": "first_record", "target": ["G-5", "G-7"]}
+}

@@ -123,6 +123,10 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
         </select>
       </label>
       <p className="groups-rule-said">{ruleSentence(rule, columnName)}</p>
+      <p className="muted groups-actions-said">
+        Grouping puts whole incidents together by the rule chosen. Choosing a group lists its incidents in the table and changes nothing; Keep or Remove
+        takes a step with exactly its incidents; Compare as A or B makes it a side of a comparison without changing the selection.
+      </p>
       {listed.phase === "loading" && <p className="working-text">Grouping the kept incidents…</p>}
       {listed.phase === "failed" && (
         <div className="inline-error" role="alert">

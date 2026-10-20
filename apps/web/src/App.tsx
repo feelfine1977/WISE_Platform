@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { fetchHealth } from "./api";
 import { httpComparisonClient, type ComparisonClient } from "./compare/client";
 import { CompareCoordinator } from "./compare/coordinator";
-import { CompareView } from "./compare/CompareView";
+import { basisOf, CompareView } from "./compare/CompareView";
 import { AreaTabs, type AreaTab } from "./components/AreaTabs";
 import { ServiceStatus } from "./components/ServiceStatus";
 import { httpImportClient, type ImportClient } from "./data/client";
@@ -160,7 +160,16 @@ export default function App({
       {purchasingVisited && <div hidden={area !== "purchasing"}><Bpic19Workspace active={area === "purchasing"} investigation={importedCoordinator} comparison={compareCoordinator} saving={savingCoordinator} session={bpic19Session} prepared={preparedSession} onShowData={showData} onShowComparison={() => setArea("compare")} /></div>}
       {area === "investigations" &&
         (incidentsOpen ? (
-          <ImportedInvestigation coordinator={importedCoordinator} saving={savingCoordinator} onShowData={showData} />
+          <ImportedInvestigation coordinator={importedCoordinator} saving={savingCoordinator} onShowData={showData}
+            onCompareGroup={(role, name, caseIds) => {
+              // Compare works in the reading shown: its basis is set first, so that opening Compare keeps the sides chosen here.
+              const population = importedCoordinator.getState().population;
+              if (population.phase === "ready") compareCoordinator.useBasis(basisOf(population.answer));
+              compareCoordinator.setMode("groups");
+              compareCoordinator.takeIds(role, [...caseIds]);
+              compareCoordinator.rename(role, name);
+            }}
+            onShowComparison={() => setArea("compare")} />
         ) : (
           <StartNotice start={firstOpen} onShowData={showData} />
         ))}

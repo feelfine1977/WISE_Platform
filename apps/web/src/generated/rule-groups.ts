@@ -75,6 +75,10 @@ export interface SharedReferenceRule {
   kind: "shared_reference";
   column_index: number;
   minimum_parent_case_count: number;
+  /**
+   * Which values of an incident are read: every record's (the default; an incident can be in several groups), the first record's in the declared order, or the latest record's that has a value. The last two need the order to be known; an incident is then in exactly one group.
+   */
+  policy?: "any_record" | "first_record" | "latest_record";
 }
 export interface ExactMappedSequenceRule {
   kind: "exact_mapped_sequence";
