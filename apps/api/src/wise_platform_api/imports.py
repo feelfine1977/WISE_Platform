@@ -171,6 +171,10 @@ class Imports:
             OPEN_POPULATION, parse_import_body(body, OpenPopulationRequest, OPEN_POPULATION), self._open_population
         )
 
+    def forbidden_folders(self) -> tuple:
+        """The program's own folders, in which no workspace is opened or restored."""
+        return self._forbidden
+
     def case_evidence(self, body: bytes) -> ImportReply:
         return _answering(
             CASE_EVIDENCE, parse_import_body(body, ImportedCaseEvidenceRequest, CASE_EVIDENCE), self._case_evidence
