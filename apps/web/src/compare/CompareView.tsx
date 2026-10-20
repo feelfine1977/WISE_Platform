@@ -15,6 +15,7 @@ import { describeImportProblem } from "../data/wording";
 import type { ImportedCaseEvidenceAnswer } from "../generated/imports";
 import { stepWording, supportText } from "../map/wording";
 import { RecordsTable } from "../pinned/PairedHistories";
+import { OutcomeSection } from "./OutcomeSection";
 import type { ComparisonProblem } from "./client";
 import {
   type CompareBasis,
@@ -202,6 +203,9 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
             onInspect={shown.kind === "groups" ? setInspected : undefined} />}
           {shown && <EmptySide shown={shown} frozen={draft.parent !== null} onRebase={() => coordinator.rebase()} onSwap={() => coordinator.swap()} onShowInvestigation={onShowInvestigation} />}
           {shown && shown.kind === "groups" && <SideIncidents key={shown.answer.comparison_id} shown={shown} investigation={investigation} inspected={inspected} />}
+          {shown && shown.kind === "groups" && (
+            <OutcomeSection answer={shown.answer} columnName={columnName(shown.answer.context_column_index)} activities={activities} investigation={investigation} />
+          )}
         </section>
       </div>
     </main>
