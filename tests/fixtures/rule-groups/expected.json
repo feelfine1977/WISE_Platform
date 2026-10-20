@@ -1,0 +1,322 @@
+{
+ "about": "Hand-written expectations for #64 (tests/test_issue64_rule_groups.py and tools/qualify_rule_groups.py). Invented incidents; Desk and Ref are invented context columns, Ref the shared reference. G-3's first record has no activity label and its second no Ref; G-5's Ref R3 is in one incident only; G-UNK has a time that is not a time. Kept: recorded span at least 2 hours. Never read by product code. A group's distributions count its kept incidents against every incident of the whole parent.",
+ "file": "groups.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": [
+   4,
+   5
+  ]
+ },
+ "reference_column": 5,
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "edges_hours": [
+  0,
+  1,
+  24,
+  168
+ ],
+ "kept_step": {
+  "kind": "observed_span_at_least",
+  "hours": 2,
+  "negate": false
+ },
+ "kept": [
+  "G-1",
+  "G-3",
+  "G-4"
+ ],
+ "parent": {
+  "first_raw_activity": {
+   "groups": [
+    [
+     "activity",
+     "Opened",
+     [
+      "G-1",
+      "G-2",
+      "G-4",
+      "G-5"
+     ]
+    ],
+    [
+     "missing_activity",
+     null,
+     [
+      "G-3"
+     ]
+    ]
+   ],
+   "unevaluable": [
+    "G-UNK"
+   ],
+   "unassigned": []
+  },
+  "last_raw_activity": {
+   "groups": [
+    [
+     "activity",
+     "Resolved",
+     [
+      "G-1",
+      "G-2",
+      "G-3"
+     ]
+    ],
+    [
+     "activity",
+     "Closed",
+     [
+      "G-4"
+     ]
+    ],
+    [
+     "activity",
+     "Opened",
+     [
+      "G-5"
+     ]
+    ]
+   ],
+   "unevaluable": [
+    "G-UNK"
+   ],
+   "unassigned": []
+  },
+  "exact_mapped_sequence": {
+   "groups": [
+    [
+     "exact_sequence",
+     [
+      "Opened"
+     ],
+     [
+      "G-5"
+     ]
+    ],
+    [
+     "exact_sequence",
+     [
+      "Opened",
+      "Assigned",
+      "Resolved"
+     ],
+     [
+      "G-1"
+     ]
+    ],
+    [
+     "exact_sequence",
+     [
+      "Opened",
+      "Resolved"
+     ],
+     [
+      "G-2"
+     ]
+    ],
+    [
+     "exact_sequence",
+     [
+      "Opened",
+      "Waiting",
+      "Resolved",
+      "Closed"
+     ],
+     [
+      "G-4"
+     ]
+    ],
+    [
+     "exact_sequence",
+     [
+      "Resolved"
+     ],
+     [
+      "G-3"
+     ]
+    ]
+   ],
+   "unevaluable": [
+    "G-UNK"
+   ],
+   "unassigned": []
+  },
+  "raw_record_count_bands": {
+   "groups": [
+    [
+     "raw_record_count_band",
+     [
+      1,
+      2
+     ],
+     [
+      "G-5"
+     ]
+    ],
+    [
+     "raw_record_count_band",
+     [
+      2,
+      5
+     ],
+     [
+      "G-1",
+      "G-2",
+      "G-3",
+      "G-4",
+      "G-UNK"
+     ]
+    ]
+   ],
+   "unevaluable": [],
+   "unassigned": []
+  },
+  "activity_presence": {
+   "activity": "Assigned",
+   "groups": [
+    [
+     "activity_presence",
+     false,
+     [
+      "G-2",
+      "G-3",
+      "G-4",
+      "G-5",
+      "G-UNK"
+     ]
+    ],
+    [
+     "activity_presence",
+     true,
+     [
+      "G-1"
+     ]
+    ]
+   ],
+   "unevaluable": [],
+   "unassigned": []
+  },
+  "shared_reference": {
+   "groups": [
+    [
+     "reference_value",
+     "R1",
+     [
+      "G-1",
+      "G-2",
+      "G-4"
+     ]
+    ],
+    [
+     "reference_value",
+     "R2",
+     [
+      "G-3",
+      "G-UNK"
+     ]
+    ],
+    [
+     "missing_reference",
+     null,
+     [
+      "G-3"
+     ]
+    ]
+   ],
+   "unevaluable": [],
+   "unassigned": [
+    "G-5"
+   ],
+   "coverage": {
+    "parent_distinct_nonmissing_value_count": 3,
+    "parent_suppressed_nonmissing_value_count": 1,
+    "parent_missing_reference_record_count": 1,
+    "population_missing_reference_record_count": 1
+   }
+  }
+ },
+ "kept_first_activity": {
+  "eligible": 3,
+  "parent_eligible": 5,
+  "Opened": {
+   "kept": [
+    "G-1",
+    "G-4"
+   ],
+   "kept_share": 0.6666666666666666,
+   "parent_count": 4,
+   "parent_share": 0.8,
+   "span_kept": [
+    0,
+    1,
+    1,
+    0
+   ],
+   "gap_kept": [
+    0,
+    2,
+    0,
+    0
+   ],
+   "shortest": [
+    "G-1",
+    6
+   ],
+   "longest": [
+    "G-4",
+    24
+   ],
+   "span_whole_parent": [
+    1,
+    3,
+    1,
+    0
+   ],
+   "gap_whole_parent": [
+    0,
+    4,
+    0,
+    0
+   ],
+   "gap_whole_parent_unavailable": {
+    "fewer_than_two_records_case_count": 1,
+    "order_unknown_case_count": 1
+   }
+  },
+  "missing_activity": {
+   "kept": [
+    "G-3"
+   ],
+   "kept_share": 0.3333333333333333,
+   "parent_count": 1,
+   "parent_share": 0.2,
+   "shortest": [
+    "G-3",
+    12
+   ],
+   "longest": [
+    "G-3",
+    12
+   ]
+  }
+ },
+ "kept_shared_reference": {
+  "unassigned_kept": [],
+  "unassigned_parent": [
+   "G-5"
+  ],
+  "population_missing_reference_record_count": 1,
+  "R1_kept": [
+   "G-1",
+   "G-4"
+  ]
+ },
+ "keep_opened_from_kept": [
+  "G-1",
+  "G-4"
+ ]
+}

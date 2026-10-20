@@ -1,0 +1,15 @@
+Ticket,Status,At,Seq,Desk,Ref
+G-1,Opened,2026-06-01T08:00:00Z,1,East,R1
+G-1,Assigned,2026-06-01T10:00:00Z,2,East,R1
+G-1,Resolved,2026-06-01T14:00:00Z,3,East,R1
+G-2,Opened,2026-06-02T08:00:00Z,1,East,R1
+G-2,Resolved,2026-06-02T09:00:00Z,2,East,R1
+G-3,,2026-06-03T08:00:00Z,1,West,R2
+G-3,Resolved,2026-06-03T20:00:00Z,2,West,
+G-4,Opened,2026-06-04T08:00:00Z,1,West,R1
+G-4,Waiting,2026-06-04T09:00:00Z,2,West,R1
+G-4,Resolved,2026-06-04T11:00:00Z,3,West,R1
+G-4,Closed,2026-06-05T08:00:00Z,4,West,R1
+G-5,Opened,2026-06-06T08:00:00Z,1,North,R3
+G-UNK,Opened,2026-06-07T08:00:00Z,1,East,R2
+G-UNK,Resolved,not a time,2,East,R2

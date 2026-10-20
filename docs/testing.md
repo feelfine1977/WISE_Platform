@@ -171,6 +171,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - The search by number keeps the order and leaves the counts and the distribution unchanged.
   - With `WISE_SCREENSHOT_DIR` set, a picture of the list is written there.
 
+- `tools/qualify_rule_groups.py` (#64): groups by a stated rule over the invented `tests/fixtures/rule-groups` file, against its own `expected.json`.
+  - Each of the six rules groups the incidents as the oracle does; the rule is said, with who is eligible among the kept incidents and in the parent.
+  - The incident of unknown order is unevaluable only for the rules that read the order. For the shared reference: the incident in no group, the records without a value, and the values too rare to form a group.
+  - A chosen group states its rule, its support, its distributions against the whole parent and its shortest and longest incident.
+  - Choosing takes no step; keeping takes one with the group's incidents, undone exactly.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

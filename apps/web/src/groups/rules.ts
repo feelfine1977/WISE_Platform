@@ -1,7 +1,15 @@
 import type { GroupRule, RuleGroupKey } from "../generated/rule-groups";
 
-/** The edges of the bands of numbers of records: one record, two to four, five to nine, ten to 19, 20 to 49, 50 or more. */
-export const RECORD_BANDS = [1, 2, 5, 10, 20, 50];
+/**
+ * The edges of the bands of numbers of records: one record, two to four, five to nine, ten to 19, 20 to 49, 50 or more.
+ * The service's edges begin at zero; the band below one record holds no incident and is not shown (see `shownGroup`).
+ */
+export const RECORD_BANDS = [0, 1, 2, 5, 10, 20, 50];
+
+/** Whether a group is shown: every group but the band below one record, which no incident can be in. */
+export function shownGroup(key: RuleGroupKey): boolean {
+  return !(key.kind === "raw_record_count_band" && key.start_inclusive === 0 && key.end_exclusive === 1);
+}
 
 /** A rule the analyst can group by, with its words in the list. */
 export interface RuleChoice {
@@ -45,5 +53,59 @@ export function groupLabel(key: RuleGroupKey): string {
       return "Not recorded";
     case "exact_sequence":
       return key.activities.join(" → ");
+  }
+}
+
+/** Whether a rule reads the order of the records, so that an incident whose order is not fully known cannot be evaluated. */
+export function readsOrder(rule: GroupRule): boolean {
+  return rule.kind === "first_raw_activity" || rule.kind === "last_raw_activity" || rule.kind === "exact_mapped_sequence";
+}
+
+/**
+ * How a rule groups the incidents, in words: what it reads, which incidents it cannot evaluate, and where an incident
+ * with a missing value goes. The rule is the analyst's; nothing in it is a business class.
+ */
+export function ruleSentence(rule: GroupRule, columnName: (index: number) => string): string {
+  switch (rule.kind) {
+    case "first_raw_activity":
+    case "last_raw_activity": {
+      const which = rule.kind === "first_raw_activity" ? "first" : "last";
+      return `Each incident is in the group of the activity of its ${which} record in the declared order. An incident whose order is not fully known cannot be evaluated; one whose ${which} record has no activity label is in “No activity label”.`;
+    }
+    case "raw_record_count_bands":
+      return "Each incident is in the band of its number of records, records without an activity label included. Every incident can be evaluated.";
+    case "exact_mapped_sequence":
+      return "Each incident is in the group of its exact sequence of labelled activities in the declared order; records without an activity label are left out of the sequence. An incident whose order is not fully known cannot be evaluated.";
+    case "activity_presence":
+      return `Each incident is in “With ${rule.activity}” if at least one of its records has that activity, otherwise in “Without ${rule.activity}”. Every incident can be evaluated.`;
+    case "shared_reference": {
+      const name = columnName(rule.column_index);
+      return `Each incident is in the group of every value of ${name} recorded in it, so an incident with several values is in several groups. A value recorded in fewer than ${rule.minimum_parent_case_count} incidents of the parent forms no group. An incident with a record without a value of ${name} is also in “Not recorded”.`;
+    }
+  }
+}
+
+/** The rule of one group, in words: which incidents it holds. */
+export function groupRuleSentence(key: RuleGroupKey, rule: GroupRule, columnName: (index: number) => string): string {
+  switch (key.kind) {
+    case "activity":
+    case "missing_activity": {
+      const which = rule.kind === "last_raw_activity" ? "last" : "first";
+      return key.kind === "activity"
+        ? `Incidents whose ${which} record in the declared order has the activity “${key.activity}”.`
+        : `Incidents whose ${which} record in the declared order has no activity label.`;
+    }
+    case "raw_record_count_band":
+      return `Incidents with ${groupLabel(key)}, records without an activity label included.`;
+    case "activity_presence":
+      return key.present ? `Incidents with at least one record of “${key.activity}”.` : `Incidents with no record of “${key.activity}”.`;
+    case "reference_value":
+      return `Incidents with at least one record whose ${columnName(key.column_index)} is “${key.value}”.`;
+    case "missing_reference":
+      return `Incidents with at least one record without a value of ${columnName(key.column_index)}.`;
+    case "exact_sequence":
+      return key.activities.length === 0
+        ? "Incidents without a labelled activity in the declared order."
+        : `Incidents whose labelled activities in the declared order are exactly ${key.activities.map((activity) => `“${activity}”`).join(", then ")}.`;
   }
 }
