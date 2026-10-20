@@ -97,7 +97,7 @@ function PairedSide({ pin, loaded, stale, onRetry }: { pin: Pin; loaded: Loaded;
           </button>
         </div>
       ) : (
-        <Records answer={loaded.answer} />
+        <RecordsTable answer={loaded.answer} />
       )}
     </section>
   );
@@ -118,7 +118,8 @@ function PinNotes({ pin }: { pin: Pin }) {
   );
 }
 
-function Records({ answer }: { answer: ImportedCaseEvidenceAnswer }) {
+/** Every original record of one history in the declared order, with its source position, row, time, context and marks. */
+export function RecordsTable({ answer }: { answer: ImportedCaseEvidenceAnswer }) {
   const marks = historyMarks(answer);
   const names = new Map(answer.columns.map((column) => [column.index, column.name === "" ? `Column ${column.index}` : column.name]));
   const contextColumns = answer.records[0].context.map((value) => value.column_index);

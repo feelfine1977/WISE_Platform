@@ -1,0 +1,105 @@
+{
+ "about": "Hand-written expectations for #14 (tests/test_issue14_frozen_parent.py and tools/qualify_frozen_parent.py). Invented incidents. The retained (eligibility) step keeps incidents that begin with Opened: F06 begins with Assigned and is outside the parent; F07 has a record without a usable time, so its first record and its eligibility are unknown. The parent P is frozen after that step. The clause 'contains Resolved' splits P: F04 has no recorded resolution, which is not a business-open verdict. The clause 'interval from Opened to the first Resolved at or after it is more than 4 hours' is nullable: F04 has no response, so it is in neither side. Team is read at the first record (F05's is not recorded); Region is North everywhere, so it is fixed in the parent. Never read by product code.",
+ "file": "frozen.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": null,
+  "context_columns": [
+   3,
+   4
+  ]
+ },
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "incidents": 7,
+ "retained": {
+  "kind": "starts_with_activity",
+  "activity": "Opened",
+  "negate": false
+ },
+ "parent": {
+  "case_ids": [
+   "F01",
+   "F02",
+   "F03",
+   "F04",
+   "F05"
+  ],
+  "outside": [
+   "F06"
+  ],
+  "eligibility_unknown": [
+   "F07"
+  ]
+ },
+ "resolution": {
+  "clause": {
+   "kind": "contains_activity",
+   "activity": "Resolved",
+   "negate": false
+  },
+  "target_name": "Recorded “Resolved”",
+  "reference_name": "No recorded “Resolved”",
+  "target": [
+   "F01",
+   "F02",
+   "F03",
+   "F05"
+  ],
+  "reference": [
+   "F04"
+  ],
+  "unevaluable": [],
+  "whole_log_removed_with_both_steps": [
+   "F04",
+   "F06"
+  ],
+  "team": {
+   "A": {
+    "parent": 2,
+    "target": 2,
+    "reference": 0
+   },
+   "B": {
+    "parent": 2,
+    "target": 1,
+    "reference": 1
+   },
+   "not recorded": {
+    "parent": 1,
+    "target": 1,
+    "reference": 0
+   }
+  }
+ },
+ "long_interval": {
+  "clause": {
+   "kind": "interval_threshold",
+   "interval": {
+    "policy": "incident.interval.first_start_first_response_at_or_after.v1",
+    "start_activity": "Opened",
+    "response_activity": "Resolved"
+   },
+   "operator": "gt",
+   "hours": 4,
+   "negate": false
+  },
+  "target": [
+   "F02",
+   "F03"
+  ],
+  "reference": [
+   "F01",
+   "F05"
+  ],
+  "unevaluable": [
+   "F04"
+  ]
+ },
+ "region": {
+  "column_index": 4,
+  "fixed": "North"
+ },
+ "team_column_index": 3
+}

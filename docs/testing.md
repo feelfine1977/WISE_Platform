@@ -134,6 +134,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - The bridge and the tie open their incidents with the original rows of the passage marked, and the focus returns.
   - A cell's step is previewed, cancelled and applied with the focus on the cell, and undone; the map's paths under the same relation carry the same numbers; a small window is not widened.
 
+- `tools/qualify_frozen_parent.py` (#14): a comparison within a parent frozen after an eligibility step, on the invented `tests/fixtures/frozen-parent` file, against its own `expected.json`.
+  - "Kept against removed" freezes the parent after the earlier steps and splits it by the last: the parent, its eligibility-unknown incident, the role names and the absent-resolution wording are checked.
+  - The opening context reconciles with its missing value; a field constant in the parent is labelled fixed; both sides' histories open beside the comparison and the focus returns.
+  - A nullable interval clause leaves its unknown in neither side; the way back to every incident is explicit.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

@@ -7,6 +7,7 @@ tests/fixtures/intervals/*.csv -text
 tests/fixtures/variants/*.csv -text
 tests/fixtures/pinned/*.csv -text
 tests/fixtures/matrix/*.csv -text
+tests/fixtures/frozen-parent/*.csv -text
 tests/fixtures/starts/*.csv -text
 tests/fixtures/comparisons/*.csv -text
 tests/fixtures/expectations/*.csv -text

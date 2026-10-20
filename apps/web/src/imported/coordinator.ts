@@ -521,6 +521,49 @@ export class ImportedInvestigationCoordinator {
     return { ok: true, parent: parent.case_count, kept: kept.case_count, removed: removed.case_count, unevaluable: unevaluable.case_count, keptIds: [...kept.case_ids] };
   }
 
+  /**
+   * The incidents these steps keep of the investigation's parent, and those they cannot evaluate, without taking them:
+   * the frozen parent a comparison is made in. Nothing is published.
+   */
+  async keptBy(steps: readonly SelectionPredicate[], signal: AbortSignal): Promise<{ ok: true; keptIds: string[]; unevaluable: number; parent: number } | { ok: false; problem: SelectionProblem }> {
+    const population = this.state.population;
+    if (population.phase !== "ready") return { ok: false, problem: { kind: "unreachable" } };
+    this.previews += 1;
+    const request: SelectCasesRequest = {
+      schema_version: 1,
+      message_type: "select_cases_request",
+      request_id: `parent-${this.revision}-${this.previews}`,
+      query_revision: Math.max(this.revision, 1),
+      workspace_id: population.answer.workspace_id,
+      identity: population.answer.identity,
+      parent_case_ids: this.state.parentCaseIds === null ? null : [...this.state.parentCaseIds],
+      predicates: [...steps],
+    };
+    const outcome = await this.selectionClient.selectCases(request, signal).catch(() => selectionUnreachable);
+    const checked = outcome.ok ? checkSelection(request, population.answer, outcome.answer) : checkSelectionProblem(request, outcome.problem);
+    if (!checked.ok) return { ok: false, problem: checked.problem };
+    return { ok: true, keptIds: [...checked.answer.kept.case_ids], unevaluable: checked.answer.unevaluable.case_count, parent: checked.answer.parent.case_count };
+  }
+
+  /** The complete history of an incident in a population named by its identity, for example one side of a comparison. */
+  async evidenceIn(identity: AnswerIdentity, caseId: CaseId, signal: AbortSignal): Promise<PinEvidence> {
+    const population = this.state.population;
+    if (population.phase !== "ready") return { ok: false, problem: { kind: "unreachable" } };
+    this.caseRequestSequence += 1;
+    const request: ImportedCaseEvidenceRequest = {
+      schema_version: 1,
+      message_type: "imported_case_evidence_request",
+      request_id: `side-${this.revision}-${this.caseRequestSequence}`,
+      query_revision: Math.max(this.revision, 1),
+      workspace_id: population.answer.workspace_id,
+      identity,
+      case_id: caseId,
+    };
+    const outcome = await this.client.caseEvidence(request, signal).catch(() => unreachable);
+    const checked = outcome.ok ? checkCase(request, outcome.answer) : checkProblem(request, outcome.problem);
+    return checked.ok ? { ok: true, answer: checked.answer } : { ok: false, problem: checked.problem };
+  }
+
   /** Gives up steps that could not be selected: the selection shown stays, with the steps and undo it was answered under. */
   staySelection(): void {
     const selection = this.state.selection;

@@ -1,0 +1,16 @@
+Case,Activity,At,Team,Region
+F01,Opened,2026-08-01T08:00:00Z,A,North
+F01,Resolved,2026-08-01T10:00:00Z,A,North
+F02,Opened,2026-08-02T08:00:00Z,B,North
+F02,Assigned,2026-08-02T09:00:00Z,B,North
+F02,Resolved,2026-08-02T14:00:00Z,B,North
+F03,Opened,2026-08-03T08:00:00Z,A,North
+F03,Resolved,2026-08-03T15:00:00Z,A,North
+F04,Opened,2026-08-04T08:00:00Z,B,North
+F04,Reviewed,2026-08-04T09:00:00Z,B,North
+F05,Opened,2026-08-05T08:00:00Z,,North
+F05,Resolved,2026-08-05T09:00:00Z,A,North
+F06,Assigned,2026-08-06T08:00:00Z,A,North
+F06,Resolved,2026-08-06T09:00:00Z,A,North
+F07,Opened,,A,North
+F07,Resolved,2026-08-07T10:00:00Z,A,North

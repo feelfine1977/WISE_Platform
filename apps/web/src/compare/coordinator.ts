@@ -38,9 +38,27 @@ export interface GroupChoice {
 
 /** The kept and the removed side of one selection, in one step. */
 export interface SplitChoice {
+  /** The clause that splits the parent: what it keeps is one side, what it removes the other, what it cannot evaluate neither. */
   predicates: SelectionPredicate[];
   targetSide: "kept" | "removed";
-  taken: { kept: PopulationSupport; removed: PopulationSupport; unevaluable: PopulationSupport };
+  /** The supports of the sides when the split was taken, where they were known then. */
+  taken: { kept: PopulationSupport; removed: PopulationSupport; unevaluable: PopulationSupport } | null;
+}
+
+/**
+ * The parent a comparison is made in, frozen when it was taken: the incidents the retained steps keep. Incidents a
+ * retained step cannot evaluate are outside it, their eligibility unknown. Null in a draft is every incident.
+ */
+export interface FrozenParent {
+  /** The incidents of the parent; null for every incident of the population. */
+  caseIds: string[] | null;
+  /** The steps it is the result of; none for every incident or the investigation's own parent. */
+  retained: SelectionPredicate[];
+  count: number;
+  /** Incidents a retained step could not evaluate: they are in no parent, so in no side. */
+  eligibilityUnknown: number;
+  /** Counts the parents taken in this window, so that a new parent is told apart from the one before. */
+  revision: number;
 }
 
 /** A period of incident starts as picked: whole days, the first and the last day included. */
@@ -57,6 +75,8 @@ export interface CompareDraft {
   groups: Record<Role, GroupChoice | null>;
   /** When set, the groups are the two sides of this selection and `groups` is not used. */
   split: SplitChoice | null;
+  /** The frozen parent the comparison is made in; null for every incident of the population. */
+  parent: FrozenParent | null;
   periods: Record<Role, PeriodChoice>;
   /** The minimum follow-up in hours, as typed. */
   minimum: string;
@@ -85,7 +105,7 @@ export interface CompareState {
 }
 
 /** A comparison to ask for. */
-type Asked = { kind: "groups"; definition: GroupComparisonDefinition } | { kind: "periods"; definition: PeriodComparisonDefinition };
+type Asked = ({ kind: "groups"; definition: GroupComparisonDefinition } | { kind: "periods"; definition: PeriodComparisonDefinition }) & { parent?: string[] | null };
 
 export const defaultNames: Record<Role, string> = { target: "Group A", reference: "Group B" };
 
@@ -95,6 +115,7 @@ function emptyDraft(basis: CompareBasis | null, mode: CompareDraft["mode"] = "gr
     names: { ...defaultNames },
     groups: { target: null, reference: null },
     split: null,
+    parent: null,
     periods: { target: { name: "Period A", from: "", to: "" }, reference: { name: "Period B", from: "", to: "" } },
     minimum: "0",
     endpoint: null,
@@ -203,6 +224,8 @@ function dayAfter(date: string): string | null {
 export class CompareCoordinator {
   private state: CompareState = { basis: null, draft: emptyDraft(null), comparison: { phase: "idle" } };
   private revision = 0;
+  /** How many parents were taken; the revision of the parent shown. */
+  private parents = 0;
   private request: AbortController | null = null;
   /** The comparison asked for last, which a retry asks for again. */
   private last: Asked | null = null;
@@ -283,6 +306,22 @@ export class CompareCoordinator {
   /** Group A is the kept side of the selection and group B its removed side. */
   splitSelection(steps: readonly SelectionPredicate[], taken: SplitChoice["taken"]): void {
     this.change({ split: { predicates: [...steps], targetSide: "kept", taken }, names: { target: "Kept", reference: "Removed" } });
+  }
+
+  /**
+   * Splits a frozen parent by one clause: A is what the clause keeps there, B what it removes, and what it cannot
+   * evaluate is in neither. The names are the roles' own, from the clause, not "kept" and "removed".
+   */
+  splitWithin(clause: SelectionPredicate, parent: Omit<FrozenParent, "revision"> | null, taken: SplitChoice["taken"] = null): void {
+    if (parent !== null) this.parents += 1;
+    this.change({ split: { predicates: [clause], targetSide: "kept", taken }, parent: parent && { ...parent, revision: this.parents }, names: clauseNames(clause) });
+  }
+
+  /** Makes every incident of the population the parent again, explicitly: the retained steps no longer narrow it. */
+  rebase(): void {
+    if (this.state.draft.parent === null) return;
+    this.parents += 1;
+    this.change({ parent: null });
   }
 
   /** Exchanges the roles of A and B: the differences change their direction, the memberships stay. */
@@ -431,14 +470,14 @@ export class CompareCoordinator {
       query_revision: revision,
       workspace_id: basis.workspaceId,
       identity: basis.identity,
-      parent_case_ids: null,
+      parent_case_ids: asked.parent === undefined ? (draft.parent?.caseIds ? [...draft.parent.caseIds] : null) : asked.parent,
       context_column_index: draft.column,
       context_policy: contextPolicy,
     };
     const controller = new AbortController();
     this.request = controller;
     this.publish({ ...this.state, comparison: { phase: "loading", revision, shown: this.shown() } });
-    this.last = asked;
+    this.last = { ...asked, parent: envelope.parent_case_ids };
     if (asked.kind === "groups") {
       const request: GroupComparisonRequest = { ...envelope, message_type: "compare_groups_request", definition: asked.definition };
       this.client.compareGroups(request, controller.signal).then(
@@ -530,4 +569,17 @@ function checkProblem(request: GroupComparisonRequest | PeriodComparisonRequest,
     }
   }
   return { ok: false, problem };
+}
+
+/**
+ * The names of the two sides of a clause, said as what is recorded: an activity recorded or not recorded, never a
+ * business state such as open or unresolved; any other clause as meeting it or not.
+ */
+export function clauseNames(clause: SelectionPredicate): Record<Role, string> {
+  if (clause.kind === "contains_activity") {
+    const recorded = `Recorded “${clause.activity}”`;
+    const absent = `No recorded “${clause.activity}”`;
+    return clause.negate ? { target: absent, reference: recorded } : { target: recorded, reference: absent };
+  }
+  return { target: "Meets the clause", reference: "Does not meet the clause" };
 }
