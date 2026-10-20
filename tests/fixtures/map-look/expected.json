@@ -1,0 +1,9 @@
+{
+ "about": "Expectations for #71 (tools/qualify_map_look.py), by construction of tools/make_map_look_fixture.py (seed 71): 240 invented incidents over 36 activities named Step 01 to Step 36, every incident starting at Step 01, with a Phase context column (Early, Middle, Late). The checks are of the screen, not of counts. Never read by product code.",
+ "file": "large.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": [4]},
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "incidents": 240,
+ "activities": 36,
+ "first_activity": "Step 01"
+}

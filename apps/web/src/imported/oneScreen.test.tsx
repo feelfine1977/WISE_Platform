@@ -138,3 +138,18 @@ it("has a guide of the keys of every action, of this build, behind one button of
   await user.keyboard("{Escape}");
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "Keys" }));
 });
+
+it("says in place of the map that the selection keeps no incident, with the way back (#71)", async () => {
+  const imports = scriptedImportClient();
+  const selecting = scriptedSelectionClient();
+  const views = scriptedViewClient();
+  const coordinator = new ImportedInvestigationCoordinator(imports.client, selecting.client, views.client);
+  render(<ImportedInvestigation coordinator={coordinator} onShowData={() => undefined} />);
+  act(() => coordinator.open({ workspaceId, preparationId }));
+  await deliver(() => imports.populations[0].reply({ ok: true, answer: populationAnswer(imports.populations[0].request) }));
+  const none = { ...everyIncident, population: "0", kept: { ...everyIncident.kept, case_ids: [], case_count: 0, record_count: 0 }, removed: everyIncident.kept };
+  await deliver(() => selecting.selections[0].reply({ ok: true, answer: selectionAnswer(selecting.selections[0].request, none) }));
+  await deliver(() => selecting.graphs[0]?.reply({ ok: true, answer: graphAnswer(selecting.graphs[0].request, []) }));
+  expect(document.querySelector(".map-empty")?.textContent).toMatch(/^The selection keeps no incident of the 2 incidents of its parent, so the map has nothing to draw\.\s+Remove a step or undo it to keep incidents again\.$/);
+  expect(screen.queryByText("Map of the kept incidents", { selector: "p" })).toBeNull();
+});

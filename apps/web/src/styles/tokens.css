@@ -276,6 +276,19 @@
   --wf-line: var(--color-tint);
 }
 
+/*
+ * The map library's panels that stand outside the canvas, the detail strip above it and the legend under it, are part of
+ * the explorer: their labels, keys and notes take the application's smallest text, not the library's smaller one.
+ */
+.map-detail,
+.map-legend {
+  --wf-text-legend-item: var(--font-size-small);
+  --wf-text-legend-value: var(--font-size-small);
+  --wf-text-panel-note: var(--font-size-small);
+  --wf-text-panel-label: var(--font-size-small);
+  --wf-text-panel-key: var(--font-size-small);
+}
+
 /* The map library reads the size of an event's circle from its own tokens: on the frame of the map they are the application's. */
 .map-frame {
   --wf-event-width: var(--size-map-event);

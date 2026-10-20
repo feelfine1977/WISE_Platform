@@ -548,7 +548,13 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               <h3 id="imported-map-title" className="pane-title">
                 {view === "map" ? "Map of the kept incidents" : "Paths of the kept incidents"}
               </h3>
-              {shown && state.parentGraph ? (
+              {shown && shown.answer.kept.case_count === 0 ? (
+                // Nothing to draw: said in place of the map, with the way back, rather than an empty canvas.
+                <p className="working-text map-empty" role="status">
+                  The selection keeps no incident of the {countOf(shown.answer.parent.case_count, "incident")} of its parent, so the {view === "map" ? "map has nothing to draw" : "list has no path"}.
+                  Remove a step or undo it to keep incidents again.
+                </p>
+              ) : shown && state.parentGraph ? (
                 <MapView
                   shown={shown}
                   gaps={httpGapsClient}

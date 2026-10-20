@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type ActivityLabelOptions, activityReferences, buildScene, checkTheme, colorTokens, defaultTheme, layout, type Measure, resolveTheme, stateStyle } from "wise-flow";
+import { type ActivityLabelOptions, activityReferences, buildScene, checkTheme, colorTokens, contrastRatio, defaultTheme, hexToRgb, layout, type Measure, resolveTheme, stateStyle, themeColors } from "wise-flow";
 import libraryTokens from "wise-flow/tokens.css?raw";
 import { noStages, type StageDefinitions, withActivity, withStage } from "../stages/definitions";
 import sheet from "../styles/tokens.css?raw";
@@ -132,5 +132,21 @@ describe("the theme of the map", () => {
     // Without the theme of the map the library outlines a stage without a tint and titles it in the muted ink.
     const plain = buildScene(scene.graph, scene.positions, {}).groupMarks[0];
     expect([plain.fill.opacity, plain.texts[0].paint]).toEqual([0, "inkMuted"]);
+  });
+
+  it("colours the stages from a restrained palette in which every title stays readable and every colour has a pattern twin (#71)", () => {
+    const { palette, patterns } = theme;
+    const colors = themeColors(theme);
+    // Six colours that colour-blind readers tell apart (Okabe and Ito), each with its own pattern, so that colour is never the only cue.
+    expect(palette.categorical).toHaveLength(6);
+    expect(new Set(patterns).size).toBe(palette.categorical.length);
+    for (const colour of palette.categorical) {
+      // The title of a stage is in the ink on the paper with the stage's colour laid over it at the box's opacity.
+      const [r, g, b] = hexToRgb(colour);
+      const [pr, pg, pb] = hexToRgb(colors.paper);
+      const mix = (one: number, paper: number) => Math.round(paper + (one - paper) * 0.12).toString(16).padStart(2, "0");
+      const box = `#${mix(r, pr)}${mix(g, pg)}${mix(b, pb)}`;
+      expect(contrastRatio(colors.ink, box), `title on the box of ${colour}`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });
