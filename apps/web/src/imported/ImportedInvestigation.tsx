@@ -561,6 +561,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                       describedBy="imported-incidents-hint"
                       waitingFor={waitingFor}
                       onShowRecords={openWitness}
+                      onOrder={setIncidentOrder}
                     />
                   ) : (
                     <IncidentWindow
@@ -572,6 +573,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                       labelledBy="imported-incidents-title"
                       describedBy="imported-incidents-hint"
                       waitingFor={waitingFor}
+                      // The kept incidents by number: the head of Records orders them by the local service instead.
+                      sorting={!variantView && !groupView && !listingRemoved && shown ? { column: null, descending: false, onSort: setIncidentOrder } : undefined}
                     />
                   )}
                 </div>

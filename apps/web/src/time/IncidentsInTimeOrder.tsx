@@ -46,6 +46,8 @@ interface IncidentsInTimeOrderProps {
   evidence?: Pick<ImportClient, "caseEvidence">;
   /** Opens an incident with some of its records marked: the two records of its longest gap. */
   onShowRecords?: (caseId: CaseId, rowIds: string[]) => void;
+  /** Asks for another order from a column head; a click on the head of the current order reverses it here. */
+  onOrder?: (order: TimeOrder) => void;
 }
 
 type Listed = { phase: "loading" } | { phase: "ready"; rows: ExplorerCaseSummary[]; answer: CaseListAnswer; more: boolean } | { phase: "failed"; message: string };
@@ -63,7 +65,7 @@ const timesOf = (row: ExplorerCaseSummary): IncidentTimes =>
  * incident number narrows only the rows shown; the counts and the distribution stay those of all
  * kept incidents. What the list says of the incident in the current row stands under it.
  */
-export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, order, caseLists = httpCaseListClient, evidence = httpImportClient, onShowRecords, ...table }: IncidentsInTimeOrderProps) {
+export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, order, caseLists = httpCaseListClient, evidence = httpImportClient, onShowRecords, onOrder, ...table }: IncidentsInTimeOrderProps) {
   const asked = useId();
   const searchId = useId();
   const [listed, setListed] = useState<Listed>({ phase: "loading" });
@@ -126,7 +128,7 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
     const witnessOf = (caseId: CaseId) => timeOf(caseId)?.maximum_gap_witness ?? null;
     const dash = <span className="muted" title="Not available for this incident">–</span>;
     return [
-      { head: "First record", cell: (caseId) => { const row = byId.get(caseId); const first = row ? firstRecordCell(row) : null; return first ?? dash; } },
+      { head: "First record", sort: "first_recorded_time", cell: (caseId) => { const row = byId.get(caseId); const first = row ? firstRecordCell(row) : null; return first ?? dash; } },
       { head: "Longest gap between", cell: (caseId) => { const witness = witnessOf(caseId); return witness ? <span title={gapBetween(witness)}>{gapBetween(witness)}</span> : dash; } },
       {
         head: `Records over time, 0 to ${durationName(axisHours)}`,
@@ -201,7 +203,12 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
           The search narrows only the rows shown: the kept incidents, their counts and their distribution stay the same.
         </p>
       )}
-      <IncidentWindow cases={cases} times={times} duration={durationName} extras={extras} onActive={setActiveCase} {...table} />
+      <IncidentWindow cases={cases} times={times} duration={durationName} extras={extras} onActive={setActiveCase} {...table}
+        sorting={{
+          column: order, descending: direction === "descending",
+          // The head of the current order reverses it; another head orders by its column, in that column's first direction.
+          onSort: (column) => (column === order ? setDirection(direction === "ascending" ? "descending" : "ascending") : onOrder?.(column)),
+        }} />
       {focused !== undefined && <IncidentInFocus row={focused} columns={listed.answer.context_columns} onShowRecords={onShowRecords} />}
       {rows.some((row) => "timestamp_kind" in row.time_summary && row.time_summary.timestamp_kind === "wall_clock") && (
         <p className="muted">

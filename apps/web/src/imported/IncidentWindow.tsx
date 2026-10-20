@@ -40,6 +40,8 @@ interface IncidentWindowProps {
   extras?: readonly ExtraColumn[];
   /** Told the incident of the current row whenever it changes, so that what is said of it can stand beside the table. */
   onActive?: (caseId: CaseId) => void;
+  /** With it, the heads of the measure columns order the list: a click orders by the column, a second click reverses it. */
+  sorting?: Sorting;
 }
 
 /** A column after the counts and times of an incident: its head, and its cell for each incident in view. */
@@ -48,6 +50,18 @@ export interface ExtraColumn {
   cell: (caseId: CaseId) => ReactNode;
   /** "number" aligns the cell to the right. */
   className?: string;
+  /** The order its head sorts the list in, where it sorts it. */
+  sort?: SortColumn;
+}
+
+/** The measures the list can be ordered by from its column heads; the local service sorts by them. */
+export type SortColumn = "record_count" | "observed_span_hours" | "maximum_adjacent_raw_gap_hours" | "first_recorded_time";
+
+/** How the list is ordered by a column head now, if it is, and what a click on a head asks for. */
+export interface Sorting {
+  column: SortColumn | null;
+  descending: boolean;
+  onSort: (column: SortColumn) => void;
 }
 
 /**
@@ -55,7 +69,7 @@ export interface ExtraColumn {
  * single tab stop: Tab enters the table at the current row, the arrow keys, Page Up, Page Down,
  * Home and End move between rows, and Enter opens the incident.
  */
-export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy, waitingFor, times, duration = String, extras = [], onActive }: IncidentWindowProps) {
+export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy, waitingFor, times, duration = String, extras = [], onActive, sorting }: IncidentWindowProps) {
   const columns = (times === undefined ? COLUMNS : COLUMNS + 2) + extras.length;
   const scroller = useRef<HTMLDivElement>(null);
   const controls = useRef(new Map<number, HTMLButtonElement>()).current;
@@ -203,6 +217,23 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
     );
   }
 
+  /**
+   * The head of a column: with a sorting and a column to sort by, a button that orders the list by it, the head saying the
+   * direction for assistive technology, as the list of paths does; otherwise its label alone.
+   */
+  function head(label: string, column: SortColumn | undefined, className?: string) {
+    if (sorting === undefined || column === undefined) return <th key={label} scope="col" className={className}>{label}</th>;
+    const current = sorting.column === column;
+    return (
+      <th key={label} scope="col" className={className} aria-label={label} aria-sort={current ? (sorting.descending ? "descending" : "ascending") : undefined}>
+        <button type="button" className="path-sort" aria-label={`${label}: sort the list`} onClick={() => sorting.onSort(column)}>
+          {label}
+          {current && <span className="path-sort-mark" aria-hidden="true">{sorting.descending ? "▼" : "▲"}</span>}
+        </button>
+      </th>
+    );
+  }
+
   /** A duration where the service supplied one; a muted dash where it has none. */
   function durationCell(hours: number | null) {
     return hours === null ? <span className="muted" title="Not available for this incident">–</span> : duration(hours);
@@ -228,19 +259,17 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
         <thead>
           <tr aria-rowindex={1}>
             <th scope="col">Incident</th>
-            <th scope="col" className="number">Records</th>
+            {head("Records", "record_count", "number")}
             <th scope="col" className="number">Mapped records</th>
             <th scope="col" className="number">Without activity label</th>
             <th scope="col">Order of records</th>
             {times !== undefined && (
               <>
-                <th scope="col" className="number">Span</th>
-                <th scope="col" className="number">Longest gap</th>
+                {head("Span", "observed_span_hours", "number")}
+                {head("Longest gap", "maximum_adjacent_raw_gap_hours", "number")}
               </>
             )}
-            {extras.map((extra) => (
-              <th key={extra.head} scope="col" className={extra.className}>{extra.head}</th>
-            ))}
+            {extras.map((extra) => head(extra.head, extra.sort, extra.className))}
           </tr>
         </thead>
         <tbody>
