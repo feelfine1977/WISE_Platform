@@ -68,7 +68,6 @@ try {
   await areas.getByRole('button', {name: 'Data', exact: true}).click();
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${reading.preparation_id}$`)}).click();
   await settled(0);
-  const parent = selections.at(-1);
   await page.getByRole('group', {name: 'View'}).getByRole('button', {name: 'Map', exact: true}).click();
   const opening = await places(activities);
   const points = Object.values(opening);
@@ -123,6 +122,7 @@ try {
 
   // Rearrange and back, by keyboard: said, and no incident asked for, no identity changed.
   const before = {...asked};
+  const answered = selections.length;
   await page.getByRole('button', {name: 'Rearrange for this view', exact: true}).focus();
   await page.keyboard.press('Enter');
   await page.getByRole('button', {name: "Back to the parent's places", exact: true}).waitFor();
@@ -132,7 +132,9 @@ try {
   await page.getByRole('button', {name: "Back to the parent's places", exact: true}).focus();
   await page.keyboard.press('Enter');
   check('back_restores_the_parent_places', same(await places(activities), opening), null);
-  check('rearranging_asks_for_no_incident', same(asked, before) && same(selections.at(-1).identity, parent.identity), [asked, before]);
+  // No selection and no map is asked for, so the incidents, their numbers and the identity shown stay those of the parent.
+  check('rearranging_asks_for_no_incident', same(asked, before) && selections.length === answered
+    && await page.getByRole('list', {name: 'Steps of the selection'}).count() === 0, [asked, before]);
 
   // The direction is presentation, named in words.
   await page.getByRole('button', {name: 'Run the map left to right'}).click();
