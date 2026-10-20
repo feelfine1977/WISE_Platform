@@ -8,6 +8,7 @@ none. The wall clock reads the same hours here, where no clock change lies betwe
 """
 
 import json
+import re
 
 import pytest
 
@@ -33,7 +34,8 @@ def wall(client, tmp_path):  # noqa: F811
     folder = tmp_path / "wall"
     folder.mkdir()
     workspace = client.post("/api/workspaces/open", json=envelope("open_workspace_request", path=str(folder))).json()
-    source = upload(client, workspace, RAW.replace(b"Z\n", b"\n"), EXPECTED["file"])
+    # The same times without their zone, whichever line ending the checkout gave the file.
+    source = upload(client, workspace, re.sub(rb"Z(\r?\n)", rb"\1", RAW), EXPECTED["file"])
     request = envelope("confirm_mapping_request", workspace_id=workspace["workspace_id"], source_id=source["source_id"],
                        dialect={"encoding": "utf-8", "delimiter": ",", "quotechar": '"', "header": "first_record"},
                        mapping=EXPECTED["mapping"], policies=policies(wall=True), accept_report_issues=True)
