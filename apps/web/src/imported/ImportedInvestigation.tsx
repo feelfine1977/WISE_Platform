@@ -545,6 +545,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   initiallyInPlace={mapInPlace}
                   showing={view === "paths" ? "paths" : "map"}
                   onShowMap={() => setView("map")}
+                  contextColumns={contextColumns}
                   aside={<TimeColumn workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep} previewStep={previewStep} waitingFor={waitingFor} />}
                 />
               ) : state.selection.phase === "failed" ? (

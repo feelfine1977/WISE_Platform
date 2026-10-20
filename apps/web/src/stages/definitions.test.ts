@@ -99,6 +99,9 @@ describe("the stages as they are kept and read again", () => {
         ["Eröffnet", intake],
         ["Geschlossen", closure],
       ],
+      // Both set by hand, with no phase column named (#70).
+      origins: [],
+      phaseColumn: null,
     });
     expect(read(kept)).toEqual(assigned);
     expect(read(JSON.parse(JSON.stringify(written(noStages))))).toBe(noStages);

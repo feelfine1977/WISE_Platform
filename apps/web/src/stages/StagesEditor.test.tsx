@@ -42,9 +42,9 @@ async function addStages(user: ReturnType<typeof userEvent.setup>, ...stages: st
 }
 
 describe("the editor of the stages of a log", () => {
-  it("says in one line in view where the stages stay and that the investigation does not save them, and the rest behind a button the keyboard reaches", async () => {
+  it("says in one line in view where the stages stay and that the investigation saves them, and the rest behind a button the keyboard reaches", async () => {
     const { user } = setup();
-    const line = screen.getByText("Stages stay in this browser and are not saved with the investigation");
+    const line = screen.getByText("Stages stay in this browser for this reading and are saved with the investigation");
     expect(editor().querySelectorAll("p.stages-note")[0]).toBe(line);
     expect(line.getAttribute("title")).toBeNull();
     // What a stage is and what the map does with it is no paragraph of the editor: it opens from "About stages".
@@ -54,9 +54,11 @@ describe("the editor of the stages of a log", () => {
     await user.keyboard("{Enter}");
     const panel = within(editor()).getByRole("group", { name: "About stages" });
     expect(panel.textContent).toContain(
-      "The stages are kept in this browser for this reading. They are not yet part of a saved investigation, so another browser or another computer does not show them.",
+      "The stages are kept in this browser for this reading, and saving the investigation saves them with it, bound to this reading. Reopening the " +
+        "investigation shows them again, also in another browser; stages saved for another reading are not applied to this one.",
     );
-    expect(panel.textContent).toContain("nothing is built in, and nothing is derived from the records.");
+    expect(panel.textContent).toContain("nothing is built in, and a value of a context column becomes a stage only when you take it from a proposal.");
+    expect(panel.textContent).toContain("Stages change how the map is drawn, never an incident, a step or a count.");
     expect(screen.getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
   });
 
@@ -249,7 +251,7 @@ describe("the editor of the stages of a log", () => {
     const nothing: StageMemory = { recall: () => null, remember: () => false };
     const { user, store } = setup(new StageStore(nothing));
     // That nothing is kept limits what the editor is good for: it stays in the editor itself, in the place of the line that says where the stages stay.
-    const line = screen.getByText("Stages last until the page closes and are not saved with the investigation");
+    const line = screen.getByText("Stages last until the page closes unless the investigation is saved with them");
     expect(line.className).toContain("stages-not-kept");
     expect(editor().textContent).not.toContain("stay in this browser");
     await addStages(user, "Intake");

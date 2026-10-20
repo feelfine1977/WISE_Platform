@@ -289,6 +289,11 @@ class Saving:
         if isinstance(pipeline, Problem):
             return _problem(SAVE, pipeline, given)
         presentation = given.get("presentation_state")
+        # Stages are presentation, bound to the reading they were defined for: saved with another reading's, or
+        # inconsistent, they are refused rather than kept to be applied to a log they do not belong to.
+        stages = _stages_problem(presentation, given["base_identity"])
+        if stages is not None:
+            return _refused(SAVE, "invalid_request", stages[0] + " Nothing was saved.", given, stages[1])
         published = SavedInvestigations(workspace).publish(
             given["investigation_id"],
             given["expected_revision_id"],
@@ -427,7 +432,7 @@ class Saving:
                 "restored_comparison_id": None
                 if question.comparison is None
                 else question.comparison["comparison_id"],
-                "recovery": _recovery(revision.presentation_state),
+                "recovery": _recovery(revision.presentation_state, revision.content["base_identity"]),
             },
         )
 
@@ -863,7 +868,28 @@ def _unreadable_results(revision: StoredRevision) -> Problem:
     )
 
 
-def _recovery(stored: object) -> dict[str, object]:
+def _stages_problem(presentation: object, base_identity: Mapping[str, object]) -> tuple[str, str] | None:
+    """Why the stages of a presentation cannot belong to this reading, with the field; None when they can or there are none."""
+    stages = presentation.get("stages") if isinstance(presentation, Mapping) else None
+    if not isinstance(stages, Mapping):
+        return None
+    field = "presentation_state.stages"
+    if stages.get("preparation_id") != base_identity.get("preparation_id"):
+        return ("The stages were defined for another reading of the source; they belong to the preparation they were defined for.",
+                field + ".preparation_id")
+    ids = [stage["id"] for stage in stages["stages"]]
+    names = [stage["name"].casefold() for stage in stages["stages"]]
+    if len(set(ids)) != len(ids) or len(set(names)) != len(names):
+        return "Two stages have the same id or the same name.", field + ".stages"
+    activities = [assignment["activity"] for assignment in stages["assignments"]]
+    if len(set(activities)) != len(activities):
+        return "An activity is put into more than one stage.", field + ".assignments"
+    if any(assignment["stage_id"] not in ids for assignment in stages["assignments"]):
+        return "An activity is put into a stage that is not defined.", field + ".assignments"
+    return None
+
+
+def _recovery(stored: object, base_identity: Mapping[str, object] | None = None) -> dict[str, object]:
     """The saved presentation, or none with a warning when it cannot be used; the question is unaffected."""
     if stored is None:
         return {"presentation_state": None, "warnings": []}
@@ -880,6 +906,12 @@ def _recovery(stored: object) -> dict[str, object]:
                 }
             ],
         }
+    problem = _stages_problem(stored, base_identity) if base_identity is not None else None
+    if problem is not None:
+        # The stages are left out and said to be; the rest of the presentation and the question are as saved.
+        kept = {key: value for key, value in stored.items() if key != "stages"}
+        return {"presentation_state": kept, "warnings": [{"code": "stages_not_applied", "message": "The stages saved with this "
+                "investigation were not applied: " + problem[0][0].lower() + problem[0][1:] + " The incidents and every count are as saved."}]}
     return {"presentation_state": stored, "warnings": []}
 
 

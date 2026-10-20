@@ -64,3 +64,13 @@
 .stages-table thead th { border-bottom-color: var(--color-line); font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: var(--letter-spacing-label); color: var(--color-ink-muted); }
 .stages-table tbody th { overflow-wrap: anywhere; }
 .stages-table .stages-number { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* The proposal from a phase column: under the stages and the activities, its table with a value's button in the last column. */
+.stages-proposal { display: grid; gap: var(--space-2); min-width: 0; margin-top: var(--space-4); }
+.stages-values { width: 100%; }
+/* Mixed values are said in words before them, not by colour alone. */
+.stages-mixed { font-weight: var(--font-weight-strong); }
+.stages-take { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.stages-origin { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.stages-notice, .stages-stale { margin: 0; }
+.stages-stale { display: grid; gap: var(--space-1); justify-items: start; }

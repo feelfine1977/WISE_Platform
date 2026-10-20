@@ -1,0 +1,180 @@
+{
+ "about": "Hand-written expectations for #70 (tests/test_issue70_stages.py and tools/qualify_stages.py). Invented incidents; Phase and Desk are invented context columns. Every record of a labelled activity counts under its Phase as recorded; an empty cell is missing; the unlabelled record of P-4 belongs to no activity. Never read by product code.",
+ "file": "phases.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": [
+   4,
+   5
+  ]
+ },
+ "phase_column": 4,
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "incidents": [
+  "P-1",
+  "P-2",
+  "P-3",
+  "P-4",
+  "P-5"
+ ],
+ "every_incident": {
+  "kept": {
+   "case_count": 5,
+   "record_count": 19,
+   "labelled_record_count": 18,
+   "unlabelled_record_count": 1
+  },
+  "activities": [
+   {
+    "activity": "Close",
+    "record_count": 5,
+    "incident_count": 5,
+    "missing_record_count": 1,
+    "values": [
+     [
+      "Closure",
+      4
+     ]
+    ],
+    "mixed": false,
+    "leading": [
+     "Closure",
+     4
+    ]
+   },
+   {
+    "activity": "Open",
+    "record_count": 5,
+    "incident_count": 5,
+    "missing_record_count": 1,
+    "values": [
+     [
+      "Intake",
+      4
+     ]
+    ],
+    "mixed": false,
+    "leading": [
+     "Intake",
+     4
+    ]
+   },
+   {
+    "activity": "Assign",
+    "record_count": 4,
+    "incident_count": 4,
+    "missing_record_count": 0,
+    "values": [
+     [
+      "Handling",
+      2
+     ],
+     [
+      "Intake",
+      2
+     ]
+    ],
+    "mixed": true,
+    "leading": null
+   },
+   {
+    "activity": "Work",
+    "record_count": 4,
+    "incident_count": 3,
+    "missing_record_count": 0,
+    "values": [
+     [
+      "Handling",
+      4
+     ]
+    ],
+    "mixed": false,
+    "leading": [
+     "Handling",
+     4
+    ]
+   }
+  ]
+ },
+ "with_work": {
+  "kept": [
+   "P-1",
+   "P-2",
+   "P-4"
+  ],
+  "activities": [
+   {
+    "activity": "Work",
+    "record_count": 4,
+    "incident_count": 3,
+    "missing_record_count": 0,
+    "values": [
+     [
+      "Handling",
+      4
+     ]
+    ],
+    "mixed": false,
+    "leading": [
+     "Handling",
+     4
+    ]
+   },
+   {
+    "activity": "Close",
+    "record_count": 3,
+    "incident_count": 3,
+    "missing_record_count": 1,
+    "values": [
+     [
+      "Closure",
+      2
+     ]
+    ],
+    "mixed": false,
+    "leading": [
+     "Closure",
+     2
+    ]
+   },
+   {
+    "activity": "Open",
+    "record_count": 3,
+    "incident_count": 3,
+    "missing_record_count": 0,
+    "values": [
+     [
+      "Intake",
+      3
+     ]
+    ],
+    "mixed": false,
+    "leading": [
+     "Intake",
+     3
+    ]
+   },
+   {
+    "activity": "Assign",
+    "record_count": 2,
+    "incident_count": 2,
+    "missing_record_count": 0,
+    "values": [
+     [
+      "Handling",
+      1
+     ],
+     [
+      "Intake",
+      1
+     ]
+    ],
+    "mixed": true,
+    "leading": null
+   }
+  ]
+ }
+}

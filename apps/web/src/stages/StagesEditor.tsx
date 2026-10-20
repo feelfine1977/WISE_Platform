@@ -2,7 +2,9 @@ import { type FormEvent, type KeyboardEvent, useEffect, useId, useMemo, useRef, 
 import { InfoPopover } from "../components/InfoPopover";
 import { countOf } from "../data/wording";
 import type { SuppliedGraph } from "../generated/selection";
-import { moved, nameProblem, renamed, type Stage, type StageDefinitions, stageName, withActivity, withoutStage, withStage } from "./definitions";
+import { moved, nameProblem, originOf, renamed, type Stage, type StageDefinitions, stageName, staleActivities, withActivity, withoutActivities, withoutStage, withStage } from "./definitions";
+import type { ProposalClient } from "./proposalClient";
+import { type ProposalSource, StageProposal } from "./StageProposal";
 import { browserStages, type StagedReading, type StageStore, useStages } from "./store";
 import "./stages.css";
 
@@ -13,6 +15,9 @@ interface StagesEditorProps {
   parentGraph: SuppliedGraph;
   /** Where the stages are held; the browser's own unless the caller holds them elsewhere. */
   store?: StageStore;
+  /** The kept incidents and the context columns a proposal of stages is counted from; without them none is offered. */
+  proposal?: ProposalSource;
+  proposalClient?: ProposalClient;
 }
 
 /** An activity of the parent's map, with the supplied number of incidents that contain it. */
@@ -33,17 +38,19 @@ function refusal(problem: "empty" | "taken", name: string): string {
 const STAGES_ARE =
   "A stage holds activities that belong together in this log. The map draws a box around the activities of a stage, lays the stages out in the " +
   "order given here, and offers “Show stages” in its Detail panel to draw each stage as one node. Start and End belong to no stage. Which stages " +
-  "there are and what belongs to them is yours to say for this log: nothing is built in, and nothing is derived from the records.";
+  "there are and what belongs to them is yours to say for this log: nothing is built in, and a value of a context column becomes a stage only " +
+  "when you take it from a proposal. Stages change how the map is drawn, never an incident, a step or a count.";
 /** Where the stages are kept, in full. */
 const STAGES_KEPT =
-  "The stages are kept in this browser for this reading. They are not yet part of a saved investigation, so another browser or another computer " +
-  "does not show them.";
+  "The stages are kept in this browser for this reading, and saving the investigation saves them with it, bound to this reading. Reopening the " +
+  "investigation shows them again, also in another browser; stages saved for another reading are not applied to this one.";
 /** That nothing can be kept, in full. */
 const STAGES_NOT_KEPT =
-  "This browser keeps nothing for this page, so the stages last only until the page is closed or loaded again. They are not part of a saved investigation either.";
-/** Where the stages stay and that saving the investigation does not keep them: in view in the editor, because both limit what it is good for. */
-export const STAGES_KEPT_LINE = "Stages stay in this browser and are not saved with the investigation";
-export const STAGES_NOT_KEPT_LINE = "Stages last until the page closes and are not saved with the investigation";
+  "This browser keeps nothing for this page, so the stages last only until the page is closed or loaded again, unless the investigation is saved: " +
+  "saving it saves its stages, bound to this reading.";
+/** Where the stages stay and that saving the investigation keeps them: in view in the editor. */
+export const STAGES_KEPT_LINE = "Stages stay in this browser for this reading and are saved with the investigation";
+export const STAGES_NOT_KEPT_LINE = "Stages last until the page closes unless the investigation is saved with them";
 
 /**
  * The stages of a log, defined by the analyst: the stages in their order with their names, and
@@ -52,8 +59,8 @@ export const STAGES_NOT_KEPT_LINE = "Stages last until the page closes and are n
  * the reading and belong to no saved investigation; the editor says so in one line, and in full
  * in the tooltip of that line.
  */
-export function StagesEditor({ reading, parentGraph, store = browserStages }: StagesEditorProps) {
-  const { definitions, kept } = useStages(reading, store);
+export function StagesEditor({ reading, parentGraph, store = browserStages, proposal, proposalClient }: StagesEditorProps) {
+  const { definitions, kept, notice } = useStages(reading, store);
   const [said, setSaid] = useState("");
   const [newName, setNewName] = useState("");
   const newNameId = useId();
@@ -72,6 +79,14 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
     [parentGraph],
   );
   const inStage = (stage: Stage) => listed.filter((activity) => definitions.assigned.get(activity.name) === stage.id).length;
+  // Activities put into a stage that this log does not have: drawn nowhere, and said rather than applied silently.
+  const stale = useMemo(() => staleActivities(definitions, new Set(parentGraph.nodes.map((node) => node.label))), [definitions, parentGraph]);
+  const columnName = (index: number) => proposal?.columns.find((item) => item.index === index)?.name ?? `column ${index}`;
+  const fromOf = (activity: string) => {
+    if (!definitions.assigned.has(activity)) return "";
+    const origin = originOf(definitions, activity);
+    return origin.kind === "manual" ? "Set by hand" : `${columnName(origin.column)} “${origin.value}”`;
+  };
   const without = listed.filter((activity) => !definitions.assigned.has(activity.name)).length;
   const change = (next: (definitions: StageDefinitions) => StageDefinitions) => store.change(reading, next);
 
@@ -138,6 +153,20 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
           </section>
         </InfoPopover>
       </div>
+      {notice?.kind === "restored" && <p className="stages-note stages-notice">The stages saved with the investigation “{notice.investigation}”.</p>}
+      {notice?.kind === "not_applied" && <p className="limitation stages-notice" role="note">{notice.message}</p>}
+      {definitions.phaseColumn != null && <p className="stages-note">Phase column: {columnName(definitions.phaseColumn)}.</p>}
+      {stale.length > 0 && (
+        <div className="limitation stages-stale" role="note">
+          <p>
+            {countOf(stale.length, "activity", "activities")} put into a stage {stale.length === 1 ? "is" : "are"} not in this log, so {stale.length === 1 ? "it is" : "they are"} drawn
+            in no stage: {stale.map((activity) => `“${activity}”`).join(", ")}.
+          </p>
+          <button type="button" onClick={() => { change((current) => withoutActivities(current, stale)); setSaid(`${countOf(stale.length, "activity", "activities")} not in this log taken out of their stages.`); }}>
+            Take {stale.length === 1 ? "it" : "them"} out of {stale.length === 1 ? "its stage" : "their stages"}
+          </button>
+        </div>
+      )}
       <div className="stages-parts">
         <div className="stages-part">
           <h4 id={stagesTitle} className="stages-title">
@@ -215,6 +244,7 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
                   Incidents
                 </th>
                 <th scope="col">Stage</th>
+                <th scope="col">From</th>
               </tr>
             </thead>
             <tbody>
@@ -238,12 +268,14 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
                       ))}
                     </select>
                   </td>
+                  <td className="stages-origin">{fromOf(activity.name)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+      {proposal && <StageProposal reading={reading} store={store} definitions={definitions} source={proposal} client={proposalClient} />}
     </section>
   );
 }

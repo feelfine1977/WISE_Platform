@@ -1,3 +1,5 @@
+import type { StagesPresentation } from "../generated/saving";
+
 /** A stage of a log, as the analyst named it. */
 export interface Stage {
   /** Names the stage on the map and in what is kept; it stays the same when the stage is renamed or moved. */
@@ -6,18 +8,40 @@ export interface Stage {
 }
 
 /**
+ * Where the stage of an activity came from: set by hand, or taken by the analyst from a value of
+ * the phase column that the proposal listed for the activity's records. A proposal never assigns.
+ */
+export type StageOrigin = { readonly kind: "manual" } | { readonly kind: "proposed"; readonly column: number; readonly value: string };
+
+/**
  * The stages of a log and the stage of each of its activities. Which stages a log has and what
- * belongs to them is the analyst's reading of that log: nothing here is built in, and nothing is
- * derived from the records. Every change gives new definitions; those given are never changed.
+ * belongs to them is the analyst's reading of that log: nothing here is built in, and a value of
+ * the records becomes a stage only when the analyst takes it. Every change gives new definitions;
+ * those given are never changed.
  */
 export interface StageDefinitions {
   /** The stages in their order, the earliest first. */
   readonly stages: readonly Stage[];
   /** The id of the stage of each activity that has one, by the activity's name; an activity without an entry is in no stage. */
   readonly assigned: ReadonlyMap<string, string>;
+  /** Where the stage of each assigned activity came from; an activity without an entry was set by hand. */
+  readonly origins?: ReadonlyMap<string, StageOrigin>;
+  /** The context column the analyst reads the phase of a record from, when one was chosen. */
+  readonly phaseColumn?: number | null;
 }
 
 export const noStages: StageDefinitions = { stages: [], assigned: new Map() };
+
+const MANUAL: StageOrigin = { kind: "manual" };
+
+/** The definitions without an empty map of origins or an unnamed phase column, so that equal definitions are written alike. */
+function tidy(definitions: StageDefinitions): StageDefinitions {
+  const { origins, phaseColumn, ...rest } = definitions;
+  return { ...rest, ...(origins && origins.size > 0 ? { origins } : {}), ...(phaseColumn != null ? { phaseColumn } : {}) };
+}
+
+/** Where the stage of an activity came from; set by hand unless it was taken from a proposal. */
+export const originOf = (definitions: StageDefinitions, activity: string): StageOrigin => definitions.origins?.get(activity) ?? MANUAL;
 
 const STAGE_ID = "stage:";
 
@@ -59,10 +83,13 @@ export function renamed(definitions: StageDefinitions, stageId: string, name: st
 /** Removes a stage; its activities are in no stage afterwards. */
 export function withoutStage(definitions: StageDefinitions, stageId: string): StageDefinitions {
   if (!definitions.stages.some((stage) => stage.id === stageId)) return definitions;
-  return {
+  const assigned = new Map([...definitions.assigned].filter(([, assignedTo]) => assignedTo !== stageId));
+  return tidy({
+    ...definitions,
     stages: definitions.stages.filter((stage) => stage.id !== stageId),
-    assigned: new Map([...definitions.assigned].filter(([, assignedTo]) => assignedTo !== stageId)),
-  };
+    assigned,
+    origins: new Map([...(definitions.origins ?? [])].filter(([activity]) => assigned.has(activity))),
+  });
 }
 
 /** Moves a stage one place earlier or later; the first stage moves no earlier and the last no later. */
@@ -75,22 +102,75 @@ export function moved(definitions: StageDefinitions, stageId: string, direction:
   return { ...definitions, stages };
 }
 
-/** Puts an activity into a stage, or into none (null). A stage that is not defined changes nothing. */
-export function withActivity(definitions: StageDefinitions, activity: string, stageId: string | null): StageDefinitions {
-  if ((definitions.assigned.get(activity) ?? null) === stageId) return definitions;
+/**
+ * Puts an activity into a stage, or into none (null), by hand unless an origin is given. A stage
+ * that is not defined changes nothing.
+ */
+export function withActivity(definitions: StageDefinitions, activity: string, stageId: string | null, origin: StageOrigin = MANUAL): StageDefinitions {
+  const sameOrigin = JSON.stringify(originOf(definitions, activity)) === JSON.stringify(origin);
+  if ((definitions.assigned.get(activity) ?? null) === stageId && (stageId === null || sameOrigin)) return definitions;
   if (stageId !== null && !definitions.stages.some((stage) => stage.id === stageId)) return definitions;
   const assigned = new Map(definitions.assigned);
-  if (stageId === null) assigned.delete(activity);
-  else assigned.set(activity, stageId);
-  return { ...definitions, assigned };
+  const origins = new Map(definitions.origins ?? []);
+  if (stageId === null) {
+    assigned.delete(activity);
+    origins.delete(activity);
+  } else {
+    assigned.set(activity, stageId);
+    if (origin.kind === "manual") origins.delete(activity);
+    else origins.set(activity, origin);
+  }
+  return tidy({ ...definitions, assigned, origins });
+}
+
+/**
+ * Takes a value the proposal listed for an activity: the activity goes into the stage of that
+ * name, which is added after the others when there is none yet, and keeps where its stage came
+ * from. A value that cannot be a stage's name changes nothing.
+ */
+export function withProposed(definitions: StageDefinitions, activity: string, column: number, value: string): StageDefinitions {
+  const wanted = stageName(value).toLocaleLowerCase();
+  const withIt = definitions.stages.some((stage) => stage.name.toLocaleLowerCase() === wanted) ? definitions : withStage(definitions, value);
+  const stage = withIt.stages.find((item) => item.name.toLocaleLowerCase() === wanted);
+  return stage ? withActivity(withIt, activity, stage.id, { kind: "proposed", column, value }) : definitions;
+}
+
+/** Names the context column the phase of a record is read from, or none. */
+export function withPhaseColumn(definitions: StageDefinitions, column: number | null): StageDefinitions {
+  return (definitions.phaseColumn ?? null) === column ? definitions : tidy({ ...definitions, phaseColumn: column });
+}
+
+/** The activities put into a stage that the log does not have: they are drawn nowhere and are said, never applied silently. */
+export function staleActivities(definitions: StageDefinitions, activities: ReadonlySet<string>): string[] {
+  return [...definitions.assigned.keys()].filter((activity) => !activities.has(activity)).sort();
+}
+
+/** Takes the activities the log does not have out of their stages. */
+export function withoutActivities(definitions: StageDefinitions, gone: readonly string[]): StageDefinitions {
+  return gone.reduce((current, activity) => withActivity(current, activity, null), definitions);
 }
 
 /**
  * The definitions as they are written down to be kept: the stages in their order, and the
  * activities with their stage as pairs, since an activity may have any name.
  */
-export function written(definitions: StageDefinitions): { stages: Stage[]; assigned: [string, string][] } {
-  return { stages: definitions.stages.map(({ id, name }) => ({ id, name })), assigned: [...definitions.assigned] };
+export function written(definitions: StageDefinitions): { stages: Stage[]; assigned: [string, string][]; origins: [string, StageOrigin][]; phaseColumn: number | null } {
+  return {
+    stages: definitions.stages.map(({ id, name }) => ({ id, name })),
+    assigned: [...definitions.assigned],
+    origins: [...(definitions.origins ?? [])].filter(([activity]) => definitions.assigned.has(activity)),
+    phaseColumn: definitions.phaseColumn ?? null,
+  };
+}
+
+/** An origin as it was kept, or none where it is not of the written form. */
+function originRead(kept: unknown): StageOrigin | null {
+  if (typeof kept !== "object" || kept === null) return null;
+  const { kind, column, value } = kept as Record<string, unknown>;
+  if (kind === "manual") return MANUAL;
+  return kind === "proposed" && Number.isInteger(column) && (column as number) >= 0 && typeof value === "string" && value !== ""
+    ? { kind: "proposed", column: column as number, value }
+    : null;
 }
 
 /**
@@ -100,7 +180,7 @@ export function written(definitions: StageDefinitions): { stages: Stage[]; assig
  */
 export function read(kept: unknown): StageDefinitions {
   if (typeof kept !== "object" || kept === null) return noStages;
-  const { stages: keptStages, assigned: keptAssigned } = kept as Record<string, unknown>;
+  const { stages: keptStages, assigned: keptAssigned, origins: keptOrigins, phaseColumn: keptPhase } = kept as Record<string, unknown>;
   const stages: Stage[] = [];
   for (const item of Array.isArray(keptStages) ? keptStages : []) {
     if (typeof item !== "object" || item === null) continue;
@@ -115,5 +195,37 @@ export function read(kept: unknown): StageDefinitions {
     const [activity, stageId] = pair as unknown[];
     if (typeof activity === "string" && typeof stageId === "string" && stages.some((stage) => stage.id === stageId)) assigned.set(activity, stageId);
   }
-  return { stages, assigned };
+  const origins = new Map<string, StageOrigin>();
+  for (const pair of Array.isArray(keptOrigins) ? keptOrigins : []) {
+    if (!Array.isArray(pair)) continue;
+    const [activity, origin] = pair as unknown[];
+    const readOrigin = originRead(origin);
+    if (typeof activity === "string" && assigned.has(activity) && readOrigin !== null && readOrigin.kind === "proposed") origins.set(activity, readOrigin);
+  }
+  const phaseColumn = Number.isInteger(keptPhase) && (keptPhase as number) >= 0 ? (keptPhase as number) : null;
+  return tidy({ stages, assigned, origins, phaseColumn });
+}
+
+/** The stages as a saved investigation holds them, bound to the preparation they are defined for. */
+export function toPresentation(definitions: StageDefinitions, preparationId: string): StagesPresentation {
+  return {
+    preparation_id: preparationId,
+    phase_column_index: definitions.phaseColumn ?? null,
+    stages: definitions.stages.map(({ id, name }) => ({ id, name })),
+    assignments: [...definitions.assigned].map(([activity, stageId]) => {
+      const origin = originOf(definitions, activity);
+      return { activity, stage_id: stageId, origin: origin.kind === "manual" ? { kind: "manual" as const } : { kind: "proposed" as const, column_index: origin.column, value: origin.value } };
+    }),
+  };
+}
+
+/** The stages a saved investigation holds, read as kept stages are: what cannot be a stage is left out. */
+export function fromPresentation(saved: StagesPresentation): StageDefinitions {
+  return read({
+    stages: saved.stages,
+    assigned: saved.assignments.map((assignment) => [assignment.activity, assignment.stage_id]),
+    origins: saved.assignments.map((assignment) => [assignment.activity,
+      assignment.origin.kind === "manual" ? { kind: "manual" } : { kind: "proposed", column: assignment.origin.column_index, value: assignment.origin.value }]),
+    phaseColumn: saved.phase_column_index,
+  });
 }
