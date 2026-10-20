@@ -25,4 +25,5 @@
 | Evidence reference | Pinned case/record/endpoint witness with sufficient identity to reopen and verify it. |
 | Finding / bookmark | Analyst interpretation or navigation reference pinned to an investigation revision and evidence. |
 | Presentation state | Viewport, detail, sorting and leading view; resetting these does not change analytical truth. |
+| Capacity tier | Declared source sizes, machine and runtime with measured memory, disk and time limits for named operations; never an assumed scale. |
 | Workspace | External local runtime storage for snapshots, metadata, immutable artifacts and saved investigations. |

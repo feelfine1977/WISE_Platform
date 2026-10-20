@@ -55,6 +55,10 @@ Saved investigations retain selection recipes and exact membership, comparison r
 
 Local expectation authoring produces a versioned draft or reviewed definition with scope, endpoints, clock, target and missingness. Method evaluates it. Authoring and score-to-scene projection are separate: map marks must identify actual evaluated results, coverage and witnesses.
 
+## Memory and capacity
+
+Prepared data is currently held in the local Python process, so its memory is a product property. [Decision 0006](adr/0006-bounded-memory-prepared-data.md) (accepted) sets the target, and the implementation meets it. Prepared records hold repeated values once and compute derivable values when read. Sources are streamed into the workspace and read in one pass. Retained data and each operation's estimated peak share one byte budget, and work that cannot fit is refused before it reads. Measured limits are published in [Measured capacity](capacity.md). A columnar analytical file or query engine follows only when a measured tier needs it and exact parity holds.
+
 ## Structure and evolution
 
 ```text
