@@ -25,6 +25,7 @@ import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
 import { PairedHistories } from "../pinned/PairedHistories";
+import { TransitionMatrix } from "../matrix/TransitionMatrix";
 import { PinControl } from "../pinned/PinControl";
 import { PinnedIndex } from "../pinned/PinnedIndex";
 
@@ -40,7 +41,7 @@ interface ImportedInvestigationProps {
 }
 
 /** What the centre shows: the map, the incidents, or every path of the map in one list. */
-type View = InvestigationView | "paths";
+type View = InvestigationView | "paths" | "matrix";
 /** What the side panel shows beside the map or the table. */
 type Rail = "filters" | "context" | "patterns" | "interval" | "pinned";
 
@@ -78,6 +79,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const [listed, setListed] = useState<"kept" | "removed">("kept");
   // Two pins read beside each other in place of the map and the table, and the button that asked for it.
   const [pair, setPair] = useState<[number, number] | null>(null);
+  // The rows of a passage opened from the matrix, marked in the incident's history while it is open.
+  const [marked, setMarked] = useState<{ caseId: string; rowIds: string[] } | null>(null);
   const pairOpener = useRef<HTMLElement | null>(null);
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
   const incidentsHeading = useRef<HTMLHeadingElement>(null);
@@ -146,6 +149,15 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const openPin = useCallback(
     (pinId: number) => {
       coordinator.openPin(pinId);
+      setLayout((current) => (current === "collapsed" ? "side" : current));
+      setFocusInspector((count) => count + 1);
+    },
+    [coordinator],
+  );
+  const openWitness = useCallback(
+    (caseId: CaseId, rowIds: string[]) => {
+      setMarked({ caseId, rowIds });
+      coordinator.openCase(caseId);
       setLayout((current) => (current === "collapsed" ? "side" : current));
       setFocusInspector((count) => count + 1);
     },
@@ -276,8 +288,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           onStay={() => coordinator.stay()}
         />
       )}
-      {/* A saved investigation opens on its map or on its incidents; the list of paths is the map's and is saved as the map. */}
-      {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view === "paths" ? "map" : view} onClose={() => setSaveOpen(false)} />}
+      {/* A saved investigation opens on its map or on its incidents; the list of paths and the matrix are of the map and are saved as the map. */}
+      {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view === "paths" || view === "matrix" ? "map" : view} onClose={() => setSaveOpen(false)} />}
       {state.saved && <SavedLine binding={state.saved} />}
       {answer && answer.cases.length > 0 && answer.cases.every((summary) => !summary.sequence_evaluable) && (
         <div className="state-line state-confirm" role="note">
@@ -301,6 +313,9 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             </button>
             <button type="button" aria-pressed={view === "paths"} onClick={() => setView("paths")}>
               Paths
+            </button>
+            <button type="button" aria-pressed={view === "matrix"} onClick={() => setView("matrix")}>
+              Matrix
             </button>
           </div>
           <SelectionSteps
@@ -398,7 +413,13 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             <PairedHistories pins={[shownPair[0], shownPair[1]]} evidence={pairEvidence} currentPopulationId={shown?.answer.identity.population_id ?? null} onReturn={closePair} />
           )}
           {/* The map and the list of its paths are one view of the kept incidents: its detail, its selection and its steps stay from one to the other. */}
-          {answer && view !== "incidents" && (
+          {answer && view === "matrix" && shown && (
+            <div hidden={shownPair !== null}>
+              <TransitionMatrix workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep}
+                previewStep={previewStep} waitingFor={waitingFor} onOpenCase={openWitness} openCaseId={openCaseId} />
+            </div>
+          )}
+          {answer && (view === "map" || view === "paths") && (
             <section className="map-pane" aria-labelledby="imported-map-title" hidden={shownPair !== null}>
               <h3 id="imported-map-title" className="pane-title">
                 {view === "map" ? "Map of the kept incidents" : "Paths of the kept incidents"}
@@ -411,7 +432,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   previewStep={previewStep}
                   waitingFor={waitingFor}
                   initiallyInPlace={mapInPlace}
-                  showing={view}
+                  showing={view === "paths" ? "paths" : "map"}
                   onShowMap={() => setView("map")}
                   aside={<TimeColumn workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep} previewStep={previewStep} waitingFor={waitingFor} />}
                 />
@@ -563,6 +584,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onReturn={returnToIncidents}
             onRetry={() => coordinator.retryCase()}
             observation={observationOf(answer)}
+            highlightedRowIds={marked !== null && marked.caseId === inspected.caseId && inspected.side === undefined ? marked.rowIds : undefined}
             selection={shown ? { kept: shown.answer.kept.case_count, parent: shown.answer.parent.case_count, steps: shown.answer.predicate_results.length,
               removed: shown.answer.removed.case_count } : undefined}
             actions={inspected.phase === "ready" && inspected.side !== "pinned" && shown ? (

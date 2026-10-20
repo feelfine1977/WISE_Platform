@@ -129,6 +129,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Rearrange and the way back are explicit, by keyboard, ask for no incident and change no identity; the direction is named; another parent is arranged anew.
   - With `--screenshots DIR` the map is photographed in the parent's places, rearranged, and left to right.
 
+- `tools/qualify_transition_matrix.py` (#12): the transition matrix of the invented `tests/fixtures/matrix` file, against its own `expected.json`.
+  - Every measure of every cell equals the oracle; absent pairs and rows no pair leaves are named; a repeat adds passages, not incidents.
+  - The bridge and the tie open their incidents with the original rows of the passage marked, and the focus returns.
+  - A cell's step is previewed, cancelled and applied with the focus on the cell, and undone; the map's paths under the same relation carry the same numbers; a small window is not widened.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

@@ -61,10 +61,10 @@ const offered = () => Array.from(document.querySelectorAll(".map-choices button"
 describe("the list of every path in the investigation", () => {
   it("is the third view of the centre, lists the supplied paths and flows, and takes the steps the map takes", async () => {
     const app = await renderInvestigation();
-    expect(within(screen.getByRole("group", { name: "View" })).getAllByRole("button").map((button) => button.textContent)).toEqual(["Map", "Incidents", "Paths"]);
+    expect(within(screen.getByRole("group", { name: "View" })).getAllByRole("button").map((button) => button.textContent)).toEqual(["Map", "Incidents", "Paths", "Matrix"]);
 
     await app.user.click(viewButton("Paths"));
-    expect([pressed("Map"), pressed("Incidents"), pressed("Paths")]).toEqual(["false", "false", "true"]);
+    expect([pressed("Map"), pressed("Incidents"), pressed("Paths"), pressed("Matrix")]).toEqual(["false", "false", "true", "false"]);
     expect(screen.getByRole("heading", { name: "Paths of the kept incidents" })).toBeTruthy();
     expect(screen.queryByLabelText("Process map of the kept incidents")).toBeNull();
     expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Incidents▼", "Passages", "Median lag (h)", "On the map"]);

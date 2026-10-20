@@ -62,6 +62,8 @@ describe("the investigation of an imported preparation", () => {
     expect(focusedText()).toBe("Incidents");
     await app.user.tab();
     expect(focusedText()).toBe("Paths");
+    await app.user.tab();
+    expect(focusedText()).toBe("Matrix");
     // The switch of the side panel stands before the table; the panel itself is closed until it is asked for.
     await app.user.tab();
     expect(focusedText()).toBe("Filters and views");
@@ -106,8 +108,8 @@ describe("the investigation of an imported preparation", () => {
     const app = renderInvestigation();
     await deliver(() => app.populations[0].reply({ ok: true, answer: populationAnswer(app.populations[0].request, caseSummaries(40000)) }));
     const scroller = screen.getByRole("table", { name: "Kept incidents" }).parentElement!;
-    // Data and the button about the data, then the three views, then the switch of the side panel, then the table.
-    for (let stop = 0; stop < 7; stop += 1) await app.user.tab();
+    // Data and the button about the data, then the four views, then the switch of the side panel, then the table.
+    for (let stop = 0; stop < 8; stop += 1) await app.user.tab();
     await app.user.keyboard("{End}");
     expect(focusedText()).toBe("INC-39999");
 
