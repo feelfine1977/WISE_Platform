@@ -74,6 +74,8 @@ export function stepWording(step: SelectionPredicate): string {
     }
     case "measure_between":
       return rangeWording(step);
+    case "path_lag_in_range":
+      return lagRangeWording(step);
     case "interval_threshold": {
       const relation = step.operator === "gt" ? (step.negate ? "at most" : "more than") : step.negate ? "less than" : "at least";
       return `Keep incidents whose interval from the first ${quoted(step.interval.start_activity)} to the first ${quoted(step.interval.response_activity)} at or after it is ${relation} ${step.hours} hours`;
@@ -109,6 +111,30 @@ function rangeWording(step: Extract<SelectionPredicate, { kind: "measure_between
   const less = records ? "fewer" : "less";
   if (maximum === null) return `Keep incidents with ${measure}${less} than ${minimum} ${records && minimum === 1 ? "record" : unit}`;
   return `Keep incidents with ${measure}${less} than ${minimum} or more than ${maximum} ${records ? "records" : unit}`;
+}
+
+/** Hours as a step says them, with the days beside them where they are whole days of two or more. */
+export function lagHours(hours: number): string {
+  return hours >= 48 && hours % 24 === 0 ? `${hours} hours (${hours / 24} days)` : `${hours} ${hours === 1 ? "hour" : "hours"}`;
+}
+
+/** A range of lags in words, each bound included or excluded as stated. */
+export function lagRange(step: Extract<SelectionPredicate, { kind: "path_lag_in_range" }>): string {
+  const low = step.minimum_hours === null ? null : `${step.minimum_inclusive ? "at least" : "more than"} ${lagHours(step.minimum_hours)}`;
+  const high = step.maximum_hours === null ? null : `${step.maximum_inclusive ? "at most" : "less than"} ${lagHours(step.maximum_hours)}`;
+  return [low, high].filter(Boolean).join(" and ");
+}
+
+/** What a step on the lag of a path keeps: one passage in the range, or every passage of an incident that passes the path. */
+function lagRangeWording(step: Extract<SelectionPredicate, { kind: "path_lag_in_range" }>): string {
+  const pair = `from ${quoted(step.source_activity)} to ${quoted(step.target_activity)}`;
+  const range = lagRange(step);
+  if (step.passages === "every") {
+    return step.negate
+      ? `Keep incidents that never pass ${pair}, or have a passage of it that does not take ${range}`
+      : `Keep incidents that pass ${pair} with every passage taking ${range}`;
+  }
+  return step.negate ? `Keep incidents with no passage ${pair} taking ${range}` : `Keep incidents with at least one passage ${pair} taking ${range}`;
 }
 
 /** A whole sequence of labelled activities, repeats kept, or the sequence without a labelled record. */
@@ -156,6 +182,8 @@ export function unevaluableReason(step: SelectionPredicate): string | null {
       return "the order of their records is not known, or no span or gap can be measured from their times";
     case "record_attributes_all":
       return "a record lacks a cell of a named column, so whether it matches cannot be told";
+    case "path_lag_in_range":
+      return "the order of their records is not known, so their passages and their lags are not known";
     case "measure_between":
       return step.measure === "raw_record_count"
         ? null

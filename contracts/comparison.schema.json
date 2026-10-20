@@ -307,6 +307,9 @@
           "$ref": "#/$defs/MeasureBetween"
         },
         {
+          "$ref": "#/$defs/PathLagInRange"
+        },
+        {
           "$ref": "#/$defs/RecordAttributesAll"
         }
       ]
@@ -2016,6 +2019,67 @@
         "measure",
         "minimum",
         "maximum",
+        "negate"
+      ]
+    },
+    "PathLagInRange": {
+      "title": "PathLagInRange",
+      "description": "Keeps the incidents that pass the path from source_activity to target_activity, a pair of adjacent records of the activity sequence (the passages of the map's path and of its lag), with a lag in the range: above minimum_hours and below maximum_hours, each bound included or excluded as stated, a null bound not bounding. With passages at_least_one, one passage in the range suffices; with every, the incident passes the path at least once and every passage is in the range. The lag is the elapsed time on the preparation's clock between the two records. An incident whose order is not known is not evaluable; one that never passes the path is outside. Negation keeps the incidents the condition does not keep; the unevaluable stay unevaluable.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "path_lag_in_range"
+        },
+        "source_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimum_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "minimum_inclusive": {
+          "type": "boolean"
+        },
+        "maximum_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "maximum_inclusive": {
+          "type": "boolean"
+        },
+        "passages": {
+          "type": "string",
+          "enum": [
+            "at_least_one",
+            "every"
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "source_activity",
+        "target_activity",
+        "minimum_hours",
+        "minimum_inclusive",
+        "maximum_hours",
+        "maximum_inclusive",
+        "passages",
         "negate"
       ]
     },

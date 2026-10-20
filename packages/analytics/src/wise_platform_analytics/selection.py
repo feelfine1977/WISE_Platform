@@ -11,7 +11,7 @@ import json
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Protocol, TypeAlias
 
-from .intervals import INTERVAL_POLICY, OPERATORS, Interval, measure, satisfies
+from .intervals import INTERVAL_POLICY, OPERATORS, Interval, measure, satisfies, threshold_of
 
 if TYPE_CHECKING:
     from .mapping import ImportRefusal
@@ -173,6 +173,24 @@ class MeasureBetween:
 
 
 @dataclass(frozen=True)
+class PathLagInRange:
+    """The incident passes the path from ``source_activity`` to ``target_activity`` (two adjacent records of the activity
+    sequence, as the map's path and its lag count them) with a lag in the range: above the minimum and below the maximum,
+    each bound included or excluded as stated, a missing bound not bounding. With ``every_passage`` the incident passes
+    the path at least once and every passage is in the range; otherwise one passage in the range suffices. An incident
+    whose order is not known is not evaluable; one that never passes the path is outside."""
+
+    source_activity: str
+    target_activity: str
+    minimum_hours: float | None
+    minimum_inclusive: bool
+    maximum_hours: float | None
+    maximum_inclusive: bool
+    every_passage: bool = False
+    negate: bool = False
+
+
+@dataclass(frozen=True)
 class IntervalThreshold:
     """The interval from a start to the first response at or after it (``intervals.INTERVAL_POLICY``) exceeds (gt) or
     reaches (ge) a number of hours. An incident without that interval is not evaluable, never false."""
@@ -208,7 +226,7 @@ class VariantIs:
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
                         | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
                         | OpeningAttributeIn | RecordAttributeIn | RecordAttributesAll | ObservedSpanAtLeast | MaxRawGapAtLeast
-                        | IntervalThreshold | VariantIs | MeasureBetween)
+                        | IntervalThreshold | VariantIs | MeasureBetween | PathLagInRange)
 
 
 class SelectionError(ValueError):
@@ -350,6 +368,24 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
             raise SelectionError("invalid_predicate", "The variant's identity does not match its sequence.")
         return {"kind": "variant_is", "variant": {"id": identity, "activities": list(predicate.activities), "projection_policy": predicate.policy},
                 "negate": predicate.negate}
+    if isinstance(predicate, PathLagInRange):
+        _label(predicate.source_activity)
+        _label(predicate.target_activity)
+        if type(predicate.minimum_inclusive) is not bool or type(predicate.maximum_inclusive) is not bool or type(predicate.every_passage) is not bool:
+            raise SelectionError("invalid_predicate", "Whether a bound is included, and which passages count, are stated as Booleans.")
+        if predicate.minimum_hours is None and predicate.maximum_hours is None:
+            raise SelectionError("invalid_predicate", "A range of lags needs at least one bound.")
+        for bound in (predicate.minimum_hours, predicate.maximum_hours):
+            if bound is not None:
+                _hours(bound)
+        if predicate.minimum_hours is not None and predicate.maximum_hours is not None and (
+                predicate.maximum_hours < predicate.minimum_hours
+                or (predicate.maximum_hours == predicate.minimum_hours and not (predicate.minimum_inclusive and predicate.maximum_inclusive))):
+            raise SelectionError("invalid_predicate", "The range of lags is empty: its upper bound is below its lower bound, or equal to it and not included.")
+        return {"kind": "path_lag_in_range", "source_activity": predicate.source_activity, "target_activity": predicate.target_activity,
+                "minimum_hours": predicate.minimum_hours, "minimum_inclusive": predicate.minimum_inclusive,
+                "maximum_hours": predicate.maximum_hours, "maximum_inclusive": predicate.maximum_inclusive,
+                "passages": "every" if predicate.every_passage else "at_least_one", "negate": predicate.negate}
     if isinstance(predicate, MeasureBetween):
         if predicate.measure not in MEASURES:
             raise SelectionError("invalid_predicate", "The measure is the number of records, the recorded span or the longest gap.")
@@ -454,6 +490,14 @@ def semantic_predicate(descriptor: Mapping[str, object]) -> dict[str, object]:
         for bound in ("minimum", "maximum"):
             if isinstance(result[bound], float) and result[bound].is_integer():
                 result[bound] = int(result[bound])
+    elif kind == "path_lag_in_range":
+        for bound in ("minimum", "maximum"):
+            hours = result[bound + "_hours"]
+            if isinstance(hours, float) and hours.is_integer():
+                result[bound + "_hours"] = int(hours)
+            # Whether a missing bound is "included" bounds nothing and does not change the meaning.
+            if hours is None:
+                result[bound + "_inclusive"] = False
     elif kind == "case_start_in_window":
         from .time_formats import iso_local, iso_utc
         window = result["window"]
@@ -616,6 +660,8 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
         value = None
     elif isinstance(predicate, VariantIs):
         value = tuple(record.activity for record in records if record.activity is not None) == predicate.activities
+    elif isinstance(predicate, PathLagInRange):
+        value = _path_lag_in_range(records, predicate)
     elif isinstance(predicate, CaseStartInWindow):
         start, end = _window_bounds(predicate)
         moment = records[0].time_value if records else None
@@ -647,6 +693,25 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
             opening = records[0].context_value(predicate.column_index)
             value = opening == predicate.value
     return None if value is None else not value if predicate.negate else value
+
+
+def _path_lag_in_range(records: Sequence[PreparedRecordLike], predicate: PathLagInRange) -> bool:
+    """Whether the passages of the path, adjacent records of the activity sequence, have their lags in the range.
+
+    The lags are exact durations, compared with the bounds as exact durations, so a lag equal to a bound is exactly at it."""
+    mapped = [record for record in records if record.activity is not None]
+    lags = [right.time_value - left.time_value for left, right in zip(mapped, mapped[1:])
+            if left.activity == predicate.source_activity and right.activity == predicate.target_activity]
+    low = None if predicate.minimum_hours is None else threshold_of(predicate.minimum_hours)
+    high = None if predicate.maximum_hours is None else threshold_of(predicate.maximum_hours)
+
+    def inside(lag) -> bool:
+        above = low is None or (lag >= low if predicate.minimum_inclusive else lag > low)
+        below = high is None or (lag <= high if predicate.maximum_inclusive else lag < high)
+        return above and below
+
+    found = [inside(lag) for lag in lags]
+    return bool(found) and all(found) if predicate.every_passage else any(found)
 
 
 def _partition(prepared: PreparedDataLike, values: Mapping[str, bool | None]) -> tuple[PopulationSupport, PopulationSupport, PopulationSupport]:

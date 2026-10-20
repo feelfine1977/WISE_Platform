@@ -1,0 +1,235 @@
+{
+ "about": "Hand-written expectations for #90 (tests/test_issue90_path_lag_range.py and tools/qualify_path_lag_range.py). Invented incidents. The path is A to B: adjacent records of the activity sequence, a record without an activity label passed over (L-5). Lags in hours: L-1 10; L-2 720 (30 days); L-3 2 and 800; L-4 720 and 721; L-5 750; L-6 none (A, C, B never passes A to B); L-7 0 (tied); L-UNK order unknown. The map's path A to B: 8 passages in 6 incidents, median lag 720 hours. Never read by product code.",
+ "file": "lags.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": []
+ },
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "source": "A",
+ "target": "B",
+ "path": {
+  "passages": 8,
+  "incidents": [
+   "L-1",
+   "L-2",
+   "L-3",
+   "L-4",
+   "L-5",
+   "L-7"
+  ],
+  "median_lag_hours": 720
+ },
+ "ranges": [
+  {
+   "name": "slower_than_30_days",
+   "minimum_hours": 720,
+   "minimum_inclusive": false,
+   "maximum_hours": null,
+   "maximum_inclusive": false,
+   "passages": "at_least_one",
+   "negate": false,
+   "kept": [
+    "L-3",
+    "L-4",
+    "L-5"
+   ],
+   "removed": [
+    "L-1",
+    "L-2",
+    "L-6",
+    "L-7"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  },
+  {
+   "name": "at_least_30_days",
+   "minimum_hours": 720,
+   "minimum_inclusive": true,
+   "maximum_hours": null,
+   "maximum_inclusive": false,
+   "passages": "at_least_one",
+   "negate": false,
+   "kept": [
+    "L-2",
+    "L-3",
+    "L-4",
+    "L-5"
+   ],
+   "removed": [
+    "L-1",
+    "L-6",
+    "L-7"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  },
+  {
+   "name": "every_passage_at_least_30_days",
+   "minimum_hours": 720,
+   "minimum_inclusive": true,
+   "maximum_hours": null,
+   "maximum_inclusive": false,
+   "passages": "every",
+   "negate": false,
+   "kept": [
+    "L-2",
+    "L-4",
+    "L-5"
+   ],
+   "removed": [
+    "L-1",
+    "L-3",
+    "L-6",
+    "L-7"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  },
+  {
+   "name": "at_most_10_hours",
+   "minimum_hours": null,
+   "minimum_inclusive": false,
+   "maximum_hours": 10,
+   "maximum_inclusive": true,
+   "passages": "at_least_one",
+   "negate": false,
+   "kept": [
+    "L-1",
+    "L-3",
+    "L-7"
+   ],
+   "removed": [
+    "L-2",
+    "L-4",
+    "L-5",
+    "L-6"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  },
+  {
+   "name": "less_than_10_hours",
+   "minimum_hours": null,
+   "minimum_inclusive": false,
+   "maximum_hours": 10,
+   "maximum_inclusive": false,
+   "passages": "at_least_one",
+   "negate": false,
+   "kept": [
+    "L-3",
+    "L-7"
+   ],
+   "removed": [
+    "L-1",
+    "L-2",
+    "L-4",
+    "L-5",
+    "L-6"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  },
+  {
+   "name": "more_than_0_at_most_10_hours",
+   "minimum_hours": 0,
+   "minimum_inclusive": false,
+   "maximum_hours": 10,
+   "maximum_inclusive": true,
+   "passages": "at_least_one",
+   "negate": false,
+   "kept": [
+    "L-1",
+    "L-3"
+   ],
+   "removed": [
+    "L-2",
+    "L-4",
+    "L-5",
+    "L-6",
+    "L-7"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  },
+  {
+   "name": "no_passage_slower_than_30_days",
+   "minimum_hours": 720,
+   "minimum_inclusive": false,
+   "maximum_hours": null,
+   "maximum_inclusive": false,
+   "passages": "at_least_one",
+   "negate": true,
+   "kept": [
+    "L-1",
+    "L-2",
+    "L-6",
+    "L-7"
+   ],
+   "removed": [
+    "L-3",
+    "L-4",
+    "L-5"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  },
+  {
+   "name": "not_every_passage_at_least_30_days",
+   "minimum_hours": 720,
+   "minimum_inclusive": true,
+   "maximum_hours": null,
+   "maximum_inclusive": false,
+   "passages": "every",
+   "negate": true,
+   "kept": [
+    "L-1",
+    "L-3",
+    "L-6",
+    "L-7"
+   ],
+   "removed": [
+    "L-2",
+    "L-4",
+    "L-5"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  },
+  {
+   "name": "from_720_to_721_hours",
+   "minimum_hours": 720,
+   "minimum_inclusive": true,
+   "maximum_hours": 721,
+   "maximum_inclusive": true,
+   "passages": "at_least_one",
+   "negate": false,
+   "kept": [
+    "L-2",
+    "L-4"
+   ],
+   "removed": [
+    "L-1",
+    "L-3",
+    "L-5",
+    "L-6",
+    "L-7"
+   ],
+   "unevaluable": [
+    "L-UNK"
+   ]
+  }
+ ]
+}
