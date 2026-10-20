@@ -32,6 +32,7 @@ import {
   describeComparisonProblem,
   differenceCell,
   groupWording,
+  ratioCell,
   hoursText,
   overlapSentences,
   partOf,
@@ -71,6 +72,7 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
   const population = investigated.population.phase === "ready" ? investigated.population.answer : null;
   const basis = useMemo(() => (population ? basisOf(population) : null), [population]);
   const [added, setAdded] = useState<SelectionPredicate | null>(null);
+  const [inspected, setInspected] = useState<InspectedValue | null>(null);
   const waitingReason = useId();
   // While other incidents open in Investigations, no step is added to the selection they replace.
   const waitingFor = investigated.replacement?.phase === "running" ? waitingReason : undefined;
@@ -196,9 +198,10 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
               No step can be added while other incidents are opening in Investigations.
             </p>
           )}
-          {shown && <ComparisonTable shown={shown} columnName={columnName(shown.answer.context_column_index)} onStep={addStep} waitingFor={waitingFor} />}
+          {shown && <ComparisonTable shown={shown} columnName={columnName(shown.answer.context_column_index)} onStep={addStep} waitingFor={waitingFor}
+            onInspect={shown.kind === "groups" ? setInspected : undefined} />}
           {shown && <EmptySide shown={shown} frozen={draft.parent !== null} onRebase={() => coordinator.rebase()} onSwap={() => coordinator.swap()} onShowInvestigation={onShowInvestigation} />}
-          {shown && shown.kind === "groups" && <SideIncidents key={shown.answer.comparison_id} shown={shown} investigation={investigation} />}
+          {shown && shown.kind === "groups" && <SideIncidents key={shown.answer.comparison_id} shown={shown} investigation={investigation} inspected={inspected} />}
         </section>
       </div>
     </main>
@@ -614,7 +617,18 @@ interface Row {
   a: string;
   b: string;
   difference: string | null;
+  /** A's share divided by B's share, for an opening value; shown only on request. */
+  ratio?: string;
   step?: { predicate: SelectionPredicate; label: string };
+  /** The opening value whose incidents of A and B can be listed, without a step. */
+  inspect?: { value: string | null; label: string };
+}
+
+/** An opening value whose incidents of each side are listed, as the local service selects them. */
+export interface InspectedValue {
+  columnIndex: number;
+  value: string | null;
+  label: string;
 }
 
 interface ComparisonTableProps {
@@ -623,11 +637,15 @@ interface ComparisonTableProps {
   onStep: (step: SelectionPredicate) => void;
   /** The id of the text saying why no step can be added now; while it is given, the steps wait. */
   waitingFor?: string;
+  /** Lists the incidents of A and B first recorded with one value; the selection stays. */
+  onInspect?: (value: InspectedValue) => void;
 }
 
-function ComparisonTable({ shown, columnName, onStep, waitingFor }: ComparisonTableProps) {
+function ComparisonTable({ shown, columnName, onStep, waitingFor, onInspect }: ComparisonTableProps) {
   const answer = shown.answer;
   const names: [string, string] = [answer.target.name, answer.reference.name];
+  // The paired counts and shares are shown first; the ratio of the shares is asked for.
+  const [ratio, setRatio] = useState(false);
   const rows: Row[] = [...cohortRows(answer)];
   if (shown.kind === "periods") rows.push(...periodRows(shown.answer, shown.request.definition.minimum_followup_hours));
   rows.push(...profileRows(answer, columnName));
@@ -637,6 +655,18 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor }: ComparisonTa
       <p className="compare-roles">
         <strong>A</strong> is {kind} {names[0]}; <strong>B</strong> is {kind} {names[1]}. {roleDefinitions(shown)}
       </p>
+      <div className="compare-actions">
+        <button type="button" aria-pressed={ratio} onClick={() => setRatio(!ratio)}>
+          {ratio ? "Hide the ratio of shares" : "Show the ratio of shares"}
+        </button>
+      </div>
+      {ratio && (
+        <p className="compare-muted">
+          The ratio divides the share of a value in A ({names[0]}) by its share in B ({names[1]}), each of its own incidents with a readable first
+          record: above 1 the value is more frequent in A, below 1 in B. Exchanging A and B turns it over. A share of 0 in B gives no ratio, only no
+          reference support. It describes this snapshot; it is not a risk, a lift or a priority.
+        </p>
+      )}
       <div className="compare-scroll">
         <table className="compare-table">
           <caption className="compare-caption">
@@ -648,6 +678,7 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor }: ComparisonTa
               <th scope="col">A: {names[0]}</th>
               <th scope="col">B: {names[1]}</th>
               <th scope="col">Difference A − B</th>
+              {ratio && <th scope="col">Ratio: A's share ÷ B's share</th>}
               <th scope="col">
                 <span className="compare-hidden">Selection step</span>
               </th>
@@ -663,7 +694,13 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor }: ComparisonTa
                 <td>{row.a}</td>
                 <td>{row.b}</td>
                 <td>{row.difference ?? <span className="compare-muted" aria-label="Counts are not compared">—</span>}</td>
+                {ratio && <td>{row.ratio ?? <span className="compare-muted" aria-label="No ratio">—</span>}</td>}
                 <td>
+                  {row.inspect && onInspect && (
+                    <button type="button" className="compare-step" onClick={() => row.inspect && onInspect({ columnIndex: answer.context_column_index, ...row.inspect })}>
+                      Inspect the incidents first recorded with {row.inspect.label}
+                    </button>
+                  )}
                   {row.step && (
                     <button
                       type="button"
@@ -689,7 +726,8 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor }: ComparisonTa
       <ProfileNotes profile={answer.context_profile} columnName={columnName} />
       {shown.kind === "periods" && <ExposureNote answer={shown.answer} minimum={shown.request.definition.minimum_followup_hours} />}
       <p className="compare-muted">
-        These figures say how {names[0]} and {names[1]} differ. They do not say why they differ.
+        These figures say how {names[0]} and {names[1]} differ. They do not say why they differ. They are exact counts of this log, not tests of
+        significance, and no value here is a cause.
       </p>
     </>
   );
@@ -791,6 +829,8 @@ function profileRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer, col
       a: shareText(category.target),
       b: shareText(category.reference),
       difference: differenceCell(category, names),
+      ratio: ratioCell(category, names),
+      inspect: { value: category.value, label: category.value === null ? `${columnName} not recorded` : `${columnName} ${value}` },
       step: {
         predicate: {
           kind: "opening_attribute_equals",
@@ -813,6 +853,9 @@ function ProfileNotes({ profile, columnName }: { profile: ContextProfile; column
       `${countOf(count, "incident")} of the parent ${count === 1 ? "has" : "have"} no readable first record, as ${count === 1 ? "its" : "their"} order is not known; ${count === 1 ? "it is" : "they are"} in no share.`,
     );
   }
+  notes.push(
+    `Each incident has exactly one first recorded ${columnName}, so the shares of a side add up. Values ever recorded later would overlap and not add up; they are not offered here.`,
+  );
   if (profile.parent_fixed.status === "fixed") {
     notes.push(`${columnName} is fixed in the parent: every incident of the parent was first recorded with ${columnName} ${valueText(profile.parent_fixed.value)}, so this column cannot tell the groups apart.`);
   } else if (profile.parent_fixed.status === "varying") {
@@ -904,16 +947,31 @@ type SideChoice = "target" | "reference" | "both";
  * The incidents of A, of B or of both, each opened with its complete history in the population of its side; the
  * comparison stays shown, and returning gives the focus back to the incident's button.
  */
-function SideIncidents({ shown, investigation }: { shown: Extract<ShownComparison, { kind: "groups" }>; investigation: ImportedInvestigationCoordinator }) {
+function SideIncidents({ shown, investigation, inspected = null }: { shown: Extract<ShownComparison, { kind: "groups" }>; investigation: ImportedInvestigationCoordinator; inspected?: InspectedValue | null }) {
   const [side, setSide] = useState<SideChoice | null>(null);
+  // The incidents of each side first recorded with an inspected value, as the local service selects them in that side.
+  const [valued, setValued] = useState<{ label: string; target: string[]; reference: string[] } | { label: string; failed: string } | null>(null);
+  useEffect(() => {
+    if (inspected === null) return;
+    const controller = new AbortController();
+    const step: SelectionPredicate = { kind: "opening_attribute_equals", column_index: inspected.columnIndex, value: inspected.value, negate: false, anchor_policy: contextPolicy };
+    setSide("both");
+    Promise.all([shown.answer.target, shown.answer.reference].map((cohort) => investigation.keptBy([step], controller.signal, cohort.included.case_ids))).then(([a, b]) => {
+      if (controller.signal.aborted) return;
+      setValued(a.ok && b.ok ? { label: inspected.label, target: a.keptIds, reference: b.keptIds } : { label: inspected.label, failed: "The incidents of this value could not be selected; try again." });
+    });
+    return () => controller.abort();
+  }, [inspected, shown, investigation]);
   const [open, setOpen] = useState<{ caseId: string; role: Role; loaded: { ok: true; answer: ImportedCaseEvidenceAnswer } | { ok: false; message: string } | null } | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const { target, reference } = shown.answer;
   const inTarget = new Set(target.included.case_ids);
   const inReference = new Set(reference.included.case_ids);
-  const listed = side === null ? [] : side === "target" ? target.included.case_ids : side === "reference" ? reference.included.case_ids
-    : [...new Set([...target.included.case_ids, ...reference.included.case_ids])].sort();
+  const ofValue = valued !== null && "target" in valued ? { target: new Set(valued.target), reference: new Set(valued.reference) } : null;
+  const listed = (side === null ? [] : side === "target" ? target.included.case_ids : side === "reference" ? reference.included.case_ids
+    : [...new Set([...target.included.case_ids, ...reference.included.case_ids])].sort())
+    .filter((caseId) => ofValue === null || ofValue.target.has(caseId) || ofValue.reference.has(caseId));
   useEffect(() => {
     if (open?.loaded) heading.current?.focus();
   }, [open?.loaded]);
@@ -940,6 +998,14 @@ function SideIncidents({ shown, investigation }: { shown: Extract<ShownCompariso
           </button>
         ))}
       </div>
+      {valued !== null && (
+        <p className="compare-muted">
+          {"failed" in valued ? valued.failed : `Listed: the incidents first recorded with ${valued.label}, ${valued.target.length} of A and ${valued.reference.length} of B. Listing them takes no step.`}{" "}
+          <button type="button" className="link-button" onClick={() => setValued(null)}>
+            List every incident of the sides
+          </button>
+        </p>
+      )}
       {side !== null && (
         <ul className="compare-side-list" aria-label={side === "both" ? "Incidents of A and B" : `Incidents of ${roleName(side)}`}>
           {listed.map((caseId) => {

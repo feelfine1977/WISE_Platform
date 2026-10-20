@@ -220,19 +220,23 @@ describe("the Compare view", () => {
       "",
     ]);
     expect(row(table, "First record readable").slice(1, 3)).toEqual(["2 of 2 incidents in the group", "3 of 3 incidents in the group"]);
+    // The paired counts and the difference first; the ratio only on request.
     expect(row(table, "First recorded with column 3 not recorded")).toEqual([
       "First recorded with column 3 not recordedparent: 1 of 4 (25.0%)",
       "1 of 2 (50.0%)",
       "1 of 3 (33.3%)",
-      "+16.7 pp · ratio 1.50",
-      "Keep incidents first recorded with column 3 not recorded",
+      "+16.7 pp",
+      "Inspect the incidents first recorded with column 3 not recordedKeep incidents first recorded with column 3 not recorded",
     ]);
-    expect(row(table, "First recorded with column 3 East").slice(1, 4)).toEqual([
-      "1 of 2 (50.0%)",
-      "0 of 3 (0.0%)",
-      "+50.0 pp · ratio not available: the share in Listed is 0",
-    ]);
-    expect(row(table, "First recorded with column 3 North").slice(1, 4)).toEqual(["0 of 2 (0.0%)", "1 of 3 (33.3%)", "−33.3 pp · ratio 0.00"]);
+    expect(row(table, "First recorded with column 3 East").slice(1, 4)).toEqual(["1 of 2 (50.0%)", "0 of 3 (0.0%)", "+50.0 pp"]);
+    expect(row(table, "First recorded with column 3 North").slice(1, 4)).toEqual(["0 of 2 (0.0%)", "1 of 3 (33.3%)", "−33.3 pp"]);
+    await app.user.click(screen.getByRole("button", { name: "Show the ratio of shares" }));
+    expect(within(table).getAllByRole("columnheader").map((cell) => cell.textContent)).toContain("Ratio: A's share ÷ B's share");
+    expect(row(table, "First recorded with column 3 not recorded")[4]).toBe("1.50");
+    expect(row(table, "First recorded with column 3 East")[4]).toBe("no reference support: none in Listed");
+    expect(row(table, "First recorded with column 3 North")[4]).toBe("0.00: none in With assignment in this snapshot");
+    expect(screen.getByText(/^The ratio divides the share of a value in A/).textContent).toContain("it is not a risk, a lift or a priority");
+    await app.user.click(screen.getByRole("button", { name: "Hide the ratio of shares" }));
 
     const overlap = screen.getByRole("note", { name: "Overlap" });
     expect(overlap.textContent).toContain(
