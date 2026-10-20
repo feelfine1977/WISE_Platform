@@ -74,6 +74,29 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const [chosenGroup, setChosenGroup] = useState<{ id: string; label: string; caseIds: readonly string[]; ordered?: true; note?: string } | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [rail, setRail] = useState<Rail>("context");
+  // Where the line of guidance leads: the map or the chart of starts beside it gets the focus once shown, and "+ Add step" opens.
+  const [guideFocus, setGuideFocus] = useState<"map" | "starts" | null>(null);
+  const [addStepRequest, setAddStepRequest] = useState(0);
+  useEffect(() => {
+    if (guideFocus === null || view !== "map") return;
+    let tries = 0;
+    // The map and its column of time are drawn after the view switches: the focus waits for them.
+    const timer = window.setInterval(() => {
+      const target = guideFocus === "map"
+        ? document.querySelector<HTMLElement>('[aria-label="Process map of the kept incidents"]')
+        : document.querySelector<HTMLElement>('[aria-label^="Incident starts per"][tabindex]');
+      tries += 1;
+      if (target || tries > 40) {
+        window.clearInterval(timer);
+        if (target) {
+          if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+          target.focus();
+        }
+        setGuideFocus(null);
+      }
+    }, 50);
+    return () => window.clearInterval(timer);
+  }, [guideFocus, view]);
   // Closed until it is asked for: the map and the table open on the whole width.
   const [railOpen, setRailOpen] = useState(false);
   const [layout, setLayout] = useState<InspectorLayout>("side");
@@ -335,12 +358,17 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onUndo={() => coordinator.undo()}
             onRedo={() => coordinator.redo()}
             onShowAfter={(count) => coordinator.showAfter(count)}
+            guide={{
+              onShowMap: () => { setView("map"); setGuideFocus("map"); },
+              onShowStarts: () => { setView("map"); setGuideFocus("starts"); },
+              onAddStep: () => setAddStepRequest((count) => count + 1),
+            }}
             onRetry={() => coordinator.retrySelection()}
             onStay={() => coordinator.staySelection()}
             waitingFor={waitingFor}
           />
           {answer && (
-            <AddStep population={answer} parentIds={state.parentCaseIds} parentIdentity={shown?.answer.parent_identity ?? answer.identity}
+            <AddStep openRequest={addStepRequest} population={answer} parentIds={state.parentCaseIds} parentIdentity={shown?.answer.parent_identity ?? answer.identity}
               keptIdentity={shown?.answer.identity ?? answer.identity} revision={revision} opening={openingContext} onStep={addStep} waitingFor={waitingFor} />
           )}
           <button type="button" className="rail-toggle" aria-expanded={railOpen} aria-controls="explorer-rail" onClick={() => setRailOpen((open) => !open)}>

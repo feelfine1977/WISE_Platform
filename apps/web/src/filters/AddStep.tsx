@@ -7,7 +7,10 @@ import "./filters.css";
 /** The line that says what a step is, wherever steps are offered. */
 export const STEP_GLOSS = "A step keeps or removes whole incidents: every record of a kept incident stays with it, and Undo takes a step back.";
 
-type AddStepProps = Omit<ComponentProps<typeof FilterPanel>, "only" | "previewStep">;
+type AddStepProps = Omit<ComponentProps<typeof FilterPanel>, "only" | "previewStep"> & {
+  /** A new number opens the panel, as the line of guidance asks. */
+  openRequest?: number;
+};
 
 /**
  * The one entry from which every way of keeping or removing incidents by a value starts: "+ Add step" opens a short list
@@ -26,6 +29,10 @@ export function AddStep(props: AddStepProps) {
     setKind(null);
     entry.current?.focus();
   };
+
+  useEffect(() => {
+    if (props.openRequest) setOpen(true);
+  }, [props.openRequest]);
 
   useEffect(() => {
     if (!open) return;

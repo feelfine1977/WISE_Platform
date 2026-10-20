@@ -238,6 +238,10 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Applying adds the step at once, closes the panel and gives the focus back to the entry; Undo takes it back, and Escape closes without a step.
   - The journeys that took steps from the side panel's filters (#11, #57, #60, #61, #63, #85, #89, #92, #93) now take them from "+ Add step" through `tools/add_step.mjs`; those that opened "Patterns" (#13, #55, #56) open "Variants". All twelve pass again on this build.
 
+- `tools/qualify_guidance.py` (#95): the line of guidance, over the invented `tests/fixtures/span-gap` file.
+  - The empty state names the ways to a first step: its links focus the map and the chart of starts, and open "+ Add step".
+  - After the first step one line says how to undo or add another. It gives way for good after another step, and there is never more than one line.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

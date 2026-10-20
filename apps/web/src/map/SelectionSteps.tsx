@@ -1,4 +1,4 @@
-import { useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { SelectionPredicate } from "../generated/selection";
 import { type ImportedSelectionState, shownSelection } from "../imported/coordinator";
 import type { Replacement } from "../replacement/replacement";
@@ -18,6 +18,8 @@ interface SelectionStepsProps {
   onRetry: () => void;
   /** Shows the state after the first `count` steps of the trail; the later steps stay until a new step is taken. */
   onShowAfter?: (count: number) => void;
+  /** Where the line of guidance leads: the map, the chart of starts, and "+ Add step". Without it the line names the map only. */
+  guide?: { onShowMap: () => void; onShowStarts: () => void; onAddStep: () => void };
   /** Gives up steps that could not be selected and stays with the selection shown. */
   onStay: () => void;
   /** The id of the text saying why the steps cannot be changed now; while it is given, they wait. */
@@ -31,9 +33,17 @@ interface SelectionStepsProps {
  * actions open on demand. The trail leads back to any earlier state, the parent first; the later steps
  * stay in the trail, not applied, until a new step is taken.
  */
-export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, onRetry, onShowAfter, onStay, waitingFor }: SelectionStepsProps) {
+export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, onRetry, onShowAfter, onStay, waitingFor, guide }: SelectionStepsProps) {
   const waiting = waitingFor !== undefined;
   const reasonId = useId();
+  // The line after the first step gives way for good once the analyst has undone that step or taken another.
+  const stepCount = selection.phase === "idle" ? 0 : shownSelection(selection)?.answer.predicate_results.length ?? 0;
+  const previousCount = useRef(stepCount);
+  const [firstStepGuided, setFirstStepGuided] = useState(false);
+  useEffect(() => {
+    if (previousCount.current === 1 && stepCount !== 1) setFirstStepGuided(true);
+    previousCount.current = stepCount;
+  }, [stepCount]);
   // The incidents kept after each step of a trail, by the steps up to it, as answered: a later step not applied now keeps its count.
   const keptAfter = useRef(new Map<string, number>()).current;
   if (selection.phase === "idle") return null;
@@ -69,8 +79,23 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
           {selection.phase === "loading" ? "Selecting the incidents and drawing their map…" : ""}
         </p>
       </div>
+      {/* One line of guidance at most: what can be done first, or, after the first step, how to go back or on. */}
       {shown && results.length === 0 && (
-        <p className="muted">No step yet: every incident of the parent is kept. Select an activity or a path on the map to keep or remove incidents.</p>
+        guide ? (
+          <p className="muted guide-line">
+            No step yet: every incident of the parent is kept. Take a first step:{" "}
+            <button type="button" className="link-button" onClick={guide.onShowMap}>select an activity or a path on the map</button>,{" "}
+            <button type="button" className="link-button" onClick={guide.onShowStarts}>drag over a period of starts</button>, or{" "}
+            <button type="button" className="link-button" onClick={guide.onAddStep}>add a step</button>.
+          </p>
+        ) : (
+          <p className="muted">No step yet: every incident of the parent is kept. Select an activity or a path on the map to keep or remove incidents.</p>
+        )
+      )}
+      {shown && guide && results.length === 1 && !firstStepGuided && (
+        <p className="muted guide-line">
+          One step taken: Undo takes it back, or <button type="button" className="link-button" onClick={guide.onAddStep}>add another step</button>.
+        </p>
       )}
       {shown && (results.length > 0 || later.length > 0) && onShowAfter && (
         <p className="trail-start">
