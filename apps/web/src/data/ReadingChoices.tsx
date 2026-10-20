@@ -519,6 +519,7 @@ function ContextChoice({
               ? [...draft.contextColumns, item.index]
               : draft.contextColumns.filter((index) => index !== item.index),
             ...(!event.target.checked && draft.documentColumn === item.index ? { documentColumn: null } : {}),
+            ...(!event.target.checked ? { numericColumns: draft.numericColumns.filter((numeric) => numeric.column !== item.index) } : {}),
           })
         }
       />
@@ -531,6 +532,7 @@ function ContextChoice({
       {suggested.map(check)}
       {others.length > 0 && <span className="label-text">Other columns</span>}
       {others.map(check)}
+      {draft.contextColumns.length > 0 && <NumericChoice names={names} draft={draft} coordinator={coordinator} />}
       {draft.contextColumns.length > 0 && (
         <label>
           <span className="label-text">Document reference (optional)</span>
@@ -728,5 +730,42 @@ function ZoneChoiceFields({ draft, proposal, coordinator }: { draft: Draft; prop
         <Proposal proposal={proposal} draft={draft} coordinator={coordinator} />
       </div>
     </>
+  );
+}
+
+/**
+ * Which context columns are read as numbers, each with an optional unit. The analyst declares them for each log; a
+ * column's name decides nothing. A cell that is not a number stays in its record and is counted, never read as zero.
+ */
+function NumericChoice({ names, draft, coordinator }: { names: Map<number, string>; draft: Draft; coordinator: DataCoordinator }) {
+  const declared = new Map(draft.numericColumns.map((item) => [item.column, item.unit]));
+  const set = (column: number, unit: string | null) =>
+    coordinator.choose({
+      numericColumns: unit === null
+        ? draft.numericColumns.filter((item) => item.column !== column)
+        : [...draft.numericColumns.filter((item) => item.column !== column), { column, unit }],
+    });
+  return (
+    <fieldset className="checks numeric-choice">
+      <legend className="label-text">Read as numbers (optional)</legend>
+      <span className="muted">
+        A number is digits with at most one decimal point or comma (0.8 or 0,8) and an optional sign; anything else stays as written and is counted as “not a
+        number”, never as zero.
+      </span>
+      {[...draft.contextColumns].sort((left, right) => left - right).map((column) => (
+        <div key={column} className="numeric-column">
+          <label className="check">
+            <input type="checkbox" checked={declared.has(column)} onChange={(event) => set(column, event.target.checked ? "" : null)} />
+            {columnName(names, column)} is a number
+          </label>
+          {declared.has(column) && (
+            <label>
+              <span className="label-text">Unit of {columnName(names, column)} (optional)</span>
+              <input type="text" maxLength={32} value={declared.get(column) ?? ""} onChange={(event) => set(column, event.target.value)} />
+            </label>
+          )}
+        </div>
+      ))}
+    </fieldset>
   );
 }

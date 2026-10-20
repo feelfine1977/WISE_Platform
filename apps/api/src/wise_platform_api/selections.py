@@ -37,6 +37,7 @@ from wise_platform_analytics.selection import (
     VariantIs,
     MeasureBetween,
     PathLagInRange,
+    ContextNumberInRange,
     MaxRawGapAtLeast,
     DirectlyFollows,
     EndsWithActivity,
@@ -214,6 +215,8 @@ def package_predicate(given: Mapping[str, object]) -> Predicate:
     if kind in ("observed_span_at_least", "max_raw_gap_at_least"):
         constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
         return constructor(given["hours"], negate)
+    if kind == "context_number_in_range":
+        return ContextNumberInRange(given["column_index"], str(given["projection"]), given["minimum"], given["maximum"], negate)
     if kind == "path_lag_in_range":
         return PathLagInRange(str(given["source_activity"]), str(given["target_activity"]), given["minimum_hours"], given["minimum_inclusive"],
                               given["maximum_hours"], given["maximum_inclusive"], given["passages"] == "every", negate)

@@ -369,7 +369,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             </div>
             <div className="rail-body">
               {rail === "filters" && <FilterPanel population={answer} parentIds={state.parentCaseIds}
-                parentIdentity={shown?.answer.parent_identity ?? answer.identity} revision={revision}
+                parentIdentity={shown?.answer.parent_identity ?? answer.identity} keptIdentity={shown?.answer.identity ?? answer.identity} revision={revision}
                 opening={openingContext} onStep={addStep} previewStep={previewStep} waitingFor={waitingFor} />}
               <div hidden={rail !== "context"}>
                 <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} onStep={addStep} previewStep={previewStep} onOpenCase={openCase} openCaseId={openCaseId} />
@@ -727,6 +727,8 @@ function DataDetails({ answer, revision }: { answer: ImportedPopulationAnswer; r
     ["Sequence column", mapping.sequence_column === null ? "none" : `column ${mapping.sequence_column}`],
     ["Context columns", mapping.context_columns.length === 0 ? "none" : mapping.context_columns.map((index) => `column ${index}`).join(", ")],
     ["Document reference", mapping.document_reference_column == null ? "none" : `column ${mapping.document_reference_column}`],
+    ["Read as numbers", mapping.numeric_context_columns == null ? "none"
+      : mapping.numeric_context_columns.map((item) => `column ${item.column_index}${item.unit === null ? "" : ` (${item.unit})`}`).join(", ")],
     ["Time policy", preparation.policies.time.id],
     ["Export taken at", exportTakenAt(answer)],
     ["Row rule", preparation.policies.rows.id],

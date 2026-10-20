@@ -222,19 +222,12 @@ class DialectHints(BaseModel):
     delimiter: Delimiter | None = None
 
 
-class Mapping(BaseModel):
+class NumericContextColumn(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    case_column: ColumnIndex
-    activity_column: ColumnIndex
-    timestamp_column: ColumnIndex
-    sequence_column: ColumnIndex | None
-    context_columns: list[ColumnIndex]
-    document_reference_column: ColumnIndex | None = Field(
-        None,
-        description="Optional declared role: one of the context columns whose value names the record's document in the workspace's local document folder. Absent when no document reference is mapped; it is part of the preparation and its identity only when present.",
-    )
+    column_index: ColumnIndex
+    unit: constr(min_length=1, max_length=32) | None
 
 
 class RecordedTimezone(BaseModel):
@@ -1016,6 +1009,26 @@ class Summary3(AvailableWallCaseTimeSummary):
     )
     maximum_gap_witness: MaximumRawGapWitness
     usable_gap_count: conint(ge=1, le=9007199254740991)
+
+
+class Mapping(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_column: ColumnIndex
+    activity_column: ColumnIndex
+    timestamp_column: ColumnIndex
+    sequence_column: ColumnIndex | None
+    context_columns: list[ColumnIndex]
+    document_reference_column: ColumnIndex | None = Field(
+        None,
+        description="Optional declared role: one of the context columns whose value names the record's document in the workspace's local document folder. Absent when no document reference is mapped; it is part of the preparation and its identity only when present.",
+    )
+    numeric_context_columns: list[NumericContextColumn] | None = Field(
+        None,
+        description='Optional declaration: the context columns the analyst reads as numbers, each with its unit or none. Absent when none is declared; it is part of the preparation and its identity only when present. Cells are read by incident.context.number.point_or_comma_decimal.v1 and stay unchanged in the records.',
+        min_length=1,
+    )
 
 
 class ImportRowPolicy(RootModel[StrictImportRowPolicy | TolerantImportRowPolicy]):

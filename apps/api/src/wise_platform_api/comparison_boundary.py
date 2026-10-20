@@ -109,6 +109,7 @@ _PREDICATES = _by(
         "variant_is": "VariantIs",
         "measure_between": "MeasureBetween",
         "path_lag_in_range": "PathLagInRange",
+        "context_number_in_range": "ContextNumberInRange",
     },
 )
 _PERIODS = ("target", _period_member)
@@ -124,7 +125,7 @@ _UNIONS: dict[str, tuple[str, Callable[[Mapping[str, object]], str | None]]] = {
             "OpeningAttributeEquals",
             "StartsWithActivity",
             "EndsWithActivity", "CaseIdIn", "CaseStartInWindow", "OpeningAttributeIn",
-            "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast", "IntervalThreshold", "VariantIs", "MeasureBetween", "PathLagInRange",
+            "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast", "IntervalThreshold", "VariantIs", "MeasureBetween", "PathLagInRange", "ContextNumberInRange",
         )
     },
     "UtcCaseStartWindow": _by("timestamp_kind", {"utc_instant": "UtcCaseStartWindow", "wall_clock": "WallCaseStartWindow"}),

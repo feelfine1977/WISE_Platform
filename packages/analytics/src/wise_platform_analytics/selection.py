@@ -173,6 +173,20 @@ class MeasureBetween:
 
 
 @dataclass(frozen=True)
+class ContextNumberInRange:
+    """The incident's number in a context column declared numeric, under a projection (``numeric_context.PROJECTIONS``),
+    lies in the half-open range [minimum, maximum); a missing bound does not bound. Under ``any_record`` one of its
+    numbers in the range suffices. An incident without the projected number (order unknown, missing, not a number) is
+    not evaluable."""
+
+    column_index: int
+    projection: str
+    minimum: float | None
+    maximum: float | None
+    negate: bool = False
+
+
+@dataclass(frozen=True)
 class PathLagInRange:
     """The incident passes the path from ``source_activity`` to ``target_activity`` (two adjacent records of the activity
     sequence, as the map's path and its lag count them) with a lag in the range: above the minimum and below the maximum,
@@ -226,7 +240,7 @@ class VariantIs:
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
                         | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
                         | OpeningAttributeIn | RecordAttributeIn | RecordAttributesAll | ObservedSpanAtLeast | MaxRawGapAtLeast
-                        | IntervalThreshold | VariantIs | MeasureBetween | PathLagInRange)
+                        | IntervalThreshold | VariantIs | MeasureBetween | PathLagInRange | ContextNumberInRange)
 
 
 class SelectionError(ValueError):
@@ -372,6 +386,25 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
             raise SelectionError("invalid_predicate", "The variant's identity does not match its sequence.")
         return {"kind": "variant_is", "variant": {"id": identity, "activities": list(predicate.activities), "projection_policy": predicate.policy},
                 "negate": predicate.negate}
+    if isinstance(predicate, ContextNumberInRange):
+        from .numeric_context import PROJECTIONS
+        if type(predicate.column_index) is not int or predicate.column_index < 0:
+            raise SelectionError("invalid_predicate", "The column is a nonnegative index.")
+        if predicate.projection not in PROJECTIONS:
+            raise SelectionError("invalid_predicate", "The projection is the first record, the latest record or any record.")
+        if predicate.minimum is None and predicate.maximum is None:
+            raise SelectionError("invalid_predicate", "A range of numbers needs at least one bound.")
+        for bound in (predicate.minimum, predicate.maximum):
+            try:
+                valid = bound is None or (type(bound) in (int, float) and math.isfinite(bound))
+            except OverflowError:
+                valid = False
+            if not valid:
+                raise SelectionError("invalid_predicate", "Each bound is a finite number.")
+        if predicate.minimum is not None and predicate.maximum is not None and predicate.maximum <= predicate.minimum:
+            raise SelectionError("invalid_predicate", "The range [minimum, maximum) is empty: its upper bound must be above its lower bound.")
+        return {"kind": "context_number_in_range", "column_index": predicate.column_index, "projection": predicate.projection,
+                "minimum": predicate.minimum, "maximum": predicate.maximum, "negate": predicate.negate}
     if isinstance(predicate, PathLagInRange):
         _label(predicate.source_activity)
         _label(predicate.target_activity)
@@ -494,6 +527,10 @@ def semantic_predicate(descriptor: Mapping[str, object]) -> dict[str, object]:
         for bound in ("minimum", "maximum"):
             if isinstance(result[bound], float) and result[bound].is_integer():
                 result[bound] = int(result[bound])
+    elif kind == "context_number_in_range":
+        for bound in ("minimum", "maximum"):
+            if isinstance(result[bound], float) and result[bound].is_integer():
+                result[bound] = int(result[bound])
     elif kind == "path_lag_in_range":
         for bound in ("minimum", "maximum"):
             hours = result[bound + "_hours"]
@@ -555,6 +592,11 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
         except SelectionError as error:
             error.field = error.field or f"predicates.{index}"
             raise
+        if isinstance(predicate, ContextNumberInRange):
+            from .numeric_context import numeric_columns
+            if predicate.column_index not in numeric_columns(prepared):
+                raise SelectionError("unmapped_context_column", "A range of numbers needs a context column declared numeric at import.",
+                                     f"predicates.{index}.column_index")
         if isinstance(predicate, (OpeningAttributeEquals, OpeningAttributeIn, RecordAttributeIn)):
             if predicate.column_index not in prepared.mapping["context_columns"]:
                 raise SelectionError("unmapped_context_column", "Context must use a mapped context column.",
@@ -660,6 +702,10 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
         value = any(record.context_value(predicate.column_index) in predicate.values for record in records)
     elif isinstance(predicate, ContainsActivity):
         value = any(record.activity == predicate.activity for record in records)
+    elif isinstance(predicate, ContextNumberInRange):
+        from .numeric_context import in_range, project
+        state, numbers = project(prepared, case_id, predicate.column_index, predicate.projection)
+        value = in_range(numbers, predicate.minimum, predicate.maximum) if state == "number" else None
     elif isinstance(predicate, MeasureBetween) and predicate.measure == "raw_record_count":
         # Every raw record counts, with or without an activity label, whatever the order: every incident has this measure.
         value = predicate.minimum <= len(records) and (predicate.maximum is None or len(records) <= predicate.maximum)

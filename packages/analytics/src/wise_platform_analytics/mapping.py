@@ -47,6 +47,9 @@ def validate_mapping(value: object, column_count: int) -> dict[str, object] | Im
     # identity, only when one is chosen; a mapping without it keeps its earlier identity.
     if isinstance(value, Mapping) and "document_reference_column" in value:
         keys = keys | {"document_reference_column"}
+    # So are the context columns declared as numbers, with their units: present only when one is declared.
+    if isinstance(value, Mapping) and "numeric_context_columns" in value:
+        keys = keys | {"numeric_context_columns"}
     refusal = exact_object(value, keys, "mapping")
     if refusal is not None:
         return refusal
@@ -69,6 +72,23 @@ def validate_mapping(value: object, column_count: int) -> dict[str, object] | Im
                                                  or value["document_reference_column"] not in context):
         return ImportRefusal("invalid_mapping", "The document reference must be one of the mapped context columns.",
                              "mapping.document_reference_column")
+    if "numeric_context_columns" in value:
+        numeric = value["numeric_context_columns"]
+        if not isinstance(numeric, (list, tuple)) or not numeric:
+            return ImportRefusal("invalid_mapping", "Declare at least one numeric context column, or leave the declaration out.", "mapping.numeric_context_columns")
+        for place, item in enumerate(numeric):
+            field = f"mapping.numeric_context_columns.{place}"
+            if not isinstance(item, Mapping) or set(item) != {"column_index", "unit"}:
+                return ImportRefusal("invalid_mapping", "A numeric column names its column and its unit, or no unit.", field)
+            if type(item["column_index"]) is not int or item["column_index"] not in context:
+                return ImportRefusal("invalid_mapping", "A numeric column must be one of the mapped context columns.", field + ".column_index")
+            unit = item["unit"]
+            if unit is not None and (not isinstance(unit, str) or not 1 <= len(unit) <= 32 or unit != unit.strip()):
+                return ImportRefusal("invalid_mapping", "A unit is a short text without outer spaces, or no unit.", field + ".unit")
+        if len({item["column_index"] for item in numeric}) != len(numeric):
+            return ImportRefusal("invalid_mapping", "A column is declared numeric once.", "mapping.numeric_context_columns")
+        return {**value, "context_columns": list(context),
+                "numeric_context_columns": [{"column_index": item["column_index"], "unit": item["unit"]} for item in numeric]}
     return {**value, "context_columns": list(context)}
 
 

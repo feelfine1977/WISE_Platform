@@ -6,6 +6,7 @@ import type {
   Encoding,
   ImportPolicies,
   ImportRowPolicy,
+  Mapping,
   RoleSuggestion,
   SourceId,
   TimePolicy,
@@ -30,6 +31,8 @@ export interface Draft {
   contextColumns: ColumnIndex[];
   /** The context column naming each record's document in the workspace's document folder, if the analyst declares one. */
   documentColumn: ColumnIndex | null;
+  /** The context columns the analyst reads as numbers, each with its unit or none; nothing is assumed from a column's name. */
+  numericColumns: readonly { column: ColumnIndex; unit: string }[];
   timeFormat: TimestampFormat | null;
   zone: ZoneChoice | null;
   offsetMinutes: number;
@@ -49,6 +52,7 @@ export const emptyDraft: Draft = {
   sequenceColumn: null,
   contextColumns: [],
   documentColumn: null,
+  numericColumns: [],
   timeFormat: null,
   zone: null,
   offsetMinutes: 0,
@@ -463,6 +467,8 @@ function readingOf(
       context_columns: [...draft.contextColumns].sort((left, right) => left - right),
       // The document reference is a declared role only when chosen, and only among the context columns.
       ...(draft.documentColumn !== null && draft.contextColumns.includes(draft.documentColumn) ? { document_reference_column: draft.documentColumn } : {}),
+      // The numeric columns are declared only when there are some, and only among the context columns; an empty unit is none.
+      ...numericDeclaration(draft),
     },
     policies: { time: timePolicy(draft, draft.timeFormat, cutoff), rows: rowPolicies[draft.rowRule], ...fixedPolicies },
     accept_report_issues: acceptReportIssues,
@@ -472,4 +478,13 @@ function readingOf(
 /** A supplied time as the value of the cutoff field: the same clock, without the UTC mark. */
 export function cutoffFieldValue(time: string): string {
   return time.replace(/Z$/, "");
+}
+
+/** The numeric context columns of a draft as the mapping declares them, or nothing when none is declared. */
+export function numericDeclaration(draft: Pick<Draft, "contextColumns" | "numericColumns">): Pick<Mapping, "numeric_context_columns"> {
+  const declared = draft.numericColumns
+    .filter((item) => draft.contextColumns.includes(item.column))
+    .map((item) => ({ column_index: item.column, unit: item.unit.trim() === "" ? null : item.unit.trim() }))
+    .sort((left, right) => left.column_index - right.column_index);
+  return declared.length === 0 ? {} : { numeric_context_columns: [declared[0], ...declared.slice(1)] };
 }

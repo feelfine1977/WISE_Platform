@@ -23,6 +23,7 @@ from .bpic19_measures import Bpic19Measures
 from .case_lists import CaseLists
 from .interval_tails import IntervalTails
 from .transition_matrices import TransitionMatrices
+from .numeric_contexts import NumericContexts
 from .outcomes import Outcomes
 from .workspace_backups import WorkspaceBackups
 from .comparisons import ComparisonReply, Comparisons
@@ -79,6 +80,7 @@ def create_app(
     case_lists = CaseLists(imports)
     interval_tails = IntervalTails(imports)
     transition_matrices = TransitionMatrices(imports)
+    numeric_contexts = NumericContexts(imports)
     outcomes = Outcomes(imports)
     backups = WorkspaceBackups(imports)
     start_trends = StartTrends(imports)
@@ -214,6 +216,11 @@ def create_app(
     @application.post("/api/investigations/transition-matrix")
     async def transition_matrix(request: Request) -> JSONResponse:
         reply = await run_in_threadpool(transition_matrices.transition_matrix, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/numeric-context")
+    async def numeric_context(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(numeric_contexts.numeric_context, await request.body())
         return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/outcome-rates")

@@ -1,0 +1,15 @@
+Ticket,Status,At,Seq,Desk,Confidence,Amount
+N-1,Opened,2026-03-01T08:00:00Z,1,East,0.9,100
+N-1,Resolved,2026-03-01T10:00:00Z,2,East,0.7,
+N-2,Opened,2026-03-02T08:00:00Z,1,West,"0,85",250.5
+N-2,Resolved,2026-03-02T09:00:00Z,2,West,0.95,"250,5"
+N-3,Opened,2026-03-03T08:00:00Z,1,East,high,12
+N-3,Resolved,2026-03-03T12:00:00Z,2,East,0.6,12
+N-4,Opened,2026-03-04T08:00:00Z,1,West,,
+N-4,Assigned,2026-03-04T09:00:00Z,2,West,0.8,80
+N-4,Resolved,2026-03-04T11:00:00Z,3,West,,EUR 80
+N-5,Opened,2026-03-05T08:00:00Z,1,East,0.8,1.234
+N-6,Opened,2026-03-06T08:00:00Z,1,North, 0.75 ,-5
+N-6,Resolved,2026-03-06T08:30:00Z,2,North,1e3,"1.234,5"
+N-UNK,Opened,2026-03-07T08:00:00Z,1,East,0.99,7
+N-UNK,Resolved,not a time,2,East,0.5,7

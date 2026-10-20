@@ -290,6 +290,16 @@ export interface Mapping {
   sequence_column: ColumnIndex | null;
   context_columns: ColumnIndex[];
   document_reference_column?: ColumnIndex1;
+  /**
+   * Optional declaration: the context columns the analyst reads as numbers, each with its unit or none. Absent when none is declared; it is part of the preparation and its identity only when present. Cells are read by incident.context.number.point_or_comma_decimal.v1 and stay unchanged in the records.
+   *
+   * @minItems 1
+   */
+  numeric_context_columns?: [NumericContextColumn, ...NumericContextColumn[]];
+}
+export interface NumericContextColumn {
+  column_index: ColumnIndex;
+  unit: string | null;
 }
 export interface ImportPolicies {
   time: TimePolicy;

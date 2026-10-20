@@ -137,9 +137,10 @@ describe("the data row of an investigation", () => {
     expect(aboutButton().getAttribute("aria-expanded")).toBe("true");
     expect(within(about()!).getByRole("heading", { name: "Data details" })).toBeTruthy();
     const rows = Array.from(about()!.querySelectorAll("dl > div"), (row) => [row.querySelector("dt")?.textContent, row.querySelector("dd")?.textContent]);
-    expect(rows).toHaveLength(20);
+    expect(rows).toHaveLength(21);
     // A log without a declared document reference says so.
     expect(Object.fromEntries(rows)["Document reference"]).toBe("none");
+    expect(Object.fromEntries(rows)["Read as numbers"]).toBe("none");
     // #49: the cutoff of the reading is named on its clock.
     expect(Object.fromEntries(rows)["Export taken at"]).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}( UTC|, as recorded)$/);
     // The revision of the selection shown, then how the source was read and the identities of what was made of it.
