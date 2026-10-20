@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildScene, layout, type Measure } from "wise-flow";
+import { buildScene, layout, legendOfScene, type Measure } from "wise-flow";
 import { checked, closed, nodeIds, opened, pathId, suppliedGraph } from "../test/selections";
 import { endFlowId, startFlowId, toFlowGraph } from "./graph";
-import { OPENING_MEASURE, styleOver } from "./measures";
+import { LAG_CLASSES_HOURS, OPENING_MEASURE, styleOver } from "./measures";
 
 /**
  * What the map library writes in a measure on the map of both incidents, built as the map asks for
@@ -67,5 +67,47 @@ describe("the measures of the map", () => {
     // No time until a next event is supplied where no path leads out of the activity.
     expect(line(closed)).toEqual(["–", "· 50 %"]);
     expect(line(checked)).toEqual(["–", "· 50 %"]);
+  });
+});
+
+describe("the lag of the paths in classes in the Time measure (#86)", () => {
+  /** A busy path of no lag, a rare slow path, one between, and one without a usable lag, as the library colours them in the Time measure. */
+  async function classed() {
+    const graph = toFlowGraph(suppliedGraph(["A-1", "B-2"]));
+    const template = graph.edges.find((edge) => edge.id === pathId)!;
+    const paths = [
+      { id: "busy-zero", metrics: { count: 900, cases: 800, medianLagHours: 0, usableLagCount: 900 } },
+      { id: "under-a-day", metrics: { count: 40, cases: 40, medianLagHours: 23.9, usableLagCount: 40 } },
+      { id: "exactly-a-day", metrics: { count: 30, cases: 30, medianLagHours: 24, usableLagCount: 30 } },
+      { id: "days", metrics: { count: 20, cases: 20, medianLagHours: 72, usableLagCount: 20 } },
+      { id: "rare-slow", metrics: { count: 2, cases: 2, medianLagHours: 900, usableLagCount: 2 } },
+      { id: "no-lag", metrics: { count: 5, cases: 5 } },
+    ].map((path) => ({ ...template, ...path, metrics: path.metrics as Record<string, number> }));
+    const several = { ...graph, edges: paths };
+    const scene = buildScene(several, await layout(several, { engine: "dagre" }), { measure: "performance", style: styleOver("performance"), locale: "en" });
+    const colour = (id: string) => scene.edgeMarks.find((edge) => edge.id === id)!.color;
+    return { scene, colour };
+  }
+
+  it("draws a path of little or no lag in the neutral grey, never blue, and the slower classes in the readable blues", async () => {
+    const { scene, colour } = await classed();
+    expect(LAG_CLASSES_HOURS).toEqual([24, 168]);
+    const legend = scene.scales.legend.find((item) => item.kind === "classes");
+    expect(legend).toMatchObject({ kind: "classes", metric: "medianLagHours", bounds: [24, 168] });
+    const [neutral, blue, darker] = (legend as { colors: string[] }).colors;
+    // The busy path of no lag, the path just under a day and the one exactly at the bound are in the first class: the neutral grey.
+    expect([colour("busy-zero"), colour("under-a-day"), colour("exactly-a-day")]).toEqual([neutral, neutral, neutral]);
+    expect([colour("days"), colour("rare-slow")]).toEqual([blue, darker]);
+    expect(new Set([neutral, blue, darker]).size).toBe(3);
+    // A path without a usable lag stays as before: not evaluated, its label a dash.
+    const missing = scene.edgeMarks.find((edge) => edge.id === "no-lag")!;
+    expect(missing.notEvaluated).toBe(true);
+    expect(missing.texts.map((text) => text.text)).toEqual(["– · 5"]);
+  });
+
+  it("names the classes in the legend with their bounds as durations", async () => {
+    const { scene } = await classed();
+    const swatches = legendOfScene(scene).rows.find((row) => row.kind === "swatches");
+    expect(swatches && "entries" in swatches ? swatches.entries.map((entry) => entry.text) : null).toEqual(["up to 24 h", "24 h to 7.0 d", "over 7.0 d"]);
   });
 });

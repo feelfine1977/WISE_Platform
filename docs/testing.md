@@ -210,6 +210,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Each activity selected on the map shows the median and the mean from the previous and to the next labelled record, with the passages they rest on; an activity without a passage says why.
   - Each path into Close shows its median and mean lag. Durations are matched in the map library's own format.
 
+- `tools/qualify_lag_classes.py` (#86): the Time measure at 1280 × 720 over the invented `tests/fixtures/lag-classes` file, against its own `expected.json`.
+  - The busy path of zero lag is drawn in the neutral grey of the legend's first class, never blue; the 30-hour path is drawn in the second class and the rare 14-day path in the third.
+  - The whole legend names the classes with their bounds as durations.
+  - With `WISE_SCREENSHOT_DIR` set, a picture of the map is written there.
+  - Seeing the classes on a real log is the owner's step: open the log's reading, choose Time on the map, and look at 1280 × 720.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
