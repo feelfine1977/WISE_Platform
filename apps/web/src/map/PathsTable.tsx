@@ -18,7 +18,7 @@ const COLUMNS: { column: PathColumn; label: string; number?: true; note?: string
   { column: "to", label: "To" },
   { column: "incidents", label: "Incidents", number: true },
   { column: "passages", label: "Passages", number: true, note: FLOW_NOTE },
-  { column: "lag", label: "Median lag (h)", number: true, note: FLOW_NOTE },
+  { column: "lag", label: "Median lag of the passages (h)", number: true, note: FLOW_NOTE },
   { column: "drawn", label: "On the map", note: "Drawn at the current detail" },
 ];
 

@@ -84,7 +84,8 @@ function expectFirstShown() {
   expect(shownIncidents()).toEqual(["A-1", "B-2"]);
   expect(screen.getByLabelText("Population").textContent).toContain("2 of 2 incidents3 of 3 records");
   const details = aboutData();
-  expect(details).toMatch(/^Data detailsRevision2Source file/);
+  // "About this data" opens with what its figures count (#87), then the details of the data.
+  expect(details).toMatch(/^The figures above count incidents and their records: .*Data detailsRevision2Source file/);
   expect(details).toContain(preparationId);
   expect(details).not.toContain(earlierPreparationId);
 }

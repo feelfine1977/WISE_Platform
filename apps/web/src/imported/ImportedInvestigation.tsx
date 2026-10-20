@@ -675,6 +675,7 @@ function Facts({ answer, shown, revision }: { answer: ImportedPopulationAnswer; 
         <Limit name="Records without activity label" count={answer.coverage.omitted_activity_record_count} word="unlabelled" />
       </dl>
       <InfoPopover label="About this data">
+        <p className="about-lead">The figures above count incidents and their records: those the selection keeps, of the parent's, and the records outside every incident.</p>
         <DataDetails answer={answer} revision={revision} />
       </InfoPopover>
     </div>

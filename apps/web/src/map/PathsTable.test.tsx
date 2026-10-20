@@ -67,7 +67,7 @@ describe("the list of every path in the investigation", () => {
     expect([pressed("Map"), pressed("Incidents"), pressed("Paths"), pressed("Matrix")]).toEqual(["false", "false", "true", "false"]);
     expect(screen.getByRole("heading", { name: "Paths of the kept incidents" })).toBeTruthy();
     expect(screen.queryByLabelText("Process map of the kept incidents")).toBeNull();
-    expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Incidents▼", "Passages", "Median lag (h)", "On the map"]);
+    expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Incidents▼", "Passages", "Median lag of the passages (h)", "On the map"]);
     // The heading that sorts by the incidents is not taken for the view of that name.
     expect(within(list()).getByRole("button", { name: "Incidents: sort the list" })).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Incidents" })).toHaveLength(1);
@@ -199,7 +199,7 @@ describe("the list of every path beside the map", () => {
     expect(first()).toEqual([stepName(11), "End", "70"]);
     sort("Passages");
     expect(listed()[0].slice(0, 4)).toEqual([stepName(0), stepName(1), "105", "105"]);
-    sort("Median lag (h)");
+    sort("Median lag of the passages (h)");
     // The last path of the graph, the fourth activity to itself, takes the longest: 84 hours.
     expect(listed()[0]).toEqual([stepName(3), stepName(3), "15", "17", "84.0", "Drawn"]);
     sort("On the map");
@@ -225,7 +225,7 @@ describe("the list of every path beside the map", () => {
       ["To", null],
       ["Incidents", null],
       ["Passages", "A flow has incidents only"],
-      ["Median lag (h)", "A flow has incidents only"],
+      ["Median lag of the passages (h)", "A flow has incidents only"],
       ["On the map", "Drawn at the current detail"],
     ]);
   });
