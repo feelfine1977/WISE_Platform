@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type RefObject } from "react";
+import { useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { AnswerIdentity, Column, ImportedCaseEvidenceAnswer, ImportedCaseSummary, ImportedSourceRecord } from "../generated/imports";
 import type { DocumentClient } from "../documents/client";
 import { DocumentPane, referenceOf } from "../documents/DocumentPane";
@@ -25,7 +25,9 @@ interface ImportedInspectorProps {
   /** When the export the incident was read from was taken, on the preparation's clock. */
   observation?: Observation;
   /** The selection the incident was opened from, which reading it does not change. */
-  selection?: { kept: number; parent: number; steps: number };
+  selection?: { kept: number; parent: number; steps: number; removed?: number };
+  /** What the analyst can do with the history read: pin it, for example. */
+  actions?: ReactNode;
 }
 
 export interface Observation {
@@ -42,7 +44,7 @@ export interface RecordDocuments {
 }
 
 /** Every record of one imported incident in the declared order, as a vertical sequence. */
-export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds, documents, observation, selection }: ImportedInspectorProps) {
+export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds, documents, observation, selection, actions }: ImportedInspectorProps) {
   const collapsed = layout === "collapsed";
   return (
     <section className="imported-inspector" aria-labelledby="imported-inspector-title">
@@ -55,7 +57,11 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
             {summary && <>{countOf(summary.record_count, "record")} · </>}
             Complete history in the declared order. Escape returns to the incidents.
           </p>
-          {selection && <p className="muted focus-line">{focusLine(selection)}</p>}
+          {inspected.side === "pinned" ? (
+            <p className="muted focus-line">You are reading a pinned history in the population it was pinned in; reading it changes no step.</p>
+          ) : (
+            selection && <p className="muted focus-line">{focusLine(selection, inspected.side === "removed")}</p>
+          )}
         </div>
         <div className="inspector-actions">
           <button type="button" aria-expanded={!collapsed} aria-controls="imported-inspector-body" onClick={() => onLayout(collapsed ? "side" : "collapsed")}>
@@ -80,6 +86,11 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
         {inspected.phase === "failed" && (
           <ImportProblemNotice title={`The records of ${inspected.caseId} could not be shown`} problem={inspected.problem} onRetry={onRetry} waitingFor={waitingFor} />
         )}
+        {inspected.phase === "ready" && inspected.refusal && (
+          <ImportProblemNotice title={`The pinned history of ${inspected.refusal.caseId} could not be read; the history below is the one read before`}
+            problem={inspected.refusal.problem} />
+        )}
+        {inspected.phase === "ready" && actions}
         {inspected.phase === "ready" && <History answer={inspected.answer} highlightedRowIds={highlightedRowIds} documents={documents} observation={observation} />}
       </div>
     </section>
@@ -246,7 +257,9 @@ export function observationLine(records: readonly ImportedSourceRecord[], observ
 }
 
 /** The incident read beside the selection it comes from: reading one incident changes no step and no membership. */
-export function focusLine({ kept, parent, steps }: { kept: number; parent: number; steps: number }): string {
+export function focusLine({ kept, parent, steps, removed = 0 }: { kept: number; parent: number; steps: number; removed?: number }, fromRemoved = false): string {
+  if (fromRemoved)
+    return `You are reading one incident of the ${countOf(removed, "incident")} the selection removes, in its parent of ${countOf(parent, "incident")} (${countOf(steps, "step")}); reading it changes no step.`;
   return steps === 0
     ? `You are reading one incident of all ${countOf(parent, "incident")}; no step is taken, and reading it takes none.`
     : `You are reading one incident of the ${countOf(kept, "incident")} the selection keeps of ${countOf(parent, "incident")} (${countOf(steps, "step")}); reading it changes no step.`;

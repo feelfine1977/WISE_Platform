@@ -5,6 +5,7 @@ tests/fixtures/ymd-slash/*.csv -text
 tests/fixtures/categories/*.csv -text
 tests/fixtures/intervals/*.csv -text
 tests/fixtures/variants/*.csv -text
+tests/fixtures/pinned/*.csv -text
 tests/fixtures/starts/*.csv -text
 tests/fixtures/comparisons/*.csv -text
 tests/fixtures/expectations/*.csv -text

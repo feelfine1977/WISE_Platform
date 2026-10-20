@@ -113,6 +113,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Listing a variant's incidents takes no step. A listed history opens with its unlabelled record, and the focus returns.
   - Each variant is previewed and kept by keyboard with its exact members, the incident of unknown order not evaluable. Cancel takes nothing, and Undo restores the exact parent.
 
+- `tools/qualify_pinned_histories.py` (#19): a supporting and a contrary history of the invented `tests/fixtures/pinned` file, against its own `expected.json`.
+  - From the incidents first recorded at one desk, a kept incident is pinned as supporting and a removed one, read in the selection's parent, as contrary.
+  - Both are read side by side with every record, row and mark of the oracle, and with the context of both first records; nothing is matched.
+  - Returning restores the focus and the selection; a pin opens from the index and returns to it.
+  - On a narrow window, after the steps changed, and with one handle refused, both sides stay named, and the readable one stays whole.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
