@@ -132,7 +132,7 @@ export const withoutOpened: Figures = {
   results: [{ kept: support(["B-2"], 1), removed: support(["A-1"], 2), unevaluable: support([], 0) }],
 };
 
-type Times = Pick<NodeMetrics, "medianPreviousHours" | "usablePreviousCount" | "medianNextHours" | "usableNextCount">;
+type Times = Pick<NodeMetrics, "medianPreviousHours" | "meanPreviousHours" | "usablePreviousCount" | "medianNextHours" | "meanNextHours" | "usableNextCount">;
 const noPassage: Times = { usablePreviousCount: 0, usableNextCount: 0 };
 
 const activity = (label: keyof typeof nodeIds, events: number, starts: number, ends: number, times: Times = noPassage) => ({
@@ -150,8 +150,8 @@ export function suppliedGraph(caseIds: string[]): SuppliedGraph {
     nodes: [
       ...(withA
         ? [
-            activity(opened, 1, 1, 0, { usablePreviousCount: 0, medianNextHours: 25.5, usableNextCount: 1 }),
-            activity(closed, 1, 0, 1, { medianPreviousHours: 25.5, usablePreviousCount: 1, usableNextCount: 0 }),
+            activity(opened, 1, 1, 0, { usablePreviousCount: 0, medianNextHours: 25.5, meanNextHours: 25.5, usableNextCount: 1 }),
+            activity(closed, 1, 0, 1, { medianPreviousHours: 25.5, meanPreviousHours: 25.5, usablePreviousCount: 1, usableNextCount: 0 }),
           ]
         : []),
       ...(withB ? [activity(checked, 1, 0, 0)] : []),
@@ -163,7 +163,7 @@ export function suppliedGraph(caseIds: string[]): SuppliedGraph {
             kind: "follows",
             source: nodeIds[opened],
             target: nodeIds[closed],
-            metrics: { count: 1, cases: 1, medianLagHours: 25.5, usableLagCount: 1 },
+            metrics: { count: 1, cases: 1, medianLagHours: 25.5, meanLagHours: 25.5, usableLagCount: 1 },
             payload: { source_activity: opened, target_activity: closed, case_ids: ["A-1"], gap_case_ids: [], omitted_row_ids: [], bridged_passage_count: 0 },
           },
         ]

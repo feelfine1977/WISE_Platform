@@ -15,6 +15,8 @@ export function duration(hours: number): string {
 export interface TimeRow {
   name: "From previous" | "To next";
   median: number | null;
+  /** The supplied mean over the same passages; null where there is none or the service supplied none. */
+  mean: number | null;
   passages: number;
   reason: string | null;
 }
@@ -23,17 +25,19 @@ export interface TimeRow {
 export function timeRows(graph: SuppliedGraph, nodeId: string): TimeRow[] {
   const node = graph.nodes.find((item) => item.id === nodeId);
   if (!node) return [];
-  const { medianPreviousHours, usablePreviousCount, medianNextHours, usableNextCount } = node.metrics;
+  const { medianPreviousHours, meanPreviousHours, usablePreviousCount, medianNextHours, meanNextHours, usableNextCount } = node.metrics;
   return [
     {
       name: "From previous",
       median: medianPreviousHours ?? null,
+      mean: meanPreviousHours ?? null,
       passages: usablePreviousCount,
       reason: medianPreviousHours === undefined ? "no labelled record comes before it in an incident whose order is known" : null,
     },
     {
       name: "To next",
       median: medianNextHours ?? null,
+      mean: meanNextHours ?? null,
       passages: usableNextCount,
       reason: medianNextHours === undefined ? "no labelled record follows it in an incident whose order is known" : null,
     },
@@ -46,6 +50,8 @@ export interface PathOfActivity {
   other: string;
   passages: number;
   lag: number | null;
+  /** The supplied mean lag over the same passages; null where the service supplied none. */
+  meanLag: number | null;
   bridged: number;
 }
 
@@ -57,6 +63,7 @@ export function pathsOf(graph: SuppliedGraph, nodeId: string): { into: PathOfAct
     other: label(other),
     passages: edge.metrics.count,
     lag: edge.metrics.usableLagCount > 0 ? edge.metrics.medianLagHours : null,
+    meanLag: edge.metrics.usableLagCount > 0 ? (edge.metrics.meanLagHours ?? null) : null,
     bridged: edge.payload.bridged_passage_count,
   });
   const strongestFirst = (one: PathOfActivity, other: PathOfActivity) => other.passages - one.passages || one.other.localeCompare(other.other);

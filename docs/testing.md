@@ -206,6 +206,10 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Every range of the oracle (first, latest and any record; half-open; kept and removed) is previewed, taken as one step and undone exactly. A range chosen on the chart takes the parent's exact edges, and the unit and a signed range are shown.
   - After an actual restart the reading opens again with its declaration.
 
+- `tools/qualify_mean_times.py` (#74): the mean beside each median over the invented `tests/fixtures/mean-times` file, against its own `expected.json`.
+  - Each activity selected on the map shows the median and the mean from the previous and to the next labelled record, with the passages they rest on; an activity without a passage says why.
+  - Each path into Close shows its median and mean lag. Durations are matched in the map library's own format.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

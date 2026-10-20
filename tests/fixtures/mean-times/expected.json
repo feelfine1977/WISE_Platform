@@ -1,0 +1,18 @@
+{
+ "about": "Hand-written expectations for #74 (tests/test_issue74_mean_times.py). Invented incidents. Passages of the incidents whose order is known, in hours: Open>Assign 2, 1, 0 (T3 two records at one time); Assign>Assign 7 (a repeat); Assign>Close 6, 5, 12; Open>Close 0.5 (T4, over a record without label) and 240 (T7, the long tail). T5's order is not known; T6 has one record. Means rest on exactly the passages of the medians. Never read by product code.",
+ "file": "times.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": null, "context_columns": []},
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "activities": {
+  "Open": {"usablePreviousCount": 0, "medianNextHours": 1, "meanNextHours": 48.7, "usableNextCount": 5},
+  "Assign": {"medianPreviousHours": 1.5, "meanPreviousHours": 2.5, "usablePreviousCount": 4, "medianNextHours": 6.5, "meanNextHours": 7.5, "usableNextCount": 4},
+  "Close": {"medianPreviousHours": 6, "meanPreviousHours": 52.7, "usablePreviousCount": 5, "usableNextCount": 0},
+  "Check": {"usablePreviousCount": 0, "usableNextCount": 0}
+ },
+ "paths": {
+  "Open>Assign": {"medianLagHours": 1, "meanLagHours": 1, "usableLagCount": 3},
+  "Assign>Assign": {"medianLagHours": 7, "meanLagHours": 7, "usableLagCount": 1},
+  "Assign>Close": {"medianLagHours": 6, "meanLagHours": 7.666666666666667, "usableLagCount": 3},
+  "Open>Close": {"medianLagHours": 120.25, "meanLagHours": 120.25, "usableLagCount": 2}
+ }
+}

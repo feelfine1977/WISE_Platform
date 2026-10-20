@@ -85,13 +85,13 @@ NODE_COUNTS = {"count": 3, "events": 3, "cases": 2, "starts": 1, "ends": 0}
 
 def test_an_activity_carries_its_counts_and_for_each_time_the_passages_it_rests_on():
     definition = SCHEMA["$defs"]["NodeMetrics"]
-    assert list(definition["properties"]) == ["count", "events", "cases", "starts", "ends", "medianPreviousHours",
-                                              "usablePreviousCount", "medianNextHours", "usableNextCount"]
+    assert list(definition["properties"]) == ["count", "events", "cases", "starts", "ends", "medianPreviousHours", "meanPreviousHours",
+                                              "usablePreviousCount", "medianNextHours", "meanNextHours", "usableNextCount"]
     assert definition["required"] == ["count", "events", "cases", "starts", "ends",
                                       "usablePreviousCount", "usableNextCount"]
     assert definition["additionalProperties"] is False
     # Hours and their supports are named as those of a path are.
-    assert list(SCHEMA["$defs"]["PathMetrics"]["properties"]) == ["count", "cases", "medianLagHours", "usableLagCount"]
+    assert list(SCHEMA["$defs"]["PathMetrics"]["properties"]) == ["count", "cases", "medianLagHours", "meanLagHours", "usableLagCount"]
 
 
 def test_an_activity_gives_a_time_exactly_where_it_names_passages_for_it():
@@ -101,6 +101,9 @@ def test_an_activity_gives_a_time_exactly_where_it_names_passages_for_it():
         {**NODE_COUNTS, "medianPreviousHours": 0, "usablePreviousCount": 2, "usableNextCount": 0},
         {**NODE_COUNTS, "usablePreviousCount": 0, "medianNextHours": 1.5, "usableNextCount": 1},
         {**NODE_COUNTS, "medianPreviousHours": 2.25, "usablePreviousCount": 4, "medianNextHours": 0.5, "usableNextCount": 3},
+        # A mean beside its median, over the same passages; a graph without means is still read (#74).
+        {**NODE_COUNTS, "medianPreviousHours": 2.25, "meanPreviousHours": 3.5, "usablePreviousCount": 4, "medianNextHours": 0.5,
+         "meanNextHours": 0.5, "usableNextCount": 3},
     ]:
         validator.validate(metrics)
         assert NodeMetrics.model_validate(metrics).model_dump(mode="json", exclude_unset=True) == metrics
@@ -120,6 +123,10 @@ def test_an_activity_gives_a_time_exactly_where_it_names_passages_for_it():
         {**NODE_COUNTS, "medianPreviousHours": -0.5, "usablePreviousCount": 1, "usableNextCount": 0},
         {**NODE_COUNTS, "medianPreviousHours": 1, "usablePreviousCount": 1.5, "usableNextCount": 0},
         {**NODE_COUNTS, "usablePreviousCount": 0, "usableNextCount": 0, "p90NextHours": 3},
+        # A mean without a passage, and a negative mean.
+        {**NODE_COUNTS, "meanPreviousHours": 1, "usablePreviousCount": 0, "usableNextCount": 0},
+        {**NODE_COUNTS, "usablePreviousCount": 0, "meanNextHours": 0, "usableNextCount": 0},
+        {**NODE_COUNTS, "medianPreviousHours": 1, "meanPreviousHours": -1, "usablePreviousCount": 1, "usableNextCount": 0},
     ]:
         assert list(validator.iter_errors(metrics)), metrics
 

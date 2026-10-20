@@ -297,13 +297,13 @@ describe("the map of the kept incidents", () => {
     fireEvent.click(nodeOf(map, opened));
     expect(rows()).toEqual([
       "From previous: Not available: no labelled record comes before it in an incident whose order is known.",
-      "To next: median 26 h · 1 passage of 1 record",
+      "To next: median 26 h · mean 26 h · 1 passage of 1 record",
     ]);
-    expect(paths("Paths out")).toEqual([`To ${closed}: 1 passages, median lag 26 h. Select this path on the map.`]);
+    expect(paths("Paths out")).toEqual([`To ${closed}: 1 passages, median lag 26 h, mean lag 26 h. Select this path on the map.`]);
     expect(screen.getByText("No path leads into it.")).toBeTruthy();
     fireEvent.click(nodeOf(map, closed));
     expect(rows()).toEqual([
-      "From previous: median 26 h · 1 passage of 1 record",
+      "From previous: median 26 h · mean 26 h · 1 passage of 1 record",
       "To next: Not available: no labelled record follows it in an incident whose order is known.",
     ]);
     // Choosing a path of the activity selects that path on the map, and the card is the path's.
@@ -358,7 +358,7 @@ describe("the map of the kept incidents", () => {
     // Both times of an activity stay worded under the map, also the one the map does not write on it.
     fireEvent.click(nodeOf(map, closed));
     expect(Array.from(document.querySelectorAll(".activity-times-rows dt"), (name) => name.textContent)).toEqual(["From previous", "To next"]);
-    expect(document.querySelector(".activity-times-rows dd")?.textContent).toBe("median 26 h · 1 passage of 1 record");
+    expect(document.querySelector(".activity-times-rows dd")?.textContent).toBe("median 26 h · mean 26 h · 1 passage of 1 record");
     expect(screen.getByRole("button", { name: "Keep incidents that end with it" })).toBeTruthy();
 
     await app.user.click(within(map).getByRole("button", { name: "Frequency" }));

@@ -69,3 +69,28 @@ describe("the times of a selected activity", () => {
     ]);
   });
 });
+
+describe("the mean beside each median (#74)", () => {
+  it("writes the supplied mean of both times and of each path's lag, over the same passages as the median", () => {
+    const graph = suppliedGraph(["A-1"]);
+    render(<ActivityTimesCard graph={graph} nodeId={nodeIds[opened]} onSelectPath={vi.fn()} />);
+    expect(Array.from(document.querySelectorAll(".activity-times-rows > div"), (row) => row.textContent)).toEqual([
+      "From previousNot available: no labelled record comes before it in an incident whose order is known.",
+      "To nextmedian 26 h · mean 26 h · 1 passage of 1 record",
+    ]);
+    expect(screen.getByRole("button", { name: /^To Geschlossen: 1 passages, median lag 26 h, mean lag 26 h\./ })).toBeTruthy();
+  });
+
+  it("still reads a graph without means, and says the mean is not available", () => {
+    const graph = suppliedGraph(["A-1"]);
+    const withoutMeans: SuppliedGraph = {
+      ...graph,
+      nodes: graph.nodes.map(({ metrics: { meanPreviousHours: _previous, meanNextHours: _next, ...metrics }, ...node }) => ({ ...node, metrics })),
+      edges: graph.edges.map(({ metrics: { meanLagHours: _lag, ...metrics }, ...edge }) => ({ ...edge, metrics })),
+    };
+    render(<ActivityTimesCard graph={withoutMeans} nodeId={nodeIds[opened]} onSelectPath={vi.fn()} />);
+    expect(document.querySelectorAll(".activity-times-rows > div")[1].textContent).toBe("To nextmedian 26 h · mean not available from this service · 1 passage of 1 record");
+    expect(screen.getByRole("button", { name: /mean lag not available\./ })).toBeTruthy();
+    expect(pathsOf(withoutMeans, nodeIds[opened]).out[0].meanLag).toBeNull();
+  });
+});

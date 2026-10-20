@@ -82,12 +82,13 @@ def test_every_activity_carries_its_counts_and_the_time_figures_it_has():
     assert nodes == {
         # Open is only ever the first labelled record: nothing leads into it.
         "Open": {"count": 5, "events": 5, "cases": 5, "starts": 4, "ends": 0,
-                 "usablePreviousCount": 0, "medianNextHours": 0.75, "usableNextCount": 4},
+                 "usablePreviousCount": 0, "medianNextHours": 0.75, "meanNextHours": 0.875, "usableNextCount": 4},
         "Assign": {"count": 5, "events": 5, "cases": 4, "starts": 0, "ends": 0,
-                   "medianPreviousHours": 1.5, "usablePreviousCount": 4, "medianNextHours": 6.5, "usableNextCount": 4},
+                   "medianPreviousHours": 1.5, "meanPreviousHours": 2.5, "usablePreviousCount": 4,
+                   "medianNextHours": 6.5, "meanNextHours": 7.5, "usableNextCount": 4},
         # Close is only ever the last labelled record: nothing leads out of it.
         "Close": {"count": 5, "events": 5, "cases": 5, "starts": 0, "ends": 4,
-                  "medianPreviousHours": 5.5, "usablePreviousCount": 4, "usableNextCount": 0},
+                  "medianPreviousHours": 5.5, "meanPreviousHours": 5.875, "usablePreviousCount": 4, "usableNextCount": 0},
         "Check": {"count": 1, "events": 1, "cases": 1, "starts": 1, "ends": 1,
                   "usablePreviousCount": 0, "usableNextCount": 0},
     }

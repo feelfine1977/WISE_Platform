@@ -406,18 +406,18 @@ def test_the_map_of_the_opened_population_is_the_map_of_every_incident(client, w
     # Out of Opened lead passages of 1, 0.5 and 2 hours; into Assigned of 1, 2 and 2 hours and out of it
     # of 2 and 2 hours; into Resolved of 2 and 0.5 hours. D's order is not known and adds no passage.
     assert nodes == {"Opened": {"count": 4, "events": 4, "cases": 4, "starts": 3, "ends": 0,
-                                "usablePreviousCount": 0, "medianNextHours": 1, "usableNextCount": 3},
+                                "usablePreviousCount": 0, "medianNextHours": 1, "meanNextHours": 3.5 / 3, "usableNextCount": 3},
                      "Assigned": {"count": 4, "events": 4, "cases": 3, "starts": 0, "ends": 1,
-                                  "medianPreviousHours": 2, "usablePreviousCount": 3,
-                                  "medianNextHours": 2, "usableNextCount": 2},
+                                  "medianPreviousHours": 2, "meanPreviousHours": 5 / 3, "usablePreviousCount": 3,
+                                  "medianNextHours": 2, "meanNextHours": 2, "usableNextCount": 2},
                      "Resolved": {"count": 2, "events": 2, "cases": 2, "starts": 0, "ends": 2,
-                                  "medianPreviousHours": 1.25, "usablePreviousCount": 2, "usableNextCount": 0}}
+                                  "medianPreviousHours": 1.25, "meanPreviousHours": 1.25, "usablePreviousCount": 2, "usableNextCount": 0}}
     paths = {(edge["payload"]["source_activity"], edge["payload"]["target_activity"]): edge["metrics"]
              for edge in graph["edges"]}
-    assert paths == {("Opened", "Assigned"): {"count": 2, "cases": 2, "medianLagHours": 1.5, "usableLagCount": 2},
-                     ("Opened", "Resolved"): {"count": 1, "cases": 1, "medianLagHours": 0.5, "usableLagCount": 1},
-                     ("Assigned", "Resolved"): {"count": 1, "cases": 1, "medianLagHours": 2, "usableLagCount": 1},
-                     ("Assigned", "Assigned"): {"count": 1, "cases": 1, "medianLagHours": 2, "usableLagCount": 1}}
+    assert paths == {("Opened", "Assigned"): {"count": 2, "cases": 2, "medianLagHours": 1.5, "meanLagHours": 1.5, "usableLagCount": 2},
+                     ("Opened", "Resolved"): {"count": 1, "cases": 1, "medianLagHours": 0.5, "meanLagHours": 0.5, "usableLagCount": 1},
+                     ("Assigned", "Resolved"): {"count": 1, "cases": 1, "medianLagHours": 2, "meanLagHours": 2, "usableLagCount": 1},
+                     ("Assigned", "Assigned"): {"count": 1, "cases": 1, "medianLagHours": 2, "meanLagHours": 2, "usableLagCount": 1}}
     meta = graph["meta"]
     assert (meta["selected_case_ids"], meta["sequence_unevaluable_case_ids"]) == (["A", "B", "C", "D"], ["D"])
     assert (meta["node_case_denominator"], meta["path_case_denominator"]) == (4, 3)
