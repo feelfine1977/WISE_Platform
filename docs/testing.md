@@ -242,6 +242,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - The empty state names the ways to a first step: its links focus the map and the chart of starts, and open "+ Add step".
   - After the first step one line says how to undo or add another. It gives way for good after another step, and there is never more than one line.
 
+- `tools/qualify_steps_keyboard.py` (#96): the bar of steps and its trail by keyboard, over the invented `tests/fixtures/span-gap` file.
+  - A new step takes the focus to its chip, and a polite line says the change with the incidents kept.
+  - The trail is one tab stop moved along by the arrow keys, Home and End. Tab reaches the bar, whose arrow keys move between the actions that can be used. Escape leaves both for the views.
+  - After Undo the focus stays on Undo; after Clear all it goes to Undo, never to the page; each change is said.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

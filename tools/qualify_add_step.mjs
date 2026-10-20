@@ -71,7 +71,9 @@ try {
   await time.getByRole('button', {name: 'Keep by recorded time', exact: true}).click();
   await settled(1);
   check('applied_at_once', selections.length === asked + 1 && selections.at(-1).predicate_results[0].predicate.kind === 'observed_span_at_least', selections.length - asked);
-  check('panel_closed_and_focus_back_on_the_entry', await panel.count() === 0 && await page.evaluate(() => document.activeElement?.textContent) === '+ Add step', null);
+  // The focus is never lost: back on the entry, and once the step is answered on its new chip (#96).
+  check('panel_closed_and_focus_back_on_the_entry', await panel.count() === 0 && await page.evaluate(() => document.activeElement?.textContent === '+ Add step'
+    || !!document.activeElement?.closest('ul[aria-label="Steps of the selection"]')), null);
   await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Undo', exact: true}).click();
   await settled(0);
   check('undo_takes_it_back', same(selections.at(-1).identity, parent.identity), null);
