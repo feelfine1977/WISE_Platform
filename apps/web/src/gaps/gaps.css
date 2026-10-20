@@ -1,0 +1,16 @@
+/* The longest recorded gaps in the side panel: the choices on one line, the pairs in a table that scrolls sideways. */
+.gap-pairs { display: grid; gap: var(--space-2); }
+.gap-pairs > p { margin: 0; }
+.gap-pairs-choices { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-2) var(--space-4); }
+.gap-pairs-choices [role="group"] > button[aria-pressed="true"] { background: var(--color-tint); font-weight: var(--font-weight-strong); }
+.gap-pairs-scroll { overflow-x: auto; }
+.gap-pairs-table { border-collapse: collapse; font-size: var(--font-size-small); }
+.gap-pairs-table th,
+.gap-pairs-table td { padding: var(--space-half) var(--space-2); border-bottom: var(--line-width) solid var(--color-line-row); text-align: left; white-space: nowrap; }
+.gap-pairs-table .number { text-align: right; font-variant-numeric: tabular-nums; }
+.gap-pairs-table tr.selected { background: var(--color-accent-tint); }
+.gap-pairs-table button[aria-pressed="true"] { font-weight: var(--font-weight-strong); }
+/* On the card of a selected path: its long lags, and the threshold they are counted against. */
+.path-gaps { display: grid; gap: var(--space-1); }
+.path-gaps > p { margin: 0; }
+.path-gaps form { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-2); }

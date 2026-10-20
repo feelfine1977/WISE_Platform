@@ -28,6 +28,8 @@ import { MeasureSwitch } from "./MeasureSwitch";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { PathsTable } from "./PathsTable";
 import { PathLagControl } from "./PathLagControl";
+import { PathGaps } from "../gaps/PathGaps";
+import type { GapsClient } from "../gaps/client";
 import { boundaryLine, clockTag, flowsLine, unevaluableLine } from "./wording";
 
 /** Above this many activities the map opens on the most frequent ones; its detail controls show the rest. */
@@ -103,6 +105,8 @@ function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph, sta
 
 interface MapViewProps {
   shown: ShownSelection;
+  /** Where the long lags of a selected path are read from; without it the card of a path does not offer them. */
+  gaps?: GapsClient;
   /** The map of every incident of the parent; its arrangement places every map of a selection. */
   parentGraph: SuppliedGraph;
   onStep: (step: SelectionPredicate) => void;
@@ -143,7 +147,7 @@ const NOT_ARRANGED_IN_FULL =
  * know about it opens over it, and the steps of a selected element or the editor of the stages
  * stand beside it.
  */
-export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, initiallyInPlace = false, showing = "map", aside, onShowMap }: MapViewProps) {
+export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waitingFor, initiallyInPlace = false, showing = "map", aside, onShowMap }: MapViewProps) {
   // The stages the analyst defined for the reading shown; the map draws its activities in them.
   const workspaceId = shown.answer.workspace_id;
   const preparationId = shown.answer.identity.preparation_id;
@@ -485,6 +489,10 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
             In {countOf(element.bridged, "passage")} of {countOf(element.passages, "passage")}, records without activity label lie between the two
             activities; the path joins the labelled records around them.
           </p>
+        )}
+        {element?.kind === "path" && gaps && (
+          <PathGaps key={`gaps-${element.source}\u0000${element.target}`} workspaceId={shown.answer.workspace_id} revision={shown.revision} identity={shown.answer.identity}
+            source={element.source} target={element.target} client={gaps} />
         )}
         {element?.kind === "path" && (
           <PathLagControl key={`${element.source}\u0000${element.target}`} source={element.source} target={element.target}

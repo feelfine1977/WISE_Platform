@@ -24,6 +24,7 @@ from .case_lists import CaseLists
 from .interval_tails import IntervalTails
 from .transition_matrices import TransitionMatrices
 from .numeric_contexts import NumericContexts
+from .gap_pairs import GapPairs
 from .outcomes import Outcomes
 from .workspace_backups import WorkspaceBackups
 from .comparisons import ComparisonReply, Comparisons
@@ -81,6 +82,7 @@ def create_app(
     interval_tails = IntervalTails(imports)
     transition_matrices = TransitionMatrices(imports)
     numeric_contexts = NumericContexts(imports)
+    gap_pair_views = GapPairs(imports)
     outcomes = Outcomes(imports)
     backups = WorkspaceBackups(imports)
     start_trends = StartTrends(imports)
@@ -221,6 +223,11 @@ def create_app(
     @application.post("/api/investigations/numeric-context")
     async def numeric_context(request: Request) -> JSONResponse:
         reply = await run_in_threadpool(numeric_contexts.numeric_context, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/gap-pairs")
+    async def gap_pairs(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(gap_pair_views.gap_pairs, await request.body())
         return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/outcome-rates")

@@ -1,0 +1,84 @@
+"""The recorded gaps between records by the pair of activities around them, kept against the parent."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+import logging
+
+from wise_platform_analytics.gap_pairs import gap_pairs
+
+from .boundary import SCHEMA_VERSION, read_object
+from .generated import gap_pairs as generated
+from .generated.gap_pairs import GapPairsAnswer, GapPairsRefusal, GapPairsRequest
+from .import_boundary import import_echo
+from .imports import Imports
+from .population_views import resolve_population
+from .strict_reading import alternatives_of, read_strictly, version_failures
+from .workspace import Problem
+
+logger = logging.getLogger(__name__)
+
+STATUS = {"invalid_request": 400, "unsupported_schema": 400, "invalid_parameter": 400,
+          "workspace_unavailable": 404, "workspace_not_writable": 403, "workspace_incompatible": 409,
+          "source_unavailable": 404, "memory_unavailable": 503, "preparation_unavailable": 404, "identity_mismatch": 409,
+          "population_unavailable": 404, "computation_failed": 500}
+RETRYABLE = frozenset({"workspace_unavailable", "workspace_not_writable", "source_unavailable", "memory_unavailable",
+                       "preparation_unavailable", "population_unavailable", "computation_failed"})
+
+
+@dataclass(frozen=True)
+class GapReply:
+    status: int
+    body: dict
+
+
+def refused(code: str, message: str, given: dict, field: str | None = None) -> GapReply:
+    if code not in STATUS:
+        code, message, field = "computation_failed", "The gaps could not be computed from this preparation.", None
+    body = GapPairsRefusal(schema_version=SCHEMA_VERSION, message_type="gap_pairs_refusal", **import_echo(given),
+        operation="gap_pairs", code=code, message=message, field=field, retryable=code in RETRYABLE).model_dump(mode="json")
+    return GapReply(STATUS[code], body)
+
+
+def parse(body: bytes) -> dict | GapReply:
+    given = read_object(body)
+    if isinstance(given, str):
+        return refused("invalid_request", given, {})
+    version = given.get("schema_version")
+    if type(version) is int and version != SCHEMA_VERSION:
+        return refused("unsupported_schema", "This application reads schema version one.", given, "schema_version")
+    checked = read_strictly(given, GapPairsRequest, alternatives_of(generated))
+    if isinstance(checked, list):
+        failure = checked[0]
+        return refused("invalid_request", "The request is not valid at " + (failure.field or "the request") + ": " + failure.reason + ".", given, failure.field)
+    failures = version_failures(given, (("identity", "implementation_version"),))
+    if failures:
+        return refused("invalid_request", failures[0].reason + ".", given, failures[0].field)
+    return given
+
+
+class GapPairs:
+    def __init__(self, imports: Imports) -> None:
+        self._imports = imports
+
+    def gap_pairs(self, body: bytes) -> GapReply:
+        given = parse(body)
+        if isinstance(given, GapReply):
+            return given
+        try:
+            resolved = resolve_population(self._imports, given)
+            if isinstance(resolved, Problem):
+                return refused(resolved.code, resolved.message, given, resolved.field)
+            prepared, population = resolved
+            chosen = given["chosen"]
+            result = gap_pairs(prepared, population.case_ids, population.parent_ids, given["relation"], given["threshold_hours"], given["limit"],
+                               None if chosen is None else (chosen["from_activity"], chosen["to_activity"]), given["case_limit"])
+            answer = {"schema_version": SCHEMA_VERSION, "message_type": "gap_pairs_answer", "request_id": given["request_id"],
+                      "query_revision": given["query_revision"], "workspace_id": given["workspace_id"], "identity": population.identity,
+                      "parent_identity": population.parent_identity, **result}
+            checked = read_strictly(answer, GapPairsAnswer, alternatives_of(generated))
+            if isinstance(checked, list):
+                raise ValueError("The computed gaps are outside their contract at " + str(checked[0].field))
+            return GapReply(200, answer)
+        except Exception:
+            logger.exception("The gaps failed unexpectedly")
+            return refused("computation_failed", "The gaps could not be computed. Retry; if it fails again, the application needs repair.", given)
