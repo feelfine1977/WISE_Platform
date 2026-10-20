@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, constr
+from pydantic import BaseModel, ConfigDict, Field, conint, constr
 
 
 class HealthResponse(BaseModel):
@@ -15,3 +15,7 @@ class HealthResponse(BaseModel):
     status: Literal['ok']
     stage: Literal['foundation']
     version: constr(pattern=r'^\d+\.\d+\.\d+$')
+    memory_budget_bytes: conint(ge=1) | None = Field(
+        None,
+        description='The memory the service may use for open work; work that would not fit is refused before it starts.',
+    )

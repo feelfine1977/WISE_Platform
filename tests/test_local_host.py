@@ -30,7 +30,7 @@ def ready(process: subprocess.Popen, base: str, log: Path) -> None:
         try:
             status, payload = response(base + '/api/health')
             if status == 200:
-                assert json.loads(payload) == VALID
+                assert {key: value for key, value in json.loads(payload).items() if key != 'memory_budget_bytes'} == VALID
                 return
         except (urllib.error.URLError, TimeoutError, ConnectionError):
             pass
@@ -67,7 +67,7 @@ def test_actual_cli_stops_and_restarts_on_the_same_loopback_port(tmp_path):
             try:
                 ready(process, base, log)
                 assert process.poll() is None
-                assert json.loads(response(base + '/api/health')[1]) == VALID
+                assert {key: value for key, value in json.loads(response(base + '/api/health')[1]).items() if key != 'memory_budget_bytes'} == VALID
                 assert response(base + '/api/unknown')[0] == 404
                 status, body = response(base + '/')
                 if index.is_file():

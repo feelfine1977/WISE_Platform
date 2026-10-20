@@ -36,8 +36,18 @@ def test_json_and_generated_python_reject_the_same_invalid_payloads(payload):
         HealthResponse.model_validate(payload)
 
 
+def without_budget(answer):
+    """The health answer without the memory the service may use (#29), which is a positive number of bytes."""
+    budget = answer.pop("memory_budget_bytes")
+    assert isinstance(budget, int) and budget > 0
+    return answer
+
+
 def test_generated_python_preserves_closed_fields_constants_and_version_validation():
-    assert HealthResponse.model_validate(VALID).model_dump(mode='json') == VALID
+    # The memory budget is optional in the contract (#29): a payload without it stays as it was.
+    assert HealthResponse.model_validate(VALID).model_dump(mode='json', exclude_none=True) == VALID
+    with_budget = {**VALID, 'memory_budget_bytes': 10 * 1024 ** 3}
+    assert HealthResponse.model_validate(with_budget).model_dump(mode='json') == with_budget
     generated = HealthResponse.model_json_schema()
     assert generated['additionalProperties'] is False
     assert set(generated['required']) == set(SCHEMA['required'])
@@ -51,7 +61,7 @@ def test_health_is_an_actual_api_answer_without_built_web_assets(tmp_path):
     with TestClient(create_app(static_dir=absent_assets)) as client:
         response = client.get('/api/health')
         assert response.status_code == 200
-        assert response.json() == VALID
+        assert without_budget(response.json()) == VALID
         HealthResponse.model_validate(response.json())
         root = client.get('/')
         assert root.status_code == 503
@@ -68,6 +78,6 @@ def test_built_files_do_not_mask_unknown_api_routes(tmp_path):
         assert client.get('/').status_code == 200
         assert 'Local fixture page' in client.get('/').text
         assert client.get('/asset.txt').text == 'local asset'
-        assert client.get('/api/health').json() == VALID
+        assert without_budget(client.get('/api/health').json()) == VALID
         assert client.get('/api/unknown').status_code == 404
         assert client.get('/absent.js').status_code == 404

@@ -1,3 +1,4 @@
+import { CapacityNote } from "./CapacityNote";
 import { type FormEvent, useEffect, useId, useState, useSyncExternalStore } from "react";
 import type { PreparationTarget } from "../imported/coordinator";
 import type { DataCoordinator, DataState } from "./coordinator";
@@ -172,6 +173,7 @@ function SourceStep({
       <h3 id="source-title" className="step-title">
         Source
       </h3>
+      <CapacityNote />
       <div className="inline-form">
         <label htmlFor={inputId} className="label-text">
           Add an event-history CSV

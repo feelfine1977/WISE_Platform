@@ -108,7 +108,7 @@ def create_app(
 
     @application.get("/api/health", response_model=HealthResponse)
     def health() -> HealthResponse:
-        return HealthResponse(status="ok", stage="foundation", version=__version__)
+        return HealthResponse(status="ok", stage="foundation", version=__version__, memory_budget_bytes=budget.limit)
 
     @application.post("/api/investigations/open-example")
     async def open_example(request: Request) -> JSONResponse:
