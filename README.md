@@ -85,6 +85,7 @@ Steps 1, 2, 3 (recorded-span thresholds and start-period bands), 4 (for groups a
 ## Project guide
 
 - [Prepared catalogue provenance](docs/prepared-catalogue-provenance.md): upstream prepared-v1 authority, verified distribution bytes and immutable stored native results.
+- [Preparation catalogue](docs/preparation-catalogue.md): a reviewed local record of a source collection, its event views, their reconciliation and their qualification.
 
 - [Architecture](docs/architecture.md): module ownership, contracts, state and local deployment.
 - [Requirements](docs/requirements.md), [design perspectives](docs/design.md), [decisions](docs/adr/README.md) and [glossary](GLOSSARY.md).

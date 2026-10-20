@@ -262,3 +262,12 @@ Application base `d9ef6706fe08b730e45de9d4296c9d73b57470ef`, with the benchmark 
 | Complete workspace bytes | 654,157 | 6,360,189 |
 
 Both runs independently checked the selected East membership (500/5,000 cases and 5,000/50,000 complete records), present/absent rule buckets, and a 9-hour interval with Method value 1 for every scored parent case. Both restored questions, complete evidence and original runs matched after stopped copies. Comparable first/next page costs are consistent with full-parent work; they do not establish the cause of every latency or bound behavior at larger sizes. Raw receipts remain external runtime evidence rather than product source; rerun the commands above for a new candidate and retain its own receipts.
+
+## Catalogue workloads (#99)
+
+`tools/qualify_preparation_catalogue.py` measures each whole view of a preparation catalogue in its own process. Each view is measured twice:
+
+- **import:** store, inspect, prepare and open;
+- **investigation:** the map and variants of the whole population.
+
+Each measurement records records, incidents, columns, versions, elapsed time and peak process-tree memory. These are measurements of named workloads, kept apart from the pilots. They claim no capacity tier; a confirmed limit becomes a follow-up under #29.

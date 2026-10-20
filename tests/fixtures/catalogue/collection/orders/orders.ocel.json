@@ -1,0 +1,710 @@
+{
+ "objectTypes": [
+  {
+   "name": "item",
+   "attributes": [
+    {
+     "name": "weight",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "name": "order",
+   "attributes": [
+    {
+     "name": "value",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "name": "package",
+   "attributes": []
+  }
+ ],
+ "eventTypes": [
+  {
+   "name": "check stock",
+   "attributes": [
+    {
+     "name": "note",
+     "type": "string"
+    }
+   ]
+  },
+  {
+   "name": "pack",
+   "attributes": []
+  },
+  {
+   "name": "pick item",
+   "attributes": [
+    {
+     "name": "picker",
+     "type": "string"
+    }
+   ]
+  },
+  {
+   "name": "place order",
+   "attributes": [
+    {
+     "name": "channel",
+     "type": "string"
+    }
+   ]
+  },
+  {
+   "name": "ship",
+   "attributes": [
+    {
+     "name": "carrier",
+     "type": "string"
+    }
+   ]
+  }
+ ],
+ "objects": [
+  {
+   "id": "O-1",
+   "type": "order",
+   "attributes": [
+    {
+     "name": "value",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 100
+    },
+    {
+     "name": "value",
+     "time": "2026-07-02T00:00:00Z",
+     "value": 90
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-1",
+     "qualifier": "contains"
+    }
+   ]
+  },
+  {
+   "id": "O-2",
+   "type": "order",
+   "attributes": [
+    {
+     "name": "value",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 110
+    },
+    {
+     "name": "value",
+     "time": "2026-07-02T00:00:00Z",
+     "value": 100
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-3",
+     "qualifier": "contains"
+    },
+    {
+     "objectId": "I-4",
+     "qualifier": "contains"
+    }
+   ]
+  },
+  {
+   "id": "O-3",
+   "type": "order",
+   "attributes": [
+    {
+     "name": "value",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 120
+    },
+    {
+     "name": "value",
+     "time": "2026-07-02T00:00:00Z",
+     "value": 110
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-5",
+     "qualifier": "contains"
+    }
+   ]
+  },
+  {
+   "id": "O-4",
+   "type": "order",
+   "attributes": [
+    {
+     "name": "value",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 130
+    },
+    {
+     "name": "value",
+     "time": "2026-07-02T00:00:00Z",
+     "value": 120
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-7",
+     "qualifier": "contains"
+    },
+    {
+     "objectId": "I-8",
+     "qualifier": "contains"
+    }
+   ]
+  },
+  {
+   "id": "O-5",
+   "type": "order",
+   "attributes": [
+    {
+     "name": "value",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 140
+    },
+    {
+     "name": "value",
+     "time": "2026-07-02T00:00:00Z",
+     "value": 130
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-9",
+     "qualifier": "contains"
+    }
+   ]
+  },
+  {
+   "id": "I-1",
+   "type": "item",
+   "attributes": [
+    {
+     "name": "weight",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 0.5
+    }
+   ],
+   "relationships": []
+  },
+  {
+   "id": "I-3",
+   "type": "item",
+   "attributes": [
+    {
+     "name": "weight",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 1.5
+    }
+   ],
+   "relationships": []
+  },
+  {
+   "id": "I-4",
+   "type": "item",
+   "attributes": [
+    {
+     "name": "weight",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 2.0
+    }
+   ],
+   "relationships": []
+  },
+  {
+   "id": "I-5",
+   "type": "item",
+   "attributes": [
+    {
+     "name": "weight",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 2.5
+    }
+   ],
+   "relationships": []
+  },
+  {
+   "id": "I-7",
+   "type": "item",
+   "attributes": [
+    {
+     "name": "weight",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 3.5
+    }
+   ],
+   "relationships": []
+  },
+  {
+   "id": "I-8",
+   "type": "item",
+   "attributes": [
+    {
+     "name": "weight",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 4.0
+    }
+   ],
+   "relationships": []
+  },
+  {
+   "id": "I-9",
+   "type": "item",
+   "attributes": [
+    {
+     "name": "weight",
+     "time": "1970-01-01T00:00:00Z",
+     "value": 4.5
+    }
+   ],
+   "relationships": []
+  },
+  {
+   "id": "P-1",
+   "type": "package",
+   "attributes": [],
+   "relationships": [
+    {
+     "objectId": "I-1",
+     "qualifier": "carries"
+    },
+    {
+     "objectId": "I-5",
+     "qualifier": "carries"
+    },
+    {
+     "objectId": "I-9",
+     "qualifier": "carries"
+    }
+   ]
+  },
+  {
+   "id": "P-2",
+   "type": "package",
+   "attributes": [],
+   "relationships": [
+    {
+     "objectId": "I-3",
+     "qualifier": "carries"
+    },
+    {
+     "objectId": "I-7",
+     "qualifier": "carries"
+    }
+   ]
+  },
+  {
+   "id": "P-3",
+   "type": "package",
+   "attributes": [],
+   "relationships": [
+    {
+     "objectId": "I-4",
+     "qualifier": "carries"
+    },
+    {
+     "objectId": "I-8",
+     "qualifier": "carries"
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "e1",
+   "type": "place order",
+   "time": "2026-07-01T00:37:00Z",
+   "attributes": [
+    {
+     "name": "channel",
+     "value": "Portal"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "O-1",
+     "qualifier": "order"
+    },
+    {
+     "objectId": "I-1",
+     "qualifier": "part"
+    }
+   ]
+  },
+  {
+   "id": "e2",
+   "type": "place order",
+   "time": "2026-07-01T01:14:00Z",
+   "attributes": [
+    {
+     "name": "channel",
+     "value": "Portal"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "O-2",
+     "qualifier": "order"
+    },
+    {
+     "objectId": "I-3",
+     "qualifier": "part"
+    },
+    {
+     "objectId": "I-4",
+     "qualifier": "part"
+    }
+   ]
+  },
+  {
+   "id": "e3",
+   "type": "place order",
+   "time": "2026-07-01T01:51:00Z",
+   "attributes": [
+    {
+     "name": "channel",
+     "value": "Portal"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "O-3",
+     "qualifier": "order"
+    },
+    {
+     "objectId": "I-5",
+     "qualifier": "part"
+    }
+   ]
+  },
+  {
+   "id": "e4",
+   "type": "place order",
+   "time": "2026-07-01T02:28:00Z",
+   "attributes": [
+    {
+     "name": "channel",
+     "value": "Portal"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "O-4",
+     "qualifier": "order"
+    },
+    {
+     "objectId": "I-7",
+     "qualifier": "part"
+    },
+    {
+     "objectId": "I-8",
+     "qualifier": "part"
+    }
+   ]
+  },
+  {
+   "id": "e5",
+   "type": "place order",
+   "time": "2026-07-01T03:05:00Z",
+   "attributes": [
+    {
+     "name": "channel",
+     "value": "Portal"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "O-5",
+     "qualifier": "order"
+    },
+    {
+     "objectId": "I-9",
+     "qualifier": "part"
+    }
+   ]
+  },
+  {
+   "id": "e6",
+   "type": "pick item",
+   "time": "2026-07-01T03:42:00Z",
+   "attributes": [
+    {
+     "name": "picker",
+     "value": "Picker 2"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-1",
+     "qualifier": "picked"
+    }
+   ]
+  },
+  {
+   "id": "e7",
+   "type": "pick item",
+   "time": "2026-07-01T04:19:00Z",
+   "attributes": [
+    {
+     "name": "picker",
+     "value": "Picker 2"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-3",
+     "qualifier": "picked"
+    }
+   ]
+  },
+  {
+   "id": "e8",
+   "type": "pick item",
+   "time": "2026-07-01T04:56:00Z",
+   "attributes": [
+    {
+     "name": "picker",
+     "value": "Picker 1"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-4",
+     "qualifier": "picked"
+    }
+   ]
+  },
+  {
+   "id": "e9",
+   "type": "pick item",
+   "time": "2026-07-01T05:33:00Z",
+   "attributes": [
+    {
+     "name": "picker",
+     "value": "Picker 2"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-5",
+     "qualifier": "picked"
+    }
+   ]
+  },
+  {
+   "id": "e10",
+   "type": "pick item",
+   "time": "2026-07-01T06:10:00Z",
+   "attributes": [
+    {
+     "name": "picker",
+     "value": "Picker 2"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-7",
+     "qualifier": "picked"
+    }
+   ]
+  },
+  {
+   "id": "e11",
+   "type": "pick item",
+   "time": "2026-07-01T06:47:00Z",
+   "attributes": [
+    {
+     "name": "picker",
+     "value": "Picker 1"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-8",
+     "qualifier": "picked"
+    }
+   ]
+  },
+  {
+   "id": "e12",
+   "type": "pick item",
+   "time": "2026-07-01T07:24:00Z",
+   "attributes": [
+    {
+     "name": "picker",
+     "value": "Picker 2"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "I-9",
+     "qualifier": "picked"
+    }
+   ]
+  },
+  {
+   "id": "e13",
+   "type": "check stock",
+   "time": "2026-07-01T08:01:00Z",
+   "attributes": [
+    {
+     "name": "note",
+     "value": "no object"
+    }
+   ],
+   "relationships": []
+  },
+  {
+   "id": "e14",
+   "type": "pack",
+   "time": "2026-07-01T08:38:00Z",
+   "attributes": [],
+   "relationships": [
+    {
+     "objectId": "P-1",
+     "qualifier": "package"
+    },
+    {
+     "objectId": "I-1",
+     "qualifier": "packed"
+    },
+    {
+     "objectId": "I-5",
+     "qualifier": "packed"
+    },
+    {
+     "objectId": "I-9",
+     "qualifier": "packed"
+    }
+   ]
+  },
+  {
+   "id": "e15",
+   "type": "pack",
+   "time": "2026-07-01T09:15:00Z",
+   "attributes": [],
+   "relationships": [
+    {
+     "objectId": "P-2",
+     "qualifier": "package"
+    },
+    {
+     "objectId": "I-3",
+     "qualifier": "packed"
+    },
+    {
+     "objectId": "I-7",
+     "qualifier": "packed"
+    }
+   ]
+  },
+  {
+   "id": "e16",
+   "type": "pack",
+   "time": "2026-07-01T09:52:00Z",
+   "attributes": [],
+   "relationships": [
+    {
+     "objectId": "P-3",
+     "qualifier": "package"
+    },
+    {
+     "objectId": "I-4",
+     "qualifier": "packed"
+    },
+    {
+     "objectId": "I-8",
+     "qualifier": "packed"
+    }
+   ]
+  },
+  {
+   "id": "e17",
+   "type": "ship",
+   "time": "2026-07-01T10:29:00Z",
+   "attributes": [
+    {
+     "name": "carrier",
+     "value": "Invented Freight"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "P-1",
+     "qualifier": "shipped"
+    },
+    {
+     "objectId": "O-1",
+     "qualifier": "delivered"
+    },
+    {
+     "objectId": "O-3",
+     "qualifier": "delivered"
+    },
+    {
+     "objectId": "O-5",
+     "qualifier": "delivered"
+    }
+   ]
+  },
+  {
+   "id": "e18",
+   "type": "ship",
+   "time": "2026-07-01T11:06:00Z",
+   "attributes": [
+    {
+     "name": "carrier",
+     "value": "Invented Freight"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "P-2",
+     "qualifier": "shipped"
+    },
+    {
+     "objectId": "O-2",
+     "qualifier": "delivered"
+    },
+    {
+     "objectId": "O-4",
+     "qualifier": "delivered"
+    }
+   ]
+  },
+  {
+   "id": "e19",
+   "type": "ship",
+   "time": "2026-07-01T11:43:00Z",
+   "attributes": [
+    {
+     "name": "carrier",
+     "value": "Invented Freight"
+    }
+   ],
+   "relationships": [
+    {
+     "objectId": "P-3",
+     "qualifier": "shipped"
+    },
+    {
+     "objectId": "O-2",
+     "qualifier": "delivered"
+    },
+    {
+     "objectId": "O-4",
+     "qualifier": "delivered"
+    }
+   ]
+  }
+ ]
+}
