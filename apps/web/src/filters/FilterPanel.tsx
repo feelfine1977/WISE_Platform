@@ -5,7 +5,7 @@ import type { CaseListRequest } from "../generated/case-list";
 import type { ViewState } from "../imported/coordinator";
 import type { OpeningContextAnswer } from "../views/messages";
 import type { StepPreviewer } from "../map/StepPreviewLine";
-import { Filters, type RecordedRange } from "./Filters";
+import { Filters, type RecordedRange, type StepKind } from "./Filters";
 import { NumberRange } from "../numbers/NumberRange";
 import { answersCaseList, httpCaseListClient, type CaseListClient } from "./client";
 
@@ -21,11 +21,13 @@ interface Props {
   previewStep?: StepPreviewer;
   waitingFor?: string;
   client?: CaseListClient;
+  /** Shows the form of one kind of step alone, as "+ Add step" does. */
+  only?: StepKind;
 }
 type RangeState = { phase: "loading" } | { phase: "ready"; range: RecordedRange | null } | { phase: "failed"; message: string };
 
 /** Loads the fixed parent's recorded range, without selecting or reading individual histories. */
-export function FilterPanel({ population, parentIds, parentIdentity, keptIdentity, revision, opening, onStep, previewStep, waitingFor, client = httpCaseListClient }: Props) {
+export function FilterPanel({ only, population, parentIds, parentIdentity, keptIdentity, revision, opening, onStep, previewStep, waitingFor, client = httpCaseListClient }: Props) {
   const requestName = useId();
   const [range, setRange] = useState<RangeState>({ phase: "loading" });
   const [retry, setRetry] = useState(0);
@@ -58,11 +60,11 @@ export function FilterPanel({ population, parentIds, parentIdentity, keptIdentit
 
   return <>
     {range.phase === "failed" && <div role="alert" className="inline-error"><p>{range.message}</p><button type="button" onClick={() => setRetry((value) => value + 1)} disabled={waitingFor !== undefined}>Retry recorded range</button></div>}
-    <Filters key={identityKey} population={population} parentIds={parentIds} opening={opening} onStep={onStep} previewStep={previewStep}
+    {only !== "number" && <Filters key={identityKey} only={only} population={population} parentIds={parentIds} opening={opening} onStep={onStep} previewStep={previewStep}
       range={range.phase === "ready" ? range.range : undefined}
       rangeProblem={range.phase === "ready" && range.range === null ? "No usable recorded timestamps in this parent." : range.phase === "failed" ? range.message : undefined}
-      waitingFor={waitingFor} />
-    <NumberRange population={population} identity={keptIdentity ?? parentIdentity} revision={revision} onStep={onStep} previewStep={previewStep} waitingFor={waitingFor}
-      columnName={(index) => (opening.phase === "ready" ? opening.answer.opening_context.columns.find((item) => item.column_index === index)?.column_name : undefined) || `Column ${index}`} />
+      waitingFor={waitingFor} />}
+    {(only === undefined || only === "number") && <NumberRange alone={only === "number"} population={population} identity={keptIdentity ?? parentIdentity} revision={revision} onStep={onStep} previewStep={previewStep} waitingFor={waitingFor}
+      columnName={(index) => (opening.phase === "ready" ? opening.answer.opening_context.columns.find((item) => item.column_index === index)?.column_name : undefined) || `Column ${index}`} />}
   </>;
 }

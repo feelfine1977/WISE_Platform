@@ -238,6 +238,8 @@
   --size-record-marks: 160px;
   --size-wide-table: 1120px;
   --size-step-status: 280px;
+  --size-add-step: 440px;
+  --size-add-step-height: 70vh;
   --size-wide-first-column: 140px;
   --size-bar-marks: 12px;
   /* A header row of one line, and the bar of the kept share in the data row. */

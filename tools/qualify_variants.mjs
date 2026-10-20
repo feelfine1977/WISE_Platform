@@ -47,7 +47,7 @@ try {
 
   // A named Variants entry in the side panel; its sequences are actual and complete, apart from the map's routes.
   await page.getByRole('button', {name: 'Filters and views'}).click();
-  await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Patterns', exact: true}).click();
+  await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Variants', exact: true}).click();
   await panel().getByRole('heading', {name: 'Variants'}).waitFor();
   await items().first().waitFor();
   const shown = await items().evaluateAll(list => list.map(item => [...item.querySelectorAll('.variant-step')].map(step => step.textContent)));

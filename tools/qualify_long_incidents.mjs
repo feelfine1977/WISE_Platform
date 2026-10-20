@@ -8,6 +8,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {addStep} from './add_step.mjs';
 
 const [base, output, playwright, chrome, configPath, phase] = process.argv.slice(2);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -74,14 +75,10 @@ try {
     await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Undo', exact: true}).click();
     await settled(0);
     check('undo_restores_the_parent', same(selections.at(-1).identity, parent.identity), null);
-    await page.getByRole('button', {name: 'Filters and views'}).click();
-    await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Filters', exact: true}).click();
-    const time = page.locator('details', {has: page.getByText('Recorded time', {exact: true})});
-    await time.locator('summary').click();
+    const time = await addStep(page, 'Recorded time');
     await time.getByLabel('Measure').selectOption('observed_span_at_least');
     await time.getByLabel('At least this many hours').fill('4');
     await time.getByRole('button', {name: 'Keep by recorded time', exact: true}).click();
-    await page.getByRole('group', {name: 'Filter not yet taken'}).getByRole('button', {name: 'Take this step', exact: true}).click();
     await settled(1);
     check('typed_filter_gives_the_same_identity', same(selections.at(-1).identity, fromChart.identity), null);
     // Kept against removed in Compare: the same two groups; the unknown is in neither.

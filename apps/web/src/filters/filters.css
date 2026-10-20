@@ -13,3 +13,27 @@
 .number-range { display: grid; gap: var(--space-2); }
 .number-range-read { display: grid; gap: var(--space-1); }
 .number-range-read > p { margin: 0; }
+
+/* "+ Add step": the entry above the views, and the panel it opens with the kinds of step and the form of one. */
+.add-step { position: relative; display: grid; flex: none; justify-items: start; }
+.add-step-panel {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  margin-top: var(--space-1);
+  display: grid;
+  gap: var(--space-2);
+  width: var(--size-add-step);
+  max-height: var(--size-add-step-height);
+  overflow: auto;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: var(--line-width) solid var(--color-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-float);
+}
+.add-step-gloss,
+.add-step-title { margin: 0; }
+.add-step-kinds { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.add-step-kinds button { width: 100%; text-align: left; }
+.add-step-close { justify-self: end; }

@@ -90,7 +90,7 @@ try {
 
   // A selection without a labelled record: no path and no flow, said so.
   await page.getByRole('button', {name: 'Filters and views'}).click();
-  await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Patterns', exact: true}).click();
+  await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Variants', exact: true}).click();
   const rank = variants.variants.findIndex(variant => variant.activities.length === 0) + 1;
   await page.getByRole('button', {name: `Preview keeping the 1 incident of variant ${rank}`}).click();
   await page.getByRole('group', {name: `Variant ${rank} not yet applied`}).getByRole('button', {name: 'Apply', exact: true}).click();

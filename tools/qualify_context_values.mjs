@@ -9,6 +9,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {addStep} from './add_step.mjs';
 
 const [base, output, playwright, chrome, configPath, phase] = process.argv.slice(2);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -35,8 +36,9 @@ async function settled(steps) {
   await page.waitForFunction(n => document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length === n, steps);
 }
 async function contextFilter({values, missing = false, where = 'any'}) {
-  const section = page.locator('details', {has: page.getByText('Context values', {exact: true})});
-  if (!(await section.evaluate(element => element.open))) await section.locator('summary').click();
+  // From the one entry of every step (#94); a refused entry leaves its form open.
+  const section = (await page.getByRole('group', {name: 'Add a step'}).getByLabel('Exact context values').isVisible().catch(() => false))
+    ? page.getByRole('group', {name: 'Add a step'}) : await addStep(page, 'Context values');
   await section.getByLabel('Where to look').selectOption(where);
   await section.getByLabel('Exact context values').fill(values.join('\n'));
   const box = section.getByLabel('Not recorded (distinct from the text “Unknown”)');
@@ -44,7 +46,7 @@ async function contextFilter({values, missing = false, where = 'any'}) {
   await section.getByRole('button', {name: 'Keep by context', exact: true}).click();
 }
 async function take(steps) {
-  await page.getByRole('group', {name: 'Filter not yet taken'}).getByRole('button', {name: 'Take this step', exact: true}).click();
+  // Applied at once from "+ Add step" (#94).
   await settled(steps);
   return last();
 }
@@ -59,10 +61,7 @@ try {
     await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
     await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
     await settled(0);
-    await page.getByRole('button', {name: 'Filters and views'}).click();
-    await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Filters', exact: true}).click();
-    const section = page.locator('details', {has: page.getByText('Context values', {exact: true})});
-    await section.locator('summary').click();
+    const section = await addStep(page, 'Context values');
     // The column, its anchoring and the suggestions from the first records.
     const columnLabel = await section.getByLabel('Context column').evaluate(select => select.selectedOptions[0].text);
     const suggestions = await section.getByRole('group', {name: 'Suggestions from first records'}).locator('label').allTextContents();
@@ -95,8 +94,7 @@ try {
     await contextFilter({values: expected.any_east.values});
     const east2 = await take(1);
     check('same_definition_same_identity', same(east2.identity, east.identity), null);
-    const time = page.locator('details', {has: page.getByText('Recorded time', {exact: true})});
-    await time.locator('summary').click();
+    const time = await addStep(page, 'Recorded time');
     await time.getByLabel('Measure').selectOption('max_raw_gap_at_least');
     await time.getByLabel('At least this many hours').fill('1');
     await time.getByRole('button', {name: 'Keep by recorded time', exact: true}).click();

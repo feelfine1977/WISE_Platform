@@ -10,6 +10,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {addStep} from './add_step.mjs';
 
 const [base, output, playwright, chrome, configPath, phase] = process.argv.slice(2);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -43,6 +44,8 @@ async function settled(steps) {
   await page.waitForFunction(n => (document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length === n), steps);
 }
 async function enter(numbers) {
+  // From the one entry of every step (#94); a refused entry leaves its form open.
+  if (!(await page.getByLabel('Exact incident numbers').isVisible().catch(() => false))) await addStep(page, 'Incident numbers');
   const box = page.getByLabel('Exact incident numbers');
   await box.fill(numbers.join('\n'));
   await page.getByRole('button', {name: 'Keep these incidents', exact: true}).click();
@@ -63,8 +66,7 @@ try {
     await areas.getByRole('button', {name: 'Data', exact: true}).click();
     await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
     await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
-    await page.getByRole('button', {name: 'Filters and views'}).click();
-    await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Filters', exact: true}).click();
+    await addStep(page, 'Incident numbers');
     await page.getByLabel('Exact incident numbers').waitFor().catch(async error => {
       if (process.env.WISE_BROWSER_DUMP_TEXT) await writeFile(process.env.WISE_BROWSER_DUMP_TEXT, (await page.locator('main').first().textContent()) ?? '');
       throw error;
@@ -76,20 +78,19 @@ try {
     check('unknown_number_refused_by_name', ((await page.getByRole('alert').textContent()) ?? '').includes(`Unknown incident numbers: ${expected.unknown_named}.`) , null);
     await enter(expected.duplicate_entry);
     check('repeated_number_refused', ((await page.getByRole('alert').textContent()) ?? '').startsWith('A number appears more than once'), null);
-    check('refused_entries_ask_nothing', selections.length === asked && await page.getByRole('group', {name: 'Filter not yet taken'}).count() === 0, null);
-    // Previewed, then taken: the chip and its counts.
+    check('refused_entries_ask_nothing', selections.length === asked, null);
+    // Taken at once from "+ Add step" (#94): the chip and its counts.
     await enter(expected.entry);
-    const pending = page.getByRole('group', {name: 'Filter not yet taken'});
-    await pending.getByText(/^Preview:/).waitFor();
-    check('preview_counts', ((await pending.textContent()) ?? '').includes(`Preview: would keep ${count(expected.kept.ids.length, 'incident')} of ${count(expected.parent.incidents, 'incident')}; ${expected.removed.ids.length} removed, 0 not evaluable.`), await pending.textContent());
-    await pending.getByRole('button', {name: 'Take this step', exact: true}).click();
     await settled(1);
+    check('taken_at_once', selections.length === asked + 1 && await page.getByRole('group', {name: 'Add a step'}).count() === 0, selections.length);
     const kept = committed();
     check('kept_membership_matches_the_oracle', same(kept.kept.case_ids, expected.kept.ids) && kept.kept.record_count === expected.kept.records
       && same(kept.removed.case_ids, expected.removed.ids) && kept.removed.record_count === expected.removed.records, kept.kept);
     const chip = page.getByRole('list', {name: 'Steps of the selection'}).getByRole('listitem').first();
     const chipText = (await chip.textContent()) ?? '';
-    check('chip_names_the_numbers_and_counts', chipText.startsWith(expected.chip) && chipText.includes(`Kept${count(expected.kept.ids.length, 'incident')} · ${count(expected.kept.records, 'record')}`), chipText);
+    // The chip of the trail (#93) holds its full wording, which names the numbers, behind its short one.
+    const wording = (await chip.locator('.chip-wording').textContent()) ?? '';
+    check('chip_names_the_numbers_and_counts', wording.startsWith(expected.chip) && chipText.includes(`Kept${count(expected.kept.ids.length, 'incident')} · ${count(expected.kept.records, 'record')}`), chipText);
     // Every record of each kept incident, the unlabelled ones included.
     await view('Incidents').click();
     const opened = {};
@@ -100,7 +101,6 @@ try {
     await settled(0);
     check('undo_returns_to_the_parent', same(committed().identity, parent.identity), null);
     await enter(expected.reordered_entry);
-    await page.getByRole('group', {name: 'Filter not yet taken'}).getByRole('button', {name: 'Take this step', exact: true}).click();
     await settled(1);
     check('input_order_keeps_the_identity', same(committed().identity, kept.identity), null);
     // Kept against removed in Compare: the same two groups.
@@ -127,9 +127,11 @@ try {
     await page.getByRole('list', {name: 'Steps of the selection'}).waitFor();
     await settled(1);
     check('reopened_selection_has_the_saved_identity', same(committed().identity, config.identity), null);
-    const chipText = (await page.getByRole('list', {name: 'Steps of the selection'}).getByRole('listitem').first().textContent()) ?? '';
+    const reopenedChip = page.getByRole('list', {name: 'Steps of the selection'}).getByRole('listitem').first();
+    const chipText = (await reopenedChip.textContent()) ?? '';
+    const reopenedWording = (await reopenedChip.locator('.chip-wording').textContent()) ?? '';
     // The step keeps the numbers as last entered: the second entry, in its own order.
-    check('reopened_chip_and_counts_agree', chipText.startsWith(expected.reordered_chip) && chipText.includes(`Kept${count(expected.kept.ids.length, 'incident')} · ${count(expected.kept.records, 'record')}`), chipText);
+    check('reopened_chip_and_counts_agree', reopenedWording.startsWith(expected.reordered_chip) && chipText.includes(`Kept${count(expected.kept.ids.length, 'incident')} · ${count(expected.kept.records, 'record')}`), chipText);
     // A reopened investigation starts its history with its saved steps: Clear all leads to the parent, and Undo
     // brings back exactly the saved selection.
     await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Clear all', exact: true}).click();

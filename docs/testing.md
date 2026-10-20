@@ -178,7 +178,7 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Choosing takes no step; keeping takes one with the group's incidents, undone exactly.
 
 - `tools/qualify_measure_range.py` (#89): ranges of records, span and longest gap over the invented `tests/fixtures/span-gap` file, against its `ranges.json`.
-  - The Filters' range control says that both bounds are included and which incidents have each measure.
+  - The range control (from "+ Add step" since #94) says that both bounds are included and which incidents have each measure.
   - Each range is previewed with its not-evaluable count, taken as one step that keeps, removes and leaves unevaluable the oracle's incidents, shown in the incident table, and undone exactly.
   - A reversed range is refused and nothing is applied.
 
@@ -191,7 +191,7 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - The head says the direction (`aria-sort`), and the order is said in words with its ties and its unavailable values.
 
 - `tools/qualify_step_trail.py` (#93): the trail of steps over the invented `tests/fixtures/span-gap` file, against its `trail.json`.
-  - Three steps taken from the Filters stand as short chips, the earliest first, each with the incidents kept after it ("kept after step k", supplied by the service). A chip's details open on demand.
+  - Three steps taken from "+ Add step" stand as short chips, the earliest first, each with the incidents kept after it ("kept after step k", supplied by the service). A chip's details open on demand.
   - Choosing a chip shows the state after it, the later steps kept with their counts. The journey goes forward and back to the parent; a new step drops the later steps.
   - With `WISE_SCREENSHOT_DIR` set, a picture of the trail is written there.
 
@@ -202,7 +202,7 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
 
 - `tools/qualify_numeric_context.py` (#85): numbers in a context column over the invented `tests/fixtures/numeric-context` file, against its own `expected.json`, in two service processes.
   - The file is added in the Data area and Confidence and Amount (EUR) are declared numbers; the summary and the preparation say so.
-  - The Filters' range of a number shows the parent's range, the bins, the incidents without a number by reason and the records that are not numbers.
+  - The range of a number (from "+ Add step") shows the parent's range, the bins, the incidents without a number by reason and the records that are not numbers.
   - Every range of the oracle (first, latest and any record; half-open; kept and removed) is previewed, taken as one step and undone exactly. A range chosen on the chart takes the parent's exact edges, and the unit and a signed range are shown.
   - After an actual restart the reading opens again with its declaration.
 
@@ -231,6 +231,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - The unlabelled endpoint is named, the policies and the incidents of unknown order are said, and no gap is called a working or waiting time.
   - A pair orders the incident list by its longest gap without a step.
   - A path of the map gives its 90th percentile lag and its passages longer than the threshold.
+
+- `tools/qualify_add_step.py` (#94): the one entry of every step by a value, over the invented `tests/fixtures/span-gap` file, at 1280 × 720.
+  - The bar is headed "Steps" and has "+ Add step". The side panel holds no filters and names "Variants".
+  - The entry lists the six kinds of step with the line that says what a step is, and each kind opens its form alone.
+  - Applying adds the step at once, closes the panel and gives the focus back to the entry; Undo takes it back, and Escape closes without a step.
+  - The journeys that took steps from the side panel's filters (#11, #57, #60, #61, #63, #85, #89, #92, #93) now take them from "+ Add step" through `tools/add_step.mjs`; those that opened "Patterns" (#13, #55, #56) open "Variants". All twelve pass again on this build.
 
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).

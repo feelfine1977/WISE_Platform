@@ -47,7 +47,7 @@ function tableIncidents(): string[] {
 function panel(name: string): HTMLElement {
   const toggle = screen.queryByRole("button", { name: "Filters and views" });
   if (toggle?.getAttribute("aria-expanded") === "false") fireEvent.click(toggle);
-  const tab = screen.queryByRole("button", { name: name === "Variants" ? /^Patterns/ : /^Context( ·|$)/ });
+  const tab = screen.queryByRole("button", { name: name === "Variants" ? /^Variants( ·|$)/ : /^Context( ·|$)/ });
   if (tab) fireEvent.click(tab);
   return screen.getByRole("region", { name });
 }
