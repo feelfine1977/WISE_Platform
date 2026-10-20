@@ -93,6 +93,7 @@ describe("the first use of the application", () => {
     expect(within(view).getAllByRole("button").map((button) => `${button.textContent}:${button.getAttribute("aria-pressed")}`)).toEqual([
       "Map:true",
       "Incidents:false",
+      "Variants:false",
       "Paths:false",
       "Matrix:false",
     ]);

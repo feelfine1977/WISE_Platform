@@ -251,7 +251,8 @@ describe("keeping the investigation shown while another preparation is opened", 
     await app.user.click(screen.getByRole("button", { name: "Filters and views" }));
     expect(retries()).toHaveLength(3);
     expect(screen.getByRole("button", { name: "Context · not shown" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Variants · not shown" })).toBeTruthy();
+    // Said on the tab of the side panel and on the view of the centre alike.
+    expect(screen.getAllByRole("button", { name: "Variants · not shown" })).toHaveLength(2);
     const request = askSecond(app);
 
     const reason = `Not available while ${askedName} is opening: what is shown belongs to ${shownName}.`;

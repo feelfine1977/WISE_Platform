@@ -1,0 +1,31 @@
+{
+ "about": "Hand-written expectations for #54 (tools/qualify_one_screen.py and tests/test_issue54_one_screen.py). Invented incidents with long activity names and a long file name; Desk is an invented context column. Never read by product code.",
+ "file": "service-desk-export-of-the-northern-municipalities-october-2026.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": [4]},
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "activities": {
+  "A": "Received through the customer service portal and registered for triage",
+  "B": "Assigned to the second-level application support group for analysis",
+  "C": "Waiting for the requesting customer to supply missing information",
+  "D": "Resolved by the application support group",
+  "E": "Closed after the requester confirmed the resolution"
+ },
+ "incidents": ["L-01", "L-02", "L-03", "L-04", "L-05", "L-06", "L-07", "L-08", "L-09", "L-10"],
+ "record_count": 42,
+ "records": {"L-01": 4, "L-02": 4, "L-03": 6, "L-04": 5, "L-05": 3, "L-06": 5, "L-07": 3, "L-08": 4, "L-09": 6, "L-10": 2},
+ "variants": {
+  "count": 7,
+  "case_counts": [3, 2, 1, 1, 1, 1, 1],
+  "first": {"activities": ["A", "B", "D", "E"], "case_ids": ["L-01", "L-02", "L-08"]},
+  "second": {"activities": ["A", "B", "C", "B", "D", "E"], "case_ids": ["L-03", "L-09"]}
+ },
+ "contains_C": {"kept": ["L-03", "L-04", "L-06", "L-09"], "record_count": 22},
+ "three_steps": {
+  "steps": [
+   {"kind": "contains_activity", "activity": "B", "choice": "Keep incidents that contain it", "kept_of_parent": 8, "kept_after_step": 8},
+   {"kind": "ends_with_activity", "activity": "E", "choice": "Keep incidents that end with it", "kept_of_parent": 8, "kept_after_step": 7},
+   {"kind": "contains_activity", "activity": "C", "choice": "Keep incidents that contain it", "kept_of_parent": 4, "kept_after_step": 4}
+  ],
+  "kept": ["L-03", "L-04", "L-06", "L-09"]
+ }
+}

@@ -159,6 +159,10 @@
   --size-map-least: 420px;
   --size-map-surround: 360px;
   --size-chip: 420px;
+  /* A step in the trail of the investigation: its few words and what is kept after it on one line, its whole wording when opened. */
+  --size-chip-compact: 280px;
+  /* The most of the window the scope of the investigation takes before it scrolls in itself. */
+  --size-scope-most: 34vh;
   --size-inspector-surround: 160px;
   --size-row-inset: 6px;
   --row-overhang: -3px;

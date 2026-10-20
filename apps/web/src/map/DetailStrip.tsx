@@ -17,17 +17,20 @@ interface DetailStripProps {
   lead?: ReactNode;
   /** What else stands in the row of the strip, after the controls: the tools of the map. */
   children?: ReactNode;
+  /** Where the Canvas map draws fewer of the selected paths at its zoom: both numbers, which the controls say. */
+  drawn?: { selected: number; drawn: number };
 }
 
 /**
  * The detail controls of the map in a strip above its canvas, so that the canvas is the map's
  * alone: the map library's own two sliders, each with the statement of what is shown, and its
  * switch to the table view. The sliders stand where the map's detail stands and the statements are
- * those of the graph the map draws (`mapDetail`). When moving one slider changes the statement of
+ * those of the graph the map draws (`mapDetail`); where the library's Canvas draws fewer of the
+ * selected paths at its zoom, the strip says how many. When moving one slider changes the statement of
  * the other, the controls say it in a live region of their own. The tools of the map stand in the
  * same row, after the controls.
  */
-export function DetailStrip({ detail, shown, onChange, view, onViewChange, lead, children }: DetailStripProps) {
+export function DetailStrip({ detail, shown, onChange, view, onViewChange, lead, children, drawn }: DetailStripProps) {
   return (
     <div className="map-detail">
       {lead}
@@ -40,6 +43,7 @@ export function DetailStrip({ detail, shown, onChange, view, onViewChange, lead,
         onViewChange={onViewChange}
         positions={shown.positions}
         statement={statementAsText(shown.statement)}
+        drawn={drawn}
       />
       {children}
     </div>

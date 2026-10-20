@@ -28,6 +28,7 @@ import { TransitionMatrix } from "../matrix/TransitionMatrix";
 import { PinControl } from "../pinned/PinControl";
 import { PinnedIndex } from "../pinned/PinnedIndex";
 import { GapPairs } from "../gaps/GapPairs";
+import { KeysGuide } from "./KeysGuide";
 import { AddStep } from "../filters/AddStep";
 import { httpGapsClient } from "../gaps/client";
 
@@ -42,8 +43,8 @@ interface ImportedInvestigationProps {
   mapInPlace?: boolean;
 }
 
-/** What the centre shows: the map, the incidents, or every path of the map in one list. */
-type View = InvestigationView | "paths" | "matrix";
+/** What the centre shows: the map, the incidents, their variants, every path of the map in one list, or the matrix of its paths. */
+type View = InvestigationView | "variants" | "paths" | "matrix";
 /** What the side panel shows beside the map or the table. */
 type Rail = "context" | "patterns" | "interval" | "gaps" | "pinned";
 
@@ -110,6 +111,13 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   // The rows of a passage opened from the matrix, marked in the incident's history while it is open.
   const [marked, setMarked] = useState<{ caseId: string; rowIds: string[] } | null>(null);
   const pairOpener = useRef<HTMLElement | null>(null);
+  // What had the keyboard when the history of an incident was opened, so that closing it gives the keyboard back there.
+  const historyOpener = useRef<HTMLElement | null>(null);
+  const noteOpener = useCallback(() => {
+    const active = document.activeElement;
+    // An opener inside the history itself (another incident opened from there) keeps the first one.
+    if (active instanceof HTMLElement && active !== document.body && !active.closest(".imported-inspector")) historyOpener.current = active;
+  }, []);
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
   const incidentsHeading = useRef<HTMLHeadingElement>(null);
   const waitingReason = useId();
@@ -160,36 +168,40 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
 
   const openCase = useCallback(
     (caseId: CaseId) => {
+      noteOpener();
       coordinator.openCase(caseId);
       setLayout((current) => (current === "collapsed" ? "side" : current));
       setFocusInspector((count) => count + 1);
     },
-    [coordinator],
+    [coordinator, noteOpener],
   );
   const openRemoved = useCallback(
     (caseId: CaseId) => {
+      noteOpener();
       coordinator.openCase(caseId, "removed");
       setLayout((current) => (current === "collapsed" ? "side" : current));
       setFocusInspector((count) => count + 1);
     },
-    [coordinator],
+    [coordinator, noteOpener],
   );
   const openPin = useCallback(
     (pinId: number) => {
+      noteOpener();
       coordinator.openPin(pinId);
       setLayout((current) => (current === "collapsed" ? "side" : current));
       setFocusInspector((count) => count + 1);
     },
-    [coordinator],
+    [coordinator, noteOpener],
   );
   const openWitness = useCallback(
     (caseId: CaseId, rowIds: string[]) => {
+      noteOpener();
       setMarked({ caseId, rowIds });
       coordinator.openCase(caseId);
       setLayout((current) => (current === "collapsed" ? "side" : current));
       setFocusInspector((count) => count + 1);
     },
-    [coordinator],
+    [coordinator, noteOpener],
   );
   const openPair = useCallback((pinIds: [number, number]) => {
     pairOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -207,8 +219,16 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
     const current = coordinator.getState().inspected;
     if (current.phase === "closed") return;
     coordinator.closeCase();
-    // A pinned history returns the focus to its pin; another to its row of the table.
-    if (current.side !== "pinned") setFocusRequest((previous) => ({ caseId: current.caseId, token: (previous?.token ?? 0) + 1 }));
+    const opener = historyOpener.current;
+    historyOpener.current = null;
+    // Opened from the table, the keyboard goes back to the incident's row, which the table brings into view. Opened from
+    // anywhere else (the map's matrix, a list in the side panel, a pin), it goes back to what opened it, once the history
+    // has made room for it again; the selection and the view stay as they are.
+    if (current.side !== "pinned" && (opener === null || opener.closest(".incident-table") !== null)) {
+      setFocusRequest((previous) => ({ caseId: current.caseId, token: (previous?.token ?? 0) + 1 }));
+    } else if (opener !== null) {
+      requestAnimationFrame(() => opener.isConnected && opener.focus());
+    }
   }, [coordinator]);
 
   useEffect(() => {
@@ -303,6 +323,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           </h2>
         </nav>
         {answer && <Facts answer={answer} shown={shown} revision={revision} />}
+        {answer && <KeysGuide serviceVersion={answer.identity.implementation_version} />}
         {saving && answer && <SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} waitingFor={waitingFor} />}
         <p role="status" className="visually-hidden">
           {population.phase === "loading" ? "Opening the incidents of this preparation" : population.phase === "ready" ? "Incidents shown" : ""}
@@ -320,8 +341,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           onStay={() => coordinator.stay()}
         />
       )}
-      {/* A saved investigation opens on its map or on its incidents; the list of paths and the matrix are of the map and are saved as the map. */}
-      {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view === "paths" || view === "matrix" ? "map" : view} onClose={() => setSaveOpen(false)} />}
+      {/* A saved investigation opens on its map or on its incidents; the list of paths and the matrix are of the map and are saved as the map, the variants as the incidents. */}
+      {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view === "paths" || view === "matrix" ? "map" : view === "variants" ? "incidents" : view} onClose={() => setSaveOpen(false)} />}
       {state.saved && <SavedLine binding={state.saved} />}
       {saving && state.saved && <RefreshReview saving={saving} revisionId={state.saved.revisionId} />}
       {answer && answer.cases.length > 0 && answer.cases.every((summary) => !summary.sequence_evaluable) && (
@@ -343,6 +364,10 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             </button>
             <button type="button" aria-pressed={view === "incidents"} onClick={() => setView("incidents")}>
               Incidents
+            </button>
+            {/* A view that cannot be shown says so on its button, so that a failure in a view not shown is not missed. */}
+            <button type="button" aria-pressed={view === "variants"} data-failed={variants.phase === "failed" || undefined} onClick={() => setView("variants")}>
+              {variants.phase === "failed" ? "Variants · not shown" : "Variants"}
             </button>
             <button type="button" aria-pressed={view === "paths"} onClick={() => setView("paths")}>
               Paths
@@ -390,6 +415,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 >
                   {openingContext.phase === "failed" ? "Context · not shown" : "Context"}
                 </button>
+                {/* The variants beside the table too, so that one variant after another can be listed in it. */}
                 <button
                   type="button"
                   aria-pressed={rail === "patterns"}
@@ -447,17 +473,22 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   openPinId={openPinId}
                 />
               )}
+              {/* Not beside its own view: the variants in the centre are the same list. */}
               <div hidden={rail !== "patterns"}>
-                <Variants
-                  state={variants}
-                  chosen={chosenVariant}
-                  onChoose={chooseVariant}
-                  onClear={() => clearVariant(false)}
-                  onRetry={() => coordinator.retryVariants()}
-                  waitingFor={waitingFor}
-                  onStep={addStep}
-                  previewStep={previewStep}
-                />
+                {view === "variants" ? (
+                  <p className="muted">The variants are shown in the centre.</p>
+                ) : (
+                  <Variants
+                    state={variants}
+                    chosen={chosenVariant}
+                    onChoose={chooseVariant}
+                    onClear={() => clearVariant(false)}
+                    onRetry={() => coordinator.retryVariants()}
+                    waitingFor={waitingFor}
+                    onStep={addStep}
+                    previewStep={previewStep}
+                  />
+                )}
               </div>
             </div>
           </aside>
@@ -467,11 +498,36 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             <PairedHistories pins={[shownPair[0], shownPair[1]]} evidence={pairEvidence} currentPopulationId={shown?.answer.identity.population_id ?? null} onReturn={closePair} />
           )}
           {/* The map and the list of its paths are one view of the kept incidents: its detail, its selection and its steps stay from one to the other. */}
-          {answer && view === "matrix" && shown && (
+          {answer && view === "matrix" && (
             <div hidden={shownPair !== null}>
-              <TransitionMatrix workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep}
-                previewStep={previewStep} waitingFor={waitingFor} onOpenCase={openWitness} openCaseId={openCaseId} />
+              {shown ? (
+                <TransitionMatrix workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep}
+                  previewStep={previewStep} waitingFor={waitingFor} onOpenCase={openWitness} openCaseId={openCaseId} />
+              ) : (
+                // The matrix is of the incidents a selection keeps: until one is answered it is not shown, and says so.
+                <p className="working-text">
+                  {state.selection.phase === "failed" ? "The matrix is shown once the incidents are selected." : "Selecting the incidents for the matrix of their paths…"}
+                </p>
+              )}
             </div>
+          )}
+          {/* The variants of the kept incidents in the centre: a variant listed shows its incidents in the table, and a step from one keeps or removes them. */}
+          {answer && view === "variants" && (
+            <section className="variants-pane" aria-labelledby="imported-variants-title" hidden={shownPair !== null}>
+              <h3 id="imported-variants-title" className="pane-title">
+                Variants of the kept incidents
+              </h3>
+              <Variants
+                state={variants}
+                chosen={chosenVariant}
+                onChoose={chooseVariant}
+                onClear={() => clearVariant(false)}
+                onRetry={() => coordinator.retryVariants()}
+                waitingFor={waitingFor}
+                onStep={addStep}
+                previewStep={previewStep}
+              />
+            </section>
           )}
           {answer && (view === "map" || view === "paths") && (
             <section className="map-pane" aria-labelledby="imported-map-title" hidden={shownPair !== null}>

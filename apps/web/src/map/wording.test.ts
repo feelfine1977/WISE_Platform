@@ -61,7 +61,7 @@ describe("the words of the map", () => {
       "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
       "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. Start and End are always shown, each with the strongest flow among the activities shown. The Paths detail ranks the paths by their incidents; another flow is drawn when it carries at least as many incidents as the weakest path drawn by frequency, and all are drawn when every path is; the menu of an activity offers the incidents that begin or end with it also while its flow is not drawn.",
       "Lag: the median of elapsed hours between the two records of a path.",
-      "Measures: the legend on the map, shown whole, switches what the map writes. " +
+      "Measures: the legend under the map, shown whole, switches what the map writes. " +
         "Frequency: the incidents on every path and activity. " +
         "Performance: before the incidents of a path its median lag, and on an activity the median time until the next event, with “–” where none is available; " +
         "the time since the event before is said under the map for a selected activity. " +

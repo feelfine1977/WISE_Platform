@@ -61,7 +61,8 @@ describe("the tools of the map", () => {
 
     // The map view is the row with the frame, and beside them in the page only what a selection offers.
     expect(parts()).toEqual(["map-main", "map-element visually-hidden"]);
-    expect(Array.from(view().querySelector(".map-main")!.children, (part) => part.className)).toEqual(["map-detail", "map-frame"]);
+    // Under the frame the legend: the canvas is the map's alone (#54).
+    expect(Array.from(view().querySelector(".map-main")!.children, (part) => part.className)).toEqual(["map-detail", "map-frame", "map-legend"]);
     expect(view().querySelector("details:not(.map-frame *)")).toBeNull();
     expect(view().querySelector('input[type="checkbox"]:not(.map-frame *)')).toBeNull();
   });
@@ -90,8 +91,8 @@ describe("the tools of the map", () => {
     const { user, map } = await renderMap();
     expect(tool("Overview of the whole map").getAttribute("aria-pressed")).toBe("false");
     expect(map.querySelector(".react-flow__minimap")).toBeNull();
-    // The zoom control and the legend stay where they are, with or without it.
-    const kept = () => [within(map).getByRole("button", { name: "Show the whole legend" }), map.querySelector(".react-flow__panel.bottom.left")].map((panel) => panel !== null);
+    // The zoom control and the legend under the map stay where they are, with or without it.
+    const kept = () => [screen.getByRole("button", { name: "Show the whole legend" }), map.querySelector(".react-flow__panel.bottom.left")].map((panel) => panel !== null);
     expect(kept()).toEqual([true, true]);
 
     await user.click(tool("Overview of the whole map"));
@@ -216,7 +217,7 @@ describe("what there is to know about the map", () => {
     expect(caption).toHaveLength(7);
     expect(caption[0]).toBe("Activities count labelled records and distinct incidents of the 2 incidents on the map.");
     expect(caption[5]).toMatch(/^Lag: /);
-    expect(caption[6]).toMatch(/^Measures: the legend on the map, shown whole, switches what the map writes\./);
+    expect(caption[6]).toMatch(/^Measures: the legend under the map, shown whole, switches what the map writes\./);
     expect(about().lastElementChild?.textContent).toBe("The map is drawn with an unreleased state of the map library (wise-flow 0.3.5, a local packaging candidate).");
   });
 

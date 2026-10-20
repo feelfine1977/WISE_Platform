@@ -73,9 +73,9 @@ it("opens the incident table from Map when a variant is listed, without changing
   const facts = screen.getByLabelText("Population").textContent;
   const requests = [imports.populations.length, selecting.selections.length, selecting.graphs.length, views.openings.length, views.variants.length];
 
-  // The variants are in the side panel, under Patterns.
-  await user.click(screen.getByRole("button", { name: "Filters and views" }));
-  await user.click(within(screen.getByRole("group", { name: "Side panel" })).getByRole("button", { name: "Variants" }));
+  // The variants are a view of the centre, named beside the map and the incidents (#54).
+  await user.click(within(screen.getByRole("group", { name: "View" })).getByRole("button", { name: "Variants" }));
+  expect(screen.getByRole("heading", { name: "Variants of the kept incidents" })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "List the 1 incident of variant 1 in the table" }));
 
   expect(screen.getByRole("button", { name: /^Incidents$/ }).getAttribute("aria-pressed")).toBe("true");

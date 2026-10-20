@@ -7,10 +7,26 @@
  * those sets is written with more classes than theirs.
  */
 
-/* The strip and, under it, the frame the map library draws in or the list of every path: either takes the height that is left. */
-.map-main { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; }
+/* The strip, under it the frame the map library draws in or the list of every path, which takes the height that is left, and under the frame the legend. */
+.map-main { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; }
 .map-main > .map-frame,
 .map-main > .path-list { grid-row: 2; }
+
+/*
+ * The legend of the map under its canvas: the map library's legend as a row of the paper, as the
+ * detail strip is above, joined to the bottom of the frame by one hairline. Shown whole it takes at
+ * most the height of the notes and scrolls there, so the map keeps the rest.
+ */
+.map-legend { grid-row: 3; position: relative; min-width: 0; max-height: var(--size-map-notes); overflow: auto; border-top: var(--line-width) solid var(--color-line); }
+.map-legend .wf-legend {
+  max-width: none;
+  padding: var(--space-1) var(--space-4);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.map-legend .wf-legend__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.map-legend .wf-legend--strip .wf-legend__measure { margin: 0; white-space: normal; }
 
 /*
  * The detail strip: the map library's panel laid out as one row, joined to the top of the frame so

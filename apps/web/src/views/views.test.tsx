@@ -47,7 +47,9 @@ function tableIncidents(): string[] {
 function panel(name: string): HTMLElement {
   const toggle = screen.queryByRole("button", { name: "Filters and views" });
   if (toggle?.getAttribute("aria-expanded") === "false") fireEvent.click(toggle);
-  const tab = screen.queryByRole("button", { name: name === "Variants" ? /^Variants( ·|$)/ : /^Context( ·|$)/ });
+  // The tab of the side panel: the variants are also a view of the centre, with a button of the same name in the views.
+  const side = screen.queryByRole("group", { name: "Side panel" });
+  const tab = side && within(side).queryByRole("button", { name: name === "Variants" ? /^Variants( ·|$)/ : /^Context( ·|$)/ });
   if (tab) fireEvent.click(tab);
   return screen.getByRole("region", { name });
 }
