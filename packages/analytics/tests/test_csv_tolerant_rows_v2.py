@@ -1,4 +1,5 @@
 """Real CSV defects retain exact source witnesses under explicit rows policy v2."""
+import hashlib
 import csv
 import json
 
@@ -38,7 +39,7 @@ def test_one_ragged_of_twenty_is_confirmed_outside_case_with_blank_ordinal_gaps(
     result=prepare(raw,dialect(),roles(context=(3,)),v2_choices(),True)
     assert isinstance(result,PreparationResult) and result.state=='ready'
     p=result.preparation; assert p is not None
-    assert p.source==raw and len(p.records)==20 and len(p.histories['A'])==19
+    assert p.source_id=='source.v1:sha256:'+hashlib.sha256(raw).hexdigest() and not hasattr(p,'source') and len(p.records)==20 and len(p.histories['A'])==19
     assert [r.source_position for r in p.records]==[0,*range(2,21)]
     excluded=p.records[1]
     assert excluded.case_id is None and excluded.activity is None and excluded.context==()
@@ -58,7 +59,7 @@ def test_one_ragged_of_twenty_is_confirmed_outside_case_with_blank_ordinal_gaps(
     assert again.preparation.identity_dict()==p.identity_dict()
     assert again.to_dict()==result.to_dict()
     replay=json.loads(json.dumps(p.descriptor()))
-    restored=prepare(p.source,replay['dialect'],replay['mapping'],replay['policies'],True)
+    restored=prepare(raw,replay['dialect'],replay['mapping'],replay['policies'],True)
     assert restored.preparation.identity_dict()==p.identity_dict()
     assert restored.to_dict()==result.to_dict()
 

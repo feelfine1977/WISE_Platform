@@ -39,6 +39,7 @@ STATUS: dict[str, int] = {
     "invalid_parameter": 400,
     "workspace_unavailable": 404,
     "source_unavailable": 404,
+    "memory_unavailable": 503,
     "preparation_unavailable": 404,
     "identity_mismatch": 409,
     "population_unavailable": 404,
@@ -56,6 +57,7 @@ RETRYABLE = frozenset(
     {
         "workspace_unavailable",
         "source_unavailable",
+        "memory_unavailable",
         "preparation_unavailable",
         "population_unavailable",
         "computation_failed",

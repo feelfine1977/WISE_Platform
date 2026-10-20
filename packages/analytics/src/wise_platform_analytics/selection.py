@@ -21,11 +21,6 @@ BOUNDARY_POLICY = "incident.boundary.raw_labeled_start_end.v1"
 SAME_RECORD_POLICY = "incident.raw.same_record_all.v1"
 
 
-class ContextRecord(Protocol):
-    column_index: int
-    value: str | None
-
-
 class PreparedRecordLike(Protocol):
     row_id: str
     source_position: int
@@ -36,8 +31,10 @@ class PreparedRecordLike(Protocol):
     utc_instant: str | None
     local_timestamp: str | None
     time_value: datetime | None
-    context: tuple[ContextRecord, ...]
+    context_columns: tuple[int, ...]
     original_cells: tuple[str, ...]
+
+    def context_value(self, column_index: int) -> str | None: ...
 
 
 class PreparedDataLike(Protocol):
@@ -513,8 +510,7 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
     if isinstance(predicate, CaseIdIn):
         value: bool | None = case_id in predicate.case_ids
     elif isinstance(predicate, RecordAttributeIn):
-        value = any(next((context.value for context in record.context if context.column_index == predicate.column_index), None)
-                    in predicate.values for record in records)
+        value = any(record.context_value(predicate.column_index) in predicate.values for record in records)
     elif isinstance(predicate, ContainsActivity):
         value = any(record.activity == predicate.activity for record in records)
     elif not prepared.sequence_evaluable(case_id):
@@ -529,7 +525,7 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
         hours = summaries[case_id][key]
         value = None if hours is None else hours >= predicate.hours
     elif isinstance(predicate, OpeningAttributeIn):
-        opening = next((context.value for context in records[0].context if context.column_index == predicate.column_index), None) if records else None
+        opening = records[0].context_value(predicate.column_index) if records else None
         value = None if not records else opening in predicate.values
     elif isinstance(predicate, DirectlyFollows):
         mapped = [record.activity for record in records if record.activity is not None]
@@ -543,8 +539,7 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
         if not records:
             value = None
         else:
-            opening = next((context.value for context in records[0].context
-                            if context.column_index == predicate.column_index), None)
+            opening = records[0].context_value(predicate.column_index)
             value = opening == predicate.value
     return None if value is None else not value if predicate.negate else value
 

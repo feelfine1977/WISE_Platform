@@ -37,6 +37,10 @@ describe("source interpretation review", () => {
     expect(screen.getByText(/Raw parsed range: 1948.*2020/)).toBeTruthy();
     expect(screen.getByText(/Observation horizon: 2019-01-28/)).toBeTruthy();
     expect(screen.getByText("Source discrepancy: 387 items")).toBeTruthy();
+    expect(screen.getByText(/Item B: its document's earliest raw event before start/)).toBeTruthy();
+    screen.getByRole("button", { name: "Inspect original item B" }).focus();
+    await user.keyboard("{Enter}");
+    expect(onInspect).toHaveBeenLastCalledWith("B");
     const witness = screen.getByRole("button", { name: "Inspect source inclusion A" }); witness.focus();
     await user.keyboard("{Enter}");
     expect(onInspect).toHaveBeenLastCalledWith("A", [witnessRow]);
@@ -45,13 +49,40 @@ describe("source interpretation review", () => {
   });
 
   it("labels an event projection as derived and keeps the raw parent counts visible", async () => {
-    const user = userEvent.setup();
-    const projected: Bpic19SourceReview = { ...review, projection: { row_ids: [witnessRow, ...["b", "c", "d", "e"].map(letter => "row.v1:sha256:" + letter.repeat(64))], record_count: 5, case_ids: ["A", "B", "C"], case_count: 3, document_count: 2, raw_histories_preserved: true } };
-    render(<SourceReview review={projected} disabled={false} onInspect={vi.fn()} onKeep={vi.fn()} />);
+    const user = userEvent.setup(), onInspect = vi.fn();
+    const projected: Bpic19SourceReview = { ...review, interpretation: { ...review.interpretation, inclusion: { ...review.interpretation.inclusion, kind: "record_projection", end_exclusive: "2019-01-01T00:00:00Z" } }, projection: { row_ids: [witnessRow, ...["b", "c", "d", "e"].map(letter => "row.v1:sha256:" + letter.repeat(64))], record_count: 5, case_ids: ["A", "B", "C"], case_count: 3, document_count: 2, raw_histories_preserved: true } };
+    render(<SourceReview review={projected} disabled={false} onInspect={onInspect} onKeep={vi.fn()} />);
     await user.click(screen.getByText(/Source scope and observation review/));
     expect(screen.getByText(/Derived record projection: 5 records across 3 items/)).toBeTruthy();
     expect(screen.getByText(/Raw parent: 3 items \/ 7 original records/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Keep source inclusion" })).toBeNull();
+    screen.getByRole("button", { name: "Inspect projected records in original A" }).focus();
+    await user.keyboard("{Enter}");
+    expect(onInspect).toHaveBeenLastCalledWith("A", projected.projection!.row_ids);
+  });
+
+  it("disables the sibling's own original-history action with the reviewed authority", async () => {
+    const user = userEvent.setup(), onInspect = vi.fn();
+    render(<SourceReview review={review} disabled={true} onInspect={onInspect} onKeep={vi.fn()} />);
+    await user.click(screen.getByText(/Source scope and observation review/));
+    const original = screen.getByRole("button", { name: "Inspect original item B" });
+    expect(original).toHaveProperty("disabled", true);
+    await user.click(original);
+    expect(onInspect).not.toHaveBeenCalled();
+  });
+
+  it("labels the bounded projection preview and disables original-history actions when authority is revoked", async () => {
+    const user = userEvent.setup(), onInspect = vi.fn();
+    const ids = Array.from({ length: 11 }, (_, i) => `Item${i}`);
+    const projected: Bpic19SourceReview = { ...review, interpretation: { ...review.interpretation, inclusion: { ...review.interpretation.inclusion, kind: "record_projection" } }, projection: { row_ids: [witnessRow], record_count: 11, case_ids: ids, case_count: 11, document_count: 2, raw_histories_preserved: true } };
+    render(<SourceReview review={projected} disabled={true} onInspect={onInspect} onKeep={vi.fn()} />);
+    await user.click(screen.getByText(/Source scope and observation review/));
+    const buttons = screen.getAllByRole("button", { name: /^Inspect projected records in original/ });
+    expect(buttons).toHaveLength(10);
+    expect(screen.queryByRole("button", { name: "Inspect projected records in original Item10" })).toBeNull();
+    expect(screen.getByText(/1 further projected items are not shown in this preview/)).toBeTruthy();
+    for (const button of buttons) { expect(button).toHaveProperty("disabled", true); await user.click(button); }
+    expect(onInspect).not.toHaveBeenCalled();
   });
 
   it("requires declared provenance after switching an unknown horizon on and stores explicit inclusion grain", async () => {

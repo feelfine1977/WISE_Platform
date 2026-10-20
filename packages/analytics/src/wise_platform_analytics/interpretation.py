@@ -7,24 +7,26 @@ from collections.abc import Mapping
 from itertools import groupby
 from typing import TYPE_CHECKING
 
-from .csv_inspection import CsvData
 from .time_formats import TimeInterpretation, iso_local, iso_utc
 
 if TYPE_CHECKING:
-    from .preparation import PreparedRecord
+    from .preparation import PreparedRecord, SourceReading
 
 
-def interpretation_report(data: CsvData, records: tuple[PreparedRecord, ...], histories: Mapping[str, tuple[PreparedRecord, ...]],
-                          mapping: Mapping[str, object], clock: TimeInterpretation, issues: list[dict[str, object]]) -> dict[str, object]:
-    issues = list(issues)
-    seen = set()
+def interpretation_report(reading: SourceReading, records: tuple[PreparedRecord, ...], histories: Mapping[str, tuple[PreparedRecord, ...]],
+                          mapping: Mapping[str, object], clock: TimeInterpretation) -> dict[str, object]:
+    issues = list(reading.issues)
     duplicates = 0
-    for row in records:
-        if row.original_cells in seen:
-            duplicates += 1
-            issues.append({"source_position": row.source_position, "column_index": None, "case_id": row.case_id,
-                           "code": "duplicate_candidate", "severity": "warning", "message": "These original cells repeat an earlier row; both observations are retained."})
-        seen.add(row.original_cells)
+    # Equal cells mean an equal case identifier, so a repeat can only be found within one case or among the
+    # unassigned rows. Checking each group in source order finds every repeat without one table over all records.
+    for group in (*histories.values(), [row for row in records if row.case_id is None]):
+        seen = set()
+        for row in sorted(group, key=lambda row: row.source_position):
+            if row.original_cells in seen:
+                duplicates += 1
+                issues.append({"source_position": row.source_position, "column_index": None, "case_id": row.case_id,
+                               "code": "duplicate_candidate", "severity": "warning", "message": "These original cells repeat an earlier row; both observations are retained."})
+            seen.add(row.original_cells)
     tied_groups = tied_rows = 0
     for case, rows in histories.items():
         times = Counter(row.time_value for row in rows if row.time_value is not None)
@@ -55,10 +57,11 @@ def interpretation_report(data: CsvData, records: tuple[PreparedRecord, ...], hi
                      | ({mapping["sequence_column"]} if mapping["sequence_column"] is not None else set()))
     missing_cells = []
     for index in columns:
-        count = sum((cells[index].strip() == "" if index == mapping["case_column"] else cells[index] == "") for cells in data.rows if index < len(cells))
+        count = sum((cells[index].strip() == "" if index == mapping["case_column"] else cells[index] == "")
+                    for row in records if index < len(cells := row.original_cells))
         missing_cells.append({"column_index": index, "record_count": count})
-    excluded = [source.excluded_dict("ragged_record" if len(source.cells) != len(data.columns) else "missing_case_id")
-                for source, row in zip(data.records, records) if row.case_id is None]
+    excluded = [reading.excluded[row.source_position].excluded_dict("ragged_record" if len(row.original_cells) != len(reading.columns) else "missing_case_id")
+                for row in records if row.case_id is None]
     first, last = (min(usable), max(usable)) if usable else (None, None)
     wall = clock.kind == "wall_clock"
     assumptions = ["All identified incidents retain every original record; unassigned rows remain in the preserved source.",
@@ -84,5 +87,5 @@ def interpretation_report(data: CsvData, records: tuple[PreparedRecord, ...], hi
             "duplicate_candidate_record_count": duplicates,
             "activities": [{"activity": activity, "record_count": activity_rows[activity], "case_count": len(activity_cases[activity])} for activity in sorted(activity_rows)],
             "issues": sorted(issues, key=lambda issue: (issue["source_position"], issue["code"])), "assumptions": assumptions,
-            "blank_record_count": data.blank_record_count, "ragged_record_count": data.ragged_record_count,
+            "blank_record_count": reading.blank_record_count, "ragged_record_count": reading.ragged_record_count,
             "excluded_source_records": excluded}

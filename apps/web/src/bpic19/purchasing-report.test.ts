@@ -42,6 +42,39 @@ function expectSubtypeSection(md:string,step:number,definition:string,swapped:bo
   expect(block("**Recorded limitations**")).toContain("- Literal count comparison; document supports overlap, not a causal effect.");
 }
 describe("human-readable frozen purchasing report",()=>{
+  it("exports the current source discrepancy, exact inclusion members and original-row references",()=>{
+    const {revision,manifest}=literal();
+    const profile=manifest.outputs[0].output.profile as Record<string,unknown>;
+    profile.source_review={interpretation:{profile_name:"H7 document start",inclusion:{kind:"document_start"},horizon:{value:"2019-01-28T00:00:00Z",provenance:"Synthetic contract"}},
+      retained:{case_ids:["C"],case_count:1,record_count:2},excluded:{case_ids:["A","B"],case_count:2,record_count:5},unavailable:{case_ids:[],case_count:0},
+      discrepancies:[{reference:"Synthetic subtotal claim",reported_total:251734,reported_subtotal:251347,difference:387,measured_parent_case_count:3}],
+      inclusion_evidence:[{case_id:"B",reason:"earliest_raw_event_before_start",witness_case_ids:["A"],row_ids:["original-h1"]}]};
+    const md=purchasingReportMarkdown(revision,manifest).replaceAll("\\_","_");
+    const section=md.split("### Step 1:")[1].split("### Step 2:")[0];
+    expect(section).toContain("Source discrepancies");
+    expect(section).toContain("| Synthetic subtotal claim | 251734 | 251347 | 387 | 3 |");
+    expect(section).toContain("retained complete-item IDs: C.");
+    expect(section).toContain("excluded complete-item IDs: A, B.");
+    expect(section).toContain("unavailable complete-item IDs: none.");
+    expect(section).toContain("| B | earliest_raw_event_before_start | A | original-h1 |");
+    expect(section).toContain("Whole-document reasons describe the document's earliest raw event, not each sibling item's earliest event.");
+    const source=profile.source_review as Record<string,unknown>;
+    source.interpretation={profile_name:"H7 record projection",inclusion:{kind:"record_projection",timestamp_kind:"utc_instant",start_inclusive:"2018-01-01T00:00:00Z",end_exclusive:"2019-01-01T00:00:00Z"},horizon:{value:"2019-01-28T00:00:00Z",provenance:"Synthetic contract"}};
+    source.retained={case_ids:[],case_count:0,record_count:0};source.excluded={case_ids:[],case_count:0,record_count:0};
+    source.projection={case_ids:["A","B","C"],row_ids:["original-h2","original-h4","original-h5","original-h6","original-h7"],record_count:5};
+    const projected=purchasingReportMarkdown(revision,manifest);
+    expect(projected).not.toContain("projection complete-item IDs");
+    expect(projected).not.toContain("retained complete-item IDs: none.");
+    expect(projected).not.toContain("excluded complete-item IDs: none.");
+    expect(projected).toContain("Whole-item inclusion supports are not applicable to this derived record projection");
+    expect(projected.indexOf("Whole-item inclusion supports are not applicable")).toBeLessThan(projected.indexOf("retained:\n"));
+    expect(projected).toContain("Items with projected records: A, B, C.");
+    expect(projected).toContain("Derived projection original-row references: original-h2, original-h4, original-h5, original-h6, original-h7.");
+    source.projection={};
+    expect(purchasingReportMarkdown(revision,manifest)).toContain("Whole-item inclusion supports are not applicable");
+    source.projection=null;
+    expect(purchasingReportMarkdown(revision,manifest)).toContain("Whole-item inclusion supports are not applicable");
+  });
   it("scopes A and current B predicates, supports and limitations to their own action/definition",()=>{
     const {revision,manifest}=literal();
     const query={policy_id:"bpic19.flow_item_type_comparison.v1"};

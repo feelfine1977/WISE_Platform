@@ -208,11 +208,7 @@ def _catalogue(
             values = set()
             missing_records[c] = 0
             for record in records:
-                value = next(
-                    cell.value
-                    for cell in record.context
-                    if cell.column_index == rule["column_index"]
-                )
+                value = record.context_value(rule["column_index"])
                 values.add(value)
                 missing_records[c] += value is None
             for value in values:

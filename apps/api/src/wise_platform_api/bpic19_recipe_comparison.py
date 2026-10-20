@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 def _refused(given, code, message, field=None):
     body = {"schema_version": 1, "message_type": "bpic19_recipe_comparison_refusal", **import_echo(given),
             "operation": "bpic19_recipe_comparison", "code": code, "message": message, "field": field,
-            "retryable": code in {"computation_failed", "source_unavailable", "population_unavailable", "workspace_unavailable"}}
+            "retryable": code in {"memory_unavailable", "computation_failed", "source_unavailable", "population_unavailable", "workspace_unavailable"}}
     Bpic19RecipeComparisonRefusal.model_validate_json(json.dumps(body), strict=True)
-    return ImportReply(400 if code == "invalid_request" else 500 if code == "computation_failed" else 422, body)
+    return ImportReply(503 if code == "memory_unavailable" else 400 if code == "invalid_request" else 500 if code == "computation_failed" else 422, body)
 
 
 class Bpic19RecipeComparisons:

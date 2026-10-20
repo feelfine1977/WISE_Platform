@@ -12,6 +12,7 @@ import logging
 from threading import RLock
 
 from wise_platform_analytics.bpic19_measures import add_historical_measures, derive_case_measures, measure_population
+from wise_platform_analytics.footprint import report_footprint
 from wise_platform_analytics.mapping import ImportRefusal
 
 from .boundary import read_object
@@ -51,10 +52,10 @@ def _repeats(value: object, path: tuple = ()) -> tuple | None:
 
 
 def _refused(given: dict, code: str, message: str, field: str | None = None) -> Bpic19MeasuresReply:
-    status = 400 if code in {"invalid_request", "unsupported_schema", "unsupported_policy", "invalid_parameter", "unsupported_definition", "role_unavailable", "empty_calibration"} else 404 if code in {"workspace_unavailable", "source_unavailable", "preparation_unavailable", "population_unavailable"} else 403 if code == "workspace_not_writable" else 500 if code == "computation_failed" else 409
+    status = 503 if code == "memory_unavailable" else 400 if code in {"invalid_request", "unsupported_schema", "unsupported_policy", "invalid_parameter", "unsupported_definition", "role_unavailable", "empty_calibration"} else 404 if code in {"workspace_unavailable", "source_unavailable", "preparation_unavailable", "population_unavailable"} else 403 if code == "workspace_not_writable" else 500 if code == "computation_failed" else 409
     body = {"schema_version": 1, "message_type": "bpic19_measures_refusal", **import_echo(given),
             "operation": "bpic19_measures", "code": code, "message": message, "field": field,
-            "retryable": code in {"computation_failed", "workspace_unavailable", "source_unavailable", "preparation_unavailable", "population_unavailable"}}
+            "retryable": code in {"memory_unavailable", "computation_failed", "workspace_unavailable", "source_unavailable", "preparation_unavailable", "population_unavailable"}}
     checked = read_strictly(body, generated.Bpic19MeasuresRefusal, _ALTERNATIVES)
     if isinstance(checked, list): raise ValueError("The BPIC19 measures refusal violates its contract")
     return Bpic19MeasuresReply(status, body)
@@ -83,6 +84,10 @@ class Bpic19Measures:
         self._imports = imports
         self._summaries: OrderedDict[str, dict] = OrderedDict()
         self._lock = RLock()
+
+    def _forget(self, key: str) -> None:
+        with self._lock:
+            self._summaries.pop(key, None)
 
     def measures(self, body: bytes) -> Bpic19MeasuresReply:
         given = read_object(body)
@@ -117,7 +122,9 @@ class Bpic19Measures:
                 cached = {name: value for name, value in result.items() if name not in {"cases", "offset", "limit", "next_offset"}}
                 with self._lock:
                     self._summaries[key] = cached
-                    while len(self._summaries) > 2: self._summaries.popitem(last=False)
+                    dropped = [self._summaries.popitem(last=False)[0] for _ in range(len(self._summaries) - 2)]
+                for old in dropped: self._imports.budget.forget(("measures", old))
+                self._imports.budget.hold(("measures", key), report_footprint(cached), lambda key=key: self._forget(key))
             else:
                 chosen = cached["definition"]["roles"]
                 cases = [derive_case_measures(prepared, case_id, chosen, cached["definition"]) for case_id in population.case_ids[query["offset"]:query["offset"] + query["limit"]]]

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { UploadSourceMetadata } from "../generated/imports";
 import { caseSummaries, evidenceAnswer, importRefusal, inspectionAnswer, populationAnswer, workspaceId } from "../test/imports";
 import { exampleSourceRoute, httpImportClient, importContract, routes, uploadQuery } from "./client";
+import { describeImportProblem } from "./wording";
 
 const populationRequest = {
   schema_version: 1,
@@ -115,6 +116,22 @@ describe("the import client", () => {
     const outcome = await httpImportClient.uploadSource(metadata, new Blob([]), new AbortController().signal);
 
     expect(outcome).toEqual(refusal);
+  });
+
+  it("shows a refusal for lack of memory with the service's own message and a remedy the analyst can act on", async () => {
+    const request = { schema_version: 1, message_type: "inspect_csv_request", request_id: "inspect-3", query_revision: 3,
+      workspace_id: workspaceId, source_id: `source.v1:sha256:${"7".repeat(64)}` } as const;
+    const message = "Reading this source needs about 2.1 GB more memory than the service may use now.";
+    const refusal = importRefusal(request, "inspect_csv", "memory_unavailable", message);
+    if (refusal.ok || refusal.problem.kind !== "refusal") throw new Error("A refusal was expected.");
+    replying(503, { ...refusal.problem.refusal, retryable: true });
+
+    const outcome = await httpImportClient.inspect(request, new AbortController().signal);
+
+    if (outcome.ok) throw new Error("A refusal was expected.");
+    const shown = describeImportProblem(outcome.problem);
+    expect(shown.message).toBe(message);
+    expect(shown.remedy).toMatch(/not have enough memory.*Close other work/);
   });
 
   it("reports a missing operation, an unreadable reply and no connection as failures, never as answers", async () => {
