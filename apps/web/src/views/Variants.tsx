@@ -21,6 +21,10 @@ interface VariantsProps {
   /** Takes the step keeping exactly one variant; with a previewer, the step is previewed first and applied on request. */
   onStep?: (step: SelectionPredicate) => void;
   previewStep?: StepPreviewer;
+  /** Shows the incidents with a sequence similar to a variant's; without it no such suggestion is offered. */
+  onSimilar?: (variant: Variant, rank: number) => void;
+  /** The variant whose similar sequences are shown, by its id. */
+  similarTo?: VariantId | null;
 }
 
 /** The step keeping the incidents whose complete sequence is exactly this variant's. */
@@ -29,7 +33,7 @@ export function variantStep(variant: Variant): SelectionPredicate {
 }
 
 /** The actual sequences of labelled activities, most incidents first; one can be listed in the table. */
-export function Variants({ state, chosen, onChoose, onClear, onRetry, waitingFor, onStep, previewStep }: VariantsProps) {
+export function Variants({ state, chosen, onChoose, onClear, onRetry, waitingFor, onStep, previewStep, onSimilar, similarTo = null }: VariantsProps) {
   return (
     <section className="view-panel" aria-labelledby="variants-title" aria-busy={state.phase === "loading"}>
       <h3 id="variants-title" className="view-title">
@@ -39,7 +43,7 @@ export function Variants({ state, chosen, onChoose, onClear, onRetry, waitingFor
       {state.phase === "failed" && <ViewProblemNotice title="The variants cannot be shown" problem={state.problem} onRetry={onRetry} waitingFor={waitingFor} />}
       {state.phase === "ready" && (
         <VariantList key={state.answer.request_id} answer={state.answer} chosen={chosen} onChoose={onChoose} onClear={onClear}
-          actions={onStep ? { onStep, previewStep, waitingFor } : undefined} />
+          actions={onStep ? { onStep, previewStep, waitingFor } : undefined} onSimilar={onSimilar} similarTo={similarTo} />
       )}
     </section>
   );
@@ -57,6 +61,8 @@ interface VariantListProps {
   onChoose: (variantId: VariantId) => void;
   onClear: () => void;
   actions?: StepActions;
+  onSimilar?: (variant: Variant, rank: number) => void;
+  similarTo?: VariantId | null;
 }
 
 /** How the ranked variants, the ones not shown and the incidents of unknown order add up to the incidents counted. */
@@ -69,7 +75,7 @@ export function inventoryLine(summary: VariantsAnswer["variants"], listed: numbe
   return `${parts.join(" and ")}: ${countOf(summary.case_count, "incident")} counted exactly, none sampled.`;
 }
 
-function VariantList({ answer, chosen, onChoose, onClear, actions }: VariantListProps) {
+function VariantList({ answer, chosen, onChoose, onClear, actions, onSimilar, similarTo = null }: VariantListProps) {
   const summary = answer.variants;
   const [shown, setShown] = useState(VARIANTS_SHOWN);
   const [pending, setPending] = useState<VariantId | null>(null);
@@ -130,6 +136,8 @@ function VariantList({ answer, chosen, onChoose, onClear, actions }: VariantList
                 pending={variant.id === pending}
                 onPreview={() => setPending(variant.id)}
                 onSettle={() => settle(variant.id)}
+                onSimilar={onSimilar && variant.activities.length > 0 ? () => onSimilar(variant, index + 1) : undefined}
+                similar={similarTo === variant.id}
               />
             ))}
           </ol>
@@ -153,9 +161,11 @@ interface VariantItemProps {
   pending: boolean;
   onPreview: () => void;
   onSettle: () => void;
+  onSimilar?: () => void;
+  similar?: boolean;
 }
 
-function VariantItem({ variant, rank, chosen, onToggle, actions, pending, onPreview, onSettle }: VariantItemProps) {
+function VariantItem({ variant, rank, chosen, onToggle, actions, pending, onPreview, onSettle, onSimilar, similar = false }: VariantItemProps) {
   const incidents = countOf(variant.case_count, "incident");
   const described = `${variant.case_count} of ${variant.denominator} incidents whose order is known (${percent(variant.share)})`;
   const steps = variant.activities.length;
@@ -177,6 +187,11 @@ function VariantItem({ variant, rank, chosen, onToggle, actions, pending, onPrev
             aria-label={actions.previewStep ? `Preview keeping the ${incidents} of variant ${rank}` : `Keep the ${incidents} of variant ${rank}`}
             onClick={() => (actions.previewStep ? onPreview() : actions.onStep(variantStep(variant)))}>
             {actions.previewStep ? "Preview keeping" : "Keep"}
+          </button>
+        )}
+        {onSimilar && (
+          <button type="button" aria-pressed={similar} aria-label={`Incidents with a sequence similar to variant ${rank}`} onClick={onSimilar}>
+            Similar sequences
           </button>
         )}
       </div>

@@ -27,6 +27,7 @@ from .numeric_contexts import NumericContexts
 from .stage_proposals import StageProposals
 from .unanswered import UnansweredRequests
 from .record_marks_view import RecordMarks
+from .similar_sequences_view import SimilarSequences
 from .gap_pairs import GapPairs
 from .outcomes import Outcomes
 from .workspace_backups import WorkspaceBackups
@@ -88,6 +89,7 @@ def create_app(
     stage_proposals = StageProposals(imports)
     unanswered_requests = UnansweredRequests(imports)
     record_mark_views = RecordMarks(imports)
+    similar_sequence_views = SimilarSequences(imports)
     gap_pair_views = GapPairs(imports)
     outcomes = Outcomes(imports)
     backups = WorkspaceBackups(imports)
@@ -244,6 +246,11 @@ def create_app(
     @application.post("/api/investigations/record-marks")
     async def record_marks(request: Request) -> JSONResponse:
         reply = await run_in_threadpool(record_mark_views.record_marks, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/similar-sequences")
+    async def similar_sequences(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(similar_sequence_views.similar_sequences, await request.body())
         return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/gap-pairs")
