@@ -190,6 +190,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - A click on the head of Records, Span, Longest gap or First record orders the list as the oracle does; a second click reverses it.
   - The head says the direction (`aria-sort`), and the order is said in words with its ties and its unavailable values.
 
+- `tools/qualify_step_trail.py` (#93): the trail of steps over the invented `tests/fixtures/span-gap` file, against its `trail.json`.
+  - Three steps taken from the Filters stand as short chips, the earliest first, each with the incidents kept after it ("kept after step k", supplied by the service). A chip's details open on demand.
+  - Choosing a chip shows the state after it, the later steps kept with their counts. The journey goes forward and back to the parent; a new step drops the later steps.
+  - With `WISE_SCREENSHOT_DIR` set, a picture of the trail is written there.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

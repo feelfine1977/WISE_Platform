@@ -77,6 +77,14 @@ class CaseId(RootModel[constr(min_length=1, max_length=256)]):
     root: constr(min_length=1, max_length=256) = Field(..., title='CaseId')
 
 
+class KeptAfterStep(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_count: conint(ge=0, le=9007199254740991)
+    record_count: conint(ge=0, le=9007199254740991)
+
+
 class ContainsActivity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -1263,6 +1271,7 @@ class PredicateResult(BaseModel):
     removed: PopulationSupport
     unevaluable: PopulationSupport
     record_evidence: RecordAttributeEvidence | None = None
+    kept_after_step: KeptAfterStep | None = None
 
 
 class NamedGroupDefinition(

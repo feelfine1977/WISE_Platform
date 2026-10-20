@@ -1,11 +1,12 @@
-import { useId } from "react";
+import { useId, useRef } from "react";
 import type { SelectionPredicate } from "../generated/selection";
 import { type ImportedSelectionState, shownSelection } from "../imported/coordinator";
 import type { Replacement } from "../replacement/replacement";
 import { ReplacementNotice } from "../replacement/ReplacementNotice";
 import type { SelectionProblem } from "./client";
-import { canRedo, canUndo, type StepHistory } from "./steps";
-import { COMBINATION, combinedLine, describeSelectionProblem, overlapLine, stepCounts, stepWording, unevaluableReason } from "./wording";
+import { countOf } from "../data/wording";
+import { canRedo, canUndo, type StepHistory, trailOf } from "./steps";
+import { COMBINATION, combinedLine, describeSelectionProblem, overlapLine, shortStepWording, stepCounts, stepWording, unevaluableReason } from "./wording";
 
 interface SelectionStepsProps {
   selection: ImportedSelectionState;
@@ -14,6 +15,8 @@ interface SelectionStepsProps {
   onUndo: () => void;
   onRedo: () => void;
   onRetry: () => void;
+  /** Shows the state after the first `count` steps of the trail; the later steps stay until a new step is taken. */
+  onShowAfter?: (count: number) => void;
   /** Gives up steps that could not be selected and stays with the selection shown. */
   onStay: () => void;
   /** The id of the text saying why the steps cannot be changed now; while it is given, they wait. */
@@ -21,18 +24,31 @@ interface SelectionStepsProps {
 }
 
 /**
- * The steps of the selection as chips. Each chip says what it keeps and shows its own kept,
- * removed and unevaluable incidents over the whole parent, as the local service answered them for
- * the selection shown.
+ * The steps of the selection as a trail of short chips, the earliest first. Each chip says its step in
+ * a few words and the incidents kept after it ("kept after step k", as the local service supplies it);
+ * its full wording, its own kept, removed and unevaluable incidents over the whole parent and its
+ * actions open on demand. The trail leads back to any earlier state, the parent first; the later steps
+ * stay in the trail, not applied, until a new step is taken.
  */
-export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, onRetry, onStay, waitingFor }: SelectionStepsProps) {
+export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, onRetry, onShowAfter, onStay, waitingFor }: SelectionStepsProps) {
   const waiting = waitingFor !== undefined;
   const reasonId = useId();
+  // The incidents kept after each step of a trail, by the steps up to it, as answered: a later step not applied now keeps its count.
+  const keptAfter = useRef(new Map<string, number>()).current;
   if (selection.phase === "idle") return null;
   const shown = shownSelection(selection);
   const { history } = selection;
   const results = shown?.answer.predicate_results ?? [];
   const replacement = selectionReplacement(selection);
+  const parentKey = shown ? JSON.stringify(shown.answer.parent_identity) : "";
+  const prefixKey = (steps: readonly unknown[]) => `${parentKey}${JSON.stringify(steps)}`;
+  results.forEach((result, index) => {
+    if (result.kept_after_step) keptAfter.set(prefixKey(results.slice(0, index + 1).map((item) => item.predicate)), result.kept_after_step.case_count);
+  });
+  // The later steps of the trail, after the state shown, kept until a new step is taken.
+  const trail = trailOf(history);
+  const later = shown && history.present.length === results.length ? trail.slice(results.length) : [];
+  const keptLine = (count: number | undefined) => (count === undefined ? "kept: not counted now" : `${count.toLocaleString("en")} kept`);
   return (
     <section className="selection-steps" aria-labelledby="selection-steps-title">
       <div className="selection-head">
@@ -57,34 +73,82 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
       {shown && results.length === 0 && (
         <p className="muted">No step yet: every incident of the parent is kept. Select an activity or a path on the map to keep or remove incidents.</p>
       )}
+      {shown && (results.length > 0 || later.length > 0) && onShowAfter && (
+        <p className="trail-start">
+          <button type="button" disabled={waiting || results.length === 0} aria-describedby={waitingFor} onClick={() => onShowAfter(0)}>
+            Every incident of the parent · {shown.answer.parent.case_count.toLocaleString("en")}
+          </button>
+        </p>
+      )}
       {results.length > 0 && (
         <ul className="chips" aria-label="Steps of the selection">
-          {results.map((result) => {
+          {results.map((result, index) => {
             const wording = stepWording(result.predicate);
+            const last = index === results.length - 1;
             return (
-              <li key={JSON.stringify(result.predicate)} className="chip">
-                <p className="chip-wording">{wording}</p>
-                <dl className="chip-counts">
-                  {stepCounts(result).map(([label, value]) => (
-                    <div key={label}>
-                      <dt>{label}</dt>
-                      <dd>{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-                {result.unevaluable.case_count > 0 && unevaluableReason(result.predicate) !== null && (
-                  <p className="chip-reason">Not evaluable because {unevaluableReason(result.predicate)}.</p>
-                )}
-                <button
-                  type="button"
-                  className="chip-remove"
-                  aria-label={`Remove the step: ${wording}`}
-                  disabled={waiting}
-                  aria-describedby={waitingFor}
-                  onClick={() => onRemove(result.predicate)}
-                >
-                  Remove
-                </button>
+              <li key={JSON.stringify(result.predicate)} className="chip" aria-current={last ? "step" : undefined}>
+                <details>
+                  <summary>
+                    <span className="chip-short">{index + 1}. {shortStepWording(result.predicate)}</span>
+                    <span className="chip-kept">{keptLine(result.kept_after_step?.case_count)}</span>
+                  </summary>
+                  <p className="chip-wording">{wording}</p>
+                  {result.kept_after_step && (
+                    <p className="chip-after">
+                      After this step: {countOf(result.kept_after_step.case_count, "incident")} · {countOf(result.kept_after_step.record_count, "record")} kept
+                    </p>
+                  )}
+                  <dl className="chip-counts">
+                    {stepCounts(result).map(([label, value]) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {result.unevaluable.case_count > 0 && unevaluableReason(result.predicate) !== null && (
+                    <p className="chip-reason">Not evaluable because {unevaluableReason(result.predicate)}.</p>
+                  )}
+                  <p className="chip-actions">
+                    {!last && onShowAfter && (
+                      <button type="button" disabled={waiting} aria-describedby={waitingFor} onClick={() => onShowAfter(index + 1)}>
+                        Show the selection after this step
+                      </button>
+                    )}{" "}
+                    <button
+                      type="button"
+                      className="chip-remove"
+                      aria-label={`Remove the step: ${wording}`}
+                      disabled={waiting}
+                      aria-describedby={waitingFor}
+                      onClick={() => onRemove(result.predicate)}
+                    >
+                      Remove
+                    </button>
+                  </p>
+                </details>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {later.length > 0 && onShowAfter && (
+        <ul className="chips chips-later" aria-label="Later steps, not applied now">
+          {later.map((step, offset) => {
+            const count = results.length + offset + 1;
+            return (
+              <li key={JSON.stringify(step)} className="chip chip-later">
+                <details>
+                  <summary>
+                    <span className="chip-short">{count}. {shortStepWording(step)}</span>
+                    <span className="chip-kept">{keptLine(keptAfter.get(prefixKey(trail.slice(0, count))))}</span>
+                  </summary>
+                  <p className="chip-wording">{stepWording(step)}</p>
+                  <p className="muted">Not applied now; it stays in the trail until a new step is taken.</p>
+                  <button type="button" disabled={waiting} aria-describedby={waitingFor} onClick={() => onShowAfter(count)}>
+                    Show the selection after this step
+                  </button>
+                </details>
               </li>
             );
           })}

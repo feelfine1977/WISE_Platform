@@ -150,6 +150,14 @@ class EndsWithActivity(BaseModel):
     negate: bool
 
 
+class KeptAfterStep(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_count: conint(ge=0, le=9007199254740991)
+    record_count: conint(ge=0, le=9007199254740991)
+
+
 class NodeMetrics(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -613,6 +621,7 @@ class PredicateResult(BaseModel):
     removed: PopulationSupport
     unevaluable: PopulationSupport
     record_evidence: RecordAttributeEvidence | None = None
+    kept_after_step: KeptAfterStep | None = None
 
 
 class SelectCasesRequest(BaseModel):

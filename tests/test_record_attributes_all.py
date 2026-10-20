@@ -48,7 +48,7 @@ def test_same_record_not_different_rows_bad_times_and_complete_history():
         {"case_id": "T", "matching_row_ids": [f"row.v1:sha256:{9:064x}"], "unevaluable_row_ids": [f"row.v1:sha256:{10:064x}"]},
         {"case_id": "U", "matching_row_ids": [], "unevaluable_row_ids": [f"row.v1:sha256:{7:064x}"]}]}
     assert prepared.histories["K"][0].original_cells == ("K", "true", "false")
-    assert select_cases(prepared, [ContainsActivity("A")]).to_dict()["predicate_results"][0].keys() == {"predicate", "kept", "removed", "unevaluable"}
+    assert select_cases(prepared, [ContainsActivity("A")]).to_dict()["predicate_results"][0].keys() == {"predicate", "kept", "removed", "unevaluable", "kept_after_step"}
 
 
 def test_negation_missing_literal_unknown_and_row_false_case_true_truth_table():

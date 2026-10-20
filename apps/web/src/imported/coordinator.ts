@@ -21,7 +21,7 @@ import type {
 import type { EvidenceBookmark, SavedInvestigationContent } from "../generated/saving";
 import { readPinNote } from "../pinned/pins";
 import type { SelectionClient, SelectionOutcome, SelectionProblem } from "../map/client";
-import { noSteps, redone, type StepHistory, type Steps, undone, withoutStep, withoutSteps, withStep } from "../map/steps";
+import { backTo, noSteps, redone, type StepHistory, type Steps, undone, withoutStep, withoutSteps, withStep } from "../map/steps";
 import { AwaitedRequest, type Replacement } from "../replacement/replacement";
 import { httpPopulationViewClient, type PopulationViewClient, type ViewOutcome, type ViewProblem } from "../views/client";
 import type { OpeningContextAnswer, OpeningContextRequest, VariantId, VariantsAnswer, VariantsRequest } from "../views/messages";
@@ -511,6 +511,11 @@ export class ImportedInvestigationCoordinator {
   /** Goes back one step: the selection must come back with exactly the identity it had, not merely as many incidents. */
   undo(): void {
     this.changeSteps(undone, true);
+  }
+
+  /** Shows the state after the first `count` steps of the trail, keeping the later ones until a new step is taken. */
+  showAfter(count: number): void {
+    this.changeSteps((history) => backTo(history, count), true);
   }
 
   redo(): void {
