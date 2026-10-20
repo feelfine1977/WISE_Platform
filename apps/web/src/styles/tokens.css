@@ -129,6 +129,8 @@
   /* The vertical line of a history starts and ends at the centre of the first and last marker. */
   --sequence-line-inset: calc(var(--font-size-base) * var(--line-height-base) / 2);
   --size-progress: 2px;
+  /* How far the progress line pulls what follows it up, so that it takes no room. */
+  --size-progress-pull: calc(var(--size-progress) * -1);
   --size-inspector: 440px;
   /* The least width of the reading pane of a record document beside an incident's timeline. */
   --size-document-pane: 288px;
@@ -235,6 +237,7 @@
   /* The marks of the records of an incident in a cell of the list. */
   --size-record-marks: 160px;
   --size-wide-table: 1120px;
+  --size-step-status: 280px;
   --size-wide-first-column: 140px;
   --size-bar-marks: 12px;
   /* A header row of one line, and the bar of the kept share in the data row. */

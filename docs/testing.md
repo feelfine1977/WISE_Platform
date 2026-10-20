@@ -195,6 +195,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Choosing a chip shows the state after it, the later steps kept with their counts. The journey goes forward and back to the parent; a new step drops the later steps.
   - With `WISE_SCREENSHOT_DIR` set, a picture of the trail is written there.
 
+- `tools/qualify_step_icons.py` (#92): the actions of the bar of steps at 1280 × 720 and 900 × 700, over the invented `tests/fixtures/span-gap` file.
+  - Undo, Redo and Clear all are icon buttons with names and tooltips, disabled in their slots with the reason in their description while unusable.
+  - Their places and sizes are the same with no step, while a selection is answered (the answer held back), after a step, after Undo and after Clear all.
+  - With `WISE_SCREENSHOT_DIR` set, a picture of the bar at each size is written there.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

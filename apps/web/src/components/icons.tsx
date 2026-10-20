@@ -68,6 +68,8 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   pressed?: boolean;
   /** That there is something to read behind the button, in words: drawn as a small dot on it and said to assistive technology. */
   mark?: string;
+  /** Further descriptions by id, such as why nothing can be changed now. */
+  describedBy?: string;
   ref?: Ref<HTMLButtonElement>;
 }
 
@@ -76,7 +78,7 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
  * tooltip, so nothing is offered that is not named. A frequent action is such a button; an action
  * that keeps or removes incidents keeps its words.
  */
-export function IconButton({ icon, label, hint, pressed, mark, ref, ...rest }: IconButtonProps) {
+export function IconButton({ icon, label, hint, pressed, mark, describedBy, ref, ...rest }: IconButtonProps) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const markId = mark ? `${id}-mark` : undefined;
@@ -89,7 +91,7 @@ export function IconButton({ icon, label, hint, pressed, mark, ref, ...rest }: I
       aria-label={label}
       title={[label, hint, mark].filter(Boolean).join("\n")}
       aria-pressed={pressed}
-      aria-describedby={[hintId, markId].filter(Boolean).join(" ") || undefined}
+      aria-describedby={[hintId, markId, describedBy].filter(Boolean).join(" ") || undefined}
     >
       <Icon name={icon} />
       {hint && (
