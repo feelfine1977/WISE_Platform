@@ -1,3 +1,4 @@
+import type { RecordMarksRequest } from "../generated/record-marks";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -44,39 +45,29 @@ function ordering(clock: "utc_instant" | "wall_clock" = "utc_instant") {
   };
 }
 
-/** The evidence of every incident as the shared fixture A supplies it: three records, at 0, 1 and 5 hours; the first incident's order is not known. */
-function evidenceOf(answering: (request: ImportedCaseEvidenceRequest, answer: ImportedCaseEvidenceAnswer) => ImportedCaseEvidenceAnswer = (_, answer) => answer) {
+/** The marks of every incident: three records, at 0, 1 and 5 hours; a batch whose answer cannot be used when `failing`. */
+function marksOf(failing = false) {
   return {
-    caseEvidence: vi.fn(async (request: ImportedCaseEvidenceRequest) => {
-      // The fixture's history, answering exactly the question asked.
-      const answer = answering(request, {
-        ...(fixture as unknown as ImportedCaseEvidenceAnswer),
-        request_id: request.request_id,
-        query_revision: request.query_revision,
-        workspace_id: request.workspace_id,
-        identity: request.identity,
-        case_id: request.case_id,
-      });
-      if (request.case_id === "I-000") {
-        const { incident_time: _time, ...legacy } = answer;
-        void _time;
-        return { ok: true as const, answer: { ...legacy, sequence_evaluable: false } as ImportedCaseEvidenceAnswer };
-      }
-      return { ok: true as const, answer };
-    }),
+    marks: vi.fn(async (request: RecordMarksRequest) => failing
+      ? { ok: false as const, problem: { kind: "unreachable" as const } }
+      : { ok: true as const, answer: { schema_version: 1 as const, message_type: "record_marks_answer" as const, request_id: request.request_id, query_revision: request.query_revision,
+          workspace_id: request.workspace_id, identity: request.identity, policy: "incident.records.elapsed_from_first_record.v1" as const,
+          cases: request.case_ids.map((case_id) => ({ case_id, record_count: 3, order_known: true, span_microseconds: 18_000_000_000,
+            marks: [{ offset_microseconds: 0, record_count: 1 }, { offset_microseconds: 3_600_000_000, record_count: 1 }, { offset_microseconds: 18_000_000_000, record_count: 1 }],
+            untimed_record_count: 0 })) } }),
   };
 }
 
-function setup(order: "observed_span_hours" | "maximum_adjacent_raw_gap_hours" = "observed_span_hours", evidence = evidenceOf(), clock: "utc_instant" | "wall_clock" = "utc_instant") {
+function setup(order: "observed_span_hours" | "maximum_adjacent_raw_gap_hours" = "observed_span_hours", marks = marksOf(), clock: "utc_instant" | "wall_clock" = "utc_instant") {
   const caseLists = ordering(clock);
   const onOpen = vi.fn();
   render(
     <>
       <h3 id="title">Kept incidents</h3>
-      <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={keptCases} order={order} openCaseId={null} onOpen={onOpen} focusRequest={null} labelledBy="title" caseLists={caseLists} evidence={evidence} />
+      <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={keptCases} order={order} openCaseId={null} onOpen={onOpen} focusRequest={null} labelledBy="title" caseLists={caseLists} marks={marks} />
     </>,
   );
-  return { caseLists, evidence, onOpen, user: userEvent.setup() };
+  return { caseLists, marks, onOpen, user: userEvent.setup() };
 }
 
 describe("the kept incidents in an order by time", () => {
@@ -92,7 +83,7 @@ describe("the kept incidents in an order by time", () => {
   });
 
   it("says under the table that wall-clock spans and gaps may differ from the physical elapsed time", async () => {
-    setup("observed_span_hours", evidenceOf(), "wall_clock");
+    setup("observed_span_hours", marksOf(), "wall_clock");
     await screen.findByRole("table", { name: "Kept incidents" });
     expect(screen.getByText(/^Wall clock: span and longest gap are differences between times as recorded/)).toBeTruthy();
   });
@@ -111,35 +102,26 @@ describe("the kept incidents in an order by time", () => {
     expect(screen.queryByRole("button", { name: /more$/ })).toBeNull();
   });
 
-  it("draws the records of each incident in view as marks on one axis, aligned at its first record, from the supplied offsets", async () => {
-    const { evidence } = setup();
+  it("draws the records of each incident in view as marks on one axis, aligned at its first record, from bounded batches of marks (#67)", async () => {
+    const { marks: client } = setup();
     const table = await screen.findByRole("table", { name: "Kept incidents" });
     const first = within(table).getAllByRole("row")[1];
     const marks = await within(first).findByRole("img");
     expect(marks.getAttribute("aria-label")).toBe("3 records over 5 h, from the first record; the longest gap, 5.2 d, marked from 1 h");
     // The longest gap is a band from 1 hour to 1 + 124.5 hours on the axis of 249 hours.
     const band = marks.querySelector(".record-marks-gap")!;
-    expect([Number(band.getAttribute("x")).toFixed(2), Number(band.getAttribute("width")).toFixed(2)]).toEqual(["4.02", "500.00"]);
+    expect([band.getAttribute("x"), band.getAttribute("width")]).toEqual(["0.402%", "50.000%"]);
     // The axis is the longest span listed, 249 hours: the marks of 0, 1 and 5 hours lie at its very start.
-    expect(Array.from(marks.querySelectorAll(".record-marks-mark"), (mark) => Number(mark.getAttribute("x1")).toFixed(2))).toEqual(["0.00", "4.02", "20.08"]);
-    expect(evidence.caseEvidence.mock.calls.every(([request]) => request.identity.population_id === "kept")).toBe(true);
-    // Only the incidents in view ask for their evidence, each once.
-    expect(new Set(evidence.caseEvidence.mock.calls.map(([request]) => request.case_id)).size).toBe(evidence.caseEvidence.mock.calls.length);
+    expect(Array.from(marks.querySelectorAll(".record-marks-mark"), (mark) => mark.getAttribute("x1"))).toEqual(["0.000%", "0.402%", "2.008%"]);
+    // The incidents in view ask together, at most 100 at once, each once, for the incidents shown.
+    const asked = client.marks.mock.calls.flatMap(([request]) => request.case_ids);
+    expect(client.marks.mock.calls.every(([request]) => request.case_ids.length <= 100 && request.identity.population_id === "kept")).toBe(true);
+    expect(new Set(asked).size).toBe(asked.length);
   });
 
-  it("draws no marks from an answer to another question, nor from diagnostics that do not belong to the records place by place", async () => {
-    const other = evidenceOf((request, answer) =>
-      request.case_id === "I-249"
-        ? { ...answer, identity: { ...answer.identity, preparation_id: "another-preparation" } }
-        : request.case_id === "I-248"
-          ? { ...answer, incident_time: { ...answer.incident_time!, records: [answer.incident_time!.records[0], answer.incident_time!.records[2], answer.incident_time!.records[1]] } as typeof answer.incident_time }
-          : answer,
-    );
-    setup("observed_span_hours", other);
+  it("says that the marks were not read where a batch fails", async () => {
+    setup("observed_span_hours", marksOf(true));
     const table = await screen.findByRole("table", { name: "Kept incidents" });
-    const [, first, second, third] = within(table).getAllByRole("row");
-    expect(await within(first).findByText("not read")).toBeTruthy();
-    expect(await within(second).findByText("times do not match")).toBeTruthy();
-    expect(await within(third).findByRole("img")).toBeTruthy();
+    expect(await within(within(table).getAllByRole("row")[1]).findByText("not read")).toBeTruthy();
   });
 });

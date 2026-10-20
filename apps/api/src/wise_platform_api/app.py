@@ -26,6 +26,7 @@ from .transition_matrices import TransitionMatrices
 from .numeric_contexts import NumericContexts
 from .stage_proposals import StageProposals
 from .unanswered import UnansweredRequests
+from .record_marks_view import RecordMarks
 from .gap_pairs import GapPairs
 from .outcomes import Outcomes
 from .workspace_backups import WorkspaceBackups
@@ -86,6 +87,7 @@ def create_app(
     numeric_contexts = NumericContexts(imports)
     stage_proposals = StageProposals(imports)
     unanswered_requests = UnansweredRequests(imports)
+    record_mark_views = RecordMarks(imports)
     gap_pair_views = GapPairs(imports)
     outcomes = Outcomes(imports)
     backups = WorkspaceBackups(imports)
@@ -237,6 +239,11 @@ def create_app(
     @application.post("/api/investigations/unanswered-requests")
     async def unanswered_request_view(request: Request) -> JSONResponse:
         reply = await run_in_threadpool(unanswered_requests.unanswered_requests, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/record-marks")
+    async def record_marks(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(record_mark_views.record_marks, await request.body())
         return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/gap-pairs")
