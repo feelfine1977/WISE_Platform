@@ -1,0 +1,190 @@
+{
+ "about": "Hand-written ranges for #89 (tests/test_issue89_measure_range.py and tools/qualify_measure_range.py) over span-gap.csv: both bounds included, a null maximum without an upper bound; the number of records counts records without an activity label and every incident has it; an incident without the span or gap is unevaluable, also when negated. Never read by product code.",
+ "ranges": [
+  {
+   "name": "records_2_to_3",
+   "measure": "raw_record_count",
+   "minimum": 2,
+   "maximum": 3,
+   "negate": false,
+   "kept": [
+    "S-A",
+    "S-ALLTIE",
+    "S-B",
+    "S-TIE",
+    "S-UNK",
+    "S-UNLAB"
+   ],
+   "removed": [
+    "S-LONG",
+    "S-ONE"
+   ],
+   "unevaluable": []
+  },
+  {
+   "name": "records_exactly_3_with_unlabelled",
+   "measure": "raw_record_count",
+   "minimum": 3,
+   "maximum": 3,
+   "negate": false,
+   "kept": [
+    "S-A",
+    "S-TIE",
+    "S-UNLAB"
+   ],
+   "removed": [
+    "S-ALLTIE",
+    "S-B",
+    "S-LONG",
+    "S-ONE",
+    "S-UNK"
+   ],
+   "unevaluable": []
+  },
+  {
+   "name": "records_at_least_4",
+   "measure": "raw_record_count",
+   "minimum": 4,
+   "maximum": null,
+   "negate": false,
+   "kept": [
+    "S-LONG"
+   ],
+   "removed": [
+    "S-A",
+    "S-ALLTIE",
+    "S-B",
+    "S-ONE",
+    "S-TIE",
+    "S-UNK",
+    "S-UNLAB"
+   ],
+   "unevaluable": []
+  },
+  {
+   "name": "records_outside_2_to_3",
+   "measure": "raw_record_count",
+   "minimum": 2,
+   "maximum": 3,
+   "negate": true,
+   "kept": [
+    "S-LONG",
+    "S-ONE"
+   ],
+   "removed": [
+    "S-A",
+    "S-ALLTIE",
+    "S-B",
+    "S-TIE",
+    "S-UNK",
+    "S-UNLAB"
+   ],
+   "unevaluable": []
+  },
+  {
+   "name": "span_2_to_10",
+   "measure": "observed_span_hours",
+   "minimum": 2,
+   "maximum": 10,
+   "negate": false,
+   "kept": [
+    "S-A",
+    "S-B",
+    "S-TIE",
+    "S-UNLAB"
+   ],
+   "removed": [
+    "S-ALLTIE",
+    "S-LONG",
+    "S-ONE"
+   ],
+   "unevaluable": [
+    "S-UNK"
+   ]
+  },
+  {
+   "name": "span_outside_2_to_10",
+   "measure": "observed_span_hours",
+   "minimum": 2,
+   "maximum": 10,
+   "negate": true,
+   "kept": [
+    "S-ALLTIE",
+    "S-LONG",
+    "S-ONE"
+   ],
+   "removed": [
+    "S-A",
+    "S-B",
+    "S-TIE",
+    "S-UNLAB"
+   ],
+   "unevaluable": [
+    "S-UNK"
+   ]
+  },
+  {
+   "name": "span_at_least_72",
+   "measure": "observed_span_hours",
+   "minimum": 72,
+   "maximum": null,
+   "negate": false,
+   "kept": [
+    "S-LONG"
+   ],
+   "removed": [
+    "S-A",
+    "S-ALLTIE",
+    "S-B",
+    "S-ONE",
+    "S-TIE",
+    "S-UNLAB"
+   ],
+   "unevaluable": [
+    "S-UNK"
+   ]
+  },
+  {
+   "name": "gap_6_to_10",
+   "measure": "maximum_adjacent_raw_gap_hours",
+   "minimum": 6,
+   "maximum": 10,
+   "negate": false,
+   "kept": [
+    "S-A",
+    "S-B",
+    "S-UNLAB"
+   ],
+   "removed": [
+    "S-ALLTIE",
+    "S-LONG",
+    "S-TIE"
+   ],
+   "unevaluable": [
+    "S-ONE",
+    "S-UNK"
+   ]
+  },
+  {
+   "name": "gap_exactly_0",
+   "measure": "maximum_adjacent_raw_gap_hours",
+   "minimum": 0,
+   "maximum": 0,
+   "negate": false,
+   "kept": [
+    "S-ALLTIE"
+   ],
+   "removed": [
+    "S-A",
+    "S-B",
+    "S-LONG",
+    "S-TIE",
+    "S-UNLAB"
+   ],
+   "unevaluable": [
+    "S-ONE",
+    "S-UNK"
+   ]
+  }
+ ]
+}

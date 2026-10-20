@@ -27,6 +27,41 @@ interface FiltersProps {
 
 const openingPolicy = "incident.context.first_record_in_declared_order.v1";
 
+type RangeMeasure = "raw_record_count" | "observed_span_hours" | "maximum_adjacent_raw_gap_hours";
+
+/** Each measure a range is taken on: its name, its unit, and which incidents have it. */
+const RANGE_MEASURES: Record<RangeMeasure, { name: string; unit: string; has: string }> = {
+  raw_record_count: {
+    name: "Number of records",
+    unit: "records",
+    has: "Every incident has a number of records; records without an activity label count.",
+  },
+  observed_span_hours: {
+    name: "Recorded span, first to last recorded time",
+    unit: "hours",
+    has: "An incident whose order is not known has no recorded span: it is not evaluable and is counted apart, neither kept nor removed.",
+  },
+  maximum_adjacent_raw_gap_hours: {
+    name: "Longest gap between two records",
+    unit: "hours",
+    has: "An incident whose order is not known, or with one record, has no longest gap: it is not evaluable and is counted apart, neither kept nor removed.",
+  },
+};
+
+/** The range entered as a step, or why it cannot be one. */
+export function rangeStep(measure: RangeMeasure, low: string, high: string, negate: boolean): SelectionPredicate | string {
+  const records = measure === "raw_record_count";
+  const read = (text: string) => (text.trim() === "" ? null : Number(text));
+  const minimum = read(low);
+  const maximum = read(high);
+  const valid = (value: number | null) => value !== null && Number.isFinite(value) && value >= 0 && (!records || Number.isInteger(value));
+  const kind = records ? "a whole number of records, zero or more" : "a finite number of hours, zero or more";
+  if (!valid(minimum)) return `Enter the lower bound as ${kind}. Nothing was applied.`;
+  if (maximum !== null && !valid(maximum)) return `Enter the upper bound as ${kind}, or leave it empty for no upper bound. Nothing was applied.`;
+  if (maximum !== null && maximum < (minimum as number)) return "The upper bound is below the lower bound. Nothing was applied.";
+  return { kind: "measure_between", measure, minimum: minimum as number, maximum, negate };
+}
+
 /** Typed filters keep complete incidents; only the local service evaluates membership. */
 export function Filters({ population, parentIds, opening, onStep, previewStep, range, rangeProblem, waitingFor }: FiltersProps) {
   const title = useId();
@@ -36,6 +71,9 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
   const [ids, setIds] = useState("");
   const [measure, setMeasure] = useState<"observed_span_at_least" | "max_raw_gap_at_least">("observed_span_at_least");
   const [hours, setHours] = useState("");
+  const [ranged, setRanged] = useState<RangeMeasure>("raw_record_count");
+  const [low, setLow] = useState("");
+  const [high, setHigh] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [column, setColumn] = useState(String(population.preparation.mapping.context_columns[0] ?? ""));
@@ -59,6 +97,11 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
     setError(null);
     if (previewStep) setPending(step);
     else onStep(step);
+  };
+  const takeRange = (negate: boolean) => {
+    const step = rangeStep(ranged, low, high, negate);
+    if (typeof step === "string") setError(step);
+    else submit(step);
   };
 
   return (
@@ -107,6 +150,22 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
           <label>At least this many hours<input type="number" min="0" step="any" value={hours} onChange={(event) => setHours(event.target.value)} /></label>
           <p className="muted">Equality is included. Unknown chronology is not evaluable; an incident with one record has no adjacent gap. These are recorded times, not proof of working time or resolution.</p>
           <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep by recorded time</button>
+        </form>
+      </details>
+      <details>
+        <summary>A range of records, span or longest gap</summary>
+        <form onSubmit={(event) => {
+          event.preventDefault();
+          takeRange(false);
+        }}>
+          <label>Measure of the range<select value={ranged} onChange={(event) => setRanged(event.target.value as RangeMeasure)}>
+            {(Object.keys(RANGE_MEASURES) as RangeMeasure[]).map((key) => <option key={key} value={key}>{RANGE_MEASURES[key].name}</option>)}
+          </select></label>
+          <label>From, included ({RANGE_MEASURES[ranged].unit})<input type="number" min="0" step={ranged === "raw_record_count" ? "1" : "any"} value={low} onChange={(event) => setLow(event.target.value)} /></label>
+          <label>To, included ({RANGE_MEASURES[ranged].unit}; empty for no upper bound)<input type="number" min="0" step={ranged === "raw_record_count" ? "1" : "any"} value={high} onChange={(event) => setHigh(event.target.value)} /></label>
+          <p className="muted">Both bounds are included: an incident exactly at a bound is in the range. {RANGE_MEASURES[ranged].has} The range is one step; Undo takes it back.</p>
+          <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep this range</button>
+          <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={() => takeRange(true)}>Remove this range</button>
         </form>
       </details>
       <details>

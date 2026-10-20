@@ -154,6 +154,24 @@ class MaxRawGapAtLeast:
     negate: bool = False
 
 
+MEASURES = ("raw_record_count", "observed_span_hours", "maximum_adjacent_raw_gap_hours")
+
+
+@dataclass(frozen=True)
+class MeasureBetween:
+    """The incident's measure lies from ``minimum`` to ``maximum``, both included; no maximum is no upper bound.
+
+    ``raw_record_count`` counts every raw record, those without an activity label included, and every incident has it.
+    ``observed_span_hours`` and ``maximum_adjacent_raw_gap_hours`` are those of the case-list summary: an incident whose
+    order is not known has neither, and one with a single record has no longest gap; it is not evaluable, never inside
+    or outside the range."""
+
+    measure: str
+    minimum: float
+    maximum: float | None
+    negate: bool = False
+
+
 @dataclass(frozen=True)
 class IntervalThreshold:
     """The interval from a start to the first response at or after it (``intervals.INTERVAL_POLICY``) exceeds (gt) or
@@ -190,7 +208,7 @@ class VariantIs:
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
                         | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
                         | OpeningAttributeIn | RecordAttributeIn | RecordAttributesAll | ObservedSpanAtLeast | MaxRawGapAtLeast
-                        | IntervalThreshold | VariantIs)
+                        | IntervalThreshold | VariantIs | MeasureBetween)
 
 
 class SelectionError(ValueError):
@@ -332,6 +350,18 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
             raise SelectionError("invalid_predicate", "The variant's identity does not match its sequence.")
         return {"kind": "variant_is", "variant": {"id": identity, "activities": list(predicate.activities), "projection_policy": predicate.policy},
                 "negate": predicate.negate}
+    if isinstance(predicate, MeasureBetween):
+        if predicate.measure not in MEASURES:
+            raise SelectionError("invalid_predicate", "The measure is the number of records, the recorded span or the longest gap.")
+        _hours(predicate.minimum)
+        if predicate.maximum is not None:
+            _hours(predicate.maximum)
+            if predicate.maximum < predicate.minimum:
+                raise SelectionError("invalid_predicate", "The upper bound of a range must not be below its lower bound.")
+        if predicate.measure == "raw_record_count" and any(bound is not None and bound != int(bound) for bound in (predicate.minimum, predicate.maximum)):
+            raise SelectionError("invalid_predicate", "The bounds of a number of records are whole numbers.")
+        return {"kind": "measure_between", "measure": predicate.measure, "minimum": predicate.minimum, "maximum": predicate.maximum,
+                "negate": predicate.negate}
     if isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)):
         _hours(predicate.hours)
         return {"kind": "observed_span_at_least" if isinstance(predicate, ObservedSpanAtLeast) else "max_raw_gap_at_least",
@@ -420,6 +450,10 @@ def semantic_predicate(descriptor: Mapping[str, object]) -> dict[str, object]:
         hours = result["hours"]
         if isinstance(hours, float) and hours.is_integer():
             result["hours"] = int(hours)
+    elif kind == "measure_between":
+        for bound in ("minimum", "maximum"):
+            if isinstance(result[bound], float) and result[bound].is_integer():
+                result[bound] = int(result[bound])
     elif kind == "case_start_in_window":
         from .time_formats import iso_local, iso_utc
         window = result["window"]
@@ -493,7 +527,8 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
             if predicate.timestamp_kind != clock:
                 raise SelectionError("invalid_predicate", "The window must use the preparation's clock.", f"predicates.{index}.window.timestamp_kind")
     summaries = {}
-    if any(isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)) for predicate in predicates):
+    if any(isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)) or (isinstance(predicate, MeasureBetween) and predicate.measure != "raw_record_count")
+           for predicate in predicates):
         from .case_time import case_time_summary
         summaries = {case: case_time_summary(prepared, case) for case in parent}
     evaluations = []
@@ -571,6 +606,9 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
         value = any(record.context_value(predicate.column_index) in predicate.values for record in records)
     elif isinstance(predicate, ContainsActivity):
         value = any(record.activity == predicate.activity for record in records)
+    elif isinstance(predicate, MeasureBetween) and predicate.measure == "raw_record_count":
+        # Every raw record counts, with or without an activity label, whatever the order: every incident has this measure.
+        value = predicate.minimum <= len(records) and (predicate.maximum is None or len(records) <= predicate.maximum)
     elif isinstance(predicate, IntervalThreshold):
         measured = measure(records, prepared.sequence_evaluable(case_id), Interval(predicate.start_activity, predicate.response_activity))
         value = satisfies(measured, predicate.operator, predicate.hours)
@@ -587,6 +625,10 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
         key = "observed_span_hours" if isinstance(predicate, ObservedSpanAtLeast) else "maximum_adjacent_raw_gap_hours"
         hours = summaries[case_id][key]
         value = None if hours is None else hours >= predicate.hours
+    elif isinstance(predicate, MeasureBetween):
+        assert summaries is not None
+        hours = summaries[case_id][predicate.measure]
+        value = None if hours is None else predicate.minimum <= hours and (predicate.maximum is None or hours <= predicate.maximum)
     elif isinstance(predicate, OpeningAttributeIn):
         opening = records[0].context_value(predicate.column_index) if records else None
         value = None if not records else opening in predicate.values

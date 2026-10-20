@@ -39,6 +39,7 @@ export type SelectionPredicate =
   | MaxRawGapAtLeast
   | IntervalThreshold
   | VariantIs
+  | MeasureBetween
   | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
@@ -192,6 +193,16 @@ export interface VariantDefinition {
   id: string;
   activities: string[];
   projection_policy: "incident.activity.omit_missing_retain_raw_gaps.v1";
+}
+/**
+ * Keeps the incidents whose measure lies in the range from minimum to maximum, both included; a null maximum has no upper bound. raw_record_count is the number of raw records of the incident, records without an activity label included, and every incident has it. observed_span_hours and maximum_adjacent_raw_gap_hours are those of the case-list summary (incident.case_summary.full_raw_declared_order.v1): an incident whose order is not known has neither, and one with a single record has no longest gap; such an incident is not evaluable, never inside or outside. Negation keeps the incidents outside the range; the unevaluable stay unevaluable.
+ */
+export interface MeasureBetween {
+  kind: "measure_between";
+  measure: "raw_record_count" | "observed_span_hours" | "maximum_adjacent_raw_gap_hours";
+  minimum: number;
+  maximum: number | null;
+  negate: boolean;
 }
 /**
  * OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.

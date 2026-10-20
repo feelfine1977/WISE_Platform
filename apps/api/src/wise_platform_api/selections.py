@@ -35,6 +35,7 @@ from wise_platform_analytics.selection import (
     ObservedSpanAtLeast,
     IntervalThreshold,
     VariantIs,
+    MeasureBetween,
     MaxRawGapAtLeast,
     DirectlyFollows,
     EndsWithActivity,
@@ -212,6 +213,8 @@ def package_predicate(given: Mapping[str, object]) -> Predicate:
     if kind in ("observed_span_at_least", "max_raw_gap_at_least"):
         constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
         return constructor(given["hours"], negate)
+    if kind == "measure_between":
+        return MeasureBetween(str(given["measure"]), given["minimum"], given["maximum"], negate)
     if kind == "variant_is":
         variant = given["variant"]
         return VariantIs(tuple(str(activity) for activity in variant["activities"]), negate, str(variant["id"]), str(variant["projection_policy"]))

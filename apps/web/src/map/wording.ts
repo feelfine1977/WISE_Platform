@@ -72,6 +72,8 @@ export function stepWording(step: SelectionPredicate): string {
       const measure = step.kind === "observed_span_at_least" ? "recorded span" : "longest adjacent recorded gap";
       return `Keep incidents with ${measure} ${step.negate ? "less than" : "at least"} ${step.hours} hours`;
     }
+    case "measure_between":
+      return rangeWording(step);
     case "interval_threshold": {
       const relation = step.operator === "gt" ? (step.negate ? "at most" : "more than") : step.negate ? "less than" : "at least";
       return `Keep incidents whose interval from the first ${quoted(step.interval.start_activity)} to the first ${quoted(step.interval.response_activity)} at or after it is ${relation} ${step.hours} hours`;
@@ -91,6 +93,22 @@ export function stepWording(step: SelectionPredicate): string {
         ? `Keep incidents that do not end with ${quoted(step.activity)}`
         : `Keep incidents that end with ${quoted(step.activity)}`;
   }
+}
+
+/** What a range keeps, bounds included, or what its negation keeps: the incidents below or above it. */
+function rangeWording(step: Extract<SelectionPredicate, { kind: "measure_between" }>): string {
+  const records = step.measure === "raw_record_count";
+  const measure = records ? "" : step.measure === "observed_span_hours" ? "recorded span " : "longest adjacent recorded gap ";
+  const unit = records ? (step.maximum ?? step.minimum) === 1 ? "record" : "records" : "hours";
+  const { minimum, maximum } = step;
+  if (!step.negate) {
+    if (maximum === null) return `Keep incidents with ${measure}at least ${minimum} ${records && minimum === 1 ? "record" : unit}`;
+    if (maximum === minimum) return `Keep incidents with ${measure}exactly ${minimum} ${unit}`;
+    return `Keep incidents with ${measure}${records ? "" : "from "}${minimum} to ${maximum} ${unit}, both included`;
+  }
+  const less = records ? "fewer" : "less";
+  if (maximum === null) return `Keep incidents with ${measure}${less} than ${minimum} ${records && minimum === 1 ? "record" : unit}`;
+  return `Keep incidents with ${measure}${less} than ${minimum} or more than ${maximum} ${records ? "records" : unit}`;
 }
 
 /** A whole sequence of labelled activities, repeats kept, or the sequence without a labelled record. */
@@ -138,6 +156,12 @@ export function unevaluableReason(step: SelectionPredicate): string | null {
       return "the order of their records is not known, or no span or gap can be measured from their times";
     case "record_attributes_all":
       return "a record lacks a cell of a named column, so whether it matches cannot be told";
+    case "measure_between":
+      return step.measure === "raw_record_count"
+        ? null
+        : step.measure === "observed_span_hours"
+          ? "the order of their records is not known, so they have no recorded span"
+          : "the order of their records is not known, or they have one record and so no gap";
     case "variant_is":
       return "the order of their records is not known, so they have no sequence; for other views and steps they stay evaluable";
     case "interval_threshold":
