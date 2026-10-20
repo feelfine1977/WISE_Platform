@@ -76,27 +76,28 @@ Every stage is one HTTP request to the service, which runs as its own process. A
 
 | Stage | Wall time | Peak service memory | Retained after | Reply | At a quarter |
 | --- | --- | --- | --- | --- | --- |
-| Upload (streamed) | 0.06 s | 92 MB | 92 MB | 0 KB | 0.01 s |
-| Inspection | 3.84 s | 125 MB | 111 MB | 7 KB | 0.95 s |
-| Confirmation (reading) | 5.20 s | 406 MB | 406 MB | 5 KB | 1.28 s |
-| Opening the incidents | 0.30 s | 488 MB | 415 MB | 6,624 KB | 0.07 s |
-| Opening context | 0.16 s | 415 MB | 415 MB | 5 KB | 0.04 s |
-| Start trend | 0.86 s | 590 MB | 465 MB | 3,234 KB | 0.19 s |
-| Process graph | 1.11 s | 702 MB | 516 MB | 4,853 KB | 0.23 s |
-| Transition matrix | 2.08 s | 685 MB | 629 MB | 5,211 KB | 0.43 s |
-| Variants | 1.21 s | 647 MB | 646 MB | 9,617 KB | 0.24 s |
-| A step, exact membership | 0.26 s | 646 MB | 646 MB | 1,613 KB | 0.05 s |
-| Complete history | 0.02 s | 646 MB | 646 MB | 8 KB | 0.01 s |
-| Save | 0.34 s | 646 MB | 587 MB | 539 KB | 0.08 s |
-| Cold reopen after a restart | 5.46 s | 483 MB | 412 MB | 2,152 KB | 1.31 s |
+| Upload (streamed) | 0.04 s | 92 MiB | 92 MiB | 0 KiB | 0.01 s |
+| Inspection | 3.82 s | 125 MiB | 110 MiB | 7 KiB | 0.97 s |
+| Confirmation (reading) | 5.17 s | 406 MiB | 406 MiB | 5 KiB | 1.27 s |
+| Opening the incidents | 0.30 s | 491 MiB | 416 MiB | 6,624 KiB | 0.07 s |
+| Opening context | 0.16 s | 419 MiB | 419 MiB | 5 KiB | 0.04 s |
+| Start trend | 0.83 s | 590 MiB | 468 MiB | 3,234 KiB | 0.19 s |
+| Process graph | 1.09 s | 702 MiB | 521 MiB | 4,853 KiB | 0.22 s |
+| Transition matrix | 2.06 s | 681 MiB | 626 MiB | 5,211 KiB | 0.43 s |
+| Variants | 1.17 s | 645 MiB | 643 MiB | 9,617 KiB | 0.24 s |
+| A step, exact membership | 0.26 s | 643 MiB | 643 MiB | 1,613 KiB | 0.05 s |
+| Complete history | 0.02 s | 643 MiB | 643 MiB | 8 KiB | 0.01 s |
+| Save | 0.33 s | 643 MiB | 590 MiB | 539 KiB | 0.07 s |
+| Cold reopen after a restart | 5.43 s | 502 MiB | 413 MiB | 2,152 KiB | 1.37 s |
 
-- **Journey peak:** 702 MB.
-- **Workspace on disk:** 25.0 MB after the import (the source's bytes and its reading), and 25.6 MB after Save.
+- **Journey peak:** 702 MiB, about 0.74 GB. The screen says "at most 0.8 GB".
+- **Workspace on disk:** 25.0 MiB after the import (the source's bytes and its reading), and 25.6 MiB after Save.
+- **Measured** by the command above at commit `faf55a4`. A rerun differs by a few percent: the receipt attached to #29 is a later run of the same code.
 
 ### Checked alongside
 
 - **Exact answers:** every incident and record; every activity on the graph; the exact number of variants; the step's exact membership, compared with the generator's own list; three complete histories, record by record; and the saved investigation reopened after a restart with the same identity and incidents.
-- **An abandoned request:** the client gives up after 20 ms; the same request is then answered. Retained memory went from 412 MB to 640 MB, which is the answer kept for reuse, still within the budget.
+- **An abandoned request:** the client gives up after 20 ms; the same request is then answered. Retained memory went from 413 MiB to 637 MiB, which is the answer kept for reuse, still within the budget.
 - **An interrupted publication:** a second reading's confirmation was cut off by killing the service. After a restart, the workspace lists only complete readings (1), and the first one opens as before.
 - **Beyond the budget:** with a budget the size of the source, its reading is refused before anything is read, with the memory it needs and how to raise the budget. The workspace is unchanged:
 

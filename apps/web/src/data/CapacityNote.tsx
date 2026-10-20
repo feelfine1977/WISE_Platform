@@ -12,7 +12,7 @@ export const MEASURED_TIER = {
   contextColumns: 3,
   machine: "an Apple M1 Max with 64 GB and Python 3.13",
   slowestStepSeconds: 6,
-  peakGigabytes: 0.7,
+  peakGigabytes: 0.8,
 } as const;
 
 const gib = (bytes: number) =>
