@@ -152,6 +152,8 @@
   /* The Data area and the investigation of an imported preparation. */
   --size-page: 1280px;
   --size-fact-text: 28ch;
+  /* The width of what an area waits for: one reading line of words and its action under it. */
+  --size-prerequisite: 70ch;
   --size-path-input: 360px;
   --size-figure-column: 220px;
   --size-table-least: 320px;

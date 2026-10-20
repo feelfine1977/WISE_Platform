@@ -35,8 +35,8 @@ async function renderView() {
   const user = userEvent.setup();
   const coordinator = new ExpectationCoordinator(scoring.client, investigation);
   coordinator.start();
-  const rendered = render(<ExpectationView investigation={investigation} coordinator={coordinator} />);
-  expect(screen.getByText(/None are open at the moment: open the incidents of a reading in the Data area\./)).toBeTruthy();
+  const rendered = render(<ExpectationView investigation={investigation} coordinator={coordinator} onShowData={() => undefined} onShowInvestigation={() => undefined} />);
+  expect(screen.getByText(/No incidents are open at the moment: open the incidents of a reading in the Data area/)).toBeTruthy();
   act(() => investigation.open({ workspaceId, preparationId }));
   await deliver(() => imports.populations[0].reply({ ok: true, answer: scoringPopulationAnswer(imports.populations[0].request) }));
   await deliver(() => selecting.selections[0].reply({ ok: true, answer: scoringSelectionAnswer(selecting.selections[0].request) }));
@@ -244,7 +244,7 @@ describe("expectation continuity across areas", () => {
     const reference = view.coordinator.savedReference();
     expect(reference?.score_run_id).toBe(view.run.identity.run_id);
     view.rendered.unmount();
-    render(<ExpectationView investigation={view.investigation} coordinator={view.coordinator} />);
+    render(<ExpectationView investigation={view.investigation} coordinator={view.coordinator} onShowData={() => undefined} onShowInvestigation={() => undefined} />);
     expect(screen.getByLabelText("Name")).toHaveProperty("value", "Closed within four hours");
     expect(screen.getByLabelText("Target (hours)")).toHaveProperty("value", "4");
     expect(tableIncidents()).toEqual(["C-3", "D-4", "B-2", "A-1", "E-5"]);
