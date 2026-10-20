@@ -399,6 +399,7 @@ export interface PresentationRecovery {
   flow_artifact_sha256: string | null;
   graph_positions: FlowPositions | null;
   stages?: StagesPresentation;
+  requests?: RequestsPresentation;
 }
 export interface TableSort {
   table: "population" | "evidence";
@@ -459,6 +460,29 @@ export interface StageAssignment {
   activity: string;
   stage_id: string;
   origin: StageOrigin;
+}
+/**
+ * The analyst's reviewed definition of requests and answers for the log the investigation reads, bound to the preparation it was defined for. It finds incidents to read and changes no incident, step or count.
+ */
+export interface RequestsPresentation {
+  preparation_id: PreparationId;
+  /**
+   * @minItems 1
+   * @maxItems 200
+   */
+  request_activities: [string, ...string[]];
+  /**
+   * @minItems 1
+   * @maxItems 200
+   */
+  answer_activities: [string, ...string[]];
+  turn: RequestTurn | null;
+  gap_hours: number | null;
+  reviewed: true;
+}
+export interface RequestTurn {
+  column_index: ColumnIndex;
+  value: string;
 }
 export interface Bpic19Pipeline {
   schema_version: 1;
@@ -717,7 +741,12 @@ export interface RecoveryAnswer {
   warnings: RecoveryWarning[];
 }
 export interface RecoveryWarning {
-  code: "presentation_unavailable" | "presentation_invalid" | "layout_version_mismatch" | "stages_not_applied";
+  code:
+    | "presentation_unavailable"
+    | "presentation_invalid"
+    | "layout_version_mismatch"
+    | "stages_not_applied"
+    | "requests_not_applied";
   message: string;
 }
 export interface Bpic19PipelineManifest {

@@ -1,3 +1,4 @@
+import { browserRequests, draftProblem, fromPresentation as requestsFromPresentation, type RequestsStore, toPresentation as requestsPresentation } from "../requests/definitions";
 import { browserStages, type StageStore } from "../stages/store";
 import { fromPresentation, toPresentation } from "../stages/definitions";
 import type { WorkspaceId } from "../generated/imports";
@@ -8,6 +9,7 @@ import type {
   ListSavedRequest,
   PresentationRecovery,
   RecoveryAnswer,
+  RequestsPresentation,
   SavedInvestigationContent,
   ReopenInvestigationAnswer,
   ReopenInvestigationRequest,
@@ -183,6 +185,8 @@ export class SavingCoordinator {
     private readonly prepared?: PreparedAssessmentSource,
     /** The stages of each reading, which an investigation is saved and reopened with. */
     private readonly stages: StageStore = browserStages,
+    /** The reviewed definition of requests and answers of each reading, saved and reopened with an investigation too. */
+    private readonly requests: RequestsStore = browserRequests,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -305,6 +309,7 @@ export class SavingCoordinator {
       flow_artifact_sha256: null,
       graph_positions: null,
       ...(stages.stages.length > 0 ? { stages: toPresentation(stages, preparationId) } : {}),
+      ...this.reviewedRequests(population.answer.workspace_id, preparationId),
     };
     // What the saved revision holds is carried only on its own reading: a question applied to another reading is compared and scored there anew.
     const sameReading = saved !== null && sameIdentity(saved.content.base_identity, population.answer.identity);
@@ -637,6 +642,19 @@ export class SavingCoordinator {
       this.stages.restore(reading, null, { kind: "not_applied", investigation: content.name,
         message: "The stages saved with this investigation were defined for another reading of the source; they were not applied." });
     } else if (saved) this.stages.restore(reading, fromPresentation(saved), { kind: "restored", investigation: content.name });
+    const leftRequests = recovery.warnings.find((warning) => warning.code === "requests_not_applied");
+    const savedRequests = recovery.presentation_state?.requests;
+    if (leftRequests) this.requests.restore(reading, null, { kind: "not_applied", investigation: content.name, message: leftRequests.message });
+    else if (savedRequests && savedRequests.preparation_id !== reading.preparationId) {
+      this.requests.restore(reading, null, { kind: "not_applied", investigation: content.name,
+        message: "The definition of requests saved with this investigation was made for another reading of the source; it was not applied." });
+    } else if (savedRequests) this.requests.restore(reading, requestsFromPresentation(savedRequests), { kind: "restored", investigation: content.name });
+  }
+
+  /** The definition of requests of the reading, when it is complete and reviewed: a draft is not saved. */
+  private reviewedRequests(workspaceId: string, preparationId: string): { requests?: RequestsPresentation } {
+    const { draft } = this.requests.stateOf({ workspaceId, preparationId });
+    return draft.reviewed && draftProblem(draft) === null ? { requests: requestsPresentation(draft, preparationId) } : {};
   }
 
   private issue(kind: keyof SavingState, prefix: string): { requestId: string; revision: number; signal: AbortSignal } {

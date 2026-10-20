@@ -1,0 +1,22 @@
+Ticket,Status,At,Seq,Turn,Desk
+R-1,Opened,2026-10-02T08:00:00Z,1,Agent,North
+R-1,Asked customer,2026-10-02T09:00:00Z,2,Customer,North
+R-1,Customer replied,2026-10-02T15:00:00Z,3,Agent,North
+R-1,Closed,2026-10-03T08:00:00Z,4,Agent,North
+R-2,Opened,2026-10-10T08:00:00Z,1,Agent,South
+R-2,Asked customer,2026-10-10T10:00:00Z,2,Customer,South
+R-3,Opened,2026-10-11T08:00:00Z,1,Agent,North
+R-3,Asked customer,2026-10-11T09:00:00Z,2,Customer,North
+R-3,Customer replied,2026-10-11T12:00:00Z,3,Agent,North
+R-3,Asked customer,2026-10-12T08:00:00Z,4,Customer,North
+R-3,Note added,2026-10-12T09:00:00Z,5,Agent,North
+R-4,Opened,2026-10-04T08:00:00Z,1,Agent,South
+R-4,Note added,2026-10-04T09:00:00Z,2,Agent,South
+R-5,Opened,2026-10-01T08:00:00Z,1,Agent,North
+R-5,Asked customer,2026-10-01T09:00:00Z,2,Customer,North
+R-5,Opened,2026-10-11T08:00:00Z,3,Agent,North
+R-5,Note added,2026-10-11T09:00:00Z,4,Agent,North
+R-6,Opened,2026-10-05T07:00:00Z,1,Agent,South
+R-6,Asked customer,2026-10-05T08:00:00Z,2,Agent,South
+R-7,Opened,2026-10-03T08:00:00Z,1,Agent,North
+R-7,Asked customer,,2,Customer,North

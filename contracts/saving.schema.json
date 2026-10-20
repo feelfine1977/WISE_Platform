@@ -1126,6 +1126,9 @@
         },
         "stages": {
           "$ref": "#/$defs/StagesPresentation"
+        },
+        "requests": {
+          "$ref": "#/$defs/RequestsPresentation"
         }
       },
       "required": [
@@ -1146,7 +1149,8 @@
             "presentation_unavailable",
             "presentation_invalid",
             "layout_version_mismatch",
-            "stages_not_applied"
+            "stages_not_applied",
+            "requests_not_applied"
           ]
         },
         "message": {
@@ -4082,6 +4086,88 @@
         "phase_column_index",
         "stages",
         "assignments"
+      ]
+    },
+    "RequestTurn": {
+      "title": "RequestTurn",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "column_index",
+        "value"
+      ]
+    },
+    "RequestsPresentation": {
+      "title": "RequestsPresentation",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The analyst's reviewed definition of requests and answers for the log the investigation reads, bound to the preparation it was defined for. It finds incidents to read and changes no incident, step or count.",
+      "properties": {
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "request_activities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 200,
+          "uniqueItems": true
+        },
+        "answer_activities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 200,
+          "uniqueItems": true
+        },
+        "turn": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestTurn"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gap_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewed": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "required": [
+        "preparation_id",
+        "request_activities",
+        "answer_activities",
+        "turn",
+        "gap_hours",
+        "reviewed"
       ]
     }
   }

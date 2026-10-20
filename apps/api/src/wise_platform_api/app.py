@@ -25,6 +25,7 @@ from .interval_tails import IntervalTails
 from .transition_matrices import TransitionMatrices
 from .numeric_contexts import NumericContexts
 from .stage_proposals import StageProposals
+from .unanswered import UnansweredRequests
 from .gap_pairs import GapPairs
 from .outcomes import Outcomes
 from .workspace_backups import WorkspaceBackups
@@ -84,6 +85,7 @@ def create_app(
     transition_matrices = TransitionMatrices(imports)
     numeric_contexts = NumericContexts(imports)
     stage_proposals = StageProposals(imports)
+    unanswered_requests = UnansweredRequests(imports)
     gap_pair_views = GapPairs(imports)
     outcomes = Outcomes(imports)
     backups = WorkspaceBackups(imports)
@@ -230,6 +232,11 @@ def create_app(
     @application.post("/api/investigations/stage-proposal")
     async def stage_proposal(request: Request) -> JSONResponse:
         reply = await run_in_threadpool(stage_proposals.stage_proposal, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/unanswered-requests")
+    async def unanswered_request_view(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(unanswered_requests.unanswered_requests, await request.body())
         return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/gap-pairs")
