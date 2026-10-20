@@ -5,7 +5,7 @@ import type { ImportedCaseEvidenceAnswer } from "../generated/imports";
 import type { OutcomeRatesAnswer } from "../generated/outcome";
 import type { ImportedInvestigationCoordinator } from "../imported/coordinator";
 import { RecordsTable } from "../pinned/PairedHistories";
-import { contextPolicy } from "./coordinator";
+import { contextPolicy, type OutcomeChoice } from "./coordinator";
 import { httpOutcomeClient, type OutcomeClient } from "./outcomeClient";
 import { valueText } from "./wording";
 
@@ -36,6 +36,9 @@ interface OutcomeSectionProps {
   activities: string[];
   investigation: ImportedInvestigationCoordinator;
   client?: OutcomeClient;
+  /** The outcome named, kept with the question when it is saved; one restored from a saved investigation is asked again. */
+  chosen?: OutcomeChoice | null;
+  onChoose?: (outcome: OutcomeChoice) => void;
 }
 
 /**
@@ -44,10 +47,13 @@ interface OutcomeSectionProps {
  * were first recorded with, beside the parent's rate. It is independent of the groups A and B and of their roles. Each
  * value's witnesses (with O) and counterexamples (without O) open their complete histories in the parent.
  */
-export function OutcomeSection({ answer, columnName, activities, investigation, client = httpOutcomeClient }: OutcomeSectionProps) {
-  const [activity, setActivity] = useState(activities.includes("Resolved") ? "Resolved" : activities[0] ?? "");
-  const [counted, setCounted] = useState<"presence" | "absence">("absence");
-  const [asked, setAsked] = useState<{ activity: string; counted: "presence" | "absence"; attempt: number } | null>(null);
+export function OutcomeSection({ answer, columnName, activities, investigation, client = httpOutcomeClient, chosen = null, onChoose }: OutcomeSectionProps) {
+  const restored = chosen !== null && chosen.column === answer.context_column_index ? chosen : null;
+  const [activity, setActivity] = useState(restored?.activity ?? (activities.includes("Resolved") ? "Resolved" : activities[0] ?? ""));
+  const [counted, setCounted] = useState<"presence" | "absence">(restored?.counted ?? "absence");
+  const [asked, setAsked] = useState<{ activity: string; counted: "presence" | "absence"; attempt: number } | null>(
+    restored ? { activity: restored.activity, counted: restored.counted, attempt: 1 } : null,
+  );
   const [shown, setShown] = useState<Shown>({ phase: "idle" });
   const [listed, setListed] = useState<{ value: string | null; with: boolean } | null>(null);
   const [open, setOpen] = useState<{ caseId: string; loaded: ImportedCaseEvidenceAnswer | string | null } | null>(null);
@@ -106,7 +112,12 @@ export function OutcomeSection({ answer, columnName, activities, investigation, 
           <label><input type="radio" name="outcome-counted" checked={counted === "absence"} onChange={() => setCounted("absence")} />its absence: {outcomeName(activity, "absence")}</label>
           <label><input type="radio" name="outcome-counted" checked={counted === "presence"} onChange={() => setCounted("presence")} />its presence: {outcomeName(activity, "presence")}</label>
         </fieldset>
-        <button type="button" disabled={activity === ""} onClick={() => { setListed(null); setOpen(null); setAsked({ activity, counted, attempt: (asked?.attempt ?? 0) + 1 }); }}>
+        <button type="button" disabled={activity === ""} onClick={() => {
+          setListed(null);
+          setOpen(null);
+          setAsked({ activity, counted, attempt: (asked?.attempt ?? 0) + 1 });
+          onChoose?.({ activity, counted, column: answer.context_column_index });
+        }}>
           Show the outcome by value
         </button>
       </div>

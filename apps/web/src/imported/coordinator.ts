@@ -18,7 +18,8 @@ import type {
   SelectionPredicate,
   SuppliedGraph,
 } from "../generated/selection";
-import type { SavedInvestigationContent } from "../generated/saving";
+import type { EvidenceBookmark, SavedInvestigationContent } from "../generated/saving";
+import { readPinNote } from "../pinned/pins";
 import type { SelectionClient, SelectionOutcome, SelectionProblem } from "../map/client";
 import { noSteps, redone, type StepHistory, type Steps, undone, withoutStep, withoutSteps, withStep } from "../map/steps";
 import { AwaitedRequest, type Replacement } from "../replacement/replacement";
@@ -52,6 +53,8 @@ export interface Restoration {
   selectionIdentity: AnswerIdentity;
   binding: SavedBinding;
   view: InvestigationView;
+  /** Whether the saved question is applied to another reading than its own: its pins stay with the revision they were saved in. */
+  refreshed?: boolean;
 }
 
 /** A question asked for: the population of a preparation, or a saved investigation to open again. */
@@ -235,6 +238,8 @@ export class ImportedInvestigationCoordinator {
   private issued = 0;
   private caseRequestSequence = 0;
   private pinSequence = 0;
+  /** The bookmarks of a reopened investigation, turned into pins once its selection is shown again. */
+  private pendingBookmarks: EvidenceBookmark[] | null = null;
   private viewRequestSequence = 0;
   private currentCaseRequestId: string | null = null;
   /** The handle of the history last asked for, published with its answer. */
@@ -304,6 +309,7 @@ export class ImportedInvestigationCoordinator {
 
   private openWith(target: PreparationTarget, restoration: Restoration | null, steps: Steps = []): void {
     const revision = this.nextRevision();
+    this.pendingBookmarks = restoration && !restoration.refreshed ? [...restoration.binding.content.bookmarks] : null;
     const asked: AskedQuestion = { target, restoration, steps };
     const request: OpenPopulationRequest = {
       schema_version: 1,
@@ -442,6 +448,22 @@ export class ImportedInvestigationCoordinator {
     };
     this.publish({ ...this.state, pins: [...this.state.pins, pin] });
     return pin;
+  }
+
+  /** A saved bookmark as a pin of the reopened question: its role and words read from its note, its side from its population. */
+  private pinOf(bookmark: EvidenceBookmark, selected: SelectionAnswer, steps: readonly SelectionPredicate[]): Pin {
+    this.pinSequence += 1;
+    const words = readPinNote(bookmark.note);
+    return {
+      id: this.pinSequence,
+      ...words,
+      caseId: bookmark.case_id,
+      side: bookmark.identity.population_id === selected.identity.population_id ? "kept" : "removed",
+      identity: bookmark.identity,
+      rowIds: [...bookmark.row_ids],
+      question: { populationId: selected.identity.population_id, steps: [...steps], kept: selected.kept.case_count, removed: selected.removed.case_count, parent: selected.parent.case_count },
+      label: bookmark.label,
+    };
   }
 
   unpin(pinId: number): void {
@@ -709,6 +731,11 @@ export class ImportedInvestigationCoordinator {
       parentGraph: this.state.parentGraph ?? (history.present.length === 0 ? graph : null),
     });
     if (this.state.parentGraph === null) this.requestParentGraph(request, history, selected);
+    if (this.pendingBookmarks !== null) {
+      const bookmarks = this.pendingBookmarks;
+      this.pendingBookmarks = null;
+      this.publish({ ...this.state, pins: bookmarks.map((bookmark) => this.pinOf(bookmark, selected, history.present)) });
+    }
     this.followSelection(selected);
     // The views follow the selection shown; the population's own views stand for a selection with the same identity.
     if (!sameJson(selected.identity, this.viewTarget?.identity)) this.requestViews(selected);

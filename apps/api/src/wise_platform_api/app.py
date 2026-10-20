@@ -274,6 +274,10 @@ def create_app(
     async def list_saved(request: Request) -> JSONResponse:
         return _sent_saving(await run_in_threadpool(saving.list_saved, await request.body()))
 
+    @application.post("/api/investigations/refresh")
+    async def refresh_investigation(request: Request) -> JSONResponse:
+        return _sent_saving(await run_in_threadpool(saving.refresh, await request.body()))
+
     @application.post("/api/investigations/reopen")
     async def reopen_investigation(request: Request) -> JSONResponse:
         return _sent_saving(await run_in_threadpool(saving.reopen, await request.body()))

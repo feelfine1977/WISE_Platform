@@ -209,7 +209,8 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
           )}
           {shown && <SideIncidents key={`sides-${shown.answer.comparison_id}`} shown={shown} investigation={investigation} inspected={inspected} />}
           {shown && shown.kind === "groups" && (
-            <OutcomeSection answer={shown.answer} columnName={columnName(shown.answer.context_column_index)} activities={activities} investigation={investigation} />
+            <OutcomeSection answer={shown.answer} columnName={columnName(shown.answer.context_column_index)} activities={activities}
+              investigation={investigation} chosen={draft.outcome} onChoose={(outcome) => coordinator.setOutcome(outcome)} />
           )}
         </section>
       </div>

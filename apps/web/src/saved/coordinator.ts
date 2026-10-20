@@ -7,10 +7,14 @@ import type {
   PresentationRecovery,
   ReopenInvestigationAnswer,
   ReopenInvestigationRequest,
+  RefreshInvestigationAnswer,
+  RefreshInvestigationRequest,
   SaveInvestigationAnswer,
   SaveInvestigationRequest,
   SavedComparison,
+  SavedComparisonParent,
   SavedInvestigationSummary,
+  SavedOutcome,
   ScoreRunReference,
   Bpic19Pipeline,
   Bpic19PipelineManifest,
@@ -23,6 +27,9 @@ import {
   shownSelection,
 } from "../imported/coordinator";
 import type { SavingClient, SavingOutcome, SavingProblem } from "./client";
+import type { Pin } from "../imported/coordinator";
+import { pinNote } from "../pinned/pins";
+import type { NoteFields } from "./notes";
 
 const contextPolicy = "incident.context.first_record_in_declared_order.v1" as const;
 
@@ -43,10 +50,30 @@ export type SaveState =
   | { phase: "saved"; answer: SaveInvestigationAnswer }
   | { phase: "failed"; problem: SavingProblem };
 
+/** A saved question applied to another reading: being asked for, refused, or shown with what changed, not yet saved. */
+export type RefreshState =
+  | { phase: "idle" }
+  | { phase: "refreshing"; summary: SavedInvestigationSummary }
+  | { phase: "failed"; summary: SavedInvestigationSummary; problem: SavingProblem }
+  | { phase: "shown"; summary: SavedInvestigationSummary; answer: RefreshInvestigationAnswer };
+
+/**
+ * What the save form held when it was closed without saving: an unsaved draft of the question it was written for. It
+ * is never a saved revision; a save that succeeds forgets it.
+ */
+export interface FormDraft {
+  /** The question the draft was written for: the reading and the revision it would revise. */
+  question: string;
+  name: string;
+  notes: NoteFields;
+}
+
 export interface SavingState {
   list: SavedListState;
   reopen: ReopenState;
   save: SaveState;
+  refresh?: RefreshState;
+  form?: FormDraft | null;
 }
 
 /** An immutable server-verified result, separate from the save form's status. */
@@ -57,7 +84,12 @@ export type VerifiedSavedExportReceipt = Readonly<Pick<SaveInvestigationAnswer,
 export interface ComparisonSource {
   savedComparisonFor(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedComparison | null;
   /** Shows the comparison of a reopened investigation again, or forgets one that was waiting when there is none. */
-  restore(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"], saved: SavedComparison | null): void;
+  restore(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"], saved: SavedComparison | null,
+    described?: SavedComparisonParent | null, outcome?: SavedOutcome | null): void;
+  /** How the frozen parent of the comparison shown was taken, in its saved form. */
+  savedParentFor?(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedComparisonParent | null;
+  /** The outcome named beside the comparison shown, in its saved form. */
+  savedOutcomeFor?(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedOutcome | null;
 }
 
 /** The part of the expectation view that saving needs: the score run shown, as a saved investigation refers to it. */
@@ -88,8 +120,10 @@ export type SaveDraft =
       revises: boolean;
       name: string;
       notes: string;
-      /** Bookmarks pinned to a selection that is no longer the one shown; the earlier revision keeps them. */
+      /** Pins made in a population that is no longer one of this question's; the revision they were saved in keeps them. */
       leftBehind: number;
+      /** The pins saved with the question, as their witnesses. */
+      pins: Pin[];
     };
 
 const initialState: SavingState = { list: { phase: "idle" }, reopen: { phase: "idle" }, save: { phase: "idle" } };
@@ -236,13 +270,14 @@ export class SavingCoordinator {
     if (selection.phase !== "ready" || shown === null) {
       return { ready: false, reason: "Saving is possible once the incidents of the current steps are selected." };
     }
-    const bookmarks = saved?.content.bookmarks ?? [];
+    const savable = savablePins(investigation);
     return {
       ready: true,
       revises: saved !== null,
       name: saved?.content.name ?? population.answer.source.filename,
       notes: saved?.content.notes ?? "",
-      leftBehind: bookmarks.length - carriedBookmarks(investigation).length,
+      leftBehind: investigation.pins.length - savable.length,
+      pins: savable,
     };
   }
 
@@ -261,8 +296,12 @@ export class SavingCoordinator {
       flow_artifact_sha256: null,
       graph_positions: null,
     };
-    const scoreReference = this.scores?.savedReference() ?? saved?.content.score_run_ref ?? null;
+    // What the saved revision holds is carried only on its own reading: a question applied to another reading is compared and scored there anew.
+    const sameReading = saved !== null && sameIdentity(saved.content.base_identity, population.answer.identity);
+    const scoreReference = this.scores?.savedReference() ?? (sameReading ? saved.content.score_run_ref : null) ?? null;
     const pipeline = this.pipeline?.savedPipeline() ?? (saved && sameIdentity(saved.content.selection_identity, shown.answer.identity) ? saved.content.bpic19_pipeline : null);
+    const comparisonParent = this.comparisons?.savedParentFor?.(population.answer.workspace_id, population.answer.identity) ?? null;
+    const outcome = this.comparisons?.savedOutcomeFor?.(population.answer.workspace_id, population.answer.identity) ?? null;
     const prepared = this.prepared ? this.prepared.savedPreparedAssessments() : saved?.content.bpic19_prepared_assessments;
     const question = {
       schema_version: 1 as const,
@@ -278,16 +317,19 @@ export class SavingCoordinator {
       // The comparison shown on this reading is saved; without one, the saved investigation keeps its own.
       comparison:
         this.comparisons?.savedComparisonFor(population.answer.workspace_id, population.answer.identity) ??
-        saved?.content.comparison ??
+        (sameReading ? saved.content.comparison : null) ??
         null,
       notes,
-      bookmarks: carriedBookmarks(investigation),
+      // The pins of this question are its witnesses, with their roles and words; pins made under other steps stay out.
+      bookmarks: savablePins(investigation).map((pin): EvidenceBookmark => ({ label: pin.label, identity: pin.identity, case_id: pin.caseId, row_ids: [...pin.rowIds], note: pinNote(pin) })),
       presentation_state: presentation,
       // The score run shown on this reading is referred to; without one, a run the saved investigation
       // refers to stays referred to until it is taken away on purpose.
       ...(scoreReference ? { score_run_ref: scoreReference } : {}),
       ...(pipeline ? { bpic19_pipeline: pipeline } : {}),
       ...(prepared ? { bpic19_prepared_assessments: prepared } : {}),
+      ...(comparisonParent ? { comparison_parent: comparisonParent } : {}),
+      ...(outcome ? { outcome } : {}),
     };
     // A new investigation names neither an investigation nor the revision it replaces; a new revision names both.
     const request: SaveInvestigationRequest = saved
@@ -299,6 +341,92 @@ export class SavingCoordinator {
       (outcome) => this.receiveSave(request, outcome),
       () => this.receiveSave(request, unreachable),
     );
+  }
+
+  /** What a save of the question shown would hold beside its steps and notes: the comparison, its parent's description and the outcome. */
+  heldWith(investigation: ImportedInvestigationState): { comparison: SavedComparison | null; parent: SavedComparisonParent | null; outcome: SavedOutcome | null; scored: boolean } {
+    const { population, saved } = investigation;
+    if (population.phase !== "ready") return { comparison: null, parent: null, outcome: null, scored: false };
+    const { workspace_id: workspaceId, identity } = population.answer;
+    return {
+      comparison: this.comparisons?.savedComparisonFor(workspaceId, identity) ?? (saved && sameIdentity(saved.content.base_identity, identity) ? saved.content.comparison : null) ?? null,
+      parent: this.comparisons?.savedParentFor?.(workspaceId, identity) ?? null,
+      outcome: this.comparisons?.savedOutcomeFor?.(workspaceId, identity) ?? null,
+      scored: (this.scores?.savedReference() ?? (saved && sameIdentity(saved.content.base_identity, identity) ? saved.content.score_run_ref : null) ?? null) !== null,
+    };
+  }
+
+  /** Keeps what the save form holds when it is closed without saving: an unsaved draft, shown as one when the form opens again. */
+  keepForm(form: FormDraft | null): void {
+    this.publish({ ...this.state, form });
+  }
+
+  /**
+   * Applies a saved question to another reading, for example of a refreshed source: its steps and parent there, and what
+   * changed, shown as a question not yet saved. Saving it adds a revision to the same investigation; the earlier one stays.
+   */
+  refresh(summary: SavedInvestigationSummary, workspaceId: WorkspaceId, preparationId: string): Promise<boolean> {
+    const client = this.client.refresh?.bind(this.client);
+    if (!client) return Promise.resolve(false);
+    this.forgetAwaited();
+    const { requestId, revision, signal } = this.issue("refresh", "refresh");
+    const request: RefreshInvestigationRequest = {
+      schema_version: 1, message_type: "refresh_investigation_request", request_id: requestId, query_revision: revision, workspace_id: workspaceId,
+      saved_revision_id: summary.latest_revision_id, preparation_id: preparationId,
+    };
+    this.publish({ ...this.state, refresh: { phase: "refreshing", summary } });
+    return client(request, signal).then(
+      (outcome) => this.receiveRefresh(request, summary, outcome),
+      () => this.receiveRefresh(request, summary, unreachable),
+    );
+  }
+
+  private receiveRefresh(request: RefreshInvestigationRequest, summary: SavedInvestigationSummary, outcome: SavingOutcome<RefreshInvestigationAnswer>): boolean {
+    if (!this.isCurrent("refresh", request.request_id)) return false;
+    this.current.delete("refresh");
+    const checked = outcome.ok ? checkEcho(request, outcome.answer) : checkProblem(request, outcome.problem);
+    if (!checked.ok || checked.answer.preparation_id !== request.preparation_id || checked.answer.revision.saved_revision_id !== request.saved_revision_id) {
+      this.publish({ ...this.state, refresh: { phase: "failed", summary, problem: checked.ok ? { kind: "unsupported_reply", detail: "The reply refreshed another question." } : checked.problem } });
+      return false;
+    }
+    const answer = checked.answer;
+    const { revision, restored_selection } = answer;
+    const { content } = revision;
+    const shownBefore = populationRevision(this.investigation.getState());
+    // The saved question on the new reading, bound to the revision it refreshes: saving it adds the next revision.
+    this.investigation.restore({
+      target: { workspaceId: request.workspace_id, preparationId: request.preparation_id },
+      steps: content.selection_recipe.predicates,
+      parentCaseIds: restored_selection.parent.case_ids,
+      selectionIdentity: restored_selection.identity,
+      binding: { investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content },
+      view: "incidents",
+      refreshed: true,
+    });
+    this.forgetAwaited();
+    const hand = () => this.comparisons?.restore(request.workspace_id, content.base_identity, null);
+    const accepted = () => {
+      const { population, replacement } = this.investigation.getState();
+      return replacement === null && population.phase === "ready" && population.revision > shownBefore && population.answer.identity.preparation_id === request.preparation_id;
+    };
+    if (accepted()) hand();
+    else {
+      const unsubscribe = this.investigation.subscribe(() => {
+        if (!accepted()) return;
+        this.forgetAwaited();
+        hand();
+      });
+      this.awaited = unsubscribe;
+    }
+    this.exportReceipt = null;
+    this.publish({ ...this.state, refresh: { phase: "shown", summary, answer }, reopen: { phase: "idle" }, save: { phase: "idle" } });
+    return true;
+  }
+
+  /** Forgets the review of a refreshed question, for example once it is saved or another question is opened. */
+  clearRefresh(): void {
+    this.cancel("refresh");
+    if (this.state.refresh && this.state.refresh.phase !== "idle") this.publish({ ...this.state, refresh: { phase: "idle" } });
   }
 
   /** Forgets the outcome of the last save, before the save form is opened again. */
@@ -382,7 +510,7 @@ export class SavingCoordinator {
       );
     };
     const hand = (): void => {
-      this.comparisons?.restore(workspaceId, content.base_identity, content.comparison);
+      this.comparisons?.restore(workspaceId, content.base_identity, content.comparison, content.comparison_parent ?? null, content.outcome ?? null);
       this.scores?.restore(content.score_run_ref ?? null);
       this.prepared?.restore(workspaceId, content.bpic19_prepared_assessments ?? []);
     };
@@ -421,7 +549,7 @@ export class SavingCoordinator {
     this.investigation.markSaved({ investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content: revision.content });
     this.rememberNativeLabels(revision.saved_revision_id, checked.answer.bpic19_outputs);
     this.rememberExportReceipt(checked.answer);
-    this.publish({ ...this.state, save: { phase: "saved", answer: checked.answer } });
+    this.publish({ ...this.state, save: { phase: "saved", answer: checked.answer }, form: null, refresh: { phase: "idle" } });
   }
 
   /** Whether the investigation still shows the question a save request was made for. */
@@ -479,7 +607,9 @@ export class SavingCoordinator {
     });
     this.restoreWhenAccepted(request.workspace_id, revision, shownBefore);
     this.rememberExportReceipt(checked.answer);
-    this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" } });
+    // A draft written for this investigation, for example before a conflict, stays for its latest revision.
+    const form = this.state.form && this.state.form.question === revision.investigation_id ? this.state.form : null;
+    this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" }, refresh: { phase: "idle" }, form });
     return true;
   }
 
@@ -508,17 +638,15 @@ export class SavingCoordinator {
 }
 
 /**
- * The bookmarks of the saved question that still name a population of the question shown. A
- * bookmark pinned to the saved selection is left behind once the steps changed; the revision it
- * was saved in keeps it.
+ * The pins of the question shown that a saved revision can keep: those read in the selection shown, in its parent or in
+ * the population. A pin made under other steps names a population of no revision of this question and stays out; the
+ * revision it was saved in, if any, keeps it.
  */
-function carriedBookmarks(investigation: ImportedInvestigationState): EvidenceBookmark[] {
-  const saved = investigation.saved;
+function savablePins(investigation: ImportedInvestigationState): Pin[] {
   const shown = shownSelection(investigation.selection);
-  if (saved === null) return [];
-  const before = saved.content.selection_identity.population_id;
-  if (shown === null || shown.answer.identity.population_id === before) return saved.content.bookmarks;
-  return saved.content.bookmarks.filter((bookmark) => bookmark.identity.population_id !== before);
+  if (shown === null || investigation.population.phase !== "ready") return [];
+  const held = new Set([shown.answer.identity.population_id, shown.answer.parent_identity.population_id, investigation.population.answer.identity.population_id]);
+  return investigation.pins.filter((pin) => held.has(pin.identity.population_id));
 }
 
 interface Echoed {

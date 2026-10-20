@@ -157,6 +157,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Coverage that is not comparable is said and can be kept as no conclusion; the declared follow-up restriction removes only the incident not fully observed.
   - The cross-period incident opens with its whole history, also after its period, and returns; no survival estimate or improvement claim appears.
 
+- `tools/qualify_saved_finding.py` (#25): a finding of the invented `tests/fixtures/frozen-parent` file saved in one service process and reopened in another.
+  - First: the eligibility step and clause, a supporting and a contrary pin, a comparison in the frozen parent, the outcome, and a save with structured notes; its summary and its unsaved draft are checked.
+  - After an actual restart: the saved list's lineage, cutoff, folder and unchecked state, and the local guide; the reopened notes, pins, frozen parent and outcome.
+  - The question is applied to a refreshed reading (one incident appended), reviewed, and saved as a new revision without the earlier comparison; the earlier revision is listed as earlier and reopens as it was.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

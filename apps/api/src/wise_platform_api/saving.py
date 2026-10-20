@@ -51,6 +51,8 @@ from .generated.saving import (
     PresentationRecovery,
     ReopenInvestigationAnswer,
     ReopenInvestigationRequest,
+    RefreshInvestigationAnswer,
+    RefreshInvestigationRequest,
     RecoverInvestigationMetadataRequest,
     RecoverInvestigationMetadataAnswer,
     SaveInvestigationAnswer,
@@ -63,6 +65,7 @@ from .saved_store import Conflict, SavedInvestigations, StoredRevision
 from .saving_boundary import (
     LIST_SAVED,
     REOPEN,
+    REFRESH,
     RECOVER_METADATA,
     SAVE,
     STATUS,
@@ -121,10 +124,83 @@ class Saving:
     def reopen(self, body: bytes) -> SavingReply:
         return _answering(REOPEN, parse_saving_body(body, ReopenInvestigationRequest, REOPEN), self._reopen)
 
+    def refresh(self, body: bytes) -> SavingReply:
+        return _answering(REFRESH, parse_saving_body(body, RefreshInvestigationRequest, REFRESH), self._refresh)
+
     def recover_metadata(self, body: bytes) -> SavingReply:
         return _answering(RECOVER_METADATA, parse_saving_body(body, RecoverInvestigationMetadataRequest, RECOVER_METADATA), self._recover_metadata)
 
     # Use cases ----------------------------------------------------------------------------
+
+    def _refresh(self, request: RefreshInvestigationRequest, given: dict) -> SavingReply:
+        """A saved question on another reading, unsaved, with what changed: a refresh saves as a new revision, never over the old."""
+        workspace = self._imports.opened_workspace(given["workspace_id"])
+        if isinstance(workspace, Problem):
+            return _problem(REFRESH, workspace, given)
+        revision = SavedInvestigations(workspace).revision(given["saved_revision_id"])
+        if isinstance(revision, Problem):
+            return _problem(REFRESH, revision, given)
+        if revision.content.get("bpic19_pipeline") is not None or revision.content.get("score_run_ref") is not None:
+            return _refused(REFRESH, "unsupported_action", "A question with a scored run or a BPIC19 pipeline is refreshed by scoring the new reading; "
+                            "reopen it and run it again instead.", given, "saved_revision_id")
+        stored = workspace.preparation(given["preparation_id"])
+        if isinstance(stored, Problem):
+            return _problem(REFRESH, Problem(stored.code, stored.message, "preparation_id"), given)
+        found = self._imports.prepared_snapshot(workspace, given["preparation_id"], "preparation_id")
+        if isinstance(found, Problem):
+            return _problem(REFRESH, found, given)
+        if isinstance(found, PackageRefusal):
+            return _refused(REFRESH, "preparation_unavailable", "This reading cannot be prepared again from its stored source.", given, "preparation_id")
+        prepared = found[0]
+        content = revision.content
+        recipe = content["selection_recipe"]
+        saved_parent = recipe["parent_case_ids"]
+        results = revision.results
+        whole = isinstance(results.get("base"), Mapping) and len(saved_parent) == results["base"].get("case_count")
+        # A parent that was every incident of its reading is every incident of the new one; a narrower parent keeps its incidents.
+        parent_ids = None if whole else list(saved_parent)
+        try:
+            predicates = [package_predicate(item) for item in recipe["predicates"]]
+            selection = select_cases(prepared, predicates, parent_ids)
+            parent = select_cases(prepared, (), parent_ids)
+        except SelectionError as error:
+            return _refused(REFRESH, "selection_mismatch", f"The saved steps or parent do not apply to this reading: {error}", given, "preparation_id")
+        registry = self._imports.selections
+        registry.keep(workspace.workspace_id, parent)
+        registry.keep(workspace.workspace_id, selection)
+        before_descriptor, after_descriptor = revision.preparation, stored.descriptor
+
+        def item(aspect: str, before: object, after: object, status: str | None = None) -> dict[str, object]:
+            text = lambda value: None if value is None else json.dumps(value, sort_keys=True, ensure_ascii=False) if not isinstance(value, str) else value
+            return {"aspect": aspect, "status": status or ("unchanged" if before == after else "changed"), "before": text(before), "after": text(after)}
+
+        old_selection = results.get("selection") if isinstance(results.get("selection"), Mapping) else {}
+        old_parent = results.get("parent") if isinstance(results.get("parent"), Mapping) else {}
+        review = [
+            item("source", content["base_identity"]["source_id"], prepared.identity_dict()["source_id"]),
+            item("binding", before_descriptor.get("mapping"), after_descriptor.get("mapping")),
+            item("clock", (before_descriptor.get("policies") or {}).get("time"), (after_descriptor.get("policies") or {}).get("time")),
+            item("parent", f"{old_parent.get('case_count')} incidents", f"{parent.parent.case_count} incidents"),
+            item("selection", f"{(old_selection.get('kept') or {}).get('case_count')} incidents kept", f"{selection.kept.case_count} incidents kept"),
+        ]
+        if content.get("comparison") is not None:
+            review.append(item("comparison", "saved comparison", None, "to_review"))
+        selected = selection.to_dict()
+        return _answer(
+            RefreshInvestigationAnswer,
+            _envelope("refresh_investigation_answer", given)
+            | {
+                "revision": revision.revision(),
+                "preparation_id": given["preparation_id"],
+                "parent_case_ids": parent_ids,
+                "restored_selection": {
+                    "identity": selected["identity"], "parent_identity": parent.identity_dict(), "parent": selected["parent"],
+                    "kept": selected["kept"], "removed": selected["removed"], "unevaluable": selected["unevaluable"],
+                    "predicate_results": selected["predicate_results"],
+                },
+                "review": review,
+            },
+        )
 
     def _recover_metadata(self, request: RecoverInvestigationMetadataRequest, given: dict) -> SavingReply:
         """Read bounded saved notes/references without replay, selection restoration or writes.
@@ -203,6 +279,9 @@ class Saving:
             content["bpic19_pipeline"] = given["bpic19_pipeline"]
         if given.get("bpic19_prepared_assessments") is not None:
             content["bpic19_prepared_assessments"] = given["bpic19_prepared_assessments"]
+        for optional in ("outcome", "comparison_parent"):
+            if given.get(optional) is not None:
+                content[optional] = _whole_numbers(given[optional])
         question = self._question(workspace, content, None)
         if isinstance(question, Problem):
             return _problem(SAVE, question, given)
@@ -266,7 +345,8 @@ class Saving:
             revision = store.revision(head.latest_revision_id)
             if isinstance(revision, Problem):
                 return _problem(LIST_SAVED, Problem(revision.code, revision.message, None), given)
-            summary = _summary(revision)
+            lineage = _lineage(store, revision)
+            summary = _summary(revision, lineage)
             if summary is None:
                 return _problem(LIST_SAVED, _unreadable_results(revision), given)
             listed.append((revision.saved_utc, summary))
@@ -421,6 +501,9 @@ class Saving:
         if isinstance(comparison, Problem):
             return comparison
         problem = _bookmark_problem(prepared, base, parent, selection, comparison, content["bookmarks"])
+        if problem is not None:
+            return problem
+        problem = _described_problem(prepared, recipe, content)
         if problem is not None:
             return problem
         return Question(prepared, source, preparation, parent, selection, comparison)
@@ -605,6 +688,32 @@ def _comparison(
     return answer
 
 
+def _described_problem(prepared: PreparedData, recipe: Mapping[str, object], content: Mapping[str, object]) -> Problem | None:
+    """Why the description of the comparison's parent or the saved outcome does not fit this question, or ``None``.
+
+    Retained steps must give exactly the comparison's parent from the selection's parent: a description that does not
+    is refused, never shown beside a parent it does not describe. A saved outcome must read a mapped context column.
+    """
+    described = content.get("comparison_parent")
+    comparison = content.get("comparison")
+    if described is not None:
+        if comparison is None:
+            return Problem("comparison_mismatch", "A parent is described without a comparison. Save the comparison with it, or leave the description out.", "comparison_parent")
+        retained = described["retained_predicates"]
+        if retained:
+            try:
+                kept = select_cases(prepared, [package_predicate(item) for item in retained], recipe["parent_case_ids"]).kept.case_ids
+            except SelectionError as error:
+                return Problem("comparison_mismatch", f"The steps describing the comparison's parent cannot be applied: {error}", "comparison_parent.retained_predicates")
+            if list(kept) != sorted(comparison["parent_case_ids"]):
+                return Problem("comparison_mismatch", "The steps describing the comparison's parent do not keep exactly its incidents. Compare again, then save.",
+                               "comparison_parent.retained_predicates")
+    outcome = content.get("outcome")
+    if outcome is not None and outcome["context_column_index"] not in prepared.mapping["context_columns"]:
+        return Problem("invalid_parameter", "The saved outcome reads a column that is not a context column of this preparation.", "outcome.context_column_index")
+    return None
+
+
 def _bookmark_problem(
     prepared: PreparedData,
     base: Mapping[str, object],
@@ -711,7 +820,7 @@ def _differing_results(saved: StoredRevision, question: Question) -> Problem | N
     return None
 
 
-def _summary(revision: StoredRevision) -> dict[str, object] | None:
+def _summary(revision: StoredRevision, lineage: list[dict[str, object]] | None = None) -> dict[str, object] | None:
     selection = revision.results.get("selection")
     kept = selection.get("kept") if isinstance(selection, dict) else None
     if not isinstance(kept, dict) or type(kept.get("case_count")) is not int or type(kept.get("record_count")) is not int:
@@ -729,7 +838,21 @@ def _summary(revision: StoredRevision) -> dict[str, object] | None:
         "comparison_kind": None if comparison is None else comparison["kind"],
         "has_score_run": content["score_run_ref"] is not None,
         "source_validation": "not_checked",
+        "saved_utc": revision.saved_utc,
+        "snapshot_cutoff": _cutoff(revision.preparation),
+        **({"revisions": lineage} if lineage is not None else {}),
     }
+
+
+def _cutoff(preparation: Mapping[str, object]) -> str | None:
+    """The snapshot cutoff the saved preparation declares, as its time policy holds it; none where it holds none."""
+    policies = preparation.get("policies") if isinstance(preparation, Mapping) else None
+    time = policies.get("time") if isinstance(policies, Mapping) else None
+    parameters = time.get("parameters") if isinstance(time, Mapping) else None
+    if not isinstance(parameters, Mapping):
+        return None
+    value = parameters.get("snapshot_cutoff_utc", parameters.get("snapshot_cutoff_local"))
+    return value if isinstance(value, str) and value else None
 
 
 def _unreadable_results(revision: StoredRevision) -> Problem:
@@ -904,3 +1027,19 @@ def _refused(
 
 def _sent_refusal(refusal: SavingRefusal) -> SavingReply:
     return SavingReply(STATUS[refusal.code], refusal_body(refusal))
+
+
+def _lineage(store: SavedInvestigations, revision: StoredRevision) -> list[dict[str, object]]:
+    """The revisions an investigation's latest one replaces, newest first, as far as each can be read."""
+    lineage: list[dict[str, object]] = []
+    current: StoredRevision | Problem = revision
+    seen: set[str] = set()
+    while isinstance(current, StoredRevision) and current.saved_revision_id not in seen:
+        seen.add(current.saved_revision_id)
+        base = current.content["base_identity"]
+        lineage.append({"saved_revision_id": current.saved_revision_id, "saved_utc": current.saved_utc,
+                        "source_id": base["source_id"], "preparation_id": base["preparation_id"]})
+        if current.replaces_revision_id is None:
+            break
+        current = store.revision(current.replaces_revision_id)
+    return lineage

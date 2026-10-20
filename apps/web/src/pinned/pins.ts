@@ -71,3 +71,33 @@ export function contextAtFirst(left: ImportedCaseEvidenceAnswer, right: Imported
     return { index, name: names.get(index) ?? `Column ${index}`, left: x, right: y, reading };
   });
 }
+
+/** The labelled lines of a pin's note, in the order they are written; a line without a label is kept as an observation. */
+const PIN_FIELDS: [keyof Pick<Pin, "observation" | "limitation" | "nextCheck">, string][] = [
+  ["observation", "Observation"],
+  ["limitation", "Limitation"],
+  ["nextCheck", "Next check"],
+];
+
+/** A pin's role and words as the note of a saved bookmark: one labelled line each, the role first. */
+export function pinNote(pin: Pick<Pin, "role" | "observation" | "limitation" | "nextCheck">): string {
+  return [`Role: ${pin.role}`, ...PIN_FIELDS.filter(([field]) => pin[field] !== "").map(([field, label]) => `${label}: ${pin[field]}`)].join("\n");
+}
+
+/** The role and words of a saved bookmark's note; a note without a role was a supporting history. */
+export function readPinNote(note: string): Pick<Pin, "role" | "observation" | "limitation" | "nextCheck"> {
+  const read = { role: "supporting" as PinRole, observation: "", limitation: "", nextCheck: "" };
+  const loose: string[] = [];
+  for (const line of note.split("\n")) {
+    const role = /^Role: (supporting|contrary)$/.exec(line);
+    if (role) {
+      read.role = role[1] as PinRole;
+      continue;
+    }
+    const field = PIN_FIELDS.find(([, label]) => line.startsWith(`${label}: `));
+    if (field) read[field[0]] = line.slice(field[1].length + 2);
+    else if (line.trim() !== "") loose.push(line);
+  }
+  if (loose.length > 0) read.observation = [read.observation, ...loose].filter(Boolean).join(" ");
+  return read;
+}

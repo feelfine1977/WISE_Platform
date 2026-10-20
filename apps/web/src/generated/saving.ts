@@ -17,7 +17,9 @@ export type SavingMessage =
   | ReopenInvestigationAnswer
   | SavingRefusal
   | RecoverInvestigationMetadataRequest
-  | RecoverInvestigationMetadataAnswer;
+  | RecoverInvestigationMetadataAnswer
+  | RefreshInvestigationRequest
+  | RefreshInvestigationAnswer;
 export type SaveInvestigationRequest = SaveInvestigationRequest1 & SaveInvestigationRequest2;
 export type SaveInvestigationRequest1 =
   | {
@@ -126,6 +128,8 @@ export interface SaveInvestigationRequest2 {
         Bpic19PreparedAssessmentReference,
         Bpic19PreparedAssessmentReference
       ];
+  outcome?: SavedOutcome | null;
+  comparison_parent?: SavedComparisonParent | null;
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -568,6 +572,22 @@ export interface Bpic19PreparedAssessmentReference {
   view: "Finance" | "Logistics" | "Compliance" | "Automation";
   output_sha256: string;
 }
+/**
+ * A separately named outcome kept with the question: a recorded activity's presence or absence at the snapshot, read by the opening value of a context column. It is asked again on reopening.
+ */
+export interface SavedOutcome {
+  policy: "incident.outcome.recorded_activity_presence_at_snapshot.v1";
+  activity: string;
+  counted: "presence" | "absence";
+  context_column_index: ColumnIndex;
+}
+/**
+ * How the comparison's frozen parent was taken: the retained steps over the selection's parent that give exactly its incidents, checked when saved and reopened, or, where no step describes it, its words.
+ */
+export interface SavedComparisonParent {
+  retained_predicates: SelectionPredicate[];
+  label: string | null;
+}
 export interface SaveInvestigationAnswer {
   schema_version: 1;
   message_type: "save_investigation_answer";
@@ -614,6 +634,8 @@ export interface SavedInvestigationContent {
         Bpic19PreparedAssessmentReference,
         Bpic19PreparedAssessmentReference
       ];
+  outcome?: SavedOutcome | null;
+  comparison_parent?: SavedComparisonParent | null;
 }
 export interface RecoveryAnswer {
   presentation_state: PresentationRecovery | null;
@@ -719,6 +741,18 @@ export interface SavedInvestigationSummary {
   comparison_kind: "group" | "period" | null;
   has_score_run: boolean;
   source_validation: "not_checked";
+  saved_utc?: string;
+  snapshot_cutoff?: string | null;
+  /**
+   * The revisions of the investigation, newest first: each one stays as it was saved.
+   */
+  revisions?: SavedRevisionLineage[];
+}
+export interface SavedRevisionLineage {
+  saved_revision_id: SavedRevisionId;
+  saved_utc: string;
+  source_id: SourceId;
+  preparation_id: PreparationId;
 }
 export interface ReopenInvestigationRequest {
   schema_version: 1;
@@ -780,7 +814,12 @@ export interface SavingRefusal1 {
   request_id: RequestId | null;
   query_revision: QueryRevision | null;
   workspace_id: WorkspaceId | null;
-  operation: "save_investigation" | "list_saved" | "reopen_investigation" | "recover_investigation_metadata";
+  operation:
+    | "save_investigation"
+    | "list_saved"
+    | "reopen_investigation"
+    | "recover_investigation_metadata"
+    | "refresh_investigation";
   code:
     | "invalid_request"
     | "unsupported_schema"
@@ -1178,4 +1217,34 @@ export interface RecoveredClaimPage {
         Bpic19LiteratureClaim
       ];
   next_offset: number | null;
+}
+/**
+ * Applies a saved revision's question to another reading, for example of a refreshed source, without saving: its steps and parent on that reading, and which of its definitions changed.
+ */
+export interface RefreshInvestigationRequest {
+  schema_version: 1;
+  message_type: "refresh_investigation_request";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  saved_revision_id: SavedRevisionId;
+  preparation_id: PreparationId;
+}
+export interface RefreshInvestigationAnswer {
+  schema_version: 1;
+  message_type: "refresh_investigation_answer";
+  request_id: RequestId;
+  query_revision: QueryRevision;
+  workspace_id: WorkspaceId;
+  revision: SavedRevision;
+  preparation_id: PreparationId;
+  parent_case_ids: CaseIds | null;
+  restored_selection: RestoredSelection;
+  review: RefreshReviewItem[];
+}
+export interface RefreshReviewItem {
+  aspect: "source" | "binding" | "clock" | "parent" | "selection" | "comparison";
+  status: "unchanged" | "changed" | "to_review";
+  before: string | null;
+  after: string | null;
 }

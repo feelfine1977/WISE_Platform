@@ -213,11 +213,19 @@ def test_save_answers_the_content_as_given_and_writes_one_file_without_a_path(cl
 def test_the_list_names_the_latest_revision_with_the_counts_stored_at_saving(client, question):
     assert listed(client, question["workspace_id"]) == []
     revision = saved(client, save_request(question))["revision"]
-    assert listed(client, question["workspace_id"]) == [{
+    [summary] = listed(client, question["workspace_id"])
+    lineage = summary.pop("revisions")
+    saved_utc = summary.pop("saved_utc")
+    cutoff = summary.pop("snapshot_cutoff")
+    assert summary == {
         "investigation_id": revision["investigation_id"], "latest_revision_id": revision["saved_revision_id"],
         "name": "Zuweisungen", "source_id": LOG_ID, "preparation_id": question["base"]["identity"]["preparation_id"],
         "selected_case_count": 2, "selected_record_count": 5, "comparison_kind": None, "has_score_run": False,
-        "source_validation": "not_checked"}]
+        "source_validation": "not_checked"}
+    # The row's lineage is its one revision, with when it was saved; the cutoff is the saved preparation's.
+    assert lineage == [{"saved_revision_id": revision["saved_revision_id"], "saved_utc": saved_utc, "source_id": LOG_ID,
+                        "preparation_id": question["base"]["identity"]["preparation_id"]}]
+    assert isinstance(cutoff, str) and cutoff
 
 
 def test_a_second_revision_names_the_one_it_replaces_and_keeps_it(client, question, folder):

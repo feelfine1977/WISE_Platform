@@ -12,7 +12,7 @@ import type {
   SelectionPredicate,
   WorkspaceId,
 } from "../generated/comparison";
-import type { SavedComparison } from "../generated/saving";
+import type { SavedComparison, SavedComparisonParent, SavedOutcome } from "../generated/saving";
 import type { ComparisonClient, ComparisonOutcome, ComparisonProblem } from "./client";
 
 export const contextPolicy = "incident.context.first_record_in_declared_order.v1" as const;
@@ -70,6 +70,13 @@ export interface PeriodChoice {
   to: string;
 }
 
+/** A separately named outcome as chosen: a recorded activity's presence or absence, read by the opening value of a column. */
+export interface OutcomeChoice {
+  activity: string;
+  counted: "presence" | "absence";
+  column: number;
+}
+
 export interface CompareDraft {
   mode: "groups" | "periods";
   /** The names of group A (target) and group B (reference). */
@@ -79,6 +86,8 @@ export interface CompareDraft {
   split: SplitChoice | null;
   /** The frozen parent the comparison is made in; null for every incident of the population. */
   parent: FrozenParent | null;
+  /** The outcome named beside the comparison, kept with the question when it is saved; null while none is. */
+  outcome: OutcomeChoice | null;
   periods: Record<Role, PeriodChoice>;
   /** The minimum follow-up in hours, as typed. */
   minimum: string;
@@ -118,6 +127,7 @@ function emptyDraft(basis: CompareBasis | null, mode: CompareDraft["mode"] = "gr
     groups: { target: null, reference: null },
     split: null,
     parent: null,
+    outcome: null,
     periods: { target: { name: "Period A", from: "", to: "" }, reference: { name: "Period B", from: "", to: "" } },
     minimum: "0",
     endpoint: null,
@@ -228,6 +238,8 @@ export class CompareCoordinator {
   private revision = 0;
   /** How many parents were taken; the revision of the parent shown. */
   private parents = 0;
+  /** The parent's description and the outcome of the saved investigation being restored. */
+  private restoredExtras: { described: SavedComparisonParent | null; outcome: SavedOutcome | null } = { described: null, outcome: null };
   private request: AbortController | null = null;
   /** The comparison asked for last, which a retry asks for again. */
   private last: Asked | null = null;
@@ -261,7 +273,9 @@ export class CompareCoordinator {
    * It is asked for once the reading it was made on is the one compared in, and forgotten when
    * another reading is. Its answer is shown only when it is the saved comparison itself.
    */
-  restore(workspaceId: WorkspaceId, identity: AnswerIdentity, saved: SavedComparison | null): void {
+  restore(workspaceId: WorkspaceId, identity: AnswerIdentity, saved: SavedComparison | null, described: SavedComparisonParent | null = null,
+    outcome: SavedOutcome | null = null): void {
+    this.restoredExtras = { described, outcome };
     if (saved === null) {
       // The reopened investigation holds no comparison, so none is shown: an answer of an earlier
       // question, shown or still on its way, does not become part of it.
@@ -269,7 +283,7 @@ export class CompareCoordinator {
       this.abandon();
       this.last = null;
       const { basis } = this.state;
-      this.publish({ basis, draft: emptyDraft(basis, this.state.draft.mode), comparison: { phase: "idle" } });
+      this.publish({ basis, draft: { ...emptyDraft(basis, this.state.draft.mode), outcome: outcomeOf(outcome) }, comparison: { phase: "idle" } });
       return;
     }
     this.restoring = { workspaceId, identity, saved, asked: false };
@@ -317,6 +331,26 @@ export class CompareCoordinator {
   splitWithin(clause: SelectionPredicate, parent: Omit<FrozenParent, "revision"> | null, taken: SplitChoice["taken"] = null): void {
     if (parent !== null) this.parents += 1;
     this.change({ split: { predicates: [clause], targetSide: "kept", taken }, parent: parent && { ...parent, revision: this.parents }, names: clauseNames(clause) });
+  }
+
+  /** Names the outcome shown beside the comparison, or none. */
+  setOutcome(outcome: OutcomeChoice | null): void {
+    this.change({ outcome });
+  }
+
+  /** How the comparison's frozen parent was taken, in its saved form, while it is the parent of the comparison shown. */
+  savedParentFor(workspaceId: WorkspaceId, identity: AnswerIdentity): SavedComparisonParent | null {
+    const { draft, comparison } = this.state;
+    if (this.savedComparisonFor(workspaceId, identity) === null || comparison.phase !== "ready" || draft.parent === null || draft.parent.caseIds === null) return null;
+    if (!sameJson([...draft.parent.caseIds].sort(), [...comparison.shown.answer.parent.case_ids].sort())) return null;
+    return { retained_predicates: [...draft.parent.retained], label: draft.parent.label ?? null };
+  }
+
+  /** The outcome named beside the comparison shown, in its saved form. */
+  savedOutcomeFor(workspaceId: WorkspaceId, identity: AnswerIdentity): SavedOutcome | null {
+    const outcome = this.state.draft.outcome;
+    if (outcome === null || this.savedComparisonFor(workspaceId, identity) === null) return null;
+    return { policy: "incident.outcome.recorded_activity_presence_at_snapshot.v1", activity: outcome.activity, counted: outcome.counted, context_column_index: outcome.column };
   }
 
   /** Compares within a frozen parent, for example one stratum of the population, whatever the groups are. */
@@ -441,9 +475,17 @@ export class CompareCoordinator {
     const controller = new AbortController();
     this.request = controller;
     this.last = null;
+    const extras = this.restoredExtras;
+    if (extras.described !== null) this.parents += 1;
     this.publish({
       ...this.state,
-      draft: { ...this.state.draft, mode: saved.kind === "group" ? "groups" : "periods", column: saved.context_column_index },
+      draft: {
+        ...this.state.draft, mode: saved.kind === "group" ? "groups" : "periods", column: saved.context_column_index,
+        // The parent's description comes back with it, as saved and checked by the local service; the outcome is asked again.
+        parent: extras.described === null ? null : { caseIds: [...saved.parent_case_ids], retained: [...extras.described.retained_predicates], count: saved.parent_case_ids.length,
+          eligibilityUnknown: 0, revision: this.parents, ...(extras.described.label ? { label: extras.described.label } : {}) },
+        outcome: outcomeOf(extras.outcome),
+      },
       comparison: { phase: "loading", revision, shown: null },
     });
     const theSaved = <Answer extends GroupComparisonAnswer | PeriodComparisonAnswer>(outcome: ComparisonOutcome<Answer>): ComparisonOutcome<Answer> =>
@@ -590,4 +632,8 @@ export function clauseNames(clause: SelectionPredicate): Record<Role, string> {
     return clause.negate ? { target: absent, reference: recorded } : { target: recorded, reference: absent };
   }
   return { target: "Meets the clause", reference: "Does not meet the clause" };
+}
+
+function outcomeOf(saved: SavedOutcome | null): OutcomeChoice | null {
+  return saved === null ? null : { activity: saved.activity, counted: saved.counted, column: saved.context_column_index };
 }
