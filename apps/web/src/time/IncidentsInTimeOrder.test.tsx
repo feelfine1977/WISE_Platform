@@ -25,13 +25,19 @@ function ordering(clock: "utc_instant" | "wall_clock" = "utc_instant") {
         const hours = ids.indexOf(case_id);
         const time_summary = hours === 0
           ? { status: "unavailable", reason: "order_unknown" }
-          : { status: "available", timestamp_kind: clock, observed_span_hours: hours, maximum_adjacent_raw_gap_hours: hours / 2 };
+          : {
+              status: "available", timestamp_kind: clock, observed_span_hours: hours, maximum_adjacent_raw_gap_hours: hours / 2,
+              first_recorded_timestamp: clock === "utc_instant" ? "2026-01-01T08:00:00Z" : "2026-01-01T08:00:00", last_recorded_timestamp: clock === "utc_instant" ? "2026-01-11T08:00:00Z" : "2026-01-11T08:00:00",
+              first_recorded_activity: "Opened", last_recorded_activity: "Resolved", observed_span_unavailable_reason: null, maximum_adjacent_raw_gap_unavailable_reason: null,
+              maximum_gap_witness: { from_row_id: `${case_id}-r2`, to_row_id: `${case_id}-r3`, from_activity: "Assigned", to_activity: null, from_offset_hours: 1, share_of_observed_span: 0.5, share_unavailable_reason: null },
+              usable_gap_count: 2, tied_timestamp_group_count: 0,
+            };
         return { case_id, record_count: 3, mapped_record_count: 3, omitted_activity_record_count: 0, sequence_evaluable: hours !== 0, time_summary, maximum_gap_context: null } as unknown as ExplorerCaseSummary;
       });
       const next = request.query.offset + rows.length;
       const answer = {
         request_id: request.request_id, query_revision: request.query_revision, workspace_id: request.workspace_id, identity: request.identity,
-        parent_identity: parent, query: request.query, rows, total_matching_case_count: ids.length, next_offset: next < ids.length ? next : null,
+        parent_identity: parent, query: request.query, rows, context_columns: [], population_case_count: ids.length, total_matching_case_count: ids.length, next_offset: next < ids.length ? next : null,
       } as unknown as CaseListAnswer;
       return { ok: true, answer };
     }),
@@ -78,10 +84,10 @@ describe("the kept incidents in an order by time", () => {
     const { caseLists } = setup();
     const table = await screen.findByRole("table", { name: "Kept incidents" });
     expect(caseLists.list.mock.calls[0][0].query).toEqual({ search_text: null, sort: { field: "observed_span_hours", direction: "descending" }, offset: 0, limit: PAGE });
-    expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Incident", "Records", "Mapped records", "Without activity label", "Order of records", "Span", "Longest gap", "Records over time, 0 to 10.4 d"]);
+    expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Incident", "Records", "Mapped records", "Without activity label", "Order of records", "Span", "Longest gap", "First record", "Longest gap between", "Records over time, 0 to 10.4 d"]);
     const first = within(table).getAllByRole("row")[1];
     expect(within(first).getByRole("button").textContent).toBe("I-249");
-    expect(within(first).getAllByRole("cell").map((cell) => cell.textContent).slice(4, 6)).toEqual(["10.4 d", "5.2 d"]);
+    expect(within(first).getAllByRole("cell").map((cell) => cell.textContent).slice(4, 8)).toEqual(["10.4 d", "5.2 d", "2026-01-01 08:00:00 UTC", "Assigned → no activity label"]);
     expect(screen.getByText("200 incidents of 250")).toBeTruthy();
   });
 
@@ -110,7 +116,10 @@ describe("the kept incidents in an order by time", () => {
     const table = await screen.findByRole("table", { name: "Kept incidents" });
     const first = within(table).getAllByRole("row")[1];
     const marks = await within(first).findByRole("img");
-    expect(marks.getAttribute("aria-label")).toBe("3 records over 5 h, from the first record");
+    expect(marks.getAttribute("aria-label")).toBe("3 records over 5 h, from the first record; the longest gap, 5.2 d, marked from 1 h");
+    // The longest gap is a band from 1 hour to 1 + 124.5 hours on the axis of 249 hours.
+    const band = marks.querySelector(".record-marks-gap")!;
+    expect([Number(band.getAttribute("x")).toFixed(2), Number(band.getAttribute("width")).toFixed(2)]).toEqual(["4.02", "500.00"]);
     // The axis is the longest span listed, 249 hours: the marks of 0, 1 and 5 hours lie at its very start.
     expect(Array.from(marks.querySelectorAll(".record-marks-mark"), (mark) => Number(mark.getAttribute("x1")).toFixed(2))).toEqual(["0.00", "4.02", "20.08"]);
     expect(evidence.caseEvidence.mock.calls.every(([request]) => request.identity.population_id === "kept")).toBe(true);

@@ -164,6 +164,13 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
 
 - `tools/qualify_backup_restore.py` (#26): a workspace with a saved question is backed up from the Data area; after an actual restart on another workspace, the backup is restored into a new folder, opened with the same identity, and its saved finding reopened with an incident's complete history. The original folder is checked unchanged.
 
+- `tools/qualify_span_gap_list.py` (#58): the kept incidents of the invented `tests/fixtures/span-gap` file listed by time, against its own `expected.json`.
+  - Every order (span, longest gap, record count, first record) either way round: equal values by number, unavailable values last as dashes.
+  - The incident in focus: first and last records, span, longest gap with its two activities, offset and share, and the chosen context columns' values; its two records open marked. One record spans zero without a gap; tied times are zero gaps.
+  - The longest gap is marked on the common axis of the records.
+  - The search by number keeps the order and leaves the counts and the distribution unchanged.
+  - With `WISE_SCREENSHOT_DIR` set, a picture of the list is written there.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

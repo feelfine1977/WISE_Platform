@@ -50,6 +50,8 @@ const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
   ["case", "By number"],
   ["observed_span_hours", "Longest span first"],
   ["maximum_adjacent_raw_gap_hours", "Longest gap first"],
+  ["record_count", "Most records first"],
+  ["first_recorded_time", "Earliest first record"],
 ];
 
 /**
@@ -558,6 +560,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                       labelledBy="imported-incidents-title"
                       describedBy="imported-incidents-hint"
                       waitingFor={waitingFor}
+                      onShowRecords={openWitness}
                     />
                   ) : (
                     <IncidentWindow
