@@ -1,6 +1,15 @@
 # Bounded memory for prepared data
 
-**Status:** proposed; capacity not yet qualified.
+**Status:** accepted by the owner on 20 October 2026, on the measured implementation (#135–#140, PRs #141–#146).
+
+On the complete native and prepared BPIC19 sources (1,595,923 records each, 251,734 cases), on the machine named in [Measured capacity](../capacity.md):
+- The journey peak fell from 15.1 GB (failed) to 4.43 GB.
+- Method scoring peaks at 6.17 GB.
+- A cold reopen peaks at 3.97 GB.
+- All are within the default 10 GiB budget.
+- Work that cannot fit is refused before it starts with `memory_unavailable`.
+
+The acceptance does not cover one known exception, #173: the separate historical notebook scoring peaks at about 14.5 GB and is not refused. It stays open.
 
 **Problem:** the descriptive journey over the full native and prepared BPIC19 sources does not fit the local service. In a supervised run, the service and its harness worker peaked at 8.89 GB RSS while importing the 527 MB native source and settled at 6.4–6.7 GB. After the 640 MB prepared source was uploaded, memory grew to 15.1 GB in about 20 seconds and the run was stopped at its 14 GiB limit. The receipt does not record whether inspection or preparation of the prepared source was running.
 
