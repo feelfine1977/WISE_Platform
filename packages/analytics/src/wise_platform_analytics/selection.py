@@ -167,10 +167,30 @@ class IntervalThreshold:
     policy: str = INTERVAL_POLICY
 
 
+ACTIVITY_PROJECTION_POLICY = "incident.activity.omit_missing_retain_raw_gaps.v1"
+
+
+def variant_id(activities: Sequence[str]) -> str:
+    """The identity of a sequence from its exact labels, in order."""
+    encoded = json.dumps(list(activities), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return "variant.v1:sha256:" + hashlib.sha256(encoded).hexdigest()
+
+
+@dataclass(frozen=True)
+class VariantIs:
+    """The incident's complete mapped sequence under the activity projection is exactly this one, repeats included.
+    An incident whose order is not known has no sequence and is not evaluable, never false."""
+
+    activities: tuple[str, ...]
+    negate: bool = False
+    variant: str | None = None
+    policy: str = ACTIVITY_PROJECTION_POLICY
+
+
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
                         | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
                         | OpeningAttributeIn | RecordAttributeIn | RecordAttributesAll | ObservedSpanAtLeast | MaxRawGapAtLeast
-                        | IntervalThreshold)
+                        | IntervalThreshold | VariantIs)
 
 
 class SelectionError(ValueError):
@@ -300,6 +320,18 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
             raise SelectionError("invalid_predicate", "The threshold is exceeded (gt) or reached (ge).")
         return {"kind": "interval_threshold", "interval": {"policy": predicate.policy, "start_activity": predicate.start_activity,
                 "response_activity": predicate.response_activity}, "operator": predicate.operator, "hours": predicate.hours, "negate": predicate.negate}
+    if isinstance(predicate, VariantIs):
+        if not isinstance(predicate.activities, tuple):
+            raise SelectionError("invalid_predicate", "A variant is a sequence of activity labels.")
+        for activity in predicate.activities:
+            _label(activity)
+        if predicate.policy != ACTIVITY_PROJECTION_POLICY:
+            raise SelectionError("unsupported_policy", "Only the declared activity projection forms variants.")
+        identity = variant_id(predicate.activities)
+        if predicate.variant is not None and predicate.variant != identity:
+            raise SelectionError("invalid_predicate", "The variant's identity does not match its sequence.")
+        return {"kind": "variant_is", "variant": {"id": identity, "activities": list(predicate.activities), "projection_policy": predicate.policy},
+                "negate": predicate.negate}
     if isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)):
         _hours(predicate.hours)
         return {"kind": "observed_span_at_least" if isinstance(predicate, ObservedSpanAtLeast) else "max_raw_gap_at_least",
@@ -544,6 +576,8 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
         value = satisfies(measured, predicate.operator, predicate.hours)
     elif not prepared.sequence_evaluable(case_id):
         value = None
+    elif isinstance(predicate, VariantIs):
+        value = tuple(record.activity for record in records if record.activity is not None) == predicate.activities
     elif isinstance(predicate, CaseStartInWindow):
         start, end = _window_bounds(predicate)
         moment = records[0].time_value if records else None

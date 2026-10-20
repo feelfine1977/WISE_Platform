@@ -164,7 +164,8 @@ describe("the views of the population of an imported preparation", () => {
     expect(figures.querySelector(".visually-hidden")?.textContent).toBe("2 of 4 incidents whose order is known (50.0%)");
     expect(items[1].textContent).toContain("No labelled activity");
     const text = panel("Variants").textContent;
-    expect(text).toContain("Shares are of the 4 incidents whose order is known.");
+    expect(text).toContain("Shares are of the 4 incidents whose order is known, among the incidents opened, whatever steps the selection takes.");
+    expect(text).toContain("4 incidents in 3 variants and 1 incident with no known order: 5 incidents counted exactly, none sampled.");
     expect(text).toContain("1 incident has no known order and is in no variant.");
     expect(text).toContain("1 record without an activity label is left out of the sequences.");
   });

@@ -301,6 +301,9 @@
           "$ref": "#/$defs/IntervalThreshold"
         },
         {
+          "$ref": "#/$defs/VariantIs"
+        },
+        {
           "$ref": "#/$defs/RecordAttributesAll"
         }
       ]
@@ -1947,6 +1950,56 @@
         "policy",
         "start_activity",
         "response_activity"
+      ]
+    },
+    "VariantIs": {
+      "title": "VariantIs",
+      "description": "Keeps the incidents whose complete mapped sequence, in the declared order under the activity projection, is exactly the variant's sequence, repeats included. The identity is the hash of the exact labels in order and must match them. An incident whose order is not known has no sequence and is not evaluable.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "variant_is"
+        },
+        "variant": {
+          "$ref": "#/$defs/VariantDefinition"
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "variant",
+        "negate"
+      ]
+    },
+    "VariantDefinition": {
+      "title": "VariantDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^variant\\.v1:sha256:[0-9a-f]{64}$"
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "projection_policy": {
+          "type": "string",
+          "const": "incident.activity.omit_missing_retain_raw_gaps.v1"
+        }
+      },
+      "required": [
+        "id",
+        "activities",
+        "projection_policy"
       ]
     },
     "RecordAttributesAll": {

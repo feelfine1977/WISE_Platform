@@ -49,7 +49,7 @@ def test_selection_boundary_rejects_ambiguous_or_unbound_intents(mutation):
 
 STEP_DEFINITIONS = ["SelectionPredicate", "ContainsActivity", "DirectlyFollows", "OpeningAttributeEquals",
                     "StartsWithActivity", "EndsWithActivity", "CaseIdIn", "CaseStartInWindow",
-                    "OpeningAttributeIn", "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast", "IntervalThreshold", "RecordAttributesAll"]
+                    "OpeningAttributeIn", "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast", "IntervalThreshold", "VariantIs", "RecordAttributesAll"]
 
 
 @pytest.mark.parametrize("kind", ["starts_with_activity", "ends_with_activity"])
@@ -76,7 +76,7 @@ def test_every_contract_that_carries_selection_steps_defines_the_same_steps():
     kinds = [member["$ref"].rsplit("/", 1)[1] for member in SCHEMA["$defs"]["SelectionPredicate"]["oneOf"]]
     assert kinds == STEP_DEFINITIONS[1:]
     for name, definitions in carrying.items():
-        for definition in [*STEP_DEFINITIONS, "RecordAttributeCondition", "IntervalDefinition"]:
+        for definition in [*STEP_DEFINITIONS, "RecordAttributeCondition", "IntervalDefinition", "VariantDefinition"]:
             assert definitions[definition] == SCHEMA["$defs"][definition], (name, definition)
 
 

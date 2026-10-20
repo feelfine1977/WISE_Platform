@@ -12,7 +12,7 @@ from .comparison_profiles import opening_context_profile, population_support
 from .mapping import ImportRefusal
 from .preparation import PreparedData, content_identity
 from .selection import (CaseIdIn, CaseStartInWindow, OpeningAttributeIn, RecordAttributeIn,
-                        ObservedSpanAtLeast, MaxRawGapAtLeast, IntervalThreshold, semantic_predicate, OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
+                        ObservedSpanAtLeast, MaxRawGapAtLeast, IntervalThreshold, VariantIs, semantic_predicate, OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
                         OpeningAttributeEquals, SelectionError, StartsWithActivity, case_ids,
                         predicate_descriptor, select_cases)
 from .time_formats import TimeInterpretation, iso_local, iso_utc, parse_format, validate_time_policy
@@ -104,6 +104,10 @@ def _predicates(value: object, field: str) -> tuple[tuple, list[dict[str, object
             d = _closed(raw, {"kind", "interval", "operator", "hours", "negate"}, at, "invalid_predicate")
             i = _closed(d["interval"], {"policy", "start_activity", "response_activity"}, at + ".interval", "invalid_predicate")
             p = IntervalThreshold(i["start_activity"], i["response_activity"], d["operator"], d["hours"], d["negate"], i["policy"])
+        elif kind == "variant_is":
+            d = _closed(raw, {"kind", "variant", "negate"}, at, "invalid_predicate")
+            v = _closed(d["variant"], {"id", "activities", "projection_policy"}, at + ".variant", "invalid_predicate")
+            p = VariantIs(tuple(v["activities"]), d["negate"], v["id"], v["projection_policy"])
         elif kind in ("observed_span_at_least", "max_raw_gap_at_least"):
             d = _closed(raw, {"kind", "hours", "negate"}, at, "invalid_predicate")
             constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast

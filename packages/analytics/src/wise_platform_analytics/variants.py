@@ -15,24 +15,14 @@ identity in every population and revision of a preparation.
 
 from __future__ import annotations
 
-import hashlib
-import json
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from .mapping import ImportRefusal
 from .preparation import PreparedData
-from .selection import SelectionError, case_ids
+from .selection import ACTIVITY_PROJECTION_POLICY, SelectionError, case_ids, variant_id
 
 __all__ = ["ACTIVITY_PROJECTION_POLICY", "UnevaluableSupport", "Variant", "Variants", "variant_id", "variants"]
-
-ACTIVITY_PROJECTION_POLICY = "incident.activity.omit_missing_retain_raw_gaps.v1"
-
-
-def variant_id(activities: Sequence[str]) -> str:
-    """The identity of a sequence from its exact labels, in order."""
-    encoded = json.dumps(list(activities), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    return "variant.v1:sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
 @dataclass(frozen=True)

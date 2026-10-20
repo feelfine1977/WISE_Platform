@@ -55,6 +55,7 @@ export type SelectionPredicate =
   | ObservedSpanAtLeast
   | MaxRawGapAtLeast
   | IntervalThreshold
+  | VariantIs
   | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
@@ -232,6 +233,19 @@ export interface IntervalDefinition {
   policy: "incident.interval.first_start_first_response_at_or_after.v1";
   start_activity: string;
   response_activity: string;
+}
+/**
+ * Keeps the incidents whose complete mapped sequence, in the declared order under the activity projection, is exactly the variant's sequence, repeats included. The identity is the hash of the exact labels in order and must match them. An incident whose order is not known has no sequence and is not evaluable.
+ */
+export interface VariantIs {
+  kind: "variant_is";
+  variant: VariantDefinition;
+  negate: boolean;
+}
+export interface VariantDefinition {
+  id: string;
+  activities: string[];
+  projection_policy: "incident.activity.omit_missing_retain_raw_gaps.v1";
 }
 /**
  * OR exact values per original cell; AND conditions on one original record; some raw record must match. Blank cells match explicit null only, absent cells are unknown; negation preserves unknown. Complete cases are retained.

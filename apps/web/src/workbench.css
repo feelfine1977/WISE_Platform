@@ -459,7 +459,7 @@
 .variant-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
 .variant-rank { font-weight: var(--font-weight-plain); }
 .variant-figures { color: var(--color-ink-muted); font-variant-numeric: tabular-nums; }
-.variant-head button { margin-left: auto; }
+.variant-head button:first-of-type { margin-left: auto; }
 .workbench .variant-head button[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
 .workbench .variant-head button[aria-pressed="true"]:hover { background: var(--color-accent-strong); }
 .variant-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) 0; margin: 0; padding: 0; list-style: none; font-size: var(--font-size-small); }

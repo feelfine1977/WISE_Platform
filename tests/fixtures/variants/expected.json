@@ -1,0 +1,118 @@
+{
+ "about": "Hand-written expectations for #13 (tests/test_issue13_variants.py and tools/qualify_variants.py). Invented incidents. A variant is the complete sequence of labelled activities in the declared order (time, then Seq), repeats kept, records without a label left out; ranked by incidents, then by the sequence. V-T1 and V-T2 tie in time and are ordered by Seq against their file order; V-N1 and V-N2 have a record without a label; V-E1 has no labelled record; V-U1 has a record without a usable time, so no known order. Never read by product code.",
+ "file": "variants.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": [
+   4
+  ]
+ },
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "incidents": 11,
+ "records": 35,
+ "records_without_label": 4,
+ "known_order": 10,
+ "variants": [
+  {
+   "activities": [
+    "Opened",
+    "Assigned",
+    "Resolved"
+   ],
+   "id": "variant.v1:sha256:6501f6e8b0dc7bc1a33fb70e7d62c32059f8178a3b443761631dabc255a04d8e",
+   "members": [
+    "V-A1",
+    "V-A2",
+    "V-A3",
+    "V-N1",
+    "V-T1"
+   ]
+  },
+  {
+   "activities": [
+    "Opened",
+    "Assigned",
+    "Assigned",
+    "Resolved"
+   ],
+   "id": "variant.v1:sha256:b696b7c1cf4cc39e1a5ce91a25f34b34312019c1922a092b8a3439496a91b7ec",
+   "members": [
+    "V-R1",
+    "V-R2"
+   ]
+  },
+  {
+   "activities": [],
+   "id": "variant.v1:sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+   "members": [
+    "V-E1"
+   ]
+  },
+  {
+   "activities": [
+    "Opened",
+    "Resolved"
+   ],
+   "id": "variant.v1:sha256:16b5f044e3d639658e9947d929a78f0664dace4f4633937b56f1138bcb7d9401",
+   "members": [
+    "V-N2"
+   ]
+  },
+  {
+   "activities": [
+    "Opened",
+    "Resolved",
+    "Assigned"
+   ],
+   "id": "variant.v1:sha256:b3416a05060452440d610c66426ca5070f8db3dd7446de0c076bb64960817c6f",
+   "members": [
+    "V-T2"
+   ]
+  }
+ ],
+ "unevaluable": [
+  "V-U1"
+ ],
+ "repeated": {
+  "variant": 1,
+  "labels_in_order": [
+   "Opened",
+   "Assigned",
+   "Assigned",
+   "Resolved"
+  ]
+ },
+ "missing_label_witness": {
+  "case": "V-N1",
+  "source_positions": [
+   23,
+   24,
+   25,
+   26
+  ],
+  "unlabelled_position": 24
+ },
+ "unrelated_step": {
+  "kind": "contains_activity",
+  "activity": "Opened",
+  "kept": [
+   "V-A1",
+   "V-A2",
+   "V-A3",
+   "V-N1",
+   "V-N2",
+   "V-R1",
+   "V-R2",
+   "V-T1",
+   "V-T2",
+   "V-U1"
+  ],
+  "removed": [
+   "V-E1"
+  ],
+  "unevaluable": []
+ }
+}
