@@ -59,6 +59,8 @@ export interface FrozenParent {
   eligibilityUnknown: number;
   /** Counts the parents taken in this window, so that a new parent is told apart from the one before. */
   revision: number;
+  /** What the parent is, said in words where no step describes it, for example a follow-up restriction. */
+  label?: string;
 }
 
 /** A period of incident starts as picked: whole days, the first and the last day included. */
