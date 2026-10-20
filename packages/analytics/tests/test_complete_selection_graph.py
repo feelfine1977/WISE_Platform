@@ -148,7 +148,7 @@ def test_repeated_passages_distinct_incidents_and_zero_lag_have_exact_support():
                                      "medianPreviousHours": 1.0, "meanPreviousHours": 1.0, "usablePreviousCount": 3,
                                      "medianNextHours": 1.0, "meanNextHours": 1.0, "usableNextCount": 1}
     edges = {(edge["payload"]["source_activity"], edge["payload"]["target_activity"]): edge for edge in graph["edges"]}
-    assert edges["A", "B"]["metrics"] == {"count": 3, "cases": 2, "medianLagHours": 1.0, "meanLagHours": 1.0, "usableLagCount": 3}
+    assert edges["A", "B"]["metrics"] == {"count": 3, "cases": 2, "medianLagHours": 1.0, "meanLagHours": 1.0, "totalLagHours": 3.0, "usableLagCount": 3}
     assert edges["B", "A"]["metrics"]["count"] == 1
     zero = build_process_graph(prepared, ["Y"])["edges"][0]
     assert zero["metrics"]["medianLagHours"] == 0 and zero["metrics"]["count"] == 1

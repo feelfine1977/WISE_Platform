@@ -5,6 +5,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 import hashlib
 import json
+from math import fsum
 from statistics import fmean, median
 
 from .selection import BOUNDARY_POLICY, PreparedDataLike, SelectionError, boundary_activities, case_ids
@@ -118,7 +119,8 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
         edge = {"id": path_edge_id(source, target), "kind": "follows",
                 "source": activity_node_id(source), "target": activity_node_id(target),
                 "metrics": {"count": passages[key], "cases": len(path_cases[key]),
-                            "medianLagHours": median(lags[key]), "meanLagHours": fmean(lags[key]), "usableLagCount": len(lags[key])},
+                            "medianLagHours": median(lags[key]), "meanLagHours": fmean(lags[key]),
+                            "totalLagHours": fsum(lags[key]), "usableLagCount": len(lags[key])},
                 "payload": {"source_activity": source, "target_activity": target,
                             "case_ids": sorted(path_cases[key]), "gap_case_ids": sorted(gap_cases[key]),
                             "omitted_row_ids": sorted(gap_rows[key]), "bridged_passage_count": gap_passages[key]}}

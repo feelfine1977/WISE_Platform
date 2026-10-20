@@ -13,3 +13,5 @@
   border-radius: var(--radius-round);
 }
 .path-drawn[data-drawn="true"] { background: var(--color-ink); border-color: var(--color-ink); }
+/* Under the list: how much of the time spent on all paths its first rows carry. */
+.path-leading { margin: 0; font-size: var(--font-size-small); }

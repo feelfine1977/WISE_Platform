@@ -583,6 +583,11 @@
           "minimum": 0,
           "description": "Mean lag over exactly the passages of medianLagHours, on the same clock. Optional: a graph without it is still read."
         },
+        "totalLagHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "The sum of the lags of all the path's passages, over exactly the passages of medianLagHours, on the same clock: the time spent on the path. Optional: a graph without it is still read."
+        },
         "usableLagCount": {
           "type": "integer",
           "minimum": 0

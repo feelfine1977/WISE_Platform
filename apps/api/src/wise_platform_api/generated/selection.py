@@ -214,6 +214,10 @@ class PathMetrics(BaseModel):
         None,
         description='Mean lag over exactly the passages of medianLagHours, on the same clock. Optional: a graph without it is still read.',
     )
+    totalLagHours: confloat(ge=0.0) | None = Field(
+        None,
+        description="The sum of the lags of all the path's passages, over exactly the passages of medianLagHours, on the same clock: the time spent on the path. Optional: a graph without it is still read.",
+    )
     usableLagCount: conint(ge=0)
 
 

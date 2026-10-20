@@ -221,6 +221,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - The time column's charts and the incident, path and matrix tables name incidents, records or passages.
   - The data row's numbers are unchanged.
 
+- `tools/qualify_total_lag.py` (#88): the paths ranked by the time spent on them, over the invented `tests/fixtures/total-lag` file, against its own `expected.json`.
+  - The list of paths opens on the total time, the largest first, under the head "Total time (days, all passages)".
+  - A line says the share of the time on all paths the first five rows carry.
+  - The rare long path comes first in the order by median lag.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
