@@ -1,0 +1,81 @@
+{
+ "about": "Hand-written expectations for #55 (tests/test_issue55_path_list.py and tools/qualify_path_list.py) over tests/fixtures/variants/variants.csv. A path is a pair of labelled activities directly following each other in the declared order (records without a label passed over); incidents are those with the pair, passages its occurrences, the lag the median of the hours from the first record to the second. V-U1 has no known order and is on no path. Flows: incidents beginning or ending with an activity at a labelled record. Never read by product code.",
+ "file": "variants.csv",
+ "not_evaluable_for_paths": 1,
+ "paths": [
+  {
+   "from": "Opened",
+   "to": "Assigned",
+   "incidents": 7,
+   "passages": 7,
+   "median_lag_hours": 1.0,
+   "bridged_passages": 1
+  },
+  {
+   "from": "Assigned",
+   "to": "Resolved",
+   "incidents": 7,
+   "passages": 7,
+   "median_lag_hours": 1.0,
+   "bridged_passages": 0
+  },
+  {
+   "from": "Assigned",
+   "to": "Assigned",
+   "incidents": 2,
+   "passages": 2,
+   "median_lag_hours": 0.75,
+   "bridged_passages": 0
+  },
+  {
+   "from": "Opened",
+   "to": "Resolved",
+   "incidents": 2,
+   "passages": 2,
+   "median_lag_hours": 1.5,
+   "bridged_passages": 1
+  },
+  {
+   "from": "Resolved",
+   "to": "Assigned",
+   "incidents": 1,
+   "passages": 1,
+   "median_lag_hours": 0.0,
+   "bridged_passages": 0
+  }
+ ],
+ "starts": {
+  "Opened": 9
+ },
+ "ends": {
+  "Resolved": 8,
+  "Assigned": 1
+ },
+ "keep_resolved_to_assigned": {
+  "kept": [
+   "V-T2"
+  ],
+  "unevaluable": [
+   "V-U1"
+  ]
+ },
+ "never_resolved_to_assigned": {
+  "kept": [
+   "V-A1",
+   "V-A2",
+   "V-A3",
+   "V-E1",
+   "V-N1",
+   "V-N2",
+   "V-R1",
+   "V-R2",
+   "V-T1"
+  ],
+  "unevaluable": [
+   "V-U1"
+  ]
+ },
+ "empty_variant_members": [
+  "V-E1"
+ ]
+}

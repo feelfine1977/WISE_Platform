@@ -119,6 +119,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Returning restores the focus and the selection; a pin opens from the index and returns to it.
   - On a narrow window, after the steps changed, and with one handle refused, both sides stay named, and the readable one stays whole.
 
+- `tools/qualify_path_list.py` (#55): the list of every path of the invented `tests/fixtures/variants` file, against `paths.json`.
+  - Each pair and flow carries the oracle's incidents, passages and median lag; the incidents of unknown order are named.
+  - At the lowest detail a path the map leaves out is drawn on request, selected, without a step.
+  - Whole incidents are kept and removed through it, each undone exactly; a selection without a labelled record lists no path and says so.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
