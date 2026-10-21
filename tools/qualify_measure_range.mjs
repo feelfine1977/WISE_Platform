@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {addStep} from './add_step.mjs';
 
 const [base, output, playwright, chrome, configPath] = process.argv.slice(2);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -27,7 +28,8 @@ const check = (name, passed, detail) => { checks[name] = Boolean(passed); assert
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const areas = page.getByRole('navigation', {name: 'Areas'});
 const view = name => page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name, exact: true});
-const control = () => page.locator('details', {has: page.getByText('A range of records, span or longest gap', {exact: true})});
+// The form of the range, from the one entry of every step (#94).
+const control = () => page.getByRole('group', {name: 'Add a step'});
 const MEASURES = {raw_record_count: 'Number of records', observed_span_hours: 'Recorded span, first to last recorded time', maximum_adjacent_raw_gap_hours: 'Longest gap between two records'};
 const UNIT = {raw_record_count: 'records', observed_span_hours: 'hours', maximum_adjacent_raw_gap_hours: 'hours'};
 async function settled(steps) {
@@ -35,11 +37,7 @@ async function settled(steps) {
   await page.waitForFunction(n => document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length === n || (n === 0 && !document.querySelector('ul[aria-label="Steps of the selection"]')), steps);
 }
 async function openControl() {
-  if (await control().count() === 0 || !(await control().isVisible())) {
-    await page.getByRole('button', {name: 'Filters and views'}).click();
-    await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Filters', exact: true}).click();
-  }
-  if (await control().getAttribute('open') === null) await control().locator('summary').click();
+  if (!(await control().getByLabel('Measure of the range').isVisible().catch(() => false))) await addStep(page, 'A range of records, span or longest gap');
 }
 
 try {
@@ -70,14 +68,10 @@ try {
     await control().getByLabel(`To, included (${UNIT[range.measure]}; empty for no upper bound)`).fill(range.maximum === null ? '' : String(range.maximum));
     const asked = selections.length;
     await control().getByRole('button', {name: range.negate ? 'Remove this range' : 'Keep this range', exact: true}).click();
-    const pending = page.getByRole('group', {name: 'Filter not yet taken'});
-    const preview = pending.locator('.step-preview');
-    await page.waitForFunction(() => /^Preview: would keep/.test(document.querySelector('[aria-label="Filter not yet taken"] .step-preview')?.textContent ?? ''));
-    const previewed = await preview.textContent();
-    const kept = range.kept.length, removed = range.removed.length, unevaluable = range.unevaluable.length;
-    check(`${range.name}_previewed_with_not_evaluable`, previewed.startsWith(`Preview: would keep ${kept} incident${kept === 1 ? '' : 's'} of ${incidents} incidents; ${removed} removed, ${unevaluable} not evaluable.`) && selections.length === asked, previewed);
-    await pending.getByRole('button', {name: 'Take this step', exact: true}).click();
+    // Applied at once from "+ Add step" (#94), as one step.
     await settled(1);
+    const kept = range.kept.length, unevaluable = range.unevaluable.length;
+    check(`${range.name}_taken_at_once`, selections.length === asked + 1, selections.length - asked);
     const taken = selections.at(-1);
     check(`${range.name}_one_step_as_the_oracle`, same(taken.kept.case_ids, range.kept) && same(taken.removed.case_ids, range.removed) && same(taken.unevaluable.case_ids, range.unevaluable)
       && taken.predicate_results.length === 1 && taken.predicate_results[0].predicate.kind === 'measure_between', [taken.kept.case_ids, taken.unevaluable.case_ids]);

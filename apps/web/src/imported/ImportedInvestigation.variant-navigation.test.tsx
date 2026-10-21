@@ -75,7 +75,7 @@ it("opens the incident table from Map when a variant is listed, without changing
 
   // The variants are in the side panel, under Patterns.
   await user.click(screen.getByRole("button", { name: "Filters and views" }));
-  await user.click(screen.getByRole("button", { name: "Patterns" }));
+  await user.click(within(screen.getByRole("group", { name: "Side panel" })).getByRole("button", { name: "Variants" }));
   await user.click(screen.getByRole("button", { name: "List the 1 incident of variant 1 in the table" }));
 
   expect(screen.getByRole("button", { name: /^Incidents$/ }).getAttribute("aria-pressed")).toBe("true");

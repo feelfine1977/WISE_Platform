@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {addStep} from './add_step.mjs';
 
 const [base, output, playwright, chrome, configPath] = process.argv.slice(2);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -46,13 +47,10 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length === 8);
   await settled(0);
   // The kept incidents: a span of at least ten hours.
-  await rail('Filters');
-  const time = page.locator('details', {has: page.getByText('Recorded time', {exact: true})});
-  await time.locator('summary').click();
+  const time = await addStep(page, 'Recorded time');
   await time.getByLabel('Measure').selectOption('observed_span_at_least');
   await time.getByLabel('At least this many hours').fill(String(expected.kept_step.hours));
   await time.getByRole('button', {name: 'Keep by recorded time', exact: true}).click();
-  await page.getByRole('group', {name: 'Filter not yet taken'}).getByRole('button', {name: 'Take this step', exact: true}).click();
   await settled(1);
   const keptSelection = selections.at(-1);
   const asked = selections.length;

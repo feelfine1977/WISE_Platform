@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {addStep} from './add_step.mjs';
 
 const [base, output, playwright, chrome, configPath] = process.argv.slice(2);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -36,19 +37,10 @@ async function settled(steps) {
   await page.waitForFunction(() => !document.querySelector('.selection-status')?.textContent);
   await page.waitForFunction(n => document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length === n || (n === 0 && !document.querySelector('ul[aria-label="Steps of the selection"]')), steps);
 }
-async function filters() {
-  if (await page.locator('section.incident-filters').count() === 0 || !(await page.locator('section.incident-filters').isVisible())) {
-    await page.getByRole('button', {name: 'Filters and views'}).click();
-    await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Filters', exact: true}).click();
-  }
-}
-const section = summary => page.locator('section.incident-filters details', {has: page.getByText(summary, {exact: true})});
-async function open(summary) {
-  if (await section(summary).getAttribute('open') === null) await section(summary).locator('summary').click();
-  return section(summary);
-}
+// Every step by a value starts from "+ Add step" (#94) and is applied at once.
+async function filters() {}
+const open = kind => addStep(page, kind);
 async function take(steps) {
-  await page.getByRole('group', {name: 'Filter not yet taken'}).getByRole('button', {name: 'Take this step', exact: true}).click();
   await settled(steps);
 }
 async function chooseChip(list, index) {

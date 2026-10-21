@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {addStep} from './add_step.mjs';
 
 const [base, output, playwright, chrome, configPath] = process.argv.slice(2);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -63,20 +64,16 @@ async function journey(width, height) {
       'Nothing to undo: the steps have not been changed.', 'Nothing to redo: no change of the steps has been undone.', 'No step to clear: every incident of the parent is kept.']), none);
     if (process.env.WISE_SCREENSHOT_DIR) await page.screenshot({path: `${process.env.WISE_SCREENSHOT_DIR}/issue92-step-icons-${size}.png`, clip: {x: 0, y: 0, width, height: 200}});
 
-    // A step from the Filters.
-    await page.getByRole('button', {name: 'Filters and views'}).click();
-    await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Filters', exact: true}).click();
-    const range = page.locator('section.incident-filters details', {has: page.getByText('A range of records, span or longest gap', {exact: true})});
-    await range.locator('summary').click();
+    // A step from "+ Add step" (#94), applied at once.
+    const range = await addStep(page, 'A range of records, span or longest gap');
     await range.getByLabel('From, included (records)').fill('2');
-    await range.getByRole('button', {name: 'Keep this range', exact: true}).click();
     // The answer is held back a while, so that the bar is seen while the selection is answered.
     let hold = true;
     await page.route('**/api/investigations/select-cases', async route => {
       if (hold && !route.request().postData()?.includes('"preview-')) await new Promise(resolve => setTimeout(resolve, 1500));
       await route.continue();
     });
-    await page.getByRole('group', {name: 'Filter not yet taken'}).getByRole('button', {name: 'Take this step', exact: true}).click();
+    await range.getByRole('button', {name: 'Keep this range', exact: true}).click();
     await page.waitForFunction(() => !!document.querySelector('.selection-status')?.textContent);
     const answering = await slots();
     const answeringRows = await rows();

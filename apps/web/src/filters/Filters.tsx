@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import type { ImportedPopulationAnswer } from "../generated/imports";
 import type { SelectionPredicate } from "../generated/selection";
 import type { OpeningContextAnswer } from "../views/messages";
@@ -23,7 +23,20 @@ interface FiltersProps {
   range?: RecordedRange | null;
   rangeProblem?: string;
   waitingFor?: string;
+  /** Shows only the form of one kind of step, open and without the list of the others, as "+ Add step" does. */
+  only?: StepKind;
 }
+
+/** The kinds of step "+ Add step" offers, with the words of each. */
+export const STEP_KINDS = {
+  numbers: "Incident numbers",
+  time: "Recorded time",
+  range: "A range of records, span or longest gap",
+  period: "First record in a period",
+  context: "Context values",
+  number: "A range of a number in a context column",
+} as const;
+export type StepKind = keyof typeof STEP_KINDS;
 
 const openingPolicy = "incident.context.first_record_in_declared_order.v1";
 
@@ -63,7 +76,7 @@ export function rangeStep(measure: RangeMeasure, low: string, high: string, nega
 }
 
 /** Typed filters keep complete incidents; only the local service evaluates membership. */
-export function Filters({ population, parentIds, opening, onStep, previewStep, range, rangeProblem, waitingFor }: FiltersProps) {
+export function Filters({ population, parentIds, opening, onStep, previewStep, range, rangeProblem, waitingFor, only }: FiltersProps) {
   const title = useId();
   const previewId = useId();
   // The filter previewed and not yet taken; a new filter or a taken one replaces it.
@@ -106,8 +119,8 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
 
   return (
     <section className="incident-filters" aria-labelledby={title}>
-      <h3 id={title} className="view-title">Filter whole incidents</h3>
-      <p className="muted">Each filter adds a step inside the same parent. Every record of a kept incident remains available. Undo removes the last step.</p>
+      <h3 id={title} className={only ? "visually-hidden" : "view-title"}>{only ? STEP_KINDS[only] : "Filter whole incidents"}</h3>
+      {!only && <p className="muted">Each filter adds a step inside the same parent. Every record of a kept incident remains available. Undo removes the last step.</p>}
       {error && <p className="inline-error" role="alert">{error}</p>}
       {pending && previewStep && (
         <div className="filter-preview" role="group" aria-label="Filter not yet taken">
@@ -120,8 +133,7 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
           <button type="button" onClick={() => setPending(null)}>Change the filter</button>
         </div>
       )}
-      <details open>
-        <summary>Incident numbers</summary>
+      <Section kind="numbers" only={only} open>
         <form onSubmit={(event) => {
           event.preventDefault();
           const entered = ids.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
@@ -137,9 +149,8 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
           <p className="muted">One number per line. The filter keeps any of these numbers, together with every existing step.</p>
           <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep these incidents</button>
         </form>
-      </details>
-      <details>
-        <summary>Recorded time</summary>
+      </Section>
+      <Section kind="time" only={only}>
         <form onSubmit={(event) => {
           event.preventDefault();
           const threshold = Number(hours);
@@ -151,9 +162,8 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
           <p className="muted">Equality is included. Unknown chronology is not evaluable; an incident with one record has no adjacent gap. These are recorded times, not proof of working time or resolution.</p>
           <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep by recorded time</button>
         </form>
-      </details>
-      <details>
-        <summary>A range of records, span or longest gap</summary>
+      </Section>
+      <Section kind="range" only={only}>
         <form onSubmit={(event) => {
           event.preventDefault();
           takeRange(false);
@@ -167,9 +177,8 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
           <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep this range</button>
           <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={() => takeRange(true)}>Remove this range</button>
         </form>
-      </details>
-      <details>
-        <summary>First record in a period</summary>
+      </Section>
+      <Section kind="period" only={only}>
         <form onSubmit={(event) => {
           event.preventDefault();
           if (!range) return setError("The recorded range is unavailable. Reopen the investigation or retry the range before applying a period.");
@@ -189,9 +198,8 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
           <p className="muted">The first raw record decides. All later records remain, including those outside this period.</p>
           <button type="submit" disabled={waitingFor !== undefined || !range} aria-describedby={waitingFor}>Keep starts in this period</button>
         </form>
-      </details>
-      <details>
-        <summary>Context values</summary>
+      </Section>
+      <Section kind="context" only={only}>
         {population.preparation.mapping.context_columns.length === 0 ? <p className="muted">No context columns were mapped. Add them in Data to filter by context.</p> : <form onSubmit={(event) => {
           event.preventDefault();
           const index = Number(column);
@@ -229,7 +237,22 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
           <label className="filter-value"><input type="checkbox" checked={missing} onChange={(event) => setMissing(event.target.checked)} />Not recorded (distinct from the text “Unknown”)</label>
           <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep by context</button>
         </form>}
-      </details>
+      </Section>
     </section>
+  );
+}
+
+/**
+ * One kind of step: among all of them, a disclosure that opens on request; alone, as "+ Add step" shows it, its form
+ * under its name; and nothing where another kind is shown alone.
+ */
+function Section({ kind, only, open, children }: { kind: StepKind; only?: StepKind; open?: boolean; children: ReactNode }) {
+  if (only !== undefined && only !== kind) return null;
+  if (only === kind) return <div className="add-step-form">{children}</div>;
+  return (
+    <details open={open}>
+      <summary>{STEP_KINDS[kind]}</summary>
+      {children}
+    </details>
   );
 }

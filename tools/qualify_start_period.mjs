@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import {addStep} from './add_step.mjs';
 
 const [base, output, playwright, chrome, configPath] = process.argv.slice(2);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -93,14 +94,10 @@ try {
   await settled(0);
   check('undo_restores_the_exact_parent', same(selections.at(-1).identity, parent.identity), null);
   // The date form with the same bounds: the same identity.
-  await page.getByRole('button', {name: 'Filters and views'}).click();
-  await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Filters', exact: true}).click();
-  const period = page.locator('details', {has: page.getByText('First record in a period', {exact: true})});
-  await period.locator('summary').click();
+  const period = await addStep(page, 'First record in a period');
   await period.getByLabel('First record from (included)').fill(expected.window.start_inclusive.slice(0, 16));
   await period.getByLabel('Until (excluded)').fill(expected.window.end_exclusive.slice(0, 16));
   await period.getByRole('button', {name: 'Keep starts in this period', exact: true}).click();
-  await page.getByRole('group', {name: 'Filter not yet taken'}).getByRole('button', {name: 'Take this step', exact: true}).click();
   await settled(1);
   check('date_form_gives_the_same_identity', same(selections.at(-1).identity, applied.identity), null);
   assert.deepEqual(errors, []);

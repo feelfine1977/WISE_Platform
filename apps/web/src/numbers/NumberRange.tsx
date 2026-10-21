@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 import { countOf } from "../data/wording";
 import type { ImportedPopulationAnswer } from "../generated/imports";
 import type { NumericContextAnswer, NumericContextRequest } from "../generated/numeric-context";
@@ -26,6 +26,8 @@ interface NumberRangeProps {
   previewStep?: StepPreviewer;
   waitingFor?: string;
   client?: NumbersClient;
+  /** Shown alone, as "+ Add step" shows one kind of step: its form, open, without a disclosure. */
+  alone?: boolean;
 }
 
 /** A number as a bound or a bin edge is written: at most four significant digits, the exact value kept in the step. */
@@ -51,7 +53,15 @@ export function numberStep(column: number, projection: Projection, low: string, 
  * typed or chosen on the chart, the lower one included and the upper one excluded. Incidents without the number, and
  * cells that are not numbers, are counted and never read as zero.
  */
-export function NumberRange({ population, identity, revision, columnName, onStep, previewStep, waitingFor, client = httpNumbersClient }: NumberRangeProps) {
+export function NumberRange({ population, identity, revision, columnName, onStep, previewStep, waitingFor, client = httpNumbersClient, alone = false }: NumberRangeProps) {
+  // Called, never rendered as a component of its own: a component made anew on each render would lose what is typed.
+  const frame = (children: ReactNode) =>
+    alone ? <div className="number-range add-step-form">{children}</div> : (
+      <details className="number-range">
+        <summary>A range of a number in a context column</summary>
+        {children}
+      </details>
+    );
   const asked = useId();
   const declared = population.preparation.mapping.numeric_context_columns ?? [];
   const [column, setColumn] = useState<number | null>(declared[0]?.column_index ?? null);
@@ -85,10 +95,7 @@ export function NumberRange({ population, identity, revision, columnName, onStep
 
   if (column === null) {
     return (
-      <details className="number-range">
-        <summary>A range of a number in a context column</summary>
-        <p className="muted">No context column was declared a number. Declare one in Data, with its unit, to keep incidents by a range of its numbers.</p>
-      </details>
+      frame(<p className="muted">No context column was declared a number. Declare one in Data, with its unit, to keep incidents by a range of its numbers.</p>)
     );
   }
   const unit = declared.find((item) => item.column_index === column)?.unit ?? null;
@@ -111,9 +118,8 @@ export function NumberRange({ population, identity, revision, columnName, onStep
   const missing = (side: NumericContextAnswer["parent"]) => side.unavailable.filter((item) => item.case_count > 0);
   const reasons = { order_unknown: "order not known", missing: "no value", not_a_number: "not a number" } as const;
 
-  return (
-    <details className="number-range">
-      <summary>A range of a number in a context column</summary>
+  return frame(
+    <>
       <label>
         Column
         <select value={String(column)} onChange={(event) => { setColumn(Number(event.target.value)); setPending(null); setLow(""); setHigh(""); }}>
@@ -203,6 +209,6 @@ export function NumberRange({ population, identity, revision, columnName, onStep
           <button type="button" onClick={() => setPending(null)}>Change the range</button>
         </div>
       )}
-    </details>
+    </>,
   );
 }

@@ -16,7 +16,6 @@ import { type Observation, ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
 import type { SavingCoordinator } from "../saved/coordinator";
 import { RefreshReview, SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
-import { FilterPanel } from "../filters/FilterPanel";
 import { IncidentsInTimeOrder, type TimeOrder } from "../time/IncidentsInTimeOrder";
 import { TimeColumn } from "../time/TimeColumn";
 import { GroupsPanel } from "../groups/GroupsPanel";
@@ -29,6 +28,7 @@ import { TransitionMatrix } from "../matrix/TransitionMatrix";
 import { PinControl } from "../pinned/PinControl";
 import { PinnedIndex } from "../pinned/PinnedIndex";
 import { GapPairs } from "../gaps/GapPairs";
+import { AddStep } from "../filters/AddStep";
 import { httpGapsClient } from "../gaps/client";
 
 interface ImportedInvestigationProps {
@@ -45,7 +45,7 @@ interface ImportedInvestigationProps {
 /** What the centre shows: the map, the incidents, or every path of the map in one list. */
 type View = InvestigationView | "paths" | "matrix";
 /** What the side panel shows beside the map or the table. */
-type Rail = "filters" | "context" | "patterns" | "interval" | "gaps" | "pinned";
+type Rail = "context" | "patterns" | "interval" | "gaps" | "pinned";
 
 /** The orders of the list of kept incidents, with the words of their buttons. */
 const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
@@ -339,6 +339,10 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onStay={() => coordinator.staySelection()}
             waitingFor={waitingFor}
           />
+          {answer && (
+            <AddStep population={answer} parentIds={state.parentCaseIds} parentIdentity={shown?.answer.parent_identity ?? answer.identity}
+              keptIdentity={shown?.answer.identity ?? answer.identity} revision={revision} opening={openingContext} onStep={addStep} waitingFor={waitingFor} />
+          )}
           <button type="button" className="rail-toggle" aria-expanded={railOpen} aria-controls="explorer-rail" onClick={() => setRailOpen((open) => !open)}>
             Filters and views
           </button>
@@ -349,7 +353,6 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           <aside className="explorer-rail" id="explorer-rail" aria-label="Filters and views of the kept incidents">
             <div className="rail-head">
               <div className="view-switch" role="group" aria-label="Side panel">
-                <button type="button" aria-pressed={rail === "filters"} onClick={() => setRail("filters")}>Filters</button>
                 {/* A view that cannot be shown says so on its button, so that a failure in the view not shown is not missed. */}
                 <button
                   type="button"
@@ -365,7 +368,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   data-failed={variants.phase === "failed" || undefined}
                   onClick={() => setRail("patterns")}
                 >
-                  {variants.phase === "failed" ? "Patterns · not shown" : "Patterns"}
+                  {variants.phase === "failed" ? "Variants · not shown" : "Variants"}
                 </button>
                 <button type="button" aria-pressed={rail === "interval"} onClick={() => setRail("interval")}>Interval</button>
                 <button type="button" aria-pressed={rail === "gaps"} onClick={() => setRail("gaps")}>Gaps</button>
@@ -376,9 +379,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               </button>
             </div>
             <div className="rail-body">
-              {rail === "filters" && <FilterPanel population={answer} parentIds={state.parentCaseIds}
-                parentIdentity={shown?.answer.parent_identity ?? answer.identity} keptIdentity={shown?.answer.identity ?? answer.identity} revision={revision}
-                opening={openingContext} onStep={addStep} previewStep={previewStep} waitingFor={waitingFor} />}
+
               <div hidden={rail !== "context"}>
                 <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} onStep={addStep} previewStep={previewStep} onOpenCase={openCase} openCaseId={openCaseId} />
               </div>

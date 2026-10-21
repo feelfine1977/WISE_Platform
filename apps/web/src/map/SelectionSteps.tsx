@@ -54,7 +54,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
     <section className="selection-steps" aria-labelledby="selection-steps-title">
       <div className="selection-head">
         <h3 id="selection-steps-title" className="pane-title">
-          Selection of whole incidents
+          Steps
         </h3>
         {/* Three fixed slots: an action that cannot be used now stays in its place, disabled, with the reason in its description. */}
         <div className="selection-actions" role="group" aria-label="Steps">

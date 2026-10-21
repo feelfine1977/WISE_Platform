@@ -77,7 +77,7 @@ try {
 
   // A preview and its cancel, then an applied step and its Undo: no activity that stays moves.
   await page.getByRole('button', {name: 'Filters and views'}).click();
-  await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Patterns', exact: true}).click();
+  await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Variants', exact: true}).click();
   const first = variants.variants[0];
   await page.getByRole('button', {name: `Preview keeping the ${first.members.length} incidents of variant 1`}).click();
   const pending = page.getByRole('group', {name: 'Variant 1 not yet applied'});
