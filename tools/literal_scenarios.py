@@ -124,16 +124,16 @@ def issue111(client, workspace: Path) -> dict:
         "11 PO items · 13 original records", "Reviewed fixed value bands · tied values stay together", "Declared amount unit: EUR"]}
 
 
-def scored_scenario(client, workspace: Path, literal, family: str, name: str) -> dict:
+def scored_scenario(client, workspace: Path, literal, family: str, name: str, raw: bytes | None = None, **settings) -> dict:
     """Review the scoring literal's profile and score it with one criteria family, both on the selected population."""
     from import_requests import envelope
-    wid, base = literal.prepare(client, workspace, literal.literal())
+    wid, base = literal.prepare(client, workspace, literal.literal() if raw is None else raw)
     identity = selection(client, wid, base, None)
     roles = {"item_category": 3, "item_type": 6, "goods_receipt": 4, "gr_based_iv": 5, "purchasing_document": 1, "item": 2, "source_case": 0}
     query = {"roles": roles, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
     profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
         identity=identity, query=query)).json()["profile"]
-    request = literal.given(wid, base, criteria_family=family)
+    request = literal.given(wid, base, criteria_family=family, **settings)
     request["named_population"] = {"name": name + " literal items", "identity": identity}
     scored = client.post("/api/investigations/bpic19-score", json=request).json()
     return save(client, wid, base, None, name, [
@@ -176,5 +176,15 @@ def issue114(client, workspace: Path) -> dict:
         "C0619001184", "C0819002172", "C0919000196", "C1019000193"]}
 
 
-SCENARIOS = {"issue112": issue112, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue115(client, workspace: Path) -> dict:
+    import test_issue115_group_priority_tcp as literal
+    saved = scored_scenario(client, workspace, literal, "completion_timing", "T13 group priority", literal.AC02,
+                            group_by=["company"], min_cases=2)
+    # By hand: scores .9, .95, 1 and one unscored Consignment item; G has 2 items, mean .925 and PI 2 × (.95 − .925).
+    return {"name": "T13 group priority", "saved": saved, "texts": [
+        "3 of 4 items scored · mean score 0.95 · mean evidence coverage 1", "Business group priorities · 1 shown of 1",
+        "G20.92520.050.050.95", "Inspect members of G", "A PI of 0 means the group's mean is at or above that reference; it is not compliance"]}
+
+
+SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
