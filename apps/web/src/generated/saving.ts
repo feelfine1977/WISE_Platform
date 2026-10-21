@@ -82,7 +82,8 @@ export type Bpic19ProfileKeepGroup =
   | ActivityCohortKeepGroup
   | CompletionCohortKeepGroup
   | IntervalSideKeepGroup
-  | AssociationSetKeepGroup;
+  | AssociationSetKeepGroup
+  | OperatorGroupKeepGroup;
 export type PreparedInputId = string;
 export type PreparedDefinitionId = string;
 export type PreparedRunId = string;
@@ -397,18 +398,19 @@ export interface Bpic19PipelineAction {
   selection_keep?: Bpic19SelectionKeep;
 }
 /**
- * Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage, interval-comparison side or native association set. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
+ * Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage, interval-comparison side, native association set or recorded-event operator group. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
  */
 export interface Bpic19SelectionKeep {
   /**
-   * Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts, an interval comparison or a native association comparison.
+   * Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts, an interval comparison, a native association comparison or a recorded-event operator.
    */
   policy_id:
     | "bpic19.profile_group_keep.v1"
     | "bpic19.measure_cohort_keep.v1"
     | "bpic19.completion_cohort_keep.v1"
     | "bpic19.interval_side_keep.v1"
-    | "bpic19.association_set_keep.v1";
+    | "bpic19.association_set_keep.v1"
+    | "bpic19.operator_group_keep.v1";
   step_index: number;
   group: Bpic19ProfileKeepGroup;
 }
@@ -492,6 +494,16 @@ export interface AssociationSetKeepGroup {
     right: string;
     set: "intersection" | "union" | "jointly_eligible";
   };
+}
+/**
+ * One complete-item selection group of a reviewed recorded-event operator answer (ordinal, FIFO, cancellation, rule or waiting).
+ */
+export interface OperatorGroupKeepGroup {
+  kind: "operator_group";
+  /**
+   * The reviewed recorded-event operator answer's selection group key, for example a state, a truth value or the earliest occupancy peak.
+   */
+  key: string;
 }
 export interface Bpic19LiteratureClaim {
   claim_id: string;

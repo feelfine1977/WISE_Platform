@@ -12,11 +12,14 @@ MEASURE_KEEP_POLICY = "bpic19.measure_cohort_keep.v1"
 COMPLETION_KEEP_POLICY = "bpic19.completion_cohort_keep.v1"
 INTERVAL_KEEP_POLICY = "bpic19.interval_side_keep.v1"
 ASSOCIATION_KEEP_POLICY = "bpic19.association_set_keep.v1"
-# Which operation may justify a Keep of which group kind, under which policy.
-_KEEPS = {"activity_cohort": ("bpic19_measures", MEASURE_KEEP_POLICY),
-          "completion_cohort": ("bpic19_cohorts", COMPLETION_KEEP_POLICY),
-          "interval_side": ("bpic19_interval_comparison", INTERVAL_KEEP_POLICY),
-          "association_set": ("bpic19_score", ASSOCIATION_KEEP_POLICY)}
+OPERATOR_KEEP_POLICY = "bpic19.operator_group_keep.v1"
+OPERATORS = frozenset({"bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"})
+# Which operations may justify a Keep of which group kind, under which policy.
+_KEEPS = {"activity_cohort": ({"bpic19_measures"}, MEASURE_KEEP_POLICY),
+          "completion_cohort": ({"bpic19_cohorts"}, COMPLETION_KEEP_POLICY),
+          "interval_side": ({"bpic19_interval_comparison"}, INTERVAL_KEEP_POLICY),
+          "association_set": ({"bpic19_score"}, ASSOCIATION_KEEP_POLICY),
+          "operator_group": (OPERATORS, OPERATOR_KEEP_POLICY)}
 
 
 def keep_step_problem(action: dict, recipe: dict | None, prefix_identities: list[dict] | None,
@@ -26,11 +29,11 @@ def keep_step_problem(action: dict, recipe: dict | None, prefix_identities: list
         if "selection_keep" in action:
             return Problem("invalid_parameter", "A declared profile Keep is a complete association, not null.", field)
         return None
-    operation, policy = _KEEPS.get(keep["group"]["kind"], ("bpic19_profile", PROFILE_KEEP_POLICY))
-    if action["operation"] != operation:
+    operations, policy = _KEEPS.get(keep["group"]["kind"], ({"bpic19_profile"}, PROFILE_KEEP_POLICY))
+    if action["operation"] not in operations:
         return Problem("invalid_parameter", "A Keep belongs only to the reviewed answer that supplies its group: a profile group to its profile, "
                        "an activity cohort to its measures, a completion stage to its cohorts, a side to its interval comparison "
-                       "and an association set to its native association run.", field)
+                       "an association set to its native association run and an operator group to its recorded-event operator.", field)
     if keep["policy_id"] != policy:
         return Problem("unsupported_policy", "This Keep names another group's policy.", field + ".policy_id")
     position = keep["step_index"]
@@ -153,6 +156,26 @@ def association_keep_problem(members: list[str], population: list[str], keep: di
     return None
 
 
+def operator_keep_problem(answer: dict, keep: dict, recipe: dict | None,
+                          prefix_supports: list[dict] | None, field: str) -> Problem | None:
+    """The kept step holds exactly the named operator group's complete items, taken from exactly the operator's parent."""
+    group = next((item for item in answer.get("selection_groups", []) if item["key"] == keep["group"]["key"]), None)
+    if group is None:
+        return Problem("invalid_parameter", "This recorded-event operator answer has no such group. No group was guessed from item IDs.", field + ".group.key")
+    position = keep["step_index"]
+    if recipe is None or prefix_supports is None or position + 1 >= len(prefix_supports):
+        return Problem("identity_mismatch", "The actual operator group Keep step is unavailable.", field + ".step_index")
+    if sorted(group["case_ids"]) != sorted(recipe["predicates"][position]["case_ids"]):
+        return Problem("selection_mismatch", "The complete item IDs differ from the replayed operator group. No membership was substituted.", f"selection_recipe.predicates.{position}.case_ids")
+    parent, selected = prefix_supports[position], prefix_supports[position + 1]
+    if (parent["case_count"], parent["record_count"]) != (answer["population_case_count"], answer["population_record_count"]):
+        return Problem("selection_mismatch", "The operator group Keep denominator differs from its exact replayed parent.", field + ".group")
+    if (sorted(selected["case_ids"]) != sorted(group["case_ids"])
+            or (selected["case_count"], selected["record_count"]) != (group["case_count"], group["record_count"])):
+        return Problem("selection_mismatch", "The operator group differs from the complete histories in the replayed step.", field + ".group")
+    return None
+
+
 def profile_keep_problem(action: dict, answer: dict, recipe: dict | None,
                          prefix_supports: list[dict] | None, field: str) -> Problem | None:
     keep = action.get("selection_keep")
@@ -164,6 +187,8 @@ def profile_keep_problem(action: dict, answer: dict, recipe: dict | None,
         return completion_keep_problem(answer, keep, recipe, prefix_supports, field)
     if keep["group"]["kind"] == "interval_side":
         return interval_keep_problem(answer, keep, recipe, prefix_supports, field)
+    if keep["group"]["kind"] == "operator_group":
+        return operator_keep_problem(answer, keep, recipe, prefix_supports, field)
     profile = answer.get("profile")
     support = None if profile is None else profile_keep_support(profile, keep["group"])
     if support is None:

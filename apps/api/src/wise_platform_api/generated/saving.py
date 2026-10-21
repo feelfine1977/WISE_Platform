@@ -727,6 +727,17 @@ class Bpic19ProfileKeepGroup12(BaseModel):
     pair: Pair | None = None
 
 
+class Bpic19ProfileKeepGroup13(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['operator_group']
+    key: constr(min_length=1, max_length=200) = Field(
+        ...,
+        description="The reviewed recorded-event operator answer's selection group key, for example a state, a truth value or the earliest occupancy peak.",
+    )
+
+
 class Bpic19ProfileKeepGroup(
     RootModel[
         Bpic19ProfileKeepGroup1
@@ -741,6 +752,7 @@ class Bpic19ProfileKeepGroup(
         | Bpic19ProfileKeepGroup10
         | Bpic19ProfileKeepGroup11
         | Bpic19ProfileKeepGroup12
+        | Bpic19ProfileKeepGroup13
     ]
 ):
     root: (
@@ -756,6 +768,7 @@ class Bpic19ProfileKeepGroup(
         | Bpic19ProfileKeepGroup10
         | Bpic19ProfileKeepGroup11
         | Bpic19ProfileKeepGroup12
+        | Bpic19ProfileKeepGroup13
     ) = Field(..., title='Bpic19ProfileKeepGroup')
 
 
@@ -769,9 +782,10 @@ class Bpic19SelectionKeep(BaseModel):
         'bpic19.completion_cohort_keep.v1',
         'bpic19.interval_side_keep.v1',
         'bpic19.association_set_keep.v1',
+        'bpic19.operator_group_keep.v1',
     ] = Field(
         ...,
-        description='Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts, an interval comparison or a native association comparison.',
+        description='Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts, an interval comparison, a native association comparison or a recorded-event operator.',
     )
     step_index: conint(ge=0, le=99)
     group: Bpic19ProfileKeepGroup
@@ -912,7 +926,7 @@ class Bpic19PipelineAction(BaseModel):
     )
     selection_keep: Bpic19SelectionKeep | None = Field(
         None,
-        description='Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage, interval-comparison side or native association set. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
+        description='Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage, interval-comparison side, native association set or recorded-event operator group. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
     )
 
 

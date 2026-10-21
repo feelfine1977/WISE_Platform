@@ -25,6 +25,7 @@ import { measureKeepAction } from "./measure-keep";
 import { cohortKeepAction, completionSupport } from "./cohort-keep";
 import { intervalKeepAction, intervalSideMembers } from "./interval-keep";
 import { associationKeepAction } from "./association-keep";
+import { operatorGroupMembers, operatorKeepAction } from "./operator-keep";
 import { Bpic19RetainedFlowComparisons, retainedFlowComparisonRequest, type RecordedFlowReturn } from "./Bpic19RetainedFlowComparisons";
 import type { Bpic19FlowComparisonAnswer, FlowComparisonQuery } from "../generated/bpic19-flow-comparison";
 import type { AnswerIdentity, Bpic19PipelineAction } from "../generated/saving";
@@ -373,8 +374,8 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
           }} />
         {profileKeepProblem && <p role="alert">{profileKeepProblem}</p>}
         {session.reviewedDeclarations().some(action=>action.selection_keep) && <details className="bpic19-profile"><summary>Reviewed purchasing selection recipes</summary>
-          <p>Each typed Keep is tied to its recorded selection step and reviewed parent. The saved profile, measures, cohort, interval or native association answer supplies its exact field roles, definitions, policies and supports.</p>
-          <ol>{session.reviewedDeclarations().filter(action=>action.selection_keep).map((action,index)=><li key={index}>Selection step {action.selection_keep!.step_index+1}: {JSON.stringify(action.selection_keep!.group)}. Parent {action.identity.population_id}. {({ bpic19_measures: "Measures", bpic19_cohorts: "Cohorts", bpic19_interval_comparison: "Interval comparison", bpic19_score: "Native association run" } as Record<string, string>)[action.operation] ?? "Profile"} {action.definition_id}.</li>)}</ol>
+          <p>Each typed Keep is tied to its recorded selection step and reviewed parent. The saved profile, measures, cohort, interval, native association or operator answer supplies its exact field roles, definitions, policies and supports.</p>
+          <ol>{session.reviewedDeclarations().filter(action=>action.selection_keep).map((action,index)=><li key={index}>Selection step {action.selection_keep!.step_index+1}: {JSON.stringify(action.selection_keep!.group)}. Parent {action.identity.population_id}. {({ bpic19_measures: "Measures", bpic19_cohorts: "Cohorts", bpic19_interval_comparison: "Interval comparison", bpic19_score: "Native association run", bpic19_ordinal: "Recorded-event operator", bpic19_fifo: "Recorded-event operator", bpic19_cancellation: "Recorded-event operator", bpic19_rule: "Recorded-event operator", bpic19_waiting: "Recorded-event operator" } as Record<string, string>)[action.operation] ?? "Profile"} {action.definition_id}.</li>)}</ol>
         </details>}
         {flowComparison && sameJson(flowComparison.identity,identity) && <Bpic19FlowComparison key={JSON.stringify(flowComparison)} workspaceId={population.workspace_id}
           identity={flowComparison.identity} revision={revision} query={flowComparison.query} recordedDefinitionId={flowComparison.definitionId} onReviewed={reviewedFlowComparison} onValidityChange={flowComparisonValid}
@@ -433,6 +434,8 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
               item_category: currentProfile?.profile?.definition.roles.item_category ?? null, net_worth: roles.net_worth ?? null }}
             query={queries.current.operators} retainedQueries={session.retainedActions().filter(action=>["bpic19_ordinal", "bpic19_fifo", "bpic19_cancellation", "bpic19_rule", "bpic19_waiting"].includes(action.operation)).map(action=>action.query as unknown as OperatorQuery)}
             columns={currentProfile?.columns} onReviewed={reviewedOperators} onRetain={retainOperator} onValidityChange={operatorsValid} onInspect={inspect}
+            onKeepGroup={(answer, groupKey) => keepTyped(answer.identity, operatorGroupMembers(answer, groupKey),
+              (predicate, step, parent) => operatorKeepAction(answer, groupKey, predicate, step, parent), "operator group")}
             restoredComparison={recipeComparisons.bpic19_operator_comparison?{...recipeComparisons.bpic19_operator_comparison.query,identity:recipeComparisons.bpic19_operator_comparison.identity} as unknown as Bpic19OperatorComparison:undefined}
             onCompared={comparedOperators} onComparisonValidityChange={operatorComparisonDraftValid}
             onKeepCases={caseIds => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }} />}
