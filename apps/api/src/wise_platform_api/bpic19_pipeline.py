@@ -18,7 +18,7 @@ from .bpic19_profiles import Bpic19Profiles
 from .imports import Imports
 from .workspace import Problem
 from .strict_reading import alternatives_of, read_strictly
-from .bpic19_selection_keep import keep_step_problem, profile_keep_problem
+from .bpic19_selection_keep import association_keep_problem, keep_step_problem, profile_keep_problem
 
 
 def _request_model(operation):
@@ -218,8 +218,18 @@ def replay_pipeline(imports: Imports, workspace_id: str, pipeline: dict | None,
             definition_id = (answer.get("profile") or {}).get("definition_id")
         if definition_id is None or definition_id != action["definition_id"]:
             return Problem("identity_mismatch", "The action definition is unreviewed or differs from the displayed result.", field + ".definition_id")
-        problem = profile_keep_problem(action, answer, selection_recipe, selection_prefix_supports,
-                                       field + ".selection_keep")
+        keep = action.get("selection_keep")
+        if keep is not None and keep["group"]["kind"] == "association_set":
+            from .bpic19_scoring import Bpic19Scoring
+            selection = {key: value for key, value in keep["group"].items() if key != "kind"}
+            resolved = Bpic19Scoring(imports).association_members(workspace_id, action["query"]["run_id"], selection,
+                                                                  field + ".selection_keep.group")
+            if isinstance(resolved, Problem): return resolved
+            problem = association_keep_problem(*resolved, keep, selection_recipe, selection_prefix_supports,
+                                               field + ".selection_keep")
+        else:
+            problem = profile_keep_problem(action, answer, selection_recipe, selection_prefix_supports,
+                                           field + ".selection_keep")
         if problem is not None: return problem
         payload = canonical_output(answer)
         raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()

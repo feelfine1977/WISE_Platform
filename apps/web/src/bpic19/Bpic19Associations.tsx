@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { bpic19Contract, type Bpic19Client } from "./scoring-client";
 import type { AssociationQuery, AssociationSelection, Bpic19ReadRequest, Bpic19ScoreAnswer } from "./scoring-types";
+import { associationSetMembers, type AssociationSet } from "./association-keep";
 
 const policy = "bpic19.frozen_native_associations.v1" as const;
 type ObjectValue = Record<string,unknown>;
@@ -16,6 +17,8 @@ interface Props {
   onReviewed: (answer: Bpic19ScoreAnswer) => void;
   onValidityChange?: (valid: boolean) => void;
   onMembers: (filter: Bpic19ReadRequest["case_filter"]) => void;
+  /** Keeps one named set's complete items as a typed selection step tied to this native association run. */
+  onKeepSet?: (answer: Bpic19ScoreAnswer, set: AssociationSet, members: string[]) => void;
 }
 
 function selector(kind: string, ids: string, groups: Bpic19ScoreAnswer["report"]["groups"], keys: string[], saved?: AssociationSelection): AssociationSelection {
@@ -32,7 +35,7 @@ function selector(kind: string, ids: string, groups: Bpic19ScoreAnswer["report"]
 }
 
 /** Explicit membership comparisons of the stored native result; the client never grades. */
-export function Bpic19Associations({answer,client,revision,onReviewed,onValidityChange,onMembers}: Props) {
+export function Bpic19Associations({answer,client,revision,onReviewed,onValidityChange,onMembers,onKeepSet}: Props) {
   const ids=objects(object(answer.report.norm).constraints).map(c=>text(c.id));
   const rawQuery=object(answer.report.association_analysis).reviewed_query;
   const restored=bpic19Contract.associationQuery(rawQuery) ? rawQuery as AssociationQuery : null;
@@ -65,7 +68,19 @@ export function Bpic19Associations({answer,client,revision,onReviewed,onValidity
     if (!outcome.ok) {setProblem(outcome.message);return;}
     setReviewedKey(draftKey);callbacks.current.onReviewed(outcome.answer);callbacks.current.onValidityChange?.(true);
   }
+  const [keeping,setKeeping]=useState(false);
+  async function keep(set: AssociationSet, holder: ObjectValue, key: string) {
+    if (!onKeepSet || keeping) return;
+    const bounded=Array.isArray(holder[key]) ? (holder[key] as unknown[]).map(String) : null,receipt=object(holder[key+"_receipt"]);
+    const abort=new AbortController();controller.current=abort;setKeeping(true);setProblem(null);
+    const outcome=await associationSetMembers(client,answer,set,bounded,receipt.complete!==false,abort.signal);
+    setKeeping(false);
+    if (abort.signal.aborted) return;
+    if (!outcome.ok) {setProblem(outcome.message);return;}
+    if (outcome.members.length) onKeepSet(answer,set,outcome.members);
+  }
   const analysis=object(answer.report.association_analysis),populations=object(analysis.populations);
+  const ratio=(value: unknown, reason: unknown)=>typeof value === "number" ? number(value) : `Unavailable · ${text(reason)}`;
   const choices=<>{answer.report.groups.map((row,i)=><option key={i} value={`group:${i}`}>{answer.report.settings.group_by.map(key=>text(row[key])).join(" · ")}</option>)}<option value="all">All assessed items</option><option value="ids">Explicit original item IDs</option></>;
   const valid=support.trim()==="" || Number.isInteger(Number(support)) && Number(support)>=1;
   return <section aria-label="Frozen criterion associations"><h3>Target and comparator associations</h3>
@@ -90,16 +105,22 @@ export function Bpic19Associations({answer,client,revision,onReviewed,onValidity
         const summary=object(populations[population]),statistics=object(summary.criteria);
         return <div key={population}><h4>{population=== "target" ? "Target" : "Comparator"}: {text(summary.name)}</h4><p>{number(summary.case_count)} original items · {number(summary.scored_case_count)} scored · native mean penalty {number(summary.native_mean_penalty)} · native penalty mass {number(summary.native_penalty_mass)}.</p>
           <button type="button" onClick={()=>onMembers({association_set:{population,state:"all"}})}>Inspect {population} complete items</button>
+          {onKeepSet && <button type="button" disabled={keeping || !summary.case_count} onClick={()=>void keep({population,state:"all"},summary,"case_ids")}>Keep {population} complete items</button>}
           <div className="bpic19-table-wrap"><table><caption>{population} criterion denominators and severity</caption><thead><tr><th>Criterion</th><th>Total</th><th>Eligible</th><th>Fired</th><th>Unavailable</th><th>Total prevalence</th><th>Eligible firing</th><th>Mean severity</th><th>Positive mean</th><th>Severity sum</th><th>Native contribution sum</th><th>Raw mean / median / unit</th><th>Evidence</th></tr></thead><tbody>{Object.entries(statistics).map(([id,value])=>{
             const row=object(value),raw=object(row.raw_measurement_statistics);
-            return <tr key={id}><td>{id}</td>{["total_case_count","eligible_case_count","positive_case_count","unavailable_case_count","total_case_prevalence","eligible_firing_rate","eligible_mean_severity","conditional_positive_severity","unweighted_severity_sum","native_contribution_sum"].map(key=><td key={key}>{number(row[key])}</td>)}<td>{number(raw.mean)} / {number(raw.median)} / {text(raw.unit)}</td><td><button type="button" onClick={()=>onMembers({association_set:{population,criterion_id:id,state:"eligible"}})}>Inspect all eligible {id}</button><button type="button" onClick={()=>onMembers({association_set:{population,criterion_id:id,state:"positive"}})}>Inspect positive {id}</button><button type="button" onClick={()=>onMembers({association_set:{population,criterion_id:id,state:"unavailable"}})}>Inspect unavailable {id}</button></td></tr>;
+            return <tr key={id}><td>{id}</td>{["total_case_count","eligible_case_count","positive_case_count","unavailable_case_count","total_case_prevalence","eligible_firing_rate","eligible_mean_severity","conditional_positive_severity","unweighted_severity_sum","native_contribution_sum"].map(key=><td key={key}>{number(row[key])}</td>)}<td>{number(raw.mean)} / {number(raw.median)} / {text(raw.unit)}</td><td><button type="button" onClick={()=>onMembers({association_set:{population,criterion_id:id,state:"eligible"}})}>Inspect all eligible {id}</button><button type="button" onClick={()=>onMembers({association_set:{population,criterion_id:id,state:"positive"}})}>Inspect positive {id}</button><button type="button" onClick={()=>onMembers({association_set:{population,criterion_id:id,state:"unavailable"}})}>Inspect unavailable {id}</button>
+              {onKeepSet && (["eligible","positive","unavailable"] as const).map(state=><button key={state} type="button" disabled={keeping || row[state+"_case_count"]===0} onClick={()=>void keep({population,criterion_id:id,state},row,state+"_case_ids")}>Keep {population} {state} {id}</button>)}</td></tr>;
           })}</tbody></table></div></div>;
       })}
       <div className="bpic19-table-wrap"><table><caption>Finite-population target minus comparator differences</caption><thead><tr><th>Criterion</th><th>Mean severity difference</th><th>Eligible firing difference</th><th>Total prevalence difference</th><th>Target / comparator eligible</th><th>Raw mean difference / unit</th><th>Pooled sample-SD magnitude</th><th>Availability</th></tr></thead><tbody>{objects(analysis.contrasts).map((row,i)=>{
         const magnitude=object(row.pooled_sample_sd_magnitude);
-        return <tr key={i}><td>{text(row.criterion_id)}</td><td>{number(row.mean_difference)}</td><td>{number(row.eligible_firing_difference)}</td><td>{number(row.total_prevalence_difference)}</td><td>{number(row.target_eligible_count)} / {number(row.comparator_eligible_count)}</td><td>{number(row.raw_mean_difference)} / {text(row.raw_unit)}</td><td>{number(magnitude.value)}</td><td>{text(magnitude.reason)}</td></tr>;
+        return <tr key={i}><td>{text(row.criterion_id)}</td><td>{number(row.mean_difference)}</td><td>{number(row.eligible_firing_difference)}</td><td>{number(row.total_prevalence_difference)}</td><td>{number(row.target_eligible_count)} / {number(row.comparator_eligible_count)}</td><td>{number(row.raw_mean_difference)} / {text(row.raw_unit)}</td><td>{number(magnitude.value)}</td><td>{text(magnitude.reason ?? "available")}</td></tr>;
       })}</tbody></table></div>
-      {(["accepted_pairs","suppressed_pairs"] as const).map(section=><div key={section} className="bpic19-table-wrap"><table><caption>{section=== "accepted_pairs" ? "Accepted" : "Suppressed"} native criterion pairs</caption><thead><tr><th>Pair</th><th>Universe N</th><th>Intersection support</th><th>Jaccard</th><th>Lift</th><th>State</th><th>Dependency</th><th>Complete item evidence</th></tr></thead><tbody>{objects(analysis[section]).map((row,i)=><tr key={i}><td>{text(row.left)} / {text(row.right)}</td><td>{number(row.universe_case_count)}</td><td>{number(row.support)}</td><td>{number(row.jaccard)}</td><td>{number(row.lift)}</td><td>{text(row.suppression_reason ?? row.lift_reason)}</td><td>{text(object(row.dependency).flag)}</td><td>{(["intersection","union","jointly_eligible"] as const).map(set=><button key={set} type="button" onClick={()=>onMembers({association_set:{population:"target",state:"all",pair:{left:text(row.left),right:text(row.right),set}}})}>Inspect {set.replaceAll("_"," ")}</button>)}</td></tr>)}</tbody></table></div>)}
+      {(["accepted_pairs","suppressed_pairs"] as const).map(section=><div key={section} className="bpic19-table-wrap"><table><caption>{section=== "accepted_pairs" ? "Accepted" : "Suppressed"} native criterion pairs</caption><thead><tr><th>Pair</th><th>Universe N</th><th>Intersection support</th><th>Jaccard</th><th>Lift</th><th>State</th><th>Dependency and lineage</th><th>Complete item evidence</th></tr></thead><tbody>{objects(analysis[section]).map((row,i)=>{
+        const dependency=object(row.dependency);
+        return <tr key={i}><td>{text(row.left)} / {text(row.right)}</td><td>{number(row.universe_case_count)}</td><td>{number(row.support)}</td><td>{ratio(row.jaccard,row.jaccard_reason)}</td><td>{ratio(row.lift,row.lift_reason)}</td><td>{text(row.suppression_reason ?? "accepted")}</td><td>{text(dependency.flag)} · {text(dependency.left_attribute)} / {text(dependency.right_attribute)}</td><td>{(["intersection","union","jointly_eligible"] as const).map(set=><span key={set}><button type="button" onClick={()=>onMembers({association_set:{population:"target",state:"all",pair:{left:text(row.left),right:text(row.right),set}}})}>Inspect {set.replaceAll("_"," ")}</button>
+          {onKeepSet && <button type="button" disabled={keeping || object(row[set+"_case_ids_receipt"]).count===0} onClick={()=>void keep({population:"target",state:"all",pair:{left:text(row.left),right:text(row.right),set}},row,set+"_case_ids")}>Keep {set.replaceAll("_"," ")} {text(row.left)}/{text(row.right)}</button>}</span>)}</td></tr>;
+      })}</tbody></table></div>)}
       <details><summary>Formula and immutable comparison receipt</summary><pre>{JSON.stringify({definition:answer.definition_id,run:answer.run_id,formula:analysis.formulas,query:analysis.query,target:object(populations.target).case_ids_receipt,comparator:object(populations.comparator).case_ids_receipt},null,2)}</pre></details>
     </>}
   </section>;

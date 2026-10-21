@@ -2139,7 +2139,7 @@
         },
         "selection_keep": {
           "$ref": "#/$defs/Bpic19SelectionKeep",
-          "description": "Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage or interval-comparison side. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
+          "description": "Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage, interval-comparison side or native association set. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer."
         }
       },
       "required": [
@@ -3142,6 +3142,70 @@
             "side",
             "support"
           ]
+        },
+        {
+          "title": "AssociationSetKeepGroup",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "association_set"
+            },
+            "population": {
+              "type": "string",
+              "enum": [
+                "target",
+                "comparator"
+              ]
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "all",
+                "eligible",
+                "positive",
+                "unavailable"
+              ]
+            },
+            "criterion_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pair": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "left": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "right": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "set": {
+                  "type": "string",
+                  "enum": [
+                    "intersection",
+                    "union",
+                    "jointly_eligible"
+                  ]
+                }
+              },
+              "required": [
+                "left",
+                "right",
+                "set"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "population",
+            "state"
+          ],
+          "description": "One named set of a reviewed native association comparison, exactly as its read filter names it: a population's items, a criterion's eligible, positive or unavailable items, or a target pair's intersection, union or jointly eligible items."
         }
       ]
     },
@@ -3156,9 +3220,10 @@
             "bpic19.profile_group_keep.v1",
             "bpic19.measure_cohort_keep.v1",
             "bpic19.completion_cohort_keep.v1",
-            "bpic19.interval_side_keep.v1"
+            "bpic19.interval_side_keep.v1",
+            "bpic19.association_set_keep.v1"
           ],
-          "description": "Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts or an interval comparison."
+          "description": "Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts, an interval comparison or a native association comparison."
         },
         "step_index": {
           "type": "integer",

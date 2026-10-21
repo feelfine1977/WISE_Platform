@@ -13,6 +13,14 @@ from itertools import combinations
 POLICY = "bpic19.frozen_native_associations.v1"
 
 
+class AssociationError(ValueError):
+    """A refused association setting, naming the request field it concerns."""
+
+    def __init__(self, message: str, field: str):
+        super().__init__(message)
+        self.field = field
+
+
 def _finite(value):
     return value if type(value) in {int,float} and math.isfinite(value) else None
 
@@ -92,17 +100,18 @@ def _dependency(norm: dict, left: str, right: str) -> dict:
 
 def analyse_associations(cases: dict[str,dict], norm: dict, query: dict) -> dict:
     """Use exact resolved membership supplied by the authorized saved-run service."""
-    if query["policy_id"]!=POLICY: raise ValueError("This association policy is not admitted.")
-    if query["positive_threshold"]!=0: raise ValueError("The admitted positive-deviation threshold is strictly greater than zero.")
-    if query["pair_mode"] not in {"jointly_eligible","legacy_total_case"}: raise ValueError("Choose an admitted pair universe.")
+    if query["policy_id"]!=POLICY: raise AssociationError("This association policy is not admitted.", "query.policy_id")
+    if query["positive_threshold"]!=0: raise AssociationError("The admitted positive-deviation threshold is strictly greater than zero.", "query.positive_threshold")
+    if query["pair_mode"] not in {"jointly_eligible","legacy_total_case"}: raise AssociationError("Choose an admitted pair universe.", "query.pair_mode")
     keys=query["criteria"]
     known={c["id"] for c in norm["constraints"]}
-    if len(set(keys))!=len(keys) or set(keys)-known: raise ValueError("Choose distinct criteria in the saved native norm.")
+    if len(set(keys))!=len(keys) or set(keys)-known: raise AssociationError("Choose distinct criteria in the saved native norm.", "query.criteria")
     target,comparator=query["target"]["case_ids"],query["comparator"]["case_ids"]
-    for ids in (target,comparator):
-        if len(set(ids))!=len(ids) or set(ids)-set(cases): raise ValueError("Every selected item must belong once to the saved native run.")
+    for name,ids in (("target",target),("comparator",comparator)):
+        if len(set(ids))!=len(ids) or set(ids)-set(cases):
+            raise AssociationError("Every selected item must belong once to the saved native run.", f"query.{name}.selector")
     support=query["min_support"] if query["min_support"] is not None else max(20,int(.02*len(target)))
-    if type(support) is not int or support<1: raise ValueError("Minimum support must be a positive integer.")
+    if type(support) is not int or support<1: raise AssociationError("Minimum support must be a positive integer.", "query.min_support")
     populations={}
     values={}
     for name,ids in (("target",target),("comparator",comparator)):

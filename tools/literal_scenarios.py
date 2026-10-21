@@ -363,5 +363,38 @@ def issue128(client, workspace: Path) -> dict:
         "Item U · unknown · rule unknown · 2 original records"]}
 
 
-SCENARIOS = {"issue128": issue128, "issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue123(client, workspace: Path) -> dict:
+    import test_issue123_associations_tcp as literal
+    from import_requests import envelope
+    wid, base, parent = literal.opened(client, workspace, literal.original_source())
+    identity = parent["identity"]
+    query = {"roles": literal.PROFILE_ROLES, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
+    profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
+        identity=identity, query=query)).json()["profile"]
+    associated = literal.associated(client, wid, literal.native_run(workspace, wid, base, identity, roles=literal.VIEW_ROLES))
+    saved = save(client, wid, base, None, "T21 criterion associations", [
+        lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
+                         "selection_prefix_length": 0},
+        lambda current: {"operation": "bpic19_score", "identity": current, "definition_id": associated["definition_id"],
+                         "query": {"run_id": associated["run_id"], "case_offset": 0, "case_limit": 50, "group_offset": 0, "group_limit": 50},
+                         "selection_prefix_length": 0}])
+    # By hand from A=[.5,0,NA,1,0], B=[1,NA,.5,0,0] (target t1..t5) and A=[.25,0], B=[0,0] (comparator), weights A .75, B .25
+    # renormalised over available criteria: penalties .625, 0, .5, .75, 0 (mass 1.875, mean .375); comparator .1875, 0.
+    # Rows read: total, eligible, fired, unavailable, prevalence, eligible firing, mean, positive mean, sum, native
+    # contribution, raw mean / median. Pooled SD (ddof 1): A sqrt((.6875+.03125)/4)=.423896, d .25/.423896=.58977;
+    # B sqrt(.6875/4)=.414578, d .375/.414578=.904534. Pair on jointly eligible t1, t4, t5: support 1, Jaccard 1/2, lift 1.5.
+    return {"name": "T21 criterion associations", "saved": saved, "texts": [
+        "Pair recipe: bpic19.frozen_native_associations.v1.jointly_eligible. Minimum support 1.",
+        "no p-values, confidence intervals, independence, causality or savings are inferred",
+        "Target: Target T5 original items · 5 scored · native mean penalty 0.375 · native penalty mass 1.875.",
+        "A54210.40.50.3750.751.51.1250.375 / 0.25 / normalized_fixture_measurement",
+        "B54210.40.50.3750.751.50.750.375 / 0.25 / normalized_fixture_measurement",
+        "Comparator: Comparator C2 original items · 2 scored · native mean penalty 0.09375 · native penalty mass 0.1875.",
+        "A22100.50.50.1250.250.250.18750.125 / 0.125 / normalized_fixture_measurement",
+        "A0.250-0.14 / 20.25 / normalized_fixture_measurement0.58976782available",
+        "B0.3750.50.44 / 20.375 / normalized_fixture_measurement0.90453403available",
+        "A / B310.51.5acceptednot_established · A / B"]}
+
+
+SCENARIOS = {"issue123": issue123, "issue128": issue128, "issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
