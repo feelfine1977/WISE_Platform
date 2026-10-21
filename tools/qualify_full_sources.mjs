@@ -29,7 +29,7 @@ page.on('requestfinished', request => { if (route(request).startsWith('/api/')) 
 page.on('requestfailed', request => { if (route(request).startsWith('/api/')) inFlight--, requestLog.push([Date.now() / 1000, 'failed', request.method(), route(request)]); });
 const areas = page.getByRole('navigation', {name: 'Areas'});
 const profileRegion = page.getByRole('region', {name: 'Understand the purchasing flows', exact: true});
-const views = {}, downloads = [], witnesses = [], inspections = [];
+const views = {}, downloads = [], witnesses = [], inspections = [], retained = [];
 const main = page.locator('main.bpic19-workspace');
 
 async function view(name, action) {
@@ -110,6 +110,25 @@ async function inspectScore() {
   }
 }
 
+// Each saved historical view's own run, read back as a retained assessment; in review, one member's records are opened.
+async function readRetained(openRecords) {
+  const section = main.locator('details', {hasText: 'Retained native assessments'}).first();
+  await section.evaluate(details => { details.open = true; });
+  const choice = section.getByRole('combobox', {name: 'Retained assessment', exact: true});
+  for (const view of expected.historical) {
+    await answered('/api/investigations/bpic19-read', () => choice.selectOption({label: view.label}));
+    await section.getByText(view.summary, {exact: false}).first().waitFor();
+    const entry = {label: view.label, summary_shown: true, records_opened: false};
+    if (openRecords) {
+      await answered('/api/investigations/case-evidence', () => section.getByRole('button', {name: 'Inspect records', exact: true}).first().click());
+      entry.records_opened = true;
+    }
+    await section.getByRole('button', {name: 'Close retained assessment', exact: true}).click();
+    retained.push(entry);
+  }
+  await settled();
+}
+
 async function exportAll() {
   for (const [kind, label] of [['json', 'Export saved definitions, results and witnesses'], ['md', 'Export readable purchasing analysis report']]) {
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', {name: label, exact: true}).click()]);
@@ -139,6 +158,7 @@ try {
   await view('profile', showProfile);
   if (expected.score) await view('score', showScore);
   if (phase === 'review' && expected.score) await view('score_evidence', inspectScore);
+  if (expected.historical) await view('historical', () => readRetained(phase === 'review'));
   if (phase === 'review') {
     await view('evidence', async () => {
       await areas.getByRole('button', {name: 'Investigations', exact: true}).click();
@@ -164,7 +184,7 @@ try {
   await exportAll();
   assert.deepEqual(errors, []);
   for (const name of Object.keys(views)) views[name].phase = phase;
-  await writeFile(output, JSON.stringify({views, downloads, witnesses, inspections}));
+  await writeFile(output, JSON.stringify({views, downloads, witnesses, inspections, retained}));
 } catch (error) {
   // Interface state only: the save form's texts and the save controls' states, never record contents.
   const state = await page.evaluate(() => ({

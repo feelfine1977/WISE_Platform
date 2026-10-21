@@ -178,7 +178,7 @@ def browse(args, folder: Path, journey: Journey, case_id: str, phase: str, expec
             os.killpg(process.pid, 9)
         except ProcessLookupError:
             pass
-    result = {"exit": code, "pid": process.pid, "views": {}, "downloads": [], "witnesses": []}
+    result = {"exit": code, "pid": process.pid, "views": {}, "downloads": [], "witnesses": [], "inspections": [], "retained": []}
     if code == 0 and output.exists():
         reported = json.loads(output.read_text())
         for view, moments in reported["views"].items():
@@ -186,6 +186,7 @@ def browse(args, folder: Path, journey: Journey, case_id: str, phase: str, expec
             result["views"][view] = {"seconds": round(moments["end"] - moments["start"], 3), "peak_browser_rss_bytes": max(within, default=None)}
         result["downloads"], result["witnesses"] = reported["downloads"], reported["witnesses"]
         result["inspections"] = reported.get("inspections", [])
+        result["retained"] = reported.get("retained", [])
     result["peak_browser_rss_bytes"] = max((value for _, value in samples), default=None)
     return result
 
@@ -311,6 +312,8 @@ def main() -> int:
         shown = browser_expectations(expected, "source.v1:sha256:" + config["native"]["sha256"])
         if journey.paper_shown is not None:
             shown["score"] = journey.paper_shown
+        if journey.historical_shown is not None:
+            shown["historical"] = journey.historical_shown
         texts.write_text(json.dumps(shown))
         review = browse(args, folder, journey, case_id, "review", texts)
         browser.update(review=review, pid=review["pid"])
@@ -323,7 +326,12 @@ def main() -> int:
         journey.restart()
         reopen = browse(args, folder, journey, case_id, "reopen", texts)
         browser.update(reopen=reopen, pids=[review["pid"], reopen["pid"]])
-        journey.check("browser_reopen", reopen["exit"] == 0 and (journey.paper_shown is None or "score" in reopen["views"]), reopen["exit"])
+        journey.check("browser_reopen", reopen["exit"] == 0 and (journey.paper_shown is None or "score" in reopen["views"])
+                      and (journey.historical_shown is None or "historical" in reopen["views"]), reopen["exit"])
+        if journey.historical_shown is not None:
+            journey.check("browser_read_every_historical_view", [entry["label"] for entry in review["retained"]] == [entry["label"] for entry in journey.historical_shown]
+                          and all(entry["records_opened"] for entry in review["retained"])
+                          and [entry["label"] for entry in reopen["retained"]] == [entry["label"] for entry in journey.historical_shown], (review["retained"], reopen["retained"]))
         journey.check("browser_exports_identical_after_restart", reopen["downloads"] == review["downloads"]
                       and len(review["downloads"]) == 2, (review["downloads"], reopen["downloads"]))
         browser.update(status="passed", views=review["views"], downloads=review["downloads"],
@@ -333,6 +341,7 @@ def main() -> int:
                       Expectations(expected["case_count"], expected["record_count"], document_count=expected.get("document_count"),
                                    source_review=expected.get("source_review"),
                                    timing_exemplar=expected.get("timing_exemplar"), paper_workflow=expected.get("paper_workflow"),
+                                   historical_workflow=expected.get("historical_workflow"),
                                    ranking_shared_counts=expected.get("ranking_shared_counts")), limit=limit,
                       deadline=args.deadline_minutes * 60, score=not args.no_scoring, after_reopen=after_reopen)
     started = time.monotonic()

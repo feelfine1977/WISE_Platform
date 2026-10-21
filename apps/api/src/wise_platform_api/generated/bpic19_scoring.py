@@ -128,6 +128,13 @@ class Settings(BaseModel):
         'completion', 'completion_timing', 'completion_rework_effort', 'full'
     ]
     association_min_support: conint(ge=1) | None = None
+    historical_corrections: list[Literal['singular_change_payment_term']] | None = (
+        Field(
+            None,
+            description='Separately reviewed corrections of the frozen historical notebook catalogue, for the historical profile only. Each correction is a new norm and profile identity; the frozen catalogue is never edited.',
+            max_length=1,
+        )
+    )
 
 
 class RepresentationGroup(BaseModel):
@@ -250,6 +257,9 @@ class Settings1(BaseModel):
         'completion', 'completion_timing', 'completion_rework_effort', 'full'
     ]
     association_min_support: conint(ge=1) | None = None
+    historical_corrections: list[Literal['singular_change_payment_term']] | None = (
+        Field(None, max_length=1)
+    )
 
 
 class CasePage(BaseModel):

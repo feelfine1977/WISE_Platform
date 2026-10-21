@@ -201,6 +201,9 @@ class Expectations:
     ``{"views": ["Balanced", ...], "reference_mean_penalty": .101358, "mean_coverage": .7876,
     "groups": [{"company": "0000", "spend_area": "Packaging", "n_cases": 109199, "mean_penalty": .117624, "PI": 1776.19}],
     "refusal_budget_bytes": 4294967296}``. The Balanced run is saved, reopened and shown in the browser."""
+    historical_workflow: dict | None = None
+    """The separate historical notebook profile in each of its views: ``{"views": ["Finance", ...], "gamma": 20}``.
+    Every view's run is saved in the revision and read back in the browser as a retained assessment."""
     timing_exemplar: dict | None = None
     """A named item's independently known C04 interval:
     ``{"case_id": ..., "invoice_date": "2018-02-16", "clearing_date": "2018-04-26", "days": 69.040972, "deviation": 0.650683}``."""
@@ -231,6 +234,8 @@ class Journey:
         """Called with the running service, workspace id, saved revision and a case id after the cold reopen."""
         self.timed_out = False
         self.paper_shown: dict | None = None
+        self.historical_shown: list[dict] | None = None
+        """Each retained historical view's label and summary, as the browser must show them."""
         """What the browser must show of the saved paper run, rendered from its HTTP answer."""
         self.workload_refusal: dict | None = None
         self.workspace = folder / "workspace"
@@ -499,6 +504,8 @@ class Journey:
                    {key: measured.get(key) for key in ("population_case_count", "population_record_count")})
         paper = self.score and self.expected.paper_workflow is not None
         balanced = self._paper_workflow(wid, base, identity, result) if paper else None
+        notebook = (self._historical_workflow(wid, base, identity, result)
+                    if self.score and self.expected.historical_workflow is not None else [])
         self.stage("process_graph", self.post("investigations/process-graph", "process_graph_request", workspace_id=wid, identity=identity))
         self.stage("variants", self.post("investigations/variants", "variants_request", workspace_id=wid, identity=identity))
         saved = self.stage("save", self.post(
@@ -508,9 +515,10 @@ class Journey:
             comparison=None, notes="Synthetic capacity measurement", bookmarks=[], bpic19_pipeline={"schema_version": 1, "actions": [
                 {"operation": "bpic19_profile", "identity": identity, "query": lineage_query,
                  "definition_id": reviewed["profile"]["definition_id"], "selection_prefix_length": 0},
-                *([{"operation": "bpic19_score", "identity": identity, "definition_id": balanced["definition_id"], "selection_prefix_length": 0,
-                    "query": {"run_id": balanced["run_id"], "case_offset": 0, "case_limit": 50, "group_offset": 0, "group_limit": 50}}]
-                  if balanced is not None else [])]}))
+                # Retained runs first; the paper's Balanced run last, so the reopened view shows it as the current assessment.
+                *[{"operation": "bpic19_score", "identity": identity, "definition_id": answer["definition_id"], "selection_prefix_length": 0,
+                   "query": {"run_id": answer["run_id"], "case_offset": 0, "case_limit": 50, "group_offset": 0, "group_limit": 50}}
+                  for answer in [*notebook, *([balanced] if balanced is not None else [])]]]}))
         revision = saved["revision"]["saved_revision_id"]
         saved_digest = digest({key: saved[key] for key in ("revision", "bpic19_outputs")})
         if self.score and not paper:
@@ -643,6 +651,36 @@ class Journey:
         result["paper_workflow"] = summary
         self.paper_shown = shown
         return balanced
+
+    def _historical_workflow(self, wid: str, base: dict, identity: dict, result: dict) -> list[dict]:
+        """The historical notebook's 29 criteria in each of its views on every item, each its own run."""
+        historical = self.expected.historical_workflow
+        answers = []
+        for view in historical["views"]:
+            settings = {"profile": "historical", "criteria_family": "full", "view": view, "mode": "layer_balanced", "gamma": historical["gamma"],
+                        "group_by": ["company", "spend_area"], "min_cases": 1, "volume": "cases", "exposure_policy": "max_absolute_p95"}
+            answer = self.stage(f"historical_scoring_{view.lower()}", self.post(
+                "investigations/bpic19-score", "bpic19_score_request", workspace_id=wid, base_identity=base,
+                named_population={"name": "Historical notebook", "identity": identity}, roles=self.measure_roles, settings=settings,
+                case_offset=0, case_limit=50))
+            report = answer["report"]
+            self.check(f"historical_{view.lower()}_keeps_every_item", report["population_case_count"] == self.expected.case_count, report["population_case_count"])
+            self.check(f"historical_{view.lower()}_all_29_admitted", report["profile_id"] == "bpic19.notebook.1.0-paper-aligned.v1"
+                       and report["requested_criterion_count"] == 29 and report["admitted_criterion_count"] == 29 and report["profile_complete"] is True and not report["omissions"],
+                       (report["profile_id"], report["admitted_criterion_count"], len(report["omissions"])))
+            self.check(f"historical_{view.lower()}_calibrates_on_the_parent", answer["snapshot"]["workload_admission"]["includes_calibration_parent"] is True,
+                       answer["snapshot"]["workload_admission"].get("includes_calibration_parent"))
+            answers.append(answer)
+        self.check("historical_views_are_distinct_runs", len({answer["run_id"] for answer in answers}) == len(answers))
+        self.check("historical_views_share_one_calibration", len({json.dumps(answer["report"].get("exposure_calibration"), sort_keys=True) for answer in answers}) == 1)
+        result["historical_workflow"] = [{"view": answer["report"]["settings"]["view"], "run_id": answer["run_id"], "definition_id": answer["definition_id"],
+                                          "scored_case_count": answer["report"]["scored_case_count"], "mean_score": answer["report"]["mean_score"],
+                                          "mean_coverage": answer["report"]["mean_coverage"]} for answer in answers]
+        self.historical_shown = [{"label": f"Historical notebook · {answer['report']['settings']['view']} · layer balanced · gamma {shown_number(answer['report']['settings']['gamma'])} · Scored item count",
+                                  "summary": f"{shown_number(answer['report']['scored_case_count'])} of {shown_number(answer['report']['population_case_count'])} items scored · "
+                                             f"mean score {shown_number(answer['report']['mean_score'])} · mean evidence coverage {shown_number(answer['report']['mean_coverage'])}"}
+                                 for answer in answers]
+        return answers
 
     def _workload_refusal(self, wid: str, identity: dict, base: dict) -> None:
         """A fresh process under a lower stated memory budget must refuse new scoring explicitly and publish nothing."""
