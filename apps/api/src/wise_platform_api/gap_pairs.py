@@ -46,6 +46,9 @@ def parse(body: bytes) -> dict | GapReply:
     version = given.get("schema_version")
     if type(version) is int and version != SCHEMA_VERSION:
         return refused("unsupported_schema", "This application reads schema version one.", given, "schema_version")
+    # Generated optional defaults also admit None; the source schema permits omission, never an explicit null.
+    if "case_offset" in given and type(given["case_offset"]) is not int:
+        return refused("invalid_request", "The case offset must be a non-negative integer.", given, "case_offset")
     checked = read_strictly(given, GapPairsRequest, alternatives_of(generated))
     if isinstance(checked, list):
         failure = checked[0]
@@ -71,7 +74,7 @@ class GapPairs:
             prepared, population = resolved
             chosen = given["chosen"]
             result = gap_pairs(prepared, population.case_ids, population.parent_ids, given["relation"], given["threshold_hours"], given["limit"],
-                               None if chosen is None else (chosen["from_activity"], chosen["to_activity"]), given["case_limit"])
+                               None if chosen is None else (chosen["from_activity"], chosen["to_activity"]), given["case_limit"], given.get("case_offset", 0))
             answer = {"schema_version": SCHEMA_VERSION, "message_type": "gap_pairs_answer", "request_id": given["request_id"],
                       "query_revision": given["query_revision"], "workspace_id": given["workspace_id"], "identity": population.identity,
                       "parent_identity": population.parent_identity, **result}

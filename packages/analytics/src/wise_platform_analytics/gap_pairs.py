@@ -56,7 +56,7 @@ def _figures(hours: list[float], cases: set[str], evaluable: int, threshold: flo
 
 
 def gap_pairs(prepared, kept_ids: Iterable[str], parent_ids: Iterable[str], relation: str, threshold_hours: float, limit: int,
-              chosen: tuple[str | None, str | None] | None = None, case_limit: int = 200) -> dict[str, object]:
+              chosen: tuple[str | None, str | None] | None = None, case_limit: int = 200, case_offset: int = 0) -> dict[str, object]:
     """Every pair with its gaps among the kept incidents and in the parent, the longest 90th percentile first."""
     kept, parent = tuple(kept_ids), tuple(parent_ids)
     kept_set = set(kept)
@@ -97,7 +97,10 @@ def gap_pairs(prepared, kept_ids: Iterable[str], parent_ids: Iterable[str], rela
     }
     if chosen is not None:
         ordered = sorted(longest, key=lambda case_id: (-longest[case_id], case_id))
+        figures = {side: _figures(gaps[side].get(chosen, []), cases[side].get(chosen, set()), evaluable[side], threshold_hours,
+                                 longer[side].get(chosen, set())) for side in ("kept", "parent")}
         answer["chosen"] = {"from_activity": chosen[0], "to_activity": chosen[1], "case_count": len(ordered),
-                            "cases": [{"case_id": case_id, "longest_hours": longest[case_id]} for case_id in ordered[:case_limit]],
-                            "cases_truncated": len(ordered) > case_limit}
+                            **figures, "case_offset": case_offset,
+                            "cases": [{"case_id": case_id, "longest_hours": longest[case_id]} for case_id in ordered[case_offset:case_offset + case_limit]],
+                            "cases_truncated": len(ordered) > case_offset + case_limit}
     return answer
