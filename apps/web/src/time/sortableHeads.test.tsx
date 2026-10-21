@@ -51,7 +51,7 @@ describe("ordering the incident list from its column heads", () => {
       <>
         <h3 id="title">Kept incidents</h3>
         <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={cases} order={order} openCaseId={null} onOpen={vi.fn()} focusRequest={null}
-          labelledBy="title" caseLists={caseLists} evidence={{ caseEvidence: vi.fn() } as never} onOrder={onOrder} />
+          labelledBy="title" caseLists={caseLists} marks={{ marks: vi.fn(async () => ({ ok: false as const, problem: { kind: "unreachable" as const } })) }} onOrder={onOrder} />
       </>
     );
     const { rerender } = render(view("observed_span_hours"));

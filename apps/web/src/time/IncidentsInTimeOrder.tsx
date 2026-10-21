@@ -5,11 +5,10 @@ import type { CaseId, ImportedCaseSummary } from "../generated/imports";
 import type { AnswerIdentity } from "../generated/selection";
 import { answersCaseList, type CaseListClient, httpCaseListClient } from "../filters/client";
 import { type ExtraColumn, type FocusRequest, IncidentWindow, type IncidentTimes } from "../imported/IncidentWindow";
-import { type ImportClient, httpImportClient } from "../data/client";
 import { firstRecordCell, gapBetween } from "./gapWording";
 import { IncidentInFocus } from "./IncidentInFocus";
 import { durationName } from "./periods";
-import { MarksLoader, RecordMarks } from "./RecordMarks";
+import { httpMarksClient, type MarksClient, MarksLoader, RecordMarks } from "./RecordMarks";
 import "./time.css";
 
 /** The orders the local service sorts the kept incidents in: by recorded span, by longest gap, by record count or by first record. */
@@ -42,8 +41,8 @@ interface IncidentsInTimeOrderProps {
   describedBy?: string;
   waitingFor?: string;
   caseLists?: CaseListClient;
-  /** Where the evidence of an incident in view is read from, for the marks of its records. */
-  evidence?: Pick<ImportClient, "caseEvidence">;
+  /** Where the marks of the records of the incidents in view are read from, in bounded batches. */
+  marks?: MarksClient;
   /** Opens an incident with some of its records marked: the two records of its longest gap. */
   onShowRecords?: (caseId: CaseId, rowIds: string[]) => void;
   /** Asks for another order from a column head; a click on the head of the current order reverses it here. */
@@ -65,7 +64,7 @@ const timesOf = (row: ExplorerCaseSummary): IncidentTimes =>
  * incident number narrows only the rows shown; the counts and the distribution stay those of all
  * kept incidents. What the list says of the incident in the current row stands under it.
  */
-export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, order, caseLists = httpCaseListClient, evidence = httpImportClient, onShowRecords, onOrder, ...table }: IncidentsInTimeOrderProps) {
+export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, order, caseLists = httpCaseListClient, marks = httpMarksClient, onShowRecords, onOrder, ...table }: IncidentsInTimeOrderProps) {
   const asked = useId();
   const searchId = useId();
   const [listed, setListed] = useState<Listed>({ phase: "loading" });
@@ -117,8 +116,13 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   const cases = useMemo(() => rows.flatMap((row) => keptById.get(row.case_id) ?? []), [rows, keptById]);
   const times = useMemo(() => new Map(rows.map((row) => [row.case_id, timesOf(row)])), [rows]);
   // The marks of the records of each incident in view, on one axis as long as the longest span listed, aligned at the first record.
-  const loader = useMemo(() => new MarksLoader(evidence, { workspaceId, revision, identity }), [evidence, workspaceId, revision, identityKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  const axisHours = useMemo(() => Math.max(0, ...rows.map((row) => timesOf(row).span ?? 0)), [rows]);
+  // The axis is as long as the longest row drawn: the longest span listed, or the time a row's records cover where its order is not known.
+  const [markedHours, setMarkedHours] = useState(0);
+  const loader = useMemo(() => {
+    setMarkedHours(0);
+    return new MarksLoader(marks, { workspaceId, revision, identity }, (hours) => setMarkedHours((longest) => Math.max(longest, hours)));
+  }, [marks, workspaceId, revision, identityKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const axisHours = useMemo(() => Math.max(markedHours, ...rows.map((row) => timesOf(row).span ?? 0)), [rows, markedHours]);
   const byId = useMemo(() => new Map(rows.map((row) => [row.case_id, row])), [rows]);
   const extras: ExtraColumn[] = useMemo(() => {
     const timeOf = (caseId: CaseId) => {
@@ -219,6 +223,11 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
       <div className="incident-more">
         <span className="muted">
           {countOf(cases.length, "incident")} of {total.toLocaleString("en")}{search !== null ? ` found` : ""}
+        </span>
+        {/* What the column of marks draws, so that no row or record is left out unsaid (#67). */}
+        <span className="muted marks-support">
+          Records over time: every one of the {countOf(rows.reduce((sum, row) => sum + row.record_count, 0), "record")} of these incidents is a mark on one
+          axis of {durationName(axisHours)}, records at the same time one mark with their count, or counted apart without a usable time.
         </span>
         {listed.more && (
           <button type="button" onClick={() => setOffset(listed.answer.next_offset ?? offset)}>

@@ -39,8 +39,13 @@
 .incident-tools > button[aria-pressed="true"] { background: var(--color-tint); font-weight: var(--font-weight-strong); }
 
 /* The records of an incident as marks on the common axis of its list, the first record at the left. */
-.record-marks { display: block; width: 100%; min-width: var(--size-record-marks); }
-.record-marks > svg { display: block; width: 100%; height: var(--size-bar-marks); }
+.record-marks { display: flex; align-items: center; gap: var(--space-1); width: 100%; min-width: var(--size-record-marks); }
+.record-marks > svg { display: block; flex: 1 1 auto; min-width: 0; height: var(--size-record-marks-height); overflow: visible; }
+/* Records at the same time: one heavier mark, its count written beside it, so that a tie is never a single record to the eye. */
+.record-marks-tie { stroke: var(--color-ink); stroke-width: var(--size-tie-mark); }
+.record-marks-count { fill: var(--color-ink-muted); font-size: var(--font-size-small); }
+/* Records without a usable time are not placed on the axis: they are counted after it, in a lane of their own. */
+.record-marks-untimed { flex: none; color: var(--color-ink-muted); font-size: var(--font-size-small); white-space: nowrap; }
 .record-marks-span { stroke: var(--color-line); stroke-width: var(--line-width); }
 .record-marks-mark { stroke: var(--color-line-strong); stroke-width: var(--line-width); }
 .record-marks-none { font-size: var(--font-size-small); }

@@ -65,7 +65,7 @@ function listing(columns = [{ column_index: DESK, name: "Desk" }, { column_index
   };
 }
 
-const noEvidence = { caseEvidence: vi.fn(async () => ({ ok: false as const, problem: { kind: "network" as const } })) } as never;
+const noMarks = { marks: vi.fn(async () => ({ ok: false as const, problem: { kind: "unreachable" as const } })) };
 
 function setup(order: TimeOrder = "observed_span_hours", caseLists = listing()) {
   const onShowRecords = vi.fn();
@@ -73,7 +73,7 @@ function setup(order: TimeOrder = "observed_span_hours", caseLists = listing()) 
     <>
       <h3 id="title">Kept incidents</h3>
       <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={keptCases} order={order} openCaseId={null} onOpen={vi.fn()}
-        focusRequest={null} labelledBy="title" caseLists={caseLists} evidence={noEvidence} onShowRecords={onShowRecords} />
+        focusRequest={null} labelledBy="title" caseLists={caseLists} marks={noMarks} onShowRecords={onShowRecords} />
     </>,
   );
   return { caseLists, onShowRecords, user: userEvent.setup() };

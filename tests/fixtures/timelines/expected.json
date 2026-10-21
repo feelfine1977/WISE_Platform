@@ -1,0 +1,13 @@
+{
+ "about": "Hand-written expectations for #67 (tests/test_issue67_many_timelines.py and tools/qualify_many_timelines.py). Invented incidents. Offsets are elapsed microseconds from each incident's earliest usable time; records at the same time are one mark with their count; records without a time are counted apart. Never read by product code.",
+ "file": "timelines.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": [4]},
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "cases": {
+  "T-1": {"record_count": 3, "order_known": true, "span_microseconds": 18000000000, "marks": [[0, 1], [7200000000, 1], [18000000000, 1]], "untimed_record_count": 0},
+  "T-2": {"record_count": 4, "order_known": true, "span_microseconds": 3600000000, "marks": [[0, 2], [3600000000, 2]], "untimed_record_count": 0},
+  "T-3": {"record_count": 3, "order_known": false, "span_microseconds": 36000000000, "marks": [[0, 1], [36000000000, 1]], "untimed_record_count": 1},
+  "T-4": {"record_count": 1, "order_known": true, "span_microseconds": 0, "marks": [[0, 1]], "untimed_record_count": 0},
+  "T-5": {"record_count": 2, "order_known": false, "span_microseconds": null, "marks": [], "untimed_record_count": 2}
+ }
+}

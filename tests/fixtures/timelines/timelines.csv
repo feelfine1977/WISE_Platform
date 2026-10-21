@@ -1,0 +1,14 @@
+Ticket,Status,At,Seq,Desk
+T-1,Open,2026-09-01T08:00:00Z,1,North
+T-1,Work,2026-09-01T10:00:00Z,2,North
+T-1,Close,2026-09-01T13:00:00Z,3,North
+T-2,Open,2026-09-02T08:00:00Z,1,South
+T-2,Note,2026-09-02T08:00:00Z,2,South
+T-2,Work,2026-09-02T09:00:00Z,3,South
+T-2,Close,2026-09-02T09:00:00Z,4,South
+T-3,Open,2026-09-03T08:00:00Z,1,North
+T-3,Note,,2,North
+T-3,Close,2026-09-03T18:00:00Z,3,North
+T-4,Open,2026-09-04T08:00:00Z,1,South
+T-5,Open,,1,North
+T-5,Close,,2,North

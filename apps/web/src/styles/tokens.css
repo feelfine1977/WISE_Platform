@@ -248,6 +248,10 @@
   --size-add-step-height: 70vh;
   --size-wide-first-column: 140px;
   --size-bar-marks: 12px;
+  /* The row of the marks of one incident's records: room for a mark and the count of a tie written beside it. */
+  --size-record-marks-height: 18px;
+  /* A mark of several records at the same time, heavier than one record's. */
+  --size-tie-mark: 2.5px;
   /* A header row of one line, and the bar of the kept share in the data row. */
   --size-kept-share: 48px;
 
