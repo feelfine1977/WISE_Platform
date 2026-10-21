@@ -17,6 +17,7 @@ from wise_platform_api.app import create_app
 from import_requests import envelope
 from test_bpic19_measures_http import ROUTE, VALIDATOR, prepare_source, request
 from test_bpic19_pipeline_http import start_process
+from literal_profile_columns import with_profile_columns
 
 CREATE = "Create Purchase Order Item"
 ROWS = [("N", CREATE, "2018-01-01T00:00:00", "-5"), ("Z", CREATE, "2018-01-01T00:00:00", "0"), ("M", CREATE, "2018-01-01T00:00:00", ""),
@@ -24,8 +25,8 @@ ROWS = [("N", CREATE, "2018-01-01T00:00:00", "-5"), ("Z", CREATE, "2018-01-01T00
         ("B1", CREATE, "2018-01-03T00:00:00", "10"), ("B2", CREATE, "2018-01-01T00:00:00", "10"), ("B3", CREATE, "2018-01-02T00:00:00", "10"),
         ("C", CREATE, "2018-01-01T00:00:00", "10"), ("C", CREATE, "2018-01-02T00:00:00", "20"),
         ("P", CREATE, "2017-12-30T00:00:00", "30"), ("P", "Record Invoice Receipt", "2018-01-02T00:00:00", "30")]
-LITERAL = ("case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text\n"
-           + "".join(f"{case},{activity},{time},,user_1,{amount},D{case},1,Packaging\n" for case, activity, time, amount in ROWS)).encode()
+LITERAL = with_profile_columns(("case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text\n"
+           + "".join(f"{case},{activity},{time},,user_1,{amount},D{case},1,Packaging\n" for case, activity, time, amount in ROWS)).encode())
 BROWSER_ANSWER = Path(__file__).resolve().parents[3] / "apps/web/src/bpic19/t09-values-answer.json"
 VALUES = {"value_reducer": "unique_creation_value", "value_unit": "EUR", "value_band_edges": [10, 20]}
 

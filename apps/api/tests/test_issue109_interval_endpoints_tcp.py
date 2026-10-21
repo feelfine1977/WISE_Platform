@@ -18,6 +18,7 @@ from wise_platform_api.app import create_app
 from import_requests import envelope
 from test_bpic19_measures_http import ROUTE as MEASURES, VALIDATOR as MEASURES_SCHEMA, prepare_source, request
 from test_bpic19_pipeline_http import start_process
+from literal_profile_columns import with_profile_columns
 
 IR, CI, GR, SES = "Record Invoice Receipt", "Clear Invoice", "Record Goods Receipt", "Record Service Entry Sheet"
 ROWS = [("A", IR, "2018-01-01T00:00:00"), ("A", CI, "2018-01-02T00:00:00"), ("A", IR, "2018-01-03T00:00:00"), ("A", CI, "2018-01-10T00:00:00"),
@@ -26,8 +27,8 @@ ROWS = [("A", IR, "2018-01-01T00:00:00"), ("A", CI, "2018-01-02T00:00:00"), ("A"
         ("O", IR, "2016-12-30T00:00:00"), ("O", CI, "2017-01-02T00:00:00"),
         ("Z", IR, "2018-01-01T10:00:00"), ("Z", CI, "2018-01-01T10:00:00"),
         ("T", IR, "2018-01-01T00:00:00"), ("T", IR, "2018-01-01T00:00:00"), ("T", CI, "2018-01-04T00:00:00")]
-LITERAL = ("case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text\n"
-           + "".join(f"{case},{activity},{time},,user_1,10,D{case},1,Packaging\n" for case, activity, time in ROWS)).encode()
+LITERAL = with_profile_columns(("case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text\n"
+           + "".join(f"{case},{activity},{time},,user_1,10,D{case},1,Packaging\n" for case, activity, time in ROWS)).encode())
 COMPARE = "/api/investigations/bpic19-interval-comparison"
 BROWSER_ANSWER = Path(__file__).resolve().parents[3] / "apps/web/src/bpic19/t07-interval-answer.json"
 BROWSER_REFERENCE_PAGE = BROWSER_ANSWER.with_name("t07-interval-reference-page.json")

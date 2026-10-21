@@ -2,19 +2,19 @@
  "schema_version": 1,
  "message_type": "bpic19_measures_answer",
  "identity": {
-  "source_id": "source.v1:sha256:79dd43abc2c5d668516d6a289b606a591ca9f42545aa214b1ff4e29cc098950d",
-  "preparation_id": "preparation.v1:sha256:171d8d02e3123225422233e8312574ff12e2a32816402d7f02bbfad2381bffb8",
-  "representation_id": "representation.v1:sha256:5c46dac5d3a5d1301fd2804e4098ef0299a6faa384e0a9761889f95aec033140",
-  "case_dictionary_id": "case-dictionary.v1:sha256:fb1a7234b28c5f0d70156342f3cd75c2a0e7cfd7c1594594642c7588e4f6befb",
-  "population_id": "population.v1:sha256:ae86b03e06719de911f27cb234876ea3be1a3956293020d31f24ae2bb2e863d6",
+  "source_id": "source.v1:sha256:058408de55aafa2a59fb2e04321434026af6d2a8c52f04566554fa808119475e",
+  "preparation_id": "preparation.v1:sha256:0b394ce5356b6a025610f1d00ae71c28e78ec0f080f7a9e334dcdd8d271a7b29",
+  "representation_id": "representation.v1:sha256:2e9d414554a14f294b50692197489485552c697c56c8c5c5af4b58bd6a68a237",
+  "case_dictionary_id": "case-dictionary.v1:sha256:88a7332396eaf8defcad88077f4488761d3ddec4d03255cf01c2dcdf22c1caa2",
+  "population_id": "population.v1:sha256:7902db5374a4701e48acd7bcc62a4d2c42f608318399763bf6cfa52844a9134b",
   "implementation_version": "0.1.0"
  },
  "parent_identity": {
-  "source_id": "source.v1:sha256:79dd43abc2c5d668516d6a289b606a591ca9f42545aa214b1ff4e29cc098950d",
-  "preparation_id": "preparation.v1:sha256:171d8d02e3123225422233e8312574ff12e2a32816402d7f02bbfad2381bffb8",
-  "representation_id": "representation.v1:sha256:5c46dac5d3a5d1301fd2804e4098ef0299a6faa384e0a9761889f95aec033140",
-  "case_dictionary_id": "case-dictionary.v1:sha256:fb1a7234b28c5f0d70156342f3cd75c2a0e7cfd7c1594594642c7588e4f6befb",
-  "population_id": "population.v1:sha256:ae86b03e06719de911f27cb234876ea3be1a3956293020d31f24ae2bb2e863d6",
+  "source_id": "source.v1:sha256:058408de55aafa2a59fb2e04321434026af6d2a8c52f04566554fa808119475e",
+  "preparation_id": "preparation.v1:sha256:0b394ce5356b6a025610f1d00ae71c28e78ec0f080f7a9e334dcdd8d271a7b29",
+  "representation_id": "representation.v1:sha256:2e9d414554a14f294b50692197489485552c697c56c8c5c5af4b58bd6a68a237",
+  "case_dictionary_id": "case-dictionary.v1:sha256:88a7332396eaf8defcad88077f4488761d3ddec4d03255cf01c2dcdf22c1caa2",
+  "population_id": "population.v1:sha256:7902db5374a4701e48acd7bcc62a4d2c42f608318399763bf6cfa52844a9134b",
   "implementation_version": "0.1.0"
  },
  "query": {
@@ -38,8 +38,8 @@
    20
   ]
  },
- "result_id": "bpic19-measures.v1:sha256:522b55f93845c3e1266ad35340c13e0bc0cdd795131da6cd46186f59e9863260",
- "definition_id": "bpic19-measure-definition.v1:sha256:27e79877a7f21216db666d48d3f4c6b33a279da49ea5bba148b807ae711166c1",
+ "result_id": "bpic19-measures.v1:sha256:f7f173f1e9e07d54e72874098609ef84f5764af64c60239ab57fd83859013852",
+ "definition_id": "bpic19-measure-definition.v1:sha256:fb5425166b33fe4977ac036ae6ee6352dd6ba4b730282be67b0ea1e0319a58bd",
  "definition": {
   "policy_id": "bpic19.source_witnessed_measures.v1",
   "measure_profile": "paper_v1",
@@ -99,7 +99,7 @@
     "Record Service Entry Sheet"
    ]
   },
-  "definition_id": "bpic19-measure-definition.v1:sha256:27e79877a7f21216db666d48d3f4c6b33a279da49ea5bba148b807ae711166c1"
+  "definition_id": "bpic19-measure-definition.v1:sha256:fb5425166b33fe4977ac036ae6ee6352dd6ba4b730282be67b0ea1e0319a58bd"
  },
  "roles_proposed_from_headers": false,
  "population_case_count": 11,
@@ -164,7 +164,7 @@
  "representation_groups": {
   "exact": [
    {
-    "group_id": "bpic19-variant-group.v1:sha256:1022d33413660ae55771fd1377931aab90e101a7f39f4b6823aabef9bf43cc6f",
+    "group_id": "bpic19-variant-group.v1:sha256:eb2301a4a34d9cc290ea9c1d6f7445a783a9ad5fc878a1f465ff94fa84665d4d",
     "sequence": [
      "Create Purchase Order Item"
     ],
@@ -183,7 +183,7 @@
     "record_count": 9
    },
    {
-    "group_id": "bpic19-variant-group.v1:sha256:71dec32d3a5eb38c264068f5640030d63683f3b6a5a42df055eb04da677e847c",
+    "group_id": "bpic19-variant-group.v1:sha256:588e374c07521b6eb2825d672f252b93c2efd5cd3e4c035e24edfafc284a5d5b",
     "sequence": [
      "Create Purchase Order Item",
      "Create Purchase Order Item"
@@ -195,7 +195,7 @@
     "record_count": 2
    },
    {
-    "group_id": "bpic19-variant-group.v1:sha256:6544d9f98921fada67fe6511c3abdd741dd2de928acf33b8e55a2267d1d16807",
+    "group_id": "bpic19-variant-group.v1:sha256:36ff11a8ba59adddd1501958d0378d927f37ab5dd31d62c20fc74b8df7bc719e",
     "sequence": [
      "Create Purchase Order Item",
      "Record Invoice Receipt"
@@ -209,7 +209,7 @@
   ],
   "first_occurrence": [
    {
-    "group_id": "bpic19-variant-group.v1:sha256:590a7a84dec2f58c5afa2be5d6d56ca4faaabee3f4524e45c77bde916b868cd7",
+    "group_id": "bpic19-variant-group.v1:sha256:bb7150b0c0e813276898d010d2a9a3d3c6032307a9358b6fcaa683a197d213f2",
     "sequence": [
      "Create Purchase Order Item"
     ],
@@ -229,7 +229,7 @@
     "record_count": 11
    },
    {
-    "group_id": "bpic19-variant-group.v1:sha256:929e168be4baae416f3449d0bcb7cd4120f9cce73d49f6ba946a8a3a394ad576",
+    "group_id": "bpic19-variant-group.v1:sha256:9d288b5ab72ca60d9369ef536ed7a959e8b8a7d351cee137a337b1f82ce8dcdc",
     "sequence": [
      "Create Purchase Order Item",
      "Record Invoice Receipt"
@@ -438,7 +438,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ]
     },
     "item_type": {
@@ -464,7 +464,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ]
     },
     "item": {
@@ -484,7 +484,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ]
     },
     "spend_area": {
@@ -492,20 +492,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+    "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+     "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
     ]
    },
    "activity_counts_available": true,
@@ -516,7 +516,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+     "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -529,7 +529,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -543,7 +543,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -557,7 +557,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -571,7 +571,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -579,7 +579,7 @@
    "selected_value_band": 1,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3",
+     "row_id": "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -600,7 +600,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3",
+     "row_id": "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8",
      "raw": "10",
      "value": 10.0,
      "state": "finite"
@@ -679,7 +679,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -693,7 +693,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -707,7 +707,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -721,7 +721,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -735,7 +735,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -764,7 +764,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -777,7 +777,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -790,11 +790,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -806,11 +806,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -822,11 +822,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -843,7 +843,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+      "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -874,10 +874,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:df6839ac25a5c9df49bd0c32d88c7fd0df9244228ba6e5f1a6918e8e5c5bd2c3"
+     "row.v1:sha256:892af9b5f3f40e867957e8ff8254837e102334deb311ca5ff6b8ec28cee5ecd8"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:0b26e2a8f0df6eaf373312f0065aeb6161a0c2764b1b81af9be497fbb040a0fd",
-    "signature_representation_id": "bpic19-signature.v1:sha256:061f516f1ceeb27969526cf5fb6ea90732bd7781b742620ec7008bf12a2aa075"
+    "exact_representation_id": "bpic19-exact.v1:sha256:d346ac097249ae9f7b13e49e081ba43ef13cb6b4d5eaaa3c81ccbe257ca44e14",
+    "signature_representation_id": "bpic19-signature.v1:sha256:c0d57c584c25c0b38ccb8f848a0076cd87a0cd1f9d4f29b13eb07b4148ab7dad"
    }
   },
   {
@@ -893,7 +893,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ]
     },
     "item_type": {
@@ -919,7 +919,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ]
     },
     "item": {
@@ -939,7 +939,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ]
     },
     "spend_area": {
@@ -947,20 +947,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+    "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+     "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
     ]
    },
    "activity_counts_available": true,
@@ -971,7 +971,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+     "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -984,7 +984,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -998,7 +998,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1012,7 +1012,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1026,7 +1026,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -1034,7 +1034,7 @@
    "selected_value_band": 1,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677",
+     "row_id": "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -1055,7 +1055,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677",
+     "row_id": "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148",
      "raw": "10",
      "value": 10.0,
      "state": "finite"
@@ -1134,7 +1134,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1148,7 +1148,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1162,7 +1162,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1176,7 +1176,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1190,7 +1190,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1219,7 +1219,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -1232,7 +1232,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -1245,11 +1245,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -1261,11 +1261,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -1277,11 +1277,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -1298,7 +1298,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+      "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1329,10 +1329,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:b8d9bfb9933ba7dbc89ff76656c43da69007c841a5cb11c644dd5d29261c7677"
+     "row.v1:sha256:4a1cc75a9ff0cb4fdf49d94cbd4712040a1ac783cbcf99025c77e1560a81b148"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:38e6f4367ebe236843171132a48c5367824c21465519824a0c52024fcb2362c0",
-    "signature_representation_id": "bpic19-signature.v1:sha256:d4ede37394ba9555bc2a8eca7b0bf48ff42e4d5a7bd3dc1552d47d115d0549b2"
+    "exact_representation_id": "bpic19-exact.v1:sha256:b30a1cc601a73cdbae48e5acddda8f46b77f015ef6a0590065122cabf3eae398",
+    "signature_representation_id": "bpic19-signature.v1:sha256:837bbd239ca7ffe0ff2e3dd4b2128b8e23154cb2939059fa15066f9cf3c21e84"
    }
   },
   {
@@ -1348,7 +1348,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ]
     },
     "item_type": {
@@ -1374,7 +1374,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ]
     },
     "item": {
@@ -1394,7 +1394,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ]
     },
     "spend_area": {
@@ -1402,20 +1402,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+    "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+     "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
     ]
    },
    "activity_counts_available": true,
@@ -1426,7 +1426,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+     "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -1439,7 +1439,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1453,7 +1453,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1467,7 +1467,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1481,7 +1481,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -1489,7 +1489,7 @@
    "selected_value_band": 1,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541",
+     "row_id": "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -1510,7 +1510,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541",
+     "row_id": "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a",
      "raw": "10",
      "value": 10.0,
      "state": "finite"
@@ -1589,7 +1589,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1603,7 +1603,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1617,7 +1617,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1631,7 +1631,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1645,7 +1645,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1674,7 +1674,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -1687,7 +1687,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -1700,11 +1700,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -1716,11 +1716,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -1732,11 +1732,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -1753,7 +1753,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+      "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1784,10 +1784,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:895b79f986a28178fa7cd5180086bd5eef0bb79e63c624eeed5b4de9e6f0a541"
+     "row.v1:sha256:68471fa1c2da3f79a77c3ee10a476cf50334818986423456607c3920dd8edf1a"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:e06138786e736a5ac20c7dd7d4561946941a83dfb55bce9840b08b828856e97f",
-    "signature_representation_id": "bpic19-signature.v1:sha256:00855404b009f0b2c94b89c486fadbc759a5447a8948bcfa4b0d9990f0d48332"
+    "exact_representation_id": "bpic19-exact.v1:sha256:55e65d49ba8517a1576a4bce5595a6f72d213937afaa43c09f8ce84182615539",
+    "signature_representation_id": "bpic19-signature.v1:sha256:bf873a0498c5c4b075cff82dc486791895f5be641ea97eb88372803bcd4fd800"
    }
   },
   {
@@ -1803,7 +1803,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0"
      ]
     },
     "item_type": {
@@ -1829,7 +1829,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0"
      ]
     },
     "item": {
@@ -1849,7 +1849,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0"
      ]
     },
     "spend_area": {
@@ -1857,22 +1857,22 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0"
      ]
     }
    },
    "record_count": 2,
    "record_row_ids": [
-    "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-    "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+    "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+    "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 2
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-     "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+     "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+     "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
     ]
    },
    "activity_counts_available": true,
@@ -1883,8 +1883,8 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-     "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+     "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+     "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -1897,8 +1897,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1912,8 +1912,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1927,8 +1927,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -1942,8 +1942,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -1951,13 +1951,13 @@
    "selected_value_band": null,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
+     "row_id": "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
     },
     {
-     "row_id": "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d",
+     "row_id": "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -1978,13 +1978,13 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
+     "row_id": "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
      "raw": "10",
      "value": 10.0,
      "state": "finite"
     },
     {
-     "row_id": "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d",
+     "row_id": "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b",
      "raw": "20",
      "value": 20.0,
      "state": "finite"
@@ -2063,8 +2063,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2078,8 +2078,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2093,8 +2093,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2108,8 +2108,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2123,8 +2123,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2153,8 +2153,8 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "lower_bound": 2,
      "unit": "user_attributed_events",
@@ -2167,8 +2167,8 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -2181,8 +2181,8 @@
      "available": false,
      "reason": "conflicting_creation_values",
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "candidate_count": 2,
      "winner_row_ids": [],
@@ -2196,12 +2196,12 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "candidate_count": 2,
      "winner_row_ids": [
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -2213,8 +2213,8 @@
      "available": false,
      "reason": "conflicting_creation_values",
      "row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "candidate_count": 2,
      "winner_row_ids": [],
@@ -2233,8 +2233,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1",
-      "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+      "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0",
+      "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2265,13 +2265,13 @@
     "reason": null,
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [
-     "row.v1:sha256:32211acfdb792c4111a5dc149be11c27127b3af56fe3d2a1717560222dd4eb7d"
+     "row.v1:sha256:fc16a852b03a5ce0c68f480f0aefb98f69eb7a2ba444b961304dbf27d9af794b"
     ],
     "signature_retained_row_ids": [
-     "row.v1:sha256:879f94aed7487c93602a7de78e75f4acb88f42655752fbbc451c80e18068b6f1"
+     "row.v1:sha256:6ac66fa72b8bd65f31b009f2798136332ca463026df4b5efba60342cc9a8b8c0"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:e323695daa7de5ce16e584c877dfbd645a9fcbc1eaf0bd8880d243578490822a",
-    "signature_representation_id": "bpic19-signature.v1:sha256:660c19cbe7e6bb70162809571a06a5af24acb6b2f3ea9ea2b1276a1de807bf95"
+    "exact_representation_id": "bpic19-exact.v1:sha256:86a051a72a21e877e3e3afb235d25ef5c4277a35a634aa6a331af55501745911",
+    "signature_representation_id": "bpic19-signature.v1:sha256:86c269fd17c20829ca1f67d1bc2a671e9f8071c5599c2d117883c9a570392dd3"
    }
   },
   {
@@ -2287,7 +2287,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ]
     },
     "item_type": {
@@ -2313,7 +2313,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ]
     },
     "item": {
@@ -2333,7 +2333,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ]
     },
     "spend_area": {
@@ -2341,20 +2341,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+    "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+     "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
     ]
    },
    "activity_counts_available": true,
@@ -2365,7 +2365,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+     "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -2378,7 +2378,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2392,7 +2392,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2406,7 +2406,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2420,7 +2420,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -2428,7 +2428,7 @@
    "selected_value_band": null,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b",
+     "row_id": "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -2449,7 +2449,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b",
+     "row_id": "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26",
      "raw": "",
      "value": null,
      "state": "missing"
@@ -2528,7 +2528,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2542,7 +2542,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2556,7 +2556,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2570,7 +2570,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2584,7 +2584,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2613,7 +2613,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -2626,7 +2626,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -2639,7 +2639,7 @@
      "available": false,
      "reason": "missing_value",
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
@@ -2653,7 +2653,7 @@
      "available": false,
      "reason": "missing_value",
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
@@ -2667,7 +2667,7 @@
      "available": false,
      "reason": "missing_value",
      "row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
@@ -2686,7 +2686,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+      "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2717,10 +2717,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:c60197a9e89dc90d931ddc37999a793aff6de38aa44ff16001af4b962a9e114b"
+     "row.v1:sha256:8d9aa2e500d1ae23544b4f05dd550aacb11d68f419bb6cf6609f42e56e9aed26"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:75cd2252c7cade74eb323846c4735f817c33971fff856908f23018a9c55746a0",
-    "signature_representation_id": "bpic19-signature.v1:sha256:b40bffbcf67e550e50923cb187faa9807ada46451593f30909af4fe08a0c26e1"
+    "exact_representation_id": "bpic19-exact.v1:sha256:f1862403e2b298701411f7a536424136083eb69ab1ec98ffe1adbbb653bd00ae",
+    "signature_representation_id": "bpic19-signature.v1:sha256:93ca09de0c4fea675885bc043b204a52856a9855141a1298e7e817cf21103886"
    }
   },
   {
@@ -2736,7 +2736,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ]
     },
     "item_type": {
@@ -2762,7 +2762,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ]
     },
     "item": {
@@ -2782,7 +2782,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ]
     },
     "spend_area": {
@@ -2790,20 +2790,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+    "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+     "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
     ]
    },
    "activity_counts_available": true,
@@ -2814,7 +2814,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+     "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -2827,7 +2827,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2841,7 +2841,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2855,7 +2855,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2869,7 +2869,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -2877,7 +2877,7 @@
    "selected_value_band": 0,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da",
+     "row_id": "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -2898,7 +2898,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da",
+     "row_id": "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362",
      "raw": "-5",
      "value": -5.0,
      "state": "finite"
@@ -2977,7 +2977,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -2991,7 +2991,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3005,7 +3005,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3019,7 +3019,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3033,7 +3033,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3062,7 +3062,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -3075,7 +3075,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -3088,11 +3088,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -3104,11 +3104,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -3120,11 +3120,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -3141,7 +3141,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+      "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3172,10 +3172,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:4c6efa028ffbdbb187321bdb05f6a8ab6c3f67c01f2a1f6d651963ad83dd70da"
+     "row.v1:sha256:d4cb9460342ffd30a3ea848d2e63d92e1e901d6e34444240d33baa9b764c6362"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:298f16a1674d0c95d0ab3eec523f03ff474068c9ac2aa9b119164f8f5a2dcb1f",
-    "signature_representation_id": "bpic19-signature.v1:sha256:fab06ed026f968ccd843112ad27bf3084ca60151a86ca4ea307bf3873bd17972"
+    "exact_representation_id": "bpic19-exact.v1:sha256:b1fab1fe7efa2c1e9c48d46414c12595f7df5eb4e7d6c5ca2d6f1aab2e63226a",
+    "signature_representation_id": "bpic19-signature.v1:sha256:308af0acc69d3d04b5596723781088ad097120c5c55fbd51cfb6cc935e9387bb"
    }
   },
   {
@@ -3191,7 +3191,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
      ]
     },
     "item_type": {
@@ -3217,7 +3217,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
      ]
     },
     "item": {
@@ -3237,7 +3237,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
      ]
     },
     "spend_area": {
@@ -3245,14 +3245,14 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
      ]
     }
    },
    "record_count": 2,
    "record_row_ids": [
-    "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-    "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+    "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+    "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1,
@@ -3260,17 +3260,17 @@
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+     "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
     ],
     "Record Invoice Receipt": [
-     "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+     "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
     ]
    },
    "activity_counts_available": true,
    "missing_activity_row_ids": [],
    "activity_measure": {
     "matching_row_ids": [
-     "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+     "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
     ],
     "lower_bound": 1,
     "unknown_label_count": 0,
@@ -3282,7 +3282,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unit": "event_occurrences",
      "lower_bound": 1,
@@ -3296,7 +3296,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unit": "case_presence_boolean",
      "lower_bound": 1,
@@ -3310,7 +3310,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unit": "repeated_event_occurrences",
      "lower_bound": 1,
@@ -3324,7 +3324,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unit": "case_repeated_presence_boolean",
      "lower_bound": 1,
@@ -3337,13 +3337,13 @@
    "selected_value_band": 2,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
+     "row_id": "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
     },
     {
-     "row_id": "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc",
+     "row_id": "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -3364,13 +3364,13 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
+     "row_id": "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
      "raw": "30",
      "value": 30.0,
      "state": "finite"
     },
     {
-     "row_id": "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc",
+     "row_id": "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d",
      "raw": "30",
      "value": 30.0,
      "state": "finite"
@@ -3382,13 +3382,13 @@
      "reason": null,
      "endpoint_state": "available",
      "timestamp": "2018-01-02T00:00:00",
-     "selected_row_id": "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc",
+     "selected_row_id": "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d",
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "later_row_ids": [],
      "candidate_row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unparseable_row_ids": [],
      "unknown_activity_row_ids": []
@@ -3422,13 +3422,13 @@
      "reason": null,
      "endpoint_state": "available",
      "timestamp": "2018-01-02T00:00:00",
-     "selected_row_id": "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc",
+     "selected_row_id": "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d",
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "later_row_ids": [],
      "candidate_row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unparseable_row_ids": [],
      "unknown_activity_row_ids": []
@@ -3452,7 +3452,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unit": "event_occurrences",
      "lower_bound": 1,
@@ -3471,8 +3471,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3486,8 +3486,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3501,8 +3501,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3516,8 +3516,8 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3526,11 +3526,11 @@
      "available": false,
      "reason": "no_parsed_endpoint",
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "interval_state": "endpoint_unavailable",
      "activation_row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "response_row_ids": [],
      "activation_timestamp": "2018-01-02T00:00:00",
@@ -3543,7 +3543,7 @@
      "available": false,
      "reason": "no_parsed_endpoint",
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unit": "boolean_observation"
     },
@@ -3552,8 +3552,8 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "lower_bound": 2,
      "unit": "user_attributed_events",
@@ -3566,8 +3566,8 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -3580,11 +3580,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -3596,13 +3596,13 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "candidate_count": 2,
      "winner_row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -3614,11 +3614,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519"
+      "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -3630,7 +3630,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "unit": "event_occurrences",
      "lower_bound": 1,
@@ -3644,11 +3644,11 @@
      "available": false,
      "reason": "no_parsed_endpoint",
      "row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "interval_state": "endpoint_unavailable",
      "activation_row_ids": [
-      "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+      "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
      ],
      "response_row_ids": [],
      "activation_timestamp": "2018-01-02T00:00:00",
@@ -3672,11 +3672,11 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:555920bff2dffb766e8cd6f06e3730661eaf4e16524d4c770f986045ca860519",
-     "row.v1:sha256:e34ecdf3faa9aa55e340b99d37cc56a922c9ddbbebf8d69f89691e3111fd63bc"
+     "row.v1:sha256:5a5498736135ce0f68e5e3454ce6eac7ca4927abe5e5e19429c1e94e8859f45b",
+     "row.v1:sha256:1645b2b640cd611b1e7a82e05258f9757852c59bb9b225cd14508742f220e88d"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:f736e901441a8327c10f3c00877fa40c2f3af2db46cfbd9ab92b52ae55216435",
-    "signature_representation_id": "bpic19-signature.v1:sha256:e3b33097bfa726802069124625c15c3fe8a6fe3cfe5cd565e1063d89ed37da48"
+    "exact_representation_id": "bpic19-exact.v1:sha256:658b7d989b3a5f423472a91e9fc3d831888eee0180c19e6c447d5dc5b88e187f",
+    "signature_representation_id": "bpic19-signature.v1:sha256:383120c89547c474896851feb5c28f91000052aebc834f973f3314edd8b8925a"
    }
   },
   {
@@ -3692,7 +3692,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ]
     },
     "item_type": {
@@ -3718,7 +3718,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ]
     },
     "item": {
@@ -3738,7 +3738,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ]
     },
     "spend_area": {
@@ -3746,20 +3746,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+    "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+     "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
     ]
    },
    "activity_counts_available": true,
@@ -3770,7 +3770,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+     "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -3783,7 +3783,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3797,7 +3797,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3811,7 +3811,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3825,7 +3825,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -3833,7 +3833,7 @@
    "selected_value_band": null,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf",
+     "row_id": "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -3854,7 +3854,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf",
+     "row_id": "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb",
      "raw": "NaN",
      "value": null,
      "state": "invalid_nonfinite"
@@ -3933,7 +3933,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3947,7 +3947,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3961,7 +3961,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3975,7 +3975,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -3989,7 +3989,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4018,7 +4018,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -4031,7 +4031,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -4044,12 +4044,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -4060,12 +4060,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -4076,12 +4076,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -4097,7 +4097,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+      "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4128,10 +4128,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:52b5e642f46ee5b213bc807396df1ad5d794715f3991cae2ec992e2ccd6ddfbf"
+     "row.v1:sha256:951bda1803e15df853debca904f3f87843f86fd43a0533f0728e68908b15f1cb"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:80f4aff8deb11d510d228f1d927c71e230a6a7391617f1b2ad6ba85651ecd463",
-    "signature_representation_id": "bpic19-signature.v1:sha256:31141c543df5e54c202b4af6c9af5b6dc916b017c811aab3cd6857ff20494ba6"
+    "exact_representation_id": "bpic19-exact.v1:sha256:3fd8de2b8c9ac3bc91dc46ebd70dfd0c611b9ce8bea8d99ed02e87f23194cbba",
+    "signature_representation_id": "bpic19-signature.v1:sha256:a7c08c157b34c093046ec43bef4a53a666c4188f7c69c9fe6779b6ba73776320"
    }
   },
   {
@@ -4147,7 +4147,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ]
     },
     "item_type": {
@@ -4173,7 +4173,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ]
     },
     "item": {
@@ -4193,7 +4193,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ]
     },
     "spend_area": {
@@ -4201,20 +4201,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+    "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+     "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
     ]
    },
    "activity_counts_available": true,
@@ -4225,7 +4225,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+     "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -4238,7 +4238,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4252,7 +4252,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4266,7 +4266,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4280,7 +4280,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -4288,7 +4288,7 @@
    "selected_value_band": null,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6",
+     "row_id": "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -4309,7 +4309,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6",
+     "row_id": "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8",
      "raw": "Infinity",
      "value": null,
      "state": "invalid_nonfinite"
@@ -4388,7 +4388,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4402,7 +4402,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4416,7 +4416,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4430,7 +4430,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4444,7 +4444,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4473,7 +4473,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -4486,7 +4486,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -4499,12 +4499,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -4515,12 +4515,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -4531,12 +4531,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -4552,7 +4552,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+      "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4583,10 +4583,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:0a8c7d7577a07f8e6eba779fc9286dd790262910f8cba1bb7f4d74b4444c62c6"
+     "row.v1:sha256:cd137008f365d4cf7528ddb5d4bddf1da10ed26c93ba3dd37e8b840bbf1252c8"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:caa89379860942ccfd839b69c4b21ca72168637f6f1122d0525d584481d4a71f",
-    "signature_representation_id": "bpic19-signature.v1:sha256:1bad048dcc78f6a00433dc89029c344d41a93ad9f7f788dc3ee08ce36d0fbe33"
+    "exact_representation_id": "bpic19-exact.v1:sha256:fe7df419ae4d2cc14330462ab222467c04c55ee30d66508a8b402f8b507e2325",
+    "signature_representation_id": "bpic19-signature.v1:sha256:9761eb9cd198ed589e59887b5860e90e64b813064d1f9759eb29915b3d8993b3"
    }
   },
   {
@@ -4602,7 +4602,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ]
     },
     "item_type": {
@@ -4628,7 +4628,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ]
     },
     "item": {
@@ -4648,7 +4648,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ]
     },
     "spend_area": {
@@ -4656,20 +4656,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+    "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+     "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
     ]
    },
    "activity_counts_available": true,
@@ -4680,7 +4680,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+     "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -4693,7 +4693,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4707,7 +4707,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4721,7 +4721,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4735,7 +4735,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -4743,7 +4743,7 @@
    "selected_value_band": null,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591",
+     "row_id": "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -4764,7 +4764,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591",
+     "row_id": "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856",
      "raw": "-Infinity",
      "value": null,
      "state": "invalid_nonfinite"
@@ -4843,7 +4843,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4857,7 +4857,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4871,7 +4871,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4885,7 +4885,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4899,7 +4899,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -4928,7 +4928,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -4941,7 +4941,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -4954,12 +4954,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -4970,12 +4970,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -4986,12 +4986,12 @@
      "available": false,
      "reason": "invalid_nonfinite",
      "row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "candidate_count": 1,
      "winner_row_ids": [],
      "invalid_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "state": "invalid_nonfinite",
      "unit": "EUR",
@@ -5007,7 +5007,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+      "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5038,10 +5038,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:48861aec7069d18fc6664aaaf20b7a1551bb9095981fdb3cd6373dc11ad38591"
+     "row.v1:sha256:35863cf8c947c31fa43af690591ccf20e8779c5f67a6b36c212d1cac72ce1856"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:51c996d59f218f4942b783fa6ca74dea6b7272f5d2f4ebac3bb85e5c123e8cfc",
-    "signature_representation_id": "bpic19-signature.v1:sha256:8102fc3de9903ec7db629d0186eccf9b690f66bc173d5ae703cbd5b48edb958d"
+    "exact_representation_id": "bpic19-exact.v1:sha256:d59f989945fa9de708a1edaa13c783c88ffbd37ece134dc09b0c1e81a775a2d3",
+    "signature_representation_id": "bpic19-signature.v1:sha256:8b01c7a1fd13c6034be8fa206344aae1e05d789d628279c239a3e82c1ed09645"
    }
   },
   {
@@ -5057,7 +5057,7 @@
      "available": false,
      "reason": "missing_case_attribute",
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ]
     },
     "item_type": {
@@ -5083,7 +5083,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ]
     },
     "item": {
@@ -5103,7 +5103,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ]
     },
     "spend_area": {
@@ -5111,20 +5111,20 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ]
     }
    },
    "record_count": 1,
    "record_row_ids": [
-    "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+    "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
    ],
    "activity_counts": {
     "Create Purchase Order Item": 1
    },
    "activity_row_ids": {
     "Create Purchase Order Item": [
-     "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+     "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
     ]
    },
    "activity_counts_available": true,
@@ -5135,7 +5135,7 @@
     "unknown_label_count": 0,
     "unknown_row_ids": [],
     "absence_row_ids": [
-     "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+     "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
     ],
     "policy_id": "bpic19.exact_activity_finite_indicators.v1",
     "count": {
@@ -5148,7 +5148,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5162,7 +5162,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5176,7 +5176,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5190,7 +5190,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     }
@@ -5198,7 +5198,7 @@
    "selected_value_band": 0,
    "actor_records": [
     {
-     "row_id": "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248",
+     "row_id": "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905",
      "raw": "user_1",
      "normalized": "user_1",
      "classification": "user"
@@ -5219,7 +5219,7 @@
    },
    "amount_records": [
     {
-     "row_id": "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248",
+     "row_id": "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905",
      "raw": "0",
      "value": 0.0,
      "state": "finite"
@@ -5298,7 +5298,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5312,7 +5312,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5326,7 +5326,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5340,7 +5340,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5354,7 +5354,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5383,7 +5383,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "lower_bound": 1,
      "unit": "user_attributed_events",
@@ -5396,7 +5396,7 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "lower_bound": 1,
      "unit": "distinct_user_identities",
@@ -5409,11 +5409,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -5425,11 +5425,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -5441,11 +5441,11 @@
      "available": true,
      "reason": null,
      "row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "candidate_count": 1,
      "winner_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "invalid_row_ids": [],
      "state": "available",
@@ -5462,7 +5462,7 @@
      "unknown_label_count": 0,
      "unknown_row_ids": [],
      "absence_row_ids": [
-      "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+      "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
      ],
      "policy_id": "bpic19.exact_activity_finite_indicators.v1"
     },
@@ -5493,10 +5493,10 @@
     "omitted_activity_row_ids": [],
     "signature_suppressed_row_ids": [],
     "signature_retained_row_ids": [
-     "row.v1:sha256:80c411cfffaa6abddf351d856af7c94c1463b2ec778f77c72ef0b760792ee248"
+     "row.v1:sha256:e13e4775e2f2ad3397a63df77c0fc8fff94ad42013d393480be9ef248edda905"
     ],
-    "exact_representation_id": "bpic19-exact.v1:sha256:392114ee6c8ab83e4ffaa166b58b3d833d7abbe143af444e476a1d391c63e112",
-    "signature_representation_id": "bpic19-signature.v1:sha256:d77322c1c48b2a8f0117cd2965f958896e06fe16a4620f65349a1d012c80abf8"
+    "exact_representation_id": "bpic19-exact.v1:sha256:9b4d0d24bab7f0d8d4fea3a8dce0604d54d05c83fd4869dfb67f45bf26bf8755",
+    "signature_representation_id": "bpic19-signature.v1:sha256:f8caddd58325dfe160aa244b77546ae71d11db2675dca43065f72eb644bc9be6"
    }
   }
  ]

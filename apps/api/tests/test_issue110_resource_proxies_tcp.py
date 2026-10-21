@@ -15,6 +15,7 @@ from wise_platform_api.app import create_app
 from import_requests import envelope
 from test_bpic19_measures_http import ROUTE, VALIDATOR, prepare_source, request
 from test_bpic19_pipeline_http import start_process
+from literal_profile_columns import with_profile_columns
 
 ITEMS = {
     "A": ["user_1", "user_1", "batch_2", "user_2"],
@@ -36,8 +37,8 @@ def _line(case, index, actor):
     return f'{case},{ACTIVITIES[index]},{time},,"{actor}",10,D{case},1,Packaging\n'
 
 
-LITERAL = ("case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text\n"
-           + "".join(_line(case, index, actor) for case, actors in ITEMS.items() for index, actor in enumerate(actors))).encode()
+LITERAL = with_profile_columns(("case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text\n"
+           + "".join(_line(case, index, actor) for case, actors in ITEMS.items() for index, actor in enumerate(actors))).encode())
 BROWSER_ANSWER = Path(__file__).resolve().parents[3] / "apps/web/src/bpic19/t08-resource-answer.json"
 
 

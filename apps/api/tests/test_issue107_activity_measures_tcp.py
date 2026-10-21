@@ -18,8 +18,9 @@ from wise_platform_api.app import create_app
 from import_requests import envelope
 from test_bpic19_measures_http import ROUTE, VALIDATOR, prepare_source, request
 from test_bpic19_pipeline_http import start_process
+from literal_profile_columns import with_profile_columns
 
-LITERAL = b'''case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text
+LITERAL = with_profile_columns(b'''case,activity,time,case Item Category,event org:resource,event Cumulative net worth (EUR),case Purchasing Document,case Company,case Spend area text
 A,Record Invoice Receipt,2018-01-01T00:00:00,,user_1,100,D,1,Packaging
 A,Record Invoice Receipt,2018-01-02T00:00:00,,user_1,100,D,1,Packaging
 A,Clear Invoice,2018-01-03T00:00:00,,user_1,100,D,1,Packaging
@@ -35,7 +36,7 @@ E,,2018-01-02T00:00:00,,user_1,10,H,1,Packaging
 F,Record Invoice Receipt,2018-01-01T00:00:00,,user_1,10,I,1,Packaging
 F,Record Invoice Receipt,2018-01-02T00:00:00,,user_1,10,I,1,Packaging
 F,,2018-01-03T00:00:00,,user_1,10,I,1,Packaging
-'''
+''')
 ALL = ["A", "B", "C", "D", "E", "F"]
 BROWSER_ANSWER = Path(__file__).resolve().parents[3] / "apps/web/src/bpic19/t05-measures-answer.json"
 SELECT = "/api/investigations/select-cases"

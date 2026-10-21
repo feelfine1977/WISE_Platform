@@ -116,3 +116,21 @@ def test_a_changed_source_or_memory_pressure_refuses_before_anything_runs(tmp_pa
     changed = json.loads((tmp_path / "changed.json").read_text())
     assert finished.returncode == 1 and changed["reason"] == "prepared source digest differs from the configuration"
     assert "admission" not in changed
+
+
+def test_a_build_older_than_any_web_source_is_not_current(tmp_path):
+    from qualify_full_sources import build_is_current
+    web, built = tmp_path / "web", tmp_path / "static"
+    (web / "src").mkdir(parents=True)
+    built.mkdir()
+    source = web / "src" / "App.tsx"
+    source.write_text("old")
+    output = built / "index.html"
+    output.write_text("built")
+    os.utime(source, (1_000, 1_000))
+    os.utime(output, (2_000, 2_000))
+    assert build_is_current(web, built)
+    os.utime(source, (3_000, 3_000))
+    assert not build_is_current(web, built)
+    output.unlink()
+    assert not build_is_current(web, built)

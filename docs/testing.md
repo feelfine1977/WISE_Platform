@@ -32,6 +32,19 @@ Save an unscored investigation and one with an optional norm/score. Stop the app
 
 The implemented adapter is filesystem-based: its safe backup procedure is a complete stopped-workspace copy. `tests/test_capacity_benchmark.py` exercises that procedure through the benchmark CLI, with real HTTP and a new host on a separately restored directory; it checks the original selection, complete evidence and original score run. This is not a live backup, database-backup qualification or power-loss test. See [release qualification](release-qualification.md) for the operator procedure and upgrade exclusions.
 
+## Literal fixtures in the built browser
+
+`tools/qualify_literal_browser.py` qualifies one ticket's literal fixture in the built application. Its scenario in `tools/literal_scenarios.py` imports the literal and saves the reviewed pipeline over public HTTP. The built browser then reopens it, which requests every saved action again, and must show the scenario's expected texts. These are values written in the ticket's HTTP test from the literal rows.
+
+The analyst then saves a revision and downloads both exports. The browser-saved manifest must hold the HTTP-saved outputs unchanged. The service process is then replaced, and a fresh browser must download byte-identical exports.
+
+```text
+python tools/qualify_literal_browser.py --scenario issue107 --output receipt.json \
+    --node NODE --playwright PLAYWRIGHT_INDEX_MJS --chrome CHROME
+```
+
+The web app is rebuilt first. Both browser tools refuse to run on a build older than the web sources. `tests/test_literal_browser_scenarios.py` runs every scenario's HTTP setup in each test run.
+
 ## Human release checklist
 
 On the supported Windows target, a novice follows the README, imports the synthetic event-history input, asks a useful question, compares context, switches to map/matrix/variants, opens full evidence, optionally scores, saves, stops and reopens. Repeat using keyboard/table paths and recover from one intentional error.
