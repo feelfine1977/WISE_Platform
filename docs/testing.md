@@ -120,6 +120,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Applied, the step keeps the oracle's incidents with their later records and the cutoff in evidence. Undo is exact.
   - The date form with the same bounds gives the same identity.
 
+- `tools/qualify_start_window.py` (#62): a week band of first records in `tests/fixtures/starts`, against its `expected.json`.
+  - The chip names the bounds and the clock; kept and removed are compared.
+  - Undo and Redo restore exact identities.
+  - The investigation is saved, then reopened after an actual restart with the same window, identity and membership.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.
