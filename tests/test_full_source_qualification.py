@@ -10,10 +10,16 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "tools"), str(ROOT / "packages/analytics/tests")]
-from bpic_shaped_literal import EVENTS_PER_CASE, MEASURE_ROLES, PREPARED_ROLES, arguments, native_arguments, native_source, source  # noqa: E402
+from bpic_shaped_literal import EVENTS_PER_CASE, MEASURE_ROLES, PREPARED_ROLES, arguments, cells, native_arguments, native_source, source  # noqa: E402
 from qualify_full_sources import admit, linux_reading, macos_reading, windows_reading  # noqa: E402
 
 GIB = 1 << 30
+# A trusted horizon inside the invented 2018 records, so some records lie after it and must stay in the population.
+SOURCE_REVIEW = {"interpretation": {"profile_name": "Synthetic source review", "policy_id": "bpic19.raw_source_interpretation.v1",
+                                    "inclusion": {"kind": "all_source", "timestamp_kind": "wall_clock", "start_inclusive": None, "end_exclusive": None},
+                                    "horizon": {"timestamp_kind": "wall_clock", "value": "2018-06-01T00:00:00", "provenance": "Invented horizon for the synthetic sources"},
+                                    "discrepancies": []},
+                 "raw_minimum_prefix": "2018-", "raw_maximum_prefix": "2018-", "witness_states": ["after_trusted_horizon"]}
 REQUIRED = 22 * GIB
 posix = pytest.mark.skipif(os.name != "posix", reason="The run reads process memory from the POSIX process table.")
 
@@ -54,7 +60,8 @@ def configuration(folder: Path, rows: int = 600) -> Path:
         declared[name] = {"path": str(path), "sha256": hashlib.sha256(raw).hexdigest(), "dialect": dialect, "mapping": mapping, "policies": policies}
     declared["native"]["hints"] = {"delimiter": ",", "encoding": "windows-1252"}
     declared.update(prepared_roles=PREPARED_ROLES, measure_roles=MEASURE_ROLES, lineage_origin_column=9,
-                    expected={"record_count": rows, "case_count": rows // EVENTS_PER_CASE})
+                    expected={"record_count": rows, "case_count": rows // EVENTS_PER_CASE,
+                              "document_count": len({cells(position)[12] for position in range(rows)}), "source_review": SOURCE_REVIEW})
     config = folder / "config.json"
     config.write_text(json.dumps(declared))
     return config
@@ -81,6 +88,9 @@ def test_synthetic_sources_produce_a_passing_receipt_without_paths_or_contents(t
     assert receipt["admission"]["admitted"] and receipt["browser"] == {"status": "not_run"}
     assert receipt["cleanup"]["surviving_pids"] == [] and receipt["cleanup"]["ports_closed"]
     assert {"prepared_confirmation", "lineage_profile", "cold_reopen"} <= {stage["stage"] for stage in receipt["journey"]["stages"]}
+    assert {"profile_documents", "lineage_covers_every_record", "source_review_horizon", "source_review_keeps_every_record",
+            "source_review_shows_post_horizon_records"} <= set(receipt["journey"]["checks"])
+    assert receipt["journey"]["source_review"]["observed_raw_maximum"].startswith("2018-")
     text = json.dumps(receipt)
     assert str(tmp_path) not in text and "vendor_" not in text and "Create Purchase Order Item" not in text
 

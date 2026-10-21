@@ -188,6 +188,11 @@ class Expectations:
     """Every case identifier, when known independently; otherwise only the counts are checked."""
     evidence: dict[str, list[list[str]]] = field(default_factory=dict)
     """Original cells of a few cases' records, in any order."""
+    document_count: int | None = None
+    """Known purchasing documents in the profile's population, when known independently."""
+    source_review: dict | None = None
+    """A reviewed source interpretation to profile with, and what its review must show:
+    ``{"interpretation": {...}, "raw_minimum_prefix": "1948-", "raw_maximum_prefix": "2020-"}``."""
 
 
 class Failed(Exception):
@@ -237,6 +242,14 @@ class Journey:
         exit_record = self.service.stop()
         if exit_record:
             self.exits.append(exit_record)
+
+    def restart(self) -> None:
+        """Stop the service, wait for its exit, and open the workspace again in a new process."""
+        first_pid = self.service.process.pid
+        self._stop()
+        self._start()
+        self.check("restart_is_a_new_process", self.service.process.pid != first_pid)
+        self.stage("restart_open_workspace", self.post("workspaces/open", "open_workspace_request", path=str(self.workspace)))
 
     def check(self, name: str, condition: bool, detail: object = None) -> None:
         if not condition:
@@ -363,12 +376,24 @@ class Journey:
         query = {"roles": self.prepared_roles, "profile_columns": None, "policy_id": PROFILE_POLICY}
         profiled = self.stage("attribute_profile", self.post("investigations/bpic19-profile", "bpic19_profile_request",
                                                              workspace_id=wid, identity=identity, query=query))
-        self.check("profile_population", profiled["profile"]["population"]["case_count"] == self.expected.case_count)
+        population = profiled["profile"]["population"]
+        self.check("profile_population", population["case_count"] == self.expected.case_count
+                   and population["record_count"] == self.expected.record_count, population)
+        if self.expected.document_count is not None:
+            self.check("profile_documents", population["document_count"] == self.expected.document_count, population)
         lineage_query = {**query, "category_lineage": lineage}
+        review = self.expected.source_review
+        if review is not None:
+            lineage_query["source_interpretation"] = review["interpretation"]
         reviewed = self.stage("lineage_profile", self.post("investigations/bpic19-profile", "bpic19_profile_request",
                                                            workspace_id=wid, identity=identity, query=lineage_query))
         recorded = reviewed["profile"]["definition"].get("category_lineage") or {}
         self.check("lineage_recorded", recorded.get("origin_preparation_id") == prepared_ids[self.native.name], recorded)
+        self.check("lineage_covers_every_record", recorded.get("verified_record_count") == self.expected.record_count
+                   and recorded.get("origin_source_id") == "source.v1:sha256:" + self.native.sha256(), recorded)
+        result["profile_population"] = reviewed["profile"]["population"]
+        if review is not None:
+            self._check_source_review(reviewed["profile"]["source_review"], review, result)
         measures_query = {"policy_id": "bpic19.source_witnessed_measures.v1", "measure_profile": "paper_v1", "roles": self.measure_roles,
                           "offset": 0, "limit": 100, "value_reducer": "unique_creation_value", "value_unit": "EUR",
                           "calibration_population": "selected", "value_band_edges": []}
@@ -387,11 +412,7 @@ class Journey:
         saved_digest = digest({key: saved[key] for key in ("revision", "bpic19_outputs")})
         if self.score:
             self._score(wid, base)
-        first_pid = self.service.process.pid
-        self._stop()
-        self._start()
-        self.check("restart_is_a_new_process", self.service.process.pid != first_pid)
-        self.stage("restart_open_workspace", self.post("workspaces/open", "open_workspace_request", path=workspace))
+        self.restart()
         reopened = self.stage("cold_reopen", self.post("investigations/reopen", "reopen_investigation_request", workspace_id=wid,
                                                       saved_revision_id=revision))
         self.check("reopen_identical", digest({key: reopened[key] for key in ("revision", "bpic19_outputs")}) == saved_digest)
@@ -402,6 +423,27 @@ class Journey:
             self.after_reopen(self, wid, revision, kept[0])
         result["identities"] = {"native": populations[self.native.name], "prepared": base}
         result["saved_payload_sha256"] = saved_digest
+
+    def _check_source_review(self, answer: dict, review: dict, result: dict) -> None:
+        """The reviewed horizon is kept apart from the raw range, and no record leaves the population for it."""
+        horizon = review["interpretation"]["horizon"]
+        state = "unknown" if horizon["value"] is None else "reviewed"
+        self.check("source_review_horizon", answer["horizon_state"] == state and answer["interpretation"]["horizon"] == horizon, answer["interpretation"])
+        self.check("source_review_raw_range", (answer["observed_raw_minimum"] or "").startswith(review["raw_minimum_prefix"])
+                   and (answer["observed_raw_maximum"] or "").startswith(review["raw_maximum_prefix"]),
+                   (answer["observed_raw_minimum"], answer["observed_raw_maximum"]))
+        raw = answer["raw_support"]
+        self.check("source_review_keeps_every_record", raw["case_count"] == self.expected.case_count and raw["record_count"] == self.expected.record_count
+                   and answer["excluded"]["case_count"] == 0 and answer["retained"]["record_count"] == self.expected.record_count, raw)
+        anomalies = {anomaly["state"]: anomaly["record_count"] for anomaly in answer["anomalies"]}
+        if horizon["value"] is not None:
+            self.check("source_review_shows_post_horizon_records", anomalies.get("after_trusted_horizon", 0) > 0, anomalies)
+        for witnessed in review.get("witness_states", []):
+            self.check(f"source_review_shows_{witnessed}", anomalies.get(witnessed, 0) > 0, anomalies)
+        result["source_review"] = {"observed_raw_minimum": answer["observed_raw_minimum"], "observed_raw_maximum": answer["observed_raw_maximum"],
+                                   "horizon": horizon, "parser_cutoff": answer["parser_cutoff"], "anomaly_record_counts": anomalies,
+                                   "discrepancies": [{key: entry[key] for key in ("reference", "reported_total", "reported_subtotal", "difference", "measured_parent_case_count")}
+                                                     for entry in answer["discrepancies"]]}
 
     def _score(self, wid: str, base: dict) -> None:
         settings = {"profile": "paper", "criteria_family": "full", "view": "Balanced", "mode": "flat", "gamma": 0,
