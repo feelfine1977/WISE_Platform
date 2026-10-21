@@ -1,0 +1,12 @@
+{
+ "about": "Hand-written expectations for #63 (tools/qualify_context_values.py) over tests/fixtures/explorer/core-v1.csv, opening_context as the mapped context column. Records' values: A East,East,East; B West,West; C -,-,-; D Unknown; E East,East (order unknown); F West; G North,East; H West,-,Unknown. Never read by product code.",
+ "source": "tests/fixtures/explorer/core-v1.csv",
+ "column": "opening_context",
+ "parent": 8,
+ "any_east": {"values": ["East"], "kept": ["A", "E", "G"], "removed": ["B", "C", "D", "F", "H"], "unevaluable": []},
+ "any_north_or_east": {"values": ["North", "East"], "kept": ["A", "E", "G"]},
+ "any_missing_or_unknown": {"values": ["Unknown"], "missing": true, "kept": ["C", "D", "H"]},
+ "first_west_or_east": {"values": ["West", "East"], "kept": ["A", "B", "F", "H"], "removed": ["C", "D", "G"], "unevaluable": ["E"]},
+ "any_east_and_gap_1h": {"kept": ["A", "G"], "removed": ["B", "C", "D", "F", "H"], "unevaluable": ["E"]},
+ "duplicate_entry": ["East", "East"]
+}
