@@ -139,6 +139,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - The opening context reconciles with its missing value; a field constant in the parent is labelled fixed; both sides' histories open beside the comparison and the focus returns.
   - A nullable interval clause leaves its unknown in neither side; the way back to every incident is explicit.
 
+- `tools/qualify_concentration.py` (#15): paired category shares and the oriented ratio on the fictional `tests/fixtures/incidents/S0.csv`, against `expected.json`.
+  - Paired counts come first; the ratio is shown on request, named A's share ÷ B's share with its direction.
+  - After exchanging the roles App is 2/5 against 2/7 = 1.40; an exact zero and no reference support are named and turn over with the roles.
+  - A value's incidents are inspected by keyboard down to a complete history without a step; no significance or causal wording appears.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

@@ -42,17 +42,20 @@ export function differenceText(difference: ShareDifference, names: [string, stri
   return `not available: ${emptyReason(difference.reason, names)}`;
 }
 
-/**
- * The difference cell of an opening value: the difference in percentage points and the ratio,
- * or, when a side has no denominator and neither exists, why, said once.
- */
+/** The difference cell of an opening value: A's share minus B's share in percentage points, or why there is none. */
 export function differenceCell(category: CategoryComparison, names: [string, string]): string {
-  const difference = category.difference_percentage_points;
+  return differenceText(category.difference_percentage_points, names);
+}
+
+/**
+ * The ratio cell of an opening value, shown on request: A's share divided by B's share. A share of 0 in B is no
+ * reference support, never an infinite or a smoothed ratio; a share of 0 in A is an exact 0 for this snapshot.
+ */
+export function ratioCell(category: CategoryComparison, names: [string, string]): string {
   const ratio = category.concentration_ratio;
-  if (difference.status === "unavailable" && ratio.status === "unavailable" && difference.reason === ratio.reason) {
-    return differenceText(difference, names);
-  }
-  return `${differenceText(difference, names)} · ${ratioText(ratio, names)}`;
+  if (ratio.status === "available") return ratio.value === 0 ? `0.00: none in ${names[0]} in this snapshot` : twoDecimals.format(ratio.value);
+  if (ratio.reason === "zero_reference_share") return `no reference support: none in ${names[1]}`;
+  return `not available: ${emptyReason(ratio.reason, names)}`;
 }
 
 /** The share of A divided by the share of B, or why there is none. */

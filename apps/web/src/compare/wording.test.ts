@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CategoryComparison } from "../generated/comparison";
-import { cutoffText, differenceCell, overlapSentences, valueText } from "./wording";
+import { cutoffText, differenceCell, overlapSentences, ratioCell, valueText } from "./wording";
 
 const names: [string, string] = ["Early", "Late"];
 const empty = { case_count: 0, denominator: 0, share: { status: "unavailable" as const, reason: "empty_profile_denominator" as const } };
@@ -19,21 +19,19 @@ function category(part: Partial<CategoryComparison>): CategoryComparison {
 }
 
 describe("the wording of a comparison", () => {
-  it("gives the difference in points and the ratio, each with its own unavailable reason", () => {
-    expect(differenceCell(category({ difference_percentage_points: { status: "available", value: 50 }, concentration_ratio: { status: "available", value: 3 } }), names)).toBe(
-      "+50.0 pp · ratio 3.00",
-    );
-    expect(differenceCell(category({ concentration_ratio: { status: "unavailable", reason: "zero_reference_share" } }), names)).toBe(
-      "±0.0 pp · ratio not available: the share in Late is 0",
-    );
-    expect(differenceCell(category({ concentration_ratio: { status: "available", value: 0 } }), names)).toBe("±0.0 pp · ratio 0.00");
+  it("gives the difference in points by default, and the ratio on request with its edge states", () => {
+    expect(differenceCell(category({ difference_percentage_points: { status: "available", value: 50 }, concentration_ratio: { status: "available", value: 3 } }), names)).toBe("+50.0 pp");
+    expect(ratioCell(category({ concentration_ratio: { status: "available", value: 3 } }), names)).toBe("3.00");
+    // No reference support is a state of its own, never an infinite or smoothed ratio; none in A is an exact zero.
+    expect(ratioCell(category({ concentration_ratio: { status: "unavailable", reason: "zero_reference_share" } }), names)).toBe("no reference support: none in Late");
+    expect(ratioCell(category({ concentration_ratio: { status: "available", value: 0 } }), names)).toBe("0.00: none in Early in this snapshot");
   });
 
-  it("says once why neither is available when a side has no readable opening", () => {
+  it("says why neither is available when a side has no readable opening", () => {
     const reason = { status: "unavailable" as const, reason: "empty_reference_profile" as const };
-    expect(differenceCell(category({ reference: empty, difference_percentage_points: reason, concentration_ratio: reason }), names)).toBe(
-      "not available: Late has no incident whose first record can be read",
-    );
+    const late = category({ reference: empty, difference_percentage_points: reason, concentration_ratio: reason });
+    expect(differenceCell(late, names)).toBe("not available: Late has no incident whose first record can be read");
+    expect(ratioCell(late, names)).toBe("not available: Late has no incident whose first record can be read");
     const both = { status: "unavailable" as const, reason: "empty_both_profiles" as const };
     expect(differenceCell(category({ difference_percentage_points: both, concentration_ratio: both }), names)).toBe(
       "not available: neither group has an incident whose first record can be read",

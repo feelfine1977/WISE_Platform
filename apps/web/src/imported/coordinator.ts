@@ -525,7 +525,7 @@ export class ImportedInvestigationCoordinator {
    * The incidents these steps keep of the investigation's parent, and those they cannot evaluate, without taking them:
    * the frozen parent a comparison is made in. Nothing is published.
    */
-  async keptBy(steps: readonly SelectionPredicate[], signal: AbortSignal): Promise<{ ok: true; keptIds: string[]; unevaluable: number; parent: number } | { ok: false; problem: SelectionProblem }> {
+  async keptBy(steps: readonly SelectionPredicate[], signal: AbortSignal, within?: readonly string[]): Promise<{ ok: true; keptIds: string[]; unevaluable: number; parent: number } | { ok: false; problem: SelectionProblem }> {
     const population = this.state.population;
     if (population.phase !== "ready") return { ok: false, problem: { kind: "unreachable" } };
     this.previews += 1;
@@ -536,7 +536,7 @@ export class ImportedInvestigationCoordinator {
       query_revision: Math.max(this.revision, 1),
       workspace_id: population.answer.workspace_id,
       identity: population.answer.identity,
-      parent_case_ids: this.state.parentCaseIds === null ? null : [...this.state.parentCaseIds],
+      parent_case_ids: within !== undefined ? [...within] : this.state.parentCaseIds === null ? null : [...this.state.parentCaseIds],
       predicates: [...steps],
     };
     const outcome = await this.selectionClient.selectCases(request, signal).catch(() => selectionUnreachable);
