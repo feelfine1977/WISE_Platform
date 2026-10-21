@@ -124,7 +124,7 @@ describe("the groups of the kept incidents", () => {
     const { client, user } = setup(5);
     // Who the rule cannot place is said apart, among the kept incidents and in the parent.
     expect(await screen.findByText("5 incidents in no group (parent 10)")).toBeTruthy();
-    expect(screen.getByText("0 incidents the rule cannot evaluate (parent 2)")).toBeTruthy();
+    expect(screen.getByText("0 incidents the rule cannot evaluate (parent 2): the order of their records is not fully known")).toBeTruthy();
     await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Exact sequence of activities");
     await screen.findByText("A0 → Ende");
     await user.click(screen.getByRole("button", { name: "Show more groups" }));
@@ -166,8 +166,8 @@ describe("a chosen group", () => {
     expect(figures).toEqual(["In the parent6 of 12 eligible · 50%", "Kept3 of 4 eligible · 75%"]);
     // The charts of a group are only to read: their description says no step.
     expect(row.textContent).not.toContain("Enter takes the step");
-    expect(within(row).getByRole("group", { name: "Recorded spans of the group, parent and kept" })).toBeTruthy();
-    expect(within(row).getByRole("group", { name: "Longest gaps of the group, parent and kept" })).toBeTruthy();
+    expect(within(row).getByRole("group", { name: "Recorded spans of the group's kept incidents against the whole parent" })).toBeTruthy();
+    expect(within(row).getByRole("group", { name: "Longest gaps of the group's kept incidents against the whole parent" })).toBeTruthy();
     expect(within(row).getByText("1 incident without a gap")).toBeTruthy();
     await user.click(within(row).getByRole("button", { name: "Longest: A-3, 2.1 d" }));
     expect(onOpen).toHaveBeenCalledWith("A-3");
@@ -202,6 +202,6 @@ describe("a group that keeps no incident", () => {
     render(<GroupsPanel workspaceId="workspace-1" revision={4} identity={kept} contextColumns={[]} chosen={null} onChoose={vi.fn()} client={client} />);
     expect(await screen.findByText("3 groups")).toBeTruthy();
     expect(screen.queryByText(/hold/)).toBeNull();
-    expect(screen.getByText("1 incident the rule cannot evaluate (parent 2)")).toBeTruthy();
+    expect(screen.getByText("1 incident the rule cannot evaluate (parent 2): the order of their records is not fully known")).toBeTruthy();
   });
 });

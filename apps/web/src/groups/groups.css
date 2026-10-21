@@ -44,3 +44,9 @@
 .groups-exemplars { display: grid; justify-items: start; gap: var(--space-1); margin: 0; font-size: var(--font-size-small); }
 .groups-distribution { display: grid; gap: var(--space-1); }
 .groups-distribution-title { margin: 0; color: var(--color-ink-muted); font-size: var(--font-size-small); }
+
+/* The rule in words under its choice, who it can evaluate, and the note that a group is no business class and no cause. */
+.groups-rule-said,
+.groups-eligible,
+.groups-note,
+.groups-detail-rule { margin: 0; font-size: var(--font-size-small); }

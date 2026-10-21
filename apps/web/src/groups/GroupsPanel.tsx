@@ -5,7 +5,7 @@ import type { AnswerIdentity } from "../generated/selection";
 import { ColumnChart } from "../time/ColumnChart";
 import { durationName, SPAN_EDGES_HOURS, spanBinLabel } from "../time/periods";
 import { answersRuleGroups, httpRuleGroupsClient, type RuleGroupsClient } from "./client";
-import { groupLabel, ruleChoices } from "./rules";
+import { groupLabel, groupRuleSentence, readsOrder, ruleChoices, ruleSentence, shownGroup } from "./rules";
 import "./groups.css";
 
 /** How many groups one page holds; the service gives at most 50 at once. */
@@ -76,7 +76,9 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
   }, [client, workspaceId, revision, identityKey, ruleKey, offset, asked, attempt]);
 
   const answer = listed.phase === "ready" ? listed.answer : null;
-  const groups = listed.phase === "ready" ? listed.groups : [];
+  const groups = listed.phase === "ready" ? listed.groups.filter((group) => shownGroup(group.key)) : [];
+  // The band below one record is the first of its catalogue and is never shown, so it is not counted either.
+  const groupCount = answer === null ? 0 : answer.group_count - (rule.kind === "raw_record_count_bands" ? 1 : 0);
   const largest = Math.max(1, ...groups.map((group) => group.population.cases.case_count));
   // The groups stand in the order of the parent's catalogue. Where they do not overlap, the shares of the parent's largest
   // groups add up to how much of the kept incidents those groups hold; the line names that ranking, which is not the kept one.
@@ -86,6 +88,8 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
     : null;
   // Who the rule cannot place, said apart: incidents it cannot evaluate, and evaluated incidents it puts in no group, among the kept and in the parent.
   const coverage = answer === null ? null : { kept: answer.population_coverage, parent: answer.parent_coverage };
+  const columnName = (index: number) => contextColumns.find((column) => column.index === index)?.name ?? `column ${index + 1}`;
+  const references = answer?.shared_reference_coverage ?? null;
 
   return (
     <section className="groups-panel" aria-label="Groups of the kept incidents">
@@ -118,6 +122,7 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
           )}
         </select>
       </label>
+      <p className="groups-rule-said">{ruleSentence(rule, columnName)}</p>
       {listed.phase === "loading" && <p className="working-text">Grouping the kept incidents…</p>}
       {listed.phase === "failed" && (
         <div className="inline-error" role="alert">
@@ -137,21 +142,37 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
       {answer !== null && (
         <>
           <p className="groups-summary">
-            {countOf(answer.group_count, "group")}
+            {countOf(groupCount, "group")}
             {cover !== null &&
               groups.length > 1 &&
               ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the ${groups[0].population.denominator.toLocaleString("en")} eligible kept incidents`}
           </p>
+          {coverage !== null && (
+            <p className="groups-eligible">
+              Eligible for the rule: {coverage.kept.eligible.case_count.toLocaleString("en")} of {countOf(coverage.kept.total.case_count, "kept incident")}, and{" "}
+              {coverage.parent.eligible.case_count.toLocaleString("en")} of {countOf(coverage.parent.total.case_count, "incident")} in the parent.
+            </p>
+          )}
           {coverage !== null && (coverage.kept.unevaluable.case_count > 0 || coverage.parent.unevaluable.case_count > 0) && (
             <p className="groups-limit">
               {countOf(coverage.kept.unevaluable.case_count, "incident")} the rule cannot evaluate (parent {coverage.parent.unevaluable.case_count.toLocaleString("en")})
+              {readsOrder(rule) && ": the order of their records is not fully known"}
             </p>
           )}
           {coverage !== null && (coverage.kept.unassigned.case_count > 0 || coverage.parent.unassigned.case_count > 0) && (
             <p className="groups-limit">
               {countOf(coverage.kept.unassigned.case_count, "incident")} in no group (parent {coverage.parent.unassigned.case_count.toLocaleString("en")})
+              {rule.kind === "shared_reference" && `: each value of ${columnName(rule.column_index)} they have is recorded in too few incidents of the parent`}
             </p>
           )}
+          {references !== null && (
+            <p className="groups-limit">
+              {countOf(references.population_missing_reference_record_count, "record")} of the kept incidents without a value of {columnName(references.column_index)}{" "}
+              (parent {references.parent_missing_reference_record_count.toLocaleString("en")}); {references.parent_suppressed_nonmissing_value_count.toLocaleString("en")} of the{" "}
+              {countOf(references.parent_distinct_nonmissing_value_count, "value")} in the parent form no group.
+            </p>
+          )}
+          <p className="muted groups-note">A group is what its stated rule puts together: it is not a business class, and a difference between groups is not a cause.</p>
           <ol className="groups-list">
             {groups.map((group) => {
               const label = groupLabel(group.key);
@@ -172,7 +193,7 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
                       <rect className="groups-bar-share" x={0} y={0} width={(count / largest) * 100} height={3} />
                     </svg>
                   </button>
-                  {chosen === group.id && <GroupDetail group={group} onOpen={onOpen} />}
+                  {chosen === group.id && <GroupDetail group={group} rule={groupRuleSentence(group.key, rule, columnName)} onOpen={onOpen} />}
                 </li>
               );
             })}
@@ -189,17 +210,18 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
 }
 
 /**
- * What a chosen group rests on, as supplied: its incidents in the parent and among the kept ones
- * with their shares, the recorded spans of its incidents against the parent's, and its shortest and
- * longest incident, each of which opens in the inspector.
+ * What a chosen group rests on, as supplied: its rule, its incidents in the parent and among the
+ * kept ones with their shares, the recorded spans and longest gaps of its incidents against the
+ * parent's, and its shortest and longest incident, each of which opens in the inspector.
  */
-function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: string) => void }) {
+function GroupDetail({ group, rule, onOpen }: { group: RuleGroup; rule: string; onOpen?: (caseId: string) => void }) {
   const share = (value: number | null) => (value === null ? "–" : percent.format(value));
   const spans = group.span_distribution;
   const gaps = group.gap_distribution;
   const exemplars = group.exemplars;
   return (
     <div className="groups-detail">
+      <p className="groups-detail-rule">{rule}</p>
       <dl className="groups-figures">
         <div>
           <dt>In the parent</dt>
@@ -215,8 +237,9 @@ function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: st
           </dd>
         </div>
       </dl>
-      <GroupDistribution title="Recorded span" name="Recorded spans of the group, parent and kept" distribution={spans} unavailable="without a span" />
-      <GroupDistribution title="Longest gap" name="Longest gaps of the group, parent and kept" distribution={gaps} unavailable="without a gap" />
+      {/* The pale columns are every incident of the parent, not only the group's: the group is read against the whole parent. */}
+      <GroupDistribution title="Recorded span: the group's kept incidents, dark, against every incident of the parent, pale" name="Recorded spans of the group's kept incidents against the whole parent" distribution={spans} unavailable="without a span" />
+      <GroupDistribution title="Longest gap: the group's kept incidents, dark, against every incident of the parent, pale" name="Longest gaps of the group's kept incidents against the whole parent" distribution={gaps} unavailable="without a gap" />
       {exemplars.status === "available" ? (
         <p className="groups-exemplars">
           {(["shortest", "longest"] as const).map((which) => {
@@ -235,7 +258,7 @@ function GroupDetail({ group, onOpen }: { group: RuleGroup; onOpen?: (caseId: st
   );
 }
 
-/** One supplied distribution of a group, the parent pale and the kept incidents solid, read only, with the kept incidents it cannot place. */
+/** One supplied distribution of a group: the whole parent pale and the group's kept incidents solid, read only, with the kept incidents it cannot place. */
 function GroupDistribution({ title, name, distribution, unavailable }: { title: string; name: string; distribution: RuleGroup["span_distribution"]; unavailable: string }) {
   const bins = distribution.bins.map((bin) => ({ label: spanBinLabel(bin.start_inclusive_hours, bin.end_exclusive_hours), parent: bin.parent_case_count, kept: bin.kept_case_count }));
   if (bins.length === 0) return null;
