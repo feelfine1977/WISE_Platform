@@ -201,9 +201,13 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
             </p>
           )}
           {shown && <ComparisonTable shown={shown} columnName={columnName(shown.answer.context_column_index)} onStep={addStep} waitingFor={waitingFor}
-            onInspect={shown.kind === "groups" ? setInspected : undefined} />}
+            onInspect={setInspected} />}
           {shown && <EmptySide shown={shown} frozen={draft.parent !== null} onRebase={() => coordinator.rebase()} onSwap={() => coordinator.swap()} onShowInvestigation={onShowInvestigation} />}
-          {shown && shown.kind === "groups" && <SideIncidents key={shown.answer.comparison_id} shown={shown} investigation={investigation} inspected={inspected} />}
+          {shown && shown.kind === "periods" && (
+            <FollowupChoice key={`followup-${shown.answer.comparison_id}`} shown={shown} restricted={draft.parent?.label?.startsWith("followed for at least") ?? false}
+              onRestrict={(parent) => coordinator.freeze(parent)} onRebase={() => coordinator.rebase()} />
+          )}
+          {shown && <SideIncidents key={`sides-${shown.answer.comparison_id}`} shown={shown} investigation={investigation} inspected={inspected} />}
           {shown && shown.kind === "groups" && (
             <OutcomeSection answer={shown.answer} columnName={columnName(shown.answer.context_column_index)} activities={activities} investigation={investigation} />
           )}
@@ -746,7 +750,15 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor, onInspect }: C
 }
 
 function roleDefinitions(shown: ShownComparison): string {
-  if (shown.kind === "periods") return "Periods take incidents by the start of their first record.";
+  if (shown.kind === "periods") {
+    const { target, reference, minimum_followup_hours: minimum, endpoint_activity: endpoint } = shown.request.definition;
+    const window = (period: typeof target) => `${period.window.start_inclusive.replace("T00:00:00Z", "").replace("T00:00:00", "")} to ${period.window.end_exclusive.replace("T00:00:00Z", "").replace("T00:00:00", "")} (end excluded)`;
+    return (
+      `Periods take incidents by the start of their first record: A from ${window(target)}, B from ${window(reference)}. Both are measured the same way, to the ` +
+      `snapshot cutoff stored with the preparation, with a minimum follow-up of ${hoursText(minimum)}${endpoint ? ` and the recorded activity “${endpoint}”` : ""}, and the same ` +
+      "context. Each incident keeps its whole history, also after its period."
+    );
+  }
   const definition = shown.request.definition;
   if (definition.mode === "selection_partition") {
     const included = definition.target_side === "kept";
@@ -809,9 +821,19 @@ function periodRows(answer: PeriodComparisonAnswer, minimum: number): Row[] {
       b: ofIncluded(answer.reference.exposure.adequate, answer.reference.included, "in the period"),
       difference: null,
     },
+    {
+      key: "inadequate",
+      measure: `Followed for less than ${hoursText(minimum)}`,
+      detail: "not fully observed: a later record could still come",
+      a: ofIncluded(answer.target.exposure.inadequate, answer.target.included, "in the period"),
+      b: ofIncluded(answer.reference.exposure.inadequate, answer.reference.included, "in the period"),
+      difference: null,
+    },
   ];
   const endpoint = endpointRow(answer.target, answer.reference);
   if (endpoint) rows.push(endpoint);
+  const missing = missingEndpointRow(answer.target, answer.reference);
+  if (missing) rows.push(missing);
   return rows;
 }
 
@@ -826,6 +848,19 @@ function endpointRow(target: PeriodCohort, reference: PeriodCohort): Row | null 
     b: ofIncluded(reference.endpoint_coverage.recorded, reference.included, "in the period"),
     difference: null,
     step: { predicate: { kind: "contains_activity", activity, negate: false }, label: `Keep incidents that contain “${activity}”` },
+  };
+}
+
+function missingEndpointRow(target: PeriodCohort, reference: PeriodCohort): Row | null {
+  if (!target.endpoint_coverage || !reference.endpoint_coverage) return null;
+  const activity = target.endpoint_coverage.activity;
+  return {
+    key: "endpoint-missing",
+    measure: `No recorded “${activity}”`,
+    detail: "in the export at its cutoff: not a verdict that the incident is unfinished",
+    a: ofIncluded(target.endpoint_coverage.not_recorded, target.included, "in the period"),
+    b: ofIncluded(reference.endpoint_coverage.not_recorded, reference.included, "in the period"),
+    difference: null,
   };
 }
 
@@ -921,7 +956,7 @@ function ComparisonProblemNotice({ title, problem, onRetry }: { title: string; p
 /** The parent of the comparisons: every incident, or the parent frozen after retained steps, with the way back to every incident. */
 function ParentLine({ filename, every, parent, onRebase }: { filename: string; every: string; parent: FrozenParent | null; onRebase: () => void }) {
   if (parent === null) return <p className="compare-muted">In {filename}: the parent is every incident, {every}.</p>;
-  const retained = parent.retained.length === 0 ? "the investigation's parent" : `kept by ${parent.retained.map(stepWording).join("; and ")}`;
+  const retained = parent.label ?? (parent.retained.length === 0 ? "the investigation's parent" : `kept by ${parent.retained.map(stepWording).join("; and ")}`);
   return (
     <div className="compare-parent" role="note" aria-label="Parent">
       <p>
@@ -959,7 +994,7 @@ type SideChoice = "target" | "reference" | "both";
  * The incidents of A, of B or of both, each opened with its complete history in the population of its side; the
  * comparison stays shown, and returning gives the focus back to the incident's button.
  */
-function SideIncidents({ shown, investigation, inspected = null }: { shown: Extract<ShownComparison, { kind: "groups" }>; investigation: ImportedInvestigationCoordinator; inspected?: InspectedValue | null }) {
+function SideIncidents({ shown, investigation, inspected = null }: { shown: ShownComparison; investigation: ImportedInvestigationCoordinator; inspected?: InspectedValue | null }) {
   const [side, setSide] = useState<SideChoice | null>(null);
   // The incidents of each side first recorded with an inspected value, as the local service selects them in that side.
   const [valued, setValued] = useState<{ label: string; target: string[]; reference: string[] } | { label: string; failed: string } | null>(null);
@@ -1113,5 +1148,54 @@ function StratumChoice({ coordinator, investigation, openings, parentCaseIds }: 
       </button>
       {state !== "idle" && state !== "working" && <p role="alert">{state}</p>}
     </fieldset>
+  );
+}
+
+/**
+ * Follow-up of two periods: a newer period may not be observed as long as an older one. The restriction to incidents
+ * followed for at least the minimum is declared as the parent; where coverage is not comparable, "no conclusion" can be
+ * kept with the comparison. No survival estimate is made and no difference is called an improvement.
+ */
+function FollowupChoice({ shown, restricted, onRestrict, onRebase }: {
+  shown: Extract<ShownComparison, { kind: "periods" }>; restricted: boolean;
+  onRestrict: (parent: Omit<FrozenParent, "revision">) => void; onRebase: () => void;
+}) {
+  const [kept, setKept] = useState(false);
+  const { target, reference } = shown.answer;
+  const minimum = shown.request.definition.minimum_followup_hours;
+  const share = (cohort: PeriodCohort) => (cohort.included.case_count === 0 ? 0 : cohort.exposure.inadequate.case_count / cohort.included.case_count);
+  const comparable = target.exposure.inadequate.case_count === 0 && reference.exposure.inadequate.case_count === 0;
+  const adequate = [...target.exposure.adequate.case_ids, ...reference.exposure.adequate.case_ids];
+  return (
+    <div className="compare-notice" role="note" aria-label="Follow-up">
+      {comparable ? (
+        <p>Every incident of both periods was followed for at least {hoursText(minimum)} before the snapshot cutoff.</p>
+      ) : (
+        <p>
+          Coverage is not comparable: {target.exposure.inadequate.case_count} of {countOf(target.included.case_count, "incident")} of {target.name} (
+          {Math.round(share(target) * 100)} %) and {reference.exposure.inadequate.case_count} of {countOf(reference.included.case_count, "incident")} of{" "}
+          {reference.name} ({Math.round(share(reference) * 100)} %) were followed for less than {hoursText(minimum)}. A difference in what is recorded may be a
+          difference in follow-up.
+        </p>
+      )}
+      {minimum <= 0 ? (
+        <p className="compare-muted">Choose a minimum follow-up above 0 hours to restrict the periods to incidents observed at least that long.</p>
+      ) : restricted ? (
+        <button type="button" onClick={onRebase}>Compare every incident of the periods again</button>
+      ) : (
+        <button type="button" disabled={comparable} onClick={() => onRestrict({ caseIds: [...new Set(adequate)].sort(), retained: [], count: new Set(adequate).size, eligibilityUnknown: 0,
+          label: `followed for at least ${hoursText(minimum)} to the snapshot cutoff` })}>
+          Keep only incidents followed for at least {hoursText(minimum)}
+        </button>
+      )}
+      {!comparable && (
+        kept ? (
+          <p role="status">Kept: no conclusion about a change between {target.name} and {reference.name}, as their follow-up is not comparable.</p>
+        ) : (
+          <button type="button" onClick={() => setKept(true)}>Keep this as no conclusion</button>
+        )
+      )}
+      <p className="compare-muted">No survival estimate is made here, and no difference between the periods is an improvement or a decline.</p>
+    </div>
   );
 }

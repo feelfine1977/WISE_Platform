@@ -152,6 +152,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Two listed, overlapping groups keep their literal memberships; the overlap is declared and the sizes and context policy are said; a side's incident opens and returns.
   - Within the stratum Priority High the listed groups are refused with their recovery; two disjoint condition groups of unequal size compare their Service, the missing value included.
 
+- `tools/qualify_period_followup.py` (#18): two start periods of `groups-and-periods.csv` to the stored cutoff, with a four-hour minimum follow-up and Resolved, against `expected.json`.
+  - The shared definitions, the measured, missing and not fully observed supports and the paired profiles are shown.
+  - Coverage that is not comparable is said and can be kept as no conclusion; the declared follow-up restriction removes only the incident not fully observed.
+  - The cross-period incident opens with its whole history, also after its period, and returns; no survival estimate or improvement claim appears.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
