@@ -24,6 +24,7 @@ from .case_lists import CaseLists
 from .interval_tails import IntervalTails
 from .transition_matrices import TransitionMatrices
 from .outcomes import Outcomes
+from .workspace_backups import WorkspaceBackups
 from .comparisons import ComparisonReply, Comparisons
 from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
 from .expectations import Expectations, ScoringReply
@@ -79,6 +80,7 @@ def create_app(
     interval_tails = IntervalTails(imports)
     transition_matrices = TransitionMatrices(imports)
     outcomes = Outcomes(imports)
+    backups = WorkspaceBackups(imports)
     start_trends = StartTrends(imports)
     rule_group_views = RuleGroups(imports)
     record_documents = RecordDocuments(imports)
@@ -217,6 +219,16 @@ def create_app(
     @application.post("/api/investigations/outcome-rates")
     async def outcome_rates(request: Request) -> JSONResponse:
         reply = await run_in_threadpool(outcomes.outcome_rates, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/workspaces/back-up")
+    async def back_up_workspace(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(backups.back_up, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/workspaces/restore")
+    async def restore_workspace(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(backups.restore, await request.body())
         return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/case-list")

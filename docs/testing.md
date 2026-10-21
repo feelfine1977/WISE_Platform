@@ -162,6 +162,8 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - After an actual restart: the saved list's lineage, cutoff, folder and unchecked state, and the local guide; the reopened notes, pins, frozen parent and outcome.
   - The question is applied to a refreshed reading (one incident appended), reviewed, and saved as a new revision without the earlier comparison; the earlier revision is listed as earlier and reopens as it was.
 
+- `tools/qualify_backup_restore.py` (#26): a workspace with a saved question is backed up from the Data area; after an actual restart on another workspace, the backup is restored into a new folder, opened with the same identity, and its saved finding reopened with an incident's complete history. The original folder is checked unchanged.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

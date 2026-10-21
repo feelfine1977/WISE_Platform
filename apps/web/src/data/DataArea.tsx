@@ -8,6 +8,7 @@ import { ReadingChoices } from "./ReadingChoices";
 import { byteSize } from "./wording";
 import { Working } from "./Working";
 import { DocumentFolderSetting } from "../documents/DocumentFolderSetting";
+import { WorkspaceBackup } from "./WorkspaceBackup";
 
 interface DataAreaProps {
   coordinator: DataCoordinator;
@@ -111,6 +112,8 @@ function WorkspaceStep({ state, coordinator }: { state: DataState; coordinator: 
           {!workspace.own && ownFolder}
         </details>
         <DocumentFolderSetting key={workspace.answer.workspace_id} workspaceId={workspace.answer.workspace_id} />
+        <WorkspaceBackup key={`backup-${workspace.answer.workspace_id}-${workspace.answer.path}`} workspaceId={workspace.answer.workspace_id}
+          onOpen={(path) => coordinator.openWorkspace(path)} />
       </section>
     );
   }

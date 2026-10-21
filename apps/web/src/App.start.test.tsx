@@ -111,7 +111,9 @@ describe("the first use of the application", () => {
     const workspace = screen.getByRole("region", { name: "Workspace" });
     expect(workspace.textContent).toContain(ownFolder);
     expect(workspace.textContent).toContain("The application's own folder");
-    const other = within(workspace).getByRole("group");
+    // The other folder is the first disclosure; backing up and restoring stands behind its own.
+    const [other, backup] = within(workspace).getAllByRole("group");
+    expect(within(backup).getByText("Back up or restore")).toBeTruthy();
     expect(other.hasAttribute("open")).toBe(false);
     expect(within(other).getByText("Use another folder")).toBeTruthy();
     expect(screen.getByLabelText("Add an event-history CSV")).toBeTruthy();
