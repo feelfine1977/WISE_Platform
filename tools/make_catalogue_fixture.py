@@ -175,6 +175,7 @@ def archive(rows: list[list[str]], log: bytes) -> bytes:
         for name, content in [("tickets-copy.csv", log), ("tickets-2026-09.csv", csv_text(TICKET_HEADER, september(rows))),
                               ("scores/earlier-scores.json", (json.dumps(scores, indent=1) + "\n").encode("utf-8"))]:
             info = zipfile.ZipInfo(name, ZIP_TIME)
+            info.create_system = 3  # Keep the committed Unix ZIP metadata on every host.
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             bundle.writestr(info, content)

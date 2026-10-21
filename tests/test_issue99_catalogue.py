@@ -56,6 +56,19 @@ def test_the_committed_collection_is_what_its_generator_writes():
     assert on_disk == written
 
 
+@pytest.mark.parametrize("host_system", [0, 3])
+def test_archive_metadata_and_bytes_do_not_depend_on_the_host(monkeypatch, host_system):
+    original = zipfile.ZipInfo
+
+    class HostZipInfo(original):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.create_system = host_system
+
+    monkeypatch.setattr(zipfile, "ZipInfo", HostZipInfo)
+    assert make_catalogue_fixture.collection()["desk/exports.zip"] == (COLLECTION / "desk/exports.zip").read_bytes()
+
+
 def test_every_file_and_member_has_a_record_with_identity_alias_and_role():
     found = catalogue_.inventory(declared(), COLLECTION)
     assert set(found.items) == {"note", "tickets", "teams", "exports", "tickets-copy", "tickets-september", "earlier-scores",

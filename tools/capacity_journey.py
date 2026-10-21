@@ -4,7 +4,7 @@ Each operation is a real HTTP request to a service started on loopback. A sample
 the service's process tree while the request runs, so every stage records its wall time, peak and retained
 service memory and the size of its reply. Answers are checked against what the caller expects as they arrive.
 
-POSIX only: the process tree's memory is read from ``ps``.
+The process tree's memory is read from ``ps`` on POSIX and Windows working sets on Windows.
 """
 from __future__ import annotations
 
@@ -21,6 +21,8 @@ import time
 
 import httpx
 
+from process_memory import tree_rss
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTEXT_POLICY = "incident.context.first_record_in_declared_order.v1"
 LINEAGE_POLICY = "bpic19.same_position_category_lineage.v1"
@@ -34,25 +36,6 @@ def envelope(message_type: str, request_id: str = "capacity-1", revision: int = 
 
 def digest(value: object) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
-
-
-def tree_rss(root_pid: int) -> int:
-    """Resident bytes of a process and all its descendants."""
-    table = subprocess.check_output(["ps", "-axo", "pid=,ppid=,rss="], text=True, timeout=5)
-    children: dict[int, list[int]] = {}
-    rss: dict[int, int] = {}
-    for line in table.splitlines():
-        parts = line.split()
-        if len(parts) == 3:
-            pid, parent, kilobytes = map(int, parts)
-            children.setdefault(parent, []).append(pid)
-            rss[pid] = kilobytes * 1024
-    total, pending = 0, [root_pid]
-    while pending:
-        pid = pending.pop()
-        total += rss.get(pid, 0)
-        pending.extend(children.get(pid, ()))
-    return total
 
 
 class MemorySampler(threading.Thread):
