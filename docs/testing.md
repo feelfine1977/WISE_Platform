@@ -144,6 +144,10 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - After exchanging the roles App is 2/5 against 2/7 = 1.40; an exact zero and no reference support are named and turn over with the roles.
   - A value's incidents are inspected by keyboard down to a complete history without a step; no significance or causal wording appears.
 
+- `tools/qualify_named_outcome.py` (#16): a separately named outcome by opening value on S0, against `expected.json`.
+  - "No recorded Resolved" is named apart from the groups, with K = P and the parent rate 5/12; App's rate is 2/4 and its lift 1.20, beside the profile ratio 1.40; every value's rate and lift is the oracle's.
+  - App's witnesses open down to a complete history and the focus returns to the same list; exchanging the roles leaves the outcome as it is.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

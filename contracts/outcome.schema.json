@@ -1,0 +1,520 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/outcome.v1.schema.json",
+  "title": "OutcomeMessage",
+  "description": "A separately named outcome over a checked parent: whether each incident's complete history records an activity at the snapshot, its known subset, and its rate by the value each incident was first recorded with, beside the parent's rate. Recorded presence or absence only; no business verdict, no duration.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/OutcomeRatesRequest"
+    },
+    {
+      "$ref": "#/$defs/OutcomeRatesAnswer"
+    },
+    {
+      "$ref": "#/$defs/OutcomeRatesRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RowId": {
+      "title": "RowId",
+      "type": "string",
+      "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "OutcomeDefinition": {
+      "title": "OutcomeDefinition",
+      "description": "Outcome O: whether the complete history of an incident holds a record of the activity at the snapshot cutoff, counted as its presence or its absence. A recorded presence or absence; never a verdict on the business state of the incident.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "const": "incident.outcome.recorded_activity_presence_at_snapshot.v1"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "counted": {
+          "type": "string",
+          "enum": [
+            "presence",
+            "absence"
+          ]
+        }
+      },
+      "required": [
+        "policy",
+        "activity",
+        "counted"
+      ]
+    },
+    "AvailableLift": {
+      "title": "AvailableLift",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "available"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "status",
+        "value"
+      ]
+    },
+    "UnavailableLift": {
+      "title": "UnavailableLift",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "zero_parent_rate",
+            "outcome_unavailable",
+            "empty_category"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "reason"
+      ]
+    },
+    "OutcomeLift": {
+      "title": "OutcomeLift",
+      "description": "The value's rate of O divided by the parent's rate of O.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AvailableLift"
+        },
+        {
+          "$ref": "#/$defs/UnavailableLift"
+        }
+      ]
+    },
+    "OutcomeCategory": {
+      "title": "OutcomeCategory",
+      "description": "The incidents of the parent first recorded with one value (null: not recorded), those of them whose outcome is known, and those with O among them.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "known_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "counted_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        },
+        "other_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        },
+        "rate": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lift": {
+          "$ref": "#/$defs/OutcomeLift"
+        }
+      },
+      "required": [
+        "value",
+        "case_count",
+        "known_case_count",
+        "counted_case_ids",
+        "other_case_ids",
+        "rate",
+        "lift"
+      ]
+    },
+    "OutcomeRatesRequest": {
+      "title": "OutcomeRatesRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "outcome_rates_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "context_column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "context_policy": {
+          "type": "string",
+          "const": "incident.context.first_record_in_declared_order.v1"
+        },
+        "outcome": {
+          "$ref": "#/$defs/OutcomeDefinition"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "context_column_index",
+        "context_policy",
+        "outcome"
+      ]
+    },
+    "OutcomeRatesAnswer": {
+      "title": "OutcomeRatesAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "outcome_rates_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "context_column_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "context_policy": {
+          "type": "string",
+          "const": "incident.context.first_record_in_declared_order.v1"
+        },
+        "outcome": {
+          "$ref": "#/$defs/OutcomeDefinition"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "available",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "activity_never_recorded"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "snapshot_cutoff": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "known_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unknown_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "counted_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "rate": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "context_unevaluable_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OutcomeCategory"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "context_column_index",
+        "context_policy",
+        "outcome",
+        "status",
+        "reason",
+        "snapshot_cutoff",
+        "parent_case_count",
+        "known_case_count",
+        "unknown_case_count",
+        "counted_case_count",
+        "rate",
+        "context_unevaluable_case_count",
+        "categories"
+      ]
+    },
+    "OutcomeRatesRefusal": {
+      "title": "OutcomeRatesRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "outcome_rates_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "outcome_rates"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "memory_unavailable",
+            "computation_failed",
+            "unmapped_context_column"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}
