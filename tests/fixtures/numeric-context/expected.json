@@ -1,0 +1,244 @@
+{
+ "about": "Hand-written expectations for #85 (tests/test_issue85_numeric_context.py and tools/qualify_numeric_context.py). Invented incidents. Confidence (column 5) and Amount (column 6, unit EUR) are declared numbers; Desk (column 4) is text. Reading rule: optional sign, digits, at most one decimal point or comma; outer spaces set aside; nothing else ('high', '1e3', '1.234,5', 'EUR 80' are not numbers; '0,85' is 0.85; ' 0.75 ' is 0.75; '1.234' is 1.234). Projections: first record and latest record with a value in the declared order (order must be known), any record. Ranges are half-open [minimum, maximum). Never read by product code.",
+ "file": "numbers.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": [
+   4,
+   5,
+   6
+  ],
+  "numeric_context_columns": [
+   {
+    "column_index": 5,
+    "unit": null
+   },
+   {
+    "column_index": 6,
+    "unit": "EUR"
+   }
+  ]
+ },
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "confidence": {
+  "first_record": {
+   "N-1": 0.9,
+   "N-2": 0.85,
+   "N-5": 0.8,
+   "N-6": 0.75
+  },
+  "first_record_unavailable": {
+   "N-3": "not_a_number",
+   "N-4": "missing",
+   "N-UNK": "order_unknown"
+  },
+  "latest_record": {
+   "N-1": 0.7,
+   "N-2": 0.95,
+   "N-3": 0.6,
+   "N-4": 0.8,
+   "N-5": 0.8
+  },
+  "latest_record_unavailable": {
+   "N-6": "not_a_number",
+   "N-UNK": "order_unknown"
+  },
+  "any_record": {
+   "N-1": [
+    0.7,
+    0.9
+   ],
+   "N-2": [
+    0.85,
+    0.95
+   ],
+   "N-3": [
+    0.6
+   ],
+   "N-4": [
+    0.8
+   ],
+   "N-5": [
+    0.8
+   ],
+   "N-6": [
+    0.75
+   ],
+   "N-UNK": [
+    0.5,
+    0.99
+   ]
+  },
+  "records": {
+   "number_record_count": 10,
+   "missing_record_count": 2,
+   "not_a_number_record_count": 2
+  },
+  "first_record_bins_4": {
+   "parent_range": [
+    0.75,
+    0.9
+   ],
+   "parent": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "unavailable": {
+    "order_unknown": 1,
+    "missing": 1,
+    "not_a_number": 1
+   }
+  },
+  "any_record_range": [
+   0.5,
+   0.99
+  ]
+ },
+ "amount": {
+  "unit": "EUR",
+  "records": {
+   "number_record_count": 10,
+   "missing_record_count": 2,
+   "not_a_number_record_count": 2
+  },
+  "first_record": {
+   "N-1": 100,
+   "N-2": 250.5,
+   "N-3": 12,
+   "N-5": 1.234,
+   "N-6": -5
+  }
+ },
+ "ranges": [
+  {
+   "name": "first_at_least_0_8",
+   "column": 5,
+   "projection": "first_record",
+   "minimum": 0.8,
+   "maximum": null,
+   "negate": false,
+   "kept": [
+    "N-1",
+    "N-2",
+    "N-5"
+   ],
+   "removed": [
+    "N-6"
+   ],
+   "unevaluable": [
+    "N-3",
+    "N-4",
+    "N-UNK"
+   ]
+  },
+  {
+   "name": "latest_at_least_0_8",
+   "column": 5,
+   "projection": "latest_record",
+   "minimum": 0.8,
+   "maximum": null,
+   "negate": false,
+   "kept": [
+    "N-2",
+    "N-4",
+    "N-5"
+   ],
+   "removed": [
+    "N-1",
+    "N-3"
+   ],
+   "unevaluable": [
+    "N-6",
+    "N-UNK"
+   ]
+  },
+  {
+   "name": "any_at_least_0_8",
+   "column": 5,
+   "projection": "any_record",
+   "minimum": 0.8,
+   "maximum": null,
+   "negate": false,
+   "kept": [
+    "N-1",
+    "N-2",
+    "N-4",
+    "N-5",
+    "N-UNK"
+   ],
+   "removed": [
+    "N-3",
+    "N-6"
+   ],
+   "unevaluable": []
+  },
+  {
+   "name": "first_0_7_to_0_8_half_open",
+   "column": 5,
+   "projection": "first_record",
+   "minimum": 0.7,
+   "maximum": 0.8,
+   "negate": false,
+   "kept": [
+    "N-6"
+   ],
+   "removed": [
+    "N-1",
+    "N-2",
+    "N-5"
+   ],
+   "unevaluable": [
+    "N-3",
+    "N-4",
+    "N-UNK"
+   ]
+  },
+  {
+   "name": "first_not_at_least_0_8",
+   "column": 5,
+   "projection": "first_record",
+   "minimum": 0.8,
+   "maximum": null,
+   "negate": true,
+   "kept": [
+    "N-6"
+   ],
+   "removed": [
+    "N-1",
+    "N-2",
+    "N-5"
+   ],
+   "unevaluable": [
+    "N-3",
+    "N-4",
+    "N-UNK"
+   ]
+  },
+  {
+   "name": "latest_below_0_7",
+   "column": 5,
+   "projection": "latest_record",
+   "minimum": null,
+   "maximum": 0.7,
+   "negate": false,
+   "kept": [
+    "N-3"
+   ],
+   "removed": [
+    "N-1",
+    "N-2",
+    "N-4",
+    "N-5"
+   ],
+   "unevaluable": [
+    "N-6",
+    "N-UNK"
+   ]
+  }
+ ]
+}

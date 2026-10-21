@@ -200,6 +200,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Their places and sizes are the same with no step, while a selection is answered (the answer held back), after a step, after Undo and after Clear all.
   - With `WISE_SCREENSHOT_DIR` set, a picture of the bar at each size is written there.
 
+- `tools/qualify_numeric_context.py` (#85): numbers in a context column over the invented `tests/fixtures/numeric-context` file, against its own `expected.json`, in two service processes.
+  - The file is added in the Data area and Confidence and Amount (EUR) are declared numbers; the summary and the preparation say so.
+  - The Filters' range of a number shows the parent's range, the bins, the incidents without a number by reason and the records that are not numbers.
+  - Every range of the oracle (first, latest and any record; half-open; kept and removed) is previewed, taken as one step and undone exactly. A range chosen on the chart takes the parent's exact edges, and the unit and a signed range are shown.
+  - After an actual restart the reading opens again with its declaration.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

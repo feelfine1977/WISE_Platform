@@ -398,6 +398,14 @@
         "document_reference_column": {
           "$ref": "#/$defs/ColumnIndex",
           "description": "Optional declared role: one of the context columns whose value names the record's document in the workspace's local document folder. Absent when no document reference is mapped; it is part of the preparation and its identity only when present."
+        },
+        "numeric_context_columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/NumericContextColumn"
+          },
+          "description": "Optional declaration: the context columns the analyst reads as numbers, each with its unit or none. Absent when none is declared; it is part of the preparation and its identity only when present. Cells are read by incident.context.number.point_or_comma_decimal.v1 and stay unchanged in the records."
         }
       },
       "required": [
@@ -406,6 +414,32 @@
         "timestamp_column",
         "sequence_column",
         "context_columns"
+      ]
+    },
+    "NumericContextColumn": {
+      "title": "NumericContextColumn",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "column_index": {
+          "$ref": "#/$defs/ColumnIndex"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "column_index",
+        "unit"
       ]
     },
     "RecordedTimezone": {

@@ -1,0 +1,493 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/numeric-context.v1.schema.json",
+  "title": "NumericContextMessage",
+  "description": "The numbers of a context column the analyst declared numeric at import: its range in the parent and its distribution on bins fixed by the parent, for the parent and the kept incidents, under one projection, with the incidents and records that have no number counted by reason. Nothing is read from a column's name; nothing is computed in the browser.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/NumericContextRequest"
+    },
+    {
+      "$ref": "#/$defs/NumericContextAnswer"
+    },
+    {
+      "$ref": "#/$defs/NumericContextRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "NumericProjection": {
+      "title": "NumericProjection",
+      "type": "string",
+      "enum": [
+        "first_record",
+        "latest_record",
+        "any_record"
+      ],
+      "description": "first_record: the number of the first record in the declared order; latest_record: the number of the last record in the declared order whose cell is not empty, the latest recorded at the snapshot cutoff; any_record: every number any record holds. The first two need a known order."
+    },
+    "NumericBin": {
+      "title": "NumericBin",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "start_inclusive": {
+          "type": "number"
+        },
+        "end_exclusive": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "parent_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kept_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "start_inclusive",
+        "end_exclusive",
+        "parent_case_count",
+        "kept_case_count"
+      ]
+    },
+    "UnavailableNumbers": {
+      "title": "UnavailableNumbers",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": [
+            "order_unknown",
+            "missing",
+            "not_a_number"
+          ]
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "reason",
+        "case_count"
+      ]
+    },
+    "NumericRecordCounts": {
+      "title": "NumericRecordCounts",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How the cells of the column read over every record of the incidents: numbers, missing (empty), and not a number, which stay in the records unchanged and are never read as zero.",
+      "properties": {
+        "number_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "missing_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "not_a_number_record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "number_record_count",
+        "missing_record_count",
+        "not_a_number_record_count"
+      ]
+    },
+    "NumericSupport": {
+      "title": "NumericSupport",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "measured_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unavailable": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/UnavailableNumbers"
+          }
+        },
+        "records": {
+          "$ref": "#/$defs/NumericRecordCounts"
+        }
+      },
+      "required": [
+        "case_count",
+        "measured_case_count",
+        "unavailable",
+        "records"
+      ]
+    },
+    "NumericRange": {
+      "title": "NumericRange",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "minimum",
+        "maximum"
+      ]
+    },
+    "NumericContextRequest": {
+      "title": "NumericContextRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "numeric_context_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "projection": {
+          "$ref": "#/$defs/NumericProjection"
+        },
+        "bin_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "column_index",
+        "projection",
+        "bin_count"
+      ]
+    },
+    "NumericContextAnswer": {
+      "title": "NumericContextAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "numeric_context_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "number_policy": {
+          "type": "string",
+          "const": "incident.context.number.point_or_comma_decimal.v1"
+        },
+        "binning_policy": {
+          "type": "string",
+          "const": "incident.context.number.equal_width_parent_range.v1"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "column_name": {
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "projection": {
+          "$ref": "#/$defs/NumericProjection"
+        },
+        "parent_range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NumericRange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bins": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/NumericBin"
+          },
+          "description": "Equal-width bins over the parent's range, fixed by the parent: each [start, end), the last without an end so that the maximum is in it. Under any_record an incident counts once in each bin one of its numbers falls into."
+        },
+        "membership_overlaps": {
+          "type": "boolean"
+        },
+        "parent": {
+          "$ref": "#/$defs/NumericSupport"
+        },
+        "kept": {
+          "$ref": "#/$defs/NumericSupport"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "parent_identity",
+        "number_policy",
+        "binning_policy",
+        "column_index",
+        "column_name",
+        "unit",
+        "projection",
+        "parent_range",
+        "bins",
+        "membership_overlaps",
+        "parent",
+        "kept"
+      ]
+    },
+    "NumericContextRefusal": {
+      "title": "NumericContextRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "numeric_context_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "numeric_context"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "memory_unavailable",
+            "column_not_numeric",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

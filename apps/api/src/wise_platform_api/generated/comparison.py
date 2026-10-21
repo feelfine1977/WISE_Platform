@@ -633,6 +633,18 @@ class PathLagInRange(BaseModel):
     negate: bool
 
 
+class ContextNumberInRange(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['context_number_in_range']
+    column_index: conint(ge=0, le=9007199254740991)
+    projection: Literal['first_record', 'latest_record', 'any_record']
+    minimum: float | None
+    maximum: float | None
+    negate: bool
+
+
 class VariantDefinition(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -747,6 +759,7 @@ class SelectionPredicate(
         | VariantIs
         | MeasureBetween
         | PathLagInRange
+        | ContextNumberInRange
         | RecordAttributesAll
     ]
 ):
@@ -766,6 +779,7 @@ class SelectionPredicate(
         | VariantIs
         | MeasureBetween
         | PathLagInRange
+        | ContextNumberInRange
         | RecordAttributesAll
     ) = Field(..., title='SelectionPredicate')
 

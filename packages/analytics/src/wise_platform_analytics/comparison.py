@@ -12,7 +12,7 @@ from .comparison_profiles import opening_context_profile, population_support
 from .mapping import ImportRefusal
 from .preparation import PreparedData, content_identity
 from .selection import (CaseIdIn, CaseStartInWindow, OpeningAttributeIn, RecordAttributeIn,
-                        ObservedSpanAtLeast, MaxRawGapAtLeast, IntervalThreshold, VariantIs, MeasureBetween, PathLagInRange, semantic_predicate, OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
+                        ObservedSpanAtLeast, MaxRawGapAtLeast, IntervalThreshold, VariantIs, MeasureBetween, PathLagInRange, ContextNumberInRange, semantic_predicate, OPENING_CONTEXT_POLICY, ContainsActivity, DirectlyFollows, EndsWithActivity,
                         OpeningAttributeEquals, SelectionError, StartsWithActivity, case_ids,
                         predicate_descriptor, select_cases)
 from .time_formats import TimeInterpretation, iso_local, iso_utc, parse_format, validate_time_policy
@@ -108,6 +108,9 @@ def _predicates(value: object, field: str) -> tuple[tuple, list[dict[str, object
             d = _closed(raw, {"kind", "variant", "negate"}, at, "invalid_predicate")
             v = _closed(d["variant"], {"id", "activities", "projection_policy"}, at + ".variant", "invalid_predicate")
             p = VariantIs(tuple(v["activities"]), d["negate"], v["id"], v["projection_policy"])
+        elif kind == "context_number_in_range":
+            d = _closed(raw, {"kind", "column_index", "projection", "minimum", "maximum", "negate"}, at, "invalid_predicate")
+            p = ContextNumberInRange(d["column_index"], d["projection"], d["minimum"], d["maximum"], d["negate"])
         elif kind == "path_lag_in_range":
             d = _closed(raw, {"kind", "source_activity", "target_activity", "minimum_hours", "minimum_inclusive", "maximum_hours", "maximum_inclusive",
                               "passages", "negate"}, at, "invalid_predicate")

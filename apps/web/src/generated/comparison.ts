@@ -41,6 +41,7 @@ export type SelectionPredicate =
   | VariantIs
   | MeasureBetween
   | PathLagInRange
+  | ContextNumberInRange
   | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
@@ -217,6 +218,17 @@ export interface PathLagInRange {
   maximum_hours: number | null;
   maximum_inclusive: boolean;
   passages: "at_least_one" | "every";
+  negate: boolean;
+}
+/**
+ * Keeps the incidents whose number in a context column declared numeric at import lies in the half-open range [minimum, maximum), a null bound not bounding. The cell is read by incident.context.number.point_or_comma_decimal.v1. The projection is that of other context: the first record in the declared order, the latest record in the declared order with a value (the latest recorded at the snapshot cutoff), or any record (one of its numbers in the range suffices). An incident without the projected number, because its order is not known or the value is missing or not a number, is not evaluable; negation leaves it so.
+ */
+export interface ContextNumberInRange {
+  kind: "context_number_in_range";
+  column_index: number;
+  projection: "first_record" | "latest_record" | "any_record";
+  minimum: number | null;
+  maximum: number | null;
   negate: boolean;
 }
 /**

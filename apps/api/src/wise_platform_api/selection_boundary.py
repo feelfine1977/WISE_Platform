@@ -82,6 +82,7 @@ _KINDS = {
     "VariantIs": "variant_is",
     "MeasureBetween": "measure_between",
     "PathLagInRange": "path_lag_in_range",
+    "ContextNumberInRange": "context_number_in_range",
 }
 
 # Order in which failing places are named, first one first.

@@ -319,6 +319,9 @@
           "$ref": "#/$defs/PathLagInRange"
         },
         {
+          "$ref": "#/$defs/ContextNumberInRange"
+        },
+        {
           "$ref": "#/$defs/RecordAttributesAll"
         }
       ]
@@ -1570,6 +1573,54 @@
         "maximum_hours",
         "maximum_inclusive",
         "passages",
+        "negate"
+      ]
+    },
+    "ContextNumberInRange": {
+      "title": "ContextNumberInRange",
+      "description": "Keeps the incidents whose number in a context column declared numeric at import lies in the half-open range [minimum, maximum), a null bound not bounding. The cell is read by incident.context.number.point_or_comma_decimal.v1. The projection is that of other context: the first record in the declared order, the latest record in the declared order with a value (the latest recorded at the snapshot cutoff), or any record (one of its numbers in the range suffices). An incident without the projected number, because its order is not known or the value is missing or not a number, is not evaluable; negation leaves it so.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "context_number_in_range"
+        },
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "projection": {
+          "type": "string",
+          "enum": [
+            "first_record",
+            "latest_record",
+            "any_record"
+          ]
+        },
+        "minimum": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "maximum": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "column_index",
+        "projection",
+        "minimum",
+        "maximum",
         "negate"
       ]
     },

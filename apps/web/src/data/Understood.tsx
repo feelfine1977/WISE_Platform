@@ -68,6 +68,8 @@ export function Understood({ request, answer, names, filename, cutoffEntered = f
     ["Sequence number", mapping.sequence_column == null ? "none: equal times keep the order of the file" : column(names, mapping.sequence_column)],
     ["Context attributes", mapping.context_columns.length === 0 ? "none" : mapping.context_columns.map((index) => column(names, index)).join(", ")],
     ...(mapping.document_reference_column == null ? [] : [["Document reference", column(names, mapping.document_reference_column)] as [string, string]]),
+    ...(mapping.numeric_context_columns == null ? [] : [["Read as numbers", mapping.numeric_context_columns
+      .map((item) => `${column(names, item.column_index)}${item.unit === null ? "" : ` (${item.unit})`}`).join(", ")] as [string, string]]),
     [
       "Order",
       `by the usable time; records with the same time by ${mapping.sequence_column == null ? "their place in the file" : "the sequence number, then their place in the file"}` +

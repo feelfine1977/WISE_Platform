@@ -76,6 +76,13 @@ export function stepWording(step: SelectionPredicate): string {
       return rangeWording(step);
     case "path_lag_in_range":
       return lagRangeWording(step);
+    case "context_number_in_range": {
+      const where = NUMBER_PROJECTIONS[step.projection];
+      const range = numberRange(step.minimum, step.maximum);
+      return step.negate
+        ? `Keep incidents whose number in ${columnWording(step.column_index)} at ${where} is not ${range}`
+        : `Keep incidents whose number in ${columnWording(step.column_index)} at ${where} is ${range}`;
+    }
     case "interval_threshold": {
       const relation = step.operator === "gt" ? (step.negate ? "at most" : "more than") : step.negate ? "less than" : "at least";
       return `Keep incidents whose interval from the first ${quoted(step.interval.start_activity)} to the first ${quoted(step.interval.response_activity)} at or after it is ${relation} ${step.hours} hours`;
@@ -111,6 +118,20 @@ function rangeWording(step: Extract<SelectionPredicate, { kind: "measure_between
   const less = records ? "fewer" : "less";
   if (maximum === null) return `Keep incidents with ${measure}${less} than ${minimum} ${records && minimum === 1 ? "record" : unit}`;
   return `Keep incidents with ${measure}${less} than ${minimum} or more than ${maximum} ${records ? "records" : unit}`;
+}
+
+/** Where an incident's number in a context column is read, in words. */
+export const NUMBER_PROJECTIONS = {
+  first_record: "the first record",
+  latest_record: "the latest record with a value",
+  any_record: "any record",
+} as const;
+
+/** A half-open range of numbers in words: the lower bound included, the upper one excluded. */
+export function numberRange(minimum: number | null, maximum: number | null): string {
+  if (maximum === null) return `at least ${minimum}`;
+  if (minimum === null) return `below ${maximum}`;
+  return `from ${minimum} up to, not including, ${maximum}`;
 }
 
 /** A step in the few words of a chip of the trail; its full wording opens on demand. */
@@ -153,6 +174,10 @@ export function shortStepWording(step: SelectionPredicate): string {
       const unit = step.measure === "raw_record_count" ? "" : " h";
       const range = step.maximum === null ? `≥ ${step.minimum}${unit}` : `${step.minimum}–${step.maximum}${unit}`;
       return `${measure} ${step.negate ? "outside " : ""}${range}`;
+    }
+    case "context_number_in_range": {
+      const range = step.maximum === null ? `≥ ${step.minimum}` : step.minimum === null ? `< ${step.maximum}` : `${step.minimum}–<${step.maximum}`;
+      return `${name(step.column_index)}${step.projection === "any_record" ? " (any)" : step.projection === "latest_record" ? " (latest)" : ""} ${step.negate ? "not " : ""}${range}`;
     }
     case "path_lag_in_range": {
       const low = step.minimum_hours === null ? "" : `${step.minimum_inclusive ? "≥" : ">"} ${hours(step.minimum_hours)}`;
@@ -233,6 +258,10 @@ export function unevaluableReason(step: SelectionPredicate): string | null {
       return "a record lacks a cell of a named column, so whether it matches cannot be told";
     case "path_lag_in_range":
       return "the order of their records is not known, so their passages and their lags are not known";
+    case "context_number_in_range":
+      return step.projection === "any_record"
+        ? "no record holds a number in this column: the cells are empty or not numbers"
+        : "their order is not known, or the value there is empty or not a number";
     case "measure_between":
       return step.measure === "raw_record_count"
         ? null

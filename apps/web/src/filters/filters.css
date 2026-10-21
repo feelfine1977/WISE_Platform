@@ -8,3 +8,8 @@
 .incident-filters fieldset { display: grid; gap: var(--space-2); padding: var(--space-2); border: var(--line-width) solid var(--color-line); }
 .incident-filters .filter-value { display: flex; align-items: center; gap: var(--space-2); }
 .incident-filters p { margin: 0; }
+
+/* A range of a number in a context column: its choices, its chart and its bounds, one under the other. */
+.number-range { display: grid; gap: var(--space-2); }
+.number-range-read { display: grid; gap: var(--space-1); }
+.number-range-read > p { margin: 0; }
