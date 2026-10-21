@@ -95,6 +95,13 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - Another condition combines by AND; Undo restores the earlier identity.
   - The investigation is saved, then reopened after an actual restart with the same steps and identity.
 
+- `tools/qualify_category_chart.py` (#8): the category chart of the invented `tests/fixtures/categories` file, against its own `expected.json`.
+  - Bars and table are checked at laptop size and at 200 % zoom: every value named as text, a long value whole, a column fixed in the parent.
+  - Inspecting a value lists its incidents and opens one without changing the selection.
+  - Chosen values are previewed, cancelled and applied; bars and table rows resolve the same incidents.
+  - A late reply for an earlier selection does not replace the chart.
+  - Undo is exact, and the kept incident keeps every later record.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.

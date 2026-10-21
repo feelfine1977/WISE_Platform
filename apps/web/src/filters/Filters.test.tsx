@@ -102,7 +102,7 @@ describe("#6 a filter previewed before it is taken", () => {
   it("shows what the filter would keep, takes nothing until asked, and can be changed instead", async () => {
     const population = populationAnswer({ schema_version: 1, message_type: "open_population_request", request_id: "p", query_revision: 1, workspace_id: workspaceId, preparation_id: preparationId });
     const onStep = vi.fn();
-    const previewStep = vi.fn(async () => ({ ok: true as const, parent: 2, kept: 1, removed: 1, unevaluable: 0 }));
+    const previewStep = vi.fn(async () => ({ ok: true as const, parent: 2, kept: 1, removed: 1, unevaluable: 0, keptIds: ["A-1"] }));
     const opening = openingContextAnswer({ schema_version: 1, message_type: "opening_context_request", request_id: "c", query_revision: 1, workspace_id: workspaceId, identity: population.identity });
     render(<Filters population={population} parentIds={null} opening={{ phase: "ready", answer: opening }} onStep={onStep} previewStep={previewStep} />);
     const user = userEvent.setup();

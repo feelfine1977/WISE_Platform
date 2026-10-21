@@ -297,7 +297,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 parentIdentity={shown?.answer.parent_identity ?? answer.identity} revision={revision}
                 opening={openingContext} onStep={addStep} previewStep={previewStep} waitingFor={waitingFor} />}
               <div hidden={rail !== "context"}>
-                <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} onStep={addStep} />
+                <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} onStep={addStep} previewStep={previewStep} onOpenCase={openCase} />
               </div>
               <div hidden={rail !== "patterns"}>
                 <Variants

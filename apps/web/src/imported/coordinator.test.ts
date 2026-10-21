@@ -296,6 +296,7 @@ describe("#6 a preview before a step, and an undo that restores the exact select
       kept: containingOpened.kept.case_ids.length,
       removed: containingOpened.removed.case_ids.length,
       unevaluable: containingOpened.unevaluable.case_ids.length,
+      keptIds: containingOpened.kept.case_ids,
     });
     // Nothing was taken: no selection was asked for and the state is the one before.
     expect(app.selecting.selections).toHaveLength(1);

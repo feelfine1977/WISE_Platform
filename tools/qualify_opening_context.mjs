@@ -32,6 +32,16 @@ async function settled(steps) {
   await page.waitForFunction(n => document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length === n, steps);
 }
 const panel = () => page.getByRole('region', {name: 'At the first recorded observation'});
+/** Keeps the incidents first recorded with one value: chosen by keyboard, previewed, and applied. */
+async function keepValue(value) {
+  const box = panel().getByRole('checkbox', {name: `Choose ${value}`, exact: true});
+  await box.focus();
+  await page.keyboard.press('Space');
+  await panel().getByRole('button', {name: 'Preview keeping incidents first recorded with these values', exact: true}).click();
+  const apply = panel().getByRole('button', {name: 'Apply', exact: true});
+  await apply.focus();
+  await page.keyboard.press('Enter');
+}
 
 try {
   await page.goto(base);
@@ -54,24 +64,20 @@ try {
   check('latest_and_ever_not_offered', text.includes('The latest value and any value ever recorded are not offered here'), null);
 
   // A missing first value, kept by keyboard: exactly the incidents the oracle names.
-  const keepMissing = panel().getByRole('button', {name: `Keep incidents first recorded with ${core.column} not recorded`, exact: true});
-  await keepMissing.focus();
-  await page.keyboard.press('Enter');
+  await keepValue('not recorded');
   await settled(1);
   check('missing_kept_as_its_own_value', same(selections.at(-1).kept.case_ids, core.missing) && same(selections.at(-1).unevaluable.case_ids, core.unevaluable), selections.at(-1).kept);
   await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Undo', exact: true}).click();
   await settled(0);
   // The text Unknown is another value with other incidents.
-  const keepUnknown = panel().getByRole('button', {name: `Keep incidents first recorded with ${core.column} Unknown`, exact: true});
-  await keepUnknown.focus();
-  await page.keyboard.press('Enter');
+  await keepValue('Unknown');
   await settled(1);
   check('unknown_kept_apart_from_missing', same(selections.at(-1).kept.case_ids, core.values.Unknown), selections.at(-1).kept);
   await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Undo', exact: true}).click();
   await settled(0);
   // A recorded value leads to whole incidents and every context change of their records.
   const first = Object.entries(core.values).find(([, ids]) => ids.includes(core.changes_of.case))[0];
-  await panel().getByRole('button', {name: `Keep incidents first recorded with ${core.column} ${first}`, exact: true}).click();
+  await keepValue(first);
   await settled(1);
   check('recorded_value_kept', same(selections.at(-1).kept.case_ids, core.values[first]), selections.at(-1).kept);
   await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();

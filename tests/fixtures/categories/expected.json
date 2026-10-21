@@ -1,0 +1,80 @@
+{
+ "about": "Hand-written expectations for #8 (tests/test_issue8_category_chart.py and tools/qualify_category_chart.py). Invented incidents. Team and Tenant are mapped context columns; the first recorded observation is the first record in declared order (time, then Seq). K-6 has an unreadable time, so its order is not known. Never read by product code.",
+ "file": "categories.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": [
+   4,
+   5
+  ]
+ },
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "parent": 6,
+ "evaluable": 5,
+ "unevaluable": [
+  "K-6"
+ ],
+ "team": {
+  "column_index": 4,
+  "name": "Team",
+  "values": {
+   "Service Desk": [
+    "K-1",
+    "K-5"
+   ],
+   "Unknown": [
+    "K-3"
+   ],
+   "Second-level application support for invoicing and procurement interfaces (Europe)": [
+    "K-4"
+   ]
+  },
+  "missing": [
+   "K-2"
+  ],
+  "changes_of": {
+   "case": "K-2",
+   "context": [
+    null,
+    "Service Desk"
+   ]
+  },
+  "chosen": {
+   "values": [
+    "Service Desk",
+    null
+   ],
+   "kept": [
+    "K-1",
+    "K-2",
+    "K-5"
+   ],
+   "unevaluable": [
+    "K-6"
+   ]
+  },
+  "any_record_overlap": {
+   "values": [
+    "Service Desk",
+    "Second-level application support for invoicing and procurement interfaces (Europe)"
+   ],
+   "kept": [
+    "K-1",
+    "K-2",
+    "K-4",
+    "K-5",
+    "K-6"
+   ],
+   "note": "K-1 holds both values and counts once; K-6 counts although its order is unknown, as presence needs no order."
+  }
+ },
+ "tenant": {
+  "column_index": 5,
+  "name": "Tenant",
+  "fixed": "Nord"
+ },
+ "long_value": "Second-level application support for invoicing and procurement interfaces (Europe)"
+}
