@@ -35,6 +35,7 @@ export type SelectionPredicate =
   | IntervalThreshold
   | VariantIs
   | MeasureBetween
+  | PathLagInRange
   | RecordAttributesAll;
 export type CaseStartWindow = UtcCaseStartWindow | WallCaseStartWindow;
 export type UtcInstant = string;
@@ -191,6 +192,20 @@ export interface MeasureBetween {
   measure: "raw_record_count" | "observed_span_hours" | "maximum_adjacent_raw_gap_hours";
   minimum: number;
   maximum: number | null;
+  negate: boolean;
+}
+/**
+ * Keeps the incidents that pass the path from source_activity to target_activity, a pair of adjacent records of the activity sequence (the passages of the map's path and of its lag), with a lag in the range: above minimum_hours and below maximum_hours, each bound included or excluded as stated, a null bound not bounding. With passages at_least_one, one passage in the range suffices; with every, the incident passes the path at least once and every passage is in the range. The lag is the elapsed time on the preparation's clock between the two records. An incident whose order is not known is not evaluable; one that never passes the path is outside. Negation keeps the incidents the condition does not keep; the unevaluable stay unevaluable.
+ */
+export interface PathLagInRange {
+  kind: "path_lag_in_range";
+  source_activity: string;
+  target_activity: string;
+  minimum_hours: number | null;
+  minimum_inclusive: boolean;
+  maximum_hours: number | null;
+  maximum_inclusive: boolean;
+  passages: "at_least_one" | "every";
   negate: boolean;
 }
 /**

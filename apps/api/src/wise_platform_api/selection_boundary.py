@@ -81,6 +81,7 @@ _KINDS = {
     "IntervalThreshold": "interval_threshold",
     "VariantIs": "variant_is",
     "MeasureBetween": "measure_between",
+    "PathLagInRange": "path_lag_in_range",
 }
 
 # Order in which failing places are named, first one first.

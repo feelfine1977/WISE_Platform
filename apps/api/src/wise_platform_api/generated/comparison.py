@@ -618,6 +618,21 @@ class MeasureBetween(BaseModel):
     negate: bool
 
 
+class PathLagInRange(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['path_lag_in_range']
+    source_activity: constr(min_length=1)
+    target_activity: constr(min_length=1)
+    minimum_hours: confloat(ge=0.0) | None
+    minimum_inclusive: bool
+    maximum_hours: confloat(ge=0.0) | None
+    maximum_inclusive: bool
+    passages: Literal['at_least_one', 'every']
+    negate: bool
+
+
 class VariantDefinition(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -731,6 +746,7 @@ class SelectionPredicate(
         | IntervalThreshold
         | VariantIs
         | MeasureBetween
+        | PathLagInRange
         | RecordAttributesAll
     ]
 ):
@@ -749,6 +765,7 @@ class SelectionPredicate(
         | IntervalThreshold
         | VariantIs
         | MeasureBetween
+        | PathLagInRange
         | RecordAttributesAll
     ) = Field(..., title='SelectionPredicate')
 

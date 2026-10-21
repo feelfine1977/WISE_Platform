@@ -27,6 +27,7 @@ import { MapToolbar } from "./MapToolbar";
 import { MeasureSwitch } from "./MeasureSwitch";
 import { askedFor, OPENING_MEASURE } from "./measures";
 import { PathsTable } from "./PathsTable";
+import { PathLagControl } from "./PathLagControl";
 import { boundaryLine, clockTag, flowsLine, unevaluableLine } from "./wording";
 
 /** Above this many activities the map opens on the most frequent ones; its detail controls show the rest. */
@@ -484,6 +485,10 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
             In {countOf(element.bridged, "passage")} of {countOf(element.passages, "passage")}, records without activity label lie between the two
             activities; the path joins the labelled records around them.
           </p>
+        )}
+        {element?.kind === "path" && (
+          <PathLagControl key={`${element.source}\u0000${element.target}`} source={element.source} target={element.target}
+            medianLagHours={element.medianLagHours ?? null} onStep={onStep} previewStep={previewStep} waitingFor={waitingFor} />
         )}
         {element?.kind === "boundary" && <p className="muted">{boundaryLine(element.side, element.activity, element.incidents)}</p>}
         {element?.kind === "unrecorded" && stageNode === undefined && (

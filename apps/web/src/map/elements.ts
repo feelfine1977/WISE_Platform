@@ -14,7 +14,7 @@ export type SelectedElement =
   /** `starts` and `ends` are the supplied numbers of incidents that begin and that end with the activity. */
   | { kind: "activity"; id: string; label: string; starts: number; ends: number; times: ActivityTimes }
   /** `bridged` of the path's `passages` pass over records without activity label between the two activities. */
-  | { kind: "path"; source: string; target: string; passages: number; bridged: number }
+  | { kind: "path"; source: string; target: string; passages: number; bridged: number; medianLagHours?: number | null }
   /**
    * A flow the map adds from Start to an activity (`side` "start") or from an activity to End, for
    * the supplied number of `incidents` that begin or end with that activity.
@@ -53,6 +53,7 @@ export function elementOf(graph: SuppliedGraph, kind: "node" | "edge", id: strin
       target: edge.payload.target_activity,
       passages: edge.metrics.count,
       bridged: edge.payload.bridged_passage_count,
+      medianLagHours: edge.metrics.medianLagHours ?? null,
     };
   }
   const flow = flowOf(id);

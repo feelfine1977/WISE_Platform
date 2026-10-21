@@ -27,7 +27,7 @@ describe("the element selected on the map", () => {
       ends: 1,
       times: { medianPreviousHours: 25.5, usablePreviousCount: 1, usableNextCount: 0 },
     });
-    expect(selectedElement(graph, { nodes: [], edges: [pathId], groups: [] })).toEqual({ kind: "path", source: opened, target: closed, passages: 1, bridged: 0 });
+    expect(selectedElement(graph, { nodes: [], edges: [pathId], groups: [] })).toEqual({ kind: "path", source: opened, target: closed, passages: 1, bridged: 0, medianLagHours: 25.5 });
   });
 
   it("carries the supplied times of an activity, and no time where none is supplied", () => {
