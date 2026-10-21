@@ -213,5 +213,17 @@ def issue117(client, workspace: Path) -> dict:
         "Empty unions have unavailable overlap."]}
 
 
-SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue118(client, workspace: Path) -> dict:
+    import test_issue118_document_priority_tcp as literal
+    saved = scored_scenario(client, workspace, literal, "completion_timing", "T16 document priority", literal.DOCUMENTS,
+                            group_by=["document"], min_cases=1)
+    # By hand: D1 two scored of three members (.8, .9 and unscored U), PI .075; D2 .85, PI .0375; D3 1, PI 0.
+    # Rows: document, scored, members, unscored, mean, volume, PI, stable PI, positive PI share.
+    return {"name": "T16 document priority", "saved": saved, "texts": [
+        "4 of 5 items scored · mean score 0.8875", "Purchasing document priorities · 3 shown of 3 · scored items per document",
+        "D12310.8520.0750.0750.666667", "D21100.8510.03750.03750.333333", "D311011000",
+        "A PI of 0 means the group's mean is at or above that reference; it is not compliance"]}
+
+
+SCENARIOS = {"issue112": issue112, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
