@@ -285,8 +285,8 @@ function CellTable({ answer, chosen, onChoose }: { answer: TransitionMatrixAnswe
             <th scope="col">Incidents</th>
             <th scope="col">Passages</th>
             <th scope="col">Outgoing share</th>
-            <th scope="col">Median lag (h)</th>
-            <th scope="col">Mean lag (h)</th>
+            <th scope="col">Median lag of the passages (h)</th>
+            <th scope="col">Mean lag of the passages (h)</th>
             <th scope="col">Bridged</th>
             <th scope="col">Ties</th>
           </tr>

@@ -131,6 +131,7 @@ export function StagesEditor({ reading, parentGraph, store = browserStages }: St
       <div className="stages-head">
         <p className={kept ? "stages-note" : "stages-note stages-not-kept"}>{kept ? STAGES_KEPT_LINE : STAGES_NOT_KEPT_LINE}</p>
         <InfoPopover label="About stages">
+          <p className="about-lead">A stage counts nothing of its own: it groups activities for drawing, and every number stays that of its activities' incidents and records.</p>
           <section className="popover-section">
             <p>{kept ? STAGES_KEPT : STAGES_NOT_KEPT}</p>
             <p>{STAGES_ARE}</p>

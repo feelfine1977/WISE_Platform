@@ -44,3 +44,5 @@
 @media (prefers-reduced-motion: no-preference) {
   .popover-panel { animation: open var(--motion-open); }
 }
+/* The one line an "About …" text opens with: what its numbers are, what each counts and over which incidents. */
+.about-lead { margin: 0; font-weight: var(--font-weight-strong); }

@@ -261,7 +261,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
             <th scope="col">Incident</th>
             {head("Records", "record_count", "number")}
             <th scope="col" className="number">Mapped records</th>
-            <th scope="col" className="number">Without activity label</th>
+            <th scope="col" className="number">Records without activity label</th>
             <th scope="col">Order of records</th>
             {times !== undefined && (
               <>

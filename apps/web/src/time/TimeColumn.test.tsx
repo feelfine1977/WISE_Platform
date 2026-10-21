@@ -28,8 +28,8 @@ describe("the column of time beside the map", () => {
       policy_id: "incident.start_trend.first_raw_declared_order_half_open.v1",
       binning: { kind: "explicit_edges", timestamp_kind: "utc_instant", edges: ["2025-03-03T00:00:00Z", "2025-03-10T00:00:00Z", "2025-03-17T00:00:00Z", "2025-03-24T00:00:00Z"] },
     });
-    expect(screen.getByText("Recorded span")).toBeTruthy();
-    expect(screen.getByText("Starts per week")).toBeTruthy();
+    expect(screen.getByText("Incidents by recorded span", { selector: "h5" })).toBeTruthy();
+    expect(screen.getByText("Incident starts per week", { selector: "h5" })).toBeTruthy();
   });
 
   it("keeps the incidents whose first record lies in a band of weeks chosen with the keyboard, with exactly the answered bounds, at once", async () => {

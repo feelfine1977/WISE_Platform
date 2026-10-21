@@ -216,6 +216,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - With `WISE_SCREENSHOT_DIR` set, a picture of the map is written there.
   - Seeing the classes on a real log is the owner's step: open the log's reading, choose Time on the map, and look at 1280 × 720.
 
+- `tools/qualify_counted_units.py` (#87): the words of what is counted, over the invented `tests/fixtures/span-gap` file.
+  - "About this map", "About these charts", "About stages" and "About this data" each open with one line on what the numbers are, what each counts and over which incidents.
+  - The time column's charts and the incident, path and matrix tables name incidents, records or passages.
+  - The data row's numbers are unchanged.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
