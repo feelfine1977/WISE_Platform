@@ -158,7 +158,12 @@ class ChosenGapPair(BaseModel):
     )
     case_count: conint(ge=0, le=9007199254740991)
     cases: list[ChosenGapCase]
-    cases_truncated: bool
+    cases_truncated: bool = Field(
+        ..., description='More incidents follow this page in the chosen pair’s order.'
+    )
+    case_offset: conint(ge=0, le=9007199254740991)
+    kept: GapFigures
+    parent: GapFigures
 
 
 class GapPairsRequest(BaseModel):
@@ -176,6 +181,10 @@ class GapPairsRequest(BaseModel):
     limit: conint(ge=1, le=200)
     chosen: GapPair | None
     case_limit: conint(ge=1, le=1000)
+    case_offset: conint(ge=0, le=9007199254740991) | None = Field(
+        0,
+        description='Offset in the chosen pair’s stable order: longest gap descending, then incident ID. Omission starts at zero.',
+    )
 
 
 class GapPairsAnswer(BaseModel):

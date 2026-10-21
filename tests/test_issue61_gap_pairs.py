@@ -9,6 +9,7 @@ incidents by their longest passage of it and selects nothing.
 """
 
 import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -85,10 +86,47 @@ def test_the_quantile_policy_is_the_nearest_rank_and_each_passage_counts_once():
     assert [p90(values) for values in ([1], [1, 2], [1, 1, 1, 2, 3, 4, 10], list(range(1, 11)), list(range(1, 12)))] == [1, 2, 10, 9, 10]
 
 
-@pytest.mark.parametrize(("change", "field"), [({"relation": "raw"}, "relation"), ({"threshold_hours": -1}, "threshold_hours"), ({"limit": 0}, "limit")])
+@pytest.mark.parametrize(("change", "field"), [({"relation": "raw"}, "relation"), ({"threshold_hours": -1}, "threshold_hours"), ({"limit": 0}, "limit"),
+    ({"case_offset": None}, "case_offset"), ({"case_offset": True}, "case_offset"), ({"case_offset": 1.5}, "case_offset"), ({"case_offset": -1}, "case_offset")])
 def test_what_is_no_question_of_gaps_is_refused(client, kept, change, field):  # noqa: F811
     workspace, _, selection = kept
     body = envelope("gap_pairs_request", "gaps-61", 7, workspace_id=workspace["workspace_id"], identity=selection["identity"], relation="raw_adjacent",
                     threshold_hours=24, limit=10, chosen=None, case_limit=10)
     response = client.post("/api/investigations/gap-pairs", json={**body, **change})
     assert response.status_code == 400 and response.json()["field"].startswith(field), response.text
+
+
+def test_all_1001_members_can_be_read_and_kept_or_removed_without_a_page_cap(client, tmp_path):
+    ids = [f"G-{i:04d}" for i in range(1001)]
+    rows = ["case,activity,time"]
+    for case in ids:
+        rows.extend([f"{case},Assign,2026-01-01T00:00:00Z", f"{case},Resolve,2026-01-01T01:00:00Z"])
+    rows.extend(["Other,Open,2026-01-01T00:00:00Z", "Other,Close,2026-01-01T01:00:00Z"])
+    workspace, base = read(client, tmp_path, ("\n".join(rows) + "\n").encode(), "many-gaps.csv", dict(EXPECTED["mapping"]), EXPECTED["cutoff_utc"])
+    body = envelope("gap_pairs_request", "pages", 1, workspace_id=workspace["workspace_id"], identity=base["identity"],
+                    relation="raw_adjacent", threshold_hours=24, limit=1, chosen={"from_activity": "Assign", "to_activity": "Resolve"}, case_limit=1000)
+    pages = []
+    for offset in (0, 1000):
+        response = client.post("/api/investigations/gap-pairs", json={**body, "case_offset": offset})
+        assert response.status_code == 200, response.text
+        page = response.json()["chosen"]
+        assert (page["case_count"], page["case_offset"], page["cases_truncated"]) == (1001, offset, offset == 0)
+        pages.extend(item["case_id"] for item in page["cases"])
+    assert pages == ids
+    for negate, wanted in ((False, ids), (True, ["Other"])):
+        selected = select(client, workspace, base, [{"kind": "case_id_in", "case_ids": pages, "negate": negate}])
+        assert selected["kept"]["case_ids"] == wanted
+
+
+def test_a_chosen_path_outside_the_top_200_has_its_exact_figures(client, tmp_path):
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    rows = ["case,activity,time"]
+    for i in range(201):
+        rows.extend([f"G-{i:03d},A{i:03d},{start.isoformat()}", f"G-{i:03d},B{i:03d},{(start + timedelta(hours=i + 1)).isoformat()}"])
+    workspace, base = read(client, tmp_path, ("\n".join(rows) + "\n").encode(), "many-paths.csv", dict(EXPECTED["mapping"]), EXPECTED["cutoff_utc"])
+    answer = gaps(client, workspace, base["identity"], relation="mapped_path", chosen={"from_activity": "A000", "to_activity": "B000"}, limit=200)
+    assert answer["pair_count"] == 201 and answer["pairs_truncated"]
+    assert not any(pair["from_activity"] == "A000" for pair in answer["pairs"])
+    chosen = answer["chosen"]
+    assert (chosen["kept"]["incident_count"], chosen["kept"]["passage_count"], chosen["kept"]["p90_hours"]) == (1, 1, 1)
+    assert chosen["parent"] == chosen["kept"]

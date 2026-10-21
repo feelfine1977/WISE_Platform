@@ -32,13 +32,13 @@ export function PathGaps({ workspaceId, revision, identity, source, target, clie
     setRead({ phase: "loading" });
     client.gaps({
       schema_version: 1, message_type: "gap_pairs_request", request_id: `path-gaps-${asked}-${revision}-${threshold}`, query_revision: revision, workspace_id: workspaceId,
-      identity, relation: "mapped_path", threshold_hours: threshold, limit: 200, chosen: null, case_limit: 1,
+      identity, relation: "mapped_path", threshold_hours: threshold, limit: 1, chosen: { from_activity: source, to_activity: target }, case_limit: 1,
     }, controller.signal).then(
       (outcome) => {
         if (controller.signal.aborted) return;
         if (!outcome.ok) return setRead({ phase: "failed" });
-        const pair = outcome.answer.pairs.find((item) => item.from_activity === source && item.to_activity === target);
-        setRead({ phase: "ready", figures: pair?.kept ?? null });
+        if (outcome.answer.chosen === null) return setRead({ phase: "failed" });
+        setRead({ phase: "ready", figures: outcome.answer.chosen.kept });
       },
       () => !controller.signal.aborted && setRead({ phase: "failed" }),
     );

@@ -28,7 +28,10 @@ export const gapsContract = {
 /** A reply must answer this exact request, revision, identity and relation: a late reply for another choice is not one. */
 export function answersGaps(request: GapPairsRequest, answer: GapPairsAnswer): boolean {
   return answer.request_id === request.request_id && answer.query_revision === request.query_revision && answer.workspace_id === request.workspace_id &&
-    sameJson(answer.identity, request.identity) && answer.relation === request.relation && answer.threshold_hours === request.threshold_hours;
+    sameJson(answer.identity, request.identity) && answer.relation === request.relation && answer.threshold_hours === request.threshold_hours &&
+    (request.chosen === null ? answer.chosen === null : answer.chosen !== null &&
+      answer.chosen.from_activity === request.chosen.from_activity && answer.chosen.to_activity === request.chosen.to_activity &&
+      answer.chosen.case_offset === (request.case_offset ?? 0) && answer.chosen.cases.length <= request.case_limit);
 }
 
 export const httpGapsClient: GapsClient = {
