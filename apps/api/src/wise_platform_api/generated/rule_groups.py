@@ -141,6 +141,10 @@ class SharedReferenceRule(BaseModel):
     kind: Literal['shared_reference']
     column_index: conint(ge=0, le=9007199254740991)
     minimum_parent_case_count: conint(ge=2, le=9007199254740991)
+    policy: Literal['any_record', 'first_record', 'latest_record'] | None = Field(
+        None,
+        description="Which values of an incident are read: every record's (the default; an incident can be in several groups), the first record's in the declared order, or the latest record's that has a value. The last two need the order to be known; an incident is then in exactly one group.",
+    )
 
 
 class GroupRule(

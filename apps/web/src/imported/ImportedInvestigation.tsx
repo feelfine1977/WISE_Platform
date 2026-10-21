@@ -42,6 +42,12 @@ interface ImportedInvestigationProps {
   initialView?: InvestigationView;
   /** Whether the map starts with every activity in the place the parent's arrangement gives it, as it does unless told otherwise. */
   mapInPlace?: boolean;
+  /**
+   * Puts the incidents of a group into Compare as one of its two sides, under the group's name; without it no group is
+   * offered there. Assigning a side changes no selection: it is not Keep or Remove.
+   */
+  onCompareGroup?: (role: "target" | "reference", name: string, caseIds: readonly string[]) => void;
+  onShowComparison?: () => void;
 }
 
 /** What the centre shows: the map, the incidents, their variants, every path of the map in one list, or the matrix of its paths. */
@@ -64,7 +70,7 @@ const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
  * kept incidents as a process map, as the list of every path of that map or as a table in the
  * centre; and the complete history of one kept incident beside them.
  */
-export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = true }: ImportedInvestigationProps) {
+export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = true, onCompareGroup, onShowComparison }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   // A reopened investigation opens in the view it was saved in; any other question opens on its map.
   const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? initialView);
@@ -74,6 +80,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const [groupsOpen, setGroupsOpen] = useState(false);
   // A group of the groups panel, or the order a pair of the longest gaps gives the table: `ordered` keeps the order given, `note` says what it is.
   const [chosenGroup, setChosenGroup] = useState<{ id: string; label: string; caseIds: readonly string[]; ordered?: true; note?: string } | null>(null);
+  // Which side of Compare the chosen group was put in, until another group is chosen.
+  const [compared, setCompared] = useState<{ id: string; role: "target" | "reference" } | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [rail, setRail] = useState<Rail>("context");
   // Where the line of guidance leads: the map or the chart of starts beside it gets the focus once shown, and "+ Add step" opens.
@@ -608,9 +616,28 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 <button type="button" onClick={() => stepFromGroup(true)} disabled={waitingFor !== undefined || groupView.caseIds.length === 0} aria-describedby={waitingFor}>
                   Remove these incidents
                 </button>
+                {onCompareGroup && !groupView.ordered && (
+                  <>
+                    <button type="button" disabled={groupView.caseIds.length === 0}
+                      onClick={() => { onCompareGroup("target", groupView.label, groupView.caseIds); setCompared({ id: groupView.id, role: "target" }); }}>
+                      Compare as A
+                    </button>
+                    <button type="button" disabled={groupView.caseIds.length === 0}
+                      onClick={() => { onCompareGroup("reference", groupView.label, groupView.caseIds); setCompared({ id: groupView.id, role: "reference" }); }}>
+                      Compare as B
+                    </button>
+                  </>
+                )}
                 <button type="button" onClick={() => setChosenGroup(null)}>
                   Show every incident
                 </button>
+                {compared && compared.id === groupView.id && (
+                  <p role="status" className="muted">
+                    “{groupView.label}” is side {compared.role === "target" ? "A" : "B"} in Compare, as its {countOf(groupView.caseIds.length, "incident")}; the
+                    selection is unchanged.{" "}
+                    {onShowComparison && <button type="button" className="link-button" onClick={onShowComparison}>Show the comparison</button>}
+                  </p>
+                )}
               </div>
             )}
             {population.phase === "loading" && <p className="working-text">Opening the incidents of this preparation…</p>}

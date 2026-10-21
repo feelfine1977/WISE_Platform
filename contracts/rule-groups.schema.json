@@ -366,6 +366,15 @@
           "type": "integer",
           "minimum": 2,
           "maximum": 9007199254740991
+        },
+        "policy": {
+          "type": "string",
+          "enum": [
+            "any_record",
+            "first_record",
+            "latest_record"
+          ],
+          "description": "Which values of an incident are read: every record's (the default; an incident can be in several groups), the first record's in the declared order, or the latest record's that has a value. The last two need the order to be known; an incident is then in exactly one group."
         }
       },
       "required": [
@@ -1415,8 +1424,7 @@
             "type": "object",
             "properties": {
               "group_membership_overlaps": {
-                "type": "boolean",
-                "const": true
+                "type": "boolean"
               },
               "shared_reference_coverage": {
                 "$ref": "#/$defs/SharedReferenceCoverage"
@@ -1553,6 +1561,105 @@
                     }
                   }
                 }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "object",
+                "properties": {
+                  "rule": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "shared_reference"
+                      },
+                      "policy": {
+                        "type": "string",
+                        "enum": [
+                          "first_record",
+                          "latest_record"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "policy"
+                    ]
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "group_membership_overlaps": {
+                "type": "boolean",
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "object",
+                "properties": {
+                  "rule": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "shared_reference"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "not": {
+                      "properties": {
+                        "policy": {
+                          "enum": [
+                            "first_record",
+                            "latest_record"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "policy"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "group_membership_overlaps": {
+                "type": "boolean",
+                "const": true
               }
             }
           }

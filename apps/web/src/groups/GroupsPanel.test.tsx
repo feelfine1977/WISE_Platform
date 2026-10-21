@@ -96,7 +96,9 @@ describe("the groups of the kept incidents", () => {
       "Last activity",
       "Number of records",
       "Exact sequence of activities",
-      "Same Kanal",
+      "Same Kanal, on any record",
+      "Kanal at the first record",
+      "Kanal, latest recorded value",
       "With or without Eröffnet",
       "With or without Erinnerung",
     ]);
@@ -116,7 +118,7 @@ describe("the groups of the kept incidents", () => {
     const { user, onChoose } = setup();
     await user.click(await screen.findByRole("button", { name: /Eröffnet/ }));
     expect(onChoose).toHaveBeenLastCalledWith({ id: "group-Eröffnet", label: "Eröffnet", caseIds: ["A-1", "A-2", "A-3"] });
-    await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Same Kanal");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Same Kanal, on any record");
     expect(onChoose).toHaveBeenLastCalledWith(null);
   });
 

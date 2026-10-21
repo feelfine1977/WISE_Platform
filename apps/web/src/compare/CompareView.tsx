@@ -53,7 +53,7 @@ interface CompareViewProps {
 const letters: Record<Role, string> = { target: "A", reference: "B" };
 
 /** The population of the imported preparation open in the investigation, as the comparisons need it. */
-function basisOf(answer: ImportedPopulationAnswer): CompareBasis {
+export function basisOf(answer: ImportedPopulationAnswer): CompareBasis {
   const time = answer.preparation.policies.time;
   return {
     workspaceId: answer.workspace_id,

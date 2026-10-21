@@ -72,7 +72,7 @@ describe("what a rule and its groups disclose", () => {
   it("says apart the incidents in no group and the records without a value of a shared column, with the values that form no group", async () => {
     const user = setup();
     await screen.findByText("Opened");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Same Desk");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Same Desk, on any record");
     await screen.findByText("East");
     expect(screen.getByText(/in no group/).textContent).toBe("2 incidents in no group (parent 2): each value of Desk they have is recorded in too few incidents of the parent");
     expect(screen.getByText(/without a value of Desk \(parent/).textContent).toBe("1 record of the kept incidents without a value of Desk (parent 4); 2 of the 5 values in the parent form no group.");
