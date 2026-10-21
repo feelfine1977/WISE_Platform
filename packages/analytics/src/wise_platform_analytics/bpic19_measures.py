@@ -69,19 +69,27 @@ def proposed_measure_roles(prepared: PreparedData) -> dict[str, int | None]:
     return roles
 
 
+class RoleError(ValueError):
+    """An unusable role binding, naming the role."""
+
+    def __init__(self, message: str, role: str) -> None:
+        super().__init__(message)
+        self.role = role
+
+
 def checked_measure_roles(prepared: PreparedData, roles: Mapping[str, int | None] | None) -> dict[str, int | None]:
     chosen = proposed_measure_roles(prepared) if roles is None else dict(roles)
     if set(chosen) - set(ROLE_HEADERS):
         raise ValueError("The role dictionary contains an unsupported role.")
     for role, index in chosen.items():
         if index is not None and (type(index) is not int or not 0 <= index < len(prepared.columns)):
-            raise ValueError(f"The {role} role must name an original column or null.")
+            raise RoleError(f"The {role} role must name an original column or null.", role)
     resolved = {role: chosen.get(role) for role in ROLE_HEADERS}
     if "activity" not in chosen:
         resolved["activity"] = prepared.mapping.get("activity_column")
     activity = resolved["activity"]
     if activity is not None and prepared.mapping.get("activity_column", activity) != activity:
-        raise ValueError("The activity role must use the confirmed preparation activity column.")
+        raise RoleError("The activity role must use the confirmed preparation activity column.", "activity")
     if resolved["net_worth"] is None:
         resolved["net_worth"] = resolved["value"]
     if resolved["value"] is None:
@@ -560,7 +568,7 @@ def measure_population(prepared: PreparedData, case_ids: Iterable[str], roles: M
     try:
         chosen = checked_measure_roles(prepared, roles)
     except ValueError as error:
-        return ImportRefusal("invalid_parameter", str(error), "query.roles")
+        return ImportRefusal("invalid_parameter", str(error), "query.roles" + ("." + error.role if isinstance(error, RoleError) else ""))
     if roles is not None and "activity" in roles and roles["activity"] is None:
         return ImportRefusal("role_unavailable", "The activity measure needs the confirmed activity binding.", "query.roles.activity")
     try:

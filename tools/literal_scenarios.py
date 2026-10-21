@@ -124,5 +124,30 @@ def issue111(client, workspace: Path) -> dict:
         "11 PO items · 13 original records", "Reviewed fixed value bands · tied values stay together", "Declared amount unit: EUR"]}
 
 
-SCENARIOS = {"issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue112(client, workspace: Path) -> dict:
+    import test_issue112_completion_norm_tcp as literal
+    from import_requests import envelope
+    wid, base = literal.prepare(client, workspace, literal.literal())
+    identity = selection(client, wid, base, None)
+    roles = {"item_category": 3, "item_type": 6, "goods_receipt": 4, "gr_based_iv": 5, "purchasing_document": 1, "item": 2, "source_case": 0}
+    query = {"roles": roles, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
+    profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
+        identity=identity, query=query)).json()["profile"]
+    request = literal.given(wid, base, **literal.COMPLETION)
+    request["named_population"] = {"name": "T10 literal items", "identity": identity}
+    scored = client.post("/api/investigations/bpic19-score", json=request).json()
+    saved = save(client, wid, base, None, "T10 completion norm", [
+        lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
+                         "selection_prefix_length": 0},
+        lambda current: {"operation": "bpic19_score", "identity": current, "definition_id": scored["definition_id"],
+                         "query": {"run_id": scored["run_id"], "case_offset": 0, "case_limit": 50, "group_offset": 0, "group_limit": 50},
+                         "selection_prefix_length": 0}])
+    # Criterion rows read: id, total, out of scope, scope unknown, in-scope unavailable, eligible.
+    return {"name": "T10 completion norm", "saved": saved, "texts": [
+        "4 of 6 items scored · mean score 0.916667 · mean evidence coverage 1", "Partial profile: 3 of 10 criteria admitted.",
+        "3 criteria compiled for Balanced", "activities: Record Invoice Receipt; operator: witnessed binary presenceDF1, DF2, two_way",
+        "C0161104", "C0261104", "C0362103"]}
+
+
+SCENARIOS = {"issue112": issue112, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
