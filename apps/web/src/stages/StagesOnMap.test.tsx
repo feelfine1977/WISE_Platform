@@ -172,9 +172,10 @@ describe("the stages of a log on its map", () => {
     expect(topOf(map, intake)).toBeLessThan(topOf(map, closure));
     expect(screen.getByRole("button", { name: "Show stages" })).toBeTruthy();
 
-    // The legend of the map names the stages beside the colours the library gave them.
-    await user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
-    expect(Array.from(map.querySelectorAll(".wf-legend__cat")).map((entry) => entry.textContent)).toEqual(["Intake", "Closure"]);
+    // The legend under the map names the stages beside the colours the library gave them, the colours the map draws them in.
+    const legend = document.querySelector<HTMLElement>(".map-legend")!;
+    await user.click(within(legend).getByRole("button", { name: "Show the whole legend" }));
+    expect(Array.from(legend.querySelectorAll(".wf-legend__cat")).map((entry) => entry.textContent)).toEqual(["Intake", "Closure"]);
     // The editor beside the map shows the same stages.
     expect(within(await openStages(user)).getByRole("combobox", { name: `Stage of “${closed}”` })).toHaveProperty("value", closure);
   });

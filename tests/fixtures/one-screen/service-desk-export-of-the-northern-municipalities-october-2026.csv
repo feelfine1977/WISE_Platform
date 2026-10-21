@@ -1,0 +1,43 @@
+Ticket,Status,At,Seq,Desk
+L-01,Received through the customer service portal and registered for triage,2026-10-01T08:00:00Z,1,Regional service desk for the northern municipalities
+L-01,Assigned to the second-level application support group for analysis,2026-10-01T09:00:00Z,2,Regional service desk for the northern municipalities
+L-01,Resolved by the application support group,2026-10-01T15:00:00Z,3,Regional service desk for the northern municipalities
+L-01,Closed after the requester confirmed the resolution,2026-10-02T08:00:00Z,4,Regional service desk for the northern municipalities
+L-02,Received through the customer service portal and registered for triage,2026-10-02T08:00:00Z,1,Central desk
+L-02,Assigned to the second-level application support group for analysis,2026-10-02T10:00:00Z,2,Central desk
+L-02,Resolved by the application support group,2026-10-02T12:00:00Z,3,Central desk
+L-02,Closed after the requester confirmed the resolution,2026-10-03T09:00:00Z,4,Central desk
+L-03,Received through the customer service portal and registered for triage,2026-10-03T08:00:00Z,1,Regional service desk for the northern municipalities
+L-03,Assigned to the second-level application support group for analysis,2026-10-03T09:00:00Z,2,Regional service desk for the northern municipalities
+L-03,Waiting for the requesting customer to supply missing information,2026-10-03T11:00:00Z,3,Regional service desk for the northern municipalities
+L-03,Assigned to the second-level application support group for analysis,2026-10-05T09:00:00Z,4,Regional service desk for the northern municipalities
+L-03,Resolved by the application support group,2026-10-05T16:00:00Z,5,Regional service desk for the northern municipalities
+L-03,Closed after the requester confirmed the resolution,2026-10-06T08:00:00Z,6,Regional service desk for the northern municipalities
+L-04,Received through the customer service portal and registered for triage,2026-10-04T08:00:00Z,1,Central desk
+L-04,Waiting for the requesting customer to supply missing information,2026-10-04T09:00:00Z,2,Central desk
+L-04,Assigned to the second-level application support group for analysis,2026-10-06T10:00:00Z,3,Central desk
+L-04,Resolved by the application support group,2026-10-06T14:00:00Z,4,Central desk
+L-04,Closed after the requester confirmed the resolution,2026-10-07T08:00:00Z,5,Central desk
+L-05,Received through the customer service portal and registered for triage,2026-10-05T08:00:00Z,1,Regional service desk for the northern municipalities
+L-05,Assigned to the second-level application support group for analysis,2026-10-05T08:30:00Z,2,Regional service desk for the northern municipalities
+L-05,Resolved by the application support group,2026-10-05T13:00:00Z,3,Regional service desk for the northern municipalities
+L-06,Received through the customer service portal and registered for triage,2026-10-06T08:00:00Z,1,Central desk
+L-06,Assigned to the second-level application support group for analysis,2026-10-06T09:00:00Z,2,Central desk
+L-06,Waiting for the requesting customer to supply missing information,2026-10-06T12:00:00Z,3,Central desk
+L-06,Resolved by the application support group,2026-10-08T10:00:00Z,4,Central desk
+L-06,Closed after the requester confirmed the resolution,2026-10-08T15:00:00Z,5,Central desk
+L-07,Received through the customer service portal and registered for triage,2026-10-07T08:00:00Z,1,Regional service desk for the northern municipalities
+L-07,Resolved by the application support group,2026-10-07T09:00:00Z,2,Regional service desk for the northern municipalities
+L-07,Closed after the requester confirmed the resolution,2026-10-07T17:00:00Z,3,Regional service desk for the northern municipalities
+L-08,Received through the customer service portal and registered for triage,2026-10-08T08:00:00Z,1,Central desk
+L-08,Assigned to the second-level application support group for analysis,2026-10-08T11:00:00Z,2,Central desk
+L-08,Resolved by the application support group,2026-10-08T18:00:00Z,3,Central desk
+L-08,Closed after the requester confirmed the resolution,2026-10-09T08:00:00Z,4,Central desk
+L-09,Received through the customer service portal and registered for triage,2026-10-09T08:00:00Z,1,Regional service desk for the northern municipalities
+L-09,Assigned to the second-level application support group for analysis,2026-10-09T09:00:00Z,2,Regional service desk for the northern municipalities
+L-09,Waiting for the requesting customer to supply missing information,2026-10-09T10:00:00Z,3,Regional service desk for the northern municipalities
+L-09,Assigned to the second-level application support group for analysis,2026-10-12T09:00:00Z,4,Regional service desk for the northern municipalities
+L-09,Resolved by the application support group,2026-10-12T12:00:00Z,5,Regional service desk for the northern municipalities
+L-09,Closed after the requester confirmed the resolution,2026-10-13T08:00:00Z,6,Regional service desk for the northern municipalities
+L-10,Received through the customer service portal and registered for triage,2026-10-10T08:00:00Z,1,Central desk
+L-10,Resolved by the application support group,2026-10-10T09:00:00Z,2,Central desk

@@ -375,6 +375,11 @@
 .chip-later { opacity: 0.75; border-style: dashed; }
 .trail-start { margin: 0; }
 .overlap-line { font-size: var(--font-size-small); }
+/* What all the steps keep, and beside it how steps combine, on demand. */
+.steps-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); min-width: 0; }
+.steps-summary p { margin: 0; }
+.steps-combination > summary { color: var(--color-ink-muted); font-size: var(--font-size-small); cursor: pointer; }
+.steps-combination[open] { display: grid; flex-basis: 100%; gap: var(--space-1); }
 
 /*
  * The map of the kept incidents: the library draws inside the frame, which gives it its height.
@@ -528,9 +533,27 @@
 .explorer .workbench-body[data-inspector="full"] .imported-inspector { grid-column: 1 / -1; grid-row: 1 / span 2; }
 .explorer .workbench-body[data-inspector="full"] .explorer-rail { display: none; }
 .explorer .selection-bar { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-1) var(--space-4); }
-.explorer .table-pane { padding: var(--space-4); }
+.explorer .table-pane,
+.explorer .variants-pane { padding: var(--space-4); }
+.explorer .variants-pane { display: grid; gap: var(--space-2); align-content: start; min-width: 0; }
+.explorer .variants-pane .view-panel { padding: 0; background: none; border: 0; border-radius: 0; }
 /* Aligned at the top: a chip taller than the head never moves Undo, Redo and Clear all down. */
 .explorer .selection-steps { flex: 1 1 0; align-self: flex-start; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-2) var(--space-4); }
+/*
+ * The scope stays two compact rows however many steps there are and however long their names: the trail is one line,
+ * each step in a few words on one line with what is kept after it, scrolled sideways when it is longer than the row; an
+ * opened step shows its whole wording and counts under its words. The row never takes more than its share of the
+ * window: past that it scrolls, and the map or the table keeps the rest.
+ */
+.explorer > .selection-bar { max-height: var(--size-scope-most); overflow-y: auto; }
+.explorer .trail { display: flex; flex: 1 1 100%; align-items: flex-start; gap: var(--space-2); min-width: 0; padding: var(--focus-width); overflow-x: auto; }
+.explorer .trail > .trail-start { flex: none; align-self: center; }
+.explorer .trail > .chips { flex: none; flex-wrap: nowrap; }
+.explorer .trail .chip { max-width: var(--size-chip-compact); padding: var(--space-1) var(--space-2); }
+.explorer .trail .chip > details:not([open]) > summary { flex-wrap: nowrap; align-items: baseline; }
+.explorer .trail .chip > details:not([open]) .chip-short { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.explorer .trail .chip-kept { flex: none; white-space: nowrap; }
+.explorer .steps-summary { flex: 1 1 100%; }
 .workbench .rail-toggle[aria-expanded="true"] { background: var(--color-tint); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
 /* In the row of the steps the heading names the row and is a label: it is not the title of a pane. */
 .workbench .selection-head .pane-title { color: var(--color-ink-muted); font-size: var(--font-size-label); font-weight: var(--font-weight-label); }
@@ -555,12 +578,14 @@
   .explorer { position: relative; height: calc(var(--size-viewport-height) - var(--size-app-bar)); min-height: 0; overflow: hidden; }
   .explorer .rail-body,
   .explorer .table-pane,
+  .explorer .variants-pane,
   .explorer .imported-inspector { position: relative; }
   .explorer .workbench-body { min-height: 0; }
   /* A long list in the side panel scrolls in the panel and does not stretch the row. */
   .explorer-rail { min-height: 0; }
   .explorer .rail-body,
   .explorer .table-pane,
+  .explorer .variants-pane,
   .explorer .imported-inspector { overflow: auto; }
   .explorer .main-column { grid-template-rows: minmax(0, 1fr); align-content: stretch; min-height: 0; }
   .explorer .table-pane { align-content: start; }

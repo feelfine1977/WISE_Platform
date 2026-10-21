@@ -117,7 +117,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
             return (
               <li key={JSON.stringify(result.predicate)} className="chip" aria-current={last ? "step" : undefined}>
                 <details>
-                  <summary>
+                  <summary title={wording}>
                     <span className="chip-short">{index + 1}. {shortStepWording(result.predicate)}</span>
                     <span className="chip-kept">{keptLine(result.kept_after_step?.case_count)}</span>
                   </summary>
@@ -184,11 +184,17 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
         </ul>
       )}
       </div>
+      {/* What all the steps keep in one line; how steps combine, and that each is counted on its own, on demand beside it. */}
       {shown && results.length > 0 && (
-        <p className="combined-line">{combinedLine(shown.answer.parent, shown.answer.kept, shown.answer.removed, shown.answer.unevaluable)}</p>
+        <div className="steps-summary">
+          <p className="combined-line">{combinedLine(shown.answer.parent, shown.answer.kept, shown.answer.removed, shown.answer.unevaluable)}</p>
+          <details className="steps-combination">
+            <summary>How steps combine</summary>
+            <p className="muted combination-line">{COMBINATION}</p>
+            {results.length > 1 && <p className="muted overlap-line">{overlapLine(shown.answer.parent)}</p>}
+          </details>
+        </div>
       )}
-      {shown && results.length > 0 && <p className="muted combination-line">{COMBINATION}</p>}
-      {shown && results.length > 1 && <p className="muted overlap-line">{overlapLine(shown.answer.parent)}</p>}
       {replacement && (
         <ReplacementNotice
           replacement={replacement}

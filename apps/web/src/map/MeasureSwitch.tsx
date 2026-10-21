@@ -13,8 +13,8 @@ const MEASURES: readonly [Measure, string][] = [
 
 /**
  * What every number of the map counts, as a switch of two parts at the start of the map's row: the
- * incidents, or the times. It changes every number on the map, so it stands first. The map's own
- * legend offers the same choice; both read and set the one the map view holds.
+ * incidents, or the times. It changes every number on the map, so it stands first. The legend under the map
+ * offers the same choice; both read and set the one the map view holds.
  */
 export function MeasureSwitch({ measure, onMeasure }: MeasureSwitchProps) {
   return (

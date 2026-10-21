@@ -91,11 +91,14 @@ const numberLine = (map: HTMLElement, label: keyof typeof nodeIds) =>
     .map((part) => part.textContent)
     .join(" ");
 
+/** The legend of the map, which stands under its canvas (#54). */
+const legendOf = () => document.querySelector<HTMLElement>(".map-legend")!;
+
 /** The measure the map's legend names: its first sentence while the legend is one line, the whole sentence in the whole legend. */
-const legendMeasure = (map: HTMLElement) => map.querySelector(".wf-legend__measure")?.textContent;
+const legendMeasure = (_map: HTMLElement) => legendOf().querySelector(".wf-legend__measure")?.textContent;
 
 /** The switch between the measures, which the map library offers in its whole legend. */
-const measureSwitch = (map: HTMLElement) => within(within(map).getByRole("group", { name: "Measure" })).getAllByRole("button");
+const measureSwitch = (_map: HTMLElement) => within(within(legendOf()).getByRole("group", { name: "Measure" })).getAllByRole("button");
 const pressed = (buttons: HTMLElement[]) => buttons.map((button) => [button.textContent, button.getAttribute("aria-pressed")]);
 
 function chipTexts() {
@@ -323,9 +326,10 @@ describe("the map of the kept incidents", () => {
     expect(legendMeasure(map)).toBe("Frequency: cases.");
     expect(numberLine(map, opened)).toBe("1 · 50 %");
     expect(numberLine(map, closed)).toBe("1 · 50 %");
-    // The switch is the map library's own and belongs to its whole legend.
-    expect(within(map).queryByRole("group", { name: "Measure" })).toBeNull();
-    await app.user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
+    // The switch is the map library's own and belongs to its whole legend, which stands under the canvas and not on it.
+    expect(within(legendOf()).queryByRole("group", { name: "Measure" })).toBeNull();
+    expect(map.querySelector(".wf-legend")).toBeNull();
+    await app.user.click(within(legendOf()).getByRole("button", { name: "Show the whole legend" }));
     expect(pressed(measureSwitch(map))).toEqual([
       ["Frequency", "true"],
       ["Shortfall", "false"],
@@ -337,8 +341,8 @@ describe("the map of the kept incidents", () => {
     const app = await renderInvestigation();
     const map = await openMap(app, [opened, closed]);
     const placed = nodeOf(map, opened).style.transform;
-    await app.user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
-    await app.user.click(within(map).getByRole("button", { name: "Performance" }));
+    await app.user.click(within(legendOf()).getByRole("button", { name: "Show the whole legend" }));
+    await app.user.click(within(legendOf()).getByRole("button", { name: "Performance" }));
 
     // The 25.5 supplied hours until the next event, as the map library writes hours.
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
@@ -361,7 +365,7 @@ describe("the map of the kept incidents", () => {
     expect(document.querySelector(".activity-times-rows dd")?.textContent).toBe("median 26 h · mean 26 h · 1 passage of 1 record");
     expect(screen.getByRole("button", { name: "Keep incidents that end with it" })).toBeTruthy();
 
-    await app.user.click(within(map).getByRole("button", { name: "Frequency" }));
+    await app.user.click(within(legendOf()).getByRole("button", { name: "Frequency" }));
     await waitFor(() => expect(numberLine(map, opened)).toBe("1 · 50 %"));
     expect(numberLine(map, closed)).toBe("1 · 50 %");
     expect(pressed(measureSwitch(map))[0]).toEqual(["Frequency", "true"]);
@@ -370,8 +374,8 @@ describe("the map of the kept incidents", () => {
   it("keeps the chosen measure on the map of another selection", async () => {
     const app = await renderInvestigation();
     const map = await openMap(app, [opened]);
-    await app.user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
-    await app.user.click(within(map).getByRole("button", { name: "Performance" }));
+    await app.user.click(within(legendOf()).getByRole("button", { name: "Show the whole legend" }));
+    await app.user.click(within(legendOf()).getByRole("button", { name: "Performance" }));
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
 
     app.coordinator.addStep(contains(opened));
@@ -386,8 +390,8 @@ describe("the map of the kept incidents", () => {
   it("keeps the chosen measure when the map is arranged another way", async () => {
     const app = await renderInvestigation(undefined, false);
     const map = await openMap(app, [opened]);
-    await app.user.click(within(map).getByRole("button", { name: "Show the whole legend" }));
-    await app.user.click(within(map).getByRole("button", { name: "Performance" }));
+    await app.user.click(within(legendOf()).getByRole("button", { name: "Show the whole legend" }));
+    await app.user.click(within(legendOf()).getByRole("button", { name: "Performance" }));
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
 
     // The map is taken away while every incident of the parent is arranged, and drawn again after.
@@ -396,7 +400,8 @@ describe("the map of the kept incidents", () => {
     await waitFor(() => {
       const again = screen.getByLabelText("Process map of the kept incidents");
       expect(numberLine(again, opened)).toBe("26 h to next · 50 %");
-      expect(legendMeasure(again)).toBe("Performance: median wait between activities (h, d).");
+      // The legend stands under the canvas: it is not drawn again with the map, and stays shown whole as it was left.
+      expect(legendMeasure(again)).toBe("Performance: median wait between activities (h, d). Colour = median lag. Width = cases.");
     });
   });
 
@@ -413,7 +418,7 @@ describe("the map of the kept incidents", () => {
     expect(caption.textContent).toContain("1 incident with 1 record is not evaluable for paths; 0 records have no activity label.");
     expect(caption.textContent).toContain("Observed labelled starts and ends");
     expect(caption.textContent).toContain("Lag: the median of elapsed hours between the two records of a path.");
-    expect(caption.textContent).toContain("Measures: the legend on the map, shown whole, switches what the map writes.");
+    expect(caption.textContent).toContain("Measures: the legend under the map, shown whole, switches what the map writes.");
     expect(caption.textContent).toContain("Shortfall has no values here: no expectation results are supplied to the map.");
     expect(about.querySelector(".map-library")?.textContent).toBe("The map is drawn with an unreleased state of the map library (wise-flow 0.3.5, a local packaging candidate).");
     // Every coverage figure is listed under its heading, without a further click.

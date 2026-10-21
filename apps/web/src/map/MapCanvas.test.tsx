@@ -47,7 +47,7 @@ describe("the place of the detail controls", () => {
     expect(within(controls()!).getByRole("button", { name: "Table view" }).getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("is the map library's own panel inside the map once it draws so much that it draws on its Canvas, and above the canvas again below that", () => {
+  it("stays above the canvas also once the map draws so much that it draws on its Canvas, which then reports what it draws", () => {
     const graph = crowdedGraph();
     render(<MapView shown={shownWhole(graph)} parentGraph={graph} onStep={() => undefined} />);
     // 50 activities and 2,450 paths open on the 20 most frequent activities and 30 paths.
@@ -66,16 +66,15 @@ describe("the place of the detail controls", () => {
     const tools = () => within(screen.getByRole("group", { name: "Map tools" }));
 
     move("Paths", 1946);
-    expect(asked().controls).toBe(true);
-    expect(controls()).toBeNull();
-    // The row above the map then holds no detail controls: only what stays in view of the incidents not evaluable for paths, and the tools, which do what they do.
+    // Drawn on the Canvas, the map is still given no panel of its own (#54): the controls stay above it, and the map draws as
+    // many of the selected paths as its zoom allows and reports them, which the controls then say.
+    expect(asked().controls).toBe(false);
+    expect(controls()).not.toBeNull();
+    expect(asked().edgeBudget).toBe("adaptive");
+    expect(asked().onEdgesShown).toBeTypeOf("function");
+    act(() => asked().onEdgesShown?.({ edges: ["a", "b", "c"], total: 1949 }));
+    expect(controls()!.textContent).toContain("1,949");
     expect(screen.getByRole("group", { name: "Map tools" }).parentElement?.className).toBe("map-detail");
-    expect(Array.from(screen.getByRole("group", { name: "Map tools" }).parentElement!.children, (part) => part.className)).toEqual([
-      "measure-switch",
-      "map-arrangement",
-      "map-basis",
-      "icon-toolbar map-toolbar",
-    ]);
     fireEvent.click(tools().getByRole("button", { name: "Overview of the whole map" }));
     expect(asked().minimap).toBe(true);
     fireEvent.click(tools().getByRole("button", { name: "Overview of the whole map" }));

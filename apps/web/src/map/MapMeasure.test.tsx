@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { ProcessMap } from "wise-flow/react";
@@ -46,12 +46,15 @@ describe("the measure the map is asked for", () => {
     expect(asked().measure).toBe("frequency");
     // Over the library's own style of the counts: only the widths of the paths.
     expect(asked().style).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
-    // The map offers its measures only to a host that listens for the choice.
-    expect(asked().onMeasureChange).toBeTypeOf("function");
-    expect(asked().legend).toBe(true);
+    // The canvas is the map's alone (#54): its detail controls, its legend and the list of the paths of an activity stand
+    // outside it, and the measure is chosen there.
+    expect(asked().controls).toBe(false);
+    expect(asked().legend).toBe(false);
+    expect(asked().pathList).toBe(false);
+    expect(asked().onMeasureChange).toBeUndefined();
     const counted = theRest(asked());
 
-    act(() => asked().onMeasureChange?.("performance"));
+    act(() => screen.getByRole("button", { name: "Time on the map" }).click());
     expect(asked().measure).toBe("performance");
     // Over the library's own performance style: the same widths, a dash where no time until the next event is supplied, and the lag in classes (#86).
     expect(asked().style).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] }, nodeLine: { metric: "medianNextHours", missing: "dash" }, edgeColor: { bins: [24, 168] } });
@@ -60,8 +63,27 @@ describe("the measure the map is asked for", () => {
     expect(asked().graph).toBe(counted.graph);
     expect(asked().layoutResetKey).toBe(counted.layoutResetKey);
 
-    act(() => asked().onMeasureChange?.("frequency"));
+    act(() => screen.getByRole("button", { name: "Incidents on the map" }).click());
     expect(asked().measure).toBe("frequency");
     expect(asked().style).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
+  });
+});
+
+describe("the paths of an activity asked for on the map", () => {
+  it("are listed beside the map with the activity's steps and times, not on the canvas", () => {
+    const graph = suppliedGraph(["A-1", "B-2"]);
+    render(<MapView shown={{ revision: 1, steps: [], answer: selectionAnswer(request, everyIncident), graph }} parentGraph={graph} onStep={() => undefined} />);
+    expect(asked().pathList).toBe(false);
+    const activity = graph.nodes[0];
+    act(() => asked().onFocusChange?.(activity.id));
+    // The activity is selected: the panel beside the map is shown, with its paths in and out.
+    const panel = document.querySelector(".map-element")!;
+    expect(panel.classList.contains("visually-hidden")).toBe(false);
+    expect(asked().selection).toEqual({ nodes: [activity.id], edges: [], groups: [] });
+    expect(screen.getAllByRole("region", { name: new RegExp(`^Paths (in|out) of ${activity.label}$`) }).length).toBeGreaterThan(0);
+    // The paths between two activities select the path between them.
+    const edge = graph.edges[0];
+    act(() => asked().onFocusChange?.([edge.source, edge.target]));
+    expect(asked().selection).toEqual({ nodes: [], edges: [edge.id], groups: [] });
   });
 });

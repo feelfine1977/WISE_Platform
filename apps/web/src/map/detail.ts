@@ -22,9 +22,9 @@ export interface MapDetail {
   hasStages: boolean;
   /**
    * Whether the map library draws this graph on its Canvas. There it decides by the zoom and by
-   * the time a frame takes how many of the selected paths it draws, and says so in its own detail
-   * panel; that number cannot be read from outside the map. Drawn as elements, the map is told to
-   * draw every path its detail selects.
+   * the time a frame takes how many of the selected paths it draws, and reports them, so that the
+   * detail controls above the map say it. Drawn as elements, the map is told to draw every path its
+   * detail selects.
    */
   onCanvas: boolean;
 }

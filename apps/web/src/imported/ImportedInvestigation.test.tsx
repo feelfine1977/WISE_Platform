@@ -56,10 +56,15 @@ describe("the investigation of an imported preparation", () => {
     // The data row ends with the button of what there is to know about the data.
     await app.user.tab();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "About this data" }));
+    // Then the keys of every action, the guide of this build (#54).
+    await app.user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Keys" }));
     await app.user.tab();
     expect(focusedText()).toBe("Map");
     await app.user.tab();
     expect(focusedText()).toBe("Incidents");
+    await app.user.tab();
+    expect(focusedText()).toBe("Variants");
     await app.user.tab();
     expect(focusedText()).toBe("Paths");
     await app.user.tab();
@@ -112,8 +117,8 @@ describe("the investigation of an imported preparation", () => {
     const app = renderInvestigation();
     await deliver(() => app.populations[0].reply({ ok: true, answer: populationAnswer(app.populations[0].request, caseSummaries(40000)) }));
     const scroller = screen.getByRole("table", { name: "Kept incidents" }).parentElement!;
-    // Data and the button about the data, then the four views, the bar of steps, "+ Add step", the switch of the side panel, then the table.
-    for (let stop = 0; stop < 10; stop += 1) await app.user.tab();
+    // Data, the button about the data and the keys, then the five views, the bar of steps, "+ Add step", the switch of the side panel, then the table.
+    for (let stop = 0; stop < 12; stop += 1) await app.user.tab();
     await app.user.keyboard("{End}");
     expect(focusedText()).toBe("INC-39999");
 

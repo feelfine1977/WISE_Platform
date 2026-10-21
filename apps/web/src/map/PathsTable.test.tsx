@@ -59,9 +59,10 @@ const pressed = (name: string) => viewButton(name).getAttribute("aria-pressed");
 const offered = () => Array.from(document.querySelectorAll(".map-choices button"), (button) => button.textContent);
 
 describe("the list of every path in the investigation", () => {
-  it("is the third view of the centre, lists the supplied paths and flows, and takes the steps the map takes", async () => {
+  it("is a view of the centre beside the map, lists the supplied paths and flows, and takes the steps the map takes", async () => {
     const app = await renderInvestigation();
-    expect(within(screen.getByRole("group", { name: "View" })).getAllByRole("button").map((button) => button.textContent)).toEqual(["Map", "Incidents", "Paths", "Matrix"]);
+    // The variants of this harness are not answered: their button says so, as a view that cannot be shown does.
+    expect(within(screen.getByRole("group", { name: "View" })).getAllByRole("button").map((button) => button.textContent)).toEqual(["Map", "Incidents", "Variants · not shown", "Paths", "Matrix"]);
 
     await app.user.click(viewButton("Paths"));
     expect([pressed("Map"), pressed("Incidents"), pressed("Paths"), pressed("Matrix")]).toEqual(["false", "false", "true", "false"]);

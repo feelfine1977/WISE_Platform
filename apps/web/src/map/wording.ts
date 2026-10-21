@@ -307,7 +307,7 @@ export function overlapLine(parent: PopulationSupport): string {
  * library's, as its legend shows them. Every number is a supplied one.
  */
 export const MEASURES_LINE =
-  "Measures: the legend on the map, shown whole, switches what the map writes. " +
+  "Measures: the legend under the map, shown whole, switches what the map writes. " +
   "Frequency: the incidents on every path and activity. " +
   "Performance: before the incidents of a path its median lag, and on an activity the median time until the next event, with “–” where none is available; " +
   "the time since the event before is said under the map for a selected activity. " +

@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { abstract, type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions } from "wise-flow";
+import { abstract, type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, type Focus, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions, type ShownEdges } from "wise-flow";
 import { emptySelection, ProcessMap, type Selection } from "wise-flow/react";
 // The page has unlayered base rules, so the library's styles come unlayered too, after React Flow's.
 import "wise-flow/react-flow.css";
@@ -23,6 +23,7 @@ import { fitToFrame } from "./FitToFrame";
 import { flowCoverage, leastFlowIncidents, PATH_RANK, rankedDetail, shownActivities, showsStageNodes, stageOrder, toFlowGraph } from "./graph";
 import { MAP_THEME, nodeSize } from "./look";
 import "./look.css";
+import { MapLegend } from "./MapLegend";
 import { MapToolbar } from "./MapToolbar";
 import { MeasureSwitch } from "./MeasureSwitch";
 import { askedFor, OPENING_MEASURE } from "./measures";
@@ -196,8 +197,8 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
   /**
    * What the map draws of that graph at this detail, and what its detail controls say, computed as
    * the map library computes them. The controls stand above the canvas, where they take no room
-   * from the map. On the library's Canvas they stay the library's own panel inside the map: there
-   * the panel also says how many of the selected paths are drawn at the zoom, which only the map knows.
+   * from the map, also when the library draws on its Canvas: there the map reports how many of the
+   * selected paths it draws at the zoom, and the controls say it.
    */
   const detailShown = useMemo(() => mapDetail(graph, ranked), [graph, ranked]);
   // The way the map runs is held here, so that the map and the arrangement of the whole parent run the same way.
@@ -205,8 +206,9 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
   // Start stands first and End last on what the map draws, as they do in the arrangement of the whole parent, and every node has the size it has there.
   const mapLayout = useMemo(() => ({ ...mapArrangement(detailShown.drawn, direction), nodeSize }), [detailShown.drawn, direction]);
   const listed = showing === "paths";
-  // Over the list the controls are always above: no map is drawn there that would know more.
-  const controlsAbove = listed || !detailShown.onCanvas;
+  /** The paths the Canvas map draws at its zoom while it withholds some of those the detail selects; none while it draws them all. */
+  const [edgesShown, setEdgesShown] = useState<ShownEdges | undefined>(undefined);
+  useEffect(() => setEdgesShown(undefined), [detailShown]);
   /** Whether the map is shown as the map library's table of its activities and paths; the detail controls switch it. */
   const [view, setView] = useState<"map" | "table">("map");
   /**
@@ -262,6 +264,22 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
   useEffect(() => setSelection(emptySelection), [shown.graph]);
 
   const element = selectedElement(shown.graph, selection);
+  /**
+   * The paths into and out of an activity, asked for in its menu, are listed beside the map with the activity's steps and
+   * times: the activity is selected. The paths between two activities select the path between them, where there is one.
+   */
+  const focusPaths = useCallback(
+    (focus: Focus | undefined) => {
+      if (focus === undefined) return;
+      if (typeof focus === "string") {
+        if (shown.graph.nodes.some((node) => node.id === focus)) setSelection({ nodes: [focus], edges: [], groups: [] });
+        return;
+      }
+      const edge = shown.graph.edges.find((item) => item.source === focus[0] && item.target === focus[1]);
+      if (edge) setSelection({ nodes: [], edges: [edge.id], groups: [] });
+    },
+    [shown.graph],
+  );
   /** Draws a path of the list on the map, beyond the detail when the detail leaves it out, selected, and shows the map. */
   const drawPath = (id: string) => {
     if (!detailShown.drawn.edges.some((edge) => edge.id === id)) setRevealed((current) => (current.includes(id) ? current : [...current, id]));
@@ -361,25 +379,18 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
       data-beside={editingStages ? "stages" : element !== null ? "element" : aside !== undefined && !listed ? "aside" : "none"}
     >
       <div className="map-main">
-        {controlsAbove ? (
-          // The switch to the map library's table belongs to the map; over the list of every path it is left out.
-          <DetailStrip
-            detail={ranked}
-            shown={detailShown}
-            onChange={changeDetail}
-            view={listed ? undefined : view}
-            onViewChange={listed ? undefined : setView}
-            lead={listed ? undefined : <MeasureSwitch measure={measure} onMeasure={setMeasure} />}
-          >
-            {tools}
-          </DetailStrip>
-        ) : (
-          // The map holds its detail controls itself: the row is the tools' alone.
-          <div className="map-detail">
-            <MeasureSwitch measure={measure} onMeasure={setMeasure} />
-            {tools}
-          </div>
-        )}
+        {/* The switch to the map library's table belongs to the map; over the list of every path it is left out. */}
+        <DetailStrip
+          detail={ranked}
+          shown={detailShown}
+          onChange={changeDetail}
+          view={listed ? undefined : view}
+          onViewChange={listed ? undefined : setView}
+          lead={listed ? undefined : <MeasureSwitch measure={measure} onMeasure={setMeasure} />}
+          drawn={!listed && edgesShown ? { selected: edgesShown.total, drawn: edgesShown.edges.length } : undefined}
+        >
+          {tools}
+        </DetailStrip>
         {listed ? (
           <PathsTable graph={shown.graph} drawn={detailShown.drawn} selection={selection} onSelect={setSelection} />
         ) : (
@@ -398,14 +409,14 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 onViewChange={setView}
                 // Drawn on the Canvas from the same number of elements as the detail controls reckon with.
                 canvasThreshold={CANVAS_FROM}
-                // Drawn as elements, the map draws every path its detail selects, which is what the controls above it say.
-                edgeBudget={controlsAbove ? "all" : "adaptive"}
+                // Drawn as elements, the map draws every path its detail selects, which is what the controls above it say. On the
+                // Canvas it draws as many as the zoom allows and reports them, and the controls above say how many.
+                edgeBudget={detailShown.onCanvas ? "adaptive" : "all"}
+                onEdgesShown={setEdgesShown}
                 activityLabels={activityLabels}
                 theme={MAP_THEME}
                 // The chosen measure, with what is laid over the library's style of it.
                 {...asked}
-                // Listening for the choice is what makes the map's whole legend offer the measures.
-                onMeasureChange={setMeasure}
                 // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
                 // and a selection keeps that view, so nothing moves on screen.
                 fitView={inPlace ? shown.steps.length === 0 : true}
@@ -413,11 +424,13 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}:${direction}`}
                 // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
                 lod={LABELS_FROM}
-                // The library's own detail panel inside the map, only where the controls are not above it.
-                controls={!controlsAbove}
-                legend
+                // The detail controls stand above the canvas and the legend under it; the paths of an activity are listed beside the
+                // map, where the activity's own steps and times are, so the canvas is the map's alone.
+                controls={false}
+                legend={false}
                 minimap={overview}
-                pathList
+                pathList={false}
+                onFocusChange={focusPaths}
                 nodesDraggable
                 locale="en"
                 selection={selection}
@@ -431,6 +444,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
             )}
           </div>
         )}
+        {!listed && <MapLegend graph={detailShown.drawn} measure={asked.measure} over={asked.style} theme={MAP_THEME} onMeasure={setMeasure} />}
       </div>
       {editingStages && (
         <div className="map-stages-panel">
