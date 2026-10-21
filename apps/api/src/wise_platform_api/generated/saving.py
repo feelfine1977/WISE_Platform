@@ -269,34 +269,17 @@ class TableSort(BaseModel):
     direction: Literal['ascending', 'descending']
 
 
-class PresentationRecovery(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    active_view: Literal[
-        'incidents', 'process_map', 'context', 'variants', 'comparison'
-    ]
-    table_sorts: list[TableSort]
-    flow_artifact_sha256: constr(pattern=r'^[a-f0-9]{64}$') | None
-    graph_positions: FlowPositions | None
-
-
 class RecoveryWarning(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
     code: Literal[
-        'presentation_unavailable', 'presentation_invalid', 'layout_version_mismatch'
+        'presentation_unavailable',
+        'presentation_invalid',
+        'layout_version_mismatch',
+        'stages_not_applied',
     ]
     message: constr(min_length=1)
-
-
-class RecoveryAnswer(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    presentation_state: PresentationRecovery | None
-    warnings: list[RecoveryWarning]
 
 
 class InvestigationId1(RootModel[None]):
@@ -911,6 +894,57 @@ class RefreshReviewItem(BaseModel):
     after: str | None
 
 
+class PresentationStage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: constr(pattern=r'^stage:[1-9][0-9]{0,14}$')
+    name: constr(min_length=1, max_length=200)
+
+
+class StageOrigin1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['manual']
+
+
+class StageOrigin2(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['proposed']
+    column_index: ColumnIndex
+    value: constr(min_length=1)
+
+
+class StageOrigin(RootModel[StageOrigin1 | StageOrigin2]):
+    root: StageOrigin1 | StageOrigin2 = Field(
+        ...,
+        description="Where an activity's stage came from: set by hand, or taken by the analyst from a value of the phase column proposed for the activity.",
+        title='StageOrigin',
+    )
+
+
+class StageAssignment(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    activity: constr(min_length=1)
+    stage_id: constr(pattern=r'^stage:[1-9][0-9]{0,14}$')
+    origin: StageOrigin
+
+
+class StagesPresentation(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    preparation_id: PreparationId
+    phase_column_index: ColumnIndex | None
+    stages: list[PresentationStage] = Field(..., max_length=200)
+    assignments: list[StageAssignment] = Field(..., max_length=20000)
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -974,6 +1008,27 @@ class EvidenceBookmark(BaseModel):
     case_id: CaseId
     row_ids: list[RowId]
     note: constr(min_length=0)
+
+
+class PresentationRecovery(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    active_view: Literal[
+        'incidents', 'process_map', 'context', 'variants', 'comparison'
+    ]
+    table_sorts: list[TableSort]
+    flow_artifact_sha256: constr(pattern=r'^[a-f0-9]{64}$') | None
+    graph_positions: FlowPositions | None
+    stages: StagesPresentation | None = None
+
+
+class RecoveryAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    presentation_state: PresentationRecovery | None
+    warnings: list[RecoveryWarning]
 
 
 class SavedInvestigationSummary(BaseModel):

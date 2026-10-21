@@ -77,6 +77,18 @@ export type PeriodComparisonDefinition = UtcPeriodComparisonDefinition | WallPer
 export type RowId = string;
 export type ScoreRunId = string;
 export type CalibrationId = string;
+/**
+ * Where an activity's stage came from: set by hand, or taken by the analyst from a value of the phase column proposed for the activity.
+ */
+export type StageOrigin =
+  | {
+      kind: "manual";
+    }
+  | {
+      kind: "proposed";
+      column_index: ColumnIndex;
+      value: string;
+    };
 export type Bpic19ProfileKeepGroup =
   | FlowKeepGroup
   | InvariantSubtypeKeepGroup
@@ -386,6 +398,7 @@ export interface PresentationRecovery {
   table_sorts: TableSort[];
   flow_artifact_sha256: string | null;
   graph_positions: FlowPositions | null;
+  stages?: StagesPresentation;
 }
 export interface TableSort {
   table: "population" | "evidence";
@@ -422,6 +435,30 @@ export interface PositionEdgeRoute {
 export interface PositionPoint {
   x: number;
   y: number;
+}
+/**
+ * The stages of the log the investigation reads, as the analyst defined them: presentation only, bound to the preparation they were defined for. They group, order and colour activities on the map and change no incident, step or count.
+ */
+export interface StagesPresentation {
+  preparation_id: PreparationId;
+  phase_column_index: ColumnIndex | null;
+  /**
+   * @maxItems 200
+   */
+  stages: PresentationStage[];
+  /**
+   * @maxItems 20000
+   */
+  assignments: StageAssignment[];
+}
+export interface PresentationStage {
+  id: string;
+  name: string;
+}
+export interface StageAssignment {
+  activity: string;
+  stage_id: string;
+  origin: StageOrigin;
 }
 export interface Bpic19Pipeline {
   schema_version: 1;
@@ -680,7 +717,7 @@ export interface RecoveryAnswer {
   warnings: RecoveryWarning[];
 }
 export interface RecoveryWarning {
-  code: "presentation_unavailable" | "presentation_invalid" | "layout_version_mismatch";
+  code: "presentation_unavailable" | "presentation_invalid" | "layout_version_mismatch" | "stages_not_applied";
   message: string;
 }
 export interface Bpic19PipelineManifest {

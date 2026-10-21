@@ -123,7 +123,7 @@ describe("the editor of the stages beside the map", () => {
     const panel = view().querySelector<HTMLElement>(".map-stages-panel")!;
     expect(document.activeElement).toBe(within(panel).getByRole("heading", { name: "Stages of this log" }));
     expect(within(panel).getByRole("region", { name: "Stages of this log" })).toBeTruthy();
-    expect(within(panel).getByText("Stages stay in this browser and are not saved with the investigation")).toBeTruthy();
+    expect(within(panel).getByText("Stages stay in this browser for this reading and are saved with the investigation")).toBeTruthy();
     expect(within(panel).getByRole("table", { name: "Activities and their stage" })).toBeTruthy();
 
     await user.click(within(panel).getByRole("button", { name: "Close the editor of the stages" }));

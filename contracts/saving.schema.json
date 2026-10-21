@@ -1123,6 +1123,9 @@
               "type": "null"
             }
           ]
+        },
+        "stages": {
+          "$ref": "#/$defs/StagesPresentation"
         }
       },
       "required": [
@@ -1142,7 +1145,8 @@
           "enum": [
             "presentation_unavailable",
             "presentation_invalid",
-            "layout_version_mismatch"
+            "layout_version_mismatch",
+            "stages_not_applied"
           ]
         },
         "message": {
@@ -3953,6 +3957,131 @@
         "parent_case_ids",
         "restored_selection",
         "review"
+      ]
+    },
+    "PresentationStage": {
+      "title": "PresentationStage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^stage:[1-9][0-9]{0,14}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "StageOrigin": {
+      "title": "StageOrigin",
+      "description": "Where an activity's stage came from: set by hand, or taken by the analyst from a value of the phase column proposed for the activity.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "manual"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "proposed"
+            },
+            "column_index": {
+              "$ref": "#/$defs/ColumnIndex"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "column_index",
+            "value"
+          ]
+        }
+      ]
+    },
+    "StageAssignment": {
+      "title": "StageAssignment",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stage_id": {
+          "type": "string",
+          "pattern": "^stage:[1-9][0-9]{0,14}$"
+        },
+        "origin": {
+          "$ref": "#/$defs/StageOrigin"
+        }
+      },
+      "required": [
+        "activity",
+        "stage_id",
+        "origin"
+      ]
+    },
+    "StagesPresentation": {
+      "title": "StagesPresentation",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The stages of the log the investigation reads, as the analyst defined them: presentation only, bound to the preparation they were defined for. They group, order and colour activities on the map and change no incident, step or count.",
+      "properties": {
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "phase_column_index": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ColumnIndex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PresentationStage"
+          },
+          "maxItems": 200
+        },
+        "assignments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StageAssignment"
+          },
+          "maxItems": 20000
+        }
+      },
+      "required": [
+        "preparation_id",
+        "phase_column_index",
+        "stages",
+        "assignments"
       ]
     }
   }

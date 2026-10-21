@@ -1,3 +1,5 @@
+import { browserStages, type StageStore } from "../stages/store";
+import { fromPresentation, toPresentation } from "../stages/definitions";
 import type { WorkspaceId } from "../generated/imports";
 import { sameJson } from "../data/coordinator";
 import type {
@@ -5,6 +7,8 @@ import type {
   ListSavedAnswer,
   ListSavedRequest,
   PresentationRecovery,
+  RecoveryAnswer,
+  SavedInvestigationContent,
   ReopenInvestigationAnswer,
   ReopenInvestigationRequest,
   RefreshInvestigationAnswer,
@@ -177,6 +181,8 @@ export class SavingCoordinator {
     private readonly scores?: ScoreSource,
     private readonly pipeline?: PipelineSource,
     private readonly prepared?: PreparedAssessmentSource,
+    /** The stages of each reading, which an investigation is saved and reopened with. */
+    private readonly stages: StageStore = browserStages,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -290,11 +296,15 @@ export class SavingCoordinator {
     const shown = shownSelection(selection);
     if (investigation.replacement?.phase === "running" || population.phase !== "ready" || selection.phase !== "ready" || shown === null || name.trim() === "") return;
     const { requestId, revision, signal } = this.issue("save", "save");
+    // The stages of this reading are saved with the investigation, bound to its preparation; a reading without stages saves none.
+    const preparationId = population.answer.identity.preparation_id;
+    const stages = this.stages.stateOf({ workspaceId: population.answer.workspace_id, preparationId }).definitions;
     const presentation: PresentationRecovery = {
       active_view: view === "map" ? "process_map" : "incidents",
       table_sorts: [],
       flow_artifact_sha256: null,
       graph_positions: null,
+      ...(stages.stages.length > 0 ? { stages: toPresentation(stages, preparationId) } : {}),
     };
     // What the saved revision holds is carried only on its own reading: a question applied to another reading is compared and scored there anew.
     const sameReading = saved !== null && sameIdentity(saved.content.base_identity, population.answer.identity);
@@ -605,12 +615,28 @@ export class SavingCoordinator {
       binding: { investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content },
       view: recovery.presentation_state?.active_view === "process_map" ? "map" : "incidents",
     });
+    this.restoreStages(request.workspace_id, content, recovery);
     this.restoreWhenAccepted(request.workspace_id, revision, shownBefore);
     this.rememberExportReceipt(checked.answer);
     // A draft written for this investigation, for example before a conflict, stays for its latest revision.
     const form = this.state.form && this.state.form.question === revision.investigation_id ? this.state.form : null;
     this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" }, refresh: { phase: "idle" }, form });
     return true;
+  }
+
+  /**
+   * The stages saved with a reopened investigation are shown again for its reading and said to be. Stages the local
+   * service left out, or that name another preparation than the investigation's, are not applied, and that is said too.
+   */
+  private restoreStages(workspaceId: string, content: SavedInvestigationContent, recovery: RecoveryAnswer): void {
+    const reading = { workspaceId, preparationId: content.base_identity.preparation_id };
+    const left = recovery.warnings.find((warning) => warning.code === "stages_not_applied");
+    const saved = recovery.presentation_state?.stages;
+    if (left) this.stages.restore(reading, null, { kind: "not_applied", investigation: content.name, message: left.message });
+    else if (saved && saved.preparation_id !== reading.preparationId) {
+      this.stages.restore(reading, null, { kind: "not_applied", investigation: content.name,
+        message: "The stages saved with this investigation were defined for another reading of the source; they were not applied." });
+    } else if (saved) this.stages.restore(reading, fromPresentation(saved), { kind: "restored", investigation: content.name });
   }
 
   private issue(kind: keyof SavingState, prefix: string): { requestId: string; revision: number; signal: AbortSignal } {

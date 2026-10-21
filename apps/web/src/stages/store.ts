@@ -10,8 +10,8 @@ export interface StagedReading {
 
 /**
  * Where the stages of a reading are kept on this computer, so that a refresh and a restart show
- * them again. A convenience of this browser and nothing more: the stages are not part of a saved
- * investigation, and the local service does not know them.
+ * them again. Saving an investigation saves its stages with it, and reopening it brings them back
+ * for its reading; between the two the browser keeps the stages last shown for each reading.
  */
 export interface StageMemory {
   /** The stages kept for the reading, none where nothing readable is kept; null where nothing can be kept here. */
@@ -60,7 +60,14 @@ export interface StagesState {
   kept: boolean;
   /** How often the stages were changed on this page; a map arranged for earlier stages is arranged anew. */
   revision: number;
+  /** What a reopened investigation said of its stages, until the stages are changed: from where they came, or why they were not applied. */
+  notice?: StagesNotice;
 }
+
+/** What reopening an investigation did with the stages saved with it. */
+export type StagesNotice =
+  | { kind: "restored"; investigation: string }
+  | { kind: "not_applied"; investigation: string; message: string };
 
 /**
  * The stages of the readings shown on this page. The editor changes them and the map draws them,
@@ -95,6 +102,22 @@ export class StageStore {
     const definitions = change(before.definitions);
     if (definitions === before.definitions) return;
     this.states.set(keyOf(reading), { definitions, kept: this.memory.remember(reading, definitions), revision: before.revision + 1 });
+    for (const listener of this.listeners) listener();
+  }
+
+  /**
+   * Shows the stages a reopened investigation saved for its reading, in place of those shown for it
+   * before, and says where they came from; with none saved, the stages shown stay and nothing is said.
+   */
+  restore(reading: StagedReading, definitions: StageDefinitions | null, notice: StagesNotice): void {
+    const before = this.stateOf(reading);
+    const next = definitions ?? before.definitions;
+    this.states.set(keyOf(reading), {
+      definitions: next,
+      kept: definitions === null ? before.kept : this.memory.remember(reading, next),
+      revision: before.revision + (definitions === null ? 0 : 1),
+      notice,
+    });
     for (const listener of this.listeners) listener();
   }
 }

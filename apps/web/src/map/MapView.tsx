@@ -8,7 +8,7 @@ import { IconButton } from "../components/icons";
 import { countOf } from "../data/wording";
 import type { SelectionPredicate, SuppliedGraph } from "../generated/selection";
 import type { ShownSelection } from "../imported/coordinator";
-import type { StageDefinitions } from "../stages/definitions";
+import { type StageDefinitions, staleActivities } from "../stages/definitions";
 import { StagesEditor } from "../stages/StagesEditor";
 import { type StagedReading, useStages } from "../stages/store";
 import { AboutMap } from "./AboutMap";
@@ -130,6 +130,8 @@ interface MapViewProps {
    * and the editor of the stages take its place, and it keeps its state under them. Not beside the list of every path.
    */
   aside?: ReactNode;
+  /** The context columns of the reading, by place and name: the stages can be proposed from one of them. */
+  contextColumns?: readonly { index: number; name: string }[];
 }
 
 /** What the mark on "About this map" says while some flows from Start or to End are not drawn; the panel says which. */
@@ -148,12 +150,14 @@ const NOT_ARRANGED_IN_FULL =
  * know about it opens over it, and the steps of a selected element or the editor of the stages
  * stand beside it.
  */
-export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waitingFor, initiallyInPlace = false, showing = "map", aside, onShowMap }: MapViewProps) {
+export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waitingFor, initiallyInPlace = false, showing = "map", aside, onShowMap, contextColumns }: MapViewProps) {
   // The stages the analyst defined for the reading shown; the map draws its activities in them.
   const workspaceId = shown.answer.workspace_id;
   const preparationId = shown.answer.identity.preparation_id;
   const reading = useMemo<StagedReading>(() => ({ workspaceId, preparationId }), [workspaceId, preparationId]);
-  const { definitions: stages, revision: stagesRevision } = useStages(reading);
+  const { definitions: stages, revision: stagesRevision, notice: stagesNotice } = useStages(reading);
+  // Activities put into a stage that this log does not have are drawn in no stage, and the map says so.
+  const staleStages = useMemo(() => staleActivities(stages, new Set(parentGraph.nodes.map((node) => node.label))), [stages, parentGraph]);
   const parent = useMemo(() => toFlowGraph(parentGraph, 0, undefined, stages), [parentGraph, stages]);
   /**
    * Every activity is written with its whole name, on up to two lines, and its incidents: the cards
@@ -346,6 +350,13 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
           {NOT_ARRANGED}
         </p>
       )}
+      {stagesNotice?.kind === "not_applied" && <p className="map-limit">{stagesNotice.message}</p>}
+      {staleStages.length > 0 && (
+        <p className="map-limit">
+          {countOf(staleStages.length, "activity", "activities")} put into a stage {staleStages.length === 1 ? "is" : "are"} not in this log and {staleStages.length === 1 ? "is" : "are"} drawn in no stage.{" "}
+          <button type="button" className="link-button" onClick={() => setEditingStages(true)}>Edit stages</button>
+        </p>
+      )}
       {(unevaluable !== null || clock !== null) && (
         <p className="map-basis">
           {unevaluable !== null && <span className="map-basis-limit">{unevaluable}</span>}
@@ -454,7 +465,8 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
             </h4>
             <IconButton icon="close" label="Close the editor of the stages" onClick={closeStages} />
           </div>
-          <StagesEditor reading={reading} parentGraph={parentGraph} />
+          <StagesEditor reading={reading} parentGraph={parentGraph}
+            proposal={contextColumns ? { workspaceId, identity: shown.answer.identity, revision: shown.revision, columns: contextColumns } : undefined} />
         </div>
       )}
       {aside !== undefined && (

@@ -128,7 +128,7 @@ describe("the stages of a log on its map", () => {
     expect(panel.previousElementSibling?.className).toBe("map-main");
     expect(screen.getByLabelText("Process map of the kept incidents")).toBe(map);
     expect(within(panel).getByRole("heading", { name: "Stages of this log" })).toBeTruthy();
-    expect(within(panel).getByRole("region", { name: "Stages of this log" }).textContent).toContain("Stages stay in this browser and are not saved with the investigation");
+    expect(within(panel).getByRole("region", { name: "Stages of this log" }).textContent).toContain("Stages stay in this browser for this reading and are saved with the investigation");
     expect(within(panel).getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
   });
 
