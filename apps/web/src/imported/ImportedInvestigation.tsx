@@ -35,7 +35,7 @@ interface ImportedInvestigationProps {
   saving?: SavingCoordinator;
   /** The view a question opens in when no saved view is restored: the process map, unless the caller asks for the table. */
   initialView?: InvestigationView;
-  /** Whether the map starts with every activity kept in the place the whole parent's map gives it. */
+  /** Whether the map starts with every activity in the place the parent's arrangement gives it, as it does unless told otherwise. */
   mapInPlace?: boolean;
 }
 
@@ -57,7 +57,7 @@ const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
  * kept incidents as a process map, as the list of every path of that map or as a table in the
  * centre; and the complete history of one kept incident beside them.
  */
-export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = false }: ImportedInvestigationProps) {
+export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = true }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   // A reopened investigation opens in the view it was saved in; any other question opens on its map.
   const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? initialView);

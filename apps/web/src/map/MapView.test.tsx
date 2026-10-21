@@ -179,29 +179,26 @@ describe("the map of the kept incidents", () => {
     expect(app.selecting.selections[5].request.predicates).toEqual([]);
   });
 
-  it("arranges the map anew for what is shown unless the activities are asked to keep their places", async () => {
-    const app = await renderInvestigation(undefined, false);
+  it("keeps the parent's places by default, and arranges anew for the view only on request, saying which", async () => {
+    const app = await renderInvestigation();
     const map = await openMap(app, [closed]);
-    // Arranged by the map itself for exactly what it shows: the whole parent's arrangement is not asked for.
-    expect(flow.layoutUnion).not.toHaveBeenCalled();
-    // The switch stands with the tools in the row above the map; what it does and what it costs is its tooltip and its description.
-    const keep = screen.getByRole("button", { name: "Keep activities in place" });
-    expect(keep.closest(".map-detail")).not.toBeNull();
-    expect(keep.getAttribute("aria-pressed")).toBe("false");
-    const explanation =
-      "Keep every activity in the place the map of all incidents gives it. Off, the map is arranged anew and compactly for what is shown. " +
-      "On, places stay the same from one selection to the next, and hidden paths still shape the picture.";
-    expect(keep.getAttribute("title")).toBe(`Keep activities in place\n${explanation}`);
-    expect(document.getElementById(keep.getAttribute("aria-describedby")!)?.textContent).toBe(explanation);
+    // One arrangement of the parent, asked for once; the map reads its places from it.
+    await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
+    const line = () => document.querySelector(".map-arrangement")!;
+    // The line stands with the tools in the row above the map and says where the places come from and which way the map runs.
+    expect(line().closest(".map-detail")).not.toBeNull();
+    expect(line().textContent).toBe("Places from the map of the parent's 2 incidents; they stay through previews, steps, Undo and the detail. Runs top to bottom. Rearrange for this view");
+    expect(screen.queryByRole("button", { name: "Keep activities in place" })).toBeNull();
     expect(screen.queryByRole("checkbox")).toBeNull();
     expect(nodeOf(map, closed)).not.toBeNull();
 
-    await app.user.click(keep);
-    await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole("button", { name: "Keep activities in place" }).getAttribute("aria-pressed")).toBe("true");
-    // Switched off again, the map is arranged for what is shown, and the arrangement of the parent is not asked for anew.
-    await app.user.click(screen.getByRole("button", { name: "Keep activities in place" }));
-    expect(screen.getByRole("button", { name: "Keep activities in place" }).getAttribute("aria-pressed")).toBe("false");
+    await app.user.click(screen.getByRole("button", { name: "Rearrange for this view" }));
+    expect(line().textContent).toBe("Arranged anew for what is shown; places change with each step or detail. Runs top to bottom. Back to the parent's places");
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
+    // Back to the parent's places by keyboard: the arrangement of the parent is not asked for anew.
+    screen.getByRole("button", { name: "Back to the parent's places" }).focus();
+    await app.user.keyboard("{Enter}");
+    expect(line().textContent).toContain("Places from the map of the parent's 2 incidents");
     await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
     expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
   });
@@ -212,7 +209,7 @@ describe("the map of the kept incidents", () => {
     expect(document.querySelector(".map-limit")).toBeNull();
 
     vi.mocked(flow.layoutUnion).mockRejectedValueOnce(new Error("The arrangement failed."));
-    await app.user.click(screen.getByRole("button", { name: "Keep activities in place" }));
+    await app.user.click(screen.getByRole("button", { name: "Back to the parent's places" }));
     const limit = await screen.findByText("The arrangement of every incident of the parent could not be computed, so activities can move from one selection to the next.");
     // Short enough for one line; what the map does instead is said in full in its tooltip.
     expect(limit.getAttribute("title")).toBe(
@@ -225,7 +222,7 @@ describe("the map of the kept incidents", () => {
     expect(limit.closest(".map-main")?.querySelector(".map-frame")).not.toBeNull();
     await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
 
-    await app.user.click(screen.getByRole("button", { name: "Keep activities in place" }));
+    await app.user.click(screen.getByRole("button", { name: "Rearrange for this view" }));
     expect(document.querySelector(".map-limit")).toBeNull();
   });
 
@@ -394,7 +391,7 @@ describe("the map of the kept incidents", () => {
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
 
     // The map is taken away while every incident of the parent is arranged, and drawn again after.
-    await app.user.click(screen.getByRole("button", { name: "Keep activities in place" }));
+    await app.user.click(screen.getByRole("button", { name: "Back to the parent's places" }));
     await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
     await waitFor(() => {
       const again = screen.getByLabelText("Process map of the kept incidents");

@@ -124,6 +124,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - At the lowest detail a path the map leaves out is drawn on request, selected, without a step.
   - Whole incidents are kept and removed through it, each undone exactly; a selection without a labelled record lists no path and says so.
 
+- `tools/qualify_parent_places.py` (#56): the places of the activities on the branching map of `tests/fixtures/variants`, then another parent (`tests/fixtures/pinned`).
+  - The places are read from the map's own nodes. A preview and its cancel, a step and its Undo, the lowest detail, an activity removed and brought back, and an incident read beside the map move none of them.
+  - Rearrange and the way back are explicit, by keyboard, ask for no incident and change no identity; the direction is named; another parent is arranged anew.
+  - With `--screenshots DIR` the map is photographed in the parent's places, rearranged, and left to right.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
