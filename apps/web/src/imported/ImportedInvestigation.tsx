@@ -1,3 +1,4 @@
+import { SimilarSequences } from "../similar/SimilarSequences";
 import { RequestsPanel } from "../requests/RequestsPanel";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { InfoPopover } from "../components/InfoPopover";
@@ -80,6 +81,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const [groupsOpen, setGroupsOpen] = useState(false);
   // A group of the groups panel, or the order a pair of the longest gaps gives the table: `ordered` keeps the order given, `note` says what it is.
   const [chosenGroup, setChosenGroup] = useState<{ id: string; label: string; caseIds: readonly string[]; ordered?: true; note?: string } | null>(null);
+  // The variant whose similar sequences are suggested beside the variants (#68).
+  const [similar, setSimilar] = useState<{ id: string; rank: number; activities: readonly string[] } | null>(null);
   // Which side of Compare the chosen group was put in, until another group is chosen.
   const [compared, setCompared] = useState<{ id: string; role: "target" | "reference" } | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -548,7 +551,13 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 waitingFor={waitingFor}
                 onStep={addStep}
                 previewStep={previewStep}
+                onSimilar={(variant, rank) => setSimilar((current) => (current?.id === variant.id ? null : { id: variant.id, rank, activities: variant.activities }))}
+                similarTo={similar?.id ?? null}
               />
+              {similar && (
+                <SimilarSequences workspaceId={answer.workspace_id} identity={shown?.answer.identity ?? answer.identity} revision={revision}
+                  anchor={similar.activities} anchorName={`variant ${similar.rank}`} onStep={addStep} onOpenCase={(caseId) => openCase(caseId)} waitingFor={waitingFor} />
+              )}
             </section>
           )}
           {answer && (view === "map" || view === "paths") && (

@@ -1,0 +1,21 @@
+{
+ "about": "Hand-written expectations for #68 over the one-screen fixture (tests/test_issue68_similar_sequences.py and tools/qualify_similar_sequences.py). Letters stand for the activities of expected.json. The edit distance counts activities to insert, remove or replace; from A B D E: A B D, A D E, A B C D E and A C B D E are one edit away, A B C B D E and A D two. At equal distance the family with more incidents comes first, then the sequence in the order of its activity names. Never read by product code.",
+ "anchor": ["A", "B", "D", "E"],
+ "one_edit": {
+  "families": [
+   {"activities": ["A", "B", "D", "E"], "distance": 0, "cases": ["L-01", "L-02", "L-08"]},
+   {"activities": ["A", "B", "D"], "distance": 1, "cases": ["L-05"]},
+   {"activities": ["A", "B", "C", "D", "E"], "distance": 1, "cases": ["L-06"]},
+   {"activities": ["A", "D", "E"], "distance": 1, "cases": ["L-07"]},
+   {"activities": ["A", "C", "B", "D", "E"], "distance": 1, "cases": ["L-04"]}
+  ],
+  "suggested": 7
+ },
+ "two_edits": {
+  "added": [
+   {"activities": ["A", "B", "C", "B", "D", "E"], "distance": 2, "cases": ["L-03", "L-09"]},
+   {"activities": ["A", "D"], "distance": 2, "cases": ["L-10"]}
+  ],
+  "suggested": 10
+ }
+}
