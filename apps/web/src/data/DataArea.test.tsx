@@ -132,6 +132,7 @@ describe("the Data area", () => {
 
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByText(FOLDER)).toBeTruthy();
+    expect(screen.getByText("Writable: sources and readings are stored here, outside the program's own folders.")).toBeTruthy();
     const sources = screen.getByRole("table", { name: "Sources in this workspace" });
     expect(within(sources).getByRole("rowheader").textContent).toBe("Ältere Vorgänge.csv");
     expect(within(sources).getByText("2.0 KB")).toBeTruthy();

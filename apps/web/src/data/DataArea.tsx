@@ -90,6 +90,7 @@ function WorkspaceStep({ state, coordinator }: { state: DataState; coordinator: 
         </h3>
         <span className="identifier">{workspace.answer.path}</span>
         <span className="muted">{workspace.own ? "The application's own folder; your sources and how they are read are kept here." : "A folder you chose."}</span>
+        <span className="muted">{workspace.answer.writable ? "Writable: sources and readings are stored here, outside the program's own folders." : "Not writable."}</span>
         <details>
           <summary>Use another folder</summary>
           {otherFolder}
