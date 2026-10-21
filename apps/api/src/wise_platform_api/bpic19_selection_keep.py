@@ -9,6 +9,10 @@ from .workspace import Problem
 
 PROFILE_KEEP_POLICY = "bpic19.profile_group_keep.v1"
 MEASURE_KEEP_POLICY = "bpic19.measure_cohort_keep.v1"
+COMPLETION_KEEP_POLICY = "bpic19.completion_cohort_keep.v1"
+# Which operation may justify a Keep of which group kind, under which policy.
+_KEEPS = {"activity_cohort": ("bpic19_measures", MEASURE_KEEP_POLICY),
+          "completion_cohort": ("bpic19_cohorts", COMPLETION_KEEP_POLICY)}
 
 
 def keep_step_problem(action: dict, recipe: dict | None, prefix_identities: list[dict] | None,
@@ -18,10 +22,11 @@ def keep_step_problem(action: dict, recipe: dict | None, prefix_identities: list
         if "selection_keep" in action:
             return Problem("invalid_parameter", "A declared profile Keep is a complete association, not null.", field)
         return None
-    cohort = keep["group"]["kind"] == "activity_cohort"
-    if cohort != (action["operation"] == "bpic19_measures") or (not cohort and action["operation"] != "bpic19_profile"):
-        return Problem("invalid_parameter", "A profile group Keep belongs only to its reviewed source profile, and an activity cohort Keep only to its reviewed measures.", field)
-    if keep["policy_id"] != (MEASURE_KEEP_POLICY if cohort else PROFILE_KEEP_POLICY):
+    operation, policy = _KEEPS.get(keep["group"]["kind"], ("bpic19_profile", PROFILE_KEEP_POLICY))
+    if action["operation"] != operation:
+        return Problem("invalid_parameter", "A Keep belongs only to the reviewed answer that supplies its group: a profile group to its profile, "
+                       "an activity cohort to its measures and a completion stage to its cohorts.", field)
+    if keep["policy_id"] != policy:
         return Problem("unsupported_policy", "This Keep names another group's policy.", field + ".policy_id")
     position = keep["step_index"]
     declared = action.get("selection_prefix_length", "absent")
@@ -79,6 +84,32 @@ def measure_keep_problem(answer: dict, keep: dict, recipe: dict | None,
     return None
 
 
+def completion_keep_support(cohorts: dict, support: str) -> dict:
+    stage, _, state = support.partition("_")
+    if stage in ("inclusion", "retention"):
+        return cohorts[stage][state]
+    wanted = "unknown" if support == "completion_unknown" else support
+    return next(group for group in cohorts["completion_groups"] if group["state"] == wanted)
+
+
+def completion_keep_problem(answer: dict, keep: dict, recipe: dict | None,
+                            prefix_supports: list[dict] | None, field: str) -> Problem | None:
+    """The kept step holds exactly the replayed stage's items and records, taken from exactly the reviewed parent."""
+    cohorts = answer["cohorts"]
+    support = completion_keep_support(cohorts, keep["group"]["support"])
+    position = keep["step_index"]
+    if recipe is None or prefix_supports is None or position + 1 >= len(prefix_supports):
+        return Problem("identity_mismatch", "The actual completion cohort Keep step is unavailable.", field + ".step_index")
+    if sorted(support["case_ids"]) != sorted(recipe["predicates"][position]["case_ids"]):
+        return Problem("selection_mismatch", "The complete item IDs differ from the replayed completion cohort. No membership was substituted.", f"selection_recipe.predicates.{position}.case_ids")
+    parent, selected = prefix_supports[position], prefix_supports[position + 1]
+    if any(parent[key] != cohorts["original"][key] for key in ("case_count", "record_count")):
+        return Problem("selection_mismatch", "The completion cohort Keep denominator differs from its exact replayed parent.", field + ".group")
+    if sorted(selected["case_ids"]) != sorted(support["case_ids"]) or any(selected[key] != support[key] for key in ("case_count", "record_count")):
+        return Problem("selection_mismatch", "The completion cohort differs from the complete histories in the replayed step.", field + ".group")
+    return None
+
+
 def profile_keep_problem(action: dict, answer: dict, recipe: dict | None,
                          prefix_supports: list[dict] | None, field: str) -> Problem | None:
     keep = action.get("selection_keep")
@@ -86,6 +117,8 @@ def profile_keep_problem(action: dict, answer: dict, recipe: dict | None,
         return None
     if keep["group"]["kind"] == "activity_cohort":
         return measure_keep_problem(answer, keep, recipe, prefix_supports, field)
+    if keep["group"]["kind"] == "completion_cohort":
+        return completion_keep_problem(answer, keep, recipe, prefix_supports, field)
     profile = answer.get("profile")
     support = None if profile is None else profile_keep_support(profile, keep["group"])
     if support is None:

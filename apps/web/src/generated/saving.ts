@@ -79,7 +79,8 @@ export type Bpic19ProfileKeepGroup =
   | GrainIssueKeepGroup
   | SourceInclusionKeepGroup
   | AttributeValueKeepGroup
-  | ActivityCohortKeepGroup;
+  | ActivityCohortKeepGroup
+  | CompletionCohortKeepGroup;
 export type PreparedInputId = string;
 export type PreparedDefinitionId = string;
 export type PreparedRunId = string;
@@ -394,13 +395,13 @@ export interface Bpic19PipelineAction {
   selection_keep?: Bpic19SelectionKeep;
 }
 /**
- * Exact complete-case selection step justified by this frozen parent profile or reviewed activity-measure cohort. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
+ * Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort or completion-cohort stage. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
  */
 export interface Bpic19SelectionKeep {
   /**
-   * Profile groups use the profile policy; activity cohorts of a reviewed measures answer use the measure cohort policy.
+   * Profile groups use the profile policy; activity cohorts of a reviewed measures answer and stages of a reviewed completion-cohort answer use their own policies.
    */
-  policy_id: "bpic19.profile_group_keep.v1" | "bpic19.measure_cohort_keep.v1";
+  policy_id: "bpic19.profile_group_keep.v1" | "bpic19.measure_cohort_keep.v1" | "bpic19.completion_cohort_keep.v1";
   step_index: number;
   group: Bpic19ProfileKeepGroup;
 }
@@ -448,6 +449,20 @@ export interface ActivityCohortKeepGroup {
    * The reviewed activity operator's cohort over the complete frozen parent.
    */
   cohort: "positive" | "zero" | "unavailable";
+}
+export interface CompletionCohortKeepGroup {
+  kind: "completion_cohort";
+  /**
+   * One whole-item stage or recorded-completion state of the reviewed cohort answer over the complete frozen parent.
+   */
+  support:
+    | "inclusion_retained"
+    | "inclusion_excluded"
+    | "inclusion_unknown"
+    | "observed_closed"
+    | "open_recorded"
+    | "completion_unknown"
+    | "retention_retained";
 }
 export interface Bpic19LiteratureClaim {
   claim_id: string;
