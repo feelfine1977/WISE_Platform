@@ -14,12 +14,13 @@ from test_import_acceptance import (
     prepare, read_input, upload,
 )
 from test_saved_investigation_restart import HEALTH, loopback_port, stop_owned
+from wise_platform_api.default_workspace import default_workspace_path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 @contextmanager
-def initialized_cli(tmp_path, chosen, attempt, port):
+def initialized_cli(tmp_path, chosen, attempt, port, user=None):
     launch = tmp_path / "Unrelated launch folder"
     launch.mkdir(exist_ok=True)
     log = tmp_path / f"default-workspace-host-{attempt}.log"
@@ -27,9 +28,10 @@ def initialized_cli(tmp_path, chosen, attempt, port):
     environment["PYTHONPATH"] = os.pathsep.join([
         str(ROOT / "apps/api/src"), str(ROOT / "packages/analytics/src"),
     ])
+    environment.update(user or {})
     with log.open("wb") as stream:
         process = subprocess.Popen(
-            [sys.executable, "-m", "wise_platform_api", "--port", str(port), "--workspace", str(chosen)],
+            [sys.executable, "-m", "wise_platform_api", "--port", str(port), *(["--workspace", str(chosen)] if chosen else [])],
             cwd=launch, env=environment, stdout=stream, stderr=subprocess.STDOUT,
         )
         try:
@@ -91,3 +93,25 @@ def test_cli_override_initializes_once_and_second_process_reuses_full_preparatio
             assert recovered[key] == trace[key]
         assert kept(chosen) == protected
         assert not (tmp_path / "Unrelated launch folder" / "workspace").exists()
+
+
+def test_cli_without_override_creates_the_per_user_default_and_second_process_reuses_it(tmp_path):
+    # #47: an installed launch names no folder; the first opening creates the per-user default, the next launch reuses it.
+    home = tmp_path / "Synthetic user"
+    user = {"HOME": str(home), "USERPROFILE": str(home), "XDG_DATA_HOME": str(home / ".local/share"), "LOCALAPPDATA": str(home / "AppData/Local")}
+    expected = default_workspace_path(environment=user, home=home)
+    port = loopback_port()
+    with initialized_cli(tmp_path, None, 1, port, user) as (client, first_process):
+        assert not expected.exists(), "Initialization belongs to the first opening, not to the launch."
+        workspace = default(client, 1)
+        assert Path(workspace["path"]) == expected.resolve() and workspace["writable"] is True
+        assert not expected.resolve().is_relative_to(ROOT) and not (tmp_path / "Unrelated launch folder" / "workspace").exists()
+        literal, raw, _ = read_input("B4")
+        source = upload(client, workspace, raw, literal["file"])
+        protected = kept(expected)
+        first_pid = first_process.pid
+    with initialized_cli(tmp_path, None, 2, port, user) as (client, second_process):
+        assert second_process.pid != first_pid
+        restored = default(client, 2)
+        assert (restored["workspace_id"], restored["path"], restored["sources"]) == (workspace["workspace_id"], workspace["path"], [source])
+        assert kept(expected) == protected

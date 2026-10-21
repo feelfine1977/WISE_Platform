@@ -101,9 +101,12 @@ class MemorySampler(threading.Thread):
 
 
 class Service:
-    """The product service on an ephemeral loopback port, over one workspace folder, with its own log."""
+    """The product service on an ephemeral loopback port, over one workspace folder, with its own log.
 
-    def __init__(self, workspace: Path, log: Path) -> None:
+    Without a workspace folder the service chooses the per-user default itself, as an installed application does.
+    """
+
+    def __init__(self, workspace: Path | None, log: Path) -> None:
         self.workspace, self.log = workspace, log
         self.process: subprocess.Popen | None = None
         self.client: httpx.Client | None = None
@@ -115,7 +118,8 @@ class Service:
             sock.bind(("127.0.0.1", 0))
             self.port = sock.getsockname()[1]
         code = ("from pathlib import Path; import uvicorn; from wise_platform_api.app import create_app; "
-                f"uvicorn.run(create_app(workspace_path=Path({str(self.workspace)!r})),host='127.0.0.1',port={self.port},log_level='error')")
+                f"uvicorn.run(create_app(workspace_path={'None' if self.workspace is None else f'Path({str(self.workspace)!r})'}),"
+                f"host='127.0.0.1',port={self.port},log_level='error')")
         env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join(str(ROOT / part) for part in ("apps/api/src", "packages/analytics/src")), **(env or {})}
         with self.log.open("ab") as log:
