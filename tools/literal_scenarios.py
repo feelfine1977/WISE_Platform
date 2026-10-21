@@ -165,5 +165,16 @@ def issue113(client, workspace: Path) -> dict:
         "5 criteria compiled for Balanced", "C02900091", "C04900362", "C05910171"]}
 
 
-SCENARIOS = {"issue112": issue112, "issue113": issue113, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue114(client, workspace: Path) -> dict:
+    import test_issue114_rework_effort_tcp as literal
+    saved = scored_scenario(client, workspace, literal, "completion_rework_effort", "T12 rework and effort")
+    # Criterion rows by hand (id, total, out of scope, scope unknown, in-scope unavailable, eligible, positive):
+    # C06 cancellation in X1, X2, F, K; N unavailable. C08 repeated receipts in Z2, Z4; K, N unavailable.
+    # C09 more than five user events in Y3, Z4, U10, U15, D7, F. C10 more than two users in D3, D7, F.
+    return {"name": "T12 rework and effort", "saved": saved, "texts": [
+        "19 of 19 items scored", "Partial profile: 8 of 10 criteria admitted.", "8 criteria compiled for Balanced",
+        "C0619001184", "C0819002172", "C0919000196", "C1019000193"]}
+
+
+SCENARIOS = {"issue112": issue112, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
