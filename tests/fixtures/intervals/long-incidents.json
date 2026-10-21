@@ -1,0 +1,80 @@
+{
+ "about": "Hand-written expectations for #60 (tests/test_issue60_long_incidents.py and tools/qualify_long_incidents.py) over tests/fixtures/intervals/intervals.csv. Recorded span: first to last usable time; longest gap: largest difference between adjacent records in declared order. I-UNK has a record without a usable time, so neither is known. Never read by product code.",
+ "source": "tests/fixtures/intervals/intervals.csv",
+ "spans": {
+  "I-3H": 3,
+  "I-4H": 4,
+  "I-5H": 5,
+  "I-REP": 12,
+  "I-ZERO": 0,
+  "I-TIE": 0,
+  "I-EARLY": 1,
+  "I-NOSTART": 1,
+  "I-NORESP": 1,
+  "I-LONG": 48
+ },
+ "gaps": {
+  "I-3H": 3,
+  "I-4H": 4,
+  "I-5H": 5,
+  "I-REP": 10,
+  "I-ZERO": 0,
+  "I-TIE": 0,
+  "I-EARLY": 1,
+  "I-NOSTART": 1,
+  "I-NORESP": 1,
+  "I-LONG": 24
+ },
+ "unknown": [
+  "I-UNK"
+ ],
+ "span_at_least_4": {
+  "kept": [
+   "I-4H",
+   "I-5H",
+   "I-LONG",
+   "I-REP"
+  ],
+  "removed": [
+   "I-3H",
+   "I-EARLY",
+   "I-NORESP",
+   "I-NOSTART",
+   "I-TIE",
+   "I-ZERO"
+  ],
+  "unevaluable": [
+   "I-UNK"
+  ]
+ },
+ "span_below_4": {
+  "kept": [
+   "I-3H",
+   "I-EARLY",
+   "I-NORESP",
+   "I-NOSTART",
+   "I-TIE",
+   "I-ZERO"
+  ],
+  "unevaluable": [
+   "I-UNK"
+  ]
+ },
+ "gap_at_least_5": {
+  "kept": [
+   "I-5H",
+   "I-LONG",
+   "I-REP"
+  ],
+  "unevaluable": [
+   "I-UNK"
+  ]
+ },
+ "span_4_and_assigned": {
+  "kept": [
+   "I-LONG"
+  ],
+  "unevaluable": [],
+  "note": "I-UNK has no Assigned record: false in the conjunction, so it is removed although its span is unknown."
+ }
+}
