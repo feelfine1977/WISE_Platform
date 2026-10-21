@@ -272,6 +272,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
     - the incidents, Compare and the Expectation are reached, and the investigation is saved.
   - After an actual restart, with a stale remembered reading in the browser: the listed reading opens, the example is not read again, and the saved investigation reopens on its view.
 
+- `tools/qualify_readable_opening.py` (#65): a readable opening for a large map, over the invented `tests/fixtures/readable-opening` log (600 incidents over 45 activities with long names shortened alike, loops and a Phase column, written by `tools/make_readable_opening_fixture.py`), against its own `expected.json`, at 1280 × 720 and at 1600 × 900; with `--bpic19 PATH` the same over the complete BPIC 2019 file, read day-first in its Windows-1252 encoding with the cutoff the service proposes.
+  - The map opens readable near Start with the overview of the whole and says how many activities and paths are in view; zoomed out it stops at the smallest readable zoom, where every name on the screen stays readable; "Fit the map" shows the whole map only where that stays readable, else the map from Start at that zoom.
+  - An omitted low-frequency path is found in the list of every path, drawn on the map and brought into view with its numbers; the opening is returned to by pointer and by keyboard.
+  - A loop is drawn both ways; activities shortened alike are told apart on their cards and named in full; stages are collapsed and expanded; a path is selected.
+  - Through all of it the identity, the steps, the counts and the places of the activities stay, no analytic request is made, and every request stays on the local host. The receipt records the frame's sizes with the Time column and with the panel of a selected activity open, the zooms, the smallest name on the screen and the counts in view; with `WISE_SCREENSHOT_DIR` set, pictures of every state are written there.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.

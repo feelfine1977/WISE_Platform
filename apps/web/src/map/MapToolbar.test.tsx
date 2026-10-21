@@ -46,7 +46,7 @@ describe("the tools of the map", () => {
     // Before it, the line that says where the places of the activities come from, with the way back or the rearrangement.
     expect(tools().previousElementSibling?.previousElementSibling?.className).toBe("map-arrangement");
     expect(tools().previousElementSibling?.previousElementSibling?.previousElementSibling).toBe(screen.getByRole("form", { name: "Detail" }));
-    expect(toolNames()).toEqual(["Run the map left to right", "Overview of the whole map", "Edit stages", "About this map"]);
+    expect(toolNames()).toEqual(["Back to the opening", "Run the map left to right", "Overview of the whole map", "Edit stages", "About this map"]);
     for (const button of within(tools()).getAllByRole("button")) {
       expect(button.className).toBe("icon-button");
       expect(button.getAttribute("title")).toContain(button.getAttribute("aria-label"));
@@ -84,7 +84,7 @@ describe("the tools of the map", () => {
     expect(Array.from(view().querySelector(".map-main")!.children, (part) => part.className)).toEqual(["map-detail", "path-list"]);
     again("map");
     await screen.findByLabelText("Process map of the kept incidents");
-    expect(toolNames()).toEqual(["Run the map left to right", "Overview of the whole map", "Edit stages", "About this map"]);
+    expect(toolNames()).toEqual(["Back to the opening", "Run the map left to right", "Overview of the whole map", "Edit stages", "About this map"]);
   });
 
   it("show the overview of the whole map only when it is asked for", async () => {

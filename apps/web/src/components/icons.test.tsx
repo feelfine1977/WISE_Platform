@@ -14,7 +14,7 @@ describe("the icons", () => {
   it("are drawn in a 16 px box as pictures that assistive technology passes over, with size, line and colour left to the stylesheet", () => {
     expect(ICON_NAMES).toEqual([
       "undo", "redo", "clearAll", "save", "sidePanel", "info", "table", "map", "paths", "stages", "show", "hide", "sort",
-      "pin", "overview", "editStages", "orientation", "close", "collapse", "fullWidth",
+      "pin", "overview", "opening", "editStages", "orientation", "close", "collapse", "fullWidth",
     ]);
     for (const name of ICON_NAMES) {
       const { container, unmount } = render(<Icon name={name} />);
@@ -29,7 +29,7 @@ describe("the icons", () => {
     }
   });
 
-  it("strike the eye through to hide what it shows, and fill only the corner of the overview", () => {
+  it("strike the eye through to hide what it shows, and fill only the corner of the overview and the dot of the opening", () => {
     const line = (name: (typeof ICON_NAMES)[number]) => {
       const { container, unmount } = render(<Icon name={name} />);
       const paths = Array.from(container.querySelectorAll("path"), (path) => [path.getAttribute("class"), path.getAttribute("d")]);
@@ -38,7 +38,8 @@ describe("the icons", () => {
     };
     expect(line("hide")[0][1]).toBe(`${line("show")[0][1]}M3 13 13 3`);
     expect(line("overview").map(([filled]) => filled)).toEqual([null, "icon-filled"]);
-    expect(ICON_NAMES.filter((name) => line(name).length > 1)).toEqual(["overview"]);
+    expect(line("opening").map(([filled]) => filled)).toEqual([null, "icon-filled"]);
+    expect(ICON_NAMES.filter((name) => line(name).length > 1)).toEqual(["overview", "opening"]);
   });
 });
 

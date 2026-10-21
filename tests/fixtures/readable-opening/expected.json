@@ -1,0 +1,44 @@
+{
+ "about": "Expectations for #65 (tools/qualify_readable_opening.py), by construction of tools/make_readable_opening_fixture.py (seed 65): 600 invented incidents over 45 activities of a purchasing flow with long names shortened alike, loops and a Phase context column. The counts are by construction of the generator, not read from any answer. Never read by product code.",
+ "file": "large.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": [
+   4
+  ]
+ },
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "incidents": 600,
+ "activities": 45,
+ "paths": 913,
+ "first_activity": "Create purchase requisition item",
+ "colliding": [
+  [
+   "Record goods receipt for the purchase order item at the central warehouse",
+   "Record goods receipt for the purchase order item at the regional warehouse"
+  ],
+  [
+   "Record invoice receipt for the purchase order item from the vendor portal",
+   "Record invoice receipt for the purchase order item from the mailroom scan"
+  ],
+  [
+   "Vendor creates invoice",
+   "Vendor creates debit memo"
+  ]
+ ],
+ "loop": [
+  "Record goods receipt for the purchase order item at the central warehouse",
+  "Cancel goods receipt"
+ ],
+ "paths_both_ways": 260,
+ "phases": [
+  "Requisition",
+  "Order",
+  "Receipt",
+  "Invoice",
+  "Payment"
+ ]
+}

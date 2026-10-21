@@ -347,8 +347,8 @@ describe("the map of the kept incidents", () => {
     // The 25.5 supplied hours until the next event, as the map library writes hours.
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
     // No time until a next event is supplied for these two: a dash stands in its place, not a count.
-    expect(numberLine(map, closed)).toBe("– · 50 %");
-    expect(numberLine(map, "Prüfung")).toBe("– · 50 %");
+    expect(numberLine(map, closed)).toBe("– to next · 50 %");
+    expect(numberLine(map, "Prüfung")).toBe("– to next · 50 %");
     expect(legendMeasure(map)).toBe("Performance: median wait between activities (h, d). Colour = median lag. Width = cases.");
     expect(pressed(measureSwitch(map))).toEqual([
       ["Frequency", "false"],
@@ -383,7 +383,7 @@ describe("the map of the kept incidents", () => {
     const after = screen.getByLabelText("Process map of the kept incidents");
     // The one kept incident is every incident on this map.
     await waitFor(() => expect(numberLine(after, opened)).toBe("26 h to next · 100 %"));
-    expect(numberLine(after, closed)).toBe("– · 100 %");
+    expect(numberLine(after, closed)).toBe("– to next · 100 %");
     expect(pressed(measureSwitch(after))[2]).toEqual(["Performance", "true"]);
   });
 

@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { abstract, type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, type Focus, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions, type ShownEdges } from "wise-flow";
-import { emptySelection, ProcessMap, type Selection } from "wise-flow/react";
+import { abstract, type AbstractOptions, type ActivityLabelOptions, activityReferences, type ElementRef, filterPositions, type FlowGraph, type Focus, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions, type ShownEdges } from "wise-flow";
+import { type BringIntoView, emptySelection, type InView, ProcessMap, type Selection } from "wise-flow/react";
 // The page has unlayered base rules, so the library's styles come unlayered too, after React Flow's.
 import "wise-flow/react-flow.css";
 import "wise-flow/style.unlayered.css";
@@ -55,6 +55,14 @@ export function openingDetail(activities: number, paths = 0): AbstractOptions | 
 
 /** The zoom from which the names on the activities are drawn. */
 const LABELS_FROM = { labels: 0.12 };
+
+/**
+ * The smallest zoom of the map: the zoom from which every card still shows its name on two lines at the smallest text of the
+ * screen, which the map library derives from the cards it draws. The map opens near Start at a readable zoom, never goes
+ * below this one, and fits the whole map only where the whole stays readable; otherwise it shows the map from Start with
+ * the overview of the whole.
+ */
+const READABLE_FLOOR = { readable: "name" } as const;
 
 /** The actions of the map library's own menu that change only the picture and that the map carries out by itself. */
 const LIBRARY_ACTIONS = new Set(["paths", "clear-focus", "collapse", "expand"]);
@@ -253,6 +261,28 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
   }, []);
   const [selection, setSelection] = useState<Selection>(emptySelection);
   /**
+   * An element the map is asked to bring into view: a path drawn from the list of every path, a row chosen in the table
+   * view, a stage from the legend. The map moves its view so that the element is at the centre, at its zoom but at least
+   * the readable one; no incident, count or place changes. Each request is its own, so an element can be asked for again.
+   */
+  const [bringIntoView, setBringIntoView] = useState<BringIntoView | undefined>(undefined);
+  const brought = useRef(0);
+  const bring = useCallback((element: ElementRef) => setBringIntoView({ element, token: ++brought.current }), []);
+  /** What the map's view shows of it when the view rests, as the map library reports it; the detail strip says it while part of the map is out of view. */
+  const [inView, setInView] = useState<InView | undefined>(undefined);
+  /** How often the analyst asked for the opening again: part of the key the map opens again for. */
+  const [openings, setOpenings] = useState(0);
+  /** A row chosen in the table view is brought into view when the map is shown again. */
+  const changeView = useCallback(
+    (next: "map" | "table") => {
+      if (next === "map" && view === "table" && selection.nodes.length + selection.edges.length + selection.groups.length === 1) {
+        bring(selection.nodes[0] ? { kind: "node", id: selection.nodes[0] } : selection.edges[0] ? { kind: "edge", id: selection.edges[0] } : { kind: "group", id: selection.groups[0] });
+      }
+      setView(next);
+    },
+    [view, selection, bring],
+  );
+  /**
    * What the map writes on its paths and activities: the incidents on them, or the supplied median
    * times. The analyst chooses in the map's own legend. The choice is held here, so that it outlasts
    * a map that is drawn again for other incidents or arranged another way.
@@ -284,10 +314,11 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
     },
     [shown.graph],
   );
-  /** Draws a path of the list on the map, beyond the detail when the detail leaves it out, selected, and shows the map. */
+  /** Draws a path of the list on the map, beyond the detail when the detail leaves it out, selected and brought into view, and shows the map. */
   const drawPath = (id: string) => {
     if (!detailShown.drawn.edges.some((edge) => edge.id === id)) setRevealed((current) => (current.includes(id) ? current : [...current, id]));
     setSelection({ nodes: [], edges: [id], groups: [] });
+    bring({ kind: "edge", id });
     onShowMap?.();
   };
   const selectedPathDrawn = element?.kind === "path" && detailShown.drawn.edges.some((edge) => edge.id === selection.edges[0]);
@@ -369,6 +400,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
       )}
       <MapToolbar
         picture={!listed}
+        onOpening={() => setOpenings((count) => count + 1)}
         direction={direction}
         onDirection={setDirection}
         overview={overview}
@@ -396,9 +428,10 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
           shown={detailShown}
           onChange={changeDetail}
           view={listed ? undefined : view}
-          onViewChange={listed ? undefined : setView}
+          onViewChange={listed ? undefined : changeView}
           lead={listed ? undefined : <MeasureSwitch measure={measure} onMeasure={setMeasure} />}
           drawn={!listed && edgesShown ? { selected: edgesShown.total, drawn: edgesShown.edges.length } : undefined}
+          inView={listed || view === "table" ? undefined : inView}
         >
           {tools}
         </DetailStrip>
@@ -417,7 +450,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 abstraction={ranked}
                 onAbstractionChange={changeDetail}
                 view={view}
-                onViewChange={setView}
+                onViewChange={changeView}
                 // Drawn on the Canvas from the same number of elements as the detail controls reckon with.
                 canvasThreshold={CANVAS_FROM}
                 // Drawn as elements, the map draws every path its detail selects, which is what the controls above it say. On the
@@ -431,6 +464,13 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
                 // and a selection keeps that view, so nothing moves on screen.
                 fitView={inPlace ? shown.steps.length === 0 : true}
+                // The map opens again, readable near Start, for another revision, other stages, the other way or the stages shown as
+                // nodes, and when the analyst asks for the opening; another detail keeps the view. It never zooms below the readable
+                // floor, says what its view shows, and brings into view what the list of every path, the table view or the legend ask for.
+                openKey={`${inPlace ? "in-place" : shown.revision}:${stagesRevision}:${direction}:${stageNodes ? "stages" : "activities"}#${openings}`}
+                minZoom={READABLE_FLOOR}
+                onInView={setInView}
+                bringIntoView={bringIntoView}
                 // An activity moved by hand goes back when the map is arranged anew for other content, for other stages or to run the other way.
                 layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}:${direction}`}
                 // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
@@ -455,7 +495,18 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
             )}
           </div>
         )}
-        {!listed && <MapLegend graph={detailShown.drawn} measure={asked.measure} over={asked.style} theme={MAP_THEME} onMeasure={setMeasure} />}
+        {!listed && (
+          <MapLegend
+            graph={detailShown.drawn}
+            measure={asked.measure}
+            over={asked.style}
+            theme={MAP_THEME}
+            onMeasure={setMeasure}
+            // A stage shown as one node is brought into view as that node; drawn as a box around its activities, as the box.
+            stages={graph.groups?.map((group) => ({ id: group.id, name: group.label }))}
+            onStage={(id) => bring(stageNodes ? { kind: "node", id } : { kind: "group", id })}
+          />
+        )}
       </div>
       {editingStages && (
         <div className="map-stages-panel">

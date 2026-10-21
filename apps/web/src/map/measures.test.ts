@@ -65,8 +65,8 @@ describe("the measures of the map", () => {
     expect(scene.style.nodeLine).toEqual({ metric: "medianNextHours", format: "toNext", then: "share", missing: "dash" });
     expect(line(opened)).toEqual(["26 h to next", "· 50 %"]);
     // No time until a next event is supplied where no path leads out of the activity.
-    expect(line(closed)).toEqual(["–", "· 50 %"]);
-    expect(line(checked)).toEqual(["–", "· 50 %"]);
+    expect(line(closed)).toEqual(["– to next", "· 50 %"]);
+    expect(line(checked)).toEqual(["– to next", "· 50 %"]);
   });
 });
 
