@@ -117,6 +117,8 @@ interface MapViewProps {
    * offers what the map offers; all of them stay when the one is shown in place of the other.
    */
   showing?: "map" | "paths";
+  /** Shows the map in place of the list of every path; a path drawn from the list is shown there. */
+  onShowMap?: () => void;
   /**
    * What stands in a column beside the map while nothing else does: the card of a selected element
    * and the editor of the stages take its place, and it keeps its state under them. Not beside the list of every path.
@@ -140,7 +142,7 @@ const NOT_ARRANGED_IN_FULL =
  * know about it opens over it, and the steps of a selected element or the editor of the stages
  * stand beside it.
  */
-export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, initiallyInPlace = false, showing = "map", aside }: MapViewProps) {
+export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, initiallyInPlace = false, showing = "map", aside, onShowMap }: MapViewProps) {
   // The stages the analyst defined for the reading shown; the map draws its activities in them.
   const workspaceId = shown.answer.workspace_id;
   const preparationId = shown.answer.identity.preparation_id;
@@ -165,14 +167,21 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
     (next: AbstractOptions) => setDetail(least !== null && (next.pathDetail ?? 1) < least ? { ...next, pathDetail: least } : next),
     [least],
   );
+  /**
+   * The paths drawn on request from the list of every path, whatever the detail: the map library keeps each with both its
+   * ends. Drawing one changes no step; a map of other incidents draws by its detail again.
+   */
+  const [revealed, setRevealed] = useState<string[]>([]);
+  useEffect(() => setRevealed([]), [shown.graph]);
+  const drawnDetail = useMemo(() => (detail !== undefined && revealed.length > 0 ? { ...detail, keep: revealed } : detail), [detail, revealed]);
   // The paths are ranked by their incidents, the number the map writes on them. The map is always given a detail, so that it holds none of its own.
-  const ranked = useMemo(() => rankedDetail(detail) ?? WHOLE_DETAIL, [detail]);
+  const ranked = useMemo(() => rankedDetail(drawnDetail) ?? WHOLE_DETAIL, [drawnDetail]);
   // The flows from Start and to End follow the paths: a flow weaker than the weakest path drawn by frequency is not drawn.
   // While a stage is shown as one node every flow is handed over: the flow of a stage adds up those of its activities, and none may be missing from it.
   const stageNodes = showsStageNodes(detail);
-  const leastFlow = useMemo(() => (stageNodes ? 0 : leastFlowIncidents(shown.graph, detail)), [shown.graph, detail, stageNodes]);
+  const leastFlow = useMemo(() => (stageNodes ? 0 : leastFlowIncidents(shown.graph, drawnDetail)), [shown.graph, drawnDetail, stageNodes]);
   // A flow of an activity the detail does not show is not on the map; the strongest flow of each side is kept among those shown.
-  const shownIds = useMemo(() => (stageNodes ? undefined : shownActivities(shown.graph, detail)), [shown.graph, detail, stageNodes]);
+  const shownIds = useMemo(() => (stageNodes ? undefined : shownActivities(shown.graph, drawnDetail)), [shown.graph, drawnDetail, stageNodes]);
   const graph = useMemo(() => toFlowGraph(shown.graph, leastFlow, shownIds, stages), [shown.graph, leastFlow, shownIds, stages]);
   // With stages as nodes the flows are merged for each stage, so the count of single flows drawn is not said there.
   const flowsNotDrawn = useMemo(
@@ -242,6 +251,13 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
   useEffect(() => setSelection(emptySelection), [shown.graph]);
 
   const element = selectedElement(shown.graph, selection);
+  /** Draws a path of the list on the map, beyond the detail when the detail leaves it out, selected, and shows the map. */
+  const drawPath = (id: string) => {
+    if (!detailShown.drawn.edges.some((edge) => edge.id === id)) setRevealed((current) => (current.includes(id) ? current : [...current, id]));
+    setSelection({ nodes: [], edges: [id], groups: [] });
+    onShowMap?.();
+  };
+  const selectedPathDrawn = element?.kind === "path" && detailShown.drawn.edges.some((edge) => edge.id === selection.edges[0]);
   const choices = stepChoices(element);
   // A stage shown as one node is no supplied activity: it is named, and no step is taken from it.
   const stageNode = element?.kind === "unrecorded" ? stages.stages.find((stage) => stage.id === selection.nodes[0]) : undefined;
@@ -277,6 +293,14 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
    */
   const tools = (
     <>
+      {revealed.length > 0 && (
+        <p className="map-limit">
+          {countOf(revealed.length, "path")} drawn on request beyond the detail.{" "}
+          <button type="button" className="link-button" onClick={() => setRevealed([])}>
+            Draw by the detail only
+          </button>
+        </p>
+      )}
       {inPlace && arrangement.phase === "unavailable" && (
         <p className="map-limit" title={NOT_ARRANGED_IN_FULL}>
           {NOT_ARRANGED}
@@ -425,6 +449,18 @@ export function MapView({ shown, parentGraph, onStep, previewStep, waitingFor, i
           </p>
         )}
         {element?.kind === "several" && <p className="muted">Select one activity or one path; a step is taken from one of them.</p>}
+        {listed && element?.kind === "path" && onShowMap && (
+          <p>
+            <button type="button" onClick={() => drawPath(selection.edges[0])}>
+              {selectedPathDrawn ? "Show on the map" : "Draw on the map"}
+            </button>{" "}
+            <span className="muted">
+              {selectedPathDrawn
+                ? "The map draws this path at its detail."
+                : "The detail leaves this path out; drawing it adds it with both its activities. The incidents and the steps stay as they are."}
+            </span>
+          </p>
+        )}
         {element?.kind === "activity" && (
           <ActivityTimesCard graph={shown.graph} nodeId={element.id} onSelectPath={(id) => setSelection({ nodes: [], edges: [id], groups: [] })} />
         )}
