@@ -12,6 +12,8 @@ const emptyRoles: Bpic19SuggestedRoles = { item_category: null, item_type: null,
 const number = new Intl.NumberFormat("en");
 const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 });
 const stateName = (state: string) => state.replaceAll("_", " ");
+/** The service's reason, with the request field it names, so the analyst sees which role or policy to review. */
+const refusalText = (refusal: { message: string; field?: string | null }) => refusal.field ? `${refusal.message} Field: ${refusal.field}.` : refusal.message;
 type CategoryLineageDraft = Omit<Bpic19CategoryLineageQuery, "origin_column_index"> & { origin_column_index: number | null };
 
 export interface Bpic19ProfileProps {
@@ -58,7 +60,7 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
     const outcome = await client.profile({ schema_version: 1, message_type: "bpic19_profile_request", request_id: `bpic19-profile-${revision}-${token}`, query_revision: revision, workspace_id: workspaceId, identity, query: next }, abort.signal);
     if (token !== serial.current || abort.signal.aborted) return;
     setBusy(false);
-    if (!outcome.ok) { setProblem(outcome.problem.kind === "refusal" ? outcome.problem.refusal.message : outcome.problem.kind === "unreachable" ? "The local service could not be reached. Retry the source profile." : outcome.problem.detail); return; }
+    if (!outcome.ok) { setProblem(outcome.problem.kind === "refusal" ? refusalText(outcome.problem.refusal) : outcome.problem.kind === "unreachable" ? "The local service could not be reached. Retry the source profile." : outcome.problem.detail); return; }
     setAnswer(outcome.answer); setRoles(next.roles ?? outcome.answer.suggested_roles);
     setColumns(next.profile_columns); setSource(outcome.answer.profile?.source_review?.interpretation ?? next.source_interpretation ?? null); setCategoryLineage(next.category_lineage ?? null); setTarget(""); setComparator("");
     if (outcome.answer.profile) onReviewed?.(outcome.answer);
@@ -101,7 +103,8 @@ export function Bpic19Profile({ workspaceId, identity, revision, query, client =
   }
   function inspectIssue(caseId: string, state: string) {
     if (!profile || actionsPaused) return;
-    const fields = state === "conflicting_document_or_item" ? [profile.definition.roles.purchasing_document, profile.definition.roles.item] : [];
+    const reviewed = profile.definition.roles;
+    const fields = state === "conflicting_document_or_item" ? [reviewed.purchasing_document, reviewed.item] : state === "conflicting" ? [reviewed.item_category] : [];
     const rows = profile.attributes.filter(attribute => fields.includes(attribute.column_index))
       .flatMap(attribute => attribute.conflicting_witnesses?.find(witness => witness.case_id === caseId)?.rows ?? []);
     if (rows.length) onInspect(caseId, [...new Set(rows.map(row => row.row_id))]);
