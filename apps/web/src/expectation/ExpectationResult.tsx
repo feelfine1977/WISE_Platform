@@ -40,7 +40,14 @@ export function ExpectationResult({ run: state, chosen, populationId, openCaseId
           {state.request.message_type === "read_score_run_request" ? "Opening the saved score run…" : run ? "Scoring again; the result below is the previous run." : "The method library is scoring the incidents…"}
         </p>
       )}
-      {state.phase === "failed" && <ExpectationProblem title={state.request.message_type === "read_score_run_request" ? "The saved score run could not be opened" : "The incidents could not be scored"} problem={state.problem} onRetry={onRetry} />}
+      {state.phase === "failed" && (
+        <ExpectationProblem
+          title={state.request.message_type === "read_score_run_request" ? "The saved score run could not be opened"
+            : run ? "The incidents could not be scored again; the previous run is still shown" : "The incidents could not be scored"}
+          problem={state.problem}
+          onRetry={onRetry}
+        />
+      )}
       {run && (
         <RunView
           run={run}

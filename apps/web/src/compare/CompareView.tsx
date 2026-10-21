@@ -1,3 +1,4 @@
+import { InvestigationPrerequisite } from "../components/InvestigationPrerequisite";
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { countOf } from "../data/wording";
 import type {
@@ -98,13 +99,9 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
           </h2>
         </div>
         <div className="compare-empty">
-          <p>
-            Comparisons are made in the incidents of a source read in the Data area. Open the incidents of a source there, for example of a
-            packaged example added to a workspace, then come back here.
-          </p>
-          <button type="button" onClick={onShowData}>
-            Go to the Data area
-          </button>
+          <InvestigationPrerequisite state={investigated} purpose="Comparisons are made in the incidents of a source read in the Data area." needsSelection={false}
+            onShowData={onShowData} onShowInvestigation={onShowInvestigation} onRetryPopulation={() => investigation.retryPopulation()}
+            onRetrySelection={() => investigation.retrySelection()} />
         </div>
       </main>
     );

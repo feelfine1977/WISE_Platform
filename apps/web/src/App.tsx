@@ -167,7 +167,7 @@ export default function App({
       {area === "compare" && (
         <CompareView coordinator={compareCoordinator} investigation={importedCoordinator} onShowData={showData} onShowInvestigation={showInvestigations} />
       )}
-      {area === "expectation" && <ExpectationView investigation={importedCoordinator} coordinator={expectationCoordinator} />}
+      {area === "expectation" && <ExpectationView investigation={importedCoordinator} coordinator={expectationCoordinator} onShowData={showData} onShowInvestigation={showInvestigations} />}
       {area === "saved" && (
         <SavedInvestigations saving={savingCoordinator} data={dataCoordinator} onReopened={showInvestigations} onShowData={showData} />
       )}

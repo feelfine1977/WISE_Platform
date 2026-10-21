@@ -105,7 +105,7 @@ describe("the first use of the application", () => {
     expect(screen.queryByRole("button", { name: "Go to the Data area" })).toBeNull();
     await app.user.click(area("Expectation"));
     expect(screen.getByRole("heading", { name: "Expectation" })).toBeTruthy();
-    expect(screen.queryByText(/None are open at the moment/)).toBeNull();
+    expect(screen.queryByText(/No incidents are open at the moment/)).toBeNull();
 
     // The Data area names the folder in use in one line and keeps another folder behind it.
     await app.user.click(area("Data"));

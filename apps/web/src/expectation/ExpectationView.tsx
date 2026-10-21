@@ -1,3 +1,4 @@
+import { InvestigationPrerequisite } from "../components/InvestigationPrerequisite";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { sameJson } from "../data/coordinator";
 import { countOf } from "../data/wording";
@@ -16,6 +17,9 @@ interface ExpectationViewProps {
   /** The investigation whose shown incidents are scored. */
   investigation: ImportedInvestigationCoordinator;
   coordinator: ExpectationCoordinator;
+  /** Where the incidents of a reading are opened, and where the investigation shows them: the actions offered while none are here. */
+  onShowData: () => void;
+  onShowInvestigation: () => void;
 }
 
 /** The incidents the investigation shows now, with the activities and the clock of their map. */
@@ -67,7 +71,7 @@ function revisionFor(form: DefinitionForm, clockKind: ResolutionDefinition["cloc
  * investigation shows, scored by the method library, with the incidents of each state and the
  * records one score rests on.
  */
-export function ExpectationView({ investigation, coordinator }: ExpectationViewProps) {
+export function ExpectationView({ investigation, coordinator, onShowData, onShowInvestigation }: ExpectationViewProps) {
   const investigated = useSyncExternalStore(investigation.subscribe, investigation.getState);
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   const form = state.form;
@@ -119,11 +123,11 @@ export function ExpectationView({ investigation, coordinator }: ExpectationViewP
         <p className="expectation-method-line">{methodLine(contractMethodBuild)}</p>
       </div>
       {subject === null ? (
-        <p className="expectation-note">
-          {investigated.population.phase === "idle"
-            ? "An expectation is scored for the incidents an investigation shows. None are open at the moment: open the incidents of a reading in the Data area."
-            : "An expectation is scored for the incidents an investigation shows. These are still being opened and selected; the form appears as soon as they are there. If it does not, the Investigations area says why."}
-        </p>
+        <div className="expectation-note">
+          <InvestigationPrerequisite state={investigated} purpose="An expectation is scored for the incidents an investigation shows." needsSelection
+            onShowData={onShowData} onShowInvestigation={onShowInvestigation} onRetryPopulation={() => investigation.retryPopulation()}
+            onRetrySelection={() => investigation.retrySelection()} />
+        </div>
       ) : (
         <div className="expectation-body" data-witness={witness.phase === "closed" ? "closed" : "open"}>
           <div className="expectation-main">

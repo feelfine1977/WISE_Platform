@@ -1,0 +1,11 @@
+{
+ "about": "Hand-written expectations for #50 (tools/qualify_first_use_areas.py). Over the packaged synthetic example S0 (tests/fixtures/incidents/S0.csv): 14 incidents, all opened at 2026-10-01 09:00 UTC; INC01-07 and INC13 have a Resolved record three hours later; INC08-12 and INC14 have none. An expectation from Opened to Resolved with a 2-hour target and 2 hours partly met after it, a missing response counted as not met: three hours is half way into the width, 0.5; no response is 1. The step keeps the incidents where Assigned directly follows Opened. Never read by product code.",
+ "incidents": 14,
+ "step": {"source": "Opened", "target": "Assigned", "kept": ["INC02", "INC03", "INC05", "INC07", "INC08", "INC10"], "removed": ["INC01", "INC04", "INC06", "INC09", "INC11", "INC12", "INC13", "INC14"]},
+ "expectation": {
+  "start": "Opened", "response": "Resolved", "target_hours": 2, "width_hours": 2,
+  "values": {"INC01": 0.5, "INC02": 0.5, "INC03": 0.5, "INC04": 0.5, "INC05": 0.5, "INC06": 0.5, "INC07": 0.5, "INC13": 0.5,
+             "INC08": 1, "INC09": 1, "INC10": 1, "INC11": 1, "INC12": 1, "INC14": 1},
+  "counts": {"Meet it": 0, "Partly meet it": 8, "Do not meet it": 6, "Without the response": 6}
+ }
+}

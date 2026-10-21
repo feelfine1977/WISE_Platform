@@ -644,3 +644,7 @@
 .path-lag { display: grid; gap: var(--space-2); margin: 0; padding: var(--space-2) var(--space-3); border: var(--line-width) solid var(--color-line); border-radius: var(--radius); }
 .path-lag > p { margin: 0; }
 .path-lag-bound { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+
+/* What an area that works on the investigation's incidents waits for: the sentence, then the action that works from here. */
+.area-prerequisite { display: grid; gap: var(--space-2); justify-items: start; max-width: var(--size-prerequisite); }
+.area-prerequisite p { margin: 0; }
