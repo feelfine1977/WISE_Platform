@@ -55,7 +55,7 @@ export function PairedHistories({ pins, evidence, currentPopulationId, onReturn 
         </button>
       </div>
       <p className="muted">
-        You chose these two incidents and their roles; WISE does not match, score or explain them. Each is read in the population it was pinned in.
+        You chose these two cases and their roles; WISE does not match, score or explain them. Each is read in the population it was pinned in.
         Reading them changes no step. Escape returns to the question.
       </p>
       <div className="paired-sides">
@@ -76,9 +76,9 @@ function PairedSide({ pin, loaded, stale, onRetry }: { pin: Pin; loaded: Loaded;
   return (
     <section className="paired-side" aria-labelledby={title} data-role={pin.role}>
       <h4 id={title}>
-        {ROLE_NAMES[pin.role]} · Incident <span className="identifier">{pin.caseId}</span>
+        {ROLE_NAMES[pin.role]} · Case <span className="identifier">{pin.caseId}</span>
       </h4>
-      {pin.label !== `Incident ${pin.caseId}` && <p className="pin-label">{pin.label}</p>}
+      {pin.label !== `Case ${pin.caseId}` && <p className="pin-label">{pin.label}</p>}
       <p className="muted">{originLine(pin)}</p>
       <p className="muted">
         Population {shortPopulation(pin.identity.population_id)} · preparation {shortPopulation(pin.identity.preparation_id)}
@@ -86,11 +86,11 @@ function PairedSide({ pin, loaded, stale, onRetry }: { pin: Pin; loaded: Loaded;
       {stale && <p className="order-note">Pinned under other steps than those shown now; it is read in the population it was pinned in.</p>}
       <PinNotes pin={pin} />
       {loaded === null ? (
-        <p className="working-text">Reading every record of incident {pin.caseId}…</p>
+        <p className="working-text">Reading every record of case {pin.caseId}…</p>
       ) : !loaded.ok ? (
         <div className="problem" role="alert">
           <p>
-            <strong>The history of incident {pin.caseId} cannot be read in the population it was pinned in.</strong> {describeImportProblem(loaded.problem).message}
+            <strong>The history of case {pin.caseId} cannot be read in the population it was pinned in.</strong> {describeImportProblem(loaded.problem).message}
           </p>
           <button type="button" onClick={onRetry}>
             Try again
@@ -127,7 +127,7 @@ export function RecordsTable({ answer }: { answer: ImportedCaseEvidenceAnswer })
     <div className="paired-records">
       <table>
         <caption>
-          All {countOf(answer.records.length, "record")} of incident {answer.case_id} in the declared order
+          All {countOf(answer.records.length, "record")} of case {answer.case_id} in the declared order
           {answer.sequence_evaluable ? "" : "; the order is not fully known"}
         </caption>
         <thead>
@@ -173,7 +173,7 @@ function ContextOfBoth({ pins, left, right }: { pins: [Pin, Pin]; left: Imported
     <section className="paired-context" aria-labelledby="paired-context-title">
       <h4 id="paired-context-title">Context at the first record of each</h4>
       <p className="muted">
-        Read as recorded: a value that is not recorded stays missing, and no other incident is looked for to match either one.
+        Read as recorded: a value that is not recorded stays missing, and no other case is looked for to match either one.
       </p>
       <table>
         <thead>

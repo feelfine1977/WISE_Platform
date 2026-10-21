@@ -87,7 +87,7 @@ function setup(unassigned = 0, chosen: string | null = null) {
   return { client, onChoose, onOpen, view, user: userEvent.setup() };
 }
 
-describe("the groups of the kept incidents", () => {
+describe("the groups of the kept cases", () => {
   it("offer the stated rules, the shared value of each context column among them, and group by the first activity at first", async () => {
     const { client } = setup();
     const rule = screen.getByRole("combobox", { name: "Grouped by" });
@@ -107,14 +107,14 @@ describe("the groups of the kept incidents", () => {
     expect(client.groups.mock.calls[0][0].identity).toEqual(kept);
   });
 
-  it("rank the groups with their incidents, and say how much the largest hold where groups do not overlap", async () => {
+  it("rank the groups with their cases, and say how much the largest hold where groups do not overlap", async () => {
     setup();
     const first = await screen.findByRole("button", { name: /Eröffnet/ });
     expect(first.textContent).toContain("3");
-    expect(screen.getByText("3 groups · the parent's largest 3 hold 100% of the 4 eligible kept incidents")).toBeTruthy();
+    expect(screen.getByText("3 groups · the parent's largest 3 hold 100% of the 4 eligible kept cases")).toBeTruthy();
   });
 
-  it("hand the incidents of a chosen group to the table, and let it go when another rule is chosen", async () => {
+  it("hand the cases of a chosen group to the table, and let it go when another rule is chosen", async () => {
     const { user, onChoose } = setup();
     await user.click(await screen.findByRole("button", { name: /Eröffnet/ }));
     expect(onChoose).toHaveBeenLastCalledWith({ id: "group-Eröffnet", label: "Eröffnet", caseIds: ["A-1", "A-2", "A-3"] });
@@ -122,11 +122,11 @@ describe("the groups of the kept incidents", () => {
     expect(onChoose).toHaveBeenLastCalledWith(null);
   });
 
-  it("load more groups a page at a time, and say in the amber of a limit how many incidents are in no group", async () => {
+  it("load more groups a page at a time, and say in the amber of a limit how many cases are in no group", async () => {
     const { client, user } = setup(5);
     // Who the rule cannot place is said apart, among the kept incidents and in the parent.
-    expect(await screen.findByText("5 incidents in no group (parent 10)")).toBeTruthy();
-    expect(screen.getByText("0 incidents the rule cannot evaluate (parent 2): the order of their records is not fully known")).toBeTruthy();
+    expect(await screen.findByText("5 cases in no group (parent 10)")).toBeTruthy();
+    expect(screen.getByText("0 cases the rule cannot evaluate (parent 2): the order of their records is not fully known")).toBeTruthy();
     await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Exact sequence of activities");
     await screen.findByText("A0 → Ende");
     await user.click(screen.getByRole("button", { name: "Show more groups" }));
@@ -161,16 +161,16 @@ describe("a chosen group", () => {
     expect(client.groups.mock.calls.at(-1)?.[0].query.rule).toEqual({ kind: "activity_presence", activity: "Erinnerung" });
   });
 
-  it("shows under its row what it rests on: its incidents in the parent and kept, their spans, and its shortest and longest incident to open", async () => {
+  it("shows under its row what it rests on: its cases in the parent and kept, their spans, and its shortest and longest case to open", async () => {
     const { user, onOpen } = setup(0, "group-Eröffnet");
     const row = (await screen.findByRole("button", { name: /Eröffnet/ })).closest("li")!;
     const figures = Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent);
     expect(figures).toEqual(["In the parent6 of 12 eligible · 50%", "Kept3 of 4 eligible · 75%"]);
     // The charts of a group are only to read: their description says no step.
     expect(row.textContent).not.toContain("Enter takes the step");
-    expect(within(row).getByRole("group", { name: "Recorded spans of the group's kept incidents against the whole parent" })).toBeTruthy();
-    expect(within(row).getByRole("group", { name: "Longest gaps of the group's kept incidents against the whole parent" })).toBeTruthy();
-    expect(within(row).getByText("1 incident without a gap")).toBeTruthy();
+    expect(within(row).getByRole("group", { name: "Recorded spans of the group's kept cases against the whole parent" })).toBeTruthy();
+    expect(within(row).getByRole("group", { name: "Longest gaps of the group's kept cases against the whole parent" })).toBeTruthy();
+    expect(within(row).getByText("1 case without a gap")).toBeTruthy();
     await user.click(within(row).getByRole("button", { name: "Longest: A-3, 2.1 d" }));
     expect(onOpen).toHaveBeenCalledWith("A-3");
     expect(within(row).getByRole("button", { name: "Shortest: A-2, 3 h" })).toBeTruthy();
@@ -187,7 +187,7 @@ describe("the words of a group", () => {
   });
 });
 
-describe("a group that keeps no incident", () => {
+describe("a group that keeps no case", () => {
   it("can still be chosen, to read what it rests on in the parent and why it has no exemplars", async () => {
     const { user, onChoose } = setup(0, "group-Leer");
     const empty = await screen.findByRole("button", { name: /Leer/ });
@@ -196,14 +196,14 @@ describe("a group that keeps no incident", () => {
     expect(onChoose).toHaveBeenLastCalledWith(null);
     const row = empty.closest("li")!;
     expect(Array.from(row.querySelectorAll(".groups-figures > div"), (pair) => pair.textContent)).toEqual(["In the parent6 of 12 eligible · 50%", "Kept0 of 4 eligible · 0%"]);
-    expect(within(row).getByText("No kept incident is in this group.")).toBeTruthy();
+    expect(within(row).getByText("No kept case is in this group.")).toBeTruthy();
   });
 
-  it("says no cover where no kept incident is eligible for the rule, never a share of none", async () => {
+  it("says no cover where no kept case is eligible for the rule, never a share of none", async () => {
     const client = grouping(0, null, true);
     render(<GroupsPanel workspaceId="workspace-1" revision={4} identity={kept} contextColumns={[]} chosen={null} onChoose={vi.fn()} client={client} />);
     expect(await screen.findByText("3 groups")).toBeTruthy();
     expect(screen.queryByText(/hold/)).toBeNull();
-    expect(screen.getByText("1 incident the rule cannot evaluate (parent 2): the order of their records is not fully known")).toBeTruthy();
+    expect(screen.getByText("1 case the rule cannot evaluate (parent 2): the order of their records is not fully known")).toBeTruthy();
   });
 });

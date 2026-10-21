@@ -47,6 +47,6 @@ export const httpMarksClient: MarksClient = {
       return { ok: false, problem: { kind: "refusal", refusal: value } };
     }
     if (response.ok && marksContract.answer(value) && answersMarks(request, value)) return { ok: true, answer: value };
-    return { ok: false, problem: { kind: "unsupported_reply", detail: "The reply does not answer these incidents and identity." } };
+    return { ok: false, problem: { kind: "unsupported_reply", detail: "The reply does not answer these cases and identity." } };
   },
 };

@@ -42,21 +42,21 @@ export function Report({ request, answer, filename, cutoffEntered, previous, nam
   const figures: [string, string][] = [
     ["Records read", countOf(report.raw_record_count, "record")],
     ...supplied("Blank lines skipped", report.blank_record_count, "blank line"),
-    ["With an incident id", countOf(report.identified_record_count, "record")],
-    ["Outside every incident", countOf(report.unassigned_record_count, "record")],
+    ["With a case id", countOf(report.identified_record_count, "record")],
+    ["Outside every case", countOf(report.unassigned_record_count, "record")],
     ...supplied("Of these, with another number of cells than the header", report.ragged_record_count, "record"),
     ["With a usable time", countOf(report.usable_timestamp_record_count, "record")],
     ["Without a usable time: kept, order not known", countOf(report.unavailable_timestamp_record_count, "record")],
-    ["Incidents", countOf(report.case_count, "incident")],
-    ["Incidents in a known order", countOf(report.sequence_evaluable_case_count, "incident")],
-    ["Incidents in an order not fully known", countOf(report.sequence_unevaluable_case_count, "incident")],
+    ["Cases", countOf(report.case_count, "case")],
+    ["Cases in a known order", countOf(report.sequence_evaluable_case_count, "case")],
+    ["Cases in an order not fully known", countOf(report.sequence_unevaluable_case_count, "case")],
     ["Records with an activity label", countOf(report.mapped_activity_record_count, "record")],
     ["Records without activity label", countOf(report.omitted_activity_record_count, "record")],
     ["First usable time", period(wall ? report.first_usable_local_timestamp : report.first_usable_utc_instant)],
     ["Last usable time", period(wall ? report.last_usable_local_timestamp : report.last_usable_utc_instant)],
     ["Export taken at", period(cutoff)],
     [
-      "Tied times within an incident",
+      "Tied times within a case",
       `${countOf(report.tied_timestamp_groups, "group")} of ${countOf(report.tied_timestamp_record_count, "record")}`,
     ],
     ["Rows repeating an earlier row", countOf(report.duplicate_candidate_record_count, "record")],
@@ -101,7 +101,7 @@ export function Report({ request, answer, filename, cutoffEntered, previous, nam
               <tr>
                 <th scope="col">Activity</th>
                 <th scope="col" className="number">Records</th>
-                <th scope="col" className="number">Incidents</th>
+                <th scope="col" className="number">Cases</th>
               </tr>
             </thead>
             <tbody>
@@ -109,7 +109,7 @@ export function Report({ request, answer, filename, cutoffEntered, previous, nam
                 <tr key={item.activity}>
                   <th scope="row">{item.activity}</th>
                   <td className="number">{countOf(item.record_count, "record")}</td>
-                  <td className="number">{countOf(item.case_count, "incident")}</td>
+                  <td className="number">{countOf(item.case_count, "case")}</td>
                 </tr>
               ))}
             </tbody>
@@ -144,7 +144,7 @@ export function Report({ request, answer, filename, cutoffEntered, previous, nam
           {single && (
             <label className="check" htmlFor={singleId}>
               <input id={singleId} type="checkbox" checked={singleAccepted} onChange={(event) => setSingleAccepted(event.target.checked)} />
-              Open them as incidents of one record each.
+              Open them as cases of one record each.
             </label>
           )}
           <button
@@ -155,7 +155,7 @@ export function Report({ request, answer, filename, cutoffEntered, previous, nam
             disabled={single && !singleAccepted}
             onClick={() => onOpenIncidents(answer.preparation!.preparation_id)}
           >
-            Open incidents
+            Open cases
           </button>
         </div>
       )}
@@ -189,14 +189,14 @@ function StateLine({ answer }: { answer: InterpretationAnswer }) {
 /** The records outside every incident, each with where it stands in the file and its original text. */
 function Excluded({ records }: { records: ExcludedSourceRecord[] }) {
   const [all, setAll] = useState(false);
-  if (records.length === 0) return <p className="muted">No record stays outside every incident.</p>;
+  if (records.length === 0) return <p className="muted">No record stays outside every case.</p>;
   const shown = all ? records : records.slice(0, EXCLUDED_SHOWN);
   return (
     <div className="excluded">
       <div className="table-scroll" role="region" aria-labelledby="excluded-title" tabIndex={0}>
         <table className="plain-table compact-table excluded-table">
           <caption id="excluded-title" className="caption">
-            Records outside every incident, as written in the file
+            Records outside every case, as written in the file
           </caption>
           <thead>
             <tr>
@@ -228,7 +228,7 @@ function Excluded({ records }: { records: ExcludedSourceRecord[] }) {
       </div>
       {records.length > shown.length && (
         <button type="button" onClick={() => setAll(true)}>
-          Show all {countOf(records.length, "record")} outside every incident
+          Show all {countOf(records.length, "record")} outside every case
         </button>
       )}
     </div>
@@ -270,12 +270,12 @@ function Issues({ issues }: { issues: RowIssue[] }) {
 const COMPARED: [string, (report: InterpretationAnswer["report"]) => number, string][] = [
   ["With a usable time", (report) => report.usable_timestamp_record_count, "record"],
   ["Without a usable time", (report) => report.unavailable_timestamp_record_count, "record"],
-  ["With an incident id", (report) => report.identified_record_count, "record"],
-  ["Outside every incident", (report) => report.unassigned_record_count, "record"],
-  ["Incidents", (report) => report.case_count, "incident"],
-  ["Incidents in a known order", (report) => report.sequence_evaluable_case_count, "incident"],
+  ["With a case id", (report) => report.identified_record_count, "record"],
+  ["Outside every case", (report) => report.unassigned_record_count, "record"],
+  ["Cases", (report) => report.case_count, "case"],
+  ["Cases in a known order", (report) => report.sequence_evaluable_case_count, "case"],
   ["Records without activity label", (report) => report.omitted_activity_record_count, "record"],
-  ["Records sharing a time within an incident", (report) => report.tied_timestamp_record_count, "record"],
+  ["Records sharing a time within a case", (report) => report.tied_timestamp_record_count, "record"],
 ];
 
 /** What a change of choices does to the support, beside the previous reading of the same source, which stays as it was. */

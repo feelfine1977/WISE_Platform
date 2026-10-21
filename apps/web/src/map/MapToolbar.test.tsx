@@ -22,7 +22,7 @@ async function renderMap(showing: "map" | "paths" = "map") {
   const view = render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} showing={showing} />);
   const again = (next: "map" | "paths") => view.rerender(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} showing={next} />);
   if (showing === "paths") return { user, again, map: null as unknown as HTMLElement };
-  const map = await screen.findByLabelText("Process map of the kept incidents");
+  const map = await screen.findByLabelText("Process map of the kept cases");
   await waitFor(() => expect(map.querySelectorAll(".react-flow__node-activity").length).toBe(BUSY_ACTIVITIES));
   return { user, again, map };
 }
@@ -46,7 +46,7 @@ describe("the tools of the map", () => {
     // Before it, the line that says where the places of the activities come from, with the way back or the rearrangement.
     expect(tools().previousElementSibling?.previousElementSibling?.className).toBe("map-arrangement");
     expect(tools().previousElementSibling?.previousElementSibling?.previousElementSibling).toBe(screen.getByRole("form", { name: "Detail" }));
-    expect(toolNames()).toEqual(["Run the map left to right", "Overview of the whole map", "Edit stages", "About this map"]);
+    expect(toolNames()).toEqual(["Back to the opening", "Run the map left to right", "Overview of the whole map", "Edit stages", "About this map"]);
     for (const button of within(tools()).getAllByRole("button")) {
       expect(button.className).toBe("icon-button");
       expect(button.getAttribute("title")).toContain(button.getAttribute("aria-label"));
@@ -69,11 +69,11 @@ describe("the tools of the map", () => {
 
   it("keep what a selection offers as a description for assistive technology only", async () => {
     const { again } = await renderMap();
-    const hint = screen.getByText("Select an activity or a path on the map, or a row of its table view, to keep or remove the incidents through it.");
+    const hint = screen.getByText("Select an activity or a path on the map, or a row of its table view, to keep or remove the cases through it.");
     expect(hint.closest(".visually-hidden")).toBe(view().querySelector(".map-element"));
-    expect(screen.getByRole("heading", { name: "Keep or remove incidents" }).closest(".visually-hidden")).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Keep or remove cases" }).closest(".visually-hidden")).not.toBeNull();
     again("paths");
-    expect(screen.getByText("Select a row of the list to keep or remove the incidents through it.").closest(".visually-hidden")).not.toBeNull();
+    expect(screen.getByText("Select a row of the list to keep or remove the cases through it.").closest(".visually-hidden")).not.toBeNull();
   });
 
   it("leave the switches of the picture out over the list of every path, which is no picture", async () => {
@@ -83,8 +83,8 @@ describe("the tools of the map", () => {
     expect(tools().parentElement?.className).toBe("map-detail");
     expect(Array.from(view().querySelector(".map-main")!.children, (part) => part.className)).toEqual(["map-detail", "path-list"]);
     again("map");
-    await screen.findByLabelText("Process map of the kept incidents");
-    expect(toolNames()).toEqual(["Run the map left to right", "Overview of the whole map", "Edit stages", "About this map"]);
+    await screen.findByLabelText("Process map of the kept cases");
+    expect(toolNames()).toEqual(["Back to the opening", "Run the map left to right", "Overview of the whole map", "Edit stages", "About this map"]);
   });
 
   it("show the overview of the whole map only when it is asked for", async () => {
@@ -119,7 +119,7 @@ describe("the editor of the stages beside the map", () => {
     expect(view().getAttribute("data-beside")).toBe("stages");
     // After the row and the frame of the map, which stay as they are: the map is not taken away or pushed down.
     expect(parts()).toEqual(["map-main", "map-stages-panel", "map-element visually-hidden"]);
-    expect(screen.getByLabelText("Process map of the kept incidents")).toBe(map);
+    expect(screen.getByLabelText("Process map of the kept cases")).toBe(map);
     const panel = view().querySelector<HTMLElement>(".map-stages-panel")!;
     expect(document.activeElement).toBe(within(panel).getByRole("heading", { name: "Stages of this log" }));
     expect(within(panel).getByRole("region", { name: "Stages of this log" })).toBeTruthy();
@@ -142,7 +142,7 @@ describe("the editor of the stages beside the map", () => {
   it("takes the place of the steps of a selected element, which stays selected and has its steps back when the editor is closed", async () => {
     const { user, map } = await renderMap();
     const second = map.querySelector<HTMLElement>(`[data-id="${busyIds.activity(1)}"]`)!;
-    const own = ["Keep incidents that contain it", "Keep incidents that do not contain it", "Keep incidents that begin with it"];
+    const own = ["Keep cases that contain it", "Keep cases that do not contain it", "Keep cases that begin with it"];
     fireEvent.click(second);
     expect(screen.getByRole("heading", { name: `Activity “${stepName(1)}”` })).toBeTruthy();
     expect(offered()).toEqual(own);
@@ -164,7 +164,7 @@ describe("the editor of the stages beside the map", () => {
     await user.click(screen.getByRole("button", { name: "Close the editor of the stages" }));
     expect(view().querySelector<HTMLElement>(".map-element")!.hidden).toBe(false);
     expect(screen.getByRole("heading", { name: `Activity “${stepName(11)}”` })).toBeTruthy();
-    expect(offered()).toEqual([own[0], own[1], "Keep incidents that end with it"]);
+    expect(offered()).toEqual([own[0], own[1], "Keep cases that end with it"]);
     expect(view().getAttribute("data-beside")).toBe("element");
   });
 
@@ -196,7 +196,7 @@ describe("what there is to know about the map", () => {
     // It hangs from its button in the row above the map and is no part of the map view's layout.
     expect(about().parentElement).toBe(tool("About this map").parentElement);
     expect(parts()).toEqual(["map-main", "map-element visually-hidden"]);
-    expect(screen.getByLabelText("Process map of the kept incidents")).toBe(map);
+    expect(screen.getByLabelText("Process map of the kept cases")).toBe(map);
     expect(Array.from(about().children, (part) => part.className)).toEqual(["about-lead", "popover-section map-not-drawn", "popover-section map-coverage", "map-caption", "map-library"]);
     expect(within(about()).getAllByRole("heading").map((heading) => heading.textContent)).toEqual(["Not drawn at this detail", "What the map counts"]);
 
@@ -204,18 +204,18 @@ describe("what there is to know about the map", () => {
     expect(Array.from(about().querySelectorAll(".map-not-drawn p"), (line) => line.textContent)).toEqual([
       "12 of 12 activities shown, carrying 100.0 % of the events.",
       "36 of 47 paths: 23 by frequency, 13 kept so that every activity lies on a way from start to end. Strongest path not shown: 14.",
-      "2 of the 7 flows from Start and to End, each with fewer than 15 incidents. The Paths slider draws more.",
+      "2 of the 7 flows from Start and to End, each with fewer than 15 cases. The Paths slider draws more.",
     ]);
     expect(Array.from(about().querySelectorAll(".map-not-drawn p"), (line) => line.textContent).slice(0, 2)).toEqual([inFull("activities"), inFull("paths")]);
 
     // Then every coverage figure, and the sentences that define the numbers and the measures.
     const counts = Array.from(about().querySelectorAll(".map-coverage dl > div"), (row) => [row.querySelector("dt")?.textContent, row.querySelector("dd")?.textContent]);
     expect(counts).toHaveLength(13);
-    expect(counts[0]).toEqual(["Incidents on the map", "2 incidents"]);
+    expect(counts[0]).toEqual(["Cases on the map", "2 cases"]);
     expect(counts.map(([name]) => name)).toContain("Records without activity label");
     const caption = Array.from(about().querySelectorAll(".map-caption p"), (line) => line.textContent ?? "");
     expect(caption).toHaveLength(7);
-    expect(caption[0]).toBe("Activities count labelled records and distinct incidents of the 2 incidents on the map.");
+    expect(caption[0]).toBe("Activities count labelled records and distinct cases of the 2 cases on the map.");
     expect(caption[5]).toMatch(/^Lag: /);
     expect(caption[6]).toMatch(/^Measures: the legend under the map, shown whole, switches what the map writes\./);
     expect(about().lastElementChild?.textContent).toBe("The map is drawn with an unreleased state of the map library (wise-flow 0.3.5, a local packaging candidate).");
@@ -256,7 +256,7 @@ describe("what there is to know about the map", () => {
     expect(tool("About this map").getAttribute("title")).toBe("About this map\nSome flows from Start and to End are not drawn at this detail");
 
     await user.click(tool("About this map"));
-    expect(about().querySelector(".map-flows")?.textContent).toBe("2 of the 7 flows from Start and to End, each with fewer than 15 incidents. The Paths slider draws more.");
+    expect(about().querySelector(".map-flows")?.textContent).toBe("2 of the 7 flows from Start and to End, each with fewer than 15 cases. The Paths slider draws more.");
 
     // Every path drawn, every flow is drawn: nothing is left to say, and the statements follow the sliders while the panel is open.
     fireEvent.change(paths(), { target: { value: paths().getAttribute("max") } });
@@ -269,8 +269,8 @@ describe("what there is to know about the map", () => {
 
   it("says the flows line under its heading without the words of the heading", () => {
     expect(NOT_DRAWN).toBe("Not drawn at this detail");
-    expect(underNotDrawn("Not drawn at this detail: 26 of the 44 flows from Start and to End: 4 of activities that are not shown, 22 with fewer than 373 incidents. The sliders draw more.")).toBe(
-      "26 of the 44 flows from Start and to End: 4 of activities that are not shown, 22 with fewer than 373 incidents. The sliders draw more.",
+    expect(underNotDrawn("Not drawn at this detail: 26 of the 44 flows from Start and to End: 4 of activities that are not shown, 22 with fewer than 373 cases. The sliders draw more.")).toBe(
+      "26 of the 44 flows from Start and to End: 4 of activities that are not shown, 22 with fewer than 373 cases. The sliders draw more.",
     );
     // A line that begins otherwise is said as it is.
     expect(underNotDrawn("3 flows are not drawn.")).toBe("3 flows are not drawn.");

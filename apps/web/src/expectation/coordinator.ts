@@ -491,7 +491,7 @@ function checkRun(request: ScoreExpectationRequest, answer: ScoreRunAnswer): Sco
   if (identity.definition_version_id !== request.definition_version_id) return mismatch("The reply scored a different definition.");
   if (!sameJson(identity.base_identity, request.base_identity)) return mismatch("The reply belongs to a different preparation.");
   if (!sameJson(identity.scored_population_identity, request.named_population.identity)) {
-    return mismatch("The reply scored different incidents.");
+    return mismatch("The reply scored different cases.");
   }
   const disagreement = checkStateCounts(answer.run);
   if (disagreement) return mismatch(disagreement);
@@ -502,7 +502,7 @@ function checkWitness(request: ScoreCaseWitnessRequest, run: ScoreRun, answer: S
   const different = sameEnvelope(request, answer);
   if (different) return different;
   if (!sameJson(answer.run_identity, run.identity)) return mismatch("The reply belongs to a different run.");
-  if (answer.case.case_id !== request.case_id) return mismatch("The reply describes a different incident.");
+  if (answer.case.case_id !== request.case_id) return mismatch("The reply describes a different case.");
   return { ok: true, answer };
 }
 

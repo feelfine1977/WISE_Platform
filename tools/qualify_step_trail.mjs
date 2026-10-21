@@ -57,7 +57,7 @@ try {
   await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, incidents);
   await settled(0);
   const parent = selections.at(-1);
-  await view('Incidents').click();
+  await view('Cases').click();
 
   // Three steps from the Filters: a range of records, a span, and a value of the chosen context column Agent.
   await filters();
@@ -93,8 +93,8 @@ try {
   await first.locator('summary').click();
   const after = trail.kept_after[0];
   check('details_open_on_demand', await first.locator('.chip-counts').isVisible()
-    && (await first.locator('.chip-wording').textContent()) === 'Keep incidents with 2 to 3 records, both included'
-    && (await first.locator('.chip-after').textContent()) === `After this step: ${after.case_ids.length} incidents · ${after.record_count} records kept`, await first.locator('.chip-after').textContent());
+    && (await first.locator('.chip-wording').textContent()) === 'Keep cases with 2 to 3 records, both included'
+    && (await first.locator('.chip-after').textContent()) === `After this step: ${after.case_ids.length} cases · ${after.record_count} records kept`, await first.locator('.chip-after').textContent());
 
   // The state after the first step: the later steps stay in the trail, not applied, with their counts.
   await chooseChip(applied(), 0);
@@ -110,7 +110,7 @@ try {
   await settled(3);
   check('forward_to_the_last_step', same(selections.at(-1).identity, full.identity) && await later().count() === 0, null);
   // Back to the parent: every step is a later step; a new step drops them.
-  await page.getByRole('button', {name: `Every incident of the parent · ${incidents}`, exact: true}).click();
+  await page.getByRole('button', {name: `Every case of the parent · ${incidents}`, exact: true}).click();
   await settled(0);
   check('back_to_the_parent', same(selections.at(-1).identity, parent.identity) && (await summaries(later())).length === 3, null);
   control = await open('Recorded time');

@@ -43,13 +43,13 @@ async function openReading(preparationId) {
 }
 async function pin(caseId, role, words) {
   await page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${caseId}$`)}).click();
-  await page.getByRole('list', {name: `Records of incident ${caseId} in the declared order`}).waitFor();
+  await page.getByRole('list', {name: `Records of case ${caseId} in the declared order`}).waitFor();
   const control = page.getByRole('region', {name: 'Pin this history'});
   await control.getByText('Notes, none required').click();
   for (const [label, text] of Object.entries(words)) await control.getByLabel(label).fill(text);
   await control.getByRole('button', {name: `Pin as ${role}`, exact: true}).click();
   await control.getByRole('status').getByText(`Pinned as ${role}.`).waitFor();
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
 }
 const NAME = 'Resolution by team, frozen parent';
 
@@ -62,20 +62,20 @@ try {
     await settled(0);
     // The eligibility step, then the clause.
     await view('Paths').click();
-    await page.getByRole('table', {name: 'Paths of the kept incidents'}).locator('tbody tr').filter({has: page.locator('th', {hasText: /^Start$/})})
+    await page.getByRole('table', {name: 'Paths of the kept cases'}).locator('tbody tr').filter({has: page.locator('th', {hasText: /^Start$/})})
       .filter({has: page.locator('td', {hasText: /^Opened$/})}).locator('th button').click();
-    await page.getByRole('button', {name: 'Keep incidents that begin with it', exact: true}).click();
+    await page.getByRole('button', {name: 'Keep cases that begin with it', exact: true}).click();
     await settled(1);
     await view('Map').click();
     await page.locator('.react-flow__node-activity', {hasText: 'Resolved'}).first().click();
-    await page.getByRole('button', {name: 'Keep incidents that contain it', exact: true}).click();
+    await page.getByRole('button', {name: 'Keep cases that contain it', exact: true}).click();
     await settled(2);
     // Two witnesses, one kept and one removed.
-    await view('Incidents').click();
+    await view('Cases').click();
     await pin('F01', 'supporting', {Observation: 'Resolved within two hours.'});
-    await page.getByRole('group', {name: 'Incidents listed'}).getByRole('button', {name: /^Removed/}).click();
+    await page.getByRole('group', {name: 'Cases listed'}).getByRole('button', {name: /^Removed/}).click();
     await pin('F04', 'contrary', {Limitation: 'The export may end before a resolution.'});
-    await page.getByRole('group', {name: 'Incidents listed'}).getByRole('button', {name: /^Kept/}).click();
+    await page.getByRole('group', {name: 'Cases listed'}).getByRole('button', {name: /^Kept/}).click();
     // The comparison in the frozen parent, and the outcome.
     await areas.getByRole('button', {name: 'Compare', exact: true}).click();
     await page.getByRole('button', {name: 'Kept against removed', exact: true}).click();
@@ -93,18 +93,18 @@ try {
     const form = page.getByRole('region', {name: 'Save this investigation'});
     const summary = (await form.getByLabel('What this save holds').textContent()) ?? '';
     check('summary_names_everything_saved', summary.includes('frozen-parent') || summary.includes(expected.file)
-      && summary.includes('Recorded “Resolved”') && summary.includes('kept by Keep incidents that begin with “Opened”')
-      && summary.includes('no recorded “Resolved” at the snapshot') && summary.includes('Supporting · Incident F01 (F01); Contrary · Incident F04 (F04)')
+      && summary.includes('Recorded “Resolved”') && summary.includes('kept by Keep cases that begin with “Opened”')
+      && summary.includes('no recorded “Resolved” at the snapshot') && summary.includes('Supporting · Case F01 (F01); Contrary · Case F04 (F04)')
       && summary.includes('none: an unscored question is saved as it is'), summary);
     await form.getByLabel('Name').fill(NAME);
-    await form.getByLabel('Question').fill('Do resolved incidents differ by team?');
+    await form.getByLabel('Question').fill('Do resolved cases differ by team?');
     await form.getByLabel('Counterexample').fill('F04 has no recorded resolution.');
     await form.getByRole('button', {name: 'Close', exact: true}).click();
     await page.getByRole('button', {name: 'Save', exact: true}).click();
     const again = page.getByRole('region', {name: 'Save this investigation'});
-    check('draft_kept_and_said_unsaved', (await again.getByLabel('Question').inputValue()) === 'Do resolved incidents differ by team?'
+    check('draft_kept_and_said_unsaved', (await again.getByLabel('Question').inputValue()) === 'Do resolved cases differ by team?'
       && ((await again.getByRole('note').textContent()) ?? '').startsWith('Unsaved draft'), null);
-    await again.getByLabel('Limitation').fill('Seven invented incidents.');
+    await again.getByLabel('Limitation').fill('Seven invented cases.');
     await again.getByRole('button', {name: 'Save', exact: true}).focus();
     await page.keyboard.press('Enter');
     for (let wait = 0; wait < 600 && saveReplies.length === 0; wait += 1) await page.waitForTimeout(100);
@@ -112,7 +112,7 @@ try {
     check('save_answered', saveReplies.at(-1)?.message_type === 'save_investigation_answer', saveReplies.at(-1));
     await page.locator('#saved-form').getByRole('status').getByText(`Saved as the new investigation “${NAME}”.`).waitFor();
     const saved = saves.at(-1);
-    check('saved_with_its_whole_meaning', saved.notes === 'Question: Do resolved incidents differ by team?\n\nCounterexample: F04 has no recorded resolution.\n\nLimitation: Seven invented incidents.'
+    check('saved_with_its_whole_meaning', saved.notes === 'Question: Do resolved cases differ by team?\n\nCounterexample: F04 has no recorded resolution.\n\nLimitation: Seven invented cases.'
       && saved.bookmarks.length === 2 && saved.bookmarks[1].note.startsWith('Role: contrary') && saved.outcome?.counted === 'absence'
       && JSON.stringify(saved.comparison_parent?.retained_predicates) === JSON.stringify([expected.retained]) && saved.comparison?.kind === 'group', saved);
     await writeFile(output, JSON.stringify({checks}));
@@ -130,16 +130,16 @@ try {
     await page.keyboard.press('Enter');
     await settled(2);
     const line = (await page.getByRole('region', {name: 'Saved investigation'}).textContent()) ?? '';
-    check('notes_reopened_as_written', line.includes('QuestionDo resolved incidents differ by team?') && line.includes('CounterexampleF04 has no recorded resolution.')
+    check('notes_reopened_as_written', line.includes('QuestionDo resolved cases differ by team?') && line.includes('CounterexampleF04 has no recorded resolution.')
       && line.includes('2 pinned witnesses saved with it'), line);
     await page.getByRole('button', {name: 'Filters and views'}).click();
     await rail('Pinned').click();
     const index = (await page.getByRole('region', {name: 'Pinned histories'}).textContent()) ?? '';
-    check('pins_reopened_with_roles_and_words', index.includes('Supporting · Incident F01') && index.includes('Contrary · Incident F04') && index.includes('Removed by the selection'), index);
+    check('pins_reopened_with_roles_and_words', index.includes('Supporting · Case F01') && index.includes('Contrary · Case F04') && index.includes('Removed by the selection'), index);
     await areas.getByRole('button', {name: 'Compare', exact: true}).click();
     await page.waitForFunction(() => document.querySelector('.compare-status')?.textContent?.startsWith('Comparison shown'));
     const parent = (await page.getByRole('note', {name: 'Parent'}).textContent()) ?? '';
-    check('frozen_parent_reopened_with_its_steps', parent.includes('kept by Keep incidents that begin with “Opened”'), parent);
+    check('frozen_parent_reopened_with_its_steps', parent.includes('kept by Keep cases that begin with “Opened”'), parent);
     const outcome = page.getByRole('region', {name: 'Outcome by opening value'});
     await outcome.getByRole('table').waitFor();
     check('outcome_reopened_and_asked_again', ((await outcome.textContent()) ?? '').includes('Outcome O: No recorded “Resolved”'), null);

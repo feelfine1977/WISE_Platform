@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { type ComponentProps, useMemo, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { AbstractOptions } from "wise-flow";
-import { ProcessMap } from "wise-flow/react";
+import { type InView, ProcessMap } from "wise-flow/react";
 import { mapDetail } from "./detail";
 import { DetailStrip } from "./DetailStrip";
 import { leastFlowIncidents, rankedDetail, toFlowGraph } from "./graph";
@@ -60,7 +60,7 @@ describe("the detail controls above the canvas of the map", () => {
   async function renderBusyMap() {
     const supplied = busyGraph();
     render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} />);
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     const inside = () => within(map).getByRole("form", { name: "Detail" });
     /** How many activities the map draws. */
     const nodesDrawn = () => map.querySelectorAll(".react-flow__node-activity").length;
@@ -126,7 +126,8 @@ describe("the detail controls above the canvas of the map", () => {
     await waitFor(() => expect(map.getAttribute("data-renderer")).toBe("table"));
     expect(said(above()).switches).toEqual([["Map view", "true"]]);
     expect(said(above())).toEqual(said(inside()));
-    expect({ ...said(above()), switches: opening.switches }).toEqual(opening);
+    // The table lists the whole graph: the line saying how much of the map is in view is the map's alone.
+    expect({ ...said(above()), switches: opening.switches }).toEqual({ ...opening, furtherLines: opening.furtherLines.filter((line) => !line.endsWith(" in view")) });
 
     move(above(), "Activities", 3);
     await waitFor(() => expect(slider(inside(), "Activities").value).toBe("3"));
@@ -178,10 +179,12 @@ describe("the detail controls above the canvas of the map", () => {
       const graph = useMemo(stagedGraph, []);
       const [detail, setDetail] = useState<AbstractOptions>({});
       const [view, setView] = useState<"map" | "table">("map");
+      // What the map's view shows of it, as the map view passes it from the map to the strip.
+      const [inView, setInView] = useState<InView>();
       return (
         <>
-          <DetailStrip detail={detail} shown={mapDetail(graph, detail)} onChange={setDetail} view={view} onViewChange={setView} />
-          <ProcessMap graph={graph} abstraction={detail} onAbstractionChange={setDetail} view={view} onViewChange={setView} locale="en" ariaLabel="Staged map" />
+          <DetailStrip detail={detail} shown={mapDetail(graph, detail)} onChange={setDetail} view={view} onViewChange={setView} inView={view === "table" ? undefined : inView} />
+          <ProcessMap graph={graph} abstraction={detail} onAbstractionChange={setDetail} view={view} onViewChange={setView} onInView={setInView} locale="en" ariaLabel="Staged map" />
         </>
       );
     }

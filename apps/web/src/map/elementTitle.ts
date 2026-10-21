@@ -11,5 +11,5 @@ export function elementTitle(element: SelectedElement | null): string {
   if (element?.kind === "activity") return `Activity “${element.label}”`;
   if (element?.kind === "path") return pathTitle(element.source, element.target);
   if (element?.kind === "boundary") return flowTitle(element.side, element.activity);
-  return "Keep or remove incidents";
+  return "Keep or remove cases";
 }

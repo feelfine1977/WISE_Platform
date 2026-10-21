@@ -32,13 +32,13 @@ describe("#56 a long activity label in the parent's places", () => {
     const supplied = longGraph();
     const view = (showing: "map" | "paths") => <MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} showing={showing} initiallyInPlace />;
     const { rerender } = render(view("map"));
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(map.querySelectorAll(".react-flow__node-activity").length).toBe(supplied.nodes.length));
     // The map names the activity in full for assistive technology, whatever its card shows.
     expect([...map.querySelectorAll("[aria-label]")].some((element) => element.getAttribute("aria-label")?.includes(LONG))).toBe(true);
 
     rerender(view("paths"));
-    const list = screen.getByRole("table", { name: "Paths of the kept incidents" });
+    const list = screen.getByRole("table", { name: "Paths of the kept cases" });
     const row = within(list).getAllByRole("row").find((candidate) => candidate.textContent?.includes(LONG) && !candidate.textContent.includes("End"))!;
     const control = within(row).getAllByRole("button")[0];
     control.focus();

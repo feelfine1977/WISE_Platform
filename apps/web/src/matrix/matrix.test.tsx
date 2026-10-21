@@ -40,21 +40,21 @@ function scripted() {
 const otherIdentity = { ...identity, population_id: `population.v1:sha256:${"9".repeat(64)}` };
 
 describe("#12 the measures of a cell, each with its unit and denominator", () => {
-  it("names incidents, passages, the outgoing share and the lags apart", () => {
+  it("names cases, passages, the outgoing share and the lags apart", () => {
     const answer = answerFor({ schema_version: 1, message_type: "transition_matrix_request", request_id: "m", query_revision: 1, workspace_id: workspaceId, identity, witness_limit: 50 });
     expect(matrixContract.answer(answer)).toBe(true);
     const [first, tie] = answer.cells;
     expect(["incidents", "passages", "outgoing", "median", "mean"].map((measure) => cellValue(first, measure as never))).toEqual(["3", "4", "66.7 %", "1.5", "1.5"]);
     expect(cellValue(tie, "median")).toBe("1.0");
-    expect(measureKey("incidents", answer)).toBe("Incidents: the distinct incidents with the pair, of the 6 incidents whose order is known; a repeat adds no incident.");
+    expect(measureKey("incidents", answer)).toBe("Cases: the distinct cases with the pair, of the 6 cases whose order is known; a repeat adds no case.");
     expect(measureKey("outgoing", answer)).toContain("a row no pair leaves has no denominator");
     expect(measureKey("median", answer)).toContain("elapsed hours (UTC)");
     expect(cellDescription(first, answer)).toBe(
-      "From Opened to Assigned: 3 incidents of 6 (50.0 %), 4 passages, 66.7 % of the 6 passages leaving Opened, median lag 1.5 h over 4 usable lags");
+      "From Opened to Assigned: 3 cases of 6 (50.0 %), 4 passages, 66.7 % of the 6 passages leaving Opened, median lag 1.5 h over 4 usable lags");
   });
 });
 
-describe("#12 the matrix of the kept incidents", () => {
+describe("#12 the matrix of the kept cases", () => {
   it("shows no reply for an earlier selection, and a refusal with a way to try again", async () => {
     const { client, calls } = scripted();
     const props = { workspaceId, revision: 1, onStep: () => undefined, onOpenCase: () => undefined, client };
@@ -76,7 +76,7 @@ describe("#12 the matrix of the kept incidents", () => {
     const { client, calls } = scripted();
     render(<TransitionMatrix workspaceId={workspaceId} revision={1} identity={identity} onStep={() => undefined} onOpenCase={() => undefined} client={client} />);
     await act(async () => calls[0].reply({ ok: true, answer: answerFor(calls[0].request, true) }));
-    expect(screen.getByText("No kept incident has a known order, so there is no pair and no denominator.")).toBeTruthy();
+    expect(screen.getByText("No kept case has a known order, so there is no pair and no denominator.")).toBeTruthy();
   });
 
   it("selects a cell, previews, cancels and applies its step with the focus back on the cell, and opens a passage with its rows", async () => {
@@ -97,22 +97,22 @@ describe("#12 the matrix of the kept incidents", () => {
     const panel = screen.getByRole("region", { name: "From Assigned to Resolved" });
     expect(panel.textContent).toContain("1 passage between two records with the same time, ordered by the declared rule");
     expect(panel.textContent).toContain("median 1.0 h, mean 0.7 h over 3 usable lags; 1 measured zero");
-    await user.click(within(panel).getByRole("button", { name: "Preview removing these incidents" }));
-    expect(await within(panel).findByText(/^Preview: would keep 3 incidents of 7 incidents/)).toBeTruthy();
+    await user.click(within(panel).getByRole("button", { name: "Preview removing these cases" }));
+    expect(await within(panel).findByText(/^Preview: would keep 3 cases of 7 cases/)).toBeTruthy();
     await user.click(within(panel).getByRole("button", { name: "Cancel" }));
     expect(onStep).not.toHaveBeenCalled();
     await waitFor(() => expect(document.activeElement).toBe(within(grid).getByRole("button", { name: /^From Assigned to Resolved/ })));
-    await user.click(within(panel).getByRole("button", { name: "Preview keeping these incidents" }));
+    await user.click(within(panel).getByRole("button", { name: "Preview keeping these cases" }));
     await user.click(within(panel).getByRole("button", { name: "Apply" }));
     expect(onStep).toHaveBeenCalledWith({ kind: "directly_follows", source_activity: "Assigned", target_activity: "Resolved", negate: false });
     await waitFor(() => expect(document.activeElement).toBe(within(grid).getByRole("button", { name: /^From Assigned to Resolved/ })));
     // A passage opens its incident with the rows of both records and the record without a label between them.
-    await user.click(within(panel).getByRole("button", { name: "Open incident M-T1" }));
+    await user.click(within(panel).getByRole("button", { name: "Open case M-T1" }));
     expect(onOpenCase).toHaveBeenCalledWith("M-T1", [row("c"), row("e"), row("d")]);
     rerender(<TransitionMatrix workspaceId={workspaceId} revision={1} identity={identity} onStep={onStep} previewStep={preview} onOpenCase={onOpenCase} client={client} openCaseId="M-T1" />);
     (document.activeElement as HTMLElement).blur();
     rerender(<TransitionMatrix workspaceId={workspaceId} revision={1} identity={identity} onStep={onStep} previewStep={preview} onOpenCase={onOpenCase} client={client} openCaseId={null} />);
-    expect(document.activeElement).toBe(within(panel).getByRole("button", { name: "Open incident M-T1" }));
+    expect(document.activeElement).toBe(within(panel).getByRole("button", { name: "Open case M-T1" }));
     // The same pairs in the table, with every measure in a column.
     await user.click(screen.getByRole("button", { name: "Table" }));
     expect(within(screen.getByRole("table", { name: "Pairs of the transition matrix" })).getAllByRole("row")).toHaveLength(3);

@@ -10,11 +10,11 @@ export interface WorkspaceExample {
 }
 
 export const workspaceExamples: readonly WorkspaceExample[] = [
-  { id: "S0", label: "Synthetic example S0: fictional IT incidents", filename: "Synthetic example S0.csv" },
-  { id: "S1", label: "Synthetic example S1: fictional IT incidents, one reopened", filename: "Synthetic example S1.csv" },
+  { id: "S0", label: "Synthetic example S0: fictional IT cases", filename: "Synthetic example S0.csv" },
+  { id: "S1", label: "Synthetic example S1: fictional IT cases, one reopened", filename: "Synthetic example S1.csv" },
   {
     id: "S2",
-    label: "Synthetic example S2: fictional IT incidents with missing activity labels and equal timestamps",
+    label: "Synthetic example S2: fictional IT cases with missing activity labels and equal timestamps",
     filename: "Synthetic example S2.csv",
   },
   { id: "S3", label: "Synthetic example S3: a literal Unknown assignment group beside a missing one", filename: "Synthetic example S3.csv" },

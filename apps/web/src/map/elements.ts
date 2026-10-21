@@ -87,18 +87,18 @@ export function stepChoices(element: SelectedElement | null): StepChoice[] {
   if (element?.kind === "activity") {
     const activity = element.label;
     const choices: StepChoice[] = [
-      { label: "Keep incidents that contain it", step: { kind: "contains_activity", activity, negate: false } },
-      { label: "Keep incidents that do not contain it", step: { kind: "contains_activity", activity, negate: true } },
+      { label: "Keep cases that contain it", step: { kind: "contains_activity", activity, negate: false } },
+      { label: "Keep cases that do not contain it", step: { kind: "contains_activity", activity, negate: true } },
     ];
-    if (element.starts > 0) choices.push({ label: "Keep incidents that begin with it", step: { kind: "starts_with_activity", activity, negate: false } });
-    if (element.ends > 0) choices.push({ label: "Keep incidents that end with it", step: { kind: "ends_with_activity", activity, negate: false } });
+    if (element.starts > 0) choices.push({ label: "Keep cases that begin with it", step: { kind: "starts_with_activity", activity, negate: false } });
+    if (element.ends > 0) choices.push({ label: "Keep cases that end with it", step: { kind: "ends_with_activity", activity, negate: false } });
     return choices;
   }
   if (element?.kind === "boundary") {
     const [kind, verb] = element.side === "start" ? (["starts_with_activity", "begin"] as const) : (["ends_with_activity", "end"] as const);
     return [
-      { label: `Keep incidents that ${verb} with it`, step: { kind, activity: element.activity, negate: false } },
-      { label: `Keep incidents that do not ${verb} with it`, step: { kind, activity: element.activity, negate: true } },
+      { label: `Keep cases that ${verb} with it`, step: { kind, activity: element.activity, negate: false } },
+      { label: `Keep cases that do not ${verb} with it`, step: { kind, activity: element.activity, negate: true } },
     ];
   }
   if (element?.kind === "path") {
@@ -109,11 +109,11 @@ export function stepChoices(element: SelectedElement | null): StepChoice[] {
         // so that it is not read as the two records directly following each other in the file.
         label:
           element.bridged > 0
-            ? `Keep incidents where “${element.target}” directly follows “${element.source}” in the activity sequence, records without activity label between them passed over`
-            : `Keep incidents where “${element.target}” directly follows “${element.source}”`,
+            ? `Keep cases where “${element.target}” directly follows “${element.source}” in the activity sequence, records without activity label between them passed over`
+            : `Keep cases where “${element.target}” directly follows “${element.source}”`,
         step: { ...path, negate: false },
       },
-      { label: "Keep incidents where it never does", step: { ...path, negate: true } },
+      { label: "Keep cases where it never does", step: { ...path, negate: true } },
     ];
   }
   return [];

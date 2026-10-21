@@ -5,9 +5,9 @@
       "name": "wise-flow",
       "version": "0.3.5",
       "file": "wise-flow-0.3.5.tgz",
-      "sha256": "e4ea985c3d7cd3fb81f30d29d729cb83f47ae32e097d21d2aef62b493b052ea4",
+      "sha256": "6d3556f1cfe21862e48bc653174d7362770615808093a79eaf08ba3feba12b6e",
       "source_repository": "https://github.com/feelfine1977/wise-flow",
-      "source_commit": "ed0446c5d92e97f6965d24800fca479ea3c9e365",
+      "source_commit": "471cf752c6b89b85b4802320cf7084196cd616c3",
       "license": "PolyForm-Noncommercial-1.0.0",
       "status": "unreleased state of the process map library, packed from the source commit; not a published release"
     },

@@ -37,7 +37,7 @@ describe("the messages of the opening context and the variants", () => {
     expect(populationViewMessages.openingContextAnswer(withCategory("value", { kind: "other" }))).toBe(false);
   });
 
-  it("refuse an incident listed twice, an extra field and a count that is not a whole number", () => {
+  it("refuse a case listed twice, an extra field and a count that is not a whole number", () => {
     const repeated = structuredClone(variantsAnswer(variantsRequest));
     repeated.variants.variants[0].case_ids = ["K-1", "K-3", "K-1"];
     expect(populationViewMessages.variantsAnswer(repeated)).toBe(false);
@@ -75,7 +75,7 @@ describe("the messages of the opening context and the variants", () => {
     expect(populationViewMessages.refusal({ ...refusal, code: "guessed" })).toBe(false);
   });
 
-  it("check a variant of many incidents at once", () => {
+  it("check a variant of many cases at once", () => {
     const large = structuredClone(variantsAnswer(variantsRequest));
     const caseIds = Array.from({ length: 50_000 }, (_, index) => `K-${index + 10}`);
     large.variants.variants[0] = { ...large.variants.variants[0], case_ids: caseIds, case_count: caseIds.length };

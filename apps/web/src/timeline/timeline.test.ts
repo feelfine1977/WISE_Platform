@@ -36,7 +36,7 @@ const answerOf = (row: LiteralCase) =>
       answer.incident_time.records.every((record, place) => record.timestamp_key === row.rows_in_expected_declared_order[place].canonical_key),
   );
 
-describe("the timeline of an incident from the supplied diagnostics", () => {
+describe("the timeline of a case from the supplied diagnostics", () => {
   it("has an answer for every row of the table of expected values", () => {
     expect(answers).toHaveLength(35);
     expect(cases).toHaveLength(35);

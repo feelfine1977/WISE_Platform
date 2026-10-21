@@ -75,10 +75,10 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
           <IconButton icon="redo" label="Redo" onClick={keyboard.acting("redo", onRedo)} disabled={waiting || !canRedo(history)} describedBy={waitingFor}
             hint={canRedo(history) ? "Takes the change that was undone again." : "Nothing to redo: no change of the steps has been undone."} />
           <IconButton icon="clearAll" label="Clear all" onClick={keyboard.acting("clear", onClear)} disabled={waiting || history.present.length === 0} describedBy={waitingFor}
-            hint={history.present.length > 0 ? "Removes every step: every incident of the parent is kept again." : "No step to clear: every incident of the parent is kept."} />
+            hint={history.present.length > 0 ? "Removes every step: every case of the parent is kept again." : "No step to clear: every case of the parent is kept."} />
         </div>
         <p role="status" className="selection-status">
-          {selection.phase === "loading" ? "Selecting the incidents and drawing their map…" : ""}
+          {selection.phase === "loading" ? "Selecting the cases and drawing their map…" : ""}
         </p>
         {/* What changed and how many incidents are kept, said politely once the selection is answered. */}
         <p className="visually-hidden steps-announcement" aria-live="polite" aria-atomic="true">{keyboard.announcement}</p>
@@ -87,13 +87,13 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
       {shown && results.length === 0 && (
         guide ? (
           <p className="muted guide-line">
-            No step yet: every incident of the parent is kept. Take a first step:{" "}
+            No step yet: every case of the parent is kept. Take a first step:{" "}
             <button type="button" className="link-button" onClick={guide.onShowMap}>select an activity or a path on the map</button>,{" "}
             <button type="button" className="link-button" onClick={guide.onShowStarts}>drag over a period of starts</button>, or{" "}
             <button type="button" className="link-button" onClick={guide.onAddStep}>add a step</button>.
           </p>
         ) : (
-          <p className="muted">No step yet: every incident of the parent is kept. Select an activity or a path on the map to keep or remove incidents.</p>
+          <p className="muted">No step yet: every case of the parent is kept. Select an activity or a path on the map to keep or remove cases.</p>
         )
       )}
       {shown && guide && results.length === 1 && !firstStepGuided && (
@@ -105,7 +105,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
       {shown && (results.length > 0 || later.length > 0) && onShowAfter && (
         <p className="trail-start">
           <button type="button" disabled={waiting || results.length === 0} aria-describedby={waitingFor} onClick={() => onShowAfter(0)}>
-            Every incident of the parent · {shown.answer.parent.case_count.toLocaleString("en")}
+            Every case of the parent · {shown.answer.parent.case_count.toLocaleString("en")}
           </button>
         </p>
       )}
@@ -124,7 +124,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
                   <p className="chip-wording">{wording}</p>
                   {result.kept_after_step && (
                     <p className="chip-after">
-                      After this step: {countOf(result.kept_after_step.case_count, "incident")} · {countOf(result.kept_after_step.record_count, "record")} kept
+                      After this step: {countOf(result.kept_after_step.case_count, "case")} · {countOf(result.kept_after_step.record_count, "record")} kept
                     </p>
                   )}
                   <dl className="chip-counts">
@@ -208,7 +208,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
         />
       )}
       {selection.phase === "failed" && !shown && (
-        <SelectionProblemNotice title="The incidents could not be selected" problem={selection.problem} onRetry={waiting ? undefined : onRetry} />
+        <SelectionProblemNotice title="The cases could not be selected" problem={selection.problem} onRetry={waiting ? undefined : onRetry} />
       )}
     </section>
   );
@@ -327,7 +327,7 @@ function useStepsKeyboard(selection: ImportedSelectionState) {
             : steps.length === 0 ? "Every step removed."
               : `Steps changed: ${steps.length === 1 ? "one step" : `${steps.length} steps`}.`;
     const parent = answered.answer.parent.case_count;
-    setAnnouncement(`${what} ${answered.answer.kept.case_count.toLocaleString("en")} of ${parent.toLocaleString("en")} ${parent === 1 ? "incident" : "incidents"} kept.`);
+    setAnnouncement(`${what} ${answered.answer.kept.case_count.toLocaleString("en")} of ${parent.toLocaleString("en")} ${parent === 1 ? "case" : "cases"} kept.`);
     // A new step takes the focus to its chip where the focus would otherwise be lost: on the page, on "+ Add step" whose panel
     // has closed, or in the bar itself; the focus is left where the analyst is reading anything else.
     const active = document.activeElement;

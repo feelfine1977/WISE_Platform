@@ -58,31 +58,31 @@ function renderMap(waitingFor?: string) {
 }
 
 describe("the actions menu of the map", () => {
-  it("offers a flow from Start the incidents that begin with its activity, and those that do not", () => {
+  it("offers a flow from Start the cases that begin with its activity, and those that do not", () => {
     const { onStep, menu } = renderMap();
     const { target, actions, labels } = menu("edge", startFlowId(nodeIds[opened]));
-    expect(labels).toEqual(["Keep incidents that begin with it", "Keep incidents that do not begin with it", "Show its paths"]);
+    expect(labels).toEqual(["Keep cases that begin with it", "Keep cases that do not begin with it", "Show its paths"]);
     actions[0].run?.(target);
     actions[1].run?.(target);
     expect(onStep.mock.calls).toEqual([[begins(opened)], [begins(opened, true)]]);
   });
 
-  it("offers a flow to End the incidents that end with its activity, and those that do not", () => {
+  it("offers a flow to End the cases that end with its activity, and those that do not", () => {
     const { onStep, menu } = renderMap();
     const { target, actions, labels } = menu("edge", endFlowId(nodeIds[closed]));
-    expect(labels).toEqual(["Keep incidents that end with it", "Keep incidents that do not end with it", "Show its paths"]);
+    expect(labels).toEqual(["Keep cases that end with it", "Keep cases that do not end with it", "Show its paths"]);
     actions[0].run?.(target);
     actions[1].run?.(target);
     expect(onStep.mock.calls).toEqual([[ends(closed)], [ends(closed, true)]]);
   });
 
-  it("offers an activity its own steps first, then its beginning or its end where incidents begin or end with it", () => {
+  it("offers an activity its own steps first, then its beginning or its end where cases begin or end with it", () => {
     const { onStep, menu } = renderMap();
-    const own = ["Keep incidents that contain it", "Keep incidents that do not contain it"];
+    const own = ["Keep cases that contain it", "Keep cases that do not contain it"];
     const begun = menu("node", nodeIds[opened]);
-    expect(begun.labels).toEqual([...own, "Keep incidents that begin with it", "Show its paths"]);
+    expect(begun.labels).toEqual([...own, "Keep cases that begin with it", "Show its paths"]);
     const ended = menu("node", nodeIds[closed]);
-    expect(ended.labels).toEqual([...own, "Keep incidents that end with it", "Show its paths"]);
+    expect(ended.labels).toEqual([...own, "Keep cases that end with it", "Show its paths"]);
     // No incident whose order is known begins or ends with "Prüfung".
     expect(menu("node", nodeIds[checked]).labels).toEqual([...own, "Show its paths"]);
     begun.actions[0].run?.(begun.target);
@@ -94,7 +94,7 @@ describe("the actions menu of the map", () => {
   it("keeps the steps of a recorded path as they were", () => {
     const { onStep, menu } = renderMap();
     const { target, actions, labels } = menu("edge", pathId);
-    expect(labels).toEqual(["Keep incidents where “Geschlossen” directly follows “Eröffnet”", "Keep incidents where it never does", "Show its paths"]);
+    expect(labels).toEqual(["Keep cases where “Geschlossen” directly follows “Eröffnet”", "Keep cases where it never does", "Show its paths"]);
     actions[1].run?.(target);
     expect(onStep.mock.calls).toEqual([[follows(opened, closed, true)]]);
   });

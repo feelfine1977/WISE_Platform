@@ -18,7 +18,7 @@ const POLICY_ROLES: [keyof ConfirmMappingRequest["policies"], string][] = [
   ["time", "Time policy"],
   ["order", "Order policy"],
   ["missing_values", "Empty-cell policy"],
-  ["identifier", "Incident id policy"],
+  ["identifier", "Case id policy"],
   ["activity_projection", "Activity label policy"],
   ["parent", "Parent policy"],
   ["rows", "Row policy"],
@@ -26,7 +26,7 @@ const POLICY_ROLES: [keyof ConfirmMappingRequest["policies"], string][] = [
 
 /** The empty-cell reading the fixed missing-value policy applies; the screen offers no other. */
 export const EMPTY_CELLS =
-  "An empty cell is read as missing: in the incident id (where a cell of spaces only counts as empty), the activity, the time and each context column. " +
+  "An empty cell is read as missing: in the case id (where a cell of spaces only counts as empty), the activity, the time and each context column. " +
   "Anything written in a cell, such as 0, False or Unknown, is kept exactly as written and is never read as missing; a missing value is never shown as 0, False or Unknown.";
 
 /** Whether every incident has exactly one record: the shape of a list of incidents rather than of their histories. */
@@ -62,7 +62,7 @@ export function Understood({ request, answer, names, filename, cutoffEntered = f
   // Each new report moves the focus here, so that a keyboard or screen reader user learns what the reading gave.
   useEffect(() => heading.current?.focus(), [answer.request_id]);
   const roles: [string, string][] = [
-    ["Incident id", column(names, mapping.case_column)],
+    ["Case id", column(names, mapping.case_column)],
     ["Activity", column(names, mapping.activity_column)],
     ["Time", `${column(names, mapping.timestamp_column)}, read as ${formatLabels[time.parameters.format]}, ${zoneOf(request)}`],
     ["Sequence number", mapping.sequence_column == null ? "none: equal times keep the order of the file" : column(names, mapping.sequence_column)],
@@ -74,7 +74,7 @@ export function Understood({ request, answer, names, filename, cutoffEntered = f
       "Order",
       `by the usable time; records with the same time by ${mapping.sequence_column == null ? "their place in the file" : "the sequence number, then their place in the file"}` +
         `${mapping.sequence_column == null ? "" : "; where a sequence number disagrees with the times, the time decides"}` +
-        "; records without a usable time follow in file order, and their incident's order is then not fully known",
+        "; records without a usable time follow in file order, and their case's order is then not fully known",
     ],
     [
       "Clock",
@@ -97,20 +97,20 @@ export function Understood({ request, answer, names, filename, cutoffEntered = f
       </h4>
       <p>
         {countOf(report.raw_record_count, "record")} read{filename ? ` from ${filename}` : ""}: {countOf(report.identified_record_count, "record")} in{" "}
-        {countOf(report.case_count, "incident")}, and {countOf(report.unassigned_record_count, "record")} outside every incident. Each row is read as one
-        recorded event or change of its incident. The records outside every incident stay in the report below with their original text; no incident is
+        {countOf(report.case_count, "case")}, and {countOf(report.unassigned_record_count, "record")} outside every case. Each row is read as one
+        recorded event or change of its case. The records outside every case stay in the report below with their original text; no case is
         made of them.
       </p>
       {report.raw_record_count > 0 && report.usable_timestamp_record_count === 0 && (
         <p className="state-line state-confirm" role="note">
-          No record has a usable time with these choices, so the order of no incident is known: there will be no paths, no variants and no durations,
+          No record has a usable time with these choices, so the order of no case is known: there will be no paths, no variants and no durations,
           though every record is kept. The count beside each time format above says how many values it reads; choose one that reads them.
         </p>
       )}
       {oneRecordPerIncident(answer) && (
         <p className="state-line state-confirm" role="note">
-          Every incident has exactly one record. A file with one row per incident lists incidents rather than their histories: its incidents have no
-          order, no time between events and no path. If this file lists incidents, export their event history instead.
+          Every case has exactly one record. A file with one row per case lists cases rather than their histories: its cases have no
+          order, no time between events and no path. If this file lists cases, export their event history instead.
         </p>
       )}
       <dl className="report-figures understood-roles">

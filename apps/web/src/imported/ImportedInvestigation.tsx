@@ -41,7 +41,7 @@ interface ImportedInvestigationProps {
   saving?: SavingCoordinator;
   /** The view a question opens in when no saved view is restored: the process map, unless the caller asks for the table. */
   initialView?: InvestigationView;
-  /** Whether the map starts with every activity in the place the parent's arrangement gives it, as it does unless told otherwise. */
+  /** Whether the map starts with every activity in the place the parent's arrangement gives it; unless told otherwise it starts arranged for what is shown. */
   mapInPlace?: boolean;
   /**
    * Puts the incidents of a group into Compare as one of its two sides, under the group's name; without it no group is
@@ -71,7 +71,7 @@ const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
  * kept incidents as a process map, as the list of every path of that map or as a table in the
  * centre; and the complete history of one kept incident beside them.
  */
-export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = true, onCompareGroup, onShowComparison }: ImportedInvestigationProps) {
+export function ImportedInvestigation({ coordinator, onShowData, saving, initialView = "map", mapInPlace = false, onCompareGroup, onShowComparison }: ImportedInvestigationProps) {
   const state = useSyncExternalStore(coordinator.subscribe, coordinator.getState);
   // A reopened investigation opens in the view it was saved in; any other question opens on its map.
   const [view, setView] = useState<View>(() => coordinator.getState().restoredView ?? initialView);
@@ -96,8 +96,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
     // The map and its column of time are drawn after the view switches: the focus waits for them.
     const timer = window.setInterval(() => {
       const target = guideFocus === "map"
-        ? document.querySelector<HTMLElement>('[aria-label="Process map of the kept incidents"]')
-        : document.querySelector<HTMLElement>('[aria-label^="Incident starts per"][tabindex]');
+        ? document.querySelector<HTMLElement>('[aria-label="Process map of the kept cases"]')
+        : document.querySelector<HTMLElement>('[aria-label^="Case starts per"][tabindex]');
       tries += 1;
       if (target || tries > 40) {
         window.clearInterval(timer);
@@ -338,7 +338,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
         {answer && <KeysGuide serviceVersion={answer.identity.implementation_version} />}
         {saving && answer && <SaveButton saving={saving} open={saveOpen} onOpen={() => setSaveOpen(true)} waitingFor={waitingFor} />}
         <p role="status" className="visually-hidden">
-          {population.phase === "loading" ? "Opening the incidents of this preparation" : population.phase === "ready" ? "Incidents shown" : ""}
+          {population.phase === "loading" ? "Opening the cases of this preparation" : population.phase === "ready" ? "Cases shown" : ""}
         </p>
       </div>
       {(population.phase === "loading" || state.selection.phase === "loading" || waitingFor) && <div className="progress-line" aria-hidden="true" />}
@@ -360,8 +360,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
       {answer && answer.cases.length > 0 && answer.cases.every((summary) => !summary.sequence_evaluable) && (
         <div className="state-line state-confirm" role="note">
           <p>
-            The order of no incident is known: every incident has a record without a usable time. So this reading has no paths, no variants and no
-            durations; the incidents and all their records stay as recorded. The times may be written in another format than the one chosen.
+            The order of no case is known: every case has a record without a usable time. So this reading has no paths, no variants and no
+            durations; the cases and all their records stay as recorded. The times may be written in another format than the one chosen.
           </p>
           <button type="button" onClick={onShowData}>
             Change how the times are read, in the Data area
@@ -375,7 +375,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               Map
             </button>
             <button type="button" aria-pressed={view === "incidents"} onClick={() => setView("incidents")}>
-              Incidents
+              Cases
             </button>
             {/* A view that cannot be shown says so on its button, so that a failure in a view not shown is not missed. */}
             <button type="button" aria-pressed={view === "variants"} data-failed={variants.phase === "failed" || undefined} onClick={() => setView("variants")}>
@@ -415,7 +415,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
       )}
       <div className="workbench-body" data-inspector={inspectorOpen ? layout : "none"}>
         {answer && railOpen && (
-          <aside className="explorer-rail" id="explorer-rail" aria-label="Filters and views of the kept incidents">
+          <aside className="explorer-rail" id="explorer-rail" aria-label="Filters and views of the kept cases">
             <div className="rail-head">
               <div className="view-switch" role="group" aria-label="Side panel">
                 {/* A view that cannot be shown says so on its button, so that a failure in the view not shown is not missed. */}
@@ -531,7 +531,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               ) : (
                 // The matrix is of the incidents a selection keeps: until one is answered it is not shown, and says so.
                 <p className="working-text">
-                  {state.selection.phase === "failed" ? "The matrix is shown once the incidents are selected." : "Selecting the incidents for the matrix of their paths…"}
+                  {state.selection.phase === "failed" ? "The matrix is shown once the cases are selected." : "Selecting the cases for the matrix of their paths…"}
                 </p>
               )}
             </div>
@@ -540,7 +540,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           {answer && view === "variants" && (
             <section className="variants-pane" aria-labelledby="imported-variants-title" hidden={shownPair !== null}>
               <h3 id="imported-variants-title" className="pane-title">
-                Variants of the kept incidents
+                Variants of the kept cases
               </h3>
               <Variants
                 state={variants}
@@ -563,13 +563,13 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           {answer && (view === "map" || view === "paths") && (
             <section className="map-pane" aria-labelledby="imported-map-title" hidden={shownPair !== null}>
               <h3 id="imported-map-title" className="pane-title">
-                {view === "map" ? "Map of the kept incidents" : "Paths of the kept incidents"}
+                {view === "map" ? "Map of the kept cases" : "Paths of the kept cases"}
               </h3>
               {shown && shown.answer.kept.case_count === 0 ? (
                 // Nothing to draw: said in place of the map, with the way back, rather than an empty canvas.
                 <p className="working-text map-empty" role="status">
-                  The selection keeps no incident of the {countOf(shown.answer.parent.case_count, "incident")} of its parent, so the {view === "map" ? "map has nothing to draw" : "list has no path"}.
-                  Remove a step or undo it to keep incidents again.
+                  The selection keeps no case of the {countOf(shown.answer.parent.case_count, "case")} of its parent, so the {view === "map" ? "map has nothing to draw" : "list has no path"}.
+                  Remove a step or undo it to keep cases again.
                 </p>
               ) : shown && state.parentGraph ? (
                 <MapView
@@ -586,27 +586,27 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   aside={<TimeColumn workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep} previewStep={previewStep} waitingFor={waitingFor} />}
                 />
               ) : state.selection.phase === "failed" ? (
-                <p className="working-text">{view === "map" ? "The map is shown once the incidents are selected." : "The paths are listed once the incidents are selected."}</p>
+                <p className="working-text">{view === "map" ? "The map is shown once the cases are selected." : "The paths are listed once the cases are selected."}</p>
               ) : (
-                <p className="working-text">{view === "map" ? "Selecting the incidents and drawing their map…" : "Selecting the incidents and listing their paths…"}</p>
+                <p className="working-text">{view === "map" ? "Selecting the cases and drawing their map…" : "Selecting the cases and listing their paths…"}</p>
               )}
             </section>
           )}
           <section className="table-pane" aria-labelledby="imported-incidents-title" hidden={shownPair !== null || (answer !== null && view !== "incidents")}>
             <h3 id="imported-incidents-title" className="pane-title" tabIndex={-1} ref={incidentsHeading}>
-              {variantView ? `Kept incidents of variant ${variantView.rank}` : listingRemoved ? "Removed incidents" : "Kept incidents"}
+              {variantView ? `Kept cases of variant ${variantView.rank}` : listingRemoved ? "Removed cases" : "Kept cases"}
             </h3>
             <p role="status" className="visually-hidden">
-              {variantView ? `The table lists the ${countOf(variantView.caseCount, "incident")} of variant ${variantView.rank}.` : ""}
+              {variantView ? `The table lists the ${countOf(variantView.caseCount, "case")} of variant ${variantView.rank}.` : ""}
             </p>
             {variantView && (
               <div className="view-note">
                 <p>
-                  The table lists the {countOf(variantView.caseCount, "incident")} of variant {variantView.rank}. This is a view: the selection and
+                  The table lists the {countOf(variantView.caseCount, "case")} of variant {variantView.rank}. This is a view: the selection and
                   every count stay as they are.
                 </p>
                 <button type="button" onClick={() => clearVariant(true)}>
-                  Show every incident
+                  Show every case
                 </button>
               </div>
             )}
@@ -615,15 +615,15 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 <p>
                   {groupView.note ?? (
                     <>
-                      The table lists the {countOf(groupView.cases.length, "incident")} of the group “{groupView.label}”. This is a view until a step is taken.
+                      The table lists the {countOf(groupView.cases.length, "case")} of the group “{groupView.label}”. This is a view until a step is taken.
                     </>
                   )}
                 </p>
                 <button type="button" onClick={() => stepFromGroup(false)} disabled={waitingFor !== undefined || groupView.caseIds.length === 0} aria-describedby={waitingFor}>
-                  Keep these incidents
+                  Keep these cases
                 </button>
                 <button type="button" onClick={() => stepFromGroup(true)} disabled={waitingFor !== undefined || groupView.caseIds.length === 0} aria-describedby={waitingFor}>
-                  Remove these incidents
+                  Remove these cases
                 </button>
                 {onCompareGroup && !groupView.ordered && (
                   <>
@@ -638,26 +638,26 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   </>
                 )}
                 <button type="button" onClick={() => setChosenGroup(null)}>
-                  Show every incident
+                  Show every case
                 </button>
                 {compared && compared.id === groupView.id && (
                   <p role="status" className="muted">
-                    “{groupView.label}” is side {compared.role === "target" ? "A" : "B"} in Compare, as its {countOf(groupView.caseIds.length, "incident")}; the
+                    “{groupView.label}” is side {compared.role === "target" ? "A" : "B"} in Compare, as its {countOf(groupView.caseIds.length, "case")}; the
                     selection is unchanged.{" "}
                     {onShowComparison && <button type="button" className="link-button" onClick={onShowComparison}>Show the comparison</button>}
                   </p>
                 )}
               </div>
             )}
-            {population.phase === "loading" && <p className="working-text">Opening the incidents of this preparation…</p>}
+            {population.phase === "loading" && <p className="working-text">Opening the cases of this preparation…</p>}
             {population.phase === "failed" && (
-              <ImportProblemNotice title="The incidents could not be opened" problem={population.problem} onRetry={() => coordinator.retryPopulation()} />
+              <ImportProblemNotice title="The cases could not be opened" problem={population.problem} onRetry={() => coordinator.retryPopulation()} />
             )}
             {answer && answer.cases.length === 0 && (
-              <p className="working-text">This preparation has no incident with an incident id, so there is no incident to open.</p>
+              <p className="working-text">This preparation has no case with a case id, so there is no case to open.</p>
             )}
             {answer && answer.cases.length > 0 && kept.length === 0 && !listingRemoved && (
-              <p className="working-text">The selection keeps no incident. Remove a step or undo it to keep incidents again.</p>
+              <p className="working-text">The selection keeps no case. Remove a step or undo it to keep cases again.</p>
             )}
             {answer && (kept.length > 0 || listingRemoved) && (
               <div className="incident-area" data-groups={groupsOpen && shown && !variantView && !listingRemoved ? "open" : "closed"}>
@@ -676,14 +676,14 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 <div className="incident-table">
                   <p className="muted pane-hint" id="imported-incidents-hint">
                     {variantView
-                      ? `The kept incidents that follow variant ${variantView.rank}.`
+                      ? `The kept cases that follow variant ${variantView.rank}.`
                       : listingRemoved
-                        ? "The incidents the selection removes; each opens in the selection's parent, and opening one changes no step."
-                        : "The incidents the selection keeps; with no step, every incident with an incident id."}{" "}
-                    Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every record of an incident.
+                        ? "The cases the selection removes; each opens in the selection's parent, and opening one changes no step."
+                        : "The cases the selection keeps; with no step, every case with a case id."}{" "}
+                    Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every record of a case.
                   </p>
                   {!variantView && !groupView && steps > 0 && (
-                    <div className="incident-listed" role="group" aria-label="Incidents listed">
+                    <div className="incident-listed" role="group" aria-label="Cases listed">
                       <button type="button" aria-pressed={!listingRemoved} onClick={() => setListed("kept")}>
                         Kept ({kept.length.toLocaleString("en")})
                       </button>
@@ -705,7 +705,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                         Groups
                       </button>
                       {!groupView && (
-                        <div className="incident-order" role="group" aria-label="Order of the incidents">
+                        <div className="incident-order" role="group" aria-label="Order of the cases">
                           {INCIDENT_ORDERS.map(([value, label]) => (
                             <button key={value} type="button" aria-pressed={incidentOrder === value} onClick={() => setIncidentOrder(value)}>
                               {label}
@@ -829,7 +829,7 @@ function Facts({ answer, shown, revision }: { answer: ImportedPopulationAnswer; 
           ) : (
             <>
               <dd>
-                <KeptOf kept={kept.case_count} parent={countOf(parent.case_count, "incident")} />
+                <KeptOf kept={kept.case_count} parent={countOf(parent.case_count, "case")} />
                 <KeptShare kept={kept.case_count} parent={parent.case_count} />
               </dd>
               <dd>
@@ -838,13 +838,13 @@ function Facts({ answer, shown, revision }: { answer: ImportedPopulationAnswer; 
             </>
           )}
         </div>
-        <Limit name="Rows outside every incident" count={answer.unassigned_record_count} word="outside" />
+        <Limit name="Rows outside every case" count={answer.unassigned_record_count} word="outside" />
         <Limit name="Records without activity label" count={answer.coverage.omitted_activity_record_count} word="unlabelled" />
       </dl>
       <InfoPopover label="About this data">
         <p className="about-lead">
-          The figures above count incidents and their records: those the selection keeps, of the parent's, and the records outside every incident. Every
-          figure is exact: no incident or record is sampled; where the map draws fewer activities or paths than it counts, its detail strip says so.
+          The figures above count cases and their records: those the selection keeps, of the parent's, and the records outside every case. Every
+          figure is exact: no case or record is sampled; where the map draws fewer activities or paths than it counts, its detail strip says so.
         </p>
         <DataDetails answer={answer} revision={revision} />
       </InfoPopover>
@@ -892,7 +892,7 @@ function DataDetails({ answer, revision }: { answer: ImportedPopulationAnswer; r
     ["Source file", answer.source.filename],
     ["Encoding", encodingName(preparation.dialect.encoding)],
     ["Delimiter", delimiterName(preparation.dialect.delimiter)],
-    ["Incident column", `column ${mapping.case_column}`],
+    ["Case column", `column ${mapping.case_column}`],
     ["Activity column", `column ${mapping.activity_column}`],
     ["Time column", `column ${mapping.timestamp_column}`],
     ["Sequence column", mapping.sequence_column === null ? "none" : `column ${mapping.sequence_column}`],

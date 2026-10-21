@@ -53,8 +53,8 @@ const said = () => control().locator('.number-range-read').textContent();
 async function readAt(column, projection) {
   await control().getByLabel(/^Column/).selectOption(String(column));
   await control().getByLabel(/^Read at/).selectOption(projection);
-  await page.waitForFunction(name => document.querySelector(`.number-range [aria-label="${name}"]`) !== null || /No incident of the parent/.test(document.querySelector('.number-range .number-range-read')?.textContent ?? ''),
-    `Incidents by ${column === 5 ? 'Confidence' : 'Amount'} at ${PROJECTIONS[projection]}`);
+  await page.waitForFunction(name => document.querySelector(`.number-range [aria-label="${name}"]`) !== null || /No case of the parent/.test(document.querySelector('.number-range .number-range-read')?.textContent ?? ''),
+    `Cases by ${column === 5 ? 'Confidence' : 'Amount'} at ${PROJECTIONS[projection]}`);
 }
 
 try {
@@ -63,8 +63,8 @@ try {
   await areas.getByRole('button', {name: 'Data', exact: true}).click();
   if (phase === 'declare') {
     await page.getByLabel('Add an event-history CSV').setInputFiles(config.file);
-    await page.getByLabel('Incident id', {exact: true}).waitFor();
-    await role('Incident id', 'Ticket');
+    await page.getByLabel('Case id', {exact: true}).waitFor();
+    await role('Case id', 'Ticket');
     await role('Activity', 'Status');
     await role('Time', 'At');
     await role('Sequence number (optional)', 'Seq');
@@ -98,7 +98,7 @@ try {
     preparationId = preparation?.preparation_id ?? null;
     check('declaration_in_the_preparation', same(preparation?.mapping?.numeric_context_columns, [{column_index: 5, unit: null}, {column_index: 6, unit: 'EUR'}]), preparation?.mapping);
     await page.getByRole('status').filter({hasText: 'Ready: the source is read with these choices'}).waitFor();
-    await press(page.getByRole('button', {name: 'Open incidents', exact: true}));
+    await press(page.getByRole('button', {name: 'Open cases', exact: true}));
     await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, incidents);
     await settled(0);
     const parent = selections.at(-1);
@@ -108,8 +108,8 @@ try {
     await readAt(5, 'first_record');
     const confidence = expected.confidence.first_record_bins_4;
     const first = await said();
-    check('parent_range_and_measured_said', first.includes(`Range in the parent: ${confidence.parent_range[0]} to ${confidence.parent_range[1]}; 4 kept incidents of ${incidents} have a number.`), first);
-    check('without_a_number_by_reason', first.includes('Without a number here: 1 kept incident (order not known), 1 kept incident (no value), 1 kept incident (not a number)'), first);
+    check('parent_range_and_measured_said', first.includes(`Range in the parent: ${confidence.parent_range[0]} to ${confidence.parent_range[1]}; 4 kept cases of ${incidents} have a number.`), first);
+    check('without_a_number_by_reason', first.includes('Without a number here: 1 kept case (order not known), 1 kept case (no value), 1 kept case (not a number)'), first);
     check('records_not_numbers_counted_never_zero', first.includes(`${expected.confidence.records.not_a_number_record_count} records of the parent hold text that is not a number in this column; it stays as written and is never read as zero.`), first);
     check('equality_at_the_bounds_said', (await control().textContent()).includes('The lower bound is included and the upper bound is not'), null);
 
@@ -127,7 +127,7 @@ try {
         && same(taken.predicate_results[0].predicate, {kind: 'context_number_in_range', column_index: range.column, projection: range.projection, minimum: range.minimum, maximum: range.maximum, negate: range.negate}),
         [taken.kept.case_ids, taken.unevaluable.case_ids, taken.predicate_results[0].predicate]);
       const chip = await page.getByRole('list', {name: 'Steps of the selection'}).locator('li').first().textContent();
-      check(`${range.name}_step_says_its_unevaluable`, chip.includes(`Not evaluable${range.unevaluable.length} incident${range.unevaluable.length === 1 ? '' : 's'}`), chip);
+      check(`${range.name}_step_says_its_unevaluable`, chip.includes(`Not evaluable${range.unevaluable.length} case${range.unevaluable.length === 1 ? '' : 's'}`), chip);
       await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Undo', exact: true}).click();
       await settled(0);
       check(`${range.name}_undone_exactly`, same(selections.at(-1).identity, parent.identity), null);
@@ -136,7 +136,7 @@ try {
     // A range chosen on the chart: the first bin, with the exact edges the parent fixed.
     await openNumbers();
     await readAt(5, 'first_record');
-    const chart = control().getByRole('group', {name: 'Incidents by Confidence at the first record'});
+    const chart = control().getByRole('group', {name: 'Cases by Confidence at the first record'});
     await chart.focus();
     await page.keyboard.press('Home');
     await page.keyboard.press('Enter');

@@ -91,7 +91,7 @@ def start_trend(prepared, selected_ids: Iterable[str], parent_ids: Iterable[str]
         kept_ids = checked_case_ids(prepared, selected_ids)
         kept = set(kept_ids)
         if not kept <= set(parent):
-            return ImportRefusal("identity_mismatch", "Selected incidents are outside their frozen parent.", "identity.population_id")
+            return ImportRefusal("identity_mismatch", "Selected cases are outside their frozen parent.", "identity.population_id")
         clock = validate_time_policy(prepared.policies["time"])
         if isinstance(clock, ImportRefusal):
             return clock
@@ -126,7 +126,7 @@ def start_trend(prepared, selected_ids: Iterable[str], parent_ids: Iterable[str]
         for case in parent:
             records = prepared.histories[case]
             if not records:
-                raise SelectionError("inconsistent_sequence", "An identified incident must retain its raw history.")
+                raise SelectionError("inconsistent_sequence", "An identified case must retain its raw history.")
             if not prepared.sequence_evaluable(case):
                 unknown.append(case)
                 order_unknown.append(case)
@@ -205,7 +205,7 @@ def validate_start_trend_answer(answer: Mapping[str, object]) -> None:
     def support(value):
         ids = value["case_ids"]
         if ids != sorted(set(ids)) or len(ids) != value["case_count"] or value["record_count"] < len(ids) or (not ids and value["record_count"] != 0):
-            raise ValueError("The trend support must supply exact unique sorted IDs, incident count and complete-record support.")
+            raise ValueError("The trend support must supply exact unique sorted IDs, case count and complete-record support.")
         return set(ids)
 
     parent = support(answer["parent_support"])
@@ -233,7 +233,7 @@ def validate_start_trend_answer(answer: Mapping[str, object]) -> None:
             supports = [piece[role] for piece in pieces]
             ids = [case for value in supports for case in value["case_ids"]]
             if len(ids) != len(set(ids)) or set(ids) != set(total[role]["case_ids"]) or sum(value["record_count"] for value in supports) != total[role]["record_count"]:
-                raise ValueError("The trend partitions do not conserve exact incidents and complete records.")
+                raise ValueError("The trend partitions do not conserve exact cases and complete records.")
 
     partition(answer, [answer["available"], answer["unevaluable"]])
     partition(answer["available"], [answer["before_range"], *answer["bins"], answer["after_range"]])
@@ -241,7 +241,7 @@ def validate_start_trend_answer(answer: Mapping[str, object]) -> None:
         unknown = set(answer["unevaluable"][role]["case_ids"])
         reason_ids = set().union(*(set(value[role]["case_ids"]) for value in reasons))
         if reason_ids != unknown or any(value[role]["record_count"] > answer["unevaluable"][role]["record_count"] for value in reasons):
-            raise ValueError("The nonadditive trend reasons must explain only unevaluable incidents.")
+            raise ValueError("The nonadditive trend reasons must explain only unevaluable cases.")
 
     chosen, generation = definition["binning"], answer["bin_generation"]
     if generation["kind"] != chosen["kind"]:

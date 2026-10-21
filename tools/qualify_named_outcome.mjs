@@ -54,14 +54,14 @@ try {
   await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Context', exact: true}).click();
   const context = page.getByRole('region', {name: 'At the first recorded observation'});
   await context.getByRole('list', {name: 'Opening values of service, most frequent first'}).getByRole('checkbox', {name: `Choose ${S0.fixed_parent_service}`, exact: true}).check();
-  await context.getByRole('button', {name: 'Preview keeping incidents first recorded with these values', exact: true}).click();
+  await context.getByRole('button', {name: 'Preview keeping cases first recorded with these values', exact: true}).click();
   await context.getByRole('group', {name: 'Values of service not yet applied'}).getByRole('button', {name: 'Apply', exact: true}).click();
   await settled(1);
   check('parent_as_the_oracle', same(selections.at(-1).kept.case_ids, S0.parent_ids), selections.at(-1).kept.case_ids);
   // The clause: contains Resolved, from the map.
   await page.getByRole('group', {name: 'View'}).getByRole('button', {name: 'Map', exact: true}).click();
   await page.locator('.react-flow__node-activity', {hasText: 'Resolved'}).first().click();
-  await page.getByRole('button', {name: 'Keep incidents that contain it', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep cases that contain it', exact: true}).click();
   await settled(2);
 
   await areas.getByRole('button', {name: 'Compare', exact: true}).click();
@@ -86,9 +86,9 @@ try {
   const table = outcome.getByRole('table', {name: 'No recorded “Resolved” by the first recorded assignment_group'});
   await table.waitFor();
   const said = (await outcome.textContent()) ?? '';
-  check('outcome_named_with_its_known_subset', said.includes('Outcome O: No recorded “Resolved” at the snapshot cutoff') && said.includes('Known for 12 incidents of the 12 incidents of the parent (K = P)')
+  check('outcome_named_with_its_known_subset', said.includes('Outcome O: No recorded “Resolved” at the snapshot cutoff') && said.includes('Known for 12 cases of the 12 cases of the parent (K = P)')
     && said.includes(`In the parent, O holds for 5 of 12 (41.7%).`), said);
-  check('absence_not_a_business_verdict', said.includes('it is not a verdict that the incident is unresolved or open'), null);
+  check('absence_not_a_business_verdict', said.includes('it is not a verdict that the case is unresolved or open'), null);
   const valueRows = await table.locator('tbody tr').evaluateAll(trs => trs.map(tr => [...tr.children].map(cell => cell.textContent)));
   const app = valueRows.find(cells => cells[0] === 'App');
   check('app_rate_two_fourths_lift_one_point_two_apart_from_ratio_one_point_four', app[3] === '2 of 4 (50.0%)' && app[4] === '1.20' && profileApp.includes('1.40'), [app, profileApp]);
@@ -114,7 +114,7 @@ try {
   check('witnesses_exactly_the_value_incidents_with_o', JSON.stringify(ids) === JSON.stringify(expectedIds), ids);
   await witnesses.getByRole('button', {name: `Open ${expectedIds[0]}`, exact: true}).focus();
   await page.keyboard.press('Enter');
-  await outcome.getByRole('region', {name: new RegExp(`^Incident ${expectedIds[0]}, of the parent`)}).getByRole('table').waitFor();
+  await outcome.getByRole('region', {name: new RegExp(`^Case ${expectedIds[0]}, of the parent`)}).getByRole('table').waitFor();
   await page.keyboard.press('Escape');
   await page.waitForFunction(name => document.activeElement?.textContent === name, `Open ${expectedIds[0]}`);
   check('return_to_the_same_parent_value_and_outcome', selections.length === asked && await table.count() === 1 && await outcome.getByRole('list', {name: 'Witnesses for App'}).count() === 1, null);

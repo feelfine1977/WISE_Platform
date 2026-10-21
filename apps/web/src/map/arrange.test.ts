@@ -171,12 +171,14 @@ describe("a map arranged with Start first and End last", () => {
     // The arrangement of a whole parent is the same one.
     expect((await layout(flow, parentArrangement(flow, direction))).nodes).toEqual(positions.nodes);
 
-    // Left to itself the map library turns the main way around: Start stands behind activities, and End before some.
-    // When this fails, the library places Start itself and the engine given to it here can go.
+    // Left to itself the map library now keeps Start in the first layer and End in the last (its border layers); it leaves
+    // Start's target to the paths, which lead back into it, so the engine given to it here still puts that activity next.
     const byLibrary = await alone(flow, direction);
     expect(byLibrary.engine).toBe("elk");
-    expect(activities.some((id) => at(byLibrary, id, axis) < at(byLibrary, START_ID, axis))).toBe(true);
-    expect(activities.some((id) => at(byLibrary, id, axis) > at(byLibrary, END_ID, axis))).toBe(true);
+    for (const id of activities) {
+      expect(at(byLibrary, START_ID, axis), id).toBeLessThan(at(byLibrary, id, axis));
+      expect(at(byLibrary, END_ID, axis), id).toBeGreaterThan(at(byLibrary, id, axis));
+    }
   });
 
   it.each(ways)("keeps the stages in their order and puts Start's target first in its stage (%s)", async (direction, axis, extent) => {

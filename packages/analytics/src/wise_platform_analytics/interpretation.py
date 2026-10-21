@@ -64,7 +64,7 @@ def interpretation_report(reading: SourceReading, records: tuple[PreparedRecord,
                 for row in records if row.case_id is None]
     first, last = (min(usable), max(usable)) if usable else (None, None)
     wall = clock.kind == "wall_clock"
-    assumptions = ["All identified incidents retain every original record; unassigned rows remain in the preserved source.",
+    assumptions = ["All identified cases retain every original record; unassigned rows remain in the preserved source.",
                    "Activity omission changes the mapped sequence only; duplicate candidates are retained.",
                    "Unavailable times are placed last for evidence presentation only; their case sequence is unevaluable."]
     if wall:

@@ -87,15 +87,15 @@ try {
     && (await page.locator('.view-note').textContent()).includes('This is an order of the list: the selection and every count stay as they are'), selections.length);
 
   // A path of the map: its 90th percentile lag and its passages longer than the threshold, along the map's paths.
-  await page.getByRole('button', {name: 'Show every incident', exact: true}).click();
+  await page.getByRole('button', {name: 'Show every case', exact: true}).click();
   await view('Paths').click();
-  const list = page.getByRole('table', {name: 'Paths of the kept incidents'});
+  const list = page.getByRole('table', {name: 'Paths of the kept cases'});
   await list.locator('tbody tr').filter({has: page.locator('th', {hasText: /^Assign$/})}).filter({has: page.locator('td', {hasText: /^Resolve$/})}).first().locator('th button').click();
   const mapped = expected.mapped_path.pairs['Assign>Resolve'].kept;
   const card = page.getByRole('group', {name: 'Long lags of this path'});
   await card.getByText(/^90th percentile lag/).waitFor();
   const cardText = await card.locator('p').first().textContent();
-  check('path_gives_its_90th_percentile_and_long_passages', cardText.startsWith(`90th percentile lag ${number(mapped.p90_hours)} h over ${mapped.passage_count} passages; ${mapped.above_threshold_passage_count} passages are longer than ${expected.threshold_hours} h, in ${mapped.above_threshold_incident_count} incidents.`), cardText);
+  check('path_gives_its_90th_percentile_and_long_passages', cardText.startsWith(`90th percentile lag ${number(mapped.p90_hours)} h over ${mapped.passage_count} passages; ${mapped.above_threshold_passage_count} passages are longer than ${expected.threshold_hours} h, in ${mapped.above_threshold_incident_count} cases.`), cardText);
   assert.deepEqual(errors, []);
   await writeFile(output, JSON.stringify({checks}));
 } finally {

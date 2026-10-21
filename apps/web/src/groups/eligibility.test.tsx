@@ -60,22 +60,22 @@ describe("what a rule and its groups disclose", () => {
   it("says the rule, who is eligible among the kept and in the parent, and why the unevaluable cannot be evaluated", async () => {
     setup();
     await screen.findByText("Opened");
-    expect(screen.getByText(/^Each incident is in the group of the activity of its first record in the declared order\./).textContent).toContain(
-      "An incident whose order is not fully known cannot be evaluated; one whose first record has no activity label is in “No activity label”.",
+    expect(screen.getByText(/^Each case is in the group of the activity of its first record in the declared order\./).textContent).toContain(
+      "A case whose order is not fully known cannot be evaluated; one whose first record has no activity label is in “No activity label”.",
     );
-    expect(screen.getByText(/^Eligible for the rule:/).textContent).toBe("Eligible for the rule: 6 of 8 kept incidents, and 10 of 12 incidents in the parent.");
-    expect(screen.getByText(/the rule cannot evaluate/).textContent).toBe("2 incidents the rule cannot evaluate (parent 2): the order of their records is not fully known");
+    expect(screen.getByText(/^Eligible for the rule:/).textContent).toBe("Eligible for the rule: 6 of 8 kept cases, and 10 of 12 cases in the parent.");
+    expect(screen.getByText(/the rule cannot evaluate/).textContent).toBe("2 cases the rule cannot evaluate (parent 2): the order of their records is not fully known");
     expect(screen.getByText("No activity label")).toBeTruthy();
     expect(screen.getByText("A group is what its stated rule puts together: it is not a business class, and a difference between groups is not a cause.")).toBeTruthy();
   });
 
-  it("says apart the incidents in no group and the records without a value of a shared column, with the values that form no group", async () => {
+  it("says apart the cases in no group and the records without a value of a shared column, with the values that form no group", async () => {
     const user = setup();
     await screen.findByText("Opened");
     await user.selectOptions(screen.getByRole("combobox", { name: "Grouped by" }), "Same Desk, on any record");
     await screen.findByText("East");
-    expect(screen.getByText(/in no group/).textContent).toBe("2 incidents in no group (parent 2): each value of Desk they have is recorded in too few incidents of the parent");
-    expect(screen.getByText(/without a value of Desk \(parent/).textContent).toBe("1 record of the kept incidents without a value of Desk (parent 4); 2 of the 5 values in the parent form no group.");
+    expect(screen.getByText(/in no group/).textContent).toBe("2 cases in no group (parent 2): each value of Desk they have is recorded in too few cases of the parent");
+    expect(screen.getByText(/without a value of Desk \(parent/).textContent).toBe("1 record of the kept cases without a value of Desk (parent 4); 2 of the 5 values in the parent form no group.");
     expect(screen.getByText("Not recorded")).toBeTruthy();
     expect(screen.queryByText(/cannot evaluate/)).toBeNull();
   });
@@ -94,7 +94,7 @@ describe("what a rule and its groups disclose", () => {
   it("states the rule of a chosen group above what it rests on", async () => {
     setup(`group-${JSON.stringify({ kind: "missing_activity", activity: null })}`);
     const row = (await screen.findByRole("button", { name: /No activity label/ })).closest("li")!;
-    expect(within(row).getByText("Incidents whose first record in the declared order has no activity label.")).toBeTruthy();
+    expect(within(row).getByText("Cases whose first record in the declared order has no activity label.")).toBeTruthy();
   });
 });
 
@@ -109,15 +109,15 @@ describe("the words of each rule and group", () => {
 
   it("says for every rule what it reads and whom it cannot evaluate", () => {
     expect(rules.map((rule) => ruleSentence(rule, named))).toEqual([
-      "Each incident is in the group of the activity of its last record in the declared order. An incident whose order is not fully known cannot be evaluated; one whose last record has no activity label is in “No activity label”.",
-      "Each incident is in the band of its number of records, records without an activity label included. Every incident can be evaluated.",
-      "Each incident is in the group of its exact sequence of labelled activities in the declared order; records without an activity label are left out of the sequence. An incident whose order is not fully known cannot be evaluated.",
-      "Each incident is in “With Waiting” if at least one of its records has that activity, otherwise in “Without Waiting”. Every incident can be evaluated.",
-      "Each incident is in the group of every value of Desk recorded in it, so an incident with several values is in several groups. A value recorded in fewer than 2 incidents of the parent forms no group. An incident with a record without a value of Desk is also in “Not recorded”.",
+      "Each case is in the group of the activity of its last record in the declared order. A case whose order is not fully known cannot be evaluated; one whose last record has no activity label is in “No activity label”.",
+      "Each case is in the band of its number of records, records without an activity label included. Every case can be evaluated.",
+      "Each case is in the group of its exact sequence of labelled activities in the declared order; records without an activity label are left out of the sequence. A case whose order is not fully known cannot be evaluated.",
+      "Each case is in “With Waiting” if at least one of its records has that activity, otherwise in “Without Waiting”. Every case can be evaluated.",
+      "Each case is in the group of every value of Desk recorded in it, so a case with several values is in several groups. A value recorded in fewer than 2 cases of the parent forms no group. A case with a record without a value of Desk is also in “Not recorded”.",
     ]);
   });
 
-  it("says for every kind of group which incidents it holds", () => {
+  it("says for every kind of group which cases it holds", () => {
     expect([
       groupRuleSentence({ kind: "activity", activity: "Resolved" }, rules[0], named),
       groupRuleSentence({ kind: "raw_record_count_band", start_inclusive: 1, end_exclusive: 2 }, rules[1], named),
@@ -129,15 +129,15 @@ describe("the words of each rule and group", () => {
       groupRuleSentence({ kind: "reference_value", column_index: 3, value: "East" }, rules[4], named),
       groupRuleSentence({ kind: "missing_reference", column_index: 3, value: null }, rules[4], named),
     ]).toEqual([
-      "Incidents whose last record in the declared order has the activity “Resolved”.",
-      "Incidents with 1 record, records without an activity label included.",
-      "Incidents with 2–4 records, records without an activity label included.",
-      "Incidents with 5 or more records, records without an activity label included.",
-      "Incidents whose labelled activities in the declared order are exactly “Opened”, then “Resolved”.",
-      "Incidents without a labelled activity in the declared order.",
-      "Incidents with no record of “Waiting”.",
-      "Incidents with at least one record whose Desk is “East”.",
-      "Incidents with at least one record without a value of Desk.",
+      "Cases whose last record in the declared order has the activity “Resolved”.",
+      "Cases with 1 record, records without an activity label included.",
+      "Cases with 2–4 records, records without an activity label included.",
+      "Cases with 5 or more records, records without an activity label included.",
+      "Cases whose labelled activities in the declared order are exactly “Opened”, then “Resolved”.",
+      "Cases without a labelled activity in the declared order.",
+      "Cases with no record of “Waiting”.",
+      "Cases with at least one record whose Desk is “East”.",
+      "Cases with at least one record without a value of Desk.",
     ]);
   });
 });

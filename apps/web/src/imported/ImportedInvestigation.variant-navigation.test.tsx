@@ -9,7 +9,7 @@ import { ImportedInvestigation } from "./ImportedInvestigation";
 import { ImportedInvestigationCoordinator } from "./coordinator";
 
 vi.mock("../map/MapView", () => ({
-  MapView: () => <p>Map of the kept incidents</p>,
+  MapView: () => <p>Map of the kept cases</p>,
 }));
 
 async function deliver(action: () => void) {
@@ -49,7 +49,7 @@ function variantsOfTheTwoIncidents(request: VariantsRequest): VariantsAnswer {
   };
 }
 
-it("opens the incident table from Map when a variant is listed, without changing the analytical selection", async () => {
+it("opens the case table from Map when a variant is listed, without changing the analytical selection", async () => {
   const imports = scriptedImportClient();
   const selecting = scriptedSelectionClient();
   const views = scriptedViewClient();
@@ -67,7 +67,7 @@ it("opens the incident table from Map when a variant is listed, without changing
 
   await user.click(screen.getByRole("button", { name: /^Map$/ }));
   expect(screen.getByRole("button", { name: /^Map$/ }).getAttribute("aria-pressed")).toBe("true");
-  expect(screen.queryByRole("table", { name: "Kept incidents" })).toBeNull();
+  expect(screen.queryByRole("table", { name: "Kept cases" })).toBeNull();
   const state = coordinator.getState();
   const analytical = structuredClone({ population: state.population, selection: state.selection, parentGraph: state.parentGraph });
   const facts = screen.getByLabelText("Population").textContent;
@@ -75,12 +75,12 @@ it("opens the incident table from Map when a variant is listed, without changing
 
   // The variants are a view of the centre, named beside the map and the incidents (#54).
   await user.click(within(screen.getByRole("group", { name: "View" })).getByRole("button", { name: "Variants" }));
-  expect(screen.getByRole("heading", { name: "Variants of the kept incidents" })).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "List the 1 incident of variant 1 in the table" }));
+  expect(screen.getByRole("heading", { name: "Variants of the kept cases" })).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "List the 1 case of variant 1 in the table" }));
 
-  expect(screen.getByRole("button", { name: /^Incidents$/ }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByRole("button", { name: /^Cases$/ }).getAttribute("aria-pressed")).toBe("true");
   expect(screen.getByRole("button", { name: /^Map$/ }).getAttribute("aria-pressed")).toBe("false");
-  const table = screen.getByRole("table", { name: "Kept incidents of variant 1" });
+  const table = screen.getByRole("table", { name: "Kept cases of variant 1" });
   expect(within(table).getAllByRole("rowheader").map((cell) => cell.textContent)).toEqual(["A-1"]);
   const after = coordinator.getState();
   expect({ population: after.population, selection: after.selection, parentGraph: after.parentGraph }).toEqual(analytical);

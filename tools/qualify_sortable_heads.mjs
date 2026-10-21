@@ -46,7 +46,7 @@ try {
   await areas.getByRole('button', {name: 'Data', exact: true}).click();
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, incidents);
-  await view('Incidents').click();
+  await view('Cases').click();
 
   // By number, the head of Records already orders the list, by the local service.
   check('by_number_records_head_sorts', await head('Records').getByRole('button', {name: 'Records: sort the list'}).count() === 1 && await head('Records').getAttribute('aria-sort') === null, null);
@@ -58,11 +58,11 @@ try {
       check(`${field}_${direction}_ordered_as_the_oracle`, same(order, wanted) && same(lists.at(-1).query.sort, {field, direction}), [order, lists.at(-1).query.sort]);
       check(`${field}_${direction}_head_says_the_direction`, await head(label).getAttribute('aria-sort') === direction
         && (await Promise.all(HEADS.filter(([other]) => other !== label).map(([other]) => head(other).getAttribute('aria-sort')))).every(value => value === null), null);
-      check(`${field}_${direction}_said_with_ties_and_unavailable`, await page.getByText(`By ${measure}, ${words}; equal values in the order of their numbers, and incidents without a value last.`, {exact: true}).count() === 1, null);
+      check(`${field}_${direction}_said_with_ties_and_unavailable`, await page.getByText(`By ${measure}, ${words}; equal values in the order of their numbers, and cases without a value last.`, {exact: true}).count() === 1, null);
     }
   }
   // The order of the buttons above the list follows the heads.
-  check('order_buttons_follow_the_heads', await page.getByRole('group', {name: 'Order of the incidents'}).getByRole('button', {name: 'Earliest first record', exact: true}).getAttribute('aria-pressed') === 'true', null);
+  check('order_buttons_follow_the_heads', await page.getByRole('group', {name: 'Order of the cases'}).getByRole('button', {name: 'Earliest first record', exact: true}).getAttribute('aria-pressed') === 'true', null);
   assert.deepEqual(errors, []);
   await writeFile(output, JSON.stringify({checks}));
 } finally {

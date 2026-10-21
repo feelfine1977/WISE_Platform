@@ -96,14 +96,14 @@ async function inspectScore() {
     await main.getByText(`of ${group.members}`, {exact: false}).first().waitFor();
     await settled();
     await answered('/api/investigations/case-evidence', () => main.getByRole('button', {name: 'Inspect records', exact: true}).first().click());
-    await page.getByRole('heading', {name: /^Incident /}).first().waitFor();
+    await page.getByRole('heading', {name: /^Case /}).first().waitFor();
     const entry = {group: group.label, members_opened: true, member_records_opened: true, exemplar_records_opened: false};
     await answered('/api/investigations/bpic19-read', () => main.getByRole('button', {name: 'Show all assessed items', exact: true}).click());
     await settled();
     if (group.exemplar) {
       const paragraph = main.locator('p', {hasText: group.exemplar + ' · all-evaluable median'}).first();
       await answered('/api/investigations/case-evidence', () => paragraph.getByRole('button', {name: 'Inspect timing exemplar', exact: true}).click());
-      await page.getByRole('heading', {name: 'Incident ' + group.exemplar, exact: true}).waitFor();
+      await page.getByRole('heading', {name: 'Case ' + group.exemplar, exact: true}).waitFor();
       entry.exemplar_records_opened = true;
     }
     inspections.push(entry);
@@ -163,7 +163,7 @@ try {
     await view('evidence', async () => {
       await areas.getByRole('button', {name: 'Investigations', exact: true}).click();
       await answered('/api/investigations/case-evidence', () => incident().click());
-      await page.getByRole('heading', {name: 'Incident ' + caseId, exact: true}).waitFor();
+      await page.getByRole('heading', {name: 'Case ' + caseId, exact: true}).waitFor();
     });
     for (const state of expected.witness_states) {
       await showProfile();
@@ -171,7 +171,7 @@ try {
       const witness = profileRegion.getByRole('button', {name: /^Inspect timestamp witness /}).first();
       const witnessCase = (await witness.textContent()).replace('Inspect timestamp witness ', '').trim();
       await answered('/api/investigations/case-evidence', () => witness.click());
-      await page.getByRole('heading', {name: 'Incident ' + witnessCase, exact: true}).waitFor();
+      await page.getByRole('heading', {name: 'Case ' + witnessCase, exact: true}).waitFor();
       witnesses.push({state, opened: true});
     }
     await showProfile();

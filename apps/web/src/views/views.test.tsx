@@ -72,31 +72,31 @@ describe("the views of the population of an imported preparation", () => {
       expect(request.workspace_id).toBe(workspaceId);
       expect(request.identity).toEqual(app.population.identity);
     }
-    expect(within(panel("At the first recorded observation")).getByText("Reading the first record of every incident…")).toBeTruthy();
-    expect(within(panel("Variants")).getByText("Reading the sequence of every incident…")).toBeTruthy();
+    expect(within(panel("At the first recorded observation")).getByText("Reading the first record of every case…")).toBeTruthy();
+    expect(within(panel("Variants")).getByText("Reading the sequence of every case…")).toBeTruthy();
     expect(populationViewMessages.openingContextAnswer(openingContextAnswer(opening))).toBe(true);
     expect(populationViewMessages.openingContextAnswer(selectionOpeningContextAnswer(opening))).toBe(true);
     expect(populationViewMessages.variantsAnswer(variantsAnswer(variants))).toBe(true);
   });
 
-  it("shows how the incidents were opened, missing as not recorded and apart from the text Unknown", async () => {
+  it("shows how the cases were opened, missing as not recorded and apart from the text Unknown", async () => {
     const app = await openInvestigation();
     await deliver(() => app.views.openings[0].reply({ ok: true, answer: openingContextAnswer(app.views.openings[0].request) }));
     const opened = panel("At the first recorded observation");
-    expect(opened.textContent).toContain("These incidents are the whole parent population, so both bars are the same.");
-    expect(opened.textContent).toContain("1 incident of the parent has no readable first record because its order is not known; it is in no share.");
+    expect(opened.textContent).toContain("These cases are the whole parent population, so both bars are the same.");
+    expect(opened.textContent).toContain("1 case of the parent has no readable first record because its order is not known; it is in no share.");
 
     const group = within(opened).getByRole("list", { name: "Opening values of Gruppe, most frequent first" });
     const entries = values(group);
     expect(entries.map((entry) => entry.querySelector(".opening-label")?.textContent)).toEqual(["Büro", "Unknown", "not recorded"]);
     expect(entries[1].querySelector(".opening-label")?.className).not.toContain("missing-text");
     expect(entries[2].querySelector(".opening-label")?.className).toContain("missing-text");
-    const described = "Büro. These incidents: 2 of 4 (50.0%). Parent population: 2 of 4 (50.0%). Difference ±0.0 percentage points.";
+    const described = "Büro. These cases: 2 of 4 (50.0%). Parent population: 2 of 4 (50.0%). Difference ±0.0 percentage points.";
     expect(entries[0].getAttribute("title")).toBe(described);
     expect(entries[0].querySelector(".visually-hidden")?.textContent).toBe(described);
     expect(entries[0].querySelector(".opening-figures")?.textContent).toBe("2 (50.0%) · 2 (50.0%)");
     expect(entries[2].getAttribute("title")).toBe(
-      "not recorded. These incidents: 1 of 4 (25.0%). Parent population: 1 of 4 (25.0%). Difference ±0.0 percentage points.",
+      "not recorded. These cases: 1 of 4 (25.0%). Parent population: 1 of 4 (25.0%). Difference ±0.0 percentage points.",
     );
 
     const priority = values(within(opened).getByRole("list", { name: "Opening values of Priorität, most frequent first" }));
@@ -122,8 +122,8 @@ describe("the views of the population of an imported preparation", () => {
     render(<OpenedAs state={{ phase: "ready", answer: selectionOpeningContextAnswer(request) }} onRetry={() => undefined} />);
     const opened = panel("At the first recorded observation");
     expect(opened.textContent).not.toContain("both bars are the same");
-    expect(opened.textContent).toContain("These incidents: 2 incidents with a readable first record");
-    expect(opened.textContent).toContain("Parent population: 4 incidents with a readable first record");
+    expect(opened.textContent).toContain("These cases: 2 cases with a readable first record");
+    expect(opened.textContent).toContain("Parent population: 4 cases with a readable first record");
 
     const group = values(within(opened).getByRole("list", { name: "Opening values of Gruppe, most frequent first" }));
     const widths = (entry: HTMLElement) =>
@@ -132,23 +132,23 @@ describe("the views of the population of an imported preparation", () => {
     expect(widths(group[1])).toEqual(["50", "25"]);
     expect(widths(group[2])).toEqual(["0", "25"]);
     expect(group[1].getAttribute("title")).toBe(
-      "Unknown. These incidents: 1 of 2 (50.0%). Parent population: 1 of 4 (25.0%). Difference +25.0 percentage points.",
+      "Unknown. These cases: 1 of 2 (50.0%). Parent population: 1 of 4 (25.0%). Difference +25.0 percentage points.",
     );
     expect(group[2].getAttribute("title")).toBe(
-      "not recorded. These incidents: 0 of 2 (0.0%). Parent population: 1 of 4 (25.0%). Difference −25.0 percentage points.",
+      "not recorded. These cases: 0 of 2 (0.0%). Parent population: 1 of 4 (25.0%). Difference −25.0 percentage points.",
     );
 
     const priority = values(within(opened).getByRole("list", { name: "Opening values of Priorität, most frequent first" }));
     expect(priority.map((entry) => entry.querySelector(".opening-label")?.textContent)).toEqual(["P1", "P3", "1 other value"]);
     expect(priority[2].querySelector(".visually-hidden")?.textContent).toBe(
-      "1 other value. These incidents: 0 of 2 (0.0%). Parent population: 1 of 4 (25.0%). Difference −25.0 percentage points.",
+      "1 other value. These cases: 0 of 2 (0.0%). Parent population: 1 of 4 (25.0%). Difference −25.0 percentage points.",
     );
   });
 
-  it("ranks the variants as chains of steps with their counts and shares, and keeps the unordered incident apart", async () => {
+  it("ranks the variants as chains of steps with their counts and shares, and keeps the unordered case apart", async () => {
     const app = await openInvestigation();
     await deliver(() => app.views.variants[0].reply({ ok: true, answer: variantsAnswer(app.views.variants[0].request) }));
-    const list = within(panel("Variants")).getByRole("list", { name: "Variants, most incidents first" });
+    const list = within(panel("Variants")).getByRole("list", { name: "Variants, most cases first" });
     const items = within(list)
       .getAllByRole("listitem")
       .filter((item) => item.parentElement === list);
@@ -161,30 +161,30 @@ describe("the views of the population of an imported preparation", () => {
       "Gelöst",
     ]);
     const figures = items[0].querySelector(".variant-figures")!;
-    expect(figures.querySelector("[aria-hidden='true']")?.textContent).toBe("2 incidents · 50.0%");
-    expect(figures.getAttribute("title")).toBe("2 of 4 incidents whose order is known (50.0%)");
-    expect(figures.querySelector(".visually-hidden")?.textContent).toBe("2 of 4 incidents whose order is known (50.0%)");
+    expect(figures.querySelector("[aria-hidden='true']")?.textContent).toBe("2 cases · 50.0%");
+    expect(figures.getAttribute("title")).toBe("2 of 4 cases whose order is known (50.0%)");
+    expect(figures.querySelector(".visually-hidden")?.textContent).toBe("2 of 4 cases whose order is known (50.0%)");
     expect(items[1].textContent).toContain("No labelled activity");
     const text = panel("Variants").textContent;
-    expect(text).toContain("Shares are of the 4 incidents whose order is known, among the incidents opened, whatever steps the selection takes.");
-    expect(text).toContain("4 incidents in 3 variants and 1 incident with no known order: 5 incidents counted exactly, none sampled.");
-    expect(text).toContain("1 incident has no known order and is in no variant.");
+    expect(text).toContain("Shares are of the 4 cases whose order is known, among the cases opened, whatever steps the selection takes.");
+    expect(text).toContain("4 cases in 3 variants and 1 case with no known order: 5 cases counted exactly, none sampled.");
+    expect(text).toContain("1 case has no known order and is in no variant.");
     expect(text).toContain("1 record without an activity label is left out of the sequences.");
   });
 
-  it("lists the incidents of a chosen variant in the table until the choice is cleared, without a new request", async () => {
+  it("lists the cases of a chosen variant in the table until the choice is cleared, without a new request", async () => {
     const app = await openInvestigation();
     await deliver(() => app.views.variants[0].reply({ ok: true, answer: variantsAnswer(app.views.variants[0].request) }));
     expect(tableIncidents()).toEqual(["K-1", "K-2", "K-3", "K-4", "K-5"]);
     const facts = screen.getByLabelText("Population").textContent;
 
     panel("Variants");
-    const choose = screen.getByRole("button", { name: "List the 2 incidents of variant 1 in the table" });
+    const choose = screen.getByRole("button", { name: "List the 2 cases of variant 1 in the table" });
     expect(choose.getAttribute("aria-pressed")).toBe("false");
     await app.user.click(choose);
     expect(tableIncidents()).toEqual(["K-1", "K-3"]);
-    expect(screen.getByRole("heading", { name: "Kept incidents of variant 1" })).toBeTruthy();
-    expect(screen.getByText("The table lists the 2 incidents of variant 1.", { selector: "[role='status']" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Kept cases of variant 1" })).toBeTruthy();
+    expect(screen.getByText("The table lists the 2 cases of variant 1.", { selector: "[role='status']" })).toBeTruthy();
     expect(choose.getAttribute("aria-pressed")).toBe("true");
     // A view, not a selection step: the population, its facts and its views are not asked again.
     expect(screen.getByLabelText("Population").textContent).toBe(facts);
@@ -192,36 +192,36 @@ describe("the views of the population of an imported preparation", () => {
     expect(app.views.variants).toHaveLength(1);
     expect(app.views.openings).toHaveLength(1);
 
-    await app.user.click(screen.getByRole("button", { name: "List the 1 incident of variant 2 in the table" }));
+    await app.user.click(screen.getByRole("button", { name: "List the 1 case of variant 2 in the table" }));
     expect(tableIncidents()).toEqual(["K-4"]);
-    await app.user.click(screen.getByRole("button", { name: "Show every incident" }));
+    await app.user.click(screen.getByRole("button", { name: "Show every case" }));
     expect(tableIncidents()).toEqual(["K-1", "K-2", "K-3", "K-4", "K-5"]);
     // The button that cleared the choice is gone; the focus moves to the heading of the table.
-    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Kept incidents" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Kept cases" }));
     expect(app.coordinator.getState().chosenVariant).toBeNull();
 
     // Pressing the chosen variant again clears the choice as well.
-    await app.user.click(screen.getByRole("button", { name: "List the 1 incident of variant 3 in the table" }));
+    await app.user.click(screen.getByRole("button", { name: "List the 1 case of variant 3 in the table" }));
     expect(tableIncidents()).toEqual(["K-2"]);
-    await app.user.click(screen.getByRole("button", { name: "List the 1 incident of variant 3 in the table" }));
+    await app.user.click(screen.getByRole("button", { name: "List the 1 case of variant 3 in the table" }));
     expect(tableIncidents()).toEqual(["K-1", "K-2", "K-3", "K-4", "K-5"]);
   });
 
-  it("opens every record of an incident listed by a variant", async () => {
+  it("opens every record of a case listed by a variant", async () => {
     const app = await openInvestigation();
     await deliver(() => app.views.variants[0].reply({ ok: true, answer: variantsAnswer(app.views.variants[0].request) }));
     panel("Variants");
-    await app.user.click(screen.getByRole("button", { name: "List the 2 incidents of variant 1 in the table" }));
+    await app.user.click(screen.getByRole("button", { name: "List the 2 cases of variant 1 in the table" }));
     await app.user.click(screen.getByRole("button", { name: "K-3" }));
     expect(app.imports.evidence[0].request.case_id).toBe("K-3");
     expect(app.imports.evidence[0].request.identity).toEqual(app.population.identity);
     await app.user.keyboard("{Escape}");
     expect(document.activeElement?.textContent).toBe("K-3");
     // Showing every incident again moves the focus to the table's heading, not back to the row last returned to.
-    await app.user.click(screen.getByRole("button", { name: "Show every incident" }));
-    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Kept incidents" }));
+    await app.user.click(screen.getByRole("button", { name: "Show every case" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Kept cases" }));
     // Choosing another variant keeps the focus on its button.
-    const choose = screen.getByRole("button", { name: "List the 1 incident of variant 3 in the table" });
+    const choose = screen.getByRole("button", { name: "List the 1 case of variant 3 in the table" });
     await app.user.click(choose);
     expect(document.activeElement).toBe(choose);
   });
@@ -284,7 +284,7 @@ describe("the views of the population of an imported preparation", () => {
     expect(app.views.variants).toHaveLength(2);
     expect(app.views.variants[1].request.query_revision).toBe(variants.query_revision);
     expect(app.views.variants[1].request.request_id).not.toBe(variants.request_id);
-    expect(within(panel("Variants")).getByText("Reading the sequence of every incident…")).toBeTruthy();
+    expect(within(panel("Variants")).getByText("Reading the sequence of every case…")).toBeTruthy();
     await deliver(() => app.views.variants[1].reply({ ok: true, answer: variantsAnswer(app.views.variants[1].request) }));
     expect(within(panel("Variants")).getAllByText(/^Variant \d$/)).toHaveLength(3);
   });

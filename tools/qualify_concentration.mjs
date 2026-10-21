@@ -55,14 +55,14 @@ try {
   await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Context', exact: true}).click();
   const context = page.getByRole('region', {name: 'At the first recorded observation'});
   await context.getByRole('list', {name: 'Opening values of service, most frequent first'}).getByRole('checkbox', {name: `Choose ${S0.fixed_parent_service}`, exact: true}).check();
-  await context.getByRole('button', {name: 'Preview keeping incidents first recorded with these values', exact: true}).click();
+  await context.getByRole('button', {name: 'Preview keeping cases first recorded with these values', exact: true}).click();
   await context.getByRole('group', {name: 'Values of service not yet applied'}).getByRole('button', {name: 'Apply', exact: true}).click();
   await settled(1);
   check('parent_as_the_oracle', same(selections.at(-1).kept.case_ids, S0.parent_ids), selections.at(-1).kept.case_ids);
   // The clause: contains Resolved, from the map.
   await page.getByRole('group', {name: 'View'}).getByRole('button', {name: 'Map', exact: true}).click();
   await page.locator('.react-flow__node-activity', {hasText: 'Resolved'}).first().click();
-  await page.getByRole('button', {name: 'Keep incidents that contain it', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep cases that contain it', exact: true}).click();
   await settled(2);
 
   await areas.getByRole('button', {name: 'Compare', exact: true}).click();
@@ -98,17 +98,17 @@ try {
 
   // A value's incidents, by keyboard, down to a complete history; no step is taken.
   const asked = selections.length;
-  const inspect = page.getByRole('button', {name: 'Inspect the incidents first recorded with assignment_group App', exact: true});
+  const inspect = page.getByRole('button', {name: 'Inspect the cases first recorded with assignment_group App', exact: true});
   await inspect.focus();
   await page.keyboard.press('Enter');
-  await page.getByText(/^Listed: the incidents first recorded with assignment_group App, 2 of A and 2 of B\./).waitFor();
-  const listed = await page.getByRole('list', {name: 'Incidents of A and B'}).getByRole('listitem').allTextContents();
+  await page.getByText(/^Listed: the cases first recorded with assignment_group App, 2 of A and 2 of B\./).waitFor();
+  const listed = await page.getByRole('list', {name: 'Cases of A and B'}).getByRole('listitem').allTextContents();
   const app_ids = [...S0.opening_profile['value:App'].B_ids.map(id => `${id} · A`), ...S0.opening_profile['value:App'].A_ids.map(id => `${id} · B`)].sort();
   check('value_incidents_listed_exactly', same(listed.map(item => item.split(' Open')[0]).sort(), app_ids), listed);
   const target = S0.opening_profile['value:App'].B_ids[0];
   await page.getByRole('button', {name: `Open ${target}`, exact: true}).focus();
   await page.keyboard.press('Enter');
-  await page.getByRole('region', {name: new RegExp(`^Incident ${target}, of A`)}).getByRole('table').waitFor();
+  await page.getByRole('region', {name: new RegExp(`^Case ${target}, of A`)}).getByRole('table').waitFor();
   check('inspection_reaches_the_history_without_a_step', selections.length === asked, null);
   await page.keyboard.press('Escape');
   await page.waitForFunction(name => document.activeElement?.textContent === name, `Open ${target}`);

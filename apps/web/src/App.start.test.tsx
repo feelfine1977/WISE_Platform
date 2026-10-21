@@ -59,7 +59,7 @@ function currentArea(): string | null {
 }
 
 describe("the first use of the application", () => {
-  it("opens its own workspace and the built-in sample without a question, and shows the process map of every incident first", async () => {
+  it("opens its own workspace and the built-in sample without a question, and shows the process map of every case first", async () => {
     const app = renderApp();
     expect(currentArea()).toBe("Investigations");
     expect(screen.getByText("Opening the application's workspace…")).toBeTruthy();
@@ -92,12 +92,12 @@ describe("the first use of the application", () => {
     const view = screen.getByRole("group", { name: "View" });
     expect(within(view).getAllByRole("button").map((button) => `${button.textContent}:${button.getAttribute("aria-pressed")}`)).toEqual([
       "Map:true",
-      "Incidents:false",
+      "Cases:false",
       "Variants:false",
       "Paths:false",
       "Matrix:false",
     ]);
-    expect(screen.getByRole("heading", { name: "Map of the kept incidents" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Map of the kept cases" })).toBeTruthy();
 
     // Compare and Expectation work on these incidents; neither sends the analyst away.
     await app.user.click(area("Compare"));
@@ -105,7 +105,7 @@ describe("the first use of the application", () => {
     expect(screen.queryByRole("button", { name: "Go to the Data area" })).toBeNull();
     await app.user.click(area("Expectation"));
     expect(screen.getByRole("heading", { name: "Expectation" })).toBeTruthy();
-    expect(screen.queryByText(/No incidents are open at the moment/)).toBeNull();
+    expect(screen.queryByText(/No cases are open at the moment/)).toBeNull();
 
     // The Data area names the folder in use in one line and keeps another folder behind it.
     await app.user.click(area("Data"));

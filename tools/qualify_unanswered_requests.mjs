@@ -50,13 +50,13 @@ async function openRequests() {
 /** Finds the incidents and checks them against a part of the oracle. */
 async function find(name) {
   const before = answers.length;
-  await panel().getByRole('button', {name: 'Find the incidents', exact: true}).click();
+  await panel().getByRole('button', {name: 'Find the cases', exact: true}).click();
   for (let wait = 0; wait < 600 && answers.length === before; wait += 1) await page.waitForTimeout(100);
   const wanted = expected[name];
   check(`${name}_definition_sent_as_reviewed`, same(asked.at(-1).definition, wanted.definition), asked.at(-1).definition);
   const answer = answers.at(-1);
   check(`${name}_outcomes_as_the_oracle`, same(answer.outcomes, wanted.outcomes), answer.outcomes);
-  const table = panel().getByRole('table', {name: 'Incidents whose last request has no later answer'});
+  const table = panel().getByRole('table', {name: 'Cases whose last request has no later answer'});
   await table.waitFor();
   const rows = await table.locator('tbody tr').evaluateAll(items => items.map(row => Array.from(row.children, cell => cell.textContent)));
   const time = text => `${text.slice(0, 16).replace('T', ' ')} UTC`;
@@ -75,7 +75,7 @@ try {
     await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, expected.incidents.length);
     await settled(0);
     await openRequests();
-    const findButton = panel().getByRole('button', {name: 'Find the incidents', exact: true});
+    const findButton = panel().getByRole('button', {name: 'Find the cases', exact: true});
     check('nothing_read_before_a_definition', await findButton.isDisabled() && asked.length === 0, null);
 
     // ---- proposed from the observed values of the turn column, used, completed and reviewed ----
@@ -88,7 +88,7 @@ try {
     await panel().getByRole('group', {name: 'Answer activities'}).getByRole('checkbox', {name: 'Customer replied', exact: true}).check();
     await panel().getByLabel(/starts a new matter after a gap/).fill('72');
     const words = (await panel().locator('.requests-words p').textContent()) ?? '';
-    check('definition_said_in_words', words === 'A request is a record of “Asked customer” recorded while Turn is “Customer”; an answer is a record of “Customer replied”. A record more than 72 hours after the record before it starts a new matter, and only the latest matter of an incident is read. An incident is listed when its last request in that matter has no later answer in the records of the export.', words);
+    check('definition_said_in_words', words === 'A request is a record of “Asked customer” recorded while Turn is “Customer”; an answer is a record of “Customer replied”. A record more than 72 hours after the record before it starts a new matter, and only the latest matter of a case is read. A case is listed when its last request in that matter has no later answer in the records of the export.', words);
     check('not_read_before_review', await findButton.isDisabled() && asked.length === 0, null);
     await panel().getByRole('checkbox', {name: /I have reviewed this definition/}).check();
     const first = await find('with_turn_and_gap');
@@ -96,12 +96,12 @@ try {
     check('hours_basis_and_cutoff_disclosed', limits.includes('to the export cutoff accepted at import, 2026-10-20 00:00 UTC') && limits.includes('It is not a waiting time')
       && first.clock.snapshot_cutoff === expected.cutoff_utc, limits);
     const result = (await panel().locator('.requests-result').textContent()) ?? '';
-    check('no_resolution_label_rate_or_closure', !/resolv|\brate\b|clos/i.test(result) && result.includes('Order of records not known, not read1 incident'), result);
+    check('no_resolution_label_rate_or_closure', !/resolv|\brate\b|clos/i.test(result) && result.includes('Order of records not known, not read1 case'), result);
 
     // ---- the evidence: the history with its last request marked, and the keyboard back on the incident ----
     const open = panel().getByRole('button', {name: 'Open R-3 with its last request marked', exact: true});
     await open.click();
-    await page.getByRole('heading', {name: 'Incident R-3'}).waitFor();
+    await page.getByRole('heading', {name: 'Case R-3'}).waitFor();
     const marked = await page.locator('.imported-inspector [data-contributing]').allTextContents();
     check('history_marks_the_last_request', marked.length === 1 && marked[0].includes('Asked customer') && marked[0].includes(first.cases.find(item => item.case_id === 'R-3').last_request.row_id), marked);
     await page.keyboard.press('Escape');
@@ -112,7 +112,7 @@ try {
     await panel().getByLabel('Turn column').selectOption({label: 'No turn'});
     await panel().getByLabel(/starts a new matter after a gap/).fill('');
     check('changed_definition_needs_a_new_review', await findButton.isDisabled() && !(await panel().getByRole('checkbox', {name: /I have reviewed this definition/}).isChecked())
-      && await panel().getByRole('table', {name: 'Incidents whose last request has no later answer'}).count() === 0, null);
+      && await panel().getByRole('table', {name: 'Cases whose last request has no later answer'}).count() === 0, null);
     await panel().getByRole('checkbox', {name: /I have reviewed this definition/}).check();
     await find('plain');
 

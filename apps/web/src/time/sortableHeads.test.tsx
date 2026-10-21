@@ -27,12 +27,12 @@ function listing() {
 
 const sortOf = (name: string) => screen.getByRole("columnheader", { name }).getAttribute("aria-sort");
 
-describe("ordering the incident list from its column heads", () => {
+describe("ordering the case list from its column heads", () => {
   it("orders the list by number from the head of Records, by the local service", async () => {
     const onSort = vi.fn();
     render(
       <>
-        <h3 id="title">Kept incidents</h3>
+        <h3 id="title">Kept cases</h3>
         <IncidentWindow cases={cases} openCaseId={null} onOpen={vi.fn()} focusRequest={null} labelledBy="title" sorting={{ column: null, descending: false, onSort }} />
       </>,
     );
@@ -49,17 +49,17 @@ describe("ordering the incident list from its column heads", () => {
     const user = userEvent.setup();
     const view = (order: TimeOrder) => (
       <>
-        <h3 id="title">Kept incidents</h3>
+        <h3 id="title">Kept cases</h3>
         <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={cases} order={order} openCaseId={null} onOpen={vi.fn()} focusRequest={null}
           labelledBy="title" caseLists={caseLists} marks={{ marks: vi.fn(async () => ({ ok: false as const, problem: { kind: "unreachable" as const } })) }} onOrder={onOrder} />
       </>
     );
     const { rerender } = render(view("observed_span_hours"));
-    await screen.findByRole("table", { name: "Kept incidents" });
+    await screen.findByRole("table", { name: "Kept cases" });
     expect([sortOf("Span"), sortOf("Longest gap"), sortOf("Records"), sortOf("First record")]).toEqual(["descending", null, null, null]);
     await user.click(screen.getByRole("button", { name: "Span: sort the list" }));
     expect(caseLists.list.mock.calls.at(-1)![0].query).toMatchObject({ sort: { field: "observed_span_hours", direction: "ascending" }, offset: 0 });
-    expect(await screen.findByText(/^By recorded span, the shortest first; equal values in the order of their numbers, and incidents without a value last\./)).toBeTruthy();
+    expect(await screen.findByText(/^By recorded span, the shortest first; equal values in the order of their numbers, and cases without a value last\./)).toBeTruthy();
     expect(sortOf("Span")).toBe("ascending");
     await user.click(screen.getByRole("button", { name: "First record: sort the list" }));
     expect(onOrder).toHaveBeenCalledWith("first_recorded_time");

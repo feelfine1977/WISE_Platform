@@ -84,7 +84,7 @@ export function SavedInvestigations({ saving, data, onReopened, onShowData }: Sa
             )}
             {list.phase === "ready" && list.answer.investigations.length === 0 && (
               <p className="saved-muted">
-                No investigation is saved in this workspace yet. Open the incidents of a reading in the Data area and save them with
+                No investigation is saved in this workspace yet. Open the cases of a reading in the Data area and save them with
                 “Save” in the toolbar.
               </p>
             )}
@@ -115,7 +115,7 @@ export function SavedInvestigations({ saving, data, onReopened, onShowData }: Sa
                           busy={reopen.phase === "reopening"} />
                       </td>
                       <td className="saved-figure">
-                        {countOf(summary.selected_case_count, "incident")} · {countOf(summary.selected_record_count, "record")}
+                        {countOf(summary.selected_case_count, "case")} · {countOf(summary.selected_record_count, "record")}
                       </td>
                       <td>{summary.comparison_kind === null ? "none" : summary.comparison_kind === "group" ? "two groups" : "two periods"}</td>
                       <td>

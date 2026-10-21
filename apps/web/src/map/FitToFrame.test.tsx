@@ -77,7 +77,7 @@ const placesOf = (map: HTMLElement) => Array.from(map.querySelectorAll<HTMLEleme
 async function renderFittedMap() {
   const supplied = busyGraph();
   render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} />);
-  const map = await screen.findByLabelText("Process map of the kept incidents");
+  const map = await screen.findByLabelText("Process map of the kept cases");
   await waitFor(() => expect(map.querySelectorAll(".react-flow__node-activity").length).toBe(BUSY_ACTIVITIES));
   await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"), { timeout: LAYOUT_WITHIN });
   // The library fits the arranged map twice, the second time 400 ms after the arrangement.
@@ -86,8 +86,24 @@ async function renderFittedMap() {
   return { map, button };
 }
 
+/** The place of a node in the map's units, from where the map drew it. */
+function placeOf(map: HTMLElement, id: string) {
+  const node = map.querySelector<HTMLElement>(`[data-id="${id}"]`)!;
+  const [x, y] = (node.style.transform.match(/-?[\d.]+(?:e-?\d+)?/g) ?? []).map(Number);
+  return { x, y, width: parseFloat(node.style.width) || 0, height: parseFloat(node.style.height) || 0 };
+}
+
+/** Whether Start lies inside the frame at the map's view. */
+function startInFrame(map: HTMLElement) {
+  const { x, y, zoom } = viewOf(map);
+  const start = placeOf(map, "event:start");
+  const left = start.x * zoom + x;
+  const top = start.y * zoom + y;
+  return left + start.width * zoom > 0 && left < frame.width && top + start.height * zoom > 0 && top < frame.height;
+}
+
 describe("the map in a frame that changes its size", () => {
-  it("is fitted again as the map library fits it, and nothing is arranged again", async () => {
+  it("is opened again as the map library opens it, near Start at the readable zoom, and nothing is arranged again", async () => {
     const { map, button } = await renderFittedMap();
     const wide = viewOf(map);
     const places = placesOf(map);
@@ -95,27 +111,41 @@ describe("the map in a frame that changes its size", () => {
     const arranging: (string | null)[] = [];
     const watch = new MutationObserver(() => arranging.push(map.getAttribute("data-layout-status")));
     watch.observe(map, { attributes: true, attributeFilter: ["data-layout-status"] });
-    // The map is wider than the frame is: it is fitted to the frame's width.
-    expect(wide.zoom).toBeGreaterThan(0.05);
-    expect(wide.zoom).toBeLessThan(1);
+    // The map does not fit the frame readably: it opens at the readable zoom with Start 8 px inside the reading edge of the free
+    // area, which the zoom control in the lower left corner may narrow by 8 + 140 + 8.
+    const startLeft = () => Math.round(placeOf(map, "event:start").x * viewOf(map).zoom + viewOf(map).x);
+    expect(wide.zoom).toBe(0.75);
+    expect(startInFrame(map)).toBe(true);
+    expect([8, 164]).toContain(startLeft());
 
-    // A side panel opens: the frame is narrower.
+    // A side panel opens: the frame is narrower. The map is opened again in it, at the same zoom, Start at the reading edge.
     resizeFrame(900, 400);
     const narrow = viewOf(map);
-    expect(narrow.zoom).toBeCloseTo((wide.zoom * 900) / 1200, 6);
-    // The library's own "Fit the map" finds the view where it would put it.
-    fireEvent.click(button("Fit the map"));
-    expect(viewOf(map)).toEqual(narrow);
+    expect(narrow.zoom).toBe(0.75);
+    expect(startInFrame(map)).toBe(true);
+    expect([8, 164]).toContain(startLeft());
 
-    // The window is made lower, then the side panel closes.
+    // The window is made lower: the opening is centred across the lower frame. The side panel closes: the wide one is as it was.
     resizeFrame(900, 300);
     const low = viewOf(map);
-    expect(low.zoom).toBe(narrow.zoom);
-    expect(low.y).toBeCloseTo(narrow.y - 50, 6);
-    fireEvent.click(button("Fit the map"));
-    expect(viewOf(map)).toEqual(low);
+    expect(low.zoom).toBe(0.75);
+    expect(low.y).toBeLessThan(narrow.y);
+    expect(startInFrame(map)).toBe(true);
+    expect([8, 164]).toContain(startLeft());
     resizeFrame(1200, 400);
     expect(viewOf(map)).toEqual(wide);
+
+    // "Fit the map" fits the whole map where that stays readable: that fit then follows the frame too.
+    fireEvent.click(button("Fit the map"));
+    const fitted = viewOf(map);
+    resizeFrame(900, 400);
+    const refitted = viewOf(map);
+    expect(refitted.zoom).toBeLessThanOrEqual(fitted.zoom);
+    expect(refitted.zoom).toBeGreaterThan(0.05);
+    fireEvent.click(button("Fit the map"));
+    expect(viewOf(map)).toEqual(refitted);
+    resizeFrame(1200, 400);
+    expect(viewOf(map)).toEqual(fitted);
 
     expect(placesOf(map)).toEqual(places);
     await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
@@ -124,26 +154,28 @@ describe("the map in a frame that changes its size", () => {
     expect(map.getAttribute("data-layout-status")).toBe("ready");
   });
 
-  it("keeps a view the analyst zoomed or moved, until the map is fitted again", async () => {
+  it("keeps a view the analyst zoomed or moved, until the map is fitted or opened again", async () => {
     const { map, button } = await renderFittedMap();
-    const fitted = viewOf(map);
+    const opened = viewOf(map);
 
     fireEvent.click(button("Zoom in"));
     const zoomed = viewOf(map);
-    expect(zoomed.zoom).toBeGreaterThan(fitted.zoom);
+    expect(zoomed.zoom).toBeGreaterThan(opened.zoom);
     resizeFrame(900, 400);
     expect(viewOf(map)).toEqual(zoomed);
     resizeFrame(1200, 400);
     expect(viewOf(map)).toEqual(zoomed);
 
-    // Fitted again by the analyst, the view follows the frame again.
+    // Fitted again by the analyst, the view follows the frame again; the fit never goes below the readable floor.
     fireEvent.click(button("Fit the map"));
-    expect(viewOf(map)).toEqual(fitted);
+    const fitted = viewOf(map);
+    expect(fitted).not.toEqual(zoomed);
     resizeFrame(900, 400);
-    expect(viewOf(map).zoom).toBeCloseTo((fitted.zoom * 900) / 1200, 6);
-
-    // The wheel moves the view along the map.
     const narrow = viewOf(map);
+    expect(narrow.zoom).toBeLessThanOrEqual(fitted.zoom);
+    expect(narrow.zoom).toBeGreaterThan(0.05);
+
+    // The wheel moves the view along the map: that view is kept.
     fireEvent.wheel(map.querySelector(".react-flow__pane")!, { deltaY: 120 });
     const moved = viewOf(map);
     expect(moved).not.toEqual(narrow);
@@ -151,14 +183,15 @@ describe("the map in a frame that changes its size", () => {
     expect(viewOf(map)).toEqual(moved);
   });
 
-  it("is fitted again when the panel of a selected activity takes room from the frame", async () => {
+  it("is opened again when the panel of a selected activity takes room from the frame", async () => {
     const { map } = await renderFittedMap();
-    const fitted = viewOf(map);
+    const opened = viewOf(map);
     fireEvent.click(map.querySelector<HTMLElement>(`[data-id="${busyIds.activity(2)}"]`)!);
     expect(document.querySelector(".map-view")?.getAttribute("data-element")).toBe("selected");
-    // The panel stands beside the map and is 300 px wide, with a gap of 12 px.
+    // The panel stands beside the map and is 300 px wide, with a gap of 12 px: the map opens again in the narrower frame.
     resizeFrame(1200 - 312, 400);
-    expect(viewOf(map).zoom).toBeCloseTo((fitted.zoom * (1200 - 312)) / 1200, 6);
+    expect(viewOf(map).zoom).toBe(opened.zoom);
+    expect(startInFrame(map)).toBe(true);
   });
 });
 
@@ -167,7 +200,7 @@ describe("the fitted view", () => {
   const area = { width: 1200, height: 400 };
 
   it("shows the whole map in the middle of the frame with 4 % of its size around it", () => {
-    const view = fittedView(wideMap, area, area, []);
+    const view = fittedView(wideMap, area, []);
     // 1,000 px and twice 4 % of it in 1,200 px.
     expect(view.zoom).toBeCloseTo(1200 / 1080, 10);
     expect(view.x).toBeCloseTo(600 - 500 * (1200 / 1080), 10);
@@ -177,18 +210,18 @@ describe("the fitted view", () => {
   it("keeps clear of a panel over the map on the side that costs the least zoom, with a gap of 8 px", () => {
     const zoomControl = { x: 8, y: 352, width: 100, height: 40 };
     // The wide map loses nothing to room kept clear at the bottom: 48 px of panel and 8 px of gap.
-    const wide = fittedView(wideMap, area, area, [zoomControl]);
+    const wide = fittedView(wideMap, area, [zoomControl]);
     expect(wide.zoom).toBeCloseTo(1200 / 1080, 10);
     expect(wide.y).toBeCloseTo((400 - 56) / 2 - 100 * (1200 / 1080), 10);
     // A tall map loses nothing to room kept clear at the left: 108 px of panel and 8 px of gap.
-    const tall = fittedView({ x: 0, y: 0, width: 300, height: 600 }, area, area, [zoomControl]);
+    const tall = fittedView({ x: 0, y: 0, width: 300, height: 600 }, area, [zoomControl]);
     expect(tall.zoom).toBeCloseTo(400 / 648, 10);
     expect(tall.x).toBeCloseTo(116 + (1200 - 116) / 2 - 150 * (400 / 648), 10);
   });
 
   it("stays within the zoom of the map: no closer than 3, no farther than 0.05", () => {
-    expect(fittedView({ x: 0, y: 0, width: 10, height: 10 }, area, area, []).zoom).toBe(3);
-    expect(fittedView({ x: 0, y: 0, width: 100000, height: 10 }, area, area, []).zoom).toBe(0.05);
+    expect(fittedView({ x: 0, y: 0, width: 10, height: 10 }, area, []).zoom).toBe(3);
+    expect(fittedView({ x: 0, y: 0, width: 100000, height: 10 }, area, []).zoom).toBe(0.05);
   });
 
   it("is the same view within rounding, and another one beyond it", () => {
@@ -211,22 +244,22 @@ describe("following the frame", () => {
     return steps.map((step) => {
       const next = follow(seen, step);
       seen = next.seen;
-      return next.moveTo ?? (next.seen.wasFitted ? "fitted" : "kept");
+      return next.moveTo ?? (next.seen.fittedAs !== undefined ? "fitted" : "kept");
     });
   };
 
   it("moves a fitted view to the fit of the new frame, and leaves a chosen view where it is", () => {
-    expect(looks({ ...wide, view: forWide, fitted: forWide }, { ...narrow, view: forWide, fitted: forNarrow }, { ...narrow, view: forNarrow, fitted: forNarrow })).toEqual(["fitted", forNarrow, "fitted"]);
-    expect(looks({ ...wide, view: chosen, fitted: forWide }, { ...narrow, view: chosen, fitted: forNarrow }, { ...wide, view: chosen, fitted: forWide })).toEqual(["kept", "kept", "kept"]);
+    expect(looks({ ...wide, view: forWide, fitted: [forWide] }, { ...narrow, view: forWide, fitted: [forNarrow] }, { ...narrow, view: forNarrow, fitted: [forNarrow] })).toEqual(["fitted", forNarrow, "fitted"]);
+    expect(looks({ ...wide, view: chosen, fitted: [forWide] }, { ...narrow, view: chosen, fitted: [forNarrow] }, { ...wide, view: chosen, fitted: [forWide] })).toEqual(["kept", "kept", "kept"]);
   });
 
   it("takes a view for fitted from where its last move ended, not from what has changed around it since", () => {
     // The legend grew after the fit: the fitted view is another one now, but the view was not moved away from its fit.
     const withLargerLegend = { x: 44, y: 60, zoom: 1.1 };
-    expect(looks({ ...wide, view: forWide, fitted: forWide }, { ...narrow, view: forWide, fitted: forNarrow })).toEqual(["fitted", forNarrow]);
-    let seen = follow(null, { ...wide, view: forWide, fitted: forWide }).seen;
-    seen = { ...seen, fitted: withLargerLegend };
-    expect(follow(seen, { ...narrow, view: forWide, fitted: forNarrow }).moveTo).toEqual(forNarrow);
+    expect(looks({ ...wide, view: forWide, fitted: [forWide] }, { ...narrow, view: forWide, fitted: [forNarrow] })).toEqual(["fitted", forNarrow]);
+    let seen = follow(null, { ...wide, view: forWide, fitted: [forWide] }).seen;
+    seen = { ...seen, fitted: [withLargerLegend] };
+    expect(follow(seen, { ...narrow, view: forWide, fitted: [forNarrow] }).moveTo).toEqual(forNarrow);
   });
 
   it("fits to the new frame a view that a fit of the library was still moving when the frame changed", () => {
@@ -235,20 +268,27 @@ describe("following the frame", () => {
     expect(
       looks(
         // The library's fit for the wide frame is moving the view.
-        { ...wide, view: onTheWay, fitted: forWide },
+        { ...wide, view: onTheWay, fitted: [forWide] },
         // The frame gets narrower meanwhile: the view is not the fitted one and stays.
-        { ...narrow, view: onTheWay, fitted: forNarrow },
-        { ...narrow, view: nearer, fitted: forNarrow },
+        { ...narrow, view: onTheWay, fitted: [forNarrow] },
+        { ...narrow, view: nearer, fitted: [forNarrow] },
         // It ends on the fit for the wide frame, and is fitted to the frame it ended in.
-        { ...narrow, view: forWide, fitted: forNarrow },
-        { ...narrow, view: forNarrow, fitted: forNarrow },
+        { ...narrow, view: forWide, fitted: [forNarrow] },
+        { ...narrow, view: forNarrow, fitted: [forNarrow] },
       ),
     ).toEqual(["kept", "kept", "kept", forNarrow, "fitted"]);
     // A view the analyst moves meanwhile ends elsewhere and is kept.
-    expect(looks({ ...wide, view: onTheWay, fitted: forWide }, { ...narrow, view: onTheWay, fitted: forNarrow }, { ...narrow, view: chosen, fitted: forNarrow }, { ...wide, view: chosen, fitted: forWide })).toEqual(["kept", "kept", "kept", "kept"]);
+    expect(looks({ ...wide, view: onTheWay, fitted: [forWide] }, { ...narrow, view: onTheWay, fitted: [forNarrow] }, { ...narrow, view: chosen, fitted: [forNarrow] }, { ...wide, view: chosen, fitted: [forWide] })).toEqual(["kept", "kept", "kept", "kept"]);
+  });
+
+  it("follows the library's opening as the opening, and its fit as the fit", () => {
+    const openWide = { x: 8, y: 100, zoom: 0.75 };
+    const openNarrow = { x: 8, y: 80, zoom: 0.75 };
+    expect(looks({ ...wide, view: openWide, fitted: [forWide, openWide] }, { ...narrow, view: openWide, fitted: [forNarrow, openNarrow] })).toEqual(["fitted", openNarrow]);
+    expect(looks({ ...wide, view: forWide, fitted: [forWide, openWide] }, { ...narrow, view: forWide, fitted: [forNarrow, openNarrow] })).toEqual(["fitted", forNarrow]);
   });
 
   it("moves nothing while nothing is drawn", () => {
-    expect(looks({ ...wide, view: { x: 0, y: 0, zoom: 1 }, fitted: undefined }, { ...narrow, view: { x: 0, y: 0, zoom: 1 }, fitted: undefined })).toEqual(["kept", "kept"]);
+    expect(looks({ ...wide, view: { x: 0, y: 0, zoom: 1 }, fitted: [] }, { ...narrow, view: { x: 0, y: 0, zoom: 1 }, fitted: [] })).toEqual(["kept", "kept"]);
   });
 });

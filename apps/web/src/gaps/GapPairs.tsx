@@ -115,10 +115,10 @@ export function GapPairs({ workspaceId, revision, identity, onOrder, ordered, cl
       }
       onOrder({
         id, label: pairName(from, to), ordered: true, caseIds,
-        note: `The table lists the ${countOf(caseIds.length, "kept incident")} with a gap ${pairName(from, to)}, the longest of their gaps first. This is an order of the list: the selection and every count stay as they are until a step is taken.`,
+        note: `The table lists the ${countOf(caseIds.length, "kept case")} with a gap ${pairName(from, to)}, the longest of their gaps first. This is an order of the list: the selection and every count stay as they are until a step is taken.`,
       });
     } catch {
-      if (!controller.signal.aborted) setChoiceError("Every incident of this pair could not be read. Try choosing the pair again.");
+      if (!controller.signal.aborted) setChoiceError("Every case of this pair could not be read. Try choosing the pair again.");
     } finally {
       if (!controller.signal.aborted && choiceRequest.current === controller) {
         choiceRequest.current = null;
@@ -164,41 +164,41 @@ export function GapPairs({ workspaceId, revision, identity, onOrder, ordered, cl
       </div>
       {read.phase === "loading" && <p className="working-text">Reading the gaps…</p>}
       {read.phase === "failed" && <p className="inline-error" role="alert">{read.message}</p>}
-      {choosing !== null && <p role="status">Reading every incident of this pair…</p>}
+      {choosing !== null && <p role="status">Reading every case of this pair…</p>}
       {choiceError && <p className="inline-error" role="alert">{choiceError}</p>}
       {answer && (
         <>
           <p className="muted gap-pairs-basis">
-            Over the {countOf(answer.kept.evaluable_case_count, "kept incident")} whose order of records is known, against {countOf(answer.parent.evaluable_case_count, "incident")}{" "}
-            of the parent; each passage of a pair counts once, an incident passing it twice twice. The median is the middle passage, or the midpoint of the two
+            Over the {countOf(answer.kept.evaluable_case_count, "kept case")} whose order of records is known, against {countOf(answer.parent.evaluable_case_count, "case")}{" "}
+            of the parent; each passage of a pair counts once, a case passing it twice twice. The median is the middle passage, or the midpoint of the two
             middle ones; the 90th percentile is the passage at the nearest rank. {relation === "raw_adjacent"
               ? "A record without an activity label is an endpoint of its own."
               : "A record without an activity label is passed over, as on the map's paths."}
           </p>
           {(answer.kept.order_unknown_case_count > 0 || answer.parent.order_unknown_case_count > 0) && (
             <p className="limitation">
-              {countOf(answer.kept.order_unknown_case_count, "kept incident")} (parent {answer.parent.order_unknown_case_count.toLocaleString("en")}) whose order of records is
+              {countOf(answer.kept.order_unknown_case_count, "kept case")} (parent {answer.parent.order_unknown_case_count.toLocaleString("en")}) whose order of records is
               not known {answer.kept.order_unknown_case_count === 1 ? "has" : "have"} no gaps and {answer.kept.order_unknown_case_count === 1 ? "is" : "are"} not in these figures.
             </p>
           )}
           {answer.pairs.length === 0 ? (
-            <p className="working-text">The kept incidents have no gap between two records.</p>
+            <p className="working-text">The kept cases have no gap between two records.</p>
           ) : (
             <div className="gap-pairs-scroll">
               <table className="gap-pairs-table" aria-label="Pairs with their recorded gaps, the longest 90th percentile first">
                 <thead>
                   <tr>
                     <th scope="col" rowSpan={2}>Pair</th>
-                    <th scope="colgroup" colSpan={5}>Kept incidents</th>
+                    <th scope="colgroup" colSpan={5}>Kept cases</th>
                     <th scope="colgroup" colSpan={4}>Parent</th>
                   </tr>
                   <tr>
-                    <th scope="col" className="number">Incidents · share</th>
+                    <th scope="col" className="number">Cases · share</th>
                     <th scope="col" className="number">Passages</th>
                     <th scope="col" className="number">Median (h)</th>
                     <th scope="col" className="number">90th percentile (h)</th>
                     <th scope="col" className="number">Passages longer than {hoursText(answer.threshold_hours)} h</th>
-                    <th scope="col" className="number">Incidents · share</th>
+                    <th scope="col" className="number">Cases · share</th>
                     <th scope="col" className="number">Passages</th>
                     <th scope="col" className="number">Median (h)</th>
                     <th scope="col" className="number">90th percentile (h)</th>
@@ -210,7 +210,7 @@ export function GapPairs({ workspaceId, revision, identity, onOrder, ordered, cl
                     return (
                       <tr key={id} className={ordered === id ? "selected" : undefined}>
                         <th scope="row">
-                          <button type="button" aria-pressed={ordered === id} disabled={choosing !== null} title="Order the incident list by this pair's longest gap"
+                          <button type="button" aria-pressed={ordered === id} disabled={choosing !== null} title="Order the case list by this pair's longest gap"
                             onClick={() => void choose(pair.from_activity, pair.to_activity)}>
                             {pairName(pair.from_activity, pair.to_activity)}
                           </button>

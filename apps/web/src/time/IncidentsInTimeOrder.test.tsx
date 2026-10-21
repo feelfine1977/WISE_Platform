@@ -63,34 +63,34 @@ function setup(order: "observed_span_hours" | "maximum_adjacent_raw_gap_hours" =
   const onOpen = vi.fn();
   render(
     <>
-      <h3 id="title">Kept incidents</h3>
+      <h3 id="title">Kept cases</h3>
       <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={keptCases} order={order} openCaseId={null} onOpen={onOpen} focusRequest={null} labelledBy="title" caseLists={caseLists} marks={marks} />
     </>,
   );
   return { caseLists, marks, onOpen, user: userEvent.setup() };
 }
 
-describe("the kept incidents in an order by time", () => {
+describe("the kept cases in an order by time", () => {
   it("asks the local service for the longest first, a page at a time, and shows both times as columns", async () => {
     const { caseLists } = setup();
-    const table = await screen.findByRole("table", { name: "Kept incidents" });
+    const table = await screen.findByRole("table", { name: "Kept cases" });
     expect(caseLists.list.mock.calls[0][0].query).toEqual({ search_text: null, sort: { field: "observed_span_hours", direction: "descending" }, offset: 0, limit: PAGE });
-    expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Incident", "Records", "Mapped records", "Records without activity label", "Order of records", "Span▼", "Longest gap", "First record", "Longest gap between", "Records over time, 0 to 10.4 d"]);
+    expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Case", "Records", "Mapped records", "Records without activity label", "Order of records", "Span▼", "Longest gap", "First record", "Longest gap between", "Records over time, 0 to 10.4 d"]);
     const first = within(table).getAllByRole("row")[1];
     expect(within(first).getByRole("button").textContent).toBe("I-249");
     expect(within(first).getAllByRole("cell").map((cell) => cell.textContent).slice(4, 8)).toEqual(["10.4 d", "5.2 d", "2026-01-01 08:00:00 UTC", "Assigned → no activity label"]);
-    expect(screen.getByText("200 incidents of 250")).toBeTruthy();
+    expect(screen.getByText("200 cases of 250")).toBeTruthy();
   });
 
   it("says under the table that wall-clock spans and gaps may differ from the physical elapsed time", async () => {
     setup("observed_span_hours", marksOf(), "wall_clock");
-    await screen.findByRole("table", { name: "Kept incidents" });
+    await screen.findByRole("table", { name: "Kept cases" });
     expect(screen.getByText(/^Wall clock: span and longest gap are differences between times as recorded/)).toBeTruthy();
   });
 
   it("shows no wall-clock note for instants", async () => {
     setup();
-    await screen.findByRole("table", { name: "Kept incidents" });
+    await screen.findByRole("table", { name: "Kept cases" });
     expect(screen.queryByText(/^Wall clock: span and longest gap/)).toBeNull();
   });
 
@@ -98,13 +98,13 @@ describe("the kept incidents in an order by time", () => {
     const { caseLists, user } = setup("maximum_adjacent_raw_gap_hours");
     await user.click(await screen.findByRole("button", { name: "Show 50 more" }));
     expect(caseLists.list.mock.calls[1][0].query).toMatchObject({ sort: { field: "maximum_adjacent_raw_gap_hours", direction: "descending" }, offset: 200 });
-    expect(await screen.findByText("250 incidents of 250")).toBeTruthy();
+    expect(await screen.findByText("250 cases of 250")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /more$/ })).toBeNull();
   });
 
-  it("draws the records of each incident in view as marks on one axis, aligned at its first record, from bounded batches of marks (#67)", async () => {
+  it("draws the records of each case in view as marks on one axis, aligned at its first record, from bounded batches of marks (#67)", async () => {
     const { marks: client } = setup();
-    const table = await screen.findByRole("table", { name: "Kept incidents" });
+    const table = await screen.findByRole("table", { name: "Kept cases" });
     const first = within(table).getAllByRole("row")[1];
     const marks = await within(first).findByRole("img");
     expect(marks.getAttribute("aria-label")).toBe("3 records over 5 h, from the first record; the longest gap, 5.2 d, marked from 1 h");
@@ -121,7 +121,7 @@ describe("the kept incidents in an order by time", () => {
 
   it("says that the marks were not read where a batch fails", async () => {
     setup("observed_span_hours", marksOf(true));
-    const table = await screen.findByRole("table", { name: "Kept incidents" });
+    const table = await screen.findByRole("table", { name: "Kept cases" });
     expect(await within(within(table).getAllByRole("row")[1]).findByText("not read")).toBeTruthy();
   });
 });

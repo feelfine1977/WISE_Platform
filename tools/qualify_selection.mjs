@@ -47,9 +47,9 @@ try {
 
   // Highlight: a path chosen in the list of paths. Preview: what its step would keep, before anything is taken.
   await view('Paths').click();
-  const paths = page.getByRole('table', {name: 'Paths of the kept incidents'});
+  const paths = page.getByRole('table', {name: 'Paths of the kept cases'});
   await paths.getByRole('button', {name: `Path from “${follows.source}” to “${follows.target}”`, exact: true}).click();
-  const keepLabel = `Keep incidents where “${follows.target}” directly follows “${follows.source}”` + (follows.bridged ? ' in the activity sequence, records without activity label between them passed over' : '');
+  const keepLabel = `Keep cases where “${follows.target}” directly follows “${follows.source}”` + (follows.bridged ? ' in the activity sequence, records without activity label between them passed over' : '');
   const keep = page.getByRole('button', {name: keepLabel, exact: true});
   const previewLine = page.locator(`#${await keep.getAttribute('aria-describedby')}`);
   await previewLine.filter({hasText: /^Preview:/}).waitFor();
@@ -67,19 +67,19 @@ try {
   check('preview_and_commit_share_one_identity', previewed && JSON.stringify(previewed.answer.identity) === JSON.stringify(first.identity), null);
   const steps = (await page.locator('section.selection-steps').textContent()) ?? '';
   check('whole_selection_counted', steps.includes(`All steps together keep ${count(follows.kept.length, 'incident')} of ${count(expected.parent, 'incident')}; ${follows.removed.length} removed, ${follows.unevaluable.length} not evaluable.`), steps);
-  check('combination_named', steps.includes('An incident is kept only if it meets every step (and).') && steps.includes('or between steps, are not offered'), null);
+  check('combination_named', steps.includes('A case is kept only if it meets every step (and).') && steps.includes('or between steps, are not offered'), null);
   check('unevaluable_reason_named', steps.includes('Not evaluable because the order of their records is not known, as a record has no usable time.'), null);
 
   // Open an incident by keyboard: every record, the unlabelled one included; return puts the focus back on it.
-  await view('Incidents').click();
+  await view('Cases').click();
   const row = page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${expected.opened.case}$`)}).first();
   await row.focus();
   await page.keyboard.press('Enter');
-  const records = page.getByRole('list', {name: `Records of incident ${expected.opened.case} in the declared order`});
+  const records = page.getByRole('list', {name: `Records of case ${expected.opened.case} in the declared order`});
   await records.waitFor();
   const items = await records.getByRole('listitem').allTextContents();
   check('opened_incident_has_every_record', items.length === expected.opened.records && items.filter(text => text.includes('no activity label')).length === expected.opened.unlabelled, items.length);
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).focus();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).focus();
   await page.keyboard.press('Enter');
   await page.waitForFunction(id => document.activeElement?.textContent === id, expected.opened.case);
   check('return_restores_the_focused_incident', true);
@@ -87,16 +87,16 @@ try {
   // A second step that keeps nothing: previewed, taken, and said to keep nothing.
   await view('Paths').click();
   await paths.getByRole('button', {name: `Path from “${follows.source}” to “${follows.target}”`, exact: true}).click();
-  const never = page.getByRole('button', {name: 'Keep incidents where it never does', exact: true});
+  const never = page.getByRole('button', {name: 'Keep cases where it never does', exact: true});
   const neverPreview = page.locator(`#${await never.getAttribute('aria-describedby')}`);
   await neverPreview.filter({hasText: /^Preview:/}).waitFor();
-  check('empty_preview_says_nothing_kept', ((await neverPreview.textContent()) ?? '').startsWith(`Preview: would keep 0 incidents of ${count(expected.parent, 'incident')}; ${both.removed.length} removed, ${both.unevaluable.length} not evaluable.`), await neverPreview.textContent());
+  check('empty_preview_says_nothing_kept', ((await neverPreview.textContent()) ?? '').startsWith(`Preview: would keep 0 cases of ${count(expected.parent, 'incident')}; ${both.removed.length} removed, ${both.unevaluable.length} not evaluable.`), await neverPreview.textContent());
   await never.click();
   await settled(2);
   const second = committed(2).answer;
   check('empty_selection_matches_the_oracle', sameIds(second.kept, both.kept) && sameIds(second.unevaluable, both.unevaluable), second.kept);
-  await view('Incidents').click();
-  check('empty_selection_says_so', ((await page.locator('main').first().textContent()) ?? '').includes('The selection keeps no incident. Remove a step or undo it to keep incidents again.'), null);
+  await view('Cases').click();
+  check('empty_selection_says_so', ((await page.locator('main').first().textContent()) ?? '').includes('The selection keeps no case. Remove a step or undo it to keep cases again.'), null);
 
   // Undo twice: exactly the earlier identities, not merely as many incidents.
   await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Undo', exact: true}).click();

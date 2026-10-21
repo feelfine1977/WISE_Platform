@@ -53,7 +53,7 @@ export function populationZero(request: OpenExampleRequest): PopulationAnswer {
     source: {
       example_id: "S0",
       synthetic: true,
-      label: "Synthetic incidents, hand-made example zero",
+      label: "Synthetic cases, hand-made example zero",
       snapshot_cutoff_utc: "2026-10-02T00:00:00Z",
     },
     policies: request.policies,
@@ -84,7 +84,7 @@ export function populationOne(request: OpenExampleRequest): PopulationAnswer {
     source: {
       example_id: "S1",
       synthetic: true,
-      label: "Synthetic incidents, hand-made example one",
+      label: "Synthetic cases, hand-made example one",
       snapshot_cutoff_utc: "2026-10-02T00:00:00Z",
     },
     policies: request.policies,

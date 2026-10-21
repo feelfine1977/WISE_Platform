@@ -12,7 +12,7 @@ export const WITNESS_LIMIT = 50;
 export type MatrixMeasure = "incidents" | "passages" | "outgoing" | "median" | "mean";
 
 const MEASURES: [MatrixMeasure, string][] = [
-  ["incidents", "Incidents"],
+  ["incidents", "Cases"],
   ["passages", "Passages"],
   ["outgoing", "Outgoing share"],
   ["median", "Median lag"],
@@ -29,9 +29,9 @@ export function measureKey(measure: MatrixMeasure, answer: TransitionMatrixAnswe
   const clock = answer.clock.lag_clock === "elapsed_utc_hours" ? "elapsed hours (UTC)" : "hours as recorded on the wall clock";
   switch (measure) {
     case "incidents":
-      return `Incidents: the distinct incidents with the pair, of the ${countOf(answer.case_denominator, "incident")} whose order is known; a repeat adds no incident.`;
+      return `Cases: the distinct cases with the pair, of the ${countOf(answer.case_denominator, "case")} whose order is known; a repeat adds no case.`;
     case "passages":
-      return "Passages: how often the pair occurs; an incident that repeats it adds a passage each time.";
+      return "Passages: how often the pair occurs; a case that repeats it adds a passage each time.";
     case "outgoing":
       return "Outgoing share: the pair's passages of all passages leaving its row's activity; a row no pair leaves has no denominator.";
     case "median":
@@ -61,7 +61,7 @@ export function cellValue(cell: MatrixCell, measure: MatrixMeasure): string {
 export function cellDescription(cell: MatrixCell, answer: TransitionMatrixAnswer): string {
   const row = answer.rows.find((candidate) => candidate.activity === cell.source_activity);
   return (
-    `From ${cell.source_activity} to ${cell.target_activity}: ${countOf(cell.case_count, "incident")} of ${whole.format(answer.case_denominator)} (${percent(cell.case_share)}), ` +
+    `From ${cell.source_activity} to ${cell.target_activity}: ${countOf(cell.case_count, "case")} of ${whole.format(answer.case_denominator)} (${percent(cell.case_share)}), ` +
     `${countOf(cell.passage_count, "passage")}, ${percent(cell.outgoing_share)} of the ${whole.format(row?.outgoing_passage_count ?? 0)} passages leaving ${cell.source_activity}, ` +
     `median lag ${hoursText(cell.lag.median_hours)} over ${countOf(cell.lag.usable_count, "usable lag")}`
   );
@@ -133,7 +133,7 @@ export function TransitionMatrix({ workspaceId, revision, identity, onStep, prev
       <h3 id="matrix-title" className="pane-title">
         Transitions between activities
       </h3>
-      {shown.phase === "loading" && <p className="working-text">Counting every pair of the kept incidents…</p>}
+      {shown.phase === "loading" && <p className="working-text">Counting every pair of the kept cases…</p>}
       {shown.phase === "failed" && (
         <div className="problem" role="alert">
           <p>
@@ -176,15 +176,15 @@ function MatrixBody({ answer, measure, onMeasure, layout, onLayout, chosen, onCh
   return (
     <>
       <p className="muted">
-        A cell is a pair of activities whose records directly follow each other in the declared order of an incident whose order is known; records
+        A cell is a pair of activities whose records directly follow each other in the declared order of a case whose order is known; records
         without an activity label between them are passed over and named as a bridge. It is neither a co-occurrence nor an indirect relation (
         <span className="identifier">{answer.relation.policy}</span>).
       </p>
       <p className="muted">
-        Of the {countOf(answer.case_count, "incident")} kept, {countOf(answer.case_denominator, "incident")} {answer.case_denominator === 1 ? "has" : "have"} a
+        Of the {countOf(answer.case_count, "case")} kept, {countOf(answer.case_denominator, "case")} {answer.case_denominator === 1 ? "has" : "have"} a
         known order.
         {answer.unevaluable_case_count > 0 &&
-          ` ${countOf(answer.unevaluable_case_count, "incident")} with no known order ${answer.unevaluable_case_count === 1 ? "is" : "are"} in no cell.`}
+          ` ${countOf(answer.unevaluable_case_count, "case")} with no known order ${answer.unevaluable_case_count === 1 ? "is" : "are"} in no cell.`}
       </p>
       <div className="matrix-controls">
         <div className="view-switch" role="group" aria-label="Measure in the cells">
@@ -207,8 +207,8 @@ function MatrixBody({ answer, measure, onMeasure, layout, onLayout, chosen, onCh
       {answer.cells.length === 0 ? (
         <p className="working-text">
           {answer.case_denominator === 0
-            ? "No kept incident has a known order, so there is no pair and no denominator."
-            : "No pair: no kept incident has two labelled records one after the other."}
+            ? "No kept case has a known order, so there is no pair and no denominator."
+            : "No pair: no kept case has two labelled records one after the other."}
         </p>
       ) : layout === "matrix" ? (
         <Grid answer={answer} cells={cells} measure={measure} chosen={chosen} onChoose={onChoose} />
@@ -282,7 +282,7 @@ function CellTable({ answer, chosen, onChoose }: { answer: TransitionMatrixAnswe
         <thead>
           <tr>
             <th scope="col">From → To</th>
-            <th scope="col">Incidents</th>
+            <th scope="col">Cases</th>
             <th scope="col">Passages</th>
             <th scope="col">Outgoing share</th>
             <th scope="col">Median lag of the passages (h)</th>
@@ -343,14 +343,14 @@ function CellPanel({ cell, answer, onStep, previewStep, waitingFor, onOpen, onSe
       </h4>
       <dl className="pairs">
         <div>
-          <dt>Incidents</dt>
+          <dt>Cases</dt>
           <dd>
-            {countOf(cell.case_count, "incident")} of the {countOf(answer.case_denominator, "incident")} whose order is known ({percent(cell.case_share)})
+            {countOf(cell.case_count, "case")} of the {countOf(answer.case_denominator, "case")} whose order is known ({percent(cell.case_share)})
           </dd>
         </div>
         <div>
           <dt>Passages</dt>
-          <dd>{countOf(cell.passage_count, "passage")}; a repeat in one incident adds a passage, not an incident</dd>
+          <dd>{countOf(cell.passage_count, "passage")}; a repeat in one case adds a passage, not a case</dd>
         </div>
         <div>
           <dt>Outgoing share</dt>
@@ -369,7 +369,7 @@ function CellPanel({ cell, answer, onStep, previewStep, waitingFor, onOpen, onSe
           <div>
             <dt>Bridged</dt>
             <dd>
-              {countOf(cell.bridged_passage_count, "passage")} in {countOf(cell.bridged_case_count, "incident")} pass over records without an activity label
+              {countOf(cell.bridged_passage_count, "passage")} in {countOf(cell.bridged_case_count, "case")} pass over records without an activity label
             </dd>
           </div>
         )}
@@ -386,17 +386,17 @@ function CellPanel({ cell, answer, onStep, previewStep, waitingFor, onOpen, onSe
       {previewStep && pending === null && (
         <div className="matrix-actions">
           <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={() => setPending(false)}>
-            Preview keeping these incidents
+            Preview keeping these cases
           </button>
           <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={() => setPending(true)}>
-            Preview removing these incidents
+            Preview removing these cases
           </button>
         </div>
       )}
       {!previewStep && (
         <div className="matrix-actions">
-          <button type="button" disabled={waitingFor !== undefined} onClick={() => onStep(step(false))}>Keep these incidents</button>
-          <button type="button" disabled={waitingFor !== undefined} onClick={() => onStep(step(true))}>Remove these incidents</button>
+          <button type="button" disabled={waitingFor !== undefined} onClick={() => onStep(step(false))}>Keep these cases</button>
+          <button type="button" disabled={waitingFor !== undefined} onClick={() => onStep(step(true))}>Remove these cases</button>
         </div>
       )}
       {previewStep && pending !== null && (
@@ -415,18 +415,18 @@ function CellPanel({ cell, answer, onStep, previewStep, waitingFor, onOpen, onSe
           const key = `${witness.case_id}:${place}`;
           return (
             <li key={key}>
-              Incident <span className="identifier">{witness.case_id}</span>: {oneDecimal.format(witness.hours)} h
+              Case <span className="identifier">{witness.case_id}</span>: {oneDecimal.format(witness.hours)} h
               {witness.omitted_row_ids.length > 0 && `, over ${countOf(witness.omitted_row_ids.length, "record")} without an activity label`}
               {witness.tied && ", same time as the record before"}{" "}
               <button type="button" className="link-button" data-open-case={key}
                 onClick={() => onOpen(witness.case_id, [witness.source_row_id, ...witness.omitted_row_ids, witness.target_row_id], key)}>
-                Open incident {witness.case_id}
+                Open case {witness.case_id}
               </button>
             </li>
           );
         })}
       </ol>
-      {cell.witnesses_truncated && <p className="muted">The first {countOf(cell.witnesses.length, "passage")} are listed; every incident is in the step.</p>}
+      {cell.witnesses_truncated && <p className="muted">The first {countOf(cell.witnesses.length, "passage")} are listed; every case is in the step.</p>}
     </section>
   );
 }

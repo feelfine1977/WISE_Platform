@@ -33,7 +33,7 @@ afterEach(() => {
 });
 
 describe("the import contract checks", () => {
-  it("accept a population of 40,000 incidents and refuse one that names an incident twice", () => {
+  it("accept a population of 40,000 cases and refuse one that names a case twice", () => {
     const large = populationAnswer(populationRequest, caseSummaries(40000));
     const started = performance.now();
     expect(importContract.populationAnswer(large)).toBe(true);

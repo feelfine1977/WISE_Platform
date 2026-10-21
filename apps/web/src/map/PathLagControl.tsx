@@ -77,7 +77,7 @@ export function PathLagControl({ source, target, medianLagHours, onStep, preview
       <p className="muted">
         The lag of a passage is the time from “{source}” to the next labelled record, “{target}”, as the path's lag is measured
         {medianLagHours !== null && medianLagHours !== undefined ? `; the path's median lag is ${lagHours(Number(medianLagHours.toFixed(3)))}` : ""}.
-        An incident whose order is not known is not evaluable and is counted apart; one that never passes the path is outside.
+        A case whose order is not known is not evaluable and is counted apart; one that never passes the path is outside.
       </p>
       {medianLagHours !== null && medianLagHours !== undefined && (
         <p className="path-lag-presets">
@@ -108,7 +108,7 @@ export function PathLagControl({ source, target, medianLagHours, onStep, preview
       </div>
       <label>
         <input type="checkbox" checked={every} onChange={(event) => { setEvery(event.target.checked); setPending(null); }} />
-        Every passage of an incident in the range (otherwise one passage is enough)
+        Every passage of a case in the range (otherwise one passage is enough)
       </label>
       {error && <p className="inline-error" role="alert">{error}</p>}
       <p>

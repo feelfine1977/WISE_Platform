@@ -17,11 +17,11 @@ const remedies: Record<SavingRefusal["code"], string> = {
   source_changed: "Add the original source file again in the Data area, then reopen. A changed file is a new source.",
   preparation_unavailable: "Read the source again with the same choices in the Data area, then reopen.",
   preparation_changed: "Read the source again in the Data area and save the investigation anew; the saved revision keeps its meaning.",
-  identity_mismatch: "Open the incidents again from the Data area and take the steps again.",
-  selection_mismatch: "Open the incidents again from the Data area and take the steps again.",
+  identity_mismatch: "Open the cases again from the Data area and take the steps again.",
+  selection_mismatch: "Open the cases again from the Data area and take the steps again.",
   comparison_unavailable: "Compare the groups again; the saved comparison cannot be computed on this preparation.",
   comparison_mismatch: "Compare the groups again; the saved comparison no longer gives the same groups.",
-  invalid_bookmark: "Remove the bookmark or pin the incident again, then save.",
+  invalid_bookmark: "Remove the bookmark or pin the case again, then save.",
   score_reference_unavailable: "Save the investigation without the score run.",
   unsupported_score_reference: "Save the investigation without a score run.",
   investigation_unavailable: "Save the investigation as a new one.",
@@ -64,14 +64,14 @@ export function describeSavingProblem(problem: SavingProblem): SavingProblemText
 const quoted = (text: string) => `“${text}”`;
 
 function groupMembers(definition: NamedGroupDefinition): string {
-  if (definition.kind === "explicit_case_ids") return `${countOf(definition.case_ids.length, "named incident")}`;
-  if (definition.predicates.length === 0) return "every incident of the parent";
-  return definition.predicates.map((step) => stepWording(step).replace(/^Keep incidents/, "incidents")).join(", and ");
+  if (definition.kind === "explicit_case_ids") return `${countOf(definition.case_ids.length, "named case")}`;
+  if (definition.predicates.length === 0) return "every case of the parent";
+  return definition.predicates.map((step) => stepWording(step).replace(/^Keep cases/, "cases")).join(", and ");
 }
 
 /** The roles of a saved comparison in words: which group or period is the target and which the reference. */
 export function comparisonRoles(comparison: SavedComparison): string {
-  const parent = countOf(comparison.parent_case_ids.length, "incident");
+  const parent = countOf(comparison.parent_case_ids.length, "case");
   if (comparison.kind === "group") {
     const definition = comparison.definition;
     if (definition.mode === "two_named_groups") {
@@ -80,7 +80,7 @@ export function comparisonRoles(comparison: SavedComparison): string {
         `${quoted(definition.reference.name)} (${groupMembers(definition.reference.definition)}), within a parent of ${parent}.`
       );
     }
-    const steps = definition.predicates.map((step) => stepWording(step).replace(/^Keep incidents/, "incidents")).join(", and ");
+    const steps = definition.predicates.map((step) => stepWording(step).replace(/^Keep cases/, "cases")).join(", and ");
     const side = definition.target_side === "kept" ? "kept" : "removed";
     return (
       `Target ${quoted(definition.target_name)}: the ${side} side of ${steps || "no step"}; reference ` +
@@ -89,7 +89,7 @@ export function comparisonRoles(comparison: SavedComparison): string {
   }
   const definition = comparison.definition;
   const time = (value: string) => (definition.target.window.timestamp_kind === "utc_instant" ? utcText(value) : wallText(value));
-  const window = (period: typeof definition.target) => `incidents starting from ${time(period.window.start_inclusive)} before ${time(period.window.end_exclusive)}`;
+  const window = (period: typeof definition.target) => `cases starting from ${time(period.window.start_inclusive)} before ${time(period.window.end_exclusive)}`;
   return (
     `Target ${quoted(definition.target.name)} (${window(definition.target)}) against reference ${quoted(definition.reference.name)} ` +
     `(${window(definition.reference)}), within a parent of ${parent}; at least ${definition.minimum_followup_hours} hours of follow-up.`

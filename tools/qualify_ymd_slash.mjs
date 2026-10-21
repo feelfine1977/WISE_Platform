@@ -60,8 +60,8 @@ try {
   await areas.getByRole('button', {name: 'Data', exact: true}).click();
   await page.getByLabel('Add an event-history CSV').setInputFiles(config.file);
   await page.getByRole('heading', {name: `How ${expected.file} is written`}).waitFor();
-  await page.getByLabel('Incident id', {exact: true}).waitFor();
-  await role('Incident id', columns[expected.mapping.case_column]);
+  await page.getByLabel('Case id', {exact: true}).waitFor();
+  await role('Case id', columns[expected.mapping.case_column]);
   await role('Activity', columns[expected.mapping.activity_column]);
   await role('Time', columns[expected.mapping.timestamp_column]);
   // The new format is offered with what it reads; the format first chosen reads none of these times.
@@ -71,9 +71,9 @@ try {
   // The field takes minutes; the screen adds the seconds, as for any cutoff entered there.
   await page.getByLabel('Export taken at (as recorded)').fill(expected.wall.cutoff_local.slice(0, 16));
   const wrong = await readAndConfirm();
-  check('summary_says_no_order_can_follow', wrong.text.includes('No record has a usable time with these choices, so the order of no incident is known'), null);
-  await answered('/api/investigations/open-population', () => press(page.getByRole('button', {name: 'Open incidents', exact: true})));
-  const note = page.getByRole('note').filter({hasText: 'The order of no incident is known'});
+  check('summary_says_no_order_can_follow', wrong.text.includes('No record has a usable time with these choices, so the order of no case is known'), null);
+  await answered('/api/investigations/open-population', () => press(page.getByRole('button', {name: 'Open cases', exact: true})));
+  const note = page.getByRole('note').filter({hasText: 'The order of no case is known'});
   await note.waitFor();
   check('investigation_says_why_no_paths_or_variants', ((await note.textContent()) ?? '').includes('no paths, no variants and no durations'), null);
   // Recovery: back to the Data area, the year-first format, a new reading compared with the first.
@@ -83,16 +83,16 @@ try {
   check('summary_no_longer_warns', !right.text.includes('No record has a usable time'), null);
   check('change_compared_with_the_unreadable_reading', right.compared?.['With a usable time']?.join(' | ') ===
     `0 records | ${expected.wall.report.usable_timestamp_record_count} records | +${expected.wall.report.usable_timestamp_record_count}`, right.compared);
-  await answered('/api/investigations/open-population', () => press(page.getByRole('button', {name: 'Open incidents', exact: true})));
+  await answered('/api/investigations/open-population', () => press(page.getByRole('button', {name: 'Open cases', exact: true})));
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
-  check('no_warning_once_times_are_read', await page.getByRole('note').filter({hasText: 'The order of no incident is known'}).count() === 0, null);
+  check('no_warning_once_times_are_read', await page.getByRole('note').filter({hasText: 'The order of no case is known'}).count() === 0, null);
   await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Paths', exact: true}).click();
-  const paths = page.getByRole('table', {name: 'Paths of the kept incidents'});
+  const paths = page.getByRole('table', {name: 'Paths of the kept cases'});
   await paths.waitFor();
   check('paths_follow_from_the_read_times', await paths.getByRole('button', {name: /^Path from /}).count() > 0, null);
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
   await page.locator('table tbody tr button.row-open', {hasText: /^Case 1$/}).first().click();
-  await page.getByRole('list', {name: 'Records of incident Case 1 in the declared order'}).waitFor();
+  await page.getByRole('list', {name: 'Records of case Case 1 in the declared order'}).waitFor();
   check('original_cells_keep_the_fraction', ((await page.locator('main').first().textContent()) ?? '').includes('2010/01/13 08:40:25.123'), null);
   assert.deepEqual(errors, []);
   await writeFile(output, JSON.stringify({checks}));

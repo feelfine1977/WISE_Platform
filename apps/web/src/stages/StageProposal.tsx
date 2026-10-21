@@ -114,7 +114,7 @@ export function StageProposal({ reading, store, definitions, source, client = ht
     <section className="stages-proposal" aria-labelledby={titleId}>
       <h4 id={titleId} className="stages-title">Propose stages from a phase column</h4>
       <p className="stages-note">
-        The values of a context column on every record of each activity of the kept incidents, not only on the first record of an incident. Nothing is put
+        The values of a context column on every record of each activity of the kept cases, not only on the first record of a case. Nothing is put
         into a stage until you take a value; mixed values stay listed.
       </p>
       <div className="stages-add">
@@ -130,7 +130,7 @@ export function StageProposal({ reading, store, definitions, source, client = ht
         <>
           <p className="stages-note">
             {answer.column_name || nameOf(answer.column_index)}: counted on {countOf(answer.kept.labelled_record_count, "record")} with an activity label of the{" "}
-            {countOf(answer.kept.case_count, "kept incident")}
+            {countOf(answer.kept.case_count, "kept case")}
             {answer.kept.unlabelled_record_count > 0 ? `; ${countOf(answer.kept.unlabelled_record_count, "record")} without an activity label ${answer.kept.unlabelled_record_count === 1 ? "is" : "are"} in no activity` : ""}.
           </p>
           <table className="stages-table stages-values" aria-label={`Values of ${answer.column_name || nameOf(answer.column_index)} by activity`}>

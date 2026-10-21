@@ -15,7 +15,7 @@ interface PinControlProps {
  * WISE computes; a label is offered, and an observation, a limitation and a next check can be written, none required.
  */
 export function PinControl({ caseId, pinned, onPin, onUnpin }: PinControlProps) {
-  const [words, setWords] = useState<PinWords>({ label: `Incident ${caseId}`, observation: "", limitation: "", nextCheck: "" });
+  const [words, setWords] = useState<PinWords>({ label: `Case ${caseId}`, observation: "", limitation: "", nextCheck: "" });
   const [said, setSaid] = useState("");
   const field = (name: keyof PinWords) => ({
     value: words[name],
@@ -28,7 +28,7 @@ export function PinControl({ caseId, pinned, onPin, onUnpin }: PinControlProps) 
   return (
     <section className="pin-control" aria-labelledby="pin-control-title">
       <h3 id="pin-control-title">Pin this history</h3>
-      <p className="muted">Supporting and contrary are your reading of this incident; WISE does not decide them. Pinning changes no step.</p>
+      <p className="muted">Supporting and contrary are your reading of this case; WISE does not decide them. Pinning changes no step.</p>
       <label>
         Label
         <input type="text" {...field("label")} />
@@ -60,7 +60,7 @@ export function PinControl({ caseId, pinned, onPin, onUnpin }: PinControlProps) 
         {said}
       </p>
       {pinned.length > 0 && (
-        <ul className="pin-list" aria-label={`Pins of incident ${caseId}`}>
+        <ul className="pin-list" aria-label={`Pins of case ${caseId}`}>
           {pinned.map((pin) => (
             <li key={pin.id}>
               {ROLE_NAMES[pin.role]} · {pin.label}{" "}

@@ -81,7 +81,7 @@ async function score(label) {
   const reviewed = form.getByRole('checkbox', {name: /I have reviewed this definition/});
   if (narrow) { await reviewed.focus(); await page.keyboard.press('Space'); } else await reviewed.check();
   await act(form.getByRole('button', {name: 'Check the definition', exact: true}));
-  const scoreButton = form.getByRole('button', {name: `Score ${expected.incidents} incidents`, exact: true});
+  const scoreButton = form.getByRole('button', {name: `Score ${expected.incidents} cases`, exact: true});
   await page.waitForFunction(() => { const button = [...document.querySelectorAll('form.expectation-form button')].find(item => item.textContent.startsWith('Score ')); return button && !button.disabled; });
   const before = (replies['/api/expectations/score'] ?? []).length;
   await act(scoreButton);
@@ -90,7 +90,7 @@ async function score(label) {
   const request = sent['/api/expectations/score'].at(-1);
   check(`${label}_scored_on_the_exact_reading_and_population`, request.workspace_id === population.workspace_id && same(request.base_identity, population.identity)
     // With no step the investigation shows every incident of the reading, which is named by the reading's own identity.
-    && same(request.named_population.identity, population.identity) && request.named_population.name.startsWith('every incident of'), {request, population: population.identity});
+    && same(request.named_population.identity, population.identity) && request.named_population.name.startsWith('every case of'), {request, population: population.identity});
   const values = Object.fromEntries(run.cases.map(verdict => [verdict.case_id, verdict.value]));
   check(`${label}_values_as_the_oracle`, same(Object.fromEntries(Object.entries(values).sort()), Object.fromEntries(Object.entries(e.values).sort())), values);
   await page.locator('.expectation-states').first().waitFor();
@@ -110,16 +110,16 @@ try {
     await area('Compare').click();
     const comparePending = page.locator('.compare .area-prerequisite');
     await comparePending.getByRole('status').filter({hasText: 'are being opened'}).waitFor();
-    check('compare_says_the_incidents_are_being_opened', ((await comparePending.textContent()) ?? '').includes('Comparisons are made in the incidents') && await comparePending.getByRole('button', {name: 'Show the investigation'}).count() === 1, await comparePending.textContent());
+    check('compare_says_the_incidents_are_being_opened', ((await comparePending.textContent()) ?? '').includes('Comparisons are made in the cases') && await comparePending.getByRole('button', {name: 'Show the investigation'}).count() === 1, await comparePending.textContent());
     await area('Expectation').click();
     const expectationPending = page.locator('.expectation .area-prerequisite');
     await expectationPending.getByRole('status').filter({hasText: 'are being opened'}).waitFor();
-    check('expectation_says_the_incidents_are_being_opened', ((await expectationPending.textContent()) ?? '').includes('An expectation is scored for the incidents an investigation shows.'), await expectationPending.textContent());
+    check('expectation_says_the_incidents_are_being_opened', ((await expectationPending.textContent()) ?? '').includes('An expectation is scored for the cases an investigation shows.'), await expectationPending.textContent());
     await expectationPending.getByRole('button', {name: 'Show the investigation'}).click();
     check('recovery_action_shows_the_investigation', await area('Investigations').getAttribute('aria-current') === 'page', null);
     release();
     await page.unroute('**/api/investigations/open-population');
-    await page.getByRole('heading', {name: 'Map of the kept incidents'}).waitFor();
+    await page.getByRole('heading', {name: 'Map of the kept cases'}).waitFor();
     await settled(0);
     check('example_opened_with_every_incident', population.population.case_count === expected.incidents, population.population);
 
@@ -128,17 +128,17 @@ try {
     check('method_build_named_honestly', ((await page.locator('.expectation-method-line').textContent()) ?? '').includes('not a published release'), await page.locator('.expectation-method-line').textContent());
     // A new score that fails says that the previous run is still shown, and shows it.
     await page.route('**/api/expectations/score', route => route.abort('connectionrefused'), {times: 1});
-    await page.locator('form.expectation-form').getByRole('button', {name: `Score ${expected.incidents} incidents`, exact: true}).click();
-    await page.getByText('The incidents could not be scored again; the previous run is still shown').waitFor();
+    await page.locator('form.expectation-form').getByRole('button', {name: `Score ${expected.incidents} cases`, exact: true}).click();
+    await page.getByText('The cases could not be scored again; the previous run is still shown').waitFor();
     const keptCounts = await page.locator('.expectation-state-count').allTextContents();
     check('failed_score_keeps_the_previous_run', keptCounts.length > 0 && keptCounts.some(text => text === '8'), keptCounts);
 
     // ---- kept against removed, on the exact population ----
     await area('Investigations').click();
     await view('Paths').click();
-    const paths = page.getByRole('table', {name: 'Paths of the kept incidents'});
+    const paths = page.getByRole('table', {name: 'Paths of the kept cases'});
     await paths.getByRole('button', {name: `Path from “${expected.step.source}” to “${expected.step.target}”`, exact: true}).click();
-    await page.getByRole('button', {name: `Keep incidents where “${expected.step.target}” directly follows “${expected.step.source}”`, exact: true}).click();
+    await page.getByRole('button', {name: `Keep cases where “${expected.step.target}” directly follows “${expected.step.source}”`, exact: true}).click();
     await settled(1);
     const kept = selections.at(-1);
     await area('Compare').click();
@@ -164,7 +164,7 @@ try {
     await act(area('Expectation'));
     const failed = page.locator('.expectation .area-prerequisite[role="alert"]');
     await failed.waitFor();
-    check('failure_to_open_named_with_its_recovery', ((await failed.textContent()) ?? '').includes('The incidents could not be opened, so this area has nothing to work on.')
+    check('failure_to_open_named_with_its_recovery', ((await failed.textContent()) ?? '').includes('The cases could not be opened, so this area has nothing to work on.')
       && await failed.getByRole('button', {name: 'Try again'}).count() === 1 && await failed.getByRole('button', {name: 'Go to the Data area'}).count() === 1, await failed.textContent());
     await act(failed.getByRole('button', {name: 'Try again'}));
     await page.locator('form.expectation-form').waitFor();

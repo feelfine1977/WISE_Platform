@@ -29,9 +29,9 @@ const workspaceLine = () => page.getByRole('region', {name: 'Workspace'});
 
 async function incidentsShown() {
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0
-    && !document.body.textContent.includes('Selecting the incidents and drawing their map'));
+    && !document.body.textContent.includes('Selecting the cases and drawing their map'));
   const shown = (await page.locator('main').first().textContent()) ?? '';
-  check('example_incidents_shown', shown.includes(`${config.cases} of ${config.cases} incidents`) && shown.includes(`${config.records} of ${config.records} records`), null);
+  check('example_incidents_shown', shown.includes(`${config.cases} of ${config.cases} cases`) && shown.includes(`${config.records} of ${config.records} records`), null);
   check('population_counts', population && population.population.case_count === config.cases && population.population.record_count === config.records,
     population && population.population);
 }

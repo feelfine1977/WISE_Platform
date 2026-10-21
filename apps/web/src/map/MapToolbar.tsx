@@ -7,9 +7,14 @@ import "./toolbar.css";
 /** What the switch of the direction does, said in its tooltip. */
 export const DIRECTION_HINT = "Off, the map runs top to bottom, from Start above to End below. On, it runs left to right, from Start at the left to End at the right.";
 
+/** What going back to the opening does, said in its tooltip. */
+export const OPENING_HINT = "Shows the map again as it opened: readable, near Start, with the overview of the whole map where the whole does not fit.";
+
 interface MapToolbarProps {
   /** Whether the map is drawn below. The list of every path is no picture: nothing is arranged or overviewed there. */
   picture: boolean;
+  /** Shows the map again as it opened. */
+  onOpening: () => void;
   /** Which way the map runs: top to bottom at first, left to right on request. */
   direction: MapDirection;
   onDirection: (direction: MapDirection) => void;
@@ -32,11 +37,12 @@ interface MapToolbarProps {
  * picture is arranged and whether it shows its overview, then the editor of the stages and what
  * there is to know about the map. Nothing of it takes room from the map.
  */
-export function MapToolbar({ picture, direction, onDirection, overview, onOverview, editingStages, onEditStages, stagesSwitch, notDrawn, children }: MapToolbarProps) {
+export function MapToolbar({ picture, onOpening, direction, onDirection, overview, onOverview, editingStages, onEditStages, stagesSwitch, notDrawn, children }: MapToolbarProps) {
   return (
     <div className="icon-toolbar map-toolbar" role="group" aria-label="Map tools">
       {picture && (
         <>
+          <IconButton icon="opening" label="Back to the opening" hint={OPENING_HINT} onClick={onOpening} />
           <IconButton
             icon="orientation"
             label="Run the map left to right"

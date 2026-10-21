@@ -69,7 +69,7 @@ async function answerSelection(app: Pick<Investigation, "selecting">, index: num
 }
 
 function keptIncidents(): string[] {
-  const table = screen.getByRole("table", { name: "Kept incidents" });
+  const table = screen.getByRole("table", { name: "Kept cases" });
   return within(table).getAllByRole("rowheader").map((cell) => cell.textContent ?? "");
 }
 
@@ -85,7 +85,7 @@ describe("saving the investigation shown", () => {
     expect((within(form).getByLabelText("Name") as HTMLInputElement).value).toBe("Vorgänge.csv");
     await app.user.clear(within(form).getByLabelText("Name"));
     await app.user.type(within(form).getByLabelText("Name"), "Alle Vorgänge");
-    await app.user.type(within(form).getByLabelText("Other notes"), "Both incidents, before any step.");
+    await app.user.type(within(form).getByLabelText("Other notes"), "Both cases, before any step.");
     await app.user.click(within(form).getByRole("button", { name: "Save" }));
 
     const first = app.saving.saves[0];
@@ -93,7 +93,7 @@ describe("saving the investigation shown", () => {
     expect(first.request.investigation_id).toBeNull();
     expect(first.request.expected_revision_id).toBeNull();
     expect(first.request.name).toBe("Alle Vorgänge");
-    expect(first.request.notes).toBe("Both incidents, before any step.");
+    expect(first.request.notes).toBe("Both cases, before any step.");
     expect(first.request.workspace_id).toBe(workspaceId);
     expect(first.request.base_identity.preparation_id).toBe(preparationId);
     expect(first.request.selection_identity.population_id).toBe(`population.v1:sha256:${"f".repeat(64)}`);
@@ -109,7 +109,7 @@ describe("saving the investigation shown", () => {
     expect(within(form).getByRole("status").textContent).toBe("Saved as the new investigation “Alle Vorgänge”.");
     const line = screen.getByRole("region", { name: "Saved investigation" });
     expect(line.textContent).toContain("Alle Vorgänge");
-    expect(line.textContent).toContain("Both incidents, before any step.");
+    expect(line.textContent).toContain("Both cases, before any step.");
 
     // A step taken after saving, then a second save: it names the investigation and the revision it replaces.
     act(() => app.investigation.addStep(contains(opened)));
@@ -118,7 +118,7 @@ describe("saving the investigation shown", () => {
     await app.user.click(screen.getByRole("button", { name: "Save" }));
     const again = screen.getByRole("region", { name: "Save a new revision" });
     expect(within(again).getByText("Saving adds a new revision to “Alle Vorgänge”. The earlier revisions stay in the workspace as they were saved.")).toBeTruthy();
-    expect((within(again).getByLabelText("Other notes") as HTMLTextAreaElement).value).toBe("Both incidents, before any step.");
+    expect((within(again).getByLabelText("Other notes") as HTMLTextAreaElement).value).toBe("Both cases, before any step.");
     await app.user.click(within(again).getByRole("button", { name: "Save revision" }));
 
     const second = app.saving.saves[1];
@@ -198,12 +198,12 @@ describe("saving the investigation shown", () => {
     expect(app.investigation.getState().saved?.revisionId).toBe(firstRevisionId);
   });
 
-  it("offers saving only once the incidents of the current steps are selected", async () => {
+  it("offers saving only once the cases of the current steps are selected", async () => {
     const app = await renderInvestigation();
     act(() => app.investigation.addStep(contains(opened)));
     await app.user.click(screen.getByRole("button", { name: "Save" }));
     const form = screen.getByRole("region", { name: "Save this investigation" });
-    expect(within(form).getByText("Saving is possible once the incidents of the current steps are selected.")).toBeTruthy();
+    expect(within(form).getByText("Saving is possible once the cases of the current steps are selected.")).toBeTruthy();
     expect((within(form).getByRole("button", { name: "Save" }) as HTMLButtonElement).disabled).toBe(true);
     expect(app.saving.saves).toHaveLength(0);
   });
@@ -266,7 +266,7 @@ describe("the saved investigations", () => {
     expect(within(table).getByRole("rowheader").textContent).toBe("Eröffnungen");
     expect(cells[0]).toMatch(/^Vorgänge\.csvPreparation /);
     expect(cells[0]).toContain("Listed as saved, not checked yet: the source and the identities are checked when it is reopened.");
-    expect(cells.slice(1, 3)).toEqual(["1 incident · 2 records", "two groups"]);
+    expect(cells.slice(1, 3)).toEqual(["1 case · 2 records", "two groups"]);
     expect(screen.getByRole("button", { name: "Reopen Eröffnungen" })).toBeTruthy();
   });
 
@@ -289,7 +289,7 @@ describe("the saved investigations", () => {
     expect(screen.queryByRole("table")).toBeNull();
   });
 
-  it("reopens an investigation with its steps, kept incidents, view and comparison roles, and a fresh undo history", async () => {
+  it("reopens an investigation with its steps, kept cases, view and comparison roles, and a fresh undo history", async () => {
     const app = await renderSavedArea();
     await deliver(() => app.saving.lists[0].reply({ ok: true, answer: listAnswer(app.saving.lists[0].request, [savedSummary]) }));
     await app.user.click(screen.getByRole("button", { name: "Reopen Eröffnungen" }));
@@ -312,22 +312,22 @@ describe("the saved investigations", () => {
     expect(selection.request.predicates).toEqual([contains(opened)]);
     await answerSelection(app, 0, containingOpened, ["A-1"]);
 
-    expect(screen.getByRole("list", { name: "Steps of the selection" }).textContent).toContain("Keep incidents that contain “Eröffnet”");
+    expect(screen.getByRole("list", { name: "Steps of the selection" }).textContent).toContain("Keep cases that contain “Eröffnet”");
     expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "Redo" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole("button", { name: "Map" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByRole("heading", { name: "Map of the kept incidents" })).toBeTruthy();
-    await app.user.click(screen.getByRole("button", { name: "Incidents" }));
+    expect(screen.getByRole("heading", { name: "Map of the kept cases" })).toBeTruthy();
+    await app.user.click(screen.getByRole("button", { name: "Cases" }));
     expect(keptIncidents()).toEqual(["A-1"]);
     const line = screen.getByRole("region", { name: "Saved investigation" });
     expect(line.textContent).toContain("Eröffnungen");
     expect(line.textContent).toContain("Only A-1 was opened in a known order.");
     expect(line.textContent).toContain(
-      "Target “Geöffnet” (1 named incident) against reference “Ungeordnet” (1 named incident), within a parent of 2 incidents.",
+      "Target “Geöffnet” (1 named case) against reference “Ungeordnet” (1 named case), within a parent of 2 cases.",
     );
 
     // Removing the restored step is the first entry of the new history; undo brings the step back.
-    await app.user.click(screen.getByRole("button", { name: "Remove the step: Keep incidents that contain “Eröffnet”" }));
+    await app.user.click(screen.getByRole("button", { name: "Remove the step: Keep cases that contain “Eröffnet”" }));
     expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
@@ -364,8 +364,8 @@ describe("the saved investigations", () => {
     await deliver(() => selection.reply({ ok: true, answer: selectionAnswer(selection.request, withoutOpened) }));
 
     const alert = screen.getByRole("alert");
-    expect(alert.textContent).toContain("The incidents could not be selected");
-    expect(alert.textContent).toContain("The incidents selected now are not those of the saved investigation.");
+    expect(alert.textContent).toContain("The cases could not be selected");
+    expect(alert.textContent).toContain("The cases selected now are not those of the saved investigation.");
     expect(app.selecting.graphs).toHaveLength(0);
   });
 });

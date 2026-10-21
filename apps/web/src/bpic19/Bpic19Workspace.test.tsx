@@ -752,7 +752,7 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     expect(screen.getByRole("button", {name: "Full width"}).getAttribute("aria-pressed")).toBe("false");
     expect(details.isConnected && details.open).toBe(true);
     await app.user.click(screen.getByRole("button", {name: "Full width"}));
-    await app.user.click(screen.getByRole("button", {name: "Return to incidents"}));
+    await app.user.click(screen.getByRole("button", {name: "Return to cases"}));
     expect(main.hidden).toBe(false);
     expect(screen.getByRole("region", {name: "Scripted source profile"})).toBe(sourcePanel);
     expect(app.investigation.getState().inspected.phase).toBe("closed");
@@ -1390,7 +1390,7 @@ describe("purchasing workspace coherence across real coordinator changes", () =>
     expect(app.session.readyForSave()).toBe(true);
     expect(app.session.savedPipeline()).toBeNull();
     expect(app.saving.draft(app.investigation.getState())).toMatchObject({ ready: true });
-    app.saving.save("Generic incident investigation", "No purchasing interpretation", "incidents");
+    app.saving.save("Generic case investigation", "No purchasing interpretation", "incidents");
     expect(app.saves.saves).toHaveLength(1);
     expect(app.saves.saves[0].request.base_identity.preparation_id).toBe(earlierPreparationId);
     expect(app.saves.saves[0].request.bpic19_pipeline).toBeUndefined();

@@ -77,7 +77,7 @@ describe("#132 the reading pane", () => {
     expect(documents.opened.map((request) => [request.case_id, request.attachment_index])).toEqual([["I-1", 0]]);
   });
 
-  it("steps through the incident's documents, counting the records without one", async () => {
+  it("steps through the case's documents, counting the records without one", async () => {
     const { onPlace, user } = pane("I-1", 1);
     await screen.findByText("Invented internal note");
     await user.click(screen.getByRole("button", { name: "Next document" }));
@@ -121,7 +121,7 @@ describe("#132 the reading pane", () => {
   });
 });
 
-describe("#132 opening documents from an incident", () => {
+describe("#132 opening documents from a case", () => {
   function inspector() {
     const answer = incident("I-1"), documents = client();
     render(<ImportedInspector inspected={{ phase: "ready", caseId: answer.case_id, answer }} summary={undefined} layout="side" onLayout={() => undefined}
@@ -132,19 +132,19 @@ describe("#132 opening documents from an incident", () => {
 
   it("offers the document of each record that names one, beside the timeline, and returns to the record when closed", async () => {
     const { user } = inspector();
-    const entries = within(screen.getByRole("list", { name: "Records of incident I-1 in the declared order" })).getAllByRole("listitem");
+    const entries = within(screen.getByRole("list", { name: "Records of case I-1 in the declared order" })).getAllByRole("listitem");
     expect(entries.map((entry) => within(entry).queryByRole("button", { name: "Open document" }) !== null)).toEqual([true, true, false, true]);
     await user.click(within(entries[0]).getByRole("button", { name: "Open document" }));
     await screen.findByText("Invented question about an invented invoice");
     // The timeline stays visible beside the pane.
-    expect(screen.getByRole("region", { name: "Elapsed time of incident I-1" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Elapsed time of case I-1" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Close document" }));
     await waitFor(() => expect(document.activeElement).toBe(entries[0]));
   });
 
   it("opens a mark's document from the timeline by keyboard", async () => {
     const { user } = inspector();
-    const strip = screen.getByRole("group", { name: /Recorded times of incident I-1/ });
+    const strip = screen.getByRole("group", { name: /Recorded times of case I-1/ });
     const marks = within(strip).getAllByRole("button");
     expect(marks[0].getAttribute("aria-label")).toMatch(/a document is available, press D to open it$/);
     expect(marks[2].getAttribute("aria-label")).not.toMatch(/document/);

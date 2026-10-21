@@ -27,8 +27,8 @@ async function openIncident(caseId) {
   await areas.getByRole('button', {name: 'Investigations', exact: true}).click();
   const button = page.getByRole('button', {name: caseId, exact: true}).first();
   await answered('/api/investigations/case-evidence', () => button.click());
-  await page.getByRole('heading', {name: 'Incident ' + caseId, exact: true}).waitFor();
-  return page.getByRole('list', {name: `Records of incident ${caseId} in the declared order`});
+  await page.getByRole('heading', {name: 'Case ' + caseId, exact: true}).waitFor();
+  return page.getByRole('list', {name: `Records of case ${caseId} in the declared order`});
 }
 
 const pane = page.locator('section.document-pane');
@@ -51,7 +51,7 @@ try {
   await answered('/api/documents/read', () => page.keyboard.press('Enter'));
   await pane.getByText('Invented question about an invented invoice', {exact: true}).waitFor();
   check('email_masked_marker_shown', (await pane.getByRole('note').first().textContent()).startsWith('Masked text'));
-  check('timeline_stays_visible', await page.getByRole('region', {name: 'Elapsed time of incident I-1'}).isVisible());
+  check('timeline_stays_visible', await page.getByRole('region', {name: 'Elapsed time of case I-1'}).isVisible());
   if (phase === 'review') {
     await pane.getByRole('button', {name: 'Next document', exact: true}).focus();
     await answered('/api/documents/read', () => page.keyboard.press('Enter'));
@@ -65,7 +65,7 @@ try {
     check('escape_returns_focus_to_the_record', await page.evaluate(() => document.activeElement?.tagName === 'LI'
       && document.activeElement.textContent.includes('Status changed')));
     // From the timeline: the first mark offers its document; D opens it.
-    const mark = page.getByRole('group', {name: /Recorded times of incident I-1/}).getByRole('button').first();
+    const mark = page.getByRole('group', {name: /Recorded times of case I-1/}).getByRole('button').first();
     check('timeline_mark_offers_its_document', /a document is available, press D to open it$/.test(await mark.getAttribute('aria-label')));
     await mark.focus();
     await answered('/api/documents/read', () => page.keyboard.press('d'));
@@ -79,7 +79,7 @@ try {
     check('attachments_follow_the_stated_list', true);
     await pane.getByRole('button', {name: 'Close document', exact: true}).click();
     // The largest allowed document within a second; one byte more is refused with its size; markup stays text.
-    await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+    await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
     records = await openIncident('I-3');
     const started = Date.now();
     await recordEntry(records, 'Largest allowed').getByRole('button', {name: 'Open document', exact: true}).click();

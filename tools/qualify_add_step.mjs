@@ -24,10 +24,10 @@ page.on('response', async response => {
 const checks = {};
 const check = (name, passed, detail) => { checks[name] = Boolean(passed); assert.ok(passed, `${name}: ${JSON.stringify(detail ?? null)}`); };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const KINDS = ['Incident numbers', 'Recorded time', 'A range of records, span or longest gap', 'First record in a period', 'Context values', 'A range of a number in a context column'];
+const KINDS = ['Case numbers', 'Recorded time', 'A range of records, span or longest gap', 'First record in a period', 'Context values', 'A range of a number in a context column'];
 // What each kind's form offers first: the proof that its own form, and only it, is open.
 const FORMS = {
-  'Incident numbers': 'Exact incident numbers', 'Recorded time': 'At least this many hours', 'A range of records, span or longest gap': 'Measure of the range',
+  'Incident numbers': 'Exact case numbers', 'Recorded time': 'At least this many hours', 'A range of records, span or longest gap': 'Measure of the range',
   'First record in a period': 'First record from (included)', 'Context values': 'Exact context values',
 };
 async function settled(steps) {
@@ -56,7 +56,7 @@ try {
   const panel = page.getByRole('group', {name: 'Add a step'});
   const kinds = await panel.getByRole('list', {name: 'Kinds of step'}).getByRole('button').allTextContents();
   check('kinds_of_step_listed', same(kinds, KINDS), kinds);
-  check('glossary_line', (await panel.textContent()).includes('A step keeps or removes whole incidents'), null);
+  check('glossary_line', (await panel.textContent()).includes('A step keeps or removes whole cases'), null);
   // Each kind opens its own form alone.
   for (const kind of KINDS) {
     await addStep(page, kind);

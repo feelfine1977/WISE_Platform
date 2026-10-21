@@ -41,7 +41,7 @@ const applied = () => screen.getByRole("list", { name: "Steps of the selection" 
 const summaries = (list: HTMLElement) => Array.from(list.querySelectorAll("summary"), (summary) => summary.textContent);
 
 describe("the trail of steps", () => {
-  it("shows each step as a short chip with the incidents kept after it, the earliest first, its details on demand", async () => {
+  it("shows each step as a short chip with the cases kept after it, the earliest first, its details on demand", async () => {
     const app = await start();
     act(() => app.coordinator.addStep(contains(opened)));
     await answer(app, containingOpened);
@@ -54,8 +54,8 @@ describe("the trail of steps", () => {
     expect(details.open).toBe(false);
     await app.user.click(chips[0].querySelector("summary")!);
     expect(details.open).toBe(true);
-    expect(within(chips[0]).getByText("Keep incidents that contain “Eröffnet”")).toBeTruthy();
-    expect(within(chips[0]).getByText("After this step: 1 incident · 2 records kept")).toBeTruthy();
+    expect(within(chips[0]).getByText("Keep cases that contain “Eröffnet”")).toBeTruthy();
+    expect(within(chips[0]).getByText("After this step: 1 case · 2 records kept")).toBeTruthy();
     expect(within(chips[0]).getByRole("button", { name: "Show the selection after this step" })).toBeTruthy();
     // The last step is the state shown: it offers no way to itself.
     expect(within(chips[1]).queryByRole("button", { name: "Show the selection after this step" })).toBeNull();
@@ -79,7 +79,7 @@ describe("the trail of steps", () => {
     await answer(app, bothSteps);
     expect(screen.queryByRole("list", { name: "Later steps, not applied now" })).toBeNull();
     // Back to the parent, then a new step: the later steps are gone.
-    await app.user.click(screen.getByRole("button", { name: "Every incident of the parent · 2" }));
+    await app.user.click(screen.getByRole("button", { name: "Every case of the parent · 2" }));
     expect(app.selecting.selections.at(-1)!.request.predicates).toEqual([]);
     await answer(app, everyIncident);
     expect(summaries(screen.getByRole("list", { name: "Later steps, not applied now" }))).toHaveLength(2);
@@ -105,7 +105,7 @@ describe("the steps of the trail", () => {
     expect(backTo(full, 5)).toBe(full);
   });
 
-  it("names a long list of incident numbers by its count, and every step in a few words", () => {
+  it("names a long list of case numbers by its count, and every step in a few words", () => {
     const steps: SelectionPredicate[] = [
       { kind: "case_id_in", case_ids: ["A-1", "B-2", "C-3"], negate: false },
       { kind: "case_id_in", case_ids: ["A-1"], negate: true },
@@ -115,7 +115,7 @@ describe("the steps of the trail", () => {
       { kind: "starts_with_activity", activity: "A", negate: true },
     ];
     expect(steps.map(shortStepWording)).toEqual([
-      "3 incident numbers",
+      "3 case numbers",
       "Outside “A-1”",
       "Records 2–4",
       "“A” → “B” > 720 h, every passage",

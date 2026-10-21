@@ -6,7 +6,7 @@ import { leadingShare, OPENING_ORDER, orderBy, type PathColumn, pathRows, type P
 import { busyGraph, busyIds, stepName } from "./testGraphs";
 
 describe("the rows of the list of every path", () => {
-  it("are the supplied paths with their supplied numbers and the flows from Start and to End with their incidents", () => {
+  it("are the supplied paths with their supplied numbers and the flows from Start and to End with their cases", () => {
     // A-1 goes from "Eröffnet" to "Geschlossen" in 25.5 hours; the order of B-2 is not known, so it adds no path and no flow.
     const graph = suppliedGraph(["A-1", "B-2"]);
     const rows = pathRows(graph, mapDetail(toFlowGraph(graph), WHOLE_DETAIL).drawn);
@@ -120,7 +120,7 @@ describe("the order of the list of every path", () => {
     expect(sortedRows(rows, { column: "passages", descending: true })[0].passages).toBe(105);
   });
 
-  it("orders rows that are equal in the chosen column by their incidents, and otherwise as they were given", () => {
+  it("orders rows that are equal in the chosen column by their cases, and otherwise as they were given", () => {
     const drawnFirst = sortedRows(rows, { column: "drawn", descending: true }).filter((row) => row.drawn);
     expect(drawnFirst.map((row) => row.incidents)).toEqual([...drawnFirst.map((row) => row.incidents)].sort((a, b) => b - a));
     // A number inside a name counts by its value.
@@ -146,7 +146,7 @@ describe("the time spent on the paths (#88)", () => {
   const rows = [timed("A", "B", 30, 300), timed("B", "C", 20, 20), timed("C", "D", 2, 100), timed("D", "E", 1, 60), timed("E", "F", 10, 50), timed("F", "G", 5, 10),
     timed("G", "H", 3, 90), { id: "start", kind: "start" as const, from: "Start", to: "A", title: "Flow", incidents: 71, drawn: true }];
 
-  it("orders by the total time, the largest first, ties by incidents and the flows last; the rare long path stays first by median lag", () => {
+  it("orders by the total time, the largest first, ties by cases and the flows last; the rare long path stays first by median lag", () => {
     expect(sortedRows(rows, OPENING_ORDER).map((row) => row.id)).toEqual(["A>B", "C>D", "G>H", "D>E", "E>F", "B>C", "F>G", "start"]);
     expect(sortedRows(rows, { column: "lag", descending: true })[0].id).toBe("D>E");
   });

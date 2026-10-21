@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { abstract, type AbstractOptions, type ActivityLabelOptions, activityReferences, filterPositions, type FlowGraph, type Focus, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions, type ShownEdges } from "wise-flow";
-import { emptySelection, ProcessMap, type Selection } from "wise-flow/react";
+import { abstract, type AbstractOptions, type ActivityLabelOptions, activityReferences, type ElementRef, filterPositions, type FlowGraph, type Focus, layoutUnion, type Measure, type MenuAction, type MenuTarget, type Positions, type ShownEdges } from "wise-flow";
+import { type BringIntoView, emptySelection, type InView, ProcessMap, type Selection } from "wise-flow/react";
 // The page has unlayered base rules, so the library's styles come unlayered too, after React Flow's.
 import "wise-flow/react-flow.css";
 import "wise-flow/style.unlayered.css";
@@ -56,6 +56,14 @@ export function openingDetail(activities: number, paths = 0): AbstractOptions | 
 /** The zoom from which the names on the activities are drawn. */
 const LABELS_FROM = { labels: 0.12 };
 
+/**
+ * The smallest zoom of the map: the zoom from which every card still shows its name on two lines at the smallest text of the
+ * screen, which the map library derives from the cards it draws. The map opens near Start at a readable zoom, never goes
+ * below this one, and fits the whole map only where the whole stays readable; otherwise it shows the map from Start with
+ * the overview of the whole.
+ */
+const READABLE_FLOOR = { readable: "name" } as const;
+
 /** The actions of the map library's own menu that change only the picture and that the map carries out by itself. */
 const LIBRARY_ACTIONS = new Set(["paths", "clear-focus", "collapse", "expand"]);
 
@@ -104,6 +112,28 @@ function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph, sta
   return arranged?.parent === parent && arranged.direction === direction ? arranged.arrangement : { phase: "arranging" };
 }
 
+/** What the map is arranged for: in place, one arrangement of the parent for every revision and detail; else the revision and the detail shown. */
+const arrangedFor = (inPlace: boolean, revision: number, detail?: { activityDetail?: number; pathDetail?: number }): string =>
+  inPlace ? "in-place" : `${revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`;
+
+/**
+ * The key under which the map opens; a new key opens it again, readable near Start. Other stages, the other way, the
+ * stages shown as nodes and the analyst's own request open it again either way. Arranged for what is shown, another
+ * revision and another detail arrange the map anew, so it opens again for them; in place, a revision and a detail
+ * keep the view, since nothing on the map moves.
+ */
+export function openKeyOf(
+  inPlace: boolean,
+  revision: number,
+  detail: { activityDetail?: number; pathDetail?: number } | undefined,
+  stagesRevision: number,
+  direction: MapDirection,
+  stageNodes: boolean,
+  openings: number,
+): string {
+  return `${arrangedFor(inPlace, revision, detail)}:${stagesRevision}:${direction}:${stageNodes ? "stages" : "activities"}#${openings}`;
+}
+
 interface MapViewProps {
   shown: ShownSelection;
   /** Where the long lags of a selected path are read from; without it the card of a path does not offer them. */
@@ -115,7 +145,7 @@ interface MapViewProps {
   previewStep?: StepPreviewer;
   /** The id of the text saying why no step can be taken now; while it is given, the map offers none. */
   waitingFor?: string;
-  /** Whether the map starts with every activity in the place the parent's arrangement gives it; the investigation starts it so. */
+  /** Whether the map starts with every activity in the place the parent's arrangement gives it; unless told otherwise it starts arranged for what is shown. */
   initiallyInPlace?: boolean;
   /**
    * What stands in the frame: the map, or the list of every path of the kept incidents. The list
@@ -138,10 +168,10 @@ interface MapViewProps {
 const FLOWS_NOT_DRAWN = "Some flows from Start and to End are not drawn at this detail";
 
 /** That the arrangement of the whole parent is missing and what follows from it: short enough for one line above the map, and in full as its tooltip. */
-const NOT_ARRANGED = "The arrangement of every incident of the parent could not be computed, so activities can move from one selection to the next.";
+const NOT_ARRANGED = "The arrangement of every case of the parent could not be computed, so activities can move from one selection to the next.";
 const NOT_ARRANGED_IN_FULL =
-  "The arrangement of every incident of the parent could not be computed. " +
-  "The map arranges the kept incidents by itself, so activities can move from one selection to the next.";
+  "The arrangement of every case of the parent could not be computed. " +
+  "The map arranges the kept cases by itself, so activities can move from one selection to the next.";
 
 /**
  * The process map of the kept incidents, with the steps an activity, a path or a flow from Start or
@@ -165,7 +195,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
    * keeps its own from one selection to the next.
    */
   const activityLabels = useMemo<ActivityLabelOptions>(
-    () => ({ mode: "names", references: activityReferences(parent), showCounts: true, caseLabel: "incidents" }),
+    () => ({ mode: "names", references: activityReferences(parent), showCounts: true, caseLabel: "cases" }),
     [parent],
   );
   const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
@@ -216,12 +246,13 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
   /** Whether the map is shown as the map library's table of its activities and paths; the detail controls switch it. */
   const [view, setView] = useState<"map" | "table">("map");
   /**
-   * How the map is arranged. By default every activity keeps the place one arrangement of the parent gives it, so that
-   * previews, steps, Undo and the detail move nothing that stays on the map. That arrangement is computed once for each
-   * parent from its map thinned to the paths the map opens on, with every activity, so that the paths the detail
-   * leaves out do not shape it and every activity that comes back has its place. Rearranging for the view shown, on
-   * request, arranges the map anew and compactly for exactly what is shown, and again after each change, until the
-   * parent's places are asked for again. Neither changes an incident or a number.
+   * How the map is arranged. Unless told otherwise the map is arranged anew and compactly for exactly what is shown,
+   * and again after each step and each change of the detail, so that the activities and paths shown stand close and
+   * the lines are routed for them. On request every activity keeps instead the place one arrangement of the parent
+   * gives it, so that previews, steps, Undo and the detail move nothing that stays on the map. That arrangement is
+   * computed once for each parent from its map thinned to the paths the map opens on, with every activity, so that
+   * the paths the detail leaves out do not shape it and every activity that comes back has its place. Neither changes
+   * an incident or a number.
    */
   const [inPlace, setInPlace] = useState(initiallyInPlace);
   const arrangedParent = useMemo(
@@ -252,6 +283,28 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
     stagesSwitch.current?.focus();
   }, []);
   const [selection, setSelection] = useState<Selection>(emptySelection);
+  /**
+   * An element the map is asked to bring into view: a path drawn from the list of every path, a row chosen in the table
+   * view, a stage from the legend. The map moves its view so that the element is at the centre, at its zoom but at least
+   * the readable one; no incident, count or place changes. Each request is its own, so an element can be asked for again.
+   */
+  const [bringIntoView, setBringIntoView] = useState<BringIntoView | undefined>(undefined);
+  const brought = useRef(0);
+  const bring = useCallback((element: ElementRef) => setBringIntoView({ element, token: ++brought.current }), []);
+  /** What the map's view shows of it when the view rests, as the map library reports it; the detail strip says it while part of the map is out of view. */
+  const [inView, setInView] = useState<InView | undefined>(undefined);
+  /** How often the analyst asked for the opening again: part of the key the map opens again for. */
+  const [openings, setOpenings] = useState(0);
+  /** A row chosen in the table view is brought into view when the map is shown again. */
+  const changeView = useCallback(
+    (next: "map" | "table") => {
+      if (next === "map" && view === "table" && selection.nodes.length + selection.edges.length + selection.groups.length === 1) {
+        bring(selection.nodes[0] ? { kind: "node", id: selection.nodes[0] } : selection.edges[0] ? { kind: "edge", id: selection.edges[0] } : { kind: "group", id: selection.groups[0] });
+      }
+      setView(next);
+    },
+    [view, selection, bring],
+  );
   /**
    * What the map writes on its paths and activities: the incidents on them, or the supplied median
    * times. The analyst chooses in the map's own legend. The choice is held here, so that it outlasts
@@ -284,10 +337,11 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
     },
     [shown.graph],
   );
-  /** Draws a path of the list on the map, beyond the detail when the detail leaves it out, selected, and shows the map. */
+  /** Draws a path of the list on the map, beyond the detail when the detail leaves it out, selected and brought into view, and shows the map. */
   const drawPath = (id: string) => {
     if (!detailShown.drawn.edges.some((edge) => edge.id === id)) setRevealed((current) => (current.includes(id) ? current : [...current, id]));
     setSelection({ nodes: [], edges: [id], groups: [] });
+    bring({ kind: "edge", id });
     onShowMap?.();
   };
   const selectedPathDrawn = element?.kind === "path" && detailShown.drawn.edges.some((edge) => edge.id === selection.edges[0]);
@@ -337,11 +391,11 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
       {!listed && (
       <p className="map-arrangement">
         {inPlace
-          ? `Places from the map of the parent's ${countOf(parentGraph.meta.selected_case_count, "incident")}; they stay through previews, steps, Undo and the detail.`
-          : "Arranged anew for what is shown; places change with each step or detail."}{" "}
+          ? `Places from the map of the parent's ${countOf(parentGraph.meta.selected_case_count, "case")}; they stay through previews, steps, Undo and the detail.`
+          : "Arranged for what is shown, anew after each step and each change of the detail."}{" "}
         {direction === TOP_TO_BOTTOM ? "Runs top to bottom." : "Runs left to right."}{" "}
         <button type="button" className="link-button" onClick={() => setInPlace(!inPlace)}>
-          {inPlace ? "Rearrange for this view" : "Back to the parent's places"}
+          {inPlace ? "Rearrange for this view" : "Keep the parent's places"}
         </button>
       </p>
       )}
@@ -369,6 +423,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
       )}
       <MapToolbar
         picture={!listed}
+        onOpening={() => setOpenings((count) => count + 1)}
         direction={direction}
         onDirection={setDirection}
         overview={overview}
@@ -396,9 +451,10 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
           shown={detailShown}
           onChange={changeDetail}
           view={listed ? undefined : view}
-          onViewChange={listed ? undefined : setView}
+          onViewChange={listed ? undefined : changeView}
           lead={listed ? undefined : <MeasureSwitch measure={measure} onMeasure={setMeasure} />}
           drawn={!listed && edgesShown ? { selected: edgesShown.total, drawn: edgesShown.edges.length } : undefined}
+          inView={listed || view === "table" ? undefined : inView}
         >
           {tools}
         </DetailStrip>
@@ -408,7 +464,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
           // The stylesheet of the map's look reads from the frame which way the map runs and whether any activity on it is in a stage.
           <div className="map-frame" data-direction={direction} data-stages={graph.groups?.length ? "drawn" : "none"}>
             {inPlace && arrangement.phase === "arranging" ? (
-              <p className="working-text map-arranging">Arranging the map of every incident of the parent…</p>
+              <p className="working-text map-arranging">Arranging the map of every case of the parent…</p>
             ) : (
               <ProcessMap
                 graph={graph}
@@ -417,7 +473,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 abstraction={ranked}
                 onAbstractionChange={changeDetail}
                 view={view}
-                onViewChange={setView}
+                onViewChange={changeView}
                 // Drawn on the Canvas from the same number of elements as the detail controls reckon with.
                 canvasThreshold={CANVAS_FROM}
                 // Drawn as elements, the map draws every path its detail selects, which is what the controls above it say. On the
@@ -431,8 +487,16 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
                 // and a selection keeps that view, so nothing moves on screen.
                 fitView={inPlace ? shown.steps.length === 0 : true}
+                // The map opens again, readable near Start, for other stages, the other way or the stages shown as nodes, and when the
+                // analyst asks for the opening; arranged for what is shown, also for another revision and another detail, which arrange
+                // it anew; in place, a revision and a detail keep the view. It never zooms below the readable floor, says what its view
+                // shows, and brings into view what the list of every path, the table view or the legend ask for.
+                openKey={openKeyOf(inPlace, shown.revision, detail, stagesRevision, direction, stageNodes, openings)}
+                minZoom={READABLE_FLOOR}
+                onInView={setInView}
+                bringIntoView={bringIntoView}
                 // An activity moved by hand goes back when the map is arranged anew for other content, for other stages or to run the other way.
-                layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}:${direction}`}
+                layoutResetKey={`${arrangedFor(inPlace, shown.revision, detail)}:${stagesRevision}:${direction}`}
                 // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
                 lod={LABELS_FROM}
                 // The detail controls stand above the canvas and the legend under it; the paths of an activity are listed beside the
@@ -447,7 +511,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 selection={selection}
                 onSelect={setSelection}
                 onContextMenu={menu}
-                ariaLabel="Process map of the kept incidents"
+                ariaLabel="Process map of the kept cases"
               >
                 {/* Fitted after each arrangement by the library, and here again when the frame changes its size. */}
                 {fitToFrame}
@@ -455,7 +519,18 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
             )}
           </div>
         )}
-        {!listed && <MapLegend graph={detailShown.drawn} measure={asked.measure} over={asked.style} theme={MAP_THEME} onMeasure={setMeasure} />}
+        {!listed && (
+          <MapLegend
+            graph={detailShown.drawn}
+            measure={asked.measure}
+            over={asked.style}
+            theme={MAP_THEME}
+            onMeasure={setMeasure}
+            // A stage shown as one node is brought into view as that node; drawn as a box around its activities, as the box.
+            stages={graph.groups?.map((group) => ({ id: group.id, name: group.label }))}
+            onStage={(id) => bring(stageNodes ? { kind: "node", id } : { kind: "group", id })}
+          />
+        )}
       </div>
       {editingStages && (
         <div className="map-stages-panel">
@@ -490,8 +565,8 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
         {element === null && (
           <p>
             {listed
-              ? "Select a row of the list to keep or remove the incidents through it."
-              : "Select an activity or a path on the map, or a row of its table view, to keep or remove the incidents through it."}
+              ? "Select a row of the list to keep or remove the cases through it."
+              : "Select an activity or a path on the map, or a row of its table view, to keep or remove the cases through it."}
           </p>
         )}
         {element?.kind === "several" && <p className="muted">Select one activity or one path; a step is taken from one of them.</p>}
@@ -503,7 +578,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
             <span className="muted">
               {selectedPathDrawn
                 ? "The map draws this path at its detail."
-                : "The detail leaves this path out; drawing it adds it with both its activities. The incidents and the steps stay as they are."}
+                : "The detail leaves this path out; drawing it adds it with both its activities. The cases and the steps stay as they are."}
             </span>
           </p>
         )}

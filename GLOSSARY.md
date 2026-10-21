@@ -2,7 +2,7 @@
 
 | Term | Meaning |
 | --- | --- |
-| Incident / case | A case is the selected process instance; incident is the first domain’s word for it. A case selection retains its complete recorded history. |
+| Incident / case | A case is the selected process instance; incident is the first domain’s word for it, which the identifiers, policies and generated types of the service keep. Since 21 October 2026 the screens and the service’s sentences say case. A case selection retains its complete recorded history. |
 | Record / event | One original recorded event or change. Record count and distinct incident support are different units. |
 | Source snapshot | Immutable imported bytes plus source identity and observed cutoff. |
 | Preparation revision | Versioned interpretation: mapping, parser, time, ordering, lifecycle, missingness and duplicate decisions. |

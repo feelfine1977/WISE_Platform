@@ -58,26 +58,26 @@ describe("the data row of an investigation", () => {
     expect(population().closest(".toolbar")).not.toBeNull();
     expect(names()).toEqual([
       ["Kept of the parent", "visually-hidden"],
-      ["Rows outside every incident", "visually-hidden"],
+      ["Rows outside every case", "visually-hidden"],
       ["Records without activity label", "visually-hidden"],
     ]);
     // Nothing is known yet of what the selection keeps: the parent is said as it is supplied.
-    expect(figures()).toEqual(["being selected of 2 incidents · 3 records", "1 outside", "0 unlabelled"]);
+    expect(figures()).toEqual(["being selected of 2 cases · 3 records", "1 outside", "0 unlabelled"]);
     expect(population().querySelector("strong")).toBeNull();
     expect(population().querySelector(".kept-share")).toBeNull();
 
     await select(app, 0, everyIncident);
-    expect(figures()).toEqual(["2 of 2 incidents", "3 of 3 records", "1 outside", "0 unlabelled"]);
+    expect(figures()).toEqual(["2 of 2 cases", "3 of 3 records", "1 outside", "0 unlabelled"]);
 
     app.coordinator.addStep(contains(opened));
     await select(app, 1, containingOpened);
-    expect(figures()).toEqual(["1 of 2 incidents", "2 of 3 records", "1 outside", "0 unlabelled"]);
+    expect(figures()).toEqual(["1 of 2 cases", "2 of 3 records", "1 outside", "0 unlabelled"]);
     expect(Array.from(population().querySelectorAll("strong"), (kept) => kept.textContent)).toEqual(["1", "2"]);
-    expect(Array.from(population().querySelectorAll(".population-kept .muted"), (rest) => rest.textContent)).toEqual([" of 2 incidents", " of 3 records"]);
+    expect(Array.from(population().querySelectorAll(".population-kept .muted"), (rest) => rest.textContent)).toEqual([" of 2 cases", " of 3 records"]);
     // The kept share of the incidents is drawn beside its two numbers, as a picture only: one of two is half of the bar.
     const share = population().querySelector(".kept-share")!;
     expect(share.getAttribute("aria-hidden")).toBe("true");
-    expect(share.closest("dd")?.textContent).toBe("1 of 2 incidents");
+    expect(share.closest("dd")?.textContent).toBe("1 of 2 cases");
     expect(Array.from(share.querySelectorAll("rect"), (bar) => [bar.getAttribute("class"), bar.getAttribute("width")])).toEqual([
       ["kept-share-track", "100"],
       ["kept-share-bar", "50"],
@@ -91,7 +91,7 @@ describe("the data row of an investigation", () => {
       parent: { ...answer.parent, case_count: 12063, record_count: 74077 },
       kept: { ...answer.kept, case_count: 803, record_count: 4398 },
     }));
-    expect(figures().slice(0, 2)).toEqual(["803 of 12,063 incidents", "4,398 of 74,077 records"]);
+    expect(figures().slice(0, 2)).toEqual(["803 of 12,063 cases", "4,398 of 74,077 records"]);
     expect(Array.from(population().querySelectorAll("strong"), (kept) => kept.textContent)).toEqual(["803", "4,398"]);
   });
 
@@ -99,11 +99,11 @@ describe("the data row of an investigation", () => {
     const app = await renderInvestigation();
     await select(app, 0, everyIncident);
     // One row lies outside every incident; every record has an activity label.
-    const outside = limit("Rows outside every incident");
+    const outside = limit("Rows outside every case");
     const unlabelled = limit("Records without activity label");
     expect([outside.className, outside.getAttribute("data-some"), outside.querySelector("dd")?.textContent]).toEqual(["population-limit", "true", "1 outside"]);
     expect([unlabelled.className, unlabelled.hasAttribute("data-some"), unlabelled.querySelector("dd")?.textContent]).toEqual(["population-limit", false, "0 unlabelled"]);
-    expect(outside.querySelector("dd")?.getAttribute("title")).toBe("Rows outside every incident");
+    expect(outside.querySelector("dd")?.getAttribute("title")).toBe("Rows outside every case");
     expect(unlabelled.querySelector("dd")?.getAttribute("title")).toBe("Records without activity label");
     // The two stand together at the end of the list.
     expect(outside.nextElementSibling).toBe(unlabelled);
@@ -117,11 +117,11 @@ describe("the data row of an investigation", () => {
       coverage: { ...answer.coverage, mapped_record_count: 0, omitted_activity_record_count: 1234 },
     }));
     expect(figures().slice(1)).toEqual(["0 outside", "1,234 unlabelled"]);
-    expect(limit("Rows outside every incident").hasAttribute("data-some")).toBe(false);
+    expect(limit("Rows outside every case").hasAttribute("data-some")).toBe(false);
     expect(limit("Records without activity label").getAttribute("data-some")).toBe("true");
   });
 
-  it("holds the revision and the details of the data behind its info button, and no longer under the table of incidents", async () => {
+  it("holds the revision and the details of the data behind its info button, and no longer under the table of cases", async () => {
     const app = await renderInvestigation();
     await select(app, 0, everyIncident);
     // The button follows the figures in the row.
@@ -163,12 +163,12 @@ describe("the data row of an investigation", () => {
     expect(document.activeElement).toBe(aboutButton());
   });
 
-  it("closes at Escape before the history of an open incident does, and at a click outside it", async () => {
+  it("closes at Escape before the history of an open case does, and at a click outside it", async () => {
     const app = await renderInvestigation();
     await select(app, 0, everyIncident);
     await app.user.click(screen.getByRole("button", { name: "A-1" }));
     await deliver(() => app.imports.evidence[0].reply({ ok: true, answer: evidenceAnswer(app.imports.evidence[0].request) }));
-    const history = () => screen.queryByRole("heading", { name: "Incident A-1" });
+    const history = () => screen.queryByRole("heading", { name: "Case A-1" });
     expect(history()).not.toBeNull();
 
     await app.user.click(aboutButton());
@@ -184,7 +184,7 @@ describe("the data row of an investigation", () => {
 
     await app.user.click(aboutButton());
     expect(about()).not.toBeNull();
-    await app.user.click(screen.getByRole("heading", { name: "Kept incidents" }));
+    await app.user.click(screen.getByRole("heading", { name: "Kept cases" }));
     expect(about()).toBeNull();
   });
 });

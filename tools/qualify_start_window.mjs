@@ -47,7 +47,7 @@ try {
     await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
     await settled(0);
     const parent = selections.at(-1);
-    const chart = page.getByRole('group', {name: 'Incident starts per week'});
+    const chart = page.getByRole('group', {name: 'Case starts per week'});
     await chart.waitFor();
     await chart.focus();
     for (let step = 0; step <= expected.week_index_in_browser; step++) await page.keyboard.press('ArrowRight');

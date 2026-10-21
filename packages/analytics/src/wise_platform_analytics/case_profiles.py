@@ -145,7 +145,7 @@ def case_list_projection(prepared, selected_ids: Iterable[str], parent_ids: Iter
         parent = checked_case_ids(prepared, parent_ids)
         kept = checked_case_ids(prepared, selected_ids)
         if not set(kept) <= set(parent):
-            return ImportRefusal("identity_mismatch", "The selected incidents are outside their frozen parent.", "identity.population_id")
+            return ImportRefusal("identity_mismatch", "The selected cases are outside their frozen parent.", "identity.population_id")
         summaries = {case_id: case_time_summary(prepared, case_id) for case_id in parent}
         policy_id = prepared.policies["time"]["id"]
         if policy_id not in {"incident.time.wall_clock_as_recorded.v1", "incident.time.explicit_format_timezone_utc.v1"}:

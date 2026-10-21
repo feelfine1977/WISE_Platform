@@ -28,15 +28,20 @@ interface MapLegendProps {
   /** The theme the map is given, read over the same CSS variables the map reads. */
   theme: ThemeOverrides;
   onMeasure: (measure: Measure) => void;
+  /** The stages drawn on the map, in their order; each is offered as a button that brings it into view. */
+  stages?: readonly { id: string; name: string }[];
+  /** Brings the stage into view on the map. */
+  onStage?: (id: string) => void;
 }
 
 /**
  * The legend of the map under its canvas rather than over it: the map library's own legend, from
  * the scene the library builds for the same graph, style, theme and locale, so that it names the
  * scales and colours the map draws. Its one-line strip names the measure; shown whole, it lists the
- * classes and the stages and offers the three measures to switch between.
+ * classes and the stages and offers the three measures to switch between. Under it, a button for
+ * each stage drawn brings that stage into view on a map larger than its frame.
  */
-export function MapLegend({ graph, measure, over, theme, onMeasure }: MapLegendProps) {
+export function MapLegend({ graph, measure, over, theme, onMeasure, stages, onStage }: MapLegendProps) {
   const host = useRef<HTMLDivElement>(null);
   const look = useFlowTheme(host, theme);
   const scene = useMemo(
@@ -46,6 +51,15 @@ export function MapLegend({ graph, measure, over, theme, onMeasure }: MapLegendP
   return (
     <div className="map-legend" ref={host}>
       <Legend scales={scene.scales} legend={scene.legend} locale="en" measure={measure} onMeasureChange={onMeasure} />
+      {stages && stages.length > 0 && onStage && (
+        <div className="map-legend-stages" role="group" aria-label="Bring a stage into view">
+          {stages.map((stage) => (
+            <button key={stage.id} type="button" className="link-button" onClick={() => onStage(stage.id)}>
+              Show the stage “{stage.name}” on the map
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

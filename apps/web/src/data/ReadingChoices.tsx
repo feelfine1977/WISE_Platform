@@ -189,7 +189,7 @@ const rowRuleLabels: Record<RowRule, { title: string; sentence: string }> = {
   tolerant: {
     title: "Tolerant",
     sentence:
-      "Blank lines are skipped and counted, and records without an incident id or with another number of cells than the header are kept as written outside every incident, as long as those with another number of cells are at most 5 % of the records.",
+      "Blank lines are skipped and counted, and records without a case id or with another number of cells than the header are kept as written outside every case, as long as those with another number of cells are at most 5 % of the records.",
   },
   strict: {
     title: "Strict",
@@ -220,7 +220,7 @@ function ExampleReading({ label }: { label: string }) {
   const rows: [string, string][] = [
     ["Encoding", encodingName(exampleReading.encoding!)],
     ["Delimiter", delimiterName(exampleReading.delimiter!)],
-    ["Incident id", name(exampleReading.caseColumn)],
+    ["Case id", name(exampleReading.caseColumn)],
     ["Activity", name(exampleReading.activityColumn)],
     ["Time", `${name(exampleReading.timestampColumn)}, ${formatLabels[exampleReading.timeFormat!]}`],
     ["Zone of the times", "Offsets written in the values"],
@@ -291,7 +291,7 @@ const roleFields: Record<Role, "caseColumn" | "activityColumn" | "timestampColum
 };
 
 const roleLabels: Record<Role, string> = {
-  case_id: "Incident id",
+  case_id: "Case id",
   activity: "Activity",
   timestamp: "Time",
   source_sequence: "Sequence number (optional)",
@@ -581,10 +581,10 @@ function FormatChoice({
       : suggestion === undefined
         ? "The inspection reported nothing about this column, so no format is proposed."
         : evidence.filled === 0
-          ? "This column has no filled cell, so no format is proposed. With any format, no record has a usable time and no incident's order can be evaluated."
+          ? "This column has no filled cell, so no format is proposed. With any format, no record has a usable time and no case's order can be evaluated."
           : readsNone
-            ? "No format reads any filled cell of this column, so none is proposed. With any format, no record has a usable time and no incident's order can be evaluated."
-            : "No format reads every filled cell, so none is proposed. A value the chosen format does not read stays in its incident without a usable time.";
+            ? "No format reads any filled cell of this column, so none is proposed. With any format, no record has a usable time and no case's order can be evaluated."
+            : "No format reads every filled cell, so none is proposed. A value the chosen format does not read stays in its case without a usable time.";
   return (
     <fieldset className="checks" aria-describedby={statusId}>
       <legend className="label-text-strong">{legend}</legend>

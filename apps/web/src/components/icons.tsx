@@ -33,6 +33,8 @@ const ICONS = {
   pin: { line: "M8 2.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM8 8.5V14" },
   // A rectangle with a filled corner: the whole map, small, in a corner of it.
   overview: { line: "M2.5 3h11v10h-11z", filled: "M9 9h4.5v4H9z" },
+  // A ring with a dot in it: Start, where the map opens.
+  opening: { line: "M8 2.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z", filled: "M8 6.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" },
   // Three squares on a line: the stages in their order.
   editStages: { line: "M1.5 6.5h3v3h-3zM6.5 6.5h3v3h-3zM11.5 6.5h3v3h-3zM4.5 8h2M9.5 8h2" },
   // Which way the map runs: an arrow down and an arrow to the right.

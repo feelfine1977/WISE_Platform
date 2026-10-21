@@ -808,9 +808,9 @@ def open_selected_case(prepared: PreparedData, selection: SelectionResult,
     if not isinstance(identity, Mapping) or dict(identity) != expected:
         return ImportRefusal("identity_mismatch", "The supplied identity does not match this named selection.", "identity")
     if not isinstance(case_id, str) or case_id not in prepared.histories:
-        return ImportRefusal("case_not_found", "This incident is absent from the prepared case dictionary.", "case_id")
+        return ImportRefusal("case_not_found", "This case is absent from the prepared case dictionary.", "case_id")
     if case_id not in selection.kept.case_ids:
-        return ImportRefusal("case_not_found", "This incident is not in the selected kept population.", "case_id")
+        return ImportRefusal("case_not_found", "This case is not in the selected kept population.", "case_id")
     result = open_prepared_case(prepared, base, case_id)
     if isinstance(result, ImportRefusal):
         return result

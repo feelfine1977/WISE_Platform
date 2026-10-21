@@ -182,7 +182,7 @@ def unmet_condition(body: Mapping[str, object]) -> str | None:
         run = _mapping(body.get("run"))
         population = _mapping(run.get("population"))
         if _repeats(population.get("case_ids")):
-            return "run.population.case_ids repeats an incident"
+            return "run.population.case_ids repeats a case"
         for index, case in enumerate(_sequence(run.get("cases"))):
             problem = _measurement_condition(_mapping(_mapping(case).get("measurement")))
             if problem is not None:
@@ -210,10 +210,10 @@ def unmet_condition(body: Mapping[str, object]) -> str | None:
 def _refusal_condition(body: Mapping[str, object]) -> str | None:
     case_ids = _sequence(body.get("case_ids"))
     if _repeats(case_ids):
-        return "case_ids repeats an incident"
+        return "case_ids repeats a case"
     if body.get("code") == "unevaluable_sequence":
         if not case_ids or not isinstance(body.get("case_count"), int) or body["case_count"] < 1:
-            return "an unevaluable sequence names at least one incident"
+            return "an unevaluable sequence names at least one case"
         if not _UNEVALUABLE_RECOVERY & set(_sequence(body.get("recovery_actions"))):
             return "an unevaluable sequence names a way to qualify the population"
     return None
@@ -223,7 +223,7 @@ def _validation_condition(body: Mapping[str, object]) -> str | None:
     blockers = _sequence(body.get("blockers"))
     for index, blocker in enumerate(blockers):
         if _repeats(_mapping(blocker).get("case_ids")):
-            return f"blockers.{index}.case_ids repeats an incident"
+            return f"blockers.{index}.case_ids repeats a case"
     readiness = _mapping(body.get("readiness"))
     if body.get("state") == "ready":
         if body.get("definition_version") is None:

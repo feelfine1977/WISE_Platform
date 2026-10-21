@@ -7,7 +7,7 @@ interface MeasureSwitchProps {
 
 /** The two measures the switch offers, with their words: the incidents on each path and activity, or the supplied median times. */
 const MEASURES: readonly [Measure, string][] = [
-  ["frequency", "Incidents"],
+  ["frequency", "Cases"],
   ["performance", "Time"],
 ];
 

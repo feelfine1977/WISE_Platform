@@ -48,7 +48,7 @@ async function settled(steps) {
 
 try {
   await page.goto(base);
-  await page.getByRole('heading', {name: 'Map of the kept incidents'}).waitFor();
+  await page.getByRole('heading', {name: 'Map of the kept cases'}).waitFor();
   await settled(0);
   if (phase === 'first') {
     check('opens_on_the_map_without_a_question', await view('Map').getAttribute('aria-pressed') === 'true', null);
@@ -62,7 +62,7 @@ try {
     await page.keyboard.press('Escape');
     // The paths list counts incidents per path and flow as the oracle does.
     await view('Paths').click();
-    const paths = page.getByRole('table', {name: 'Paths of the kept incidents'});
+    const paths = page.getByRole('table', {name: 'Paths of the kept cases'});
     await paths.waitFor();
     const listed = Object.fromEntries(await paths.locator('tbody tr').evaluateAll(rows => rows.map(row => [row.children[0].textContent + ' > ' + row.children[1].textContent, Number(row.children[2].textContent)])));
     const wanted = {...Object.fromEntries(Object.entries(expected.paths)), ...Object.fromEntries(Object.entries(expected.starts).map(([activity, count]) => [`Start > ${activity}`, count])),
@@ -71,10 +71,10 @@ try {
     // A path step with exact support, previewed then applied; Undo restores the question.
     const parent = selections.at(-1);
     await paths.getByRole('button', {name: `Path from “${expected.step.source}” to “${expected.step.target}”`, exact: true}).click();
-    const keep = page.getByRole('button', {name: `Keep incidents where “${expected.step.target}” directly follows “${expected.step.source}”`, exact: true});
+    const keep = page.getByRole('button', {name: `Keep cases where “${expected.step.target}” directly follows “${expected.step.source}”`, exact: true});
     const preview = page.locator(`#${await keep.getAttribute('aria-describedby')}`);
     await preview.filter({hasText: /^Preview:/}).waitFor();
-    check('preview_reports_exact_support', ((await preview.textContent()) ?? '').startsWith(`Preview: would keep ${expected.step.kept.length} incidents of ${expected.incidents} incidents`), await preview.textContent());
+    check('preview_reports_exact_support', ((await preview.textContent()) ?? '').startsWith(`Preview: would keep ${expected.step.kept.length} cases of ${expected.incidents} cases`), await preview.textContent());
     await keep.click();
     await settled(1);
     const kept = selections.at(-1);
@@ -85,19 +85,19 @@ try {
     await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Redo', exact: true}).click();
     await settled(1);
     // The incidents and their complete histories are one action away.
-    await view('Incidents').click();
+    await view('Cases').click();
     await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, expected.step.kept.length);
     check('incidents_one_action_away', true);
     // #59: the incident read is marked and named apart from the selection, which reading it does not change.
     const asked = selections.length;
     const focused = expected.step.kept[0];
     await page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${focused}$`)}).first().click();
-    await page.getByRole('heading', {name: `Incident ${focused}`}).waitFor();
+    await page.getByRole('heading', {name: `Case ${focused}`}).waitFor();
     const line = (await page.locator('.focus-line').textContent()) ?? '';
     const marked = await page.locator('table tbody tr button.row-open[aria-current="true"]').allTextContents();
-    check('focused_history_distinct_from_selection', line === `You are reading one incident of the ${expected.step.kept.length} incidents the selection keeps of ${expected.incidents} incidents (1 step); reading it changes no step.`
+    check('focused_history_distinct_from_selection', line === `You are reading one case of the ${expected.step.kept.length} cases the selection keeps of ${expected.incidents} cases (1 step); reading it changes no step.`
       && same(marked, [focused]) && selections.length === asked && await page.getByRole('list', {name: 'Steps of the selection'}).getByRole('listitem').count() === 1, [line, marked]);
-    await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+    await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
     // Kept against removed in Compare.
     await areas.getByRole('button', {name: 'Compare', exact: true}).click();
     await page.getByRole('button', {name: 'Kept against removed', exact: true}).click();
@@ -110,7 +110,7 @@ try {
     check('expectation_reached', expected.activities.every(activity => options.includes(activity)), options);
     // Saved from the Incidents view.
     await areas.getByRole('button', {name: 'Investigations', exact: true}).click();
-    await view('Incidents').click();
+    await view('Cases').click();
     await page.getByRole('button', {name: 'Save', exact: true}).first().click();
     const form = page.locator('#saved-form');
     await form.getByLabel('Name').fill(config.saved_name);
@@ -127,7 +127,7 @@ try {
     await page.getByRole('list', {name: 'Steps of the selection'}).waitFor();
     await settled(1);
     check('reopened_selection_matches', same(selections.at(-1).identity, config.identity), null);
-    check('reopened_on_its_saved_view', await view('Incidents').getAttribute('aria-pressed') === 'true', null);
+    check('reopened_on_its_saved_view', await view('Cases').getAttribute('aria-pressed') === 'true', null);
     assert.deepEqual(errors, []);
     await writeFile(output, JSON.stringify({checks}));
   }

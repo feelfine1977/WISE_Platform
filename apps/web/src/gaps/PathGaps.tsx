@@ -52,12 +52,12 @@ export function PathGaps({ workspaceId, revision, identity, source, target, clie
       {read.phase === "failed" && <p className="muted">The long lags of this path could not be read.</p>}
       {read.phase === "ready" && (
         read.figures === null || read.figures.p90_hours === null ? (
-          <p className="muted">No kept incident passes this path in a known order, so it has no lag to rank.</p>
+          <p className="muted">No kept case passes this path in a known order, so it has no lag to rank.</p>
         ) : (
           <p>
             90th percentile lag <strong>{hours.format(read.figures.p90_hours)} h</strong> over {read.figures.passage_count.toLocaleString("en")} passages;{" "}
             {read.figures.above_threshold_passage_count.toLocaleString("en")} {read.figures.above_threshold_passage_count === 1 ? "passage is" : "passages are"} longer than{" "}
-            {hours.format(threshold)} h, in {read.figures.above_threshold_incident_count.toLocaleString("en")} {read.figures.above_threshold_incident_count === 1 ? "incident" : "incidents"}.
+            {hours.format(threshold)} h, in {read.figures.above_threshold_incident_count.toLocaleString("en")} {read.figures.above_threshold_incident_count === 1 ? "case" : "cases"}.
             <span className="muted"> A recorded gap, not a working or waiting time.</span>
           </p>
         )

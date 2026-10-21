@@ -42,13 +42,13 @@ try {
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length === 8);
   await settled(0);
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
 
   // A new step: the focus moves to its chip, and the change is said with the incidents kept.
   await timeStep(2, 1);
   await page.waitForFunction(() => document.activeElement?.tagName === 'SUMMARY');
   check('new_step_focuses_its_chip', (await focused()).chip?.startsWith('1. Span ≥ 2 h'), await focused());
-  check('step_added_said', (await said()) === 'Step added: Span ≥ 2 h. 5 of 8 incidents kept.', await said());
+  check('step_added_said', (await said()) === 'Step added: Span ≥ 2 h. 5 of 8 cases kept.', await said());
   await timeStep(10, 2);
   await page.waitForFunction(() => document.activeElement?.textContent?.startsWith('2. '));
   check('second_step_focuses_its_chip', true);
@@ -57,11 +57,11 @@ try {
   await page.keyboard.press('ArrowLeft');
   check('trail_arrow_moves_to_the_earlier_chip', (await focused()).chip?.startsWith('1. '), await focused());
   await page.keyboard.press('Home');
-  check('trail_home_reaches_the_parent', (await focused()).text.startsWith('Every incident of the parent'), await focused());
+  check('trail_home_reaches_the_parent', (await focused()).text.startsWith('Every case of the parent'), await focused());
   const stops = await page.locator('.trail').evaluate(trail => [...trail.querySelectorAll('.trail-start button, li > details > summary')].filter(item => item.tabIndex === 0).length);
   check('trail_is_one_tab_stop', stops === 1, stops);
   await page.keyboard.press('Escape');
-  check('escape_leaves_the_trail_for_the_views', (await focused()).text === 'Incidents', await focused());
+  check('escape_leaves_the_trail_for_the_views', (await focused()).text === 'Cases', await focused());
 
   // Tab reaches the bar; the arrow keys move between the actions that can be used.
   await page.keyboard.press('Shift+Tab');
@@ -76,7 +76,7 @@ try {
   await settled(1);
   await page.waitForFunction(() => /^Undone/.test(document.querySelector('.steps-announcement')?.textContent ?? ''));
   check('undo_keeps_the_focus_on_undo', (await focused()).label === 'Undo', await focused());
-  check('undone_said', (await said()) === 'Undone: Span ≥ 10 h. 5 of 8 incidents kept.', await said());
+  check('undone_said', (await said()) === 'Undone: Span ≥ 10 h. 5 of 8 cases kept.', await said());
   // Clear all: Clear all can no longer be used; the focus goes to an action that can.
   await page.keyboard.press('End');
   check('end_reaches_clear_all', (await focused()).label === 'Clear all', await focused());
@@ -85,9 +85,9 @@ try {
   await page.waitForFunction(() => /^Every step removed/.test(document.querySelector('.steps-announcement')?.textContent ?? ''));
   const afterClear = await focused();
   check('focus_never_lost_after_clear_all', !afterClear.body && afterClear.label === 'Undo', afterClear);
-  check('cleared_said', (await said()) === 'Every step removed. 8 of 8 incidents kept.', await said());
+  check('cleared_said', (await said()) === 'Every step removed. 8 of 8 cases kept.', await said());
   await page.keyboard.press('Escape');
-  check('escape_leaves_the_bar_for_the_views', (await focused()).text === 'Incidents', await focused());
+  check('escape_leaves_the_bar_for_the_views', (await focused()).text === 'Cases', await focused());
   assert.deepEqual(errors, []);
   await writeFile(output, JSON.stringify({checks}));
 } finally {

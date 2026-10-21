@@ -12,11 +12,12 @@ import { END_ID, START_ID } from "./graph";
  *
  * The layout engine of the map library (ELK) breaks the cycles of a map without knowing how many
  * incidents a path carries. Where paths lead back into the activity the incidents begin with, it
- * may turn the main way around, and Start then stands in the middle of the map, one layer before
- * its only target. The engine takes the layer of a node as a constraint, but the library has no
- * setting for one. What it has is `layout.elk`, an engine it is given. The engine given here writes
- * the constraints into the graph the library hands over and passes it on to a real ELK, in the
- * worker the application serves.
+ * may turn the main way around. The library keeps Start in the first layer and End in the last by
+ * itself, but leaves the activity the incidents begin with to the paths, and that activity then
+ * stands late in the map, far from Start. The engine takes the layer of a node as a constraint, but
+ * the library has no setting for one. What it has is `layout.elk`, an engine it is given. The
+ * engine given here writes the constraints into the graph the library hands over and passes it on
+ * to a real ELK, in the worker the application serves.
  *
  * What the library does with a given engine, and what follows from it here:
  * - It hands over one graph: the root, every stage that has an activity as a node with children,

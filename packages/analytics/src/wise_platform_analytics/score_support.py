@@ -65,7 +65,7 @@ def endpoint_candidates(history: Iterable[TimedRecord], activity: str, moment: d
 def _measurement(case: Mapping[str, object]) -> Mapping[str, object]:
     measurement = case["measurement"]
     if not isinstance(measurement, Mapping):
-        raise TypeError("A scored incident carries its measurement as a mapping.")
+        raise TypeError("A scored case carries its measurement as a mapping.")
     return measurement
 
 

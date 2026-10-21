@@ -32,7 +32,7 @@ async function settled(steps) {
   await page.waitForFunction(n => document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length === n || (n === 0 && !document.querySelector('ul[aria-label="Steps of the selection"]')), steps);
 }
 const panel = () => page.locator('section.view-panel[aria-labelledby="variants-title"]');
-const items = () => panel().getByRole('list', {name: 'Variants, most incidents first'}).locator(':scope > li');
+const items = () => panel().getByRole('list', {name: 'Variants, most cases first'}).locator(':scope > li');
 const tableIds = () => page.locator('table tbody tr button.row-open').allTextContents();
 
 try {
@@ -54,11 +54,11 @@ try {
   check('variants_are_the_oracle_s_complete_sequences', same(shown, expected.variants.map(variant => variant.activities)), shown);
   const figures = await items().locator('.variant-figures .visually-hidden').allTextContents();
   check('counts_and_shares_name_their_units', same(figures.map(text => text.split(' of ')[0]), expected.variants.map(variant => String(variant.members.length)))
-    && figures.every(text => text.includes(`of ${expected.known_order} incidents whose order is known`)), figures);
+    && figures.every(text => text.includes(`of ${expected.known_order} cases whose order is known`)), figures);
   const text = (await panel().textContent()) ?? '';
   const inVariants = expected.variants.reduce((total, variant) => total + variant.members.length, 0);
   check('inventory_reconciles_with_the_population', text.includes(`${count(inVariants, 'incident')} in ${count(expected.variants.length, 'variant')} and ${count(expected.unevaluable.length, 'incident')} with no known order: ${count(expected.incidents, 'incident')} counted exactly, none sampled.`), text);
-  check('repeats_and_the_empty_sequence_shown', text.includes('No labelled activity: every record of these incidents lacks an activity label.')
+  check('repeats_and_the_empty_sequence_shown', text.includes('No labelled activity: every record of these cases lacks an activity label.')
     && same(shown[expected.repeated.variant], expected.repeated.labels_in_order), null);
   check('variants_told_apart_from_routes_and_partial_patterns', text.includes('Each variant is one actual sequence of labelled activities in the declared order, repeats included.')
     && text.includes('Only a whole sequence can be kept here. Partial patterns, wildcards, gaps and “not followed by” are not available.'), null);
@@ -73,16 +73,16 @@ try {
   // A listed history opens whole, with the record left out of the sequence for lacking a label.
   const witness = expected.missing_label_witness;
   await page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${witness.case}$`)}).click();
-  const records = page.getByRole('list', {name: `Records of incident ${witness.case} in the declared order`});
+  const records = page.getByRole('list', {name: `Records of case ${witness.case} in the declared order`});
   await records.waitFor();
   const recordTexts = await records.getByRole('listitem').allTextContents();
   check('history_keeps_the_unlabelled_record', recordTexts.length === witness.source_positions.length
     && witness.source_positions.every(position => recordTexts.some(item => item.includes(`source position ${position}`))), recordTexts);
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).focus();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).focus();
   await page.keyboard.press('Enter');
   await page.waitForFunction(id => document.activeElement?.textContent === id, witness.case);
   check('return_restores_the_focus', true);
-  await page.getByRole('button', {name: 'Show all kept incidents'}).click().catch(() => undefined);
+  await page.getByRole('button', {name: 'Show all kept cases'}).click().catch(() => undefined);
 
   // Each variant: previewed, cancelled once, applied by keyboard with its exact members, and undone to the exact parent.
   const everyone = [...new Set(expected.variants.flatMap(variant => variant.members))].sort();

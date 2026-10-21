@@ -54,8 +54,8 @@ describe("#16 a separately named outcome over the parent", () => {
     expect(asked.outcome).toEqual({ policy: "incident.outcome.recorded_activity_presence_at_snapshot.v1", activity: "Resolved", counted: "absence" });
     await act(async () => calls[0].reply({ ok: true, answer: rates(asked) }));
     const section = screen.getByRole("region", { name: "Outcome by opening value" });
-    expect(section.textContent).toContain("Outcome O: No recorded “Resolved” at the snapshot cutoff 2026-10-02 00:00:00 UTC. Known for 12 incidents of the 12 incidents of the parent (K = P)");
-    expect(section.textContent).toContain("it is not a verdict that the incident is unresolved or open");
+    expect(section.textContent).toContain("Outcome O: No recorded “Resolved” at the snapshot cutoff 2026-10-02 00:00:00 UTC. Known for 12 cases of the 12 cases of the parent (K = P)");
+    expect(section.textContent).toContain("it is not a verdict that the case is unresolved or open");
     expect(section.textContent).toContain("It is not the ratio of shares above");
     const table = within(section).getByRole("table", { name: "No recorded “Resolved” by the first recorded assignment_group" });
     const app = within(table).getByRole("row", { name: /^App/ });

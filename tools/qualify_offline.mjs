@@ -73,8 +73,8 @@ try {
     // ---- import a synthetic local file through the Data area ----
     await areas.getByRole('button', {name: 'Data', exact: true}).click();
     await page.getByLabel('Add an event-history CSV').setInputFiles(config.file);
-    await page.getByLabel('Incident id', {exact: true}).waitFor();
-    await role('Incident id', 'Ticket');
+    await page.getByLabel('Case id', {exact: true}).waitFor();
+    await role('Case id', 'Ticket');
     await role('Activity', 'Status');
     await role('Time', 'At');
     await role('Sequence number (optional)', 'Seq');
@@ -89,35 +89,35 @@ try {
     if (await issues.count()) await issues.check();
     await page.getByRole('button', {name: 'Confirm and prepare', exact: true}).click();
     await page.getByRole('status').filter({hasText: 'Ready: the source is read with these choices'}).waitFor();
-    await page.getByRole('button', {name: 'Open incidents', exact: true}).click();
+    await page.getByRole('button', {name: 'Open cases', exact: true}).click();
     await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, expected.incidents.length);
     await settled(0);
     check('imported_offline', selections.at(-1).kept.case_count === expected.incidents.length, selections.at(-1).kept.case_count);
 
     // ---- query, map, paths, matrix, variants, context, times and evidence ----
     await view('Map').click();
-    await page.getByLabel('Process map of the kept incidents').waitFor();
-    await page.locator('.map-aside').getByText('Incidents by recorded span').waitFor();
+    await page.getByLabel('Process map of the kept cases').waitFor();
+    await page.locator('.map-aside').getByText('Cases by recorded span').waitFor();
     check('map_and_times_shown', await page.locator('.map-legend .wf-legend').count() === 1, null);
     await view('Paths').click();
-    await page.getByRole('table', {name: 'Paths of the kept incidents'}).waitFor();
-    await page.getByRole('table', {name: 'Paths of the kept incidents'}).getByRole('button', {name: 'Path from “Opened” to “Asked customer”', exact: true}).click();
-    await page.getByRole('button', {name: 'Keep incidents where “Asked customer” directly follows “Opened”', exact: true}).click();
+    await page.getByRole('table', {name: 'Paths of the kept cases'}).waitFor();
+    await page.getByRole('table', {name: 'Paths of the kept cases'}).getByRole('button', {name: 'Path from “Opened” to “Asked customer”', exact: true}).click();
+    await page.getByRole('button', {name: 'Keep cases where “Asked customer” directly follows “Opened”', exact: true}).click();
     await settled(1);
     const kept = selections.at(-1);
     check('step_taken_offline', same(kept.kept.case_ids, config.kept_after_step), kept.kept.case_ids);
     await view('Matrix').click();
     await page.locator('.matrix-pane table').first().waitFor();
     await view('Variants').click();
-    await page.getByRole('list', {name: 'Variants, most incidents first'}).waitFor();
+    await page.getByRole('list', {name: 'Variants, most cases first'}).waitFor();
     await page.getByRole('button', {name: 'Filters and views', exact: true}).click();
     await page.getByRole('heading', {name: 'At the first recorded observation'}).waitFor();
     check('matrix_variants_and_context_shown', true);
-    await view('Incidents').click();
+    await view('Cases').click();
     const first = config.kept_after_step[0];
     const [evidence] = await Promise.all([page.waitForResponse(r => new URL(r.url()).pathname === '/api/investigations/case-evidence'),
-      page.getByRole('table', {name: 'Kept incidents'}).getByRole('button', {name: first, exact: true}).click()]);
-    await page.getByRole('heading', {name: `Incident ${first}`}).waitFor();
+      page.getByRole('table', {name: 'Kept cases'}).getByRole('button', {name: first, exact: true}).click()]);
+    await page.getByRole('heading', {name: `Case ${first}`}).waitFor();
     check('complete_history_offline', (await evidence.json()).records.length === await page.locator('ol.history > li').count(), null);
     await page.keyboard.press('Escape');
 
@@ -171,7 +171,7 @@ try {
       && await page.locator('.expectation-states').count() === 0, null);
     await areas.getByRole('button', {name: 'Investigations', exact: true}).click();
     await view('Map').click();
-    await page.getByLabel('Process map of the kept incidents').waitFor();
+    await page.getByLabel('Process map of the kept cases').waitFor();
     check('everything_else_works_without_it', true);
     assert.deepEqual(errors, []);
     await writeFile(output, JSON.stringify({checks, privacy: privacy()}));

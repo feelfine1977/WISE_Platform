@@ -130,7 +130,7 @@ describe("the proposal in the editor of the stages", () => {
       ["Assign", "4", "Mixed: “Handling” 2 · “Intake” 2", "0", "None: values tie"],
       ["Work", "4", "“Handling” 4", "0", "“Handling”, 4 records of 4"],
     ]);
-    expect(screen.getByText(/^Phase: counted on 18 records with an activity label of the 5 kept incidents; 1 record without an activity label is in no activity\.$/)).toBeTruthy();
+    expect(screen.getByText(/^Phase: counted on 18 records with an activity label of the 5 kept cases; 1 record without an activity label is in no activity\.$/)).toBeTruthy();
     // Counting is not taking: no stage, and the phase column named.
     expect(store.stateOf(reading).definitions.stages).toEqual([]);
     expect(store.stateOf(reading).definitions.phaseColumn).toBe(PHASE);

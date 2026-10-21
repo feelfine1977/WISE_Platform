@@ -27,7 +27,7 @@ describe("adding a step from one entry", () => {
     const panel = screen.getByRole("group", { name: "Add a step" });
     expect(within(panel).getByText(STEP_GLOSS)).toBeTruthy();
     expect(within(within(panel).getByRole("list", { name: "Kinds of step" })).getAllByRole("button").map((button) => button.textContent)).toEqual([
-      "Incident numbers", "Recorded time", "A range of records, span or longest gap", "First record in a period", "Context values", "A range of a number in a context column",
+      "Case numbers", "Recorded time", "A range of records, span or longest gap", "First record in a period", "Context values", "A range of a number in a context column",
     ]);
   });
 
@@ -37,7 +37,7 @@ describe("adding a step from one entry", () => {
     await user.click(screen.getByRole("button", { name: "Recorded time" }));
     const panel = screen.getByRole("group", { name: "Add a step" });
     // Only this kind's form, without the others.
-    expect(within(panel).queryByText("Incident numbers")).toBeNull();
+    expect(within(panel).queryByText("Case numbers")).toBeNull();
     expect(within(panel).queryByRole("group", { name: /not yet taken/ })).toBeNull();
     await user.type(within(panel).getByLabelText("At least this many hours"), "4");
     await user.click(within(panel).getByRole("button", { name: "Keep by recorded time" }));
@@ -49,7 +49,7 @@ describe("adding a step from one entry", () => {
   it("goes back to the kinds, and closes on Escape", async () => {
     const { onStep, user } = start();
     await user.click(screen.getByRole("button", { name: "+ Add step" }));
-    await user.click(screen.getByRole("button", { name: "Incident numbers" }));
+    await user.click(screen.getByRole("button", { name: "Case numbers" }));
     await user.click(screen.getByRole("button", { name: "Other kinds of step" }));
     expect(screen.getByRole("list", { name: "Kinds of step" })).toBeTruthy();
     await user.keyboard("{Escape}");

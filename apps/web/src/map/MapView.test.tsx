@@ -24,7 +24,8 @@ import {
   support,
   suppliedGraph,
 } from "../test/selections";
-import { leastPaths, MANY_ACTIVITIES, MANY_PATHS, openingDetail } from "./MapView";
+import { LEFT_TO_RIGHT, TOP_TO_BOTTOM } from "./arrange";
+import { leastPaths, MANY_ACTIVITIES, MANY_PATHS, openingDetail, openKeyOf } from "./MapView";
 
 vi.mock("wise-flow", async (original) => {
   const library = await original<typeof import("wise-flow")>();
@@ -49,13 +50,13 @@ async function deliver(action: () => void) {
   });
 }
 
-/** The investigation with its population and every incident selected, its map not yet shown. */
-async function renderInvestigation(parentGraph: (caseIds: string[]) => SuppliedGraph = suppliedGraph, inPlace = true) {
+/** The investigation with its population and every incident selected, its map not yet shown; its map in place unless the caller leaves that to the investigation ("default"). */
+async function renderInvestigation(parentGraph: (caseIds: string[]) => SuppliedGraph = suppliedGraph, inPlace: boolean | "default" = true) {
   const imports = scriptedImportClient();
   const selecting = scriptedSelectionClient();
   const coordinator = new ImportedInvestigationCoordinator(imports.client, selecting.client);
   const user = userEvent.setup();
-  render(<ImportedInvestigation coordinator={coordinator} mapInPlace={inPlace} onShowData={() => undefined} />);
+  render(<ImportedInvestigation coordinator={coordinator} mapInPlace={inPlace === "default" ? undefined : inPlace} onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId }));
   await deliver(() => imports.populations[0].reply({ ok: true, answer: populationAnswer(imports.populations[0].request) }));
   const app = { imports, selecting, coordinator, user, parentGraph };
@@ -75,7 +76,7 @@ async function answer(app: App, place: number, figures: Figures) {
 
 async function openMap(app: App, activities: (keyof typeof nodeIds)[] = []) {
   await app.user.click(screen.getByRole("button", { name: "Map" }));
-  const map = await screen.findByLabelText("Process map of the kept incidents");
+  const map = await screen.findByLabelText("Process map of the kept cases");
   // The container precedes the rendered scene; each interaction needs its particular activities.
   await waitFor(() => {
     for (const activity of activities) expect(nodeOf(map, activity)).not.toBeNull();
@@ -108,7 +109,7 @@ function chipTexts() {
     .map((chip) => [chip.querySelector(".chip-wording")?.textContent, ...Array.from(chip.querySelectorAll(".chip-counts > div")).map((pair) => pair.textContent)]);
 }
 
-describe("the map of the kept incidents", () => {
+describe("the map of the kept cases", () => {
   it("takes a step from an activity, shows it as a chip with its supplied counts, and keeps the activities in place", async () => {
     const app = await renderInvestigation();
     const map = await openMap(app, [opened]);
@@ -118,14 +119,14 @@ describe("the map of the kept incidents", () => {
 
     fireEvent.click(nodeOf(map, opened));
     expect(screen.getByRole("heading", { name: "Activity “Eröffnet”" })).toBeTruthy();
-    await app.user.click(screen.getByRole("button", { name: "Keep incidents that contain it" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep cases that contain it" }));
     expect(app.selecting.selections[1].request.predicates).toEqual([contains(opened)]);
-    expect(document.querySelector(".selection-status")?.textContent).toBe("Selecting the incidents and drawing their map…");
+    expect(document.querySelector(".selection-status")?.textContent).toBe("Selecting the cases and drawing their map…");
 
     await answer(app, 1, containingOpened);
-    expect(chipTexts()).toEqual([["Keep incidents that contain “Eröffnet”", "Kept1 incident · 2 records", "Removed1 incident · 1 record", "Not evaluable0 incidents · 0 records"]]);
-    expect(screen.getByLabelText("Population").textContent).toContain("Kept of the parent1 of 2 incidents2 of 3 records");
-    const after = screen.getByLabelText("Process map of the kept incidents");
+    expect(chipTexts()).toEqual([["Keep cases that contain “Eröffnet”", "Kept1 case · 2 records", "Removed1 case · 1 record", "Not evaluable0 cases · 0 records"]]);
+    expect(screen.getByLabelText("Population").textContent).toContain("Kept of the parent1 of 2 cases2 of 3 records");
+    const after = screen.getByLabelText("Process map of the kept cases");
     await waitFor(() => {
       expect(nodeOf(after, opened).style.transform).toBe(placed);
       expect(after.querySelector(`[data-id="${nodeIds["Prüfung"]}"]`)).toBeNull();
@@ -133,8 +134,8 @@ describe("the map of the kept incidents", () => {
     // One arrangement of the whole parent serves every selection.
     expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
 
-    await app.user.click(screen.getByRole("button", { name: "Incidents" }));
-    const table = screen.getByRole("table", { name: "Kept incidents" });
+    await app.user.click(screen.getByRole("button", { name: "Cases" }));
+    const table = screen.getByRole("table", { name: "Kept cases" });
     expect(within(table).getAllByRole("rowheader").map((cell) => cell.textContent)).toEqual(["A-1"]);
   });
 
@@ -151,8 +152,8 @@ describe("the map of the kept incidents", () => {
       .find((row) => row.textContent?.startsWith(`${opened}${closed}`))!;
     fireEvent.click(pathRow);
     expect(screen.getByRole("heading", { name: "Path from “Eröffnet” to “Geschlossen”" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Keep incidents where “Geschlossen” directly follows “Eröffnet”" })).toBeTruthy();
-    await app.user.click(screen.getByRole("button", { name: "Keep incidents where it never does" }));
+    expect(screen.getByRole("button", { name: "Keep cases where “Geschlossen” directly follows “Eröffnet”" })).toBeTruthy();
+    await app.user.click(screen.getByRole("button", { name: "Keep cases where it never does" }));
     expect(app.selecting.selections[2].request.predicates).toEqual([contains(opened), follows(opened, closed, true)]);
 
     // Both steps remove B-2: one because it does not contain the activity, the other although its order is unknown.
@@ -164,17 +165,17 @@ describe("the map of the kept incidents", () => {
       results: [containingOpened.results[0], { kept: support([], 0), removed: support(["A-1"], 2), unevaluable: support(["B-2"], 1) }],
     });
     expect(chipTexts()[1]).toEqual([
-      "Keep incidents where “Geschlossen” never directly follows “Eröffnet”",
-      "Kept0 incidents · 0 records",
-      "Removed1 incident · 2 records",
-      "Not evaluable1 incident · 1 record",
+      "Keep cases where “Geschlossen” never directly follows “Eröffnet”",
+      "Kept0 cases · 0 records",
+      "Removed1 case · 2 records",
+      "Not evaluable1 case · 1 record",
     ]);
     expect(screen.getByText(/the removals overlap and do not add up/).textContent).toBe(
-      "Each step is counted on its own over all 2 incidents of the parent. " +
-        "An incident that several steps remove is counted by each of them, so the removals overlap and do not add up.",
+      "Each step is counted on its own over all 2 cases of the parent. " +
+        "A case that several steps remove is counted by each of them, so the removals overlap and do not add up.",
     );
 
-    await app.user.click(screen.getByRole("button", { name: "Remove the step: Keep incidents that contain “Eröffnet”" }));
+    await app.user.click(screen.getByRole("button", { name: "Remove the step: Keep cases that contain “Eröffnet”" }));
     expect(app.selecting.selections[3].request.predicates).toEqual([follows(opened, closed, true)]);
     await app.user.click(screen.getByRole("button", { name: "Undo" }));
     expect(app.selecting.selections[4].request.predicates).toEqual([contains(opened), follows(opened, closed, true)]);
@@ -182,27 +183,32 @@ describe("the map of the kept incidents", () => {
     expect(app.selecting.selections[5].request.predicates).toEqual([]);
   });
 
-  it("keeps the parent's places by default, and arranges anew for the view only on request, saying which", async () => {
-    const app = await renderInvestigation();
+  it("arranges the map for what is shown unless told otherwise, and keeps the parent's places on request, saying which", async () => {
+    const app = await renderInvestigation(undefined, "default");
     const map = await openMap(app, [closed]);
-    // One arrangement of the parent, asked for once; the map reads its places from it.
-    await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
     const line = () => document.querySelector(".map-arrangement")!;
-    // The line stands with the tools in the row above the map and says where the places come from and which way the map runs.
+    // The line stands with the tools in the row above the map and says what the map is arranged for and which way it runs.
     expect(line().closest(".map-detail")).not.toBeNull();
-    expect(line().textContent).toBe("Places from the map of the parent's 2 incidents; they stay through previews, steps, Undo and the detail. Runs top to bottom. Rearrange for this view");
-    expect(screen.queryByRole("button", { name: "Keep activities in place" })).toBeNull();
+    expect(line().textContent).toBe("Arranged for what is shown, anew after each step and each change of the detail. Runs top to bottom. Keep the parent's places");
+    // No arrangement of the parent is asked for while its places are not wanted.
+    expect(flow.layoutUnion).not.toHaveBeenCalled();
     expect(screen.queryByRole("checkbox")).toBeNull();
     expect(nodeOf(map, closed)).not.toBeNull();
 
-    await app.user.click(screen.getByRole("button", { name: "Rearrange for this view" }));
-    expect(line().textContent).toBe("Arranged anew for what is shown; places change with each step or detail. Runs top to bottom. Back to the parent's places");
-    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
-    // Back to the parent's places by keyboard: the arrangement of the parent is not asked for anew.
-    screen.getByRole("button", { name: "Back to the parent's places" }).focus();
+    // The parent's places by keyboard: one arrangement of the parent, asked for once; the map reads its places from it.
+    screen.getByRole("button", { name: "Keep the parent's places" }).focus();
     await app.user.keyboard("{Enter}");
-    expect(line().textContent).toContain("Places from the map of the parent's 2 incidents");
-    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
+    await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
+    expect(line().textContent).toBe("Places from the map of the parent's 2 cases; they stay through previews, steps, Undo and the detail. Runs top to bottom. Rearrange for this view");
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept cases"), closed)).not.toBeNull());
+
+    // Arranged for the view again, and the parent's places once more: their arrangement is not asked for anew.
+    await app.user.click(screen.getByRole("button", { name: "Rearrange for this view" }));
+    expect(line().textContent).toContain("Arranged for what is shown");
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept cases"), closed)).not.toBeNull());
+    await app.user.click(screen.getByRole("button", { name: "Keep the parent's places" }));
+    expect(line().textContent).toContain("Places from the map of the parent's 2 cases");
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept cases"), closed)).not.toBeNull());
     expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
   });
 
@@ -212,18 +218,18 @@ describe("the map of the kept incidents", () => {
     expect(document.querySelector(".map-limit")).toBeNull();
 
     vi.mocked(flow.layoutUnion).mockRejectedValueOnce(new Error("The arrangement failed."));
-    await app.user.click(screen.getByRole("button", { name: "Back to the parent's places" }));
-    const limit = await screen.findByText("The arrangement of every incident of the parent could not be computed, so activities can move from one selection to the next.");
+    await app.user.click(screen.getByRole("button", { name: "Keep the parent's places" }));
+    const limit = await screen.findByText("The arrangement of every case of the parent could not be computed, so activities can move from one selection to the next.");
     // Short enough for one line; what the map does instead is said in full in its tooltip.
     expect(limit.getAttribute("title")).toBe(
-      "The arrangement of every incident of the parent could not be computed. " +
-        "The map arranges the kept incidents by itself, so activities can move from one selection to the next.",
+      "The arrangement of every case of the parent could not be computed. " +
+        "The map arranges the kept cases by itself, so activities can move from one selection to the next.",
     );
     // In the row above the map, before the frame the map is drawn in, which the map still has.
     expect(limit.className).toBe("map-limit");
     expect(limit.parentElement?.className).toBe("map-detail");
     expect(limit.closest(".map-main")?.querySelector(".map-frame")).not.toBeNull();
-    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept cases"), closed)).not.toBeNull());
 
     await app.user.click(screen.getByRole("button", { name: "Rearrange for this view" }));
     expect(document.querySelector(".map-limit")).toBeNull();
@@ -235,7 +241,7 @@ describe("the map of the kept incidents", () => {
     fireEvent.contextMenu(nodeOf(map, closed));
     const items = screen.getAllByRole("menuitem");
     // The application's steps come first; after them what the map library does on the picture by itself.
-    expect(items.slice(0, 2).map((item) => item.textContent)).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it"]);
+    expect(items.slice(0, 2).map((item) => item.textContent)).toEqual(["Keep cases that contain it", "Keep cases that do not contain it"]);
     expect(items.length).toBeGreaterThan(2);
     // The library's own filters would look like a second selection and are not offered.
     expect(items.map((item) => item.textContent).filter((text) => /^(Filter|Exclude)/.test(text ?? ""))).toEqual([]);
@@ -255,38 +261,38 @@ describe("the map of the kept incidents", () => {
 
     fireEvent.click(rowOf(closed, "End"));
     expect(screen.getByRole("heading", { name: "Flow from “Geschlossen” to End" })).toBeTruthy();
-    expect(screen.getByText("1 incident on the map ends with “Geschlossen”.")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Keep incidents that end with it" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Keep incidents that do not end with it" })).toBeTruthy();
+    expect(screen.getByText("1 case on the map ends with “Geschlossen”.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Keep cases that end with it" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Keep cases that do not end with it" })).toBeTruthy();
 
     fireEvent.click(rowOf("Start", opened));
     expect(screen.getByRole("heading", { name: "Flow from Start to “Eröffnet”" })).toBeTruthy();
-    expect(screen.getByText("1 incident on the map begins with “Eröffnet”.")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Keep incidents that do not begin with it" })).toBeTruthy();
-    await app.user.click(screen.getByRole("button", { name: "Keep incidents that begin with it" }));
+    expect(screen.getByText("1 case on the map begins with “Eröffnet”.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Keep cases that do not begin with it" })).toBeTruthy();
+    await app.user.click(screen.getByRole("button", { name: "Keep cases that begin with it" }));
     expect(app.selecting.selections[1].request.predicates).toEqual([begins(opened)]);
 
     // A-1 begins with "Eröffnet"; the order of B-2 is not known, so it belongs to neither side.
     const beginning = { kept: support(["A-1"], 2), removed: support([], 0), unevaluable: support(["B-2"], 1) };
     await answer(app, 1, { population: "a", ...beginning, results: [beginning] });
-    expect(chipTexts()).toEqual([["Keep incidents that begin with “Eröffnet”", "Kept1 incident · 2 records", "Removed0 incidents · 0 records", "Not evaluable1 incident · 1 record"]]);
+    expect(chipTexts()).toEqual([["Keep cases that begin with “Eröffnet”", "Kept1 case · 2 records", "Removed0 cases · 0 records", "Not evaluable1 case · 1 record"]]);
   });
 
   it("offers the beginning or the end of an activity after its own steps, in its menu and under the map", async () => {
     const app = await renderInvestigation();
     const map = await openMap(app, [opened, closed]);
-    const own = ["Keep incidents that contain it", "Keep incidents that do not contain it"];
+    const own = ["Keep cases that contain it", "Keep cases that do not contain it"];
 
     fireEvent.click(nodeOf(map, opened));
     const offered = () => Array.from(document.querySelectorAll(".map-choices button")).map((button) => button.textContent);
-    expect(offered()).toEqual([...own, "Keep incidents that begin with it"]);
+    expect(offered()).toEqual([...own, "Keep cases that begin with it"]);
     fireEvent.click(nodeOf(map, closed));
-    expect(offered()).toEqual([...own, "Keep incidents that end with it"]);
+    expect(offered()).toEqual([...own, "Keep cases that end with it"]);
 
     fireEvent.contextMenu(nodeOf(map, closed));
     const items = screen.getAllByRole("menuitem");
-    expect(items.slice(0, 3).map((item) => item.textContent)).toEqual([...own, "Keep incidents that end with it"]);
-    expect(items.map((item) => item.textContent)).not.toContain("Keep incidents that begin with it");
+    expect(items.slice(0, 3).map((item) => item.textContent)).toEqual([...own, "Keep cases that end with it"]);
+    expect(items.map((item) => item.textContent)).not.toContain("Keep cases that begin with it");
     fireEvent.click(items[2]);
     expect(app.selecting.selections[1].request.predicates).toEqual([ends(closed)]);
   });
@@ -299,7 +305,7 @@ describe("the map of the kept incidents", () => {
 
     fireEvent.click(nodeOf(map, opened));
     expect(rows()).toEqual([
-      "From previous: Not available: no labelled record comes before it in an incident whose order is known.",
+      "From previous: Not available: no labelled record comes before it in a case whose order is known.",
       "To next: median 26 h · mean 26 h · 1 passage of 1 record",
     ]);
     expect(paths("Paths out")).toEqual([`To ${closed}: 1 passages, median lag 26 h, mean lag 26 h. Select this path on the map.`]);
@@ -307,7 +313,7 @@ describe("the map of the kept incidents", () => {
     fireEvent.click(nodeOf(map, closed));
     expect(rows()).toEqual([
       "From previous: median 26 h · mean 26 h · 1 passage of 1 record",
-      "To next: Not available: no labelled record follows it in an incident whose order is known.",
+      "To next: Not available: no labelled record follows it in a case whose order is known.",
     ]);
     // Choosing a path of the activity selects that path on the map, and the card is the path's.
     fireEvent.click(document.querySelector(".activity-path")!);
@@ -316,7 +322,7 @@ describe("the map of the kept incidents", () => {
     // The order of B-2 is not known, so no path leads into or out of its only activity, and the card says that such incidents are not in its times.
     fireEvent.click(nodeOf(map, "Prüfung"));
     expect(rows().every((row) => row.includes("Not available"))).toBe(true);
-    expect(document.querySelector(".activity-times-note")?.textContent).toBe("1 incident whose order of records is not known is not in these times.");
+    expect(document.querySelector(".activity-times-note")?.textContent).toBe("1 case whose order of records is not known is not in these times.");
     void app;
   });
 
@@ -347,8 +353,8 @@ describe("the map of the kept incidents", () => {
     // The 25.5 supplied hours until the next event, as the map library writes hours.
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
     // No time until a next event is supplied for these two: a dash stands in its place, not a count.
-    expect(numberLine(map, closed)).toBe("– · 50 %");
-    expect(numberLine(map, "Prüfung")).toBe("– · 50 %");
+    expect(numberLine(map, closed)).toBe("– to next · 50 %");
+    expect(numberLine(map, "Prüfung")).toBe("– to next · 50 %");
     expect(legendMeasure(map)).toBe("Performance: median wait between activities (h, d). Colour = median lag. Width = cases.");
     expect(pressed(measureSwitch(map))).toEqual([
       ["Frequency", "false"],
@@ -363,7 +369,7 @@ describe("the map of the kept incidents", () => {
     fireEvent.click(nodeOf(map, closed));
     expect(Array.from(document.querySelectorAll(".activity-times-rows dt"), (name) => name.textContent)).toEqual(["From previous", "To next"]);
     expect(document.querySelector(".activity-times-rows dd")?.textContent).toBe("median 26 h · mean 26 h · 1 passage of 1 record");
-    expect(screen.getByRole("button", { name: "Keep incidents that end with it" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Keep cases that end with it" })).toBeTruthy();
 
     await app.user.click(within(legendOf()).getByRole("button", { name: "Frequency" }));
     await waitFor(() => expect(numberLine(map, opened)).toBe("1 · 50 %"));
@@ -380,10 +386,10 @@ describe("the map of the kept incidents", () => {
 
     app.coordinator.addStep(contains(opened));
     await answer(app, 1, containingOpened);
-    const after = screen.getByLabelText("Process map of the kept incidents");
+    const after = screen.getByLabelText("Process map of the kept cases");
     // The one kept incident is every incident on this map.
     await waitFor(() => expect(numberLine(after, opened)).toBe("26 h to next · 100 %"));
-    expect(numberLine(after, closed)).toBe("– · 100 %");
+    expect(numberLine(after, closed)).toBe("– to next · 100 %");
     expect(pressed(measureSwitch(after))[2]).toEqual(["Performance", "true"]);
   });
 
@@ -395,10 +401,10 @@ describe("the map of the kept incidents", () => {
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
 
     // The map is taken away while every incident of the parent is arranged, and drawn again after.
-    await app.user.click(screen.getByRole("button", { name: "Back to the parent's places" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep the parent's places" }));
     await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
     await waitFor(() => {
-      const again = screen.getByLabelText("Process map of the kept incidents");
+      const again = screen.getByLabelText("Process map of the kept cases");
       expect(numberLine(again, opened)).toBe("26 h to next · 50 %");
       // The legend stands under the canvas: it is not drawn again with the map, and stays shown whole as it was left.
       expect(legendMeasure(again)).toBe("Performance: median wait between activities (h, d). Colour = median lag. Width = cases.");
@@ -413,9 +419,9 @@ describe("the map of the kept incidents", () => {
     await app.user.click(screen.getByRole("button", { name: "About this map" }));
     const about = screen.getByRole("group", { name: "About this map" });
     const caption = about.querySelector(".map-caption")!;
-    expect(caption.textContent).toContain("Activities count labelled records and distinct incidents of the 2 incidents on the map.");
-    expect(caption.textContent).toContain("Paths count passages and distinct incidents of the 1 incident whose order of records can be evaluated.");
-    expect(caption.textContent).toContain("1 incident with 1 record is not evaluable for paths; 0 records have no activity label.");
+    expect(caption.textContent).toContain("Activities count labelled records and distinct cases of the 2 cases on the map.");
+    expect(caption.textContent).toContain("Paths count passages and distinct cases of the 1 case whose order of records can be evaluated.");
+    expect(caption.textContent).toContain("1 case with 1 record is not evaluable for paths; 0 records have no activity label.");
     expect(caption.textContent).toContain("Observed labelled starts and ends");
     expect(caption.textContent).toContain("Lag: the median of elapsed hours between the two records of a path.");
     expect(caption.textContent).toContain("Measures: the legend under the map, shown whole, switches what the map writes.");
@@ -423,7 +429,7 @@ describe("the map of the kept incidents", () => {
     expect(about.querySelector(".map-library")?.textContent).toBe("The map is drawn with an unreleased state of the map library (wise-flow 0.3.5, a local packaging candidate).");
     // Every coverage figure is listed under its heading, without a further click.
     const counts = within(about).getByRole("heading", { name: "What the map counts" }).parentElement!;
-    expect(within(counts).getByText("Paths are counted over").nextElementSibling?.textContent).toBe("1 incident");
+    expect(within(counts).getByText("Paths are counted over").nextElementSibling?.textContent).toBe("1 case");
     expect(counts.querySelectorAll("dt")).toHaveLength(13);
   });
 
@@ -496,13 +502,13 @@ describe("#6 a step previewed before it is taken, and the selection in words", (
     // Highlighting a path asks for previews of its two steps; nothing is selected yet.
     expect(app.selecting.previews.map((call) => call.request.predicates)).toEqual([[follows(opened, closed)], [follows(opened, closed, true)]]);
     expect(app.selecting.selections).toHaveLength(1);
-    const keep = screen.getByRole("button", { name: "Keep incidents where “Geschlossen” directly follows “Eröffnet”" });
+    const keep = screen.getByRole("button", { name: "Keep cases where “Geschlossen” directly follows “Eröffnet”" });
     expect(screen.getByText("Counting what this step would keep…", { selector: `#${keep.getAttribute("aria-describedby")}` })).toBeTruthy();
     const figures = { population: "7", kept: support(["A-1"], 2), removed: support([], 0), unevaluable: support(["B-2"], 1),
       results: [{ kept: support(["A-1"], 2), removed: support([], 0), unevaluable: support(["B-2"], 1) }] };
     await deliver(() => app.selecting.previews[0].reply({ ok: true, answer: selectionAnswer(app.selecting.previews[0].request, figures) }));
     expect(document.getElementById(keep.getAttribute("aria-describedby")!)?.textContent).toBe(
-      "Preview: would keep 1 incident of 2 incidents; 0 removed, 1 not evaluable. Nothing changes until the step is taken.",
+      "Preview: would keep 1 case of 2 cases; 0 removed, 1 not evaluable. Nothing changes until the step is taken.",
     );
     expect(app.selecting.selections).toHaveLength(1);
 
@@ -510,8 +516,8 @@ describe("#6 a step previewed before it is taken, and the selection in words", (
     await app.user.click(keep);
     expect(app.selecting.selections[1].request.predicates).toEqual([follows(opened, closed)]);
     await answer(app, 1, figures);
-    expect(screen.getByText(/^All steps together keep/).textContent).toBe("All steps together keep 1 incident of 2 incidents; 0 removed, 1 not evaluable.");
-    expect(screen.getByText(/^An incident is kept only if it meets every step \(and\)/)).toBeTruthy();
+    expect(screen.getByText(/^All steps together keep/).textContent).toBe("All steps together keep 1 case of 2 cases; 0 removed, 1 not evaluable.");
+    expect(screen.getByText(/^A case is kept only if it meets every step \(and\)/)).toBeTruthy();
     expect(screen.getByText(/^Not evaluable because/).textContent).toBe(
       "Not evaluable because the order of their records is not known, as a record has no usable time.",
     );

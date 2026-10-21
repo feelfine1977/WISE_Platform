@@ -42,7 +42,8 @@
 
 /* What limits every path and the clock of every lag stay in the row, quiet but in view: the count in the amber of a limit, the clock as a tag. */
 .map-basis { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--font-size-small); white-space: nowrap; }
-.map-arrangement { margin: 0; font-size: var(--font-size-small); color: var(--color-ink-muted); }
+/* The line on the arrangement takes a row of its own at every width: beside the controls it would squeeze them into a column. */
+.map-arrangement { flex: 1 1 100%; margin: 0; font-size: var(--font-size-small); color: var(--color-ink-muted); }
 .map-basis-limit { color: var(--color-limit); }
 .map-basis-tag { padding: 0 var(--space-2); color: var(--color-ink-muted); background: var(--color-tint); border-radius: var(--radius-pill); }
 

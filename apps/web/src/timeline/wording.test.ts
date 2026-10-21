@@ -77,20 +77,20 @@ describe("the words of the strip", () => {
       if (strip.kind === "axis") throw new Error("no axis is expected");
       return noAxisLine(strip, times.length, time);
     };
-    expect(sentence([1n])).toBe("This incident has one record, at 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
-    expect(sentence([1n, 1n, 1n])).toBe("All 3 records of this incident carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
-    expect(sentence([1n, 1n])).toBe("Both records of this incident carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
+    expect(sentence([1n])).toBe("This case has one record, at 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
+    expect(sentence([1n, 1n, 1n])).toBe("All 3 records of this case carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
+    expect(sentence([1n, 1n])).toBe("Both records of this case carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
     expect(sentence([1n, null, null])).toBe(
-      "Only one of the 3 records of this incident has a readable time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.",
+      "Only one of the 3 records of this case has a readable time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.",
     );
     expect(sentence([1n, 1n, null])).toBe(
       "The 2 records with a readable time carry the same recorded time, 2026-04-03 06:00:00 UTC, and 1 record has no readable time; there is no elapsed time to draw.",
     );
-    expect(sentence([null, null])).toBe("No record of this incident has a readable time; there is no elapsed time to draw.");
+    expect(sentence([null, null])).toBe("No record of this case has a readable time; there is no elapsed time to draw.");
     expect(noAxisLine({ kind: "not_supplied", reason: "omitted" }, 3, "")).toBe(
-      "Time diagnostics were not supplied for this incident, so no elapsed time is drawn or computed here.",
+      "Time diagnostics were not supplied for this case, so no elapsed time is drawn or computed here.",
     );
-    expect(noAxisLine({ kind: "not_supplied", reason: "mismatch" }, 3, "")).toBe("The time diagnostics do not match the records of this incident, so no elapsed time is drawn.");
+    expect(noAxisLine({ kind: "not_supplied", reason: "mismatch" }, 3, "")).toBe("The time diagnostics do not match the records of this case, so no elapsed time is drawn.");
   });
 });
 
@@ -103,7 +103,7 @@ describe("the words of the gaps", () => {
 
   it("says why no gap is given", () => {
     expect(withheldLine()).toBe(
-      "No gap is given for this incident: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which.",
+      "No gap is given for this case: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which.",
     );
   });
 
@@ -134,7 +134,7 @@ describe("the words of the gaps", () => {
 describe("the words of the timeline as a whole", () => {
   const sources = import.meta.glob<string>(["./*.{ts,tsx}", "!./*.test.{ts,tsx}"], { query: "?raw", import: "default", eager: true });
 
-  it("claim nothing the log does not say: no word for an end of an incident or for a judgement of its time", () => {
+  it("claim nothing the log does not say: no word for an end of a case or for a judgement of its time", () => {
     expect(Object.keys(sources).length).toBeGreaterThan(2);
     const claims = /\b(?:wait\w*|delay\w*|resolv\w*|late|lateness|overdue|slow\w*|stuck|idle)\b/i;
     for (const [file, source] of Object.entries(sources)) expect(source.match(claims), file).toBeNull();

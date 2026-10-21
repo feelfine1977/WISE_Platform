@@ -95,10 +95,10 @@ async function inspect(projected=false,caseId='A',allSource=false,future=false,s
   assert.deepEqual(answer.records.map(r=>r.source_position),positions);
   assert.deepEqual(answer.records.map(r=>r.row_id),positions.map(rowId));
   assert.deepEqual(answer.records.map(r=>r.original_cells[3]),caseId==='A'?['1948-01-01T00:00:00Z','2018-01-01T00:00:00Z','2020-01-02T00:00:00Z']:['2018-01-02T00:00:00Z',caseId==='B'?'2018-01-03T00:00:00Z':'2018-01-04T00:00:00Z']);
-  const panel=page.getByRole('region',{name:'Incident '+caseId,exact:true});
+  const panel=page.getByRole('region',{name:'Case '+caseId,exact:true});
   assert.deepEqual(await panel.getByText(/^Contributing source record/).allTextContents(),(sibling?[]:caseId==='A'?[projected?1:future?2:0]:positions).map(p=>'Contributing source record · '+rowId(p)));
   assert.equal(await panel.locator('li.history-entry').count(),positions.length);
-  await panel.getByRole('button',{name:'Return to incidents',exact:true}).click();
+  await panel.getByRole('button',{name:'Return to cases',exact:true}).click();
   return answer.records.map(r=>r.row_id);
 }
 async function savedListing(){

@@ -29,11 +29,11 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
       <div className="inspector-head">
         <div className="inspector-heading">
           <h2 id="inspector-title" tabIndex={-1} ref={headingRef}>
-            Incident <span className="identifier truncated" title={inspected.caseId}>{inspected.caseId}</span>
+            Case <span className="identifier truncated" title={inspected.caseId}>{inspected.caseId}</span>
           </h2>
           <p className="inspector-note">
             {summary && <>{partitionLabel(summary.partition, policies)} · </>}
-            Complete history in the declared order. Escape returns to the incidents.
+            Complete history in the declared order. Escape returns to the cases.
           </p>
           {inspected.phase === "ready" && <Coverage coverage={inspected.answer.coverage} />}
         </div>
@@ -47,7 +47,7 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
             </button>
           )}
           <button type="button" className="primary" onClick={onReturn}>
-            Return to incidents
+            Return to cases
           </button>
         </div>
       </div>
@@ -70,7 +70,7 @@ export function Inspector({ inspected, summary, policies, layout, onLayout, onRe
 function Coverage({ coverage }: { coverage: CaseEvidenceAnswer["coverage"] }) {
   return (
     <p className="coverage">
-      <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this incident ·{" "}
+      <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this case ·{" "}
       {countOf(coverage.mapped_record_count, "record")} in the mapped sequence ·{" "}
       {countOf(coverage.omitted_activity_record_count, "record")} left out: no activity
     </p>
@@ -81,7 +81,7 @@ function Records({ answer }: { answer: CaseEvidenceAnswer }) {
   const mapped = new Set(answer.mapped_row_ids);
   const omitted = new Set(answer.omitted_activity_row_ids);
   return (
-    <ol className="sequence" aria-label={`Every record of incident ${answer.case_id} in the declared order`}>
+    <ol className="sequence" aria-label={`Every record of case ${answer.case_id} in the declared order`}>
       {answer.records.map((record) => {
         const membership = mapped.has(record.row_id)
           ? "Included"

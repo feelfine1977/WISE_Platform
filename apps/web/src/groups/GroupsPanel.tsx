@@ -92,7 +92,7 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
   const references = answer?.shared_reference_coverage ?? null;
 
   return (
-    <section className="groups-panel" aria-label="Groups of the kept incidents">
+    <section className="groups-panel" aria-label="Groups of the kept cases">
       <label className="groups-rule">
         <span>Grouped by</span>
         <select
@@ -124,10 +124,10 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
       </label>
       <p className="groups-rule-said">{ruleSentence(rule, columnName)}</p>
       <p className="muted groups-actions-said">
-        Grouping puts whole incidents together by the rule chosen. Choosing a group lists its incidents in the table and changes nothing; Keep or Remove
-        takes a step with exactly its incidents; Compare as A or B makes it a side of a comparison without changing the selection.
+        Grouping puts whole cases together by the rule chosen. Choosing a group lists its cases in the table and changes nothing; Keep or Remove
+        takes a step with exactly its cases; Compare as A or B makes it a side of a comparison without changing the selection.
       </p>
-      {listed.phase === "loading" && <p className="working-text">Grouping the kept incidents…</p>}
+      {listed.phase === "loading" && <p className="working-text">Grouping the kept cases…</p>}
       {listed.phase === "failed" && (
         <div className="inline-error" role="alert">
           <p>{listed.message}</p>
@@ -149,29 +149,29 @@ export function GroupsPanel({ workspaceId, revision, identity, contextColumns, a
             {countOf(groupCount, "group")}
             {cover !== null &&
               groups.length > 1 &&
-              ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the ${groups[0].population.denominator.toLocaleString("en")} eligible kept incidents`}
+              ` · the parent's largest ${Math.min(COVER_OF, groups.length)} hold ${percent.format(cover)} of the ${groups[0].population.denominator.toLocaleString("en")} eligible kept cases`}
           </p>
           {coverage !== null && (
             <p className="groups-eligible">
-              Eligible for the rule: {coverage.kept.eligible.case_count.toLocaleString("en")} of {countOf(coverage.kept.total.case_count, "kept incident")}, and{" "}
-              {coverage.parent.eligible.case_count.toLocaleString("en")} of {countOf(coverage.parent.total.case_count, "incident")} in the parent.
+              Eligible for the rule: {coverage.kept.eligible.case_count.toLocaleString("en")} of {countOf(coverage.kept.total.case_count, "kept case")}, and{" "}
+              {coverage.parent.eligible.case_count.toLocaleString("en")} of {countOf(coverage.parent.total.case_count, "case")} in the parent.
             </p>
           )}
           {coverage !== null && (coverage.kept.unevaluable.case_count > 0 || coverage.parent.unevaluable.case_count > 0) && (
             <p className="groups-limit">
-              {countOf(coverage.kept.unevaluable.case_count, "incident")} the rule cannot evaluate (parent {coverage.parent.unevaluable.case_count.toLocaleString("en")})
+              {countOf(coverage.kept.unevaluable.case_count, "case")} the rule cannot evaluate (parent {coverage.parent.unevaluable.case_count.toLocaleString("en")})
               {readsOrder(rule) && ": the order of their records is not fully known"}
             </p>
           )}
           {coverage !== null && (coverage.kept.unassigned.case_count > 0 || coverage.parent.unassigned.case_count > 0) && (
             <p className="groups-limit">
-              {countOf(coverage.kept.unassigned.case_count, "incident")} in no group (parent {coverage.parent.unassigned.case_count.toLocaleString("en")})
-              {rule.kind === "shared_reference" && `: each value of ${columnName(rule.column_index)} they have is recorded in too few incidents of the parent`}
+              {countOf(coverage.kept.unassigned.case_count, "case")} in no group (parent {coverage.parent.unassigned.case_count.toLocaleString("en")})
+              {rule.kind === "shared_reference" && `: each value of ${columnName(rule.column_index)} they have is recorded in too few cases of the parent`}
             </p>
           )}
           {references !== null && (
             <p className="groups-limit">
-              {countOf(references.population_missing_reference_record_count, "record")} of the kept incidents without a value of {columnName(references.column_index)}{" "}
+              {countOf(references.population_missing_reference_record_count, "record")} of the kept cases without a value of {columnName(references.column_index)}{" "}
               (parent {references.parent_missing_reference_record_count.toLocaleString("en")}); {references.parent_suppressed_nonmissing_value_count.toLocaleString("en")} of the{" "}
               {countOf(references.parent_distinct_nonmissing_value_count, "value")} in the parent form no group.
             </p>
@@ -242,8 +242,8 @@ function GroupDetail({ group, rule, onOpen }: { group: RuleGroup; rule: string; 
         </div>
       </dl>
       {/* The pale columns are every incident of the parent, not only the group's: the group is read against the whole parent. */}
-      <GroupDistribution title="Recorded span: the group's kept incidents, dark, against every incident of the parent, pale" name="Recorded spans of the group's kept incidents against the whole parent" distribution={spans} unavailable="without a span" />
-      <GroupDistribution title="Longest gap: the group's kept incidents, dark, against every incident of the parent, pale" name="Longest gaps of the group's kept incidents against the whole parent" distribution={gaps} unavailable="without a gap" />
+      <GroupDistribution title="Recorded span: the group's kept cases, dark, against every case of the parent, pale" name="Recorded spans of the group's kept cases against the whole parent" distribution={spans} unavailable="without a span" />
+      <GroupDistribution title="Longest gap: the group's kept cases, dark, against every case of the parent, pale" name="Longest gaps of the group's kept cases against the whole parent" distribution={gaps} unavailable="without a gap" />
       {exemplars.status === "available" ? (
         <p className="groups-exemplars">
           {(["shortest", "longest"] as const).map((which) => {
@@ -256,7 +256,7 @@ function GroupDetail({ group, rule, onOpen }: { group: RuleGroup; rule: string; 
           })}
         </p>
       ) : (
-        <p className="muted groups-exemplars">{exemplars.reason === "empty_current_group" ? "No kept incident is in this group." : "No incident of this group has a known order."}</p>
+        <p className="muted groups-exemplars">{exemplars.reason === "empty_current_group" ? "No kept case is in this group." : "No case of this group has a known order."}</p>
       )}
     </div>
   );
@@ -280,7 +280,7 @@ function GroupDistribution({ title, name, distribution, unavailable }: { title: 
         onApply={() => undefined}
         ticks={[bins[0].label, bins[bins.length - 1].label]}
       />
-      {distribution.unavailable.kept_case_count > 0 && <p className="groups-limit">{countOf(distribution.unavailable.kept_case_count, "incident")} {unavailable}</p>}
+      {distribution.unavailable.kept_case_count > 0 && <p className="groups-limit">{countOf(distribution.unavailable.kept_case_count, "case")} {unavailable}</p>}
     </div>
   );
 }

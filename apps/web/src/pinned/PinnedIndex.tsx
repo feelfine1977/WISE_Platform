@@ -43,7 +43,7 @@ export function PinnedIndex({ pins, currentPopulationId, onOpen, onUnpin, onPair
       <section className="view-panel" aria-labelledby="pinned-title">
         <h3 id="pinned-title" className="view-title">Pinned histories</h3>
         <p className="muted view-hint">
-          No history is pinned. Open an incident, kept or removed by the selection, and pin it as supporting or contrary to read two beside each other.
+          No history is pinned. Open a case, kept or removed by the selection, and pin it as supporting or contrary to read two beside each other.
         </p>
       </section>
     );
@@ -69,7 +69,7 @@ export function PinnedIndex({ pins, currentPopulationId, onOpen, onUnpin, onPair
               </td>
               <td>
                 <p>
-                  <strong>{ROLE_NAMES[pin.role]}</strong> · Incident <span className="identifier">{pin.caseId}</span>
+                  <strong>{ROLE_NAMES[pin.role]}</strong> · Case <span className="identifier">{pin.caseId}</span>
                 </p>
                 <p className="pin-label">{pin.label}</p>
                 <p className="muted">{originLine(pin)}</p>

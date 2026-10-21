@@ -390,7 +390,7 @@ function report(): InterpretationReport {
         case_id: null,
         code: "missing_case_id",
         severity: "confirmation",
-        message: "This original row has no incident identifier and remains outside every case population.",
+        message: "This original row has no case identifier and remains outside every case population.",
       },
       {
         source_position: 3,
@@ -398,7 +398,7 @@ function report(): InterpretationReport {
         case_id: "B-2",
         code: "invalid_timestamp",
         severity: "confirmation",
-        message: "This row's time is unavailable; retain raw evidence and mark the incident's sequence unevaluable.",
+        message: "This row's time is unavailable; retain raw evidence and mark the case's sequence unevaluable.",
       },
     ],
     assumptions: ["Every unzoned timestamp uses the explicitly chosen fixed UTC offset of 120 minutes; no daylight-saving adjustment is inferred."],

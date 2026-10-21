@@ -19,10 +19,10 @@ export function ExpectationWitness({ witness, definition, onReturn, onRetry, hea
     <section className="expectation-witness" aria-labelledby="expectation-witness-title">
       <div className="expectation-witness-head">
         <h3 id="expectation-witness-title" tabIndex={-1} ref={headingRef}>
-          Incident <span className="expectation-identifier">{witness.caseId}</span>
+          Case <span className="expectation-identifier">{witness.caseId}</span>
         </h3>
         <button type="button" onClick={onReturn}>
-          Return to the incidents
+          Return to the cases
         </button>
       </div>
       {witness.phase === "loading" && (
@@ -65,12 +65,12 @@ function Witness({ answer, definition }: { answer: ScoreCaseWitnessAnswer; defin
       </dl>
       <p className="expectation-muted">
         {sameOrder
-          ? `The method library read ${traced.length === 1 ? "the one record" : `all ${countOf(traced.length, "record")}`} of this incident${traced.length === 1 ? "" : ", in this order"}.`
-          : `The method library read ${countOf(traced.length, "record")} of this incident.`}{" "}
+          ? `The method library read ${traced.length === 1 ? "the one record" : `all ${countOf(traced.length, "record")}`} of this case${traced.length === 1 ? "" : ", in this order"}.`
+          : `The method library read ${countOf(traced.length, "record")} of this case.`}{" "}
         {candidateLine("start", start, answer.activation_candidate_row_ids.length, verdict.measurement.activation_known)}{" "}
         {candidateLine("response", response, answer.response_candidate_row_ids.length, verdict.measurement.response_known)}
       </p>
-      <ol className="expectation-records" aria-label={`Records of incident ${verdict.case_id}`}>
+      <ol className="expectation-records" aria-label={`Records of case ${verdict.case_id}`}>
         {trace.kind === "imported_csv"
           ? trace.records.map((record) => (
               <WitnessRecord key={record.row_id} record={record} time={<ImportedTime record={record} />} start={starts.has(record.row_id)} response={responses.has(record.row_id)} />
@@ -87,7 +87,7 @@ function Witness({ answer, definition }: { answer: ScoreCaseWitnessAnswer; defin
 function candidateLine(role: "start" | "response", activity: string, count: number, known: boolean): string {
   if (!known || count === 0) {
     return role === "start"
-      ? `No record is marked as the start: the incident has no “${activity}”.`
+      ? `No record is marked as the start: the case has no “${activity}”.`
       : `No record is marked as the response: the library found no “${activity}” at or after the start.`;
   }
   if (count === 1) return `One record is marked as the ${role}.`;

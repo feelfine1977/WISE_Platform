@@ -35,7 +35,7 @@ async function withStep() {
 }
 
 describe("#19 histories opened through their exact handles and pinned", () => {
-  it("reads a removed incident in the selection's parent, pins it as contrary and a kept one as supporting, each with its own handle", async () => {
+  it("reads a removed case in the selection's parent, pins it as contrary and a kept one as supporting, each with its own handle", async () => {
     const { imports, coordinator } = await withStep();
     coordinator.openCase("B-2", "removed");
     const removed = imports.evidence.at(-1)!;
@@ -44,7 +44,7 @@ describe("#19 histories opened through their exact handles and pinned", () => {
     await settle();
     expect(coordinator.getState().inspected).toMatchObject({ phase: "ready", caseId: "B-2", side: "removed" });
     const contrary = coordinator.pin("contrary", words)!;
-    expect(contrary).toMatchObject({ role: "contrary", caseId: "B-2", side: "removed", label: "Incident B-2", observation: "Seen twice", nextCheck: "Ask the desk" });
+    expect(contrary).toMatchObject({ role: "contrary", caseId: "B-2", side: "removed", label: "Case B-2", observation: "Seen twice", nextCheck: "Ask the desk" });
     expect(contrary.identity.population_id).toBe(parentPopulation);
     expect(contrary.question).toMatchObject({ steps: [contains(opened)], kept: 1, removed: 1, parent: 2 });
     expect(contrary.rowIds).toHaveLength(3);
@@ -78,7 +78,7 @@ describe("#19 histories opened through their exact handles and pinned", () => {
     coordinator.openPin(pin.id);
     const call = imports.evidence.at(-1)!;
     expect(call.request.identity).toEqual(pin.identity);
-    call.reply(importRefusal(call.request, "case_evidence", "case_not_found", "No incident B-2 in this population.", "case_id"));
+    call.reply(importRefusal(call.request, "case_evidence", "case_not_found", "No case B-2 in this population.", "case_id"));
     await settle();
     const inspected = coordinator.getState().inspected;
     expect(inspected).toMatchObject({ phase: "ready", caseId: "A-1", refusal: { caseId: "B-2" } });
@@ -92,7 +92,7 @@ function answerOf(caseId: string, populationId: string): ImportedCaseEvidenceAns
     identity: { ...identity, population_id: populationId }, case_id: caseId });
 }
 
-function pinOf(id: number, role: Pin["role"], caseId: string, side: Pin["side"], label = `Incident ${caseId}`): Pin {
+function pinOf(id: number, role: Pin["role"], caseId: string, side: Pin["side"], label = `Case ${caseId}`): Pin {
   return { id, role, caseId, side, identity: { ...identity, population_id: side === "kept" ? `population.v1:sha256:${"5".repeat(64)}` : parentPopulation },
     rowIds: [], question: { populationId: `population.v1:sha256:${"5".repeat(64)}`, steps: [contains(opened)], kept: 1, removed: 1, parent: 2 },
     label, observation: side === "kept" ? "Seen twice" : "", limitation: "", nextCheck: "" };
@@ -122,22 +122,22 @@ describe("#19 two pinned histories beside each other", () => {
     const contrary = pinOf(2, "contrary", "B-2", "removed");
     const evidence = vi.fn(async (pinId: number): Promise<PinEvidence> =>
       pinId === 1 ? { ok: true, answer: answerOf("A-1", supporting.identity.population_id) }
-        : importRefusal({ request_id: "e", query_revision: 1 }, "case_evidence", "case_not_found", "No incident B-2 in this population.", "case_id") as PinEvidence);
+        : importRefusal({ request_id: "e", query_revision: 1 }, "case_evidence", "case_not_found", "No case B-2 in this population.", "case_id") as PinEvidence);
     const onReturn = vi.fn();
     render(<PairedHistories pins={[supporting, contrary]} evidence={evidence} currentPopulationId={`population.v1:sha256:${"9".repeat(64)}`} onReturn={onReturn} />);
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Two pinned histories" }));
-    const left = screen.getByRole("region", { name: "Supporting · Incident A-1" });
-    const table = await within(left).findByRole("table", { name: /^All 3 records of incident A-1 in the declared order/ });
+    const left = screen.getByRole("region", { name: "Supporting · Case A-1" });
+    const table = await within(left).findByRole("table", { name: /^All 3 records of case A-1 in the declared order/ });
     expect(within(table).getAllByRole("row")).toHaveLength(4);
     expect(within(table).getByText(answerOf("A-1", parentPopulation).records[1].row_id)).toBeTruthy();
     expect(within(left).getByText("A".repeat(180))).toBeTruthy();
-    expect(within(left).getByText(/^Kept by the selection: one of 1 incident of 2 incidents, under 1 step: /)).toBeTruthy();
+    expect(within(left).getByText(/^Kept by the selection: one of 1 case of 2 cases, under 1 step: /)).toBeTruthy();
     expect(within(left).getByText("Seen twice")).toBeTruthy();
     // Pinned under other steps than those shown: said, and read in its own population all the same.
     expect(within(left).getByText(/^Pinned under other steps than those shown now/)).toBeTruthy();
-    const right = screen.getByRole("region", { name: "Contrary · Incident B-2" });
-    expect((await within(right).findByRole("alert")).textContent).toContain("No incident B-2 in this population.");
-    expect(within(right).getByText(/^Removed by the selection: one of 1 incident it removes, read in its parent of 2 incidents/)).toBeTruthy();
+    const right = screen.getByRole("region", { name: "Contrary · Case B-2" });
+    expect((await within(right).findByRole("alert")).textContent).toContain("No case B-2 in this population.");
+    expect(within(right).getByText(/^Removed by the selection: one of 1 case it removes, read in its parent of 2 cases/)).toBeTruthy();
     // Without both histories, no context is put beside each other.
     expect(screen.queryByRole("region", { name: "Context at the first record of each" })).toBeNull();
     fireEvent.keyDown(table, { key: "Escape" });
@@ -149,7 +149,7 @@ describe("#19 two pinned histories beside each other", () => {
     render(<PairedHistories pins={pins} evidence={async (pinId) => ({ ok: true, answer: answerOf(pinId === 1 ? "A-1" : "B-2", parentPopulation) })}
       currentPopulationId={pins[0].question.populationId} onReturn={() => undefined} />);
     const context = await screen.findByRole("region", { name: "Context at the first record of each" });
-    expect(within(context).getByText(/no other incident is looked for to match either one/)).toBeTruthy();
+    expect(within(context).getByText(/no other case is looked for to match either one/)).toBeTruthy();
     expect(within(context).getByRole("row", { name: /Gruppe/ }).textContent).toContain("same value");
     expect(screen.queryByText(/^Pinned under other steps/)).toBeNull();
   });
@@ -176,13 +176,13 @@ describe("#19 pinning and the index of pins", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Read the two chosen side by side" }));
     expect(onPair).toHaveBeenCalledWith([1, 2]);
-    await user.click(screen.getByRole("checkbox", { name: "Read Incident B-2 beside another" }));
+    await user.click(screen.getByRole("checkbox", { name: "Read Case B-2 beside another" }));
     expect((screen.getByRole("button", { name: "Read the two chosen side by side" }) as HTMLButtonElement).disabled).toBe(true);
-    await user.click(screen.getByRole("button", { name: "Open the history of Incident B-2" }));
+    await user.click(screen.getByRole("button", { name: "Open the history of Case B-2" }));
     expect(onOpen).toHaveBeenCalledWith(2);
     rerender(<PinnedIndex pins={pins} currentPopulationId={pins[0].question.populationId} onOpen={onOpen} onUnpin={() => undefined} onPair={onPair} openPinId={2} />);
     (document.activeElement as HTMLElement).blur();
     rerender(<PinnedIndex pins={pins} currentPopulationId={pins[0].question.populationId} onOpen={onOpen} onUnpin={() => undefined} onPair={onPair} openPinId={null} />);
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Open the history of Incident B-2" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Open the history of Case B-2" }));
   });
 });

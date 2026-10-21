@@ -13,7 +13,7 @@ import { definitionOf, emptyForm } from "./definition";
 const form = { ...emptyForm, name: "Closed within four hours", owner: "Service desk", sourceLabel: "Agreement 7", rationale: "Customers wait.", start: "Eröffnet", response: "Geschlossen", target: "4", width: "2" };
 const reviewed = definitionOf({ ...form, reviewed: true }, "utc_instant", 1) as ResolutionDefinition;
 const draft = definitionOf(form, "utc_instant", 1) as ResolutionDefinition;
-const population: NamedPopulation = { name: "every incident of Vorgänge.csv", identity };
+const population: NamedPopulation = { name: "every case of Vorgänge.csv", identity };
 const target: ScoringTarget = { workspaceId, baseIdentity: identity, population };
 
 function setUp() {
@@ -44,7 +44,7 @@ describe("the expectation coordinator", () => {
     expect(validation.phase === "ready" && validation.answer.definition_version?.definition.review_state).toBe("reviewed");
   });
 
-  it("scores only a ready, reviewed version, for the incidents it was checked for", async () => {
+  it("scores only a ready, reviewed version, for the cases it was checked for", async () => {
     const { coordinator, validations, scores } = setUp();
     coordinator.check(target, draft);
     validations[0].reply({ ok: true, answer: readyAnswer(validations[0].request) });
@@ -64,7 +64,7 @@ describe("the expectation coordinator", () => {
     expect(shownRun(coordinator.getState().run)?.cases).toHaveLength(5);
   });
 
-  it("refuses a run of other incidents and keeps the run shown when a score fails", async () => {
+  it("refuses a run of other cases and keeps the run shown when a score fails", async () => {
     const { coordinator, validations, scores } = setUp();
     coordinator.check(target, reviewed);
     validations[0].reply({ ok: true, answer: readyAnswer(validations[0].request) });
@@ -79,7 +79,7 @@ describe("the expectation coordinator", () => {
     await settle();
     const run = coordinator.getState().run;
     expect(run.phase).toBe("failed");
-    expect(run.phase === "failed" && run.problem).toEqual({ kind: "unsupported_reply", detail: "The reply scored different incidents." });
+    expect(run.phase === "failed" && run.problem).toEqual({ kind: "unsupported_reply", detail: "The reply scored different cases." });
     expect(shownRun(run)).toBe(first);
   });
 
@@ -96,7 +96,7 @@ describe("the expectation coordinator", () => {
     expect(coordinator.getState().validation.phase).toBe("loading");
   });
 
-  it("lists a state's incidents as a view without asking the local service", async () => {
+  it("lists a state's cases as a view without asking the local service", async () => {
     const { coordinator, validations, scores, witnesses } = setUp();
     coordinator.choose("partly");
     expect(coordinator.getState().chosen).toBeNull();
@@ -113,7 +113,7 @@ describe("the expectation coordinator", () => {
     expect([validations.length, scores.length, witnesses.length]).toEqual([1, 1, 0]);
   });
 
-  it("opens the records of a scored incident and drops the reply for an incident opened earlier", async () => {
+  it("opens the records of a scored case and drops the reply for a case opened earlier", async () => {
     const { coordinator, validations, scores, witnesses } = setUp();
     coordinator.check(target, reviewed);
     validations[0].reply({ ok: true, answer: readyAnswer(validations[0].request) });

@@ -157,10 +157,10 @@ def case_time_summary(prepared: TimedPreparation, case_id: str) -> dict[str, obj
     when all timestamps are available, rather than an invented positive count.
     """
     if case_id not in prepared.histories:
-        raise CaseTimeError("unknown_case", "The incident is outside this preparation's case dictionary.")
+        raise CaseTimeError("unknown_case", "The case is outside this preparation's case dictionary.")
     records = prepared.histories[case_id]
     if not records:
-        raise CaseTimeError("inconsistent_sequence", "An identified incident must retain its raw records.")
+        raise CaseTimeError("inconsistent_sequence", "An identified case must retain its raw records.")
     unavailable = sum(record.time_value is None or record.timestamp_status != "usable" for record in records)
     if not prepared.sequence_evaluable(case_id):
         return _unavailable_summary(unavailable)

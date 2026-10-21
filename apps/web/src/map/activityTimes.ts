@@ -32,14 +32,14 @@ export function timeRows(graph: SuppliedGraph, nodeId: string): TimeRow[] {
       median: medianPreviousHours ?? null,
       mean: meanPreviousHours ?? null,
       passages: usablePreviousCount,
-      reason: medianPreviousHours === undefined ? "no labelled record comes before it in an incident whose order is known" : null,
+      reason: medianPreviousHours === undefined ? "no labelled record comes before it in a case whose order is known" : null,
     },
     {
       name: "To next",
       median: medianNextHours ?? null,
       mean: meanNextHours ?? null,
       passages: usableNextCount,
-      reason: medianNextHours === undefined ? "no labelled record follows it in an incident whose order is known" : null,
+      reason: medianNextHours === undefined ? "no labelled record follows it in a case whose order is known" : null,
     },
   ];
 }
@@ -83,9 +83,9 @@ export function activityNotes(graph: SuppliedGraph, nodeId: string): string[] {
   if (graph.meta.timestamp_kind === "wall_clock") notes.push(`Hours of the recorded wall clock. ${graph.meta.clock_limitation ?? ""}`.trim());
   if (bridged > 0) notes.push(`${countOf(bridged, "passage")} of these paths pass over records without activity label; they join the labelled records around them.`);
   if (node.metrics.count > node.metrics.cases) {
-    notes.push(`Some incidents have this activity more than once (${countOf(node.metrics.count, "record")} in ${countOf(node.metrics.cases, "incident")}); each record counts.`);
+    notes.push(`Some cases have this activity more than once (${countOf(node.metrics.count, "record")} in ${countOf(node.metrics.cases, "case")}); each record counts.`);
   }
   const left = graph.meta.sequence_unevaluable_case_count;
-  if (left > 0) notes.push(`${countOf(left, "incident")} whose order of records is not known ${left === 1 ? "is" : "are"} not in these times.`);
+  if (left > 0) notes.push(`${countOf(left, "case")} whose order of records is not known ${left === 1 ? "is" : "are"} not in these times.`);
   return notes;
 }

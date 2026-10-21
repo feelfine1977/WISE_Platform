@@ -167,3 +167,77 @@ export function stagedGraph(): FlowGraph {
     ],
   };
 }
+
+/** How many activities the large graph has. */
+export const LARGE_ACTIVITIES = 45;
+
+/** The long names of the large graph, in families that a card shortens alike; the other activities are "Step NN". */
+const LONG_NAMES = [
+  "Record goods receipt for the purchase order item at the central warehouse",
+  "Record goods receipt for the purchase order item at the regional warehouse",
+  "Record goods receipt for the purchase order item at the vendor site",
+  "Record invoice receipt for the purchase order item from the vendor portal",
+  "Record invoice receipt for the purchase order item from the mailroom scan",
+  "Vendor creates invoice",
+  "Vendor creates debit memo",
+];
+
+/** The name of the activity at a place of the large graph: a long name for the first seven, "Step NN" after them. */
+export const largeName = (index: number) => LONG_NAMES[index] ?? `Step ${String(index).padStart(2, "0")}`;
+
+/**
+ * A graph larger than a map can open on legibly, still drawn as elements of the page: 45 activities, the first seven with
+ * long names in families that a card shortens alike, and 528 paths, so that the map opens on the 20 most frequent
+ * activities and a main flow of 30 paths. Activity i has 900 − 18·i incidents; its path to the next activity carries
+ * 12 fewer than that one has; a path from i to j (j not next) exists where 7·i + 11·j is divisible by 4 and carries
+ * 1 + (13·i + 7·j) mod 9 incidents, so that most paths are rare and some lead back. Every path takes one hour more than
+ * the one before it. Incidents begin with the first activity and end with the last three (200, 300, 400).
+ */
+export function largeGraph(): SuppliedGraph {
+  const count = LARGE_ACTIVITIES;
+  const incidents = (index: number) => 900 - 18 * index;
+  const pairs: [number, number, number][] = [];
+  for (let index = 0; index + 1 < count; index += 1) pairs.push([index, index + 1, incidents(index + 1) - 12]);
+  for (let source = 0; source < count; source += 1) {
+    for (let target = 0; target < count; target += 1) {
+      if (source === target || target === source + 1 || (7 * source + 11 * target) % 4 !== 0) continue;
+      pairs.push([source, target, 1 + ((13 * source + 7 * target) % 9)]);
+    }
+  }
+  const whole = suppliedGraph(["A-1", "B-2"]);
+  const witnesses = whole.edges[0].payload;
+  const edges = pairs.map(([source, target, cases], place) => ({
+    ...whole.edges[0],
+    id: pathIdOf(source, target),
+    source: activityId(source),
+    target: activityId(target),
+    metrics: { count: cases, cases, medianLagHours: place + 1, usableLagCount: cases },
+    payload: { ...witnesses, source_activity: largeName(source), target_activity: largeName(target) },
+  }));
+  const ends = [200, 300, 400];
+  const passagesInto = (index: number) => edges.filter((edge) => edge.target === activityId(index)).reduce((sum, edge) => sum + edge.metrics.count, 0);
+  const passagesOutOf = (index: number) => edges.filter((edge) => edge.source === activityId(index)).reduce((sum, edge) => sum + edge.metrics.count, 0);
+  return {
+    ...whole,
+    nodes: Array.from({ length: count }, (_, index) => ({
+      id: activityId(index),
+      kind: "activity" as const,
+      label: largeName(index),
+      metrics: {
+        count: incidents(index),
+        events: incidents(index),
+        cases: incidents(index),
+        starts: index === 0 ? incidents(0) : 0,
+        ends: ends[index - (count - ends.length)] ?? 0,
+        medianPreviousHours: 3,
+        usablePreviousCount: passagesInto(index),
+        medianNextHours: 4,
+        usableNextCount: passagesOutOf(index),
+      },
+    })),
+    edges,
+  };
+}
+
+/** The node id of an activity of the large graph, and the id of its path from one activity to another. */
+export const largeIds = { activity: activityId, path: pathIdOf };

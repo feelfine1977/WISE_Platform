@@ -28,17 +28,17 @@ export function stepWording(step: SelectionPredicate): string {
   switch (step.kind) {
     case "contains_activity":
       return step.negate
-        ? `Keep incidents that do not contain ${quoted(step.activity)}`
-        : `Keep incidents that contain ${quoted(step.activity)}`;
+        ? `Keep cases that do not contain ${quoted(step.activity)}`
+        : `Keep cases that contain ${quoted(step.activity)}`;
     case "directly_follows":
       return step.negate
-        ? `Keep incidents where ${quoted(step.target_activity)} never directly follows ${quoted(step.source_activity)}`
-        : `Keep incidents where ${quoted(step.target_activity)} directly follows ${quoted(step.source_activity)}`;
+        ? `Keep cases where ${quoted(step.target_activity)} never directly follows ${quoted(step.source_activity)}`
+        : `Keep cases where ${quoted(step.target_activity)} directly follows ${quoted(step.source_activity)}`;
     case "opening_attribute_equals": {
       const value = step.value === null ? "no value" : `the value ${quoted(step.value)}`;
       return step.negate
-        ? `Keep incidents whose first record does not have ${value} in ${columnWording(step.column_index)}`
-        : `Keep incidents whose first record has ${value} in ${columnWording(step.column_index)}`;
+        ? `Keep cases whose first record does not have ${value} in ${columnWording(step.column_index)}`
+        : `Keep cases whose first record has ${value} in ${columnWording(step.column_index)}`;
     }
     case "case_id_in": {
       // A long list, as a group hands over, is named by its count and its first numbers; the step holds every one.
@@ -46,31 +46,31 @@ export function stepWording(step: SelectionPredicate): string {
       const rest = step.case_ids.length - shown.length;
       const numbers = `${shown.map(quoted).join(", ")}${rest > 0 ? ` and ${rest.toLocaleString("en")} more` : ""}`;
       const these = step.case_ids.length > NUMBERS_NAMED ? `the ${step.case_ids.length.toLocaleString("en")} exact numbers` : "these exact numbers";
-      return `Keep incidents ${step.negate ? "outside" : "with"} ${these}: ${numbers}`;
+      return `Keep cases ${step.negate ? "outside" : "with"} ${these}: ${numbers}`;
     }
     case "case_start_in_window":
-      return `Keep incidents whose first record ${step.negate ? "is outside" : "is in"} ${step.window.start_inclusive} to ${step.window.end_exclusive} (end excluded; ${step.window.timestamp_kind === "utc_instant" ? "UTC" : "recorded wall clock"})`;
+      return `Keep cases whose first record ${step.negate ? "is outside" : "is in"} ${step.window.start_inclusive} to ${step.window.end_exclusive} (end excluded; ${step.window.timestamp_kind === "utc_instant" ? "UTC" : "recorded wall clock"})`;
     case "opening_attribute_in":
     case "record_attribute_in": {
       const values = step.values.map((value) => value === null ? "no value" : quoted(value)).join(" or ");
       const anchor = step.kind === "opening_attribute_in" ? "the first record" : "any record";
       return step.negate
         ? step.kind === "record_attribute_in"
-          ? `Keep incidents where no raw record has ${values} in ${columnWording(step.column_index)}`
-          : `Keep incidents where the first record does not have ${values} in ${columnWording(step.column_index)}`
-        : `Keep incidents where ${anchor} has ${values} in ${columnWording(step.column_index)}`;
+          ? `Keep cases where no raw record has ${values} in ${columnWording(step.column_index)}`
+          : `Keep cases where the first record does not have ${values} in ${columnWording(step.column_index)}`
+        : `Keep cases where ${anchor} has ${values} in ${columnWording(step.column_index)}`;
     }
     case "record_attributes_all": {
       const conditions = step.conditions.map(condition => {
         const values = condition.values.map(value => value === null ? "a blank cell" : quoted(value)).join(" or ");
         return `${columnWording(condition.column_index)} is ${values}`;
       }).join(" AND ");
-      return `Keep incidents where ${step.negate ? "no" : "at least one"} original record satisfies all conditions on that same record: ${conditions}`;
+      return `Keep cases where ${step.negate ? "no" : "at least one"} original record satisfies all conditions on that same record: ${conditions}`;
     }
     case "observed_span_at_least":
     case "max_raw_gap_at_least": {
       const measure = step.kind === "observed_span_at_least" ? "recorded span" : "longest adjacent recorded gap";
-      return `Keep incidents with ${measure} ${step.negate ? "less than" : "at least"} ${step.hours} hours`;
+      return `Keep cases with ${measure} ${step.negate ? "less than" : "at least"} ${step.hours} hours`;
     }
     case "measure_between":
       return rangeWording(step);
@@ -80,27 +80,27 @@ export function stepWording(step: SelectionPredicate): string {
       const where = NUMBER_PROJECTIONS[step.projection];
       const range = numberRange(step.minimum, step.maximum);
       return step.negate
-        ? `Keep incidents whose number in ${columnWording(step.column_index)} at ${where} is not ${range}`
-        : `Keep incidents whose number in ${columnWording(step.column_index)} at ${where} is ${range}`;
+        ? `Keep cases whose number in ${columnWording(step.column_index)} at ${where} is not ${range}`
+        : `Keep cases whose number in ${columnWording(step.column_index)} at ${where} is ${range}`;
     }
     case "interval_threshold": {
       const relation = step.operator === "gt" ? (step.negate ? "at most" : "more than") : step.negate ? "less than" : "at least";
-      return `Keep incidents whose interval from the first ${quoted(step.interval.start_activity)} to the first ${quoted(step.interval.response_activity)} at or after it is ${relation} ${step.hours} hours`;
+      return `Keep cases whose interval from the first ${quoted(step.interval.start_activity)} to the first ${quoted(step.interval.response_activity)} at or after it is ${relation} ${step.hours} hours`;
     }
     case "variant_is": {
       const sequence = variantSequence(step.variant.activities);
       return step.negate
-        ? `Keep incidents whose complete sequence is not exactly ${sequence}`
-        : `Keep incidents whose complete sequence is exactly ${sequence}`;
+        ? `Keep cases whose complete sequence is not exactly ${sequence}`
+        : `Keep cases whose complete sequence is exactly ${sequence}`;
     }
     case "starts_with_activity":
       return step.negate
-        ? `Keep incidents that do not begin with ${quoted(step.activity)}`
-        : `Keep incidents that begin with ${quoted(step.activity)}`;
+        ? `Keep cases that do not begin with ${quoted(step.activity)}`
+        : `Keep cases that begin with ${quoted(step.activity)}`;
     case "ends_with_activity":
       return step.negate
-        ? `Keep incidents that do not end with ${quoted(step.activity)}`
-        : `Keep incidents that end with ${quoted(step.activity)}`;
+        ? `Keep cases that do not end with ${quoted(step.activity)}`
+        : `Keep cases that end with ${quoted(step.activity)}`;
   }
 }
 
@@ -111,13 +111,13 @@ function rangeWording(step: Extract<SelectionPredicate, { kind: "measure_between
   const unit = records ? (step.maximum ?? step.minimum) === 1 ? "record" : "records" : "hours";
   const { minimum, maximum } = step;
   if (!step.negate) {
-    if (maximum === null) return `Keep incidents with ${measure}at least ${minimum} ${records && minimum === 1 ? "record" : unit}`;
-    if (maximum === minimum) return `Keep incidents with ${measure}exactly ${minimum} ${unit}`;
-    return `Keep incidents with ${measure}${records ? "" : "from "}${minimum} to ${maximum} ${unit}, both included`;
+    if (maximum === null) return `Keep cases with ${measure}at least ${minimum} ${records && minimum === 1 ? "record" : unit}`;
+    if (maximum === minimum) return `Keep cases with ${measure}exactly ${minimum} ${unit}`;
+    return `Keep cases with ${measure}${records ? "" : "from "}${minimum} to ${maximum} ${unit}, both included`;
   }
   const less = records ? "fewer" : "less";
-  if (maximum === null) return `Keep incidents with ${measure}${less} than ${minimum} ${records && minimum === 1 ? "record" : unit}`;
-  return `Keep incidents with ${measure}${less} than ${minimum} or more than ${maximum} ${records ? "records" : unit}`;
+  if (maximum === null) return `Keep cases with ${measure}${less} than ${minimum} ${records && minimum === 1 ? "record" : unit}`;
+  return `Keep cases with ${measure}${less} than ${minimum} or more than ${maximum} ${records ? "records" : unit}`;
 }
 
 /** Where an incident's number in a context column is read, in words. */
@@ -150,7 +150,7 @@ export function shortStepWording(step: SelectionPredicate): string {
       return step.negate ? `Does not end ${quoted(step.activity)}` : `Ends ${quoted(step.activity)}`;
     case "case_id_in":
       // A long list of incident numbers is named by its count.
-      return `${step.negate ? "Outside " : ""}${step.case_ids.length > 2 ? countOf(step.case_ids.length, "incident number") : step.case_ids.map(quoted).join(", ")}`;
+      return `${step.negate ? "Outside " : ""}${step.case_ids.length > 2 ? countOf(step.case_ids.length, "case number") : step.case_ids.map(quoted).join(", ")}`;
     case "case_start_in_window":
       return `First record ${step.negate ? "outside " : ""}${step.window.start_inclusive.slice(0, 10)} to ${step.window.end_exclusive.slice(0, 10)}`;
     case "opening_attribute_equals":
@@ -205,10 +205,10 @@ function lagRangeWording(step: Extract<SelectionPredicate, { kind: "path_lag_in_
   const range = lagRange(step);
   if (step.passages === "every") {
     return step.negate
-      ? `Keep incidents that never pass ${pair}, or have a passage of it that does not take ${range}`
-      : `Keep incidents that pass ${pair} with every passage taking ${range}`;
+      ? `Keep cases that never pass ${pair}, or have a passage of it that does not take ${range}`
+      : `Keep cases that pass ${pair} with every passage taking ${range}`;
   }
-  return step.negate ? `Keep incidents with no passage ${pair} taking ${range}` : `Keep incidents with at least one passage ${pair} taking ${range}`;
+  return step.negate ? `Keep cases with no passage ${pair} taking ${range}` : `Keep cases with at least one passage ${pair} taking ${range}`;
 }
 
 /** A whole sequence of labelled activities, repeats kept, or the sequence without a labelled record. */
@@ -219,12 +219,12 @@ export function variantSequence(activities: readonly string[]): string {
 /** How many incidents on the map begin or end with the activity of a flow from Start or to End. */
 export function boundaryLine(side: "start" | "end", activity: string, incidents: number): string {
   const verb = side === "start" ? "begin" : "end";
-  return `${countOf(incidents, "incident")} on the map ${incidents === 1 ? `${verb}s` : verb} with ${quoted(activity)}.`;
+  return `${countOf(incidents, "case")} on the map ${incidents === 1 ? `${verb}s` : verb} with ${quoted(activity)}.`;
 }
 
 /** A supplied support as incidents and their records. */
 export function supportText(support: PopulationSupport): string {
-  return `${countOf(support.case_count, "incident")} · ${countOf(support.record_count, "record")}`;
+  return `${countOf(support.case_count, "case")} · ${countOf(support.record_count, "record")}`;
 }
 
 /** The three supports of one step, each counted over the whole parent. */
@@ -283,13 +283,13 @@ export function unevaluableReason(step: SelectionPredicate): string | null {
 
 /** How the steps combine, and what is not offered. */
 export const COMBINATION =
-  "An incident is kept only if it meets every step (and). Within one step, the values listed are alternatives (or); a step that keeps " +
-  "incidents without something removes those with it (not). Other combinations, such as or between steps, are not offered.";
+  "A case is kept only if it meets every step (and). Within one step, the values listed are alternatives (or); a step that keeps " +
+  "cases without something removes those with it (not). Other combinations, such as or between steps, are not offered.";
 
 /** What all the steps keep together, over the parent. */
 export function combinedLine(parent: PopulationSupport, kept: PopulationSupport, removed: PopulationSupport, unevaluable: PopulationSupport): string {
   return (
-    `All steps together keep ${countOf(kept.case_count, "incident")} of ${countOf(parent.case_count, "incident")}; ` +
+    `All steps together keep ${countOf(kept.case_count, "case")} of ${countOf(parent.case_count, "case")}; ` +
     `${removed.case_count.toLocaleString("en")} removed, ${unevaluable.case_count.toLocaleString("en")} not evaluable.`
   );
 }
@@ -297,8 +297,8 @@ export function combinedLine(parent: PopulationSupport, kept: PopulationSupport,
 /** Why the counts of the steps do not add up to the incidents removed by all of them. */
 export function overlapLine(parent: PopulationSupport): string {
   return (
-    `Each step is counted on its own over all ${countOf(parent.case_count, "incident")} of the parent. ` +
-    "An incident that several steps remove is counted by each of them, so the removals overlap and do not add up."
+    `Each step is counted on its own over all ${countOf(parent.case_count, "case")} of the parent. ` +
+    "A case that several steps remove is counted by each of them, so the removals overlap and do not add up."
   );
 }
 
@@ -308,8 +308,8 @@ export function overlapLine(parent: PopulationSupport): string {
  */
 export const MEASURES_LINE =
   "Measures: the legend under the map, shown whole, switches what the map writes. " +
-  "Frequency: the incidents on every path and activity. " +
-  "Performance: before the incidents of a path its median lag, and on an activity the median time until the next event, with “–” where none is available; " +
+  "Frequency: the cases on every path and activity. " +
+  "Performance: before the cases of a path its median lag, and on an activity the median time until the next event, with “–” where none is available; " +
   "the time since the event before is said under the map for a selected activity. " +
   "Shortfall has no values here: no expectation results are supplied to the map.";
 
@@ -320,7 +320,7 @@ export const MEASURES_LINE =
  */
 export function unevaluableLine(meta: GraphCoverage): string | null {
   const count = meta.sequence_unevaluable_case_count;
-  return count === 0 ? null : `${countOf(count, "incident")} not evaluable for paths`;
+  return count === 0 ? null : `${countOf(count, "case")} not evaluable for paths`;
 }
 
 /** The tag of times read as recorded, without a time zone; null for UTC instants. It changes what every lag means, so it stays in view. */
@@ -331,15 +331,15 @@ export function clockTag(meta: GraphCoverage): string | null {
 /** The sentences under the map that say what its numbers count, from the map's own coverage. */
 export function mapCaption(meta: GraphCoverage): string[] {
   return [
-    `Activities count labelled records and distinct incidents of the ${countOf(meta.node_case_denominator, "incident")} on the map.`,
-    `Paths count passages and distinct incidents of the ${countOf(meta.path_case_denominator, "incident")} whose order of records can be evaluated.`,
-    `${countOf(meta.sequence_unevaluable_case_count, "incident")} with ${countOf(meta.sequence_unevaluable_record_count, "record")} ` +
+    `Activities count labelled records and distinct cases of the ${countOf(meta.node_case_denominator, "case")} on the map.`,
+    `Paths count passages and distinct cases of the ${countOf(meta.path_case_denominator, "case")} whose order of records can be evaluated.`,
+    `${countOf(meta.sequence_unevaluable_case_count, "case")} with ${countOf(meta.sequence_unevaluable_record_count, "record")} ` +
       `${meta.sequence_unevaluable_case_count === 1 ? "is" : "are"} not evaluable for paths; ` +
       `${countOf(meta.omitted_activity_record_count, "record")} ${meta.omitted_activity_record_count === 1 ? "has" : "have"} no activity label.`,
-    "Observed labelled starts and ends: an incident starts or ends at an activity only when its first or last record carries that label.",
-    "Start and End are added by the map: a flow leaves Start for an activity incidents begin with and enters End from an activity they end with, each with that number of incidents. " +
-      "Start and End are always shown, each with the strongest flow among the activities shown. The Paths detail ranks the paths by their incidents; another flow is drawn when it carries at least as many incidents as the weakest path drawn by frequency, " +
-      "and all are drawn when every path is; the menu of an activity offers the incidents that begin or end with it also while its flow is not drawn.",
+    "Observed labelled starts and ends: a case starts or ends at an activity only when its first or last record carries that label.",
+    "Start and End are added by the map: a flow leaves Start for an activity cases begin with and enters End from an activity they end with, each with that number of cases. " +
+      "Start and End are always shown, each with the strongest flow among the activities shown. The Paths detail ranks the paths by their cases; another flow is drawn when it carries at least as many cases as the weakest path drawn by frequency, " +
+      "and all are drawn when every path is; the menu of an activity offers the cases that begin or end with it also while its flow is not drawn.",
     lagLine(meta),
     MEASURES_LINE,
   ];
@@ -354,7 +354,7 @@ export function flowsLine(coverage: { flows: number; drawn: number; unshown?: nu
   if (left <= 0) return null;
   const unshown = Math.min(left, coverage.unshown ?? 0);
   const weak = left - unshown;
-  const fewer = Number.isFinite(least) ? `fewer than ${countOf(least, "incident")}` : null;
+  const fewer = Number.isFinite(least) ? `fewer than ${countOf(least, "case")}` : null;
   const start = `Not drawn at this detail: ${left} of the ${coverage.flows} flows from Start and to End`;
   if (unshown === 0) return `${start}${fewer ? `, ${left === 1 ? "with" : "each with"} ${fewer}` : ""}. The Paths slider draws more.`;
   if (weak === 0) return `${start}, of activities that are not shown. The Activities slider shows more.`;
@@ -371,15 +371,15 @@ export function lagLine(meta: GraphCoverage): string {
 /** Every coverage figure of the map, for the disclosure under the caption. */
 export function coverageRows(meta: GraphCoverage): [string, string][] {
   return [
-    ["Incidents on the map", countOf(meta.selected_case_count, "incident")],
-    ["Records of these incidents", countOf(meta.raw_record_count, "record")],
+    ["Cases on the map", countOf(meta.selected_case_count, "case")],
+    ["Records of these cases", countOf(meta.raw_record_count, "record")],
     ["Records with an activity label", countOf(meta.mapped_record_count, "record")],
     ["Records without activity label", countOf(meta.omitted_activity_record_count, "record")],
-    ["Incidents whose order can be evaluated", countOf(meta.sequence_evaluable_case_count, "incident")],
-    ["Incidents not evaluable for paths", countOf(meta.sequence_unevaluable_case_count, "incident")],
-    ["Records of incidents not evaluable for paths", countOf(meta.sequence_unevaluable_record_count, "record")],
-    ["Activities are counted over", countOf(meta.node_case_denominator, "incident")],
-    ["Paths are counted over", countOf(meta.path_case_denominator, "incident")],
+    ["Cases whose order can be evaluated", countOf(meta.sequence_evaluable_case_count, "case")],
+    ["Cases not evaluable for paths", countOf(meta.sequence_unevaluable_case_count, "case")],
+    ["Records of cases not evaluable for paths", countOf(meta.sequence_unevaluable_record_count, "record")],
+    ["Activities are counted over", countOf(meta.node_case_denominator, "case")],
+    ["Paths are counted over", countOf(meta.path_case_denominator, "case")],
     ["Times", meta.timestamp_kind === "wall_clock" ? "as recorded (wall clock)" : "UTC instants"],
     ["Lag", meta.lag_clock === "recorded_wall_clock_hours" ? "hours of the recorded wall clock" : "elapsed hours"],
     ["Starts and ends", `observed labelled starts and ends (${meta.boundary_policy})`],
@@ -397,14 +397,14 @@ const remedies: Record<SelectionRefusal["code"], string> = {
   source_unavailable: "Add the file again in the Data area; the workspace no longer holds these bytes.",
   memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   preparation_unavailable: "Read the source again with the same choices in the Data area.",
-  identity_mismatch: "The source or its reading changed. Open the incidents again from the Data area.",
-  population_unavailable: "Try again; the selection is made again from the incidents of the preparation.",
+  identity_mismatch: "The source or its reading changed. Open the cases again from the Data area.",
+  population_unavailable: "Try again; the selection is made again from the cases of the preparation.",
   invalid_predicate: "Undo the last step or remove it.",
-  invalid_parent: "Open the incidents again from the Data area.",
-  unknown_case: "Correct the incident numbers or remove the last step; none of the invalid entry was applied.",
+  invalid_parent: "Open the cases again from the Data area.",
+  unknown_case: "Correct the case numbers or remove the last step; none of the invalid entry was applied.",
   case_outside_parent: "Choose numbers from this parent or remove the last step; the parent was not widened.",
   unmapped_context_column: "Undo the last step or remove it.",
-  inconsistent_sequence: "The order of the records of an incident cannot be evaluated as prepared. Read the source again in the Data area.",
+  inconsistent_sequence: "The order of the records of a case cannot be evaluated as prepared. Read the source again in the Data area.",
   mixed_time_kinds: "Read the source again in the Data area with one reading of its times.",
   inconsistent_time_kind: "Read the source again in the Data area with one reading of its times.",
   computation_failed: "Try again. If it fails again, restart the application.",

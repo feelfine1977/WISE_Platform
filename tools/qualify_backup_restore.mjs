@@ -51,9 +51,9 @@ try {
     await page.waitForFunction(() => !document.querySelector('.selection-status')?.textContent && document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length === 2);
     const line = (await page.getByRole('region', {name: 'Saved investigation'}).textContent()) ?? '';
     check('saved_finding_reopened', line.includes(config.name) && line.includes('QuestionIs it still there after a restore?'), line);
-    await page.getByRole('group', {name: 'View'}).getByRole('button', {name: 'Incidents', exact: true}).click();
+    await page.getByRole('group', {name: 'View'}).getByRole('button', {name: 'Cases', exact: true}).click();
     await page.locator('table tbody tr button.row-open', {hasText: /^F01$/}).click();
-    const list = page.getByRole('list', {name: 'Records of incident F01 in the declared order'});
+    const list = page.getByRole('list', {name: 'Records of case F01 in the declared order'});
     await list.waitFor();
     const records = await list.getByRole('listitem').allTextContents();
     check('complete_evidence_read_after_restore', records.length === 2 && records[0].includes('Opened') && records[1].includes('Resolved'), records);

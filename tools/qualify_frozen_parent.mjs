@@ -52,9 +52,9 @@ try {
 
   // The eligibility step, from the flow Start → Opened in the list of every path.
   await view('Paths').click();
-  const list = page.getByRole('table', {name: 'Paths of the kept incidents'});
+  const list = page.getByRole('table', {name: 'Paths of the kept cases'});
   await list.locator('tbody tr').filter({has: page.locator('th', {hasText: /^Start$/})}).filter({has: page.locator('td', {hasText: /^Opened$/})}).locator('th button').click();
-  await page.getByRole('button', {name: 'Keep incidents that begin with it', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep cases that begin with it', exact: true}).click();
   await settled(1);
   const eligible = selections.at(-1);
   check('eligibility_step_as_the_oracle', same(eligible.kept.case_ids, expected.parent.case_ids) && same(eligible.removed.case_ids, expected.parent.outside)
@@ -62,7 +62,7 @@ try {
   // The clause, from the activity Resolved on the map.
   await view('Map').click();
   await page.locator('.react-flow__node-activity', {hasText: 'Resolved'}).first().click();
-  await page.getByRole('button', {name: 'Keep incidents that contain it', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep cases that contain it', exact: true}).click();
   await settled(2);
 
   // In Compare, the last step splits the parent frozen after the first.
@@ -71,8 +71,8 @@ try {
   const parentNote = page.getByRole('note', {name: 'Parent'});
   await parentNote.waitFor();
   const parentText = (await parentNote.textContent()) ?? '';
-  check('parent_frozen_and_eligibility_unknown_named', parentText.includes(`the parent P is frozen (parent 1): ${expected.parent.case_ids.length} incidents kept by Keep incidents that begin with “Opened”.`)
-    && parentText.includes('1 incident whose eligibility is unknown, as a step could not evaluate it, is outside it.'), parentText);
+  check('parent_frozen_and_eligibility_unknown_named', parentText.includes(`the parent P is frozen (parent 1): ${expected.parent.case_ids.length} cases kept by Keep cases that begin with “Opened”.`)
+    && parentText.includes('1 case whose eligibility is unknown, as a step could not evaluate it, is outside it.'), parentText);
   const nameA = await page.getByLabel('Name of group A').inputValue();
   const nameB = await page.getByLabel('Name of group B').inputValue();
   check('roles_named_from_the_clause', nameA === res.target_name && nameB === res.reference_name, [nameA, nameB]);
@@ -84,8 +84,8 @@ try {
   check('sides_as_the_oracle', same(first.target.included.case_ids, res.target) && same(first.reference.included.case_ids, res.reference)
     && same(first.target.unevaluable.case_ids, res.unevaluable) && !first.reference.included.case_ids.includes('F06'), [first.target.included, first.reference.included]);
   const roles = (await page.locator('.compare-roles').textContent()) ?? '';
-  check('roles_apart_from_included_and_excluded', roles.includes('A is the target and B the reference: A holds the incidents of the parent the clause includes, B those it excludes'), roles);
-  check('no_recorded_resolution_not_open', roles.includes('“No recorded “Resolved”” says only that the export holds no record of it: not that the incident is open or unresolved.'), roles);
+  check('roles_apart_from_included_and_excluded', roles.includes('A is the target and B the reference: A holds the cases of the parent the clause includes, B those it excludes'), roles);
+  check('no_recorded_resolution_not_open', roles.includes('“No recorded “Resolved”” says only that the export holds no record of it: not that the case is open or unresolved.'), roles);
   const headers = await page.locator('.compare-table thead th').allTextContents();
   check('columns_named_by_role_and_name', headers.includes(`A: ${res.target_name}`) && headers.includes(`B: ${res.reference_name}`), headers);
   const team = Object.fromEntries(first.context_profile.categories.map(category => [category.value ?? 'not recorded', [category.parent.case_count, category.target.case_count, category.reference.case_count]]));
@@ -93,14 +93,14 @@ try {
   check('missing_value_shown_as_not_recorded', await page.locator('.compare-table').getByText(/not recorded/).count() > 0, null);
 
   // Both sides' incidents open their histories; the comparison stays; the focus returns.
-  await page.getByRole('group', {name: 'Inspect the incidents of'}).getByRole('button', {name: 'Both', exact: true}).click();
-  const sides = page.getByRole('list', {name: 'Incidents of A and B'});
+  await page.getByRole('group', {name: 'Inspect the cases of'}).getByRole('button', {name: 'Both', exact: true}).click();
+  const sides = page.getByRole('list', {name: 'Cases of A and B'});
   const items = await sides.getByRole('listitem').allTextContents();
   check('both_sides_listed_with_their_roles', same(items.map(item => item.split(' Open')[0]), [...res.target.map(id => `${id} · A`), ...res.reference.map(id => `${id} · B`)].sort()), items);
   const absent = res.reference[0];
   await sides.getByRole('button', {name: `Open ${absent}`, exact: true}).click();
-  const history = page.getByRole('region', {name: new RegExp(`^Incident ${absent}, of B`)});
-  await history.getByRole('table', {name: new RegExp(`^All \\d+ records of incident ${absent}`)}).waitFor();
+  const history = page.getByRole('region', {name: new RegExp(`^Case ${absent}, of B`)});
+  await history.getByRole('table', {name: new RegExp(`^All \\d+ records of case ${absent}`)}).waitFor();
   check('side_history_whole_beside_the_comparison', await page.locator('.compare-table').count() === 1, null);
   await history.getByRole('button', {name: 'Return to the comparison', exact: true}).click();
   await page.waitForFunction(name => document.activeElement?.textContent === name, `Open ${absent}`);
@@ -142,8 +142,8 @@ try {
   check('unknown_row_shown', unknownRow.includes('1'), unknownRow);
 
   // Back to every incident, explicitly: no frozen parent is named, and the next comparison is of the whole population.
-  await page.getByRole('note', {name: 'Parent'}).getByRole('button', {name: 'Use every incident as the parent', exact: true}).click();
-  check('rebase_explicit', await page.getByRole('note', {name: 'Parent'}).count() === 0 && (await page.locator('.compare-head').textContent()).includes('the parent is every incident'), null);
+  await page.getByRole('note', {name: 'Parent'}).getByRole('button', {name: 'Use every case as the parent', exact: true}).click();
+  check('rebase_explicit', await page.getByRole('note', {name: 'Parent'}).count() === 0 && (await page.locator('.compare-head').textContent()).includes('the parent is every case'), null);
   const beforeWhole = comparisons.length;
   await page.locator('button.compare-primary').click();
   const whole = await next(beforeWhole);

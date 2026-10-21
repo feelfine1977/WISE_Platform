@@ -90,13 +90,13 @@ function renderIncident(answer: ImportedCaseEvidenceAnswer) {
       headingRef={createRef<HTMLHeadingElement>()}
     />,
   );
-  const timeline = screen.getByRole("region", { name: "Elapsed time of incident A-1" });
-  const entries = within(screen.getByRole("list", { name: "Records of incident A-1 in the declared order" })).getAllByRole("listitem");
+  const timeline = screen.getByRole("region", { name: "Elapsed time of case A-1" });
+  const entries = within(screen.getByRole("list", { name: "Records of case A-1 in the declared order" })).getAllByRole("listitem");
   return { user, timeline, entries };
 }
 
 function stripOf(timeline: HTMLElement) {
-  const strip = within(timeline).getByRole("group", { name: "Recorded times of incident A-1, the earliest at the left and the latest at the right" });
+  const strip = within(timeline).getByRole("group", { name: "Recorded times of case A-1, the earliest at the left and the latest at the right" });
   return { strip, marks: within(strip).getAllByRole("button") };
 }
 
@@ -104,8 +104,8 @@ const gapsOf = (entries: HTMLElement[]) => entries.map((entry) => entry.querySel
 const placeOf = (mark: HTMLElement) => mark.querySelector(".timeline-dot")?.getAttribute("cx");
 const claims = /\b(?:wait\w*|delay\w*|resolv\w*|late|overdue)\b/i;
 
-describe("the timeline of one incident", () => {
-  it("draws the timed records of the scripted incident, counts the record without a readable time, and computes no gap while the order cannot be evaluated", () => {
+describe("the timeline of one case", () => {
+  it("draws the timed records of the scripted case, counts the record without a readable time, and computes no gap while the order cannot be evaluated", () => {
     expect(importContract.caseEvidenceAnswer(scripted)).toBe(true);
     const { timeline, entries } = renderIncident(scripted);
 
@@ -117,7 +117,7 @@ describe("the timeline of one incident", () => {
     expect(timeline.querySelector(".timeline-ends")?.textContent).toBe("2026-04-03 06:00:00 UTC2026-04-04 07:30:00 UTC");
     expect(within(timeline).getByText("1 record without a readable time is not on the strip.")).toBeTruthy();
 
-    expect(within(timeline).getByText("No gap is given for this incident:", { exact: false }).textContent).toContain(
+    expect(within(timeline).getByText("No gap is given for this case:", { exact: false }).textContent).toContain(
       "the local service says that the order of its records cannot be evaluated",
     );
     expect(timeline.textContent).not.toContain("Longest gap");
@@ -220,16 +220,16 @@ describe("the timeline of one incident", () => {
     expect(gapsOf(entries).join(" ")).not.toMatch(claims);
   });
 
-  it("says in place of the axis that an incident has one record", () => {
+  it("says in place of the axis that a case has one record", () => {
     const { timeline, entries } = renderIncident(incidentOf([["Eröffnet", "2026-04-03T06:00:00Z"]], true));
-    expect(timeline.textContent).toBe("This incident has one record, at 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
+    expect(timeline.textContent).toBe("This case has one record, at 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.");
     expect(timeline.querySelector("svg")).toBeNull();
     expect(gapsOf(entries)).toEqual([null]);
   });
 
   it("says of one record without a readable time only that, and withholds no gap where none can be", () => {
     const { timeline, entries } = renderIncident(incidentOf([["Prüfung", null]], false));
-    expect(timeline.textContent).toBe("No record of this incident has a readable time; there is no elapsed time to draw.");
+    expect(timeline.textContent).toBe("No record of this case has a readable time; there is no elapsed time to draw.");
     expect(gapsOf(entries)).toEqual([null]);
   });
 
@@ -243,7 +243,7 @@ describe("the timeline of one incident", () => {
       true,
     );
     const { timeline, entries } = renderIncident(same);
-    expect(within(timeline).getByText("All 3 records of this incident carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.")).toBeTruthy();
+    expect(within(timeline).getByText("All 3 records of this case carry the same recorded time, 2026-04-03 06:00:00 UTC; there is no elapsed time to draw.")).toBeTruthy();
     expect(timeline.querySelector("svg")).toBeNull();
     // Every gap is zero, and zero is said: it is a computed gap, not a missing one.
     expect(timeline.textContent).toContain("Longest gap: none above zero");
@@ -299,7 +299,7 @@ describe("the timeline of one incident", () => {
     const { incident_time: _supplied, ...legacy } = ordered;
     void _supplied;
     const { timeline, entries } = renderIncident(legacy as ImportedCaseEvidenceAnswer);
-    expect(timeline.textContent).toContain("Time diagnostics were not supplied for this incident, so no elapsed time is drawn or computed here.");
+    expect(timeline.textContent).toContain("Time diagnostics were not supplied for this case, so no elapsed time is drawn or computed here.");
     expect(gapsOf(entries).every((gap) => gap === null)).toBe(true);
     expect(timeline.textContent).not.toContain("Longest gap");
   });

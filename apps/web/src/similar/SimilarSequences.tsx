@@ -54,10 +54,10 @@ export function SimilarSequences({ workspaceId, identity, revision, anchor, anch
 
   return (
     <section className="similar-sequences" aria-labelledby={`${asked}-title`}>
-      <h4 id={`${asked}-title`} className="view-title">Incidents with a sequence similar to {anchorName}</h4>
+      <h4 id={`${asked}-title`} className="view-title">Cases with a sequence similar to {anchorName}</h4>
       <p className="muted view-hint">
         Measure: the edit distance between two sequences of labelled activities, the least number of activities to insert, remove or replace to turn
-        one into the other. It is applied to every incident of the parent and does not change with the kept incidents; only their counts follow the
+        one into the other. It is applied to every case of the parent and does not change with the kept cases; only their counts follow the
         selection. A suggestion is applied only when you keep it.
       </p>
       <div className="similar-edits" role="radiogroup" aria-label="Edits allowed">
@@ -71,22 +71,22 @@ export function SimilarSequences({ workspaceId, identity, revision, anchor, anch
         <>
           <p className="similar-support">
             {countOf(answer.family_count, "family", "families")} of exactly equal sequences within {countOf(answer.maximum_edits, "edit")}:{" "}
-            {countOf(answer.suggested_parent_case_count, "incident")} of the {answer.parent.eligible_case_count.toLocaleString("en")} eligible incidents of the parent,{" "}
-            {countOf(answer.suggested_kept_case_count, "kept incident")} of {answer.kept_case_count.toLocaleString("en")}.
-            {answer.parent.unevaluable_case_count > 0 && ` ${countOf(answer.parent.unevaluable_case_count, "incident")} of the parent ${answer.parent.unevaluable_case_count === 1 ? "is" : "are"} not eligible: the order of the records is not known, or there is no labelled activity.`}
+            {countOf(answer.suggested_parent_case_count, "case")} of the {answer.parent.eligible_case_count.toLocaleString("en")} eligible cases of the parent,{" "}
+            {countOf(answer.suggested_kept_case_count, "kept case")} of {answer.kept_case_count.toLocaleString("en")}.
+            {answer.parent.unevaluable_case_count > 0 && ` ${countOf(answer.parent.unevaluable_case_count, "case")} of the parent ${answer.parent.unevaluable_case_count === 1 ? "is" : "are"} not eligible: the order of the records is not known, or there is no labelled activity.`}
           </p>
           <ol className="similar-families" aria-label="Suggested families, nearest first">
             {answer.families.map((family) => (
               <li key={family.activities.join("\u0000")}>
                 <p className="similar-family-head">
                   <span>{family.distance === 0 ? "The chosen sequence itself" : `${countOf(family.distance, "edit")} away`}</span>
-                  {" · "}{countOf(family.parent_case_count, "incident")} of the parent, {family.kept_case_ids.length.toLocaleString("en")} kept
+                  {" · "}{countOf(family.parent_case_count, "case")} of the parent, {family.kept_case_ids.length.toLocaleString("en")} kept
                 </p>
                 <p className="similar-sequence">{family.activities.join(" → ")}</p>
                 <p>
                   <button type="button" className="link-button" onClick={() => onOpenCase(family.exemplars[0])}>Open {family.exemplars[0]}, a complete history of this family</button>{" "}
                   <button type="button" disabled={waitingFor !== undefined || family.kept_case_ids.length === 0} aria-describedby={waitingFor} onClick={() => keep(family.kept_case_ids)}>
-                    Keep this family's {countOf(family.kept_case_ids.length, "kept incident")}
+                    Keep this family's {countOf(family.kept_case_ids.length, "kept case")}
                   </button>
                 </p>
               </li>
@@ -94,7 +94,7 @@ export function SimilarSequences({ workspaceId, identity, revision, anchor, anch
           </ol>
           <p>
             <button type="button" className="primary" disabled={waitingFor !== undefined || allKept.length === 0} aria-describedby={waitingFor} onClick={() => keep(allKept)}>
-              Keep the {countOf(allKept.length, "kept incident")} suggested
+              Keep the {countOf(allKept.length, "kept case")} suggested
             </button>
           </p>
           <p className="limitation">

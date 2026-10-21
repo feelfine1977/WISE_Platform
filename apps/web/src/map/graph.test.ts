@@ -73,7 +73,7 @@ describe("the supplied graph as the map library's graph", () => {
     };
   };
 
-  it("draws the flows from Start and to End that carry at least as many incidents as the paths the detail asks for", () => {
+  it("draws the flows from Start and to End that carry at least as many cases as the paths the detail asks for", () => {
     const supplied = busy([900, 40, 7, 0], [5, 300, 60, 2], [500, 80, 50, 6]);
     const flowsOf = (least: number) =>
       toFlowGraph(supplied, least)

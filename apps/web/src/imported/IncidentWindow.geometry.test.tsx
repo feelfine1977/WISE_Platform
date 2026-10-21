@@ -26,14 +26,14 @@ function renderWindow() {
   const onOpen = vi.fn();
   const view = (focusRequest: FocusRequest | null, openCaseId: string | null = null) => (
     <>
-      <h2 id="all-incidents">All imported incidents</h2>
+      <h2 id="all-incidents">All imported cases</h2>
       <p id="incident-help">Use the arrow keys and Enter to open complete evidence.</p>
       <IncidentWindow cases={CASES} openCaseId={openCaseId} onOpen={onOpen} focusRequest={focusRequest}
         labelledBy="all-incidents" describedBy="incident-help" />
     </>
   );
   const rendered = render(view(null));
-  const table = screen.getByRole<HTMLTableElement>("table", { name: "All imported incidents" });
+  const table = screen.getByRole<HTMLTableElement>("table", { name: "All imported cases" });
   const scroller = table.parentElement!;
   return { table, scroller, onOpen, requestFocus: (request: FocusRequest, openCaseId: string | null = null) => rendered.rerender(view(request, openCaseId)) };
 }
@@ -96,7 +96,7 @@ function rule(css: string, selector: string): Map<string, string> {
   return found;
 }
 
-describe("the incident window's complete vertical representation", () => {
+describe("the case window's complete vertical representation", () => {
   it("keeps all 40,000 row extents through a middle request, End, Page Up and Home", async () => {
     const app = renderWindow();
     const user = userEvent.setup();

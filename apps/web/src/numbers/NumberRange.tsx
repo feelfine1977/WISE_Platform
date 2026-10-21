@@ -95,7 +95,7 @@ export function NumberRange({ population, identity, revision, columnName, onStep
 
   if (column === null) {
     return (
-      frame(<p className="muted">No context column was declared a number. Declare one in Data, with its unit, to keep incidents by a range of its numbers.</p>)
+      frame(<p className="muted">No context column was declared a number. Declare one in Data, with its unit, to keep cases by a range of its numbers.</p>)
     );
   }
   const unit = declared.find((item) => item.column_index === column)?.unit ?? null;
@@ -142,12 +142,12 @@ export function NumberRange({ population, identity, revision, columnName, onStep
         <div className="number-range-read">
           <p className="muted">
             {answer.parent_range === null
-              ? "No incident of the parent has a number here."
-              : `Range in the parent: ${withUnit(answer.parent_range.minimum)} to ${withUnit(answer.parent_range.maximum)}; ${countOf(answer.kept.measured_case_count, "kept incident")} of ${answer.kept.case_count.toLocaleString("en")} have a number.`}
+              ? "No case of the parent has a number here."
+              : `Range in the parent: ${withUnit(answer.parent_range.minimum)} to ${withUnit(answer.parent_range.maximum)}; ${countOf(answer.kept.measured_case_count, "kept case")} of ${answer.kept.case_count.toLocaleString("en")} have a number.`}
           </p>
           {bins.length > 0 && (
             <ColumnChart
-              name={`Incidents by ${columnName(column)} at ${NUMBER_PROJECTIONS[projection]}`}
+              name={`Cases by ${columnName(column)} at ${NUMBER_PROJECTIONS[projection]}`}
               bins={bins}
               band
               applicable={() => true}
@@ -165,10 +165,10 @@ export function NumberRange({ population, identity, revision, columnName, onStep
               ticks={[bins[0].label, bins[bins.length - 1].label]}
             />
           )}
-          {answer.membership_overlaps && <p className="muted">At any record an incident counts in every bin one of its numbers falls into, so the bins overlap.</p>}
+          {answer.membership_overlaps && <p className="muted">At any record a case counts in every bin one of its numbers falls into, so the bins overlap.</p>}
           {missing(answer.kept).length > 0 && (
             <p className="limitation">
-              Without a number here: {missing(answer.kept).map((item) => `${countOf(item.case_count, "kept incident")} (${reasons[item.reason]})`).join(", ")}; they are not
+              Without a number here: {missing(answer.kept).map((item) => `${countOf(item.case_count, "kept case")} (${reasons[item.reason]})`).join(", ")}; they are not
               evaluable for this step and are counted apart.
             </p>
           )}
@@ -188,7 +188,7 @@ export function NumberRange({ population, identity, revision, columnName, onStep
         Up to, not included{unit ? ` (${unit})` : ""}; empty for no upper bound
         <input type="text" inputMode="decimal" value={high} onChange={(event) => { setHigh(event.target.value); setPending(null); }} />
       </label>
-      <p className="muted">The lower bound is included and the upper bound is not: an incident exactly at the upper bound is outside the range.</p>
+      <p className="muted">The lower bound is included and the upper bound is not: a case exactly at the upper bound is outside the range.</p>
       {error && <p className="inline-error" role="alert">{error}</p>}
       <p>
         <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={() => propose(numberStep(column, projection, low, high, false))}>

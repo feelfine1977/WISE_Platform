@@ -51,7 +51,7 @@ describe("the times of a selected activity", () => {
     expect(onSelectPath).toHaveBeenCalledWith("out-6");
   });
 
-  it("say only the notes that apply: the wall clock, bridged records, repeats and incidents left out", () => {
+  it("say only the notes that apply: the wall clock, bridged records, repeats and cases left out", () => {
     const plain = suppliedGraph(["A-1"]);
     expect(activityNotes(plain, nodeIds[opened])).toEqual([]);
     const bridged = withPathsOut();
@@ -64,8 +64,8 @@ describe("the times of a selected activity", () => {
     };
     expect(activityNotes(busy, nodeIds[opened])).toEqual([
       "Hours of the recorded wall clock. Local times without a zone.",
-      "Some incidents have this activity more than once (3 records in 1 incident); each record counts.",
-      "2 incidents whose order of records is not known are not in these times.",
+      "Some cases have this activity more than once (3 records in 1 case); each record counts.",
+      "2 cases whose order of records is not known are not in these times.",
     ]);
   });
 });
@@ -75,7 +75,7 @@ describe("the mean beside each median (#74)", () => {
     const graph = suppliedGraph(["A-1"]);
     render(<ActivityTimesCard graph={graph} nodeId={nodeIds[opened]} onSelectPath={vi.fn()} />);
     expect(Array.from(document.querySelectorAll(".activity-times-rows > div"), (row) => row.textContent)).toEqual([
-      "From previousNot available: no labelled record comes before it in an incident whose order is known.",
+      "From previousNot available: no labelled record comes before it in a case whose order is known.",
       "To nextmedian 26 h · mean 26 h · 1 passage of 1 record",
     ]);
     expect(screen.getByRole("button", { name: /^To Geschlossen: 1 passages, median lag 26 h, mean lag 26 h\./ })).toBeTruthy();

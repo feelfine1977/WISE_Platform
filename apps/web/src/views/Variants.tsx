@@ -39,7 +39,7 @@ export function Variants({ state, chosen, onChoose, onClear, onRetry, waitingFor
       <h3 id="variants-title" className="view-title">
         Variants
       </h3>
-      {state.phase === "loading" && <p className="working-text">Reading the sequence of every incident…</p>}
+      {state.phase === "loading" && <p className="working-text">Reading the sequence of every case…</p>}
       {state.phase === "failed" && <ViewProblemNotice title="The variants cannot be shown" problem={state.problem} onRetry={onRetry} waitingFor={waitingFor} />}
       {state.phase === "ready" && (
         <VariantList key={state.answer.request_id} answer={state.answer} chosen={chosen} onChoose={onChoose} onClear={onClear}
@@ -69,10 +69,10 @@ interface VariantListProps {
 export function inventoryLine(summary: VariantsAnswer["variants"], listed: number): string {
   const inVariants = summary.variants.reduce((total, variant) => total + variant.case_count, 0);
   const notShown = summary.variants.slice(listed).reduce((total, variant) => total + variant.case_count, 0);
-  const parts = [`${countOf(inVariants, "incident")} in ${countOf(summary.variant_count, "variant")}`];
-  if (listed < summary.variant_count) parts[0] += ` (${countOf(summary.variant_count - listed, "variant")} with ${countOf(notShown, "incident")} not shown yet)`;
-  if (summary.unevaluable.case_count > 0) parts.push(`${countOf(summary.unevaluable.case_count, "incident")} with no known order`);
-  return `${parts.join(" and ")}: ${countOf(summary.case_count, "incident")} counted exactly, none sampled.`;
+  const parts = [`${countOf(inVariants, "case")} in ${countOf(summary.variant_count, "variant")}`];
+  if (listed < summary.variant_count) parts[0] += ` (${countOf(summary.variant_count - listed, "variant")} with ${countOf(notShown, "case")} not shown yet)`;
+  if (summary.unevaluable.case_count > 0) parts.push(`${countOf(summary.unevaluable.case_count, "case")} with no known order`);
+  return `${parts.join(" and ")}: ${countOf(summary.case_count, "case")} counted exactly, none sampled.`;
 }
 
 function VariantList({ answer, chosen, onChoose, onClear, actions, onSimilar, similarTo = null }: VariantListProps) {
@@ -95,12 +95,12 @@ function VariantList({ answer, chosen, onChoose, onClear, actions, onSimilar, si
     <div ref={root}>
       <p className="muted view-hint">
         Each variant is one actual sequence of labelled activities in the declared order, repeats included. Shares are of the{" "}
-        {countOf(summary.sequence_evaluable_case_count, "incident")} whose order is known, among the incidents opened, whatever steps the selection takes.
+        {countOf(summary.sequence_evaluable_case_count, "case")} whose order is known, among the cases opened, whatever steps the selection takes.
       </p>
       <p className="muted view-hint variant-inventory">{inventoryLine(summary, listed.length)}</p>
       {summary.unevaluable.case_count > 0 && (
         <p className="order-note">
-          {countOf(summary.unevaluable.case_count, "incident")} {summary.unevaluable.case_count === 1 ? "has" : "have"} no known order and{" "}
+          {countOf(summary.unevaluable.case_count, "case")} {summary.unevaluable.case_count === 1 ? "has" : "have"} no known order and{" "}
           {summary.unevaluable.case_count === 1 ? "is" : "are"} in no variant.
         </p>
       )}
@@ -111,20 +111,20 @@ function VariantList({ answer, chosen, onChoose, onClear, actions, onSimilar, si
         </p>
       )}
       {summary.variants.length === 0 ? (
-        <p className="working-text">No incident here has a known order, so there is no variant to show.</p>
+        <p className="working-text">No case here has a known order, so there is no variant to show.</p>
       ) : (
         <>
           <p className="muted view-hint">
             {listed.length < summary.variant_count
               ? `Showing ${listed.length} of ${countOf(summary.variant_count, "variant")}.`
               : `${countOf(summary.variant_count, "variant")}.`}{" "}
-            Listing a variant's incidents in the table is a view: the population and every count stay as they are.
-            {actions && " Keeping a variant is a step: it keeps the incidents whose complete sequence is exactly that one."}
+            Listing a variant's cases in the table is a view: the population and every count stay as they are.
+            {actions && " Keeping a variant is a step: it keeps the cases whose complete sequence is exactly that one."}
           </p>
           {actions && (
             <p className="muted view-hint">Only a whole sequence can be kept here. Partial patterns, wildcards, gaps and “not followed by” are not available.</p>
           )}
-          <ol className="variant-list" aria-label="Variants, most incidents first">
+          <ol className="variant-list" aria-label="Variants, most cases first">
             {listed.map((variant, index) => (
               <VariantItem
                 key={variant.id}
@@ -166,8 +166,8 @@ interface VariantItemProps {
 }
 
 function VariantItem({ variant, rank, chosen, onToggle, actions, pending, onPreview, onSettle, onSimilar, similar = false }: VariantItemProps) {
-  const incidents = countOf(variant.case_count, "incident");
-  const described = `${variant.case_count} of ${variant.denominator} incidents whose order is known (${percent(variant.share)})`;
+  const incidents = countOf(variant.case_count, "case");
+  const described = `${variant.case_count} of ${variant.denominator} cases whose order is known (${percent(variant.share)})`;
   const steps = variant.activities.length;
   return (
     <li className={chosen ? "variant chosen" : "variant"}>
@@ -180,7 +180,7 @@ function VariantItem({ variant, rank, chosen, onToggle, actions, pending, onPrev
           <span className="visually-hidden">{described}</span>
         </span>
         <button type="button" aria-pressed={chosen} aria-label={`List the ${incidents} of variant ${rank} in the table`} onClick={onToggle}>
-          {chosen ? "Listed" : "List incidents"}
+          {chosen ? "Listed" : "List cases"}
         </button>
         {actions && (
           <button type="button" data-variant-preview={variant.id} disabled={actions.waitingFor !== undefined || pending} aria-describedby={actions.waitingFor}
@@ -190,13 +190,13 @@ function VariantItem({ variant, rank, chosen, onToggle, actions, pending, onPrev
           </button>
         )}
         {onSimilar && (
-          <button type="button" aria-pressed={similar} aria-label={`Incidents with a sequence similar to variant ${rank}`} onClick={onSimilar}>
+          <button type="button" aria-pressed={similar} aria-label={`Cases with a sequence similar to variant ${rank}`} onClick={onSimilar}>
             Similar sequences
           </button>
         )}
       </div>
       {steps === 0 ? (
-        <p className="missing-text">No labelled activity: every record of these incidents lacks an activity label.</p>
+        <p className="missing-text">No labelled activity: every record of these cases lacks an activity label.</p>
       ) : (
         <ol className="variant-steps" aria-label={`Sequence of variant ${rank}, ${countOf(steps, "step")}`}>
           {variant.activities.map((activity, index) => (

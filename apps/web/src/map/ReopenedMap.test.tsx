@@ -189,9 +189,9 @@ describe("a process map reopened with a saved selection", () => {
       steps: [contains(opened)], answer: { identity: app.selectedIdentity, parent_identity: app.parentIdentity, kept: support(app.selectedIds, keptRecords) },
     });
     // The real defect leaves this spinner forever even though the selected answer is ready.
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(node(map, opened)).not.toBeNull());
-    expect(screen.queryByText("Selecting the incidents and drawing their map…")).toBeNull();
+    expect(screen.queryByText("Selecting the cases and drawing their map…")).toBeNull();
     expect(app.coordinator.getState().parentGraph?.meta).toMatchObject({ selected_case_ids: parentIds, raw_record_count: parentRecords });
     expect(app.graphs).toEqual(expect.arrayContaining([expect.objectContaining({ identity: app.parentIdentity })]));
     expect(app.graphs.every((request) => request.query_revision === shownSelection(app.coordinator.getState().selection)!.revision)).toBe(true);
@@ -222,7 +222,7 @@ describe("a process map reopened with a saved selection", () => {
   it("also renders a zero-step saved subset using that subset as its parent", async () => {
     const parentIds = ["A-1", "B-2"];
     const app = await restored(parentIds, false);
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(node(map, opened)).not.toBeNull());
     expect(app.coordinator.getState().parentGraph?.meta).toMatchObject({ selected_case_ids: parentIds, raw_record_count: 3 });
     expect(shownSelection(app.coordinator.getState().selection)).toMatchObject({ steps: [], answer: { identity: app.parentIdentity, kept: support(parentIds, 3) } });

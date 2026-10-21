@@ -231,10 +231,10 @@ class RecordDocuments:
             return _refused(given, code, resolved.message, resolved.field)
         prepared, population = resolved
         if given["case_id"] not in set(population.case_ids):
-            return _refused(given, "unknown_case", "This incident is not in the population.", "case_id")
+            return _refused(given, "unknown_case", "This case is not in the population.", "case_id")
         record = next((row for row in prepared.histories[given["case_id"]] if row.row_id == given["row_id"]), None)
         if record is None:
-            return _refused(given, "unknown_record", "This record is not in the incident.", "row_id")
+            return _refused(given, "unknown_record", "This record is not in the case.", "row_id")
         return prepared, record
 
     def _document(self, workspace: Workspace, prepared, record) -> dict:

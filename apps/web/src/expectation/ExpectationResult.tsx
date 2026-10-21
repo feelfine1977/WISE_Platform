@@ -37,13 +37,13 @@ export function ExpectationResult({ run: state, chosen, populationId, openCaseId
       {state.phase === "idle" && <p className="expectation-muted">Check a reviewed definition and score it to see the result.</p>}
       {state.phase === "loading" && (
         <p role="status" className="expectation-status">
-          {state.request.message_type === "read_score_run_request" ? "Opening the saved score run…" : run ? "Scoring again; the result below is the previous run." : "The method library is scoring the incidents…"}
+          {state.request.message_type === "read_score_run_request" ? "Opening the saved score run…" : run ? "Scoring again; the result below is the previous run." : "The method library is scoring the cases…"}
         </p>
       )}
       {state.phase === "failed" && (
         <ExpectationProblem
           title={state.request.message_type === "read_score_run_request" ? "The saved score run could not be opened"
-            : run ? "The incidents could not be scored again; the previous run is still shown" : "The incidents could not be scored"}
+            : run ? "The cases could not be scored again; the previous run is still shown" : "The cases could not be scored"}
           problem={state.problem}
           onRetry={onRetry}
         />
@@ -82,33 +82,33 @@ function RunView({ run, chosen, otherPopulation, openCaseId, onChoose, onClear, 
   return (
     <>
       <p className="expectation-muted">
-        Run of {run.named_population.name}: {countOf(run.population.case_count, "incident")} with{" "}
+        Run of {run.named_population.name}: {countOf(run.population.case_count, "case")} with{" "}
         {countOf(run.population.record_count, "record")}, scored with “{definition.name}”, revision {definition.definition_revision}.
       </p>
       {otherPopulation && (
         <p className="expectation-note">
-          The investigation now shows other incidents. This run stays as it was scored; score again to score the incidents shown now.
+          The investigation now shows other cases. This run stays as it was scored; score again to score the cases shown now.
         </p>
       )}
-      <StateGroup label="Incidents by how they meet the expectation" states={states} counts={counts} chosen={chosen} onChoose={onChoose} />
-      <StateGroup label="Incidents without an endpoint" states={endpointStates} counts={counts} chosen={chosen} onChoose={onChoose} />
+      <StateGroup label="Cases by how they meet the expectation" states={states} counts={counts} chosen={chosen} onChoose={onChoose} />
+      <StateGroup label="Cases without an endpoint" states={endpointStates} counts={counts} chosen={chosen} onChoose={onChoose} />
       <p className="expectation-muted">
-        Every number counts incidents of this run.{" "}
+        Every number counts cases of this run.{" "}
         {definition.missing_response === "violate"
-          ? "An incident without the response counts as not met, so it is counted both under “Do not meet it” and under “Without the response”."
-          : "An incident without the start or without the response gets no value."}
+          ? "A case without the response counts as not met, so it is counted both under “Do not meet it” and under “Without the response”."
+          : "A case without the start or without the response gets no value."}
       </p>
       <h4 id="expectation-table-title" className="expectation-section-title">
-        {chosen === null ? "Incidents, worst first" : `Incidents ${stateWords[chosen].listed}, worst first`}
+        {chosen === null ? "Cases, worst first" : `Cases ${stateWords[chosen].listed}, worst first`}
       </h4>
       {chosen !== null && (
         <div className="expectation-note" role="status">
           <p>
-            The table lists the {countOf(counts[chosen], "incident")} {stateWords[chosen].listed}. This is a view of the run: the run and every count
+            The table lists the {countOf(counts[chosen], "case")} {stateWords[chosen].listed}. This is a view of the run: the run and every count
             stay as they are, and nothing is scored again.
           </p>
           <button type="button" onClick={onClear}>
-            Show every incident
+            Show every case
           </button>
         </div>
       )}
@@ -140,14 +140,14 @@ function StateGroup({ label, states, counts, chosen, onChoose }: StateGroupProps
 
 function IncidentRows({ cases, openCaseId, onOpen }: { cases: readonly CaseVerdict[]; openCaseId: CaseId | null; onOpen: (caseId: CaseId) => void }) {
   const [limit, setLimit] = useState(ROWS_LISTED);
-  if (cases.length === 0) return <p className="expectation-muted">No incident of the run is in this state.</p>;
+  if (cases.length === 0) return <p className="expectation-muted">No case of the run is in this state.</p>;
   const shown = cases.slice(0, limit);
   return (
     <>
       <table className="expectation-table" aria-labelledby="expectation-table-title">
         <thead>
           <tr>
-            <th scope="col">Incident</th>
+            <th scope="col">Case</th>
             <th scope="col">Value</th>
             <th scope="col">State</th>
             <th scope="col">Measured time</th>
@@ -174,7 +174,7 @@ function IncidentRows({ cases, openCaseId, onOpen }: { cases: readonly CaseVerdi
         </tbody>
       </table>
       <p className="expectation-muted">
-        Listing {countOf(shown.length, "incident")} of {cases.length.toLocaleString("en-GB")}.
+        Listing {countOf(shown.length, "case")} of {cases.length.toLocaleString("en-GB")}.
       </p>
       {shown.length < cases.length && (
         <button type="button" onClick={() => setLimit((current) => current + ROWS_LISTED)}>

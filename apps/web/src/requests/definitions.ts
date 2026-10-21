@@ -31,10 +31,10 @@ const listed = (activities: readonly string[]) =>
 export function definitionWords(draft: RequestsDraft, columnName: (index: number) => string): string {
   const turn = draft.turn ? ` recorded while ${columnName(draft.turn.column)} is “${draft.turn.value}”` : "";
   const matter = draft.gapHours === null
-    ? "The whole recorded history of an incident is one matter."
-    : `A record more than ${draft.gapHours.toLocaleString("en")} hours after the record before it starts a new matter, and only the latest matter of an incident is read.`;
+    ? "The whole recorded history of a case is one matter."
+    : `A record more than ${draft.gapHours.toLocaleString("en")} hours after the record before it starts a new matter, and only the latest matter of a case is read.`;
   return `A request is a record of ${listed(draft.requests)}${turn}; an answer is a record of ${listed(draft.answers)}. ${matter} ` +
-    "An incident is listed when its last request in that matter has no later answer in the records of the export.";
+    "A case is listed when its last request in that matter has no later answer in the records of the export.";
 }
 
 /** The definition as the local service reads it. */

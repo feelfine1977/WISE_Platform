@@ -18,6 +18,8 @@
  * most the height of the notes and scrolls there, so the map keeps the rest.
  */
 .map-legend { grid-row: 3; position: relative; min-width: 0; max-height: var(--size-map-notes); overflow: auto; border-top: var(--line-width) solid var(--color-line); }
+/* Under the legend, a button for each stage brings it into view on a map larger than its frame: one row, in the small size. */
+.map-legend-stages { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); padding: 0 var(--space-4) var(--space-1); font-size: var(--font-size-small); }
 .map-legend .wf-legend {
   max-width: none;
   padding: var(--space-1) var(--space-4);

@@ -28,7 +28,7 @@ const check = (name, passed, detail) => { checks[name] = Boolean(passed); assert
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const areas = page.getByRole('navigation', {name: 'Areas'});
 const view = name => page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name, exact: true});
-const order = name => page.getByRole('group', {name: 'Order of the incidents'}).getByRole('button', {name, exact: true});
+const order = name => page.getByRole('group', {name: 'Order of the cases'}).getByRole('button', {name, exact: true});
 const table = () => page.locator('.incident-table table.window-table');
 const listed = () => table().locator('tbody tr th button.row-open').allTextContents();
 const focus = () => page.locator('section.incident-focus');
@@ -51,7 +51,7 @@ try {
   await areas.getByRole('button', {name: 'Data', exact: true}).click();
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, incidents);
-  await view('Incidents').click();
+  await view('Cases').click();
 
   // Every order of the oracle, either way round: equal values by number, unavailable values last.
   for (const [label, field, first, second] of ORDERS) {
@@ -111,14 +111,14 @@ try {
 
   // The search narrows only the rows shown, in the same order; the counts and the distribution are unchanged.
   const whole = lists.at(-1);
-  await page.getByRole('searchbox', {name: 'Incident number contains'}).fill(expected.search.text);
+  await page.getByRole('searchbox', {name: 'Case number contains'}).fill(expected.search.text);
   await page.getByRole('button', {name: 'Find', exact: true}).click();
   check('search_in_the_same_order', same(await shows(expected.search.span_descending), expected.search.span_descending), await listed());
   const found = lists.at(-1);
   check('search_keeps_counts_and_distribution', found.query.search_text === expected.search.text && found.population_case_count === whole.population_case_count
     && same(found.distribution, whole.distribution) && same(found.identity, whole.identity), [found.population_case_count, whole.population_case_count]);
-  check('search_said', (await page.getByRole('status').filter({hasText: 'kept incidents of'}).textContent()).startsWith(`2 kept incidents of ${incidents} have “${expected.search.text}” in their numbers.`), null);
-  await page.getByRole('button', {name: 'Show every kept incident', exact: true}).click();
+  check('search_said', (await page.getByRole('status').filter({hasText: 'kept cases of'}).textContent()).startsWith(`2 kept cases of ${incidents} have “${expected.search.text}” in their numbers.`), null);
+  await page.getByRole('button', {name: 'Show every kept case', exact: true}).click();
   check('search_cleared', same(await shows(expected.orders['observed_span_hours descending']), expected.orders['observed_span_hours descending']), null);
   assert.deepEqual(errors, []);
   await writeFile(output, JSON.stringify({checks}));
