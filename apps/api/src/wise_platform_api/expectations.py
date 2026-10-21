@@ -288,7 +288,7 @@ class Expectations:
         verdict = next((case for case in run["cases"] if case["case_id"] == given["case_id"]), None)
         if verdict is None:
             raise Refused(
-                _refused(WITNESS, "case_not_found", "This incident was not scored in this run.", given, "case_id")
+                _refused(WITNESS, "case_not_found", "This case was not scored in this run.", given, "case_id")
             )
         base = run["identity"]["base_identity"]
         found = self._imports.prepared_snapshot(workspace, base["preparation_id"], "run_id")
@@ -388,7 +388,7 @@ class Expectations:
                 _refused(
                     operation,
                     "identity_mismatch",
-                    "The base identity is not the population of this preparation as it was opened. Open the incidents "
+                    "The base identity is not the population of this preparation as it was opened. Open the cases "
                     "of the preparation again.",
                     given,
                     "base_identity",
@@ -425,7 +425,7 @@ class Expectations:
                 _refused(
                     operation,
                     "population_unavailable",
-                    "This selected population is not known to the application any more. Select the incidents again.",
+                    "This selected population is not known to the application any more. Select the cases again.",
                     given,
                     "named_population.identity.population_id",
                 )
@@ -435,7 +435,7 @@ class Expectations:
                 _refused(
                     operation,
                     "identity_mismatch",
-                    "The identity does not match the population it names. Select the incidents again.",
+                    "The identity does not match the population it names. Select the cases again.",
                     given,
                     "named_population.identity",
                 )
@@ -459,7 +459,7 @@ def _preparation_gate(operation: str, prepared: PreparedData, population: NamedP
             _refused(
                 operation,
                 "empty_population",
-                "The named population has no incident, so there is nothing to score. Choose a population with incidents.",
+                "The named population has no case, so there is nothing to score. Choose a population with cases.",
                 given,
                 "named_population",
             )
@@ -471,8 +471,8 @@ def _preparation_gate(operation: str, prepared: PreparedData, population: NamedP
                 operation,
                 "unevaluable_sequence",
                 f"The order of {_incidents(unevaluable)} of this population cannot be evaluated: a record has no "
-                "usable time. Nothing was scored. Inspect the data quality of these incidents, or choose a population "
-                "without them, for example by selecting the incidents whose order can be evaluated.",
+                "usable time. Nothing was scored. Inspect the data quality of these cases, or choose a population "
+                "without them, for example by selecting the cases whose order can be evaluated.",
                 given,
                 "named_population",
                 unevaluable,
@@ -540,7 +540,7 @@ def _check_blockers(issues: Sequence[str], definition: Mapping[str, Any]) -> lis
             Blocker(
                 "invalid_parameter",
                 where,
-                f"The method library's check of this definition against the incidents of this population: {issue}. "
+                f"The method library's check of this definition against the cases of this population: {issue}. "
                 "Choose another activity, or a population in which it occurs.",
             )
         )
@@ -678,7 +678,7 @@ def _local_text(moment: datetime) -> str:
 def _incidents(case_ids: Sequence[str]) -> str:
     named = ", ".join(case_ids[:_LISTED])
     more = len(case_ids) - _LISTED
-    count = f"{len(case_ids)} incident" + ("" if len(case_ids) == 1 else "s")
+    count = f"{len(case_ids)} case" + ("" if len(case_ids) == 1 else "s")
     return f"{count} ({named}{f' and {more} more' if more > 0 else ''})"
 
 

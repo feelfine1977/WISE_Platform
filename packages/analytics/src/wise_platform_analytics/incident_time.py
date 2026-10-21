@@ -32,10 +32,10 @@ def incident_time_diagnostics(prepared: _DiagnosticPreparation, case_id: str) ->
     value cannot become a successful unknown-order answer.
     """
     if case_id not in prepared.histories:
-        raise CaseTimeError("unknown_case", "The incident is outside this preparation's case dictionary.")
+        raise CaseTimeError("unknown_case", "The case is outside this preparation's case dictionary.")
     records = prepared.histories[case_id]
     if not records or len({record.row_id for record in records}) != len(records):
-        raise CaseTimeError("inconsistent_sequence", "An incident must retain distinct complete raw records.")
+        raise CaseTimeError("inconsistent_sequence", "A case must retain distinct complete raw records.")
     kind = _clock_kind(prepared)
     times = _native_times(records, kind)
     formatter = iso_local if kind == "wall_clock" else iso_utc

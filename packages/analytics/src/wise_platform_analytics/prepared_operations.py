@@ -32,7 +32,7 @@ def open_prepared_case(prepared: PreparedData, identity: Mapping[str, object], c
     if not isinstance(identity, Mapping) or dict(identity) != expected:
         return ImportRefusal("identity_mismatch", "The supplied identity does not match this prepared population.", "identity")
     if not isinstance(case_id, str) or case_id not in prepared.histories:
-        return ImportRefusal("case_not_found", "This incident is not in the prepared population.", "case_id")
+        return ImportRefusal("case_not_found", "This case is not in the prepared population.", "case_id")
     rows = prepared.histories[case_id]
     return {"identity": expected, "case_id": case_id, "coverage": _coverage(rows),
             "columns": [{"index": index, "name": name} for index, name in enumerate(prepared.columns)],

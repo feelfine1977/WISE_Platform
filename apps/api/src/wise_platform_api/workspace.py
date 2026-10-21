@@ -142,7 +142,7 @@ class Workspace:
             return Problem(
                 "workspace_unavailable",
                 "Give the full path of the folder, beginning with its drive or root, "
-                "for example D:\\Investigations\\Incidents.",
+                "for example D:\\Investigations\\Cases.",
                 "path",
             )
         try:

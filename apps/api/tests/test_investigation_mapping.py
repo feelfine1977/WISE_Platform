@@ -208,7 +208,7 @@ def test_an_incident_id_longer_than_the_contract_carries_is_a_malformed_source(t
 
     assert (answer["request_id"], answer["query_revision"]) == ("long-1", 2)
     assert answer["retryable"] is False
-    assert "incident id" in answer["message"]
+    assert "case id" in answer["message"]
     assert "L" * 257 not in answer["message"]
 
 

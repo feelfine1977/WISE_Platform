@@ -30,11 +30,11 @@ _CUTOFF = datetime(2026, 10, 2, tzinfo=timezone.utc)
 CATALOG: Mapping[str, Example] = {
     example.example_id: example
     for example in (
-        Example("S0", "Synthetic example S0: fictional IT incidents", _CUTOFF),
-        Example("S1", "Synthetic example S1: fictional IT incidents, one reopened", _CUTOFF),
+        Example("S0", "Synthetic example S0: fictional IT cases", _CUTOFF),
+        Example("S1", "Synthetic example S1: fictional IT cases, one reopened", _CUTOFF),
         Example(
             "S2",
-            "Synthetic example S2: fictional IT incidents with missing activity labels "
+            "Synthetic example S2: fictional IT cases with missing activity labels "
             "and equal timestamps",
             _CUTOFF,
         ),

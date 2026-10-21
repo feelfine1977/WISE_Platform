@@ -160,7 +160,7 @@ def opening_context(prepared: PreparedData, population_ids: Iterable[str], paren
     except SelectionError as error:
         return ImportRefusal(error.code, str(error), "case_ids")
     if not set(population) <= set(parent):
-        return ImportRefusal("invalid_parent", "The population holds incidents outside its parent population.",
+        return ImportRefusal("invalid_parent", "The population holds cases outside its parent population.",
                              "case_ids")
     columns: Sequence[int] = tuple(prepared.mapping["context_columns"])
     if not columns:

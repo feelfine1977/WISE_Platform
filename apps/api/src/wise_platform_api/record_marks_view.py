@@ -33,7 +33,7 @@ class MarksReply:
 
 def refused(code: str, message: str, given: dict, field: str | None = None) -> MarksReply:
     if code not in STATUS:
-        code, message, field = "computation_failed", "The records of these incidents could not be read from this preparation.", None
+        code, message, field = "computation_failed", "The records of these cases could not be read from this preparation.", None
     body = RecordMarksRefusal(schema_version=SCHEMA_VERSION, message_type="record_marks_refusal", **import_echo(given),
         operation="record_marks", code=code, message=message, field=field, retryable=code in RETRYABLE).model_dump(mode="json")
     return MarksReply(STATUS[code], body)
@@ -72,7 +72,7 @@ class RecordMarks:
             kept = set(population.case_ids)
             outside = [case_id for case_id in given["case_ids"] if case_id not in kept]
             if outside:
-                return refused("case_not_in_population", f"“{outside[0]}” is not one of the incidents shown.", given, "case_ids")
+                return refused("case_not_in_population", f"“{outside[0]}” is not one of the cases shown.", given, "case_ids")
             answer = {"schema_version": SCHEMA_VERSION, "message_type": "record_marks_answer", "request_id": given["request_id"],
                       "query_revision": given["query_revision"], "workspace_id": given["workspace_id"], "identity": population.identity,
                       **marks(prepared, given["case_ids"])}
@@ -82,4 +82,4 @@ class RecordMarks:
             return MarksReply(200, answer)
         except Exception:
             logger.exception("The record marks failed unexpectedly")
-            return refused("computation_failed", "The records of these incidents could not be read. Retry; if it fails again, the application needs repair.", given)
+            return refused("computation_failed", "The records of these cases could not be read. Retry; if it fails again, the application needs repair.", given)

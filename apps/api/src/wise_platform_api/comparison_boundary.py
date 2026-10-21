@@ -236,7 +236,7 @@ def _weaker_than_the_contract(message: dict, parsed: BaseModel) -> list[Failure]
                     )
     for path, ids in lists:
         if isinstance(ids, list) and len(set(ids)) != len(ids):
-            failures.append((path, "an incident id is listed more than once"))
+            failures.append((path, "a case id is listed more than once"))
     return failures
 
 

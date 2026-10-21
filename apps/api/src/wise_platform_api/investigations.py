@@ -305,7 +305,7 @@ def _not_carried(answer: AnalyticsPopulation) -> str | None:
             reason = error.errors(include_url=False)[0]["msg"]
             shown = case_id if len(case_id) <= _SHOWN_LENGTH else case_id[:_SHOWN_LENGTH] + "..."
             return (
-                f"has an incident id the contract cannot carry "
+                f"has a case id the contract cannot carry "
                 f"({reason[0].lower()}{reason[1:]}): {shown!r}."
             )
     return None

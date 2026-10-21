@@ -130,13 +130,13 @@ def open_case(
     if history is None:
         return Refusal(
             RefusalCode.UNKNOWN_CASE,
-            f"The source has no incident {case_id!r}.",
+            f"The source has no case {case_id!r}.",
             {"case_id": case_id, "population_id": computed.population_id},
         )
     if case_id not in resolved.partition:
         return Refusal(
             RefusalCode.CASE_NOT_IN_POPULATION,
-            f"The incident {case_id!r} is outside the parent population.",
+            f"The case {case_id!r} is outside the parent population.",
             {"case_id": case_id, "population_id": computed.population_id},
         )
 

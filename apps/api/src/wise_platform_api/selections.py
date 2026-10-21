@@ -107,8 +107,8 @@ class Selections:
             return _refused(
                 SELECT_CASES,
                 "identity_mismatch",
-                "Incidents are selected from the population of a preparation as it was opened; this identity "
-                "is not that population. Open the incidents of the preparation again.",
+                "Cases are selected from the population of a preparation as it was opened; this identity "
+                "is not that population. Open the cases of the preparation again.",
                 given,
                 "identity",
             )
@@ -152,7 +152,7 @@ class Selections:
                 return _refused(
                     PROCESS_GRAPH,
                     "population_unavailable",
-                    "This selected population is not known to the application any more. Select the incidents again.",
+                    "This selected population is not known to the application any more. Select the cases again.",
                     given,
                     "identity.population_id",
                 )
@@ -162,7 +162,7 @@ class Selections:
             return _refused(
                 PROCESS_GRAPH,
                 "identity_mismatch",
-                "The identity does not match the population it names. Select the incidents again.",
+                "The identity does not match the population it names. Select the cases again.",
                 given,
                 "identity",
             )

@@ -113,7 +113,7 @@ def validate_rule_groups_query(query: object) -> ImportRefusal | None:
             )
         if not _safe_integer(rule["minimum_parent_case_count"], 2):
             return invalid(
-                "A shared reference needs at least two parent incidents.",
+                "A shared reference needs at least two parent cases.",
                 "query.rule.minimum_parent_case_count",
             )
         if rule.get("policy", "any_record") not in REFERENCE_POLICIES:
@@ -348,7 +348,7 @@ def rule_groups(
         if not current <= set(parent):
             return ImportRefusal(
                 "identity_mismatch",
-                "The current incidents are outside their frozen parent.",
+                "The current cases are outside their frozen parent.",
                 "identity.population_id",
             )
         base = prepared.identity_dict()

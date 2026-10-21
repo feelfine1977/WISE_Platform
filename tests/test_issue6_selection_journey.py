@@ -51,7 +51,7 @@ def test_preview_commit_open_return_and_undo_keep_exact_identities(client, works
     refused = client.post("/api/investigations/case-evidence", json=envelope("imported_case_evidence_request", workspace_id=workspace["workspace_id"],
                                                                              identity=both["identity"], case_id=removed))
     assert refused.status_code == 404 and refused.json()["code"] == "case_not_found", refused.text
-    assert refused.json()["message"] == "This incident is not in the selected kept population."
+    assert refused.json()["message"] == "This case is not in the selected kept population."
     # Return to the incidents changes nothing; undo gives back exactly the earlier identities, step by step.
     undone = asked(client, workspace, reading, [EAST], "select-3", 7)
     assert undone["identity"] == first["identity"] and partition(undone) == EXPECTED["any_record_East"]

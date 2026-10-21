@@ -245,7 +245,7 @@ def _read(raw: Source, dialect: Mapping[str, object], mapping: Mapping[str, obje
             continue
         case = cells[case_column].strip() or None
         if case is not None and len(case) > 256:
-            return ImportRefusal("malformed_source", f"Source record {position} has an incident identifier exceeding the supported 256 characters.", "mapping.case_column")
+            return ImportRefusal("malformed_source", f"Source record {position} has a case identifier exceeding the supported 256 characters.", "mapping.case_column")
         activity = cells[activity_column] or None
         time_text = cells[timestamp_column]
         known = parsed_times[time_text]
@@ -272,11 +272,11 @@ def _read(raw: Source, dialect: Mapping[str, object], mapping: Mapping[str, obje
             if sequence is None:
                 issues.append(_issue(position, sequence_column, case, "invalid_sequence", "blocking", "The mapped sequence is outside the supported safe-integer range 0..9007199254740991, or is not integer text; it was not guessed."))
         if case is None:
-            issues.append(_issue(position, case_column, None, "missing_case_id", "confirmation", "This original row has no incident identifier and remains outside every case population."))
+            issues.append(_issue(position, case_column, None, "missing_case_id", "confirmation", "This original row has no case identifier and remains outside every case population."))
             excluded[position] = source_record
         if status != "usable":
             issues.append(_issue(position, timestamp_column, case, "missing_timestamp" if status == "missing" else "invalid_timestamp",
-                                 "confirmation", "This row's time is unavailable; retain raw evidence and mark the incident's sequence unevaluable."))
+                                 "confirmation", "This row's time is unavailable; retain raw evidence and mark the case's sequence unevaluable."))
         if activity is None:
             issues.append(_issue(position, activity_column, case, "missing_activity", "warning", "The missing label is omitted only from the mapped sequence; its source row remains."))
         records.append(PreparedRecord(

@@ -45,7 +45,7 @@ def validate_incident_time_answer(body: dict, prepared: PreparedData, request: M
         raise ValueError("The authorized evidence identity does not bind this preparation.")
     native = open_prepared_case(prepared, native_identity, request["case_id"])
     if not isinstance(native, dict):
-        raise ValueError("The authorized incident has no complete native evidence.")
+        raise ValueError("The authorized case has no complete native evidence.")
     expected = {"schema_version": request["schema_version"], "message_type": "imported_case_evidence_answer",
                 "request_id": request["request_id"], "query_revision": request["query_revision"],
                 "workspace_id": request["workspace_id"], **native, "identity": identity}

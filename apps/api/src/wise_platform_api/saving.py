@@ -180,8 +180,8 @@ class Saving:
             item("source", content["base_identity"]["source_id"], prepared.identity_dict()["source_id"]),
             item("binding", before_descriptor.get("mapping"), after_descriptor.get("mapping")),
             item("clock", (before_descriptor.get("policies") or {}).get("time"), (after_descriptor.get("policies") or {}).get("time")),
-            item("parent", f"{old_parent.get('case_count')} incidents", f"{parent.parent.case_count} incidents"),
-            item("selection", f"{(old_selection.get('kept') or {}).get('case_count')} incidents kept", f"{selection.kept.case_count} incidents kept"),
+            item("parent", f"{old_parent.get('case_count')} cases", f"{parent.parent.case_count} cases"),
+            item("selection", f"{(old_selection.get('kept') or {}).get('case_count')} cases kept", f"{selection.kept.case_count} cases kept"),
         ]
         if content.get("comparison") is not None:
             review.append(item("comparison", "saved comparison", None, "to_review"))
@@ -450,7 +450,7 @@ class Saving:
                 return Problem(
                     "identity_mismatch",
                     f"The selection belongs to another {_IDENTITY_NAMES[name]} than the base population "
-                    f"({named[name]} instead of {base[name]}). Select the incidents of this preparation again.",
+                    f"({named[name]} instead of {base[name]}). Select the cases of this preparation again.",
                     f"selection_identity.{name}",
                 )
         bpic = content.get("bpic19_pipeline") is not None
@@ -479,7 +479,7 @@ class Saving:
                 return Problem(
                     "identity_mismatch",
                     f"The {_IDENTITY_NAMES[name]} of the preparation is {computed[name]}, not the saved "
-                    f"{base[name]}. Open the incidents of this preparation again.",
+                    f"{base[name]}. Open the cases of this preparation again.",
                     f"base_identity.{name}",
                 )
         recipe = content["selection_recipe"]
@@ -497,9 +497,9 @@ class Saving:
         if selection.identity_dict() != named:
             return Problem(
                 "selection_mismatch",
-                f"The selection steps on their parent keep {selection.kept.case_count} incidents as population "
+                f"The selection steps on their parent keep {selection.kept.case_count} cases as population "
                 f"{selection.population_id}, not the population {named['population_id']} named as the selection. "
-                "Select the incidents again.",
+                "Select the cases again.",
                 "selection_identity.population_id",
             )
         comparison = _comparison(prepared, base, content.get("comparison"))
@@ -711,7 +711,7 @@ def _described_problem(prepared: PreparedData, recipe: Mapping[str, object], con
             except SelectionError as error:
                 return Problem("comparison_mismatch", f"The steps describing the comparison's parent cannot be applied: {error}", "comparison_parent.retained_predicates")
             if list(kept) != sorted(comparison["parent_case_ids"]):
-                return Problem("comparison_mismatch", "The steps describing the comparison's parent do not keep exactly its incidents. Compare again, then save.",
+                return Problem("comparison_mismatch", "The steps describing the comparison's parent do not keep exactly its cases. Compare again, then save.",
                                "comparison_parent.retained_predicates")
     outcome = content.get("outcome")
     if outcome is not None and outcome["context_column_index"] not in prepared.mapping["context_columns"]:
@@ -745,14 +745,14 @@ def _bookmark_problem(
             return Problem(
                 "invalid_bookmark",
                 f"The bookmark {bookmark['label']!r} names a population that is not the base population, the parent, "
-                "the selection or a compared group of this investigation. Remove it or bookmark the incident again.",
+                "the selection or a compared group of this investigation. Remove it or bookmark the case again.",
                 f"{at}.identity",
             )
         if bookmark["case_id"] not in named[1]:
             return Problem(
                 "invalid_bookmark",
-                f"The bookmark {bookmark['label']!r} names the incident {bookmark['case_id']!r}, which is not in the "
-                "population it names. Remove it or bookmark the incident again.",
+                f"The bookmark {bookmark['label']!r} names the case {bookmark['case_id']!r}, which is not in the "
+                "population it names. Remove it or bookmark the case again.",
                 f"{at}.case_id",
             )
         rows = {record.row_id for record in prepared.histories[bookmark["case_id"]]}
@@ -761,7 +761,7 @@ def _bookmark_problem(
             return Problem(
                 "invalid_bookmark",
                 f"The bookmark {bookmark['label']!r} names the row {foreign[0]}, which is not a record of the "
-                f"incident {bookmark['case_id']!r}. Remove it or bookmark the records again.",
+                f"case {bookmark['case_id']!r}. Remove it or bookmark the records again.",
                 f"{at}.row_ids",
             )
     return None
@@ -818,7 +818,7 @@ def _differing_results(saved: StoredRevision, question: Question) -> Problem | N
         if saved.results.get(part) != now[part]:
             return Problem(
                 code,
-                f"Recomputed from the stored source, the {part} of this investigation has other incidents or records "
+                f"Recomputed from the stored source, the {part} of this investigation has other cases or records "
                 "than when it was saved, so it is not shown as the saved state. Open the source again and save a "
                 "new investigation.",
             )
@@ -916,7 +916,7 @@ def _recovery(stored: object, base_identity: Mapping[str, object] | None = None)
                 {
                     "code": "presentation_invalid",
                     "message": "The saved view and sort order could not be read; the investigation opens in the "
-                    "incident table instead. The incidents and every count are as saved.",
+                    "case table instead. The cases and every count are as saved.",
                 }
             ],
         }
@@ -930,7 +930,7 @@ def _recovery(stored: object, base_identity: Mapping[str, object] | None = None)
         if problem is not None:
             kept.pop(key, None)
             warnings.append({"code": code, "message": f"{what} {'were' if key == 'stages' else 'was'} not applied: " + problem[0][0].lower() + problem[0][1:]
-                             + " The incidents and every count are as saved."})
+                             + " The cases and every count are as saved."})
     return {"presentation_state": kept if warnings else stored, "warnings": warnings}
 
 

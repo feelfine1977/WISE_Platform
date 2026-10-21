@@ -247,7 +247,7 @@ def score(compiled: CompiledNorm, log: Any, case_ids: Sequence[str], unit: str) 
     for case_id in case_ids:
         value = _number(values[case_id])
         if value is not None and not 0 <= value <= 1:
-            raise MethodContractError(f"The method library gave incident {case_id!r} a value outside 0 to 1.")
+            raise MethodContractError(f"The method library gave case {case_id!r} a value outside 0 to 1.")
         reason = reasons[case_id]
         activation_known = bool(has_start[case_id])
         response_known = activation_known and bool(has_response[case_id])
@@ -295,7 +295,7 @@ def _duration_problem(lag: Any, target: float, width: float) -> DefinitionProble
         return DefinitionProblem(
             "definition.width",
             "Target and width together cannot be represented as a duration in this unit: the method library adds them "
-            "to judge open incidents and cannot work with a time span this long. Enter a smaller width.",
+            "to judge open cases and cannot work with a time span this long. Enter a smaller width.",
         )
     return None
 

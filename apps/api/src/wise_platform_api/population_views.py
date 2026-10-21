@@ -137,7 +137,7 @@ def resolve_population(imports: Imports, given: dict) -> tuple[PreparedData, Pop
     selection = imports.selections.find(given["workspace_id"], identity["population_id"])
     if selection is None or selection.identity_dict() != dict(identity):
         return Problem("population_unavailable",
-            "This population is neither the parent of the preparation nor a selection the application holds. Open the incidents again or repeat the selection.",
+            "This population is neither the parent of the preparation nor a selection the application holds. Open the cases again or repeat the selection.",
             "identity.population_id")
     parent_ids = selection.parent.case_ids
     parent_identity = select_cases(prepared, (), parent_ids).identity_dict()
