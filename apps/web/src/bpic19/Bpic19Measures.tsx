@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { AnswerIdentity, Bpic19MeasuresAnswer, CaseFeatures, MeasureQuery, MeasureRoles, Milestone, RawMeasure, RepresentationGroup } from "../generated/bpic19-measures";
 import { answersBpic19Measures, httpBpic19MeasuresClient, type Bpic19MeasuresClient, type Bpic19MeasuresOutcome } from "./measures-client";
+import type { ActivityCohort } from "./measure-keep";
 import "./measures.css";
 
 const policy = "bpic19.source_witnessed_measures.v1";
@@ -49,6 +50,8 @@ export interface Bpic19MeasuresProps {
   client?: Bpic19MeasuresClient;
   onInspect: (caseId: string, rowIds?: string[]) => void;
   onKeepCases?: (caseIds: string[], label: string) => void;
+  /** Keeps one reviewed activity cohort as a typed selection step; without it, cohorts are kept as plain item lists. */
+  onKeepCohort?: (answer: Bpic19MeasuresAnswer, cohort: ActivityCohort) => void;
   onReviewed?: (answer: Bpic19MeasuresAnswer) => void;
   onRetain?: (answer: Bpic19MeasuresAnswer) => void;
   retainedQueries?: readonly { definition_id: string; label: string; query: MeasureQuery }[];
@@ -140,7 +143,7 @@ function ItemEvidence({ feature, disabled, onInspect, onKeepCases }: { feature: 
 }
 
 /** The service owns membership, measurement, classification and lineage. Drafts only describe requested definitions. */
-export function Bpic19Measures({ workspaceId, identity, revision, roles, columns, query, client = httpBpic19MeasuresClient, onInspect, onKeepCases, onReviewed, onRetain, retainedQueries, onValidityChange }: Bpic19MeasuresProps) {
+export function Bpic19Measures({ workspaceId, identity, revision, roles, columns, query, client = httpBpic19MeasuresClient, onInspect, onKeepCases, onKeepCohort, onReviewed, onRetain, retainedQueries, onValidityChange }: Bpic19MeasuresProps) {
   const heading = useId();
   const [answer, setAnswer] = useState<Bpic19MeasuresAnswer | null>(null);
   const [draft, setDraft] = useState<MeasureQuery>(() => normalized(query ?? defaults(roles), roles));
@@ -265,8 +268,8 @@ export function Bpic19Measures({ workspaceId, identity, revision, roles, columns
       <div className="bpic19-measures-scroll"><table className="plain-table"><caption>Raw-measure distributions over the complete named population</caption><thead><tr><th>Measure</th><th>Available items</th><th>Known zero items</th><th>Unavailable items</th><th>Minimum</th><th>Median</th><th>Mean</th><th>Maximum</th></tr></thead><tbody>{Object.entries(answer.summaries).map(([key, summary]) => <tr key={key}><th scope="row">{name(key)}{summary.reason && <small>{reason(summary.reason)}</small>}</th><td>{number.format(summary.available_case_count)}</td><td>{number.format(summary.zero_case_count)}</td><td>{number.format(summary.unavailable_case_count)}</td><td>{display(summary.minimum)}</td><td>{display(summary.median)}</td><td>{display(summary.mean)}</td><td>{display(summary.maximum)}</td></tr>)}</tbody></table></div>
       {cohorts && <><h3>Compare measured activity cohorts</h3><p>Presence-positive share: {cohorts.presence_fraction === null ? `unavailable · ${reason(cohorts.reason)}` : percent.format(cohorts.presence_fraction)}. Repetition-positive share: {cohorts.repeated_presence_fraction === null ? "unavailable" : percent.format(cohorts.repeated_presence_fraction)}. Both use the complete parent denominator {number.format(cohorts.denominator)}; unknown support stays visible.</p>
         <table className="plain-table"><caption>Reviewed activity operator cohorts · complete items</caption><thead><tr><th>Cohort</th><th>PO items</th><th>Full-history actions</th></tr></thead><tbody>{[
-          { label: "Positive", ids: cohorts.positive_case_ids }, { label: "Known zero", ids: cohorts.zero_case_ids }, { label: "Unavailable", ids: cohorts.unavailable_case_ids },
-        ].map(cohort => <tr key={cohort.label}><th scope="row">{cohort.label}</th><td>{number.format(cohort.ids.length)}</td><td>{onKeepCases && <button type="button" disabled={paused || !cohort.ids.length} onClick={() => onKeepCases(cohort.ids, `${reason(answer.definition.activity_operator)}: ${cohort.label.toLowerCase()}`)}>Keep {cohort.label.toLowerCase()} items</button>}{cohort.ids[0] && <button type="button" disabled={paused} onClick={() => onInspect(cohort.ids[0])}>Inspect {cohort.label.toLowerCase()} item</button>}</td></tr>)}</tbody></table>
+          { label: "Positive", ids: cohorts.positive_case_ids, cohort: "positive" as const }, { label: "Known zero", ids: cohorts.zero_case_ids, cohort: "zero" as const }, { label: "Unavailable", ids: cohorts.unavailable_case_ids, cohort: "unavailable" as const },
+        ].map(cohort => <tr key={cohort.label}><th scope="row">{cohort.label}</th><td>{number.format(cohort.ids.length)}</td><td>{onKeepCases && <button type="button" disabled={paused || !cohort.ids.length} onClick={() => onKeepCohort ? onKeepCohort(answer, cohort.cohort) : onKeepCases(cohort.ids, `${reason(answer.definition.activity_operator)}: ${cohort.label.toLowerCase()}`)}>Keep {cohort.label.toLowerCase()} items</button>}{cohort.ids[0] && <button type="button" disabled={paused} onClick={() => onInspect(cohort.ids[0])}>Inspect {cohort.label.toLowerCase()} item</button>}</td></tr>)}</tbody></table>
         {!onKeepCases && <p className="bpic19-measure-note">Complete-item cohort selection is unavailable in this host. Cohort membership and source evidence remain inspectable.</p>}</>}
       {answer.value_bands.length > 0 && <><h3>Fixed value bands</h3><table className="plain-table"><caption>Reviewed fixed value bands · tied values stay together</caption><thead><tr><th>Band</th><th>PO items</th><th>Full-history actions</th></tr></thead><tbody>{answer.value_bands.map(band => <tr key={band.band_index}><th scope="row">[{band.lower_inclusive === null ? "−∞" : display(band.lower_inclusive)}, {band.upper_exclusive === null ? "+∞" : display(band.upper_exclusive)})</th><td>{number.format(band.case_ids.length)}</td><td>{onKeepCases && <button type="button" disabled={paused || !band.case_ids.length} onClick={() => onKeepCases(band.case_ids, `Fixed value band ${band.band_index}`)}>Keep value band {band.band_index}</button>}{band.case_ids[0] && <button type="button" disabled={paused} onClick={() => onInspect(band.case_ids[0])}>Inspect value-band item</button>}</td></tr>)}</tbody></table><p>{number.format(answer.value_band_unavailable_case_ids.length)} items have unavailable values and remain outside finite bands.</p></>}
       <h3>Compare exact variants with the first-occurrence signature</h3>

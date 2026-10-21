@@ -78,7 +78,8 @@ export type Bpic19ProfileKeepGroup =
   | CrossCheckKeepGroup
   | GrainIssueKeepGroup
   | SourceInclusionKeepGroup
-  | AttributeValueKeepGroup;
+  | AttributeValueKeepGroup
+  | ActivityCohortKeepGroup;
 export type PreparedInputId = string;
 export type PreparedDefinitionId = string;
 export type PreparedRunId = string;
@@ -393,10 +394,13 @@ export interface Bpic19PipelineAction {
   selection_keep?: Bpic19SelectionKeep;
 }
 /**
- * Exact complete-case selection step justified by this frozen parent profile. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
+ * Exact complete-case selection step justified by this frozen parent profile or reviewed activity-measure cohort. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
  */
 export interface Bpic19SelectionKeep {
-  policy_id: "bpic19.profile_group_keep.v1";
+  /**
+   * Profile groups use the profile policy; activity cohorts of a reviewed measures answer use the measure cohort policy.
+   */
+  policy_id: "bpic19.profile_group_keep.v1" | "bpic19.measure_cohort_keep.v1";
   step_index: number;
   group: Bpic19ProfileKeepGroup;
 }
@@ -437,6 +441,13 @@ export interface AttributeValueKeepGroup {
   kind: "attribute_value";
   column_index: number;
   value: string | null;
+}
+export interface ActivityCohortKeepGroup {
+  kind: "activity_cohort";
+  /**
+   * The reviewed activity operator's cohort over the complete frozen parent.
+   */
+  cohort: "positive" | "zero" | "unavailable";
 }
 export interface Bpic19LiteratureClaim {
   claim_id: string;

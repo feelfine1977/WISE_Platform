@@ -123,6 +123,14 @@ describe("human-readable frozen purchasing report",()=>{
     delete revision.content.bpic19_pipeline!.actions[0].selection_keep;
     expect(purchasingReportMarkdown(revision,manifest)).not.toContain("Verified purchasing selection lineage");
   });
+  it("names each typed Keep's group with its reviewed operation, definition and parent",()=>{
+    const {revision,manifest}=literal();
+    revision.content.bpic19_pipeline!.actions[0].selection_keep={policy_id:"bpic19.measure_cohort_keep.v1",step_index:0,group:{kind:"activity_cohort",cohort:"positive"}};
+    const md=purchasingReportMarkdown(revision,manifest).replaceAll("\\","");
+    expect(md).toContain("Verified purchasing selection lineage");
+    expect(md).toContain('{"kind":"activity_cohort","cohort":"positive"}');
+    expect(md).toContain("| bpic19_profile | "+profileId+" |");
+  });
   it("renders one coherent revision, source/selected scopes, actual tools/numbers and separately reported literature claims",()=>{
     const {revision,manifest}=literal();const md=purchasingReportMarkdown(revision,manifest);
     expect(md).toContain(firstRevisionId);expect(md).toContain(baseIdentity.source_id);expect(md).toContain(baseIdentity.preparation_id);
