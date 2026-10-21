@@ -63,6 +63,14 @@ CRITERIA_FAMILIES = {
 }
 
 
+class SettingError(ValueError):
+    """A run setting the native assessment cannot honour, naming the settings field."""
+
+    def __init__(self, message: str, field: str) -> None:
+        super().__init__(message)
+        self.field = field
+
+
 def paper_norm_document(mode: str = "flat", criteria_family: str = "full") -> dict:
     _mode(mode)
     if criteria_family not in CRITERIA_FAMILIES:
@@ -866,9 +874,9 @@ def evaluate_features(
     if not group_by or len(set(group_by)) != len(group_by) or set(group_by) - GROUP_KEYS:
         raise ValueError("Choose distinct supported business grouping keys.")
     if _number(gamma) is None or gamma < 0 or type(min_cases) is not int or min_cases < 1:
-        raise ValueError("Gamma must be finite and nonnegative; minimum support must be a positive integer.")
+        raise SettingError("Gamma must be finite and nonnegative; minimum support must be a positive integer.", "settings")
     if volume not in {"cases", "exposure"}:
-        raise ValueError("Volume must be cases or exposure.")
+        raise SettingError("Volume must be cases or exposure.", "settings.volume")
     if type(association_min_support) is not int or association_min_support < 1:
         raise ValueError("Association minimum support must be a positive integer.")
     _mode(mode)
@@ -897,19 +905,19 @@ def evaluate_features(
     receipt = None
     if volume == "exposure":
         if exposure_policy not in {"creation_value", "creation_unique_value", "creation_unique_event", "max_absolute_p95", "creation_first_source_position"}:
-            raise ValueError("Choose the reviewed creation value or maximum absolute 95th percentile exposure recipe.")
+            raise SettingError("Choose the reviewed creation value or maximum absolute 95th percentile exposure recipe.", "settings.exposure_policy")
         if profile == "historical" and exposure_policy == "max_absolute_p95":
             calibrations = [f.get("historical_policy", {}).get("calibration") for f in features]
             if (
                 any(not c or not c.get("available") for c in calibrations)
                 or len({c["calibration_id"] for c in calibrations}) != 1
             ):
-                raise ValueError("Historical exposure needs one available frozen global calibration for every item.")
+                raise SettingError("Historical exposure needs one available frozen global calibration for every item.", "settings.exposure_policy")
             receipt = dict(calibrations[0])
             if exposure_calibration is not None and exposure_calibration.get("calibration_id") != receipt.get(
                 "calibration_id"
             ):
-                raise ValueError("Historical exposure cannot recalibrate the selected population.")
+                raise SettingError("Historical exposure cannot recalibrate the selected population.", "settings.exposure_policy")
             amounts = {
                 f["case_id"]: (
                     _number(f.get("historical_measures", {}).get("exposure_norm", {}).get("value"))
@@ -999,9 +1007,7 @@ def _reviewed_exposure(
         for f in features
     }
     if any(value is None or value < 0 for value in amounts.values()):
-        raise ValueError(
-            "Exposure ranking needs a finite nonnegative reviewed value for every assessment item; unavailable values cannot become zero."
-        )
+        raise SettingError("Exposure ranking needs a finite nonnegative reviewed value for every assessment item; unavailable values cannot become zero.", "settings.exposure_policy")
     receipt = (
         dict(exposure_calibration)
         if exposure_calibration is not None
@@ -1013,11 +1019,11 @@ def _reviewed_exposure(
         }
     )
     if receipt.get("policy") != exposure_policy:
-        raise ValueError("The frozen exposure calibration uses another recipe.")
+        raise SettingError("The frozen exposure calibration uses another recipe.", "settings.exposure_policy")
     if exposure_policy == "max_absolute_p95":
         cutoff = _number(receipt.get("cutoff"))
         if cutoff is None or cutoff <= 0:
-            raise ValueError("Maximum absolute exposure calibration needs a positive finite 95th percentile cutoff.")
+            raise SettingError("Maximum absolute exposure calibration needs a positive finite 95th percentile cutoff.", "settings.exposure_policy")
         amounts = {key: min(value / cutoff, 1) for key, value in amounts.items()}
     receipt["unit"] = "source_value_units" if exposure_policy != "max_absolute_p95" else "normalized_exposure"
     receipt["quantile_method"] = "linear" if exposure_policy == "max_absolute_p95" else None
