@@ -105,6 +105,8 @@
 .progress-line::after { content: ""; position: absolute; inset: 0; width: 30%; background: var(--color-accent); }
 .working { display: grid; gap: var(--space-2); justify-items: start; margin-top: var(--space-2); }
 .working .progress-line { justify-self: stretch; }
+/* Over the investigation the line lies on the top edge of the bar of steps and takes no room: nothing below it moves while it runs. */
+.explorer > .progress-line { flex: none; z-index: 1; margin-bottom: var(--size-progress-pull); }
 .working-text { color: var(--color-ink-muted); padding: var(--space-2) 0; }
 
 /* An error: inline, a red bar on the left, the message, what to do and a retry. */
@@ -340,9 +342,10 @@
 .view-switch { display: flex; gap: var(--space-1); }
 .workbench .view-switch button[aria-pressed="true"] { font-weight: var(--font-weight-strong); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
 .selection-steps { display: grid; gap: var(--space-2); min-width: 0; }
-.selection-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
-.selection-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.selection-status { color: var(--color-ink-muted); }
+.selection-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); min-height: var(--size-icon-button); }
+/* Undo, Redo and Clear all in three fixed slots, which never wrap; the status has a place of its own, so nothing moves when it speaks. */
+.selection-actions { display: grid; flex: none; grid-template-columns: repeat(3, var(--size-icon-button)); gap: var(--space-half); }
+.selection-status { flex: none; width: var(--size-step-status); height: var(--size-icon-button); margin: 0; overflow: hidden; color: var(--color-ink-muted); line-height: var(--size-icon-button); white-space: nowrap; text-overflow: ellipsis; }
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .chip {
   display: grid;
@@ -526,7 +529,8 @@
 .explorer .workbench-body[data-inspector="full"] .explorer-rail { display: none; }
 .explorer .selection-bar { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-1) var(--space-4); }
 .explorer .table-pane { padding: var(--space-4); }
-.explorer .selection-steps { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+/* Aligned at the top: a chip taller than the head never moves Undo, Redo and Clear all down. */
+.explorer .selection-steps { flex: 1 1 0; align-self: flex-start; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-2) var(--space-4); }
 .workbench .rail-toggle[aria-expanded="true"] { background: var(--color-tint); box-shadow: inset 0 var(--bar-rise) var(--color-accent); }
 /* In the row of the steps the heading names the row and is a label: it is not the title of a pane. */
 .workbench .selection-head .pane-title { color: var(--color-ink-muted); font-size: var(--font-size-label); font-weight: var(--font-weight-label); }

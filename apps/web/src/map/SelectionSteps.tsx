@@ -4,6 +4,7 @@ import { type ImportedSelectionState, shownSelection } from "../imported/coordin
 import type { Replacement } from "../replacement/replacement";
 import { ReplacementNotice } from "../replacement/ReplacementNotice";
 import type { SelectionProblem } from "./client";
+import { IconButton } from "../components/icons";
 import { countOf } from "../data/wording";
 import { canRedo, canUndo, type StepHistory, trailOf } from "./steps";
 import { COMBINATION, combinedLine, describeSelectionProblem, overlapLine, shortStepWording, stepCounts, stepWording, unevaluableReason } from "./wording";
@@ -55,16 +56,14 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
         <h3 id="selection-steps-title" className="pane-title">
           Selection of whole incidents
         </h3>
+        {/* Three fixed slots: an action that cannot be used now stays in its place, disabled, with the reason in its description. */}
         <div className="selection-actions" role="group" aria-label="Steps">
-          <button type="button" onClick={onUndo} disabled={waiting || !canUndo(history)} aria-describedby={waitingFor}>
-            Undo
-          </button>
-          <button type="button" onClick={onRedo} disabled={waiting || !canRedo(history)} aria-describedby={waitingFor}>
-            Redo
-          </button>
-          <button type="button" onClick={onClear} disabled={waiting || history.present.length === 0} aria-describedby={waitingFor}>
-            Clear all
-          </button>
+          <IconButton icon="undo" label="Undo" onClick={onUndo} disabled={waiting || !canUndo(history)} describedBy={waitingFor}
+            hint={canUndo(history) ? "Takes back the last change of the steps." : "Nothing to undo: the steps have not been changed."} />
+          <IconButton icon="redo" label="Redo" onClick={onRedo} disabled={waiting || !canRedo(history)} describedBy={waitingFor}
+            hint={canRedo(history) ? "Takes the change that was undone again." : "Nothing to redo: no change of the steps has been undone."} />
+          <IconButton icon="clearAll" label="Clear all" onClick={onClear} disabled={waiting || history.present.length === 0} describedBy={waitingFor}
+            hint={history.present.length > 0 ? "Removes every step: every incident of the parent is kept again." : "No step to clear: every incident of the parent is kept."} />
         </div>
         <p role="status" className="selection-status">
           {selection.phase === "loading" ? "Selecting the incidents and drawing their map…" : ""}
