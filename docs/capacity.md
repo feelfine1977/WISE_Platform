@@ -54,6 +54,67 @@ The full profile, with every stage, its fitted bytes per record and the run's ch
 - These figures predate streamed upload and storage. Uploading then kept about 590 bytes per record resident, about 1 GB for both full sources; the full-source results below show the journey after it.
 - The fixture overstates Method scoring: it projects 13.8 GB, while scoring the full sources measured 8.0 GB. Scoring is therefore budgeted at its measured full-source cost, below.
 
+## Incident journey: the first supported tier (#29)
+
+The incident journey's tier is measured, with exact answers checked beside every timing, by one command:
+
+```text
+python tools/qualify_incident_capacity.py --output receipt.json --incidents 50000
+```
+
+| | |
+| --- | --- |
+| Machine | Apple M1 Max, 10 cores, 64 GB, macOS (Darwin 25.6.0 arm64) |
+| Runtime | Python 3.13.3 |
+| Workload | An invented incident log generated in memory: incidents walking forward through 30 activities, three context columns (desk, priority, category) |
+| Tier | **50,000 incidents, 394,433 records**, 26.3 MB of CSV |
+| Also measured | a quarter of it: 12,500 incidents, 98,602 records |
+| Memory budget | the default 10 GiB (`WISE_MEMORY_BUDGET_BYTES`) |
+| Run time | under a minute for both sizes and the checks below |
+
+Every stage is one HTTP request to the service, which runs as its own process. At the tier:
+
+| Stage | Wall time | Peak service memory | Retained after | Reply | At a quarter |
+| --- | --- | --- | --- | --- | --- |
+| Upload (streamed) | 0.04 s | 92 MiB | 92 MiB | 0 KiB | 0.01 s |
+| Inspection | 3.82 s | 125 MiB | 110 MiB | 7 KiB | 0.97 s |
+| Confirmation (reading) | 5.17 s | 406 MiB | 406 MiB | 5 KiB | 1.27 s |
+| Opening the incidents | 0.30 s | 491 MiB | 416 MiB | 6,624 KiB | 0.07 s |
+| Opening context | 0.16 s | 419 MiB | 419 MiB | 5 KiB | 0.04 s |
+| Start trend | 0.83 s | 590 MiB | 468 MiB | 3,234 KiB | 0.19 s |
+| Process graph | 1.09 s | 702 MiB | 521 MiB | 4,853 KiB | 0.22 s |
+| Transition matrix | 2.06 s | 681 MiB | 626 MiB | 5,211 KiB | 0.43 s |
+| Variants | 1.17 s | 645 MiB | 643 MiB | 9,617 KiB | 0.24 s |
+| A step, exact membership | 0.26 s | 643 MiB | 643 MiB | 1,613 KiB | 0.05 s |
+| Complete history | 0.02 s | 643 MiB | 643 MiB | 8 KiB | 0.01 s |
+| Save | 0.33 s | 643 MiB | 590 MiB | 539 KiB | 0.07 s |
+| Cold reopen after a restart | 5.43 s | 502 MiB | 413 MiB | 2,152 KiB | 1.37 s |
+
+- **Journey peak:** 702 MiB, about 0.74 GB. The screen says "at most 0.8 GB".
+- **Workspace on disk:** 25.0 MiB after the import (the source's bytes and its reading), and 25.6 MiB after Save.
+- **Measured** by the command above at commit `faf55a4`. A rerun differs by a few percent: the receipt attached to #29 is a later run of the same code.
+
+### Checked alongside
+
+- **Exact answers:** every incident and record; every activity on the graph; the exact number of variants; the step's exact membership, compared with the generator's own list; three complete histories, record by record; and the saved investigation reopened after a restart with the same identity and incidents.
+- **An abandoned request:** the client gives up after 20 ms; the same request is then answered. Retained memory went from 413 MiB to 637 MiB, which is the answer kept for reuse, still within the budget.
+- **An interrupted publication:** a second reading's confirmation was cut off by killing the service. After a restart, the workspace lists only complete readings (1), and the first one opens as before.
+- **Beyond the budget:** with a budget the size of the source, its reading is refused before anything is read, with the memory it needs and how to raise the budget. The workspace is unchanged:
+
+  > Reading this source needs about 79 MB more memory than the service may use now: its budget is 26 MB, and 0 MB is held for open work that cannot be released. Nothing was read or changed. Close other work, or raise the budget with WISE_MEMORY_BUDGET_BYTES if this computer has the memory.
+
+### What the screen says
+
+- The Data area states this tier beside the import, together with the memory the service may use (from `/api/health`), and says that larger files are not measured.
+- Work that would not fit the byte budget is refused before it starts. The bound is the byte budget, not a count of cached entries.
+- Pending work is shown while it runs (#54).
+- Every figure is exact, and the screen says so: no incident or record is sampled. Where the map draws fewer activities or paths than it counts, its detail strip says so.
+
+### Limits
+
+- This is one machine and one invented workload shape. A larger tier, or the Windows release tier, needs its own measured workload and a decision. It is not inferred from this one.
+- Peaks are sampled every 50 ms from the process table, so a shorter spike can be missed.
+
 ## Full-source qualification
 
 The owner qualifies the same journey on the complete local sources with one command, which writes one receipt:

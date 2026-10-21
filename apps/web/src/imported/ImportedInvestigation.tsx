@@ -806,7 +806,10 @@ function Facts({ answer, shown, revision }: { answer: ImportedPopulationAnswer; 
         <Limit name="Records without activity label" count={answer.coverage.omitted_activity_record_count} word="unlabelled" />
       </dl>
       <InfoPopover label="About this data">
-        <p className="about-lead">The figures above count incidents and their records: those the selection keeps, of the parent's, and the records outside every incident.</p>
+        <p className="about-lead">
+          The figures above count incidents and their records: those the selection keeps, of the parent's, and the records outside every incident. Every
+          figure is exact: no incident or record is sampled; where the map draws fewer activities or paths than it counts, its detail strip says so.
+        </p>
         <DataDetails answer={answer} revision={revision} />
       </InfoPopover>
     </div>

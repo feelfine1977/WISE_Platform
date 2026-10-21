@@ -12,4 +12,8 @@ export interface HealthResponse {
   status: "ok";
   stage: "foundation";
   version: string;
+  /**
+   * The memory the service may use for open work; work that would not fit is refused before it starts.
+   */
+  memory_budget_bytes?: number;
 }

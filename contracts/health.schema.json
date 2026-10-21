@@ -8,6 +8,7 @@
   "properties": {
     "status": { "type": "string", "const": "ok" },
     "stage": { "type": "string", "const": "foundation" },
-    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "memory_budget_bytes": { "type": "integer", "minimum": 1, "description": "The memory the service may use for open work; work that would not fit is refused before it starts." }
   }
 }
