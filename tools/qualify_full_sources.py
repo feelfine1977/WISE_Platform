@@ -185,6 +185,7 @@ def browse(args, folder: Path, journey: Journey, case_id: str, phase: str, expec
             within = [value for moment, value in samples if moments["start"] <= moment <= moments["end"] + 0.1]
             result["views"][view] = {"seconds": round(moments["end"] - moments["start"], 3), "peak_browser_rss_bytes": max(within, default=None)}
         result["downloads"], result["witnesses"] = reported["downloads"], reported["witnesses"]
+        result["inspections"] = reported.get("inspections", [])
     result["peak_browser_rss_bytes"] = max((value for _, value in samples), default=None)
     return result
 
@@ -228,8 +229,20 @@ def provenance() -> dict:
     for path in built:
         if path.is_file():
             assets.update(str(path.relative_to(ROOT)).encode() + b"\0" + hashlib.sha256(path.read_bytes()).digest())
+    def file_digest(relative: str) -> str | None:
+        path = ROOT / relative
+        return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+    try:
+        from importlib.metadata import version as installed
+        method_version = installed("wise-pm")
+    except Exception:
+        method_version = None
+    # Frozen before any work: the dependency locks, the vendored Method wheel and the version actually installed.
+    frozen = {"requirements_lock_sha256": file_digest("requirements-dev.lock"), "package_lock_sha256": file_digest("package-lock.json"),
+              "method_wheel_sha256": file_digest("vendor/wise_pm-0.2.0-py3-none-any.whl"), "method_manifest_sha256": file_digest("vendor/manifest.json"),
+              "installed_method_version": method_version}
     return {"head": git("rev-parse", "HEAD"), "uncommitted_changes": bool(git("status", "--porcelain", "--untracked-files=no")),
-            "python": platform.python_version(), "platform": platform.platform(),
+            "python": platform.python_version(), "platform": platform.platform(), "dependencies": frozen,
             "built_assets_sha256": assets.hexdigest() if any(path.is_file() for path in built) else None,
             "build_is_current": build_is_current()}
 
@@ -295,14 +308,22 @@ def main() -> int:
         if args.no_browser:
             return
         texts = folder / "browser-expected.json"
-        texts.write_text(json.dumps(browser_expectations(expected, "source.v1:sha256:" + config["native"]["sha256"])))
+        shown = browser_expectations(expected, "source.v1:sha256:" + config["native"]["sha256"])
+        if journey.paper_shown is not None:
+            shown["score"] = journey.paper_shown
+        texts.write_text(json.dumps(shown))
         review = browse(args, folder, journey, case_id, "review", texts)
         browser.update(review=review, pid=review["pid"])
         journey.check("browser_review", review["exit"] == 0 and set(BROWSER_VIEWS) <= set(review["views"]), review["exit"])
+        if journey.paper_shown is not None:
+            journey.check("browser_inspected_paper_groups", len(review["inspections"]) == len(journey.paper_shown["groups"])
+                          and all(entry["members_opened"] and entry["member_records_opened"] for entry in review["inspections"])
+                          and all(entry["exemplar_records_opened"] == bool(group["exemplar"])
+                                  for entry, group in zip(review["inspections"], journey.paper_shown["groups"])), review["inspections"])
         journey.restart()
         reopen = browse(args, folder, journey, case_id, "reopen", texts)
         browser.update(reopen=reopen, pids=[review["pid"], reopen["pid"]])
-        journey.check("browser_reopen", reopen["exit"] == 0, reopen["exit"])
+        journey.check("browser_reopen", reopen["exit"] == 0 and (journey.paper_shown is None or "score" in reopen["views"]), reopen["exit"])
         journey.check("browser_exports_identical_after_restart", reopen["downloads"] == review["downloads"]
                       and len(review["downloads"]) == 2, (review["downloads"], reopen["downloads"]))
         browser.update(status="passed", views=review["views"], downloads=review["downloads"],
@@ -311,7 +332,7 @@ def main() -> int:
     journey = Journey(folder, native, prepared, config["prepared_roles"], config["measure_roles"], config["lineage_origin_column"],
                       Expectations(expected["case_count"], expected["record_count"], document_count=expected.get("document_count"),
                                    source_review=expected.get("source_review"),
-                                   timing_exemplar=expected.get("timing_exemplar"),
+                                   timing_exemplar=expected.get("timing_exemplar"), paper_workflow=expected.get("paper_workflow"),
                                    ranking_shared_counts=expected.get("ranking_shared_counts")), limit=limit,
                       deadline=args.deadline_minutes * 60, score=not args.no_scoring, after_reopen=after_reopen)
     started = time.monotonic()

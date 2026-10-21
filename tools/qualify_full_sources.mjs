@@ -1,4 +1,4 @@
-// The built browser over a reopened investigation: its population, profile and evidence views.
+// The built browser over a reopened investigation: its population, profile, evidence and saved score views.
 // Each view's start and end are reported in wall-clock seconds, so the caller can attribute the browser's
 // sampled memory to it. Only counts, identities and digests are written out, never record contents.
 //
@@ -29,7 +29,8 @@ page.on('requestfinished', request => { if (route(request).startsWith('/api/')) 
 page.on('requestfailed', request => { if (route(request).startsWith('/api/')) inFlight--, requestLog.push([Date.now() / 1000, 'failed', request.method(), route(request)]); });
 const areas = page.getByRole('navigation', {name: 'Areas'});
 const profileRegion = page.getByRole('region', {name: 'Understand the purchasing flows', exact: true});
-const views = {}, downloads = [], witnesses = [];
+const views = {}, downloads = [], witnesses = [], inspections = [];
+const main = page.locator('main.bpic19-workspace');
 
 async function view(name, action) {
   const start = Date.now() / 1000;
@@ -74,6 +75,41 @@ async function showProfile() {
   await settled();
 }
 
+// The saved native paper run, as the reopened purchasing view shows it: its summary and the named group rows.
+async function showScore() {
+  const wanted = [expected.score.summary, ...expected.score.groups.map(group => group.row)];
+  const deadline = Date.now() + timeout;
+  for (;;) {
+    const shown = (await main.textContent()) ?? '';
+    const missing = wanted.filter(text => !shown.includes(text));
+    if (!missing.length) break;
+    if (Date.now() > deadline) throw new Error(`score texts missing: ${missing.length} of ${wanted.length}`);
+    await page.waitForTimeout(500);
+  }
+  await settled();
+}
+
+// Each named group's stored members, one member's complete records, and the group's timing exemplar's records.
+async function inspectScore() {
+  for (const group of expected.score.groups) {
+    await answered('/api/investigations/bpic19-read', () => main.getByRole('button', {name: 'Inspect members of ' + group.label, exact: true}).click());
+    await main.getByText(`of ${group.members}`, {exact: false}).first().waitFor();
+    await settled();
+    await answered('/api/investigations/case-evidence', () => main.getByRole('button', {name: 'Inspect records', exact: true}).first().click());
+    await page.getByRole('heading', {name: /^Incident /}).first().waitFor();
+    const entry = {group: group.label, members_opened: true, member_records_opened: true, exemplar_records_opened: false};
+    await answered('/api/investigations/bpic19-read', () => main.getByRole('button', {name: 'Show all assessed items', exact: true}).click());
+    await settled();
+    if (group.exemplar) {
+      const paragraph = main.locator('p', {hasText: group.exemplar + ' · all-evaluable median'}).first();
+      await answered('/api/investigations/case-evidence', () => paragraph.getByRole('button', {name: 'Inspect timing exemplar', exact: true}).click());
+      await page.getByRole('heading', {name: 'Incident ' + group.exemplar, exact: true}).waitFor();
+      entry.exemplar_records_opened = true;
+    }
+    inspections.push(entry);
+  }
+}
+
 async function exportAll() {
   for (const [kind, label] of [['json', 'Export saved definitions, results and witnesses'], ['md', 'Export readable purchasing analysis report']]) {
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', {name: label, exact: true}).click()]);
@@ -101,6 +137,8 @@ try {
     await incident().waitFor();
   });
   await view('profile', showProfile);
+  if (expected.score) await view('score', showScore);
+  if (phase === 'review' && expected.score) await view('score_evidence', inspectScore);
   if (phase === 'review') {
     await view('evidence', async () => {
       await areas.getByRole('button', {name: 'Investigations', exact: true}).click();
@@ -126,7 +164,7 @@ try {
   await exportAll();
   assert.deepEqual(errors, []);
   for (const name of Object.keys(views)) views[name].phase = phase;
-  await writeFile(output, JSON.stringify({views, downloads, witnesses}));
+  await writeFile(output, JSON.stringify({views, downloads, witnesses, inspections}));
 } catch (error) {
   // Interface state only: the save form's texts and the save controls' states, never record contents.
   const state = await page.evaluate(() => ({
