@@ -107,6 +107,7 @@ _PREDICATES = _by(
         "max_raw_gap_at_least": "MaxRawGapAtLeast",
         "interval_threshold": "IntervalThreshold",
         "variant_is": "VariantIs",
+        "measure_between": "MeasureBetween",
     },
 )
 _PERIODS = ("target", _period_member)
@@ -122,7 +123,7 @@ _UNIONS: dict[str, tuple[str, Callable[[Mapping[str, object]], str | None]]] = {
             "OpeningAttributeEquals",
             "StartsWithActivity",
             "EndsWithActivity", "CaseIdIn", "CaseStartInWindow", "OpeningAttributeIn",
-            "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast", "IntervalThreshold", "VariantIs",
+            "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast", "IntervalThreshold", "VariantIs", "MeasureBetween",
         )
     },
     "UtcCaseStartWindow": _by("timestamp_kind", {"utc_instant": "UtcCaseStartWindow", "wall_clock": "WallCaseStartWindow"}),

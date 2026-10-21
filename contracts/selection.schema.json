@@ -313,6 +313,9 @@
           "$ref": "#/$defs/VariantIs"
         },
         {
+          "$ref": "#/$defs/MeasureBetween"
+        },
+        {
           "$ref": "#/$defs/RecordAttributesAll"
         }
       ]
@@ -1437,6 +1440,47 @@
       "required": [
         "kind",
         "variant",
+        "negate"
+      ]
+    },
+    "MeasureBetween": {
+      "title": "MeasureBetween",
+      "description": "Keeps the incidents whose measure lies in the range from minimum to maximum, both included; a null maximum has no upper bound. raw_record_count is the number of raw records of the incident, records without an activity label included, and every incident has it. observed_span_hours and maximum_adjacent_raw_gap_hours are those of the case-list summary (incident.case_summary.full_raw_declared_order.v1): an incident whose order is not known has neither, and one with a single record has no longest gap; such an incident is not evaluable, never inside or outside. Negation keeps the incidents outside the range; the unevaluable stay unevaluable.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "measure_between"
+        },
+        "measure": {
+          "type": "string",
+          "enum": [
+            "raw_record_count",
+            "observed_span_hours",
+            "maximum_adjacent_raw_gap_hours"
+          ]
+        },
+        "minimum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "measure",
+        "minimum",
+        "maximum",
         "negate"
       ]
     },

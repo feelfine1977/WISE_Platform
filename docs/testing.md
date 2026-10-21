@@ -177,6 +177,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - A chosen group states its rule, its support, its distributions against the whole parent and its shortest and longest incident.
   - Choosing takes no step; keeping takes one with the group's incidents, undone exactly.
 
+- `tools/qualify_measure_range.py` (#89): ranges of records, span and longest gap over the invented `tests/fixtures/span-gap` file, against its `ranges.json`.
+  - The Filters' range control says that both bounds are included and which incidents have each measure.
+  - Each range is previewed with its not-evaluable count, taken as one step that keeps, removes and leaves unevaluable the oracle's incidents, shown in the incident table, and undone exactly.
+  - A reversed range is refused and nothing is applied.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

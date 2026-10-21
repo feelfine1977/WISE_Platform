@@ -605,6 +605,19 @@ class IntervalDefinition(BaseModel):
     response_activity: constr(min_length=1)
 
 
+class MeasureBetween(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['measure_between']
+    measure: Literal[
+        'raw_record_count', 'observed_span_hours', 'maximum_adjacent_raw_gap_hours'
+    ]
+    minimum: confloat(ge=0.0)
+    maximum: confloat(ge=0.0) | None
+    negate: bool
+
+
 class VariantDefinition(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -717,6 +730,7 @@ class SelectionPredicate(
         | MaxRawGapAtLeast
         | IntervalThreshold
         | VariantIs
+        | MeasureBetween
         | RecordAttributesAll
     ]
 ):
@@ -734,6 +748,7 @@ class SelectionPredicate(
         | MaxRawGapAtLeast
         | IntervalThreshold
         | VariantIs
+        | MeasureBetween
         | RecordAttributesAll
     ) = Field(..., title='SelectionPredicate')
 

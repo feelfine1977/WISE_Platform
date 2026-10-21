@@ -80,6 +80,7 @@ _KINDS = {
     "MaxRawGapAtLeast": "max_raw_gap_at_least",
     "IntervalThreshold": "interval_threshold",
     "VariantIs": "variant_is",
+    "MeasureBetween": "measure_between",
 }
 
 # Order in which failing places are named, first one first.

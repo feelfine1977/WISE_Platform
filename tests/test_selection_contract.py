@@ -49,7 +49,7 @@ def test_selection_boundary_rejects_ambiguous_or_unbound_intents(mutation):
 
 STEP_DEFINITIONS = ["SelectionPredicate", "ContainsActivity", "DirectlyFollows", "OpeningAttributeEquals",
                     "StartsWithActivity", "EndsWithActivity", "CaseIdIn", "CaseStartInWindow",
-                    "OpeningAttributeIn", "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast", "IntervalThreshold", "VariantIs", "RecordAttributesAll"]
+                    "OpeningAttributeIn", "RecordAttributeIn", "ObservedSpanAtLeast", "MaxRawGapAtLeast", "IntervalThreshold", "VariantIs", "MeasureBetween", "RecordAttributesAll"]
 
 
 @pytest.mark.parametrize("kind", ["starts_with_activity", "ends_with_activity"])
