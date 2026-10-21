@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "message_type": "bpic19_cohorts_answer",
+  "request_id": "request-1",
+  "query_revision": 1,
+  "workspace_id": "workspace.v1:literal-h7-fixture",
+  "identity": {
+    "source_id": "source.v1:sha256:5bd7cbe70fa8df8bfe8c2ff4fa7d9355f4959c2145b35f0ec0bbf26d527b4ab2",
+    "preparation_id": "preparation.v1:sha256:51e7c7b67744a66578bb0d11667f68bf4b86cf1937facf3f0104270f3ded19d5",
+    "representation_id": "representation.v1:sha256:96212a3daecd5ad6e19b154a1a6a113511c7358478726292cd3fa5ce86a95a17",
+    "case_dictionary_id": "case-dictionary.v1:sha256:d20e0aba45e65027ec276679235c7936c820517b205ce5ee78d7546446ba81de",
+    "population_id": "population.v1:sha256:b6abbb6154fe36c72f4bbc7e9f1fb64d3846da188de0e1236a8c5f0c4fab149a",
+    "implementation_version": "0.1.0"
+  },
+  "parent_identity": {
+    "source_id": "source.v1:sha256:5bd7cbe70fa8df8bfe8c2ff4fa7d9355f4959c2145b35f0ec0bbf26d527b4ab2",
+    "preparation_id": "preparation.v1:sha256:51e7c7b67744a66578bb0d11667f68bf4b86cf1937facf3f0104270f3ded19d5",
+    "representation_id": "representation.v1:sha256:96212a3daecd5ad6e19b154a1a6a113511c7358478726292cd3fa5ce86a95a17",
+    "case_dictionary_id": "case-dictionary.v1:sha256:d20e0aba45e65027ec276679235c7936c820517b205ce5ee78d7546446ba81de",
+    "population_id": "population.v1:sha256:b6abbb6154fe36c72f4bbc7e9f1fb64d3846da188de0e1236a8c5f0c4fab149a",
+    "implementation_version": "0.1.0"
+  },
+  "query": {
+    "policy_id": "bpic19.flow_completion_cohorts.v1",
+    "roles": {
+      "item_category": 3,
+      "purchasing_document": 4
+    },
+    "inclusion": {
+      "kind": "document_start_window",
+      "timestamp_kind": "wall_clock",
+      "start_inclusive": "2018-01-01T00:00:00",
+      "end_exclusive": null
+    },
+    "completion": {
+      "recipe": "flow_presence",
+      "receipt": "goods_only",
+      "tie_policy": "unknown"
+    },
+    "retain": "all_included",
+    "horizon": {
+      "timestamp_kind": "wall_clock",
+      "value": null,
+      "provenance": null
+    },
+    "page": {
+      "offset": 0,
+      "limit": 50
+    }
+  },
+  "definition_id": "bpic19-cohorts.v1:sha256:82682261a3ee6983f36f764fdf8e251de717d0b395f038ed54a799f87e53d8c3",
+  "definition": {
+    "policy_id": "bpic19.flow_completion_cohorts.v1",
+    "roles": {
+      "item_category": 3,
+      "purchasing_document": 4
+    },
+    "inclusion": {
+      "kind": "document_start_window",
+      "timestamp_kind": "wall_clock",
+      "start_inclusive": "2018-01-01T00:00:00",
+      "end_exclusive": null
+    },
+    "completion": {
+      "recipe": "flow_presence",
+      "receipt": "goods_only",
+      "tie_policy": "unknown"
+    },
+    "retain": "all_included",
+    "horizon": {
+      "timestamp_kind": "wall_clock",
+      "value": null,
+      "provenance": null
+    }
+  },
+  "cohorts": {
+    "definition_id": "bpic19-cohorts.v1:sha256:82682261a3ee6983f36f764fdf8e251de717d0b395f038ed54a799f87e53d8c3",
+    "definition": {
+      "policy_id": "bpic19.flow_completion_cohorts.v1",
+      "roles": {
+        "item_category": 3,
+        "purchasing_document": 4
+      },
+      "inclusion": {
+        "kind": "document_start_window",
+        "timestamp_kind": "wall_clock",
+        "start_inclusive": "2018-01-01T00:00:00",
+        "end_exclusive": null
+      },
+      "completion": {
+        "recipe": "flow_presence",
+        "receipt": "goods_only",
+        "tie_policy": "unknown"
+      },
+      "retain": "all_included",
+      "horizon": {
+        "timestamp_kind": "wall_clock",
+        "value": null,
+        "provenance": null
+      }
+    },
+    "original": {
+      "case_count": 3,
+      "record_count": 7,
+      "document_count": 2,
+      "document_unknown_case_count": 0
+    },
+    "inclusion": {
+      "before": {
+        "case_count": 3,
+        "record_count": 7,
+        "document_count": 2,
+        "document_unknown_case_count": 0
+      },
+      "retained": {
+        "case_count": 1,
+        "record_count": 2,
+        "document_count": 1,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "C"
+        ]
+      },
+      "excluded": {
+        "case_count": 2,
+        "record_count": 5,
+        "document_count": 1,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "A",
+          "B"
+        ]
+      },
+      "unknown": {
+        "case_count": 0,
+        "record_count": 0,
+        "document_count": 0,
+        "document_unknown_case_count": 0,
+        "case_ids": []
+      }
+    },
+    "completion_groups": [
+      {
+        "state": "observed_closed",
+        "case_count": 1,
+        "record_count": 2,
+        "document_count": 1,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "C"
+        ]
+      },
+      {
+        "state": "open_recorded",
+        "case_count": 0,
+        "record_count": 0,
+        "document_count": 0,
+        "document_unknown_case_count": 0,
+        "case_ids": []
+      },
+      {
+        "state": "unknown",
+        "case_count": 0,
+        "record_count": 0,
+        "document_count": 0,
+        "document_unknown_case_count": 0,
+        "case_ids": []
+      }
+    ],
+    "retention": {
+      "before": {
+        "case_count": 1,
+        "record_count": 2,
+        "document_count": 1,
+        "document_unknown_case_count": 0
+      },
+      "retained": {
+        "case_count": 1,
+        "record_count": 2,
+        "document_count": 1,
+        "document_unknown_case_count": 0,
+        "case_ids": [
+          "C"
+        ]
+      },
+      "excluded": {
+        "case_count": 0,
+        "record_count": 0,
+        "document_count": 0,
+        "document_unknown_case_count": 0,
+        "case_ids": []
+      },
+      "unknown": {
+        "case_count": 0,
+        "record_count": 0,
+        "document_count": 0,
+        "document_unknown_case_count": 0,
+        "case_ids": []
+      }
+    },
+    "selection": {
+      "kind": "case_id_in",
+      "case_ids": [
+        "C"
+      ],
+      "negate": false
+    },
+    "partition": {
+      "covers_included": true,
+      "is_disjoint": true
+    },
+    "page": {
+      "offset": 0,
+      "limit": 50,
+      "total": 3,
+      "items": [
+        {
+          "case_id": "A",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "excluded",
+          "inclusion_reason": "start_outside_window",
+          "completion_state": "observed_closed",
+          "inclusion_witnesses": [
+            {
+              "case_id": "A",
+              "row_ids": [
+                "row.v1:sha256:c9df96e902e85072e40e10516898034514c58ab2bab164264a4a56d0cc8e6bd0"
+              ]
+            }
+          ],
+          "reasons": [
+            "required_recorded_milestones_present"
+          ],
+          "witness_row_ids": [
+            "row.v1:sha256:b7f0f12d88c0a0d4dcaf43d2fa71bea5cdb756aff133337d9117e1b17b440b95"
+          ],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 3,
+          "document": "D",
+          "due_state": "unavailable"
+        },
+        {
+          "case_id": "B",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "excluded",
+          "inclusion_reason": "start_outside_window",
+          "completion_state": "open_recorded",
+          "inclusion_witnesses": [
+            {
+              "case_id": "A",
+              "row_ids": [
+                "row.v1:sha256:c9df96e902e85072e40e10516898034514c58ab2bab164264a4a56d0cc8e6bd0"
+              ]
+            }
+          ],
+          "reasons": [
+            "missing_recorded_milestone:Clear Invoice"
+          ],
+          "witness_row_ids": [],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 2,
+          "document": "D",
+          "due_state": "unavailable"
+        },
+        {
+          "case_id": "C",
+          "flow_id": "before_gr",
+          "category_state": "classified",
+          "inclusion_state": "retained",
+          "inclusion_reason": "start_in_window",
+          "completion_state": "observed_closed",
+          "inclusion_witnesses": [
+            {
+              "case_id": "C",
+              "row_ids": [
+                "row.v1:sha256:85e28a76d65b4e1162174df7c3bae44abf66c3dc1923a6c66ff24e7f7171c1cd"
+              ]
+            }
+          ],
+          "reasons": [
+            "required_recorded_milestones_present"
+          ],
+          "witness_row_ids": [
+            "row.v1:sha256:1569ddf2213d9df0be44b643227ebf92374314bb298a9cd116d0f1a54653f82f"
+          ],
+          "required_activity_sets": [
+            [
+              "Clear Invoice"
+            ]
+          ],
+          "record_count": 2,
+          "document": "E",
+          "due_state": "unavailable"
+        }
+      ]
+    },
+    "limitations": [
+      "Recorded completion is not compliance, payment receipt or a due-obligation judgement.",
+      "The declared horizon is retained as reviewed provenance; no payment terms are supplied, so due assessment is unavailable.",
+      "Document supports overlap across item cohorts; document inclusion uses siblings within the frozen parent.",
+      "All selected items retain complete original histories; no event projection is applied."
+    ]
+  }
+}

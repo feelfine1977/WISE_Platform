@@ -39,10 +39,11 @@ from pathlib import Path
 from threading import Lock
 
 from pydantic import BaseModel, ValidationError
-from wise_platform_analytics.csv_inspection import inspect_csv
+from wise_platform_analytics.csv_inspection import SourceChanged, inspect_csv
 from wise_platform_analytics.incident_time import incident_time_diagnostics
 from wise_platform_analytics.mapping import ImportRefusal as PackageRefusal
-from wise_platform_analytics.preparation import PreparationResult, PreparedData, prepare
+from wise_platform_analytics.footprint import prepared_footprint, reading_footprint
+from wise_platform_analytics.preparation import PreparationResult, PreparedData, SourceReading, prepare, read_for_preparation, reuses
 from wise_platform_analytics.prepared_operations import open_prepared_case, open_prepared_population
 from wise_platform_analytics.selection import open_selected_case
 
@@ -75,7 +76,8 @@ from .import_boundary import (
 from .incident_time_boundary import validate_incident_time_answer
 from .registry import SelectionRegistry
 from .strict_reading import instant_failures
-from .workspace import Problem, StoredPreparation, Workspace
+from .memory_budget import OPERATION_PEAK_PER_RECORD, READ_PEAK_PER_SOURCE_BYTE, MemoryBudget
+from .workspace import Problem, StoredPreparation, Workspace, source_changed
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +89,6 @@ CONFIRM_MAPPING = "confirm_mapping"
 OPEN_POPULATION = "open_population"
 CASE_EVIDENCE = "case_evidence"
 
-_PREPARED_KEPT = 2
 _INSPECTIONS_KEPT = 16
 _DEFAULT_INITIALIZING = Lock()
 
@@ -104,14 +105,19 @@ class Imports:
     """The import operations over the workspaces opened in this run of the application."""
 
     def __init__(
-        self, forbidden: Iterable[Path] = (), selections: SelectionRegistry | None = None, *, workspace_path: Path | None = None
+        self, forbidden: Iterable[Path] = (), selections: SelectionRegistry | None = None, *, workspace_path: Path | None = None,
+        budget: MemoryBudget | None = None,
     ) -> None:
         self._forbidden = tuple(forbidden)
         self._workspace_path = workspace_path
-        self.selections = selections if selections is not None else SelectionRegistry()
+        self.budget = budget if budget is not None else MemoryBudget()
+        self.selections = selections if selections is not None else SelectionRegistry(budget=self.budget)
         self._workspaces: dict[str, Workspace] = {}
         self._prepared: OrderedDict[str, PreparedData] = OrderedDict()
         self._inspections: OrderedDict[tuple[str, str | None, str | None], dict] = OrderedDict()
+        # One source's parse, shared by a cutoff proposal and the confirmations that follow it. It is released by a
+        # ready confirmation, which then holds the same records, and before any other source is read.
+        self._reading: tuple[str, SourceReading] | None = None
         self._lock = Lock()
         self._preparing = Lock()
 
@@ -126,7 +132,7 @@ class Imports:
             self._open_default_workspace,
         )
 
-    def upload_source(self, query: Iterable[tuple[str, str]], content_type: str | None, raw: bytes) -> ImportReply:
+    def upload_source(self, query: Iterable[tuple[str, str]], content_type: str | None, raw: bytes | Iterable[bytes]) -> ImportReply:
         message = upload_message(query)
         if isinstance(message, str):
             return _refused(import_refusal(UPLOAD_SOURCE, "invalid_request", message))
@@ -202,7 +208,7 @@ class Imports:
             },
         )
 
-    def _upload_source(self, request: UploadSourceMetadata, given: dict, raw: bytes) -> ImportReply:
+    def _upload_source(self, request: UploadSourceMetadata, given: dict, raw: bytes | Iterable[bytes]) -> ImportReply:
         workspace = self._workspace(UPLOAD_SOURCE, given)
         if isinstance(workspace, ImportReply):
             return workspace
@@ -228,10 +234,19 @@ class Imports:
         with self._lock:
             inspection = self._inspections.get(key)
         if inspection is None:
-            raw = workspace.read_source(source_id)
+            self._held_reading(source_id)
+            refused = self._admit_read(stored)
+            if refused is not None:
+                return _problem(INSPECT_CSV, refused, given)
+            raw = workspace.source_file(source_id)
             if isinstance(raw, Problem):
                 return _problem(INSPECT_CSV, raw, given)
-            found = inspect_csv(raw, hints)
+            try:
+                found = inspect_csv(raw, hints)
+            except SourceChanged:
+                return _problem(INSPECT_CSV, source_changed(), given)
+            finally:
+                self.budget.passed()
             if isinstance(found, PackageRefusal):
                 return _from_package(INSPECT_CSV, found, given)
             inspection = found
@@ -249,34 +264,28 @@ class Imports:
         workspace = self._workspace(CONFIRM_MAPPING, given)
         if isinstance(workspace, ImportReply):
             return workspace
-        raw = workspace.read_source(given["source_id"])
-        if isinstance(raw, Problem):
-            return _problem(CONFIRM_MAPPING, raw, given)
-        result = prepare(raw, given["dialect"], given["mapping"], given["policies"], given["accept_report_issues"])
-        if isinstance(result, PackageRefusal):
-            return _from_package(CONFIRM_MAPPING, result, given)
+        result = self._prepare_held(workspace, given)
+        if isinstance(result, ImportReply):
+            return result
         interpretation = result.to_dict()
         if result.preparation is not None:
+            self._release_reading(given["source_id"])
             prepared = result.preparation
             stored = workspace.store_preparation(
                 interpretation["preparation"], prepared.identity_dict(), interpretation["report"]
             )
             if isinstance(stored, Problem):
                 return _problem(CONFIRM_MAPPING, stored, given)
-            with self._lock:
-                _keep(self._prepared, prepared.preparation_id, prepared, _PREPARED_KEPT)
+            self._keep_prepared(prepared)
         return _answer(InterpretationAnswer, _envelope("interpretation_answer", given) | interpretation)
 
     def _propose_cutoff(self, request: ConfirmMappingRequest, given: dict) -> ImportReply:
         workspace = self._workspace(CONFIRM_MAPPING, given)
         if isinstance(workspace, ImportReply):
             return workspace
-        raw = workspace.read_source(given["source_id"])
-        if isinstance(raw, Problem):
-            return _problem(CONFIRM_MAPPING, raw, given)
-        result = prepare(raw, given["dialect"], given["mapping"], given["policies"], given["accept_report_issues"])
-        if isinstance(result, PackageRefusal):
-            return _from_package(CONFIRM_MAPPING, result, given)
+        result = self._prepare_held(workspace, given)
+        if isinstance(result, ImportReply):
+            return result
         report = result.report
         wall = report["timestamp_kind"] == "wall_clock"
         last = report["last_usable_local_timestamp"] if wall else report["last_usable_utc_instant"]
@@ -380,36 +389,140 @@ class Imports:
         source = workspace.source(record.source_id)
         if isinstance(source, Problem):
             return source
+        key = ("preparation", preparation_id)
         with self._lock:
             prepared = self._prepared.get(preparation_id)
-            if prepared is not None:
-                self._prepared.move_to_end(preparation_id)
-        if prepared is not None:
+        if prepared is not None and self.budget.holds(key):
+            # Pin it at once, so that admitting other work cannot evict it while this request uses it.
+            refused = self.budget.admit(0, keys=(key,), work="keeping this preparation")
+            if refused is not None:
+                return refused
+            if prepared.descriptor() != record.descriptor:
+                return Problem("preparation_unavailable", "The kept preparation descriptor differs from its confirmed cached recipe. Nothing was rebound or repaired.", field)
             changed = workspace.source_unchanged(record.source_id)
             if changed is not None:
-                with self._lock:
-                    self._prepared.pop(preparation_id, None)
+                self._drop_prepared(preparation_id)
+                self.budget.forget(key)
                 return changed
-        if prepared is None:
+        else:
             # One preparation at a time: a second request for the same snapshot then finds it held.
             with self._preparing:
                 with self._lock:
                     prepared = self._prepared.get(preparation_id)
-                if prepared is None:
+                if prepared is None or not self.budget.holds(key):
+                    refused = self._admit_read(source)
+                    if refused is not None:
+                        return refused
                     again = self._prepare_again(workspace, record)
+                    self.budget.passed()
                     if not isinstance(again, PreparedData):
                         return again
                     prepared = again
-                    with self._lock:
-                        _keep(self._prepared, preparation_id, prepared, _PREPARED_KEPT)
+                    self._keep_prepared(prepared)
+        refused = self.budget.admit(len(prepared.records) * OPERATION_PEAK_PER_RECORD, keys=(key,), work="this computation")
+        if refused is not None:
+            return refused
         return prepared, source.to_dict()
 
+    def admit_preparations(self, workspace_id: str, preparation_ids: Iterable[str]) -> Problem | None:
+        """Admit, before any source is read, one request that uses several preparations at once.
+
+        Kept preparations are pinned; each one that must be prepared again is counted at its reading peak."""
+        workspace = self.opened_workspace(workspace_id)
+        if isinstance(workspace, Problem):
+            return None
+        kept, peak = [], 0
+        for preparation_id in dict.fromkeys(preparation_ids):
+            key = ("preparation", preparation_id)
+            if self.budget.holds(key):
+                kept.append(key)
+                with self._lock:
+                    prepared = self._prepared.get(preparation_id)
+                peak += 0 if prepared is None else len(prepared.records) * OPERATION_PEAK_PER_RECORD
+                continue
+            record = workspace.preparation(preparation_id)
+            source = None if isinstance(record, Problem) else workspace.source(record.source_id)
+            if source is not None and not isinstance(source, Problem):
+                peak += round(source.byte_count * READ_PEAK_PER_SOURCE_BYTE)
+        return self.budget.admit(peak, keys=kept, work="this computation over several sources")
+
+    def _admit_read(self, source) -> Problem | None:
+        """Admit reading a stored source, at its measured peak per stored byte."""
+        if isinstance(source, Problem):
+            return None
+        return self.budget.admit(round(source.byte_count * READ_PEAK_PER_SOURCE_BYTE), work="reading this source")
+
+    def _keep_prepared(self, prepared: PreparedData) -> None:
+        preparation_id = prepared.preparation_id
+        with self._lock:
+            self._prepared[preparation_id] = prepared
+        self.budget.hold(("preparation", preparation_id), prepared_footprint(prepared), lambda: self._drop_prepared(preparation_id))
+
+    def _drop_prepared(self, preparation_id: str) -> None:
+        with self._lock:
+            self._prepared.pop(preparation_id, None)
+
+    def _prepare_held(self, workspace: Workspace, given: dict) -> PreparationResult | ImportReply:
+        """Prepare under the request's choices, reading the source again only if its held parse does not fit them."""
+        source_id = given["source_id"]
+        held = self._held_reading(source_id)
+        # A held parse reads no bytes, so the stored file is checked for it; a new parse checks the bytes it reads.
+        changed = None if held is None else workspace.source_unchanged(source_id)
+        if changed is not None:
+            self._release_reading(source_id)
+            return _problem(CONFIRM_MAPPING, changed, given)
+        raw = workspace.source_file(source_id)
+        if isinstance(raw, Problem):
+            return _problem(CONFIRM_MAPPING, raw, given)
+        if not reuses(held, raw, given["dialect"], given["mapping"], given["policies"]):
+            refused = self._admit_read(workspace.source(source_id))
+            if refused is not None:
+                return _problem(CONFIRM_MAPPING, refused, given)
+        try:
+            reading = read_for_preparation(raw, given["dialect"], given["mapping"], given["policies"], held)
+        except SourceChanged:
+            return _problem(CONFIRM_MAPPING, source_changed(), given)
+        if isinstance(reading, PackageRefusal):
+            return _from_package(CONFIRM_MAPPING, reading, given)
+        with self._lock:
+            self._reading = (source_id, reading)
+        if reading is not held:
+            self.budget.hold(("reading", source_id), reading_footprint(reading), lambda: self._release_reading(source_id))
+        self.budget.passed()
+        result = prepare(raw, given["dialect"], given["mapping"], given["policies"], given["accept_report_issues"], reading=reading)
+        if isinstance(result, PackageRefusal):
+            return _from_package(CONFIRM_MAPPING, result, given)
+        return result
+
+    def _held_reading(self, source_id: str) -> SourceReading | None:
+        """The held parse of this source; a parse of any other source is released before this one is read."""
+        with self._lock:
+            other = self._reading[0] if self._reading is not None and self._reading[0] != source_id else None
+            if other is not None:
+                self._reading = None
+            held = None if self._reading is None else self._reading[1]
+        if other is not None:
+            self.budget.forget(("reading", other))
+        return held
+
+    def _release_reading(self, source_id: str) -> None:
+        with self._lock:
+            released = self._reading is not None and self._reading[0] == source_id
+            if released:
+                self._reading = None
+        if released:
+            self.budget.forget(("reading", source_id))
+
     def _prepare_again(self, workspace: Workspace, record: StoredPreparation) -> PreparedData | Problem | PackageRefusal:
-        raw = workspace.read_source(record.source_id)
+        self._held_reading(record.source_id)
+        raw = workspace.source_file(record.source_id)
         if isinstance(raw, Problem):
             return raw
         descriptor = record.descriptor
-        result = prepare(raw, descriptor["dialect"], descriptor["mapping"], descriptor["policies"], True)
+        try:
+            result = prepare(raw, descriptor["dialect"], descriptor["mapping"], descriptor["policies"], True)
+        except SourceChanged:
+            return source_changed()
         if isinstance(result, PackageRefusal):
             return result
         if not isinstance(result, PreparationResult) or result.preparation is None:

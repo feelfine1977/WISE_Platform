@@ -231,6 +231,7 @@ export interface Refusal {
     | "case_not_found"
     | "case_not_in_population"
     | "identity_mismatch"
+    | "memory_unavailable"
     | "computation_failed";
   message: string;
   field: string | null;

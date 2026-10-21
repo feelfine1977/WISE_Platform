@@ -39,6 +39,7 @@ export type TimestampFormat =
   | "mdy_slash_minute"
   | "mdy_dot_minute"
   | "dmy_dot_second"
+  | "dmy_dash_second"
   | "mdy_dot_second"
   | "dmy_slash_second"
   | "mdy_slash_second"
@@ -838,6 +839,7 @@ export interface ImportRefusal {
     | "interpretation_not_ready"
     | "case_not_found"
     | "identity_mismatch"
+    | "memory_unavailable"
     | "computation_failed";
   message: string;
   field: string | null;

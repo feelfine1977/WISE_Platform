@@ -1,0 +1,30 @@
+.bpic19-measures { display: grid; gap: var(--space-3); padding: var(--space-4); min-width: 0; color: var(--color-ink); }
+.bpic19-measures-controls { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; margin: var(--space-4) 0; }
+.bpic19-measures-controls label, .bpic19-measures-grid label { display: grid; gap: var(--space-1); }
+.bpic19-measures-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--size-source-select)), 1fr)); gap: var(--space-4); }
+.bpic19-representations { grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--size-chip)), 1fr)); }
+.bpic19-measures fieldset { min-width: 0; border: var(--line-width) solid var(--color-line); border-radius: var(--radius); padding: var(--space-3); }
+.bpic19-measures legend { font-weight: var(--font-weight-strong); padding: 0 var(--space-1); }
+.bpic19-measures fieldset label + label { margin-top: var(--space-3); }
+.bpic19-measures textarea { width: 100%; min-height: var(--size-expectation-text); box-sizing: border-box; resize: vertical; font: inherit; }
+.bpic19-measures input, .bpic19-measures select { min-width: 0; max-width: 100%; min-height: var(--size-control); }
+.bpic19-measures-scroll { overflow-x: auto; max-width: 100%; }
+.bpic19-measures table { width: 100%; min-width: var(--size-chip); border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.bpic19-measures table th, .bpic19-measures table td { text-align: left; vertical-align: top; padding: var(--space-2); overflow-wrap: normal; white-space: normal; }
+.bpic19-measures table tbody tr { border-top: var(--line-width) solid var(--color-line); }
+.bpic19-measures table button { min-width: var(--size-column-label); margin: var(--space-1) var(--space-2) var(--space-1) 0; }
+.bpic19-measures small { display: block; overflow-wrap: anywhere; font-weight: var(--font-weight-plain); margin-top: var(--space-1); }
+.bpic19-measures .bpic19-measure-note { border-left: var(--bar-width) solid var(--color-line-strong); padding: var(--space-3); background: var(--color-tint); }
+.bpic19-measure-case { border-bottom: var(--line-width) solid var(--color-line); padding: var(--space-3) 0; }
+.bpic19-measure-case summary { cursor: pointer; font-weight: var(--font-weight-strong); margin-bottom: var(--space-2); overflow-wrap: anywhere; }
+.bpic19-measure-case dl { display: grid; grid-template-columns: minmax(var(--size-value-label), auto) 1fr; gap: var(--space-2) var(--space-4); }
+.bpic19-measure-case dd { margin: 0; overflow-wrap: anywhere; }
+.bpic19-measure-case h4 { margin: var(--space-4) 0 var(--space-2); }
+.bpic19-measures pre { overflow: auto; max-height: var(--size-floating-max-height); }
+.bpic19-prepared-input { width: 100%; max-width: 100%; }
+.bpic19-prepared-native { max-height: var(--size-floating-max-height); overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bpic19-measures [data-stale="true"] { opacity: var(--opacity-disabled); }
+.bpic19-measure-unavailable { color: var(--color-ink-muted); }
+.bpic19-measures code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bpic19-measures :is(button, input, textarea, select, summary):focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--focus-offset); }
+@media (max-width: 650px) { .bpic19-measure-case dl { grid-template-columns: 1fr; } .bpic19-measures-controls { align-items: stretch; } }

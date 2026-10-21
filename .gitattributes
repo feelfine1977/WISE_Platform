@@ -7,4 +7,5 @@ LICENSE -text
 NOTICE -text
 tools/notices/*.txt -text
 contracts/import.schema.json -text
+apps/api/src/wise_platform_api/bpic19_reference/historical-notebook-norm.json -text
 tests/fixtures/incident-time/** -text

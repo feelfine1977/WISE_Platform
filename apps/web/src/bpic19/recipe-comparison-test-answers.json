@@ -1,0 +1,3439 @@
+{
+  "operator": {
+    "schema_version": 1,
+    "message_type": "bpic19_recipe_comparison_answer",
+    "operation": "bpic19_operator_comparison",
+    "request_id": "request-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:60e21ad349a64a7d8a461fc9c4e50580",
+    "identity": {
+      "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+      "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+      "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+      "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+      "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+      "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+      "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+      "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+      "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+      "implementation_version": "0.1.0"
+    },
+    "query": {
+      "policy_id": "bpic19.ordinal_fifo_comparison.v1",
+      "ordinal": {
+        "definition_id": "bpic19-operator-definition.v1:sha256:9caa3941b98768e0dda50ee23d62ec675aabb00f690ed5555886188cda057f1c",
+        "query": {
+          "policy_id": "bpic19.declared_operators.v1",
+          "roles": {
+            "event_id": 3,
+            "item_category": 4,
+            "net_worth": 5
+          },
+          "recipe": {
+            "kind": "ordinal",
+            "order": "timestamp_source_position",
+            "stages": "gr_ir_ci",
+            "receipt": "goods",
+            "cancellation": "retain",
+            "ties": "source_position"
+          },
+          "offset": 0,
+          "limit": 20
+        }
+      },
+      "fifo": {
+        "definition_id": "bpic19-operator-definition.v1:sha256:c68a4e9a12c1c2f8f93b6a45255bc158aadfc64961c9f1ff011f55c9fd5f7b59",
+        "query": {
+          "policy_id": "bpic19.declared_operators.v1",
+          "roles": {
+            "event_id": 3,
+            "item_category": 4,
+            "net_worth": 5
+          },
+          "recipe": {
+            "kind": "fifo",
+            "order": "source_position",
+            "stages": "gr_ir_ci",
+            "receipt": "goods",
+            "cancellation": "retain",
+            "ties": "strict_time"
+          },
+          "offset": 0,
+          "limit": 20
+        }
+      }
+    },
+    "definition_id": "bpic19-recipe-comparison.v1:sha256:905d008d94d07781e44e2cb55679f322c28a3ad67619da42ed6f8b8140e0c476",
+    "definition": {
+      "identity": {
+        "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+        "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+        "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+        "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+        "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+        "implementation_version": "0.1.0"
+      },
+      "query": {
+        "policy_id": "bpic19.ordinal_fifo_comparison.v1",
+        "ordinal": {
+          "definition_id": "bpic19-operator-definition.v1:sha256:9caa3941b98768e0dda50ee23d62ec675aabb00f690ed5555886188cda057f1c",
+          "query": {
+            "policy_id": "bpic19.declared_operators.v1",
+            "roles": {
+              "event_id": 3,
+              "item_category": 4,
+              "net_worth": 5
+            },
+            "recipe": {
+              "kind": "ordinal",
+              "order": "timestamp_source_position",
+              "stages": "gr_ir_ci",
+              "receipt": "goods",
+              "cancellation": "retain",
+              "ties": "source_position"
+            },
+            "offset": 0,
+            "limit": 20
+          }
+        },
+        "fifo": {
+          "definition_id": "bpic19-operator-definition.v1:sha256:c68a4e9a12c1c2f8f93b6a45255bc158aadfc64961c9f1ff011f55c9fd5f7b59",
+          "query": {
+            "policy_id": "bpic19.declared_operators.v1",
+            "roles": {
+              "event_id": 3,
+              "item_category": 4,
+              "net_worth": 5
+            },
+            "recipe": {
+              "kind": "fifo",
+              "order": "source_position",
+              "stages": "gr_ir_ci",
+              "receipt": "goods",
+              "cancellation": "retain",
+              "ties": "strict_time"
+            },
+            "offset": 0,
+            "limit": 20
+          }
+        }
+      }
+    },
+    "comparison": {
+      "policy_id": "bpic19.ordinal_fifo_comparison.v1",
+      "definition_id": "bpic19-recipe-comparison.v1:sha256:905d008d94d07781e44e2cb55679f322c28a3ad67619da42ed6f8b8140e0c476",
+      "first": {
+        "schema_version": 1,
+        "message_type": "bpic19_operator_answer",
+        "request_id": "bpic19-compared-ordinal",
+        "query_revision": 1,
+        "workspace_id": "workspace.v1:60e21ad349a64a7d8a461fc9c4e50580",
+        "identity": {
+          "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+          "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+          "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+          "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+          "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+          "implementation_version": "0.1.0"
+        },
+        "parent_identity": {
+          "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+          "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+          "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+          "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+          "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+          "implementation_version": "0.1.0"
+        },
+        "query": {
+          "policy_id": "bpic19.declared_operators.v1",
+          "roles": {
+            "event_id": 3,
+            "item_category": 4,
+            "net_worth": 5
+          },
+          "recipe": {
+            "kind": "ordinal",
+            "order": "timestamp_source_position",
+            "stages": "gr_ir_ci",
+            "receipt": "goods",
+            "cancellation": "retain",
+            "ties": "source_position"
+          },
+          "offset": 0,
+          "limit": 20
+        },
+        "operation": "bpic19_ordinal",
+        "definition_id": "bpic19-operator-definition.v1:sha256:9caa3941b98768e0dda50ee23d62ec675aabb00f690ed5555886188cda057f1c",
+        "result_id": "bpic19-operator-result.v1:sha256:7950ba5f4ada791ee002bb55e83562aa534ed60ba228e66602085148bd8c18df",
+        "definition": {
+          "policy_id": "bpic19.declared_operators.v1",
+          "roles": {
+            "event_id": 3,
+            "item_category": 4,
+            "net_worth": 5
+          },
+          "recipe": {
+            "kind": "ordinal",
+            "order": "timestamp_source_position",
+            "stages": "gr_ir_ci",
+            "receipt": "goods",
+            "cancellation": "retain",
+            "ties": "source_position"
+          },
+          "source_evidence": [
+            "merged_reports.pdf R04 pp91\u201393: kth exact-activity occurrence ordered by original numeric eventID; item mean intervals",
+            "merged_reports.pdf R15 pp344,346\u2013347: timestamp kth occurrences and simultaneous events; reuse/shared creation rules require separate admission",
+            "Panel-declared numeric-eventID and timestamp recipes; inferred ordinal episodes, not native invoice identifiers"
+          ],
+          "original_history_policy": "immutable_complete_item_histories",
+          "inferred_invoice_id_policy": "none",
+          "representative_policy": "source_position_first_with_all_tied_candidates",
+          "definition_id": "bpic19-operator-definition.v1:sha256:9caa3941b98768e0dda50ee23d62ec675aabb00f690ed5555886188cda057f1c"
+        },
+        "catalogue": {
+          "columns": [
+            {
+              "index": 0,
+              "name": "case"
+            },
+            {
+              "index": 1,
+              "name": "activity"
+            },
+            {
+              "index": 2,
+              "name": "time"
+            },
+            {
+              "index": 3,
+              "name": "eventID"
+            },
+            {
+              "index": 4,
+              "name": "category"
+            },
+            {
+              "index": 5,
+              "name": "value"
+            }
+          ],
+          "activities": [
+            "A",
+            "B",
+            "Cancel Invoice Receipt",
+            "Change Price",
+            "Clear Invoice",
+            "Record Goods Receipt",
+            "Record Invoice Receipt",
+            "X"
+          ],
+          "clock_kind": "wall_clock",
+          "trusted_cutoff": "2018-01-21T00:00:00"
+        },
+        "population_case_count": 7,
+        "population_record_count": 21,
+        "summary": {
+          "case_state_counts": {
+            "evaluated": 7
+          },
+          "observation_state_counts": {
+            "matched": 1,
+            "unmatched": 2
+          },
+          "truth_case_counts": {},
+          "activation_count": 1,
+          "known_activation_count": 1,
+          "observation_count": 3,
+          "interval_distributions": {
+            "stage_1_to_2": {
+              "per_episode": {
+                "available_count": 1,
+                "unavailable_count": 2,
+                "zero_count": 0,
+                "minimum": 1.0,
+                "maximum": 1.0,
+                "mean": 1.0,
+                "median": 1.0,
+                "known_sum": 1.0,
+                "known_sum_reason": null
+              },
+              "per_item_mean": {
+                "available_count": 1,
+                "unavailable_count": 6,
+                "zero_count": 0,
+                "minimum": 1.0,
+                "maximum": 1.0,
+                "mean": 1.0,
+                "median": 1.0,
+                "known_sum": 1.0,
+                "known_sum_reason": null
+              }
+            },
+            "stage_2_to_3": {
+              "per_episode": {
+                "available_count": 1,
+                "unavailable_count": 2,
+                "zero_count": 0,
+                "minimum": 2.0,
+                "maximum": 2.0,
+                "mean": 2.0,
+                "median": 2.0,
+                "known_sum": 2.0,
+                "known_sum_reason": null
+              },
+              "per_item_mean": {
+                "available_count": 1,
+                "unavailable_count": 6,
+                "zero_count": 0,
+                "minimum": 2.0,
+                "maximum": 2.0,
+                "mean": 2.0,
+                "median": 2.0,
+                "known_sum": 2.0,
+                "known_sum_reason": null
+              }
+            }
+          },
+          "total_distributions": {
+            "cancellation_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 3,
+              "mean": 0.42857142857142855,
+              "median": 0,
+              "known_sum": 3.0,
+              "known_sum_reason": null
+            },
+            "paired_endpoint_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 3,
+              "mean": 0.42857142857142855,
+              "median": 0,
+              "known_sum": 3.0,
+              "known_sum_reason": null
+            },
+            "paired_episode_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 1,
+              "mean": 0.14285714285714285,
+              "median": 0,
+              "known_sum": 1.0,
+              "known_sum_reason": null
+            },
+            "stage_1_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 1,
+              "mean": 0.14285714285714285,
+              "median": 0,
+              "known_sum": 1.0,
+              "known_sum_reason": null
+            },
+            "stage_1_unmatched_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 7,
+              "minimum": 0,
+              "maximum": 0,
+              "mean": 0.0,
+              "median": 0,
+              "known_sum": 0.0,
+              "known_sum_reason": null
+            },
+            "stage_2_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 5,
+              "minimum": 0,
+              "maximum": 2,
+              "mean": 0.42857142857142855,
+              "median": 0,
+              "known_sum": 3.0,
+              "known_sum_reason": null
+            },
+            "stage_2_unmatched_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 2,
+              "mean": 0.2857142857142857,
+              "median": 0,
+              "known_sum": 2.0,
+              "known_sum_reason": null
+            },
+            "stage_3_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 1,
+              "mean": 0.14285714285714285,
+              "median": 0,
+              "known_sum": 1.0,
+              "known_sum_reason": null
+            },
+            "stage_3_unmatched_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 7,
+              "minimum": 0,
+              "maximum": 0,
+              "mean": 0.0,
+              "median": 0,
+              "known_sum": 0.0,
+              "known_sum_reason": null
+            },
+            "unmatched_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 2,
+              "mean": 0.2857142857142857,
+              "median": 0,
+              "known_sum": 2.0,
+              "known_sum_reason": null
+            }
+          },
+          "occupancy": null
+        },
+        "selection_groups": [
+          {
+            "key": "evaluated",
+            "label": "evaluated",
+            "case_ids": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g"
+            ],
+            "case_count": 7,
+            "record_count": 21
+          },
+          {
+            "key": "observation_matched",
+            "label": "observation matched",
+            "case_ids": [
+              "a"
+            ],
+            "case_count": 1,
+            "record_count": 4
+          },
+          {
+            "key": "observation_unmatched",
+            "label": "observation unmatched",
+            "case_ids": [
+              "b"
+            ],
+            "case_count": 1,
+            "record_count": 5
+          }
+        ],
+        "cases": [
+          {
+            "case_id": "a",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 4,
+            "record_row_ids": [
+              "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+              "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+              "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54",
+              "row.v1:sha256:4f50b17babc516b09f7258018aa3eda09f53bfcb180e378cb3cec94b059b51b5"
+            ],
+            "observations": [
+              {
+                "ordinal": 1,
+                "state": "matched",
+                "reason": null,
+                "activation_row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328"
+                ],
+                "response_row_ids": [
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ],
+                "candidate_row_ids": [],
+                "unknown_row_ids": [],
+                "truth": null,
+                "intervals": {
+                  "stage_1_to_2": {
+                    "value": 1.0,
+                    "available": true,
+                    "reason": null,
+                    "unit": "days",
+                    "row_ids": [
+                      "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                      "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a"
+                    ],
+                    "recorded_difference_days": 1.0
+                  },
+                  "stage_2_to_3": {
+                    "value": 2.0,
+                    "available": true,
+                    "reason": null,
+                    "unit": "days",
+                    "row_ids": [
+                      "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                      "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                    ],
+                    "recorded_difference_days": 2.0
+                  }
+                },
+                "start": null,
+                "end": null,
+                "native_invoice_id": null,
+                "stage_row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ],
+                "selected_row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ],
+                "observation_id": "bpic19-observation.v1:sha256:3f5b85efe7cc68682a8768c5159d38a87a8406df61a706355272ae7a6898544b"
+              }
+            ],
+            "unmatched_row_ids": [],
+            "included_row_ids": [
+              "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+              "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+              "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+            ],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 1,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ]
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 3,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ]
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 1,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328"
+                ]
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 1,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a"
+                ]
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 1,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ]
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 1,
+            "known_activation_count": 1
+          },
+          {
+            "case_id": "b",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 5,
+            "record_row_ids": [
+              "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+              "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6",
+              "row.v1:sha256:f9c938a4914e68c07c8672604638869a6bb6b77abb53720ad87db75b5c49e387",
+              "row.v1:sha256:2cf670c44750b201f64fd6b44aaa298086f4bbfd6c4033b9d1a689ef2af08594",
+              "row.v1:sha256:d7341eb2cefadd96cd1b4ec87c5600242c75c032b0461f8b285776a7e7a3aba5"
+            ],
+            "observations": [
+              {
+                "ordinal": 1,
+                "state": "unmatched",
+                "reason": "unmatched_endpoint",
+                "activation_row_ids": [],
+                "response_row_ids": [],
+                "candidate_row_ids": [],
+                "unknown_row_ids": [],
+                "truth": null,
+                "intervals": {
+                  "stage_1_to_2": {
+                    "value": null,
+                    "available": false,
+                    "reason": "unmatched_endpoint",
+                    "unit": "days",
+                    "row_ids": [
+                      "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29"
+                    ],
+                    "recorded_difference_days": null
+                  },
+                  "stage_2_to_3": {
+                    "value": null,
+                    "available": false,
+                    "reason": "unmatched_endpoint",
+                    "unit": "days",
+                    "row_ids": [
+                      "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29"
+                    ],
+                    "recorded_difference_days": null
+                  }
+                },
+                "start": null,
+                "end": null,
+                "native_invoice_id": null,
+                "stage_row_ids": [
+                  null,
+                  "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+                  null
+                ],
+                "selected_row_ids": [
+                  "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29"
+                ],
+                "observation_id": "bpic19-observation.v1:sha256:8330c15ae582ba63560cad17a1049a4cbc0c47e4fa27f7e82353edfa2a886fef"
+              },
+              {
+                "ordinal": 2,
+                "state": "unmatched",
+                "reason": "unmatched_endpoint",
+                "activation_row_ids": [],
+                "response_row_ids": [],
+                "candidate_row_ids": [],
+                "unknown_row_ids": [],
+                "truth": null,
+                "intervals": {
+                  "stage_1_to_2": {
+                    "value": null,
+                    "available": false,
+                    "reason": "unmatched_endpoint",
+                    "unit": "days",
+                    "row_ids": [
+                      "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                    ],
+                    "recorded_difference_days": null
+                  },
+                  "stage_2_to_3": {
+                    "value": null,
+                    "available": false,
+                    "reason": "unmatched_endpoint",
+                    "unit": "days",
+                    "row_ids": [
+                      "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                    ],
+                    "recorded_difference_days": null
+                  }
+                },
+                "start": null,
+                "end": null,
+                "native_invoice_id": null,
+                "stage_row_ids": [
+                  null,
+                  "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6",
+                  null
+                ],
+                "selected_row_ids": [
+                  "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                ],
+                "observation_id": "bpic19-observation.v1:sha256:c999fd41f5691f0721c42b122e20ed53c64852aeaceace2c8fd55b223e67f8ae"
+              }
+            ],
+            "unmatched_row_ids": [
+              "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+              "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+            ],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 2,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+                  "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                ]
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 3,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:f9c938a4914e68c07c8672604638869a6bb6b77abb53720ad87db75b5c49e387",
+                  "row.v1:sha256:2cf670c44750b201f64fd6b44aaa298086f4bbfd6c4033b9d1a689ef2af08594",
+                  "row.v1:sha256:d7341eb2cefadd96cd1b4ec87c5600242c75c032b0461f8b285776a7e7a3aba5"
+                ]
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 2,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+                  "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                ]
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 2,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+                  "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                ]
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "c",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 4,
+            "record_row_ids": [
+              "row.v1:sha256:03b96ecc1f501afc8e9abe8b98b34827c9f1f9ed59ed4b889c2b11e10eec2200",
+              "row.v1:sha256:18c73a3e41e7c866490d59864b52ea1a56e16fbd9fd2549e6102dde18626bd3b",
+              "row.v1:sha256:43bf446dc6bb94267a3245e8aa63f6c8742922908d6e0edcb29fba0caae53916",
+              "row.v1:sha256:c62c17cadb080fee204c56c210a2b843ad567de039af96f91e787442851c6345"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "d",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 3,
+            "record_row_ids": [
+              "row.v1:sha256:ed1a9d5f8d240ce59c702893a80b2ac4b3e3dbf89bf6976202324ac72866088a",
+              "row.v1:sha256:96598fe0f217ec87c7997b9c73c1e577cc0d607d910d5313791a27822c2b99e3",
+              "row.v1:sha256:33633590b8db605d7d0ee9c0e30e2d7a2887bc11182ae83903e3f4acb9327c5a"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "e",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 1,
+            "record_row_ids": [
+              "row.v1:sha256:f801d142b3d754210ac91039b124082d0b956c1c8c35f196a80a9ac8fc97457a"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "f",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 2,
+            "record_row_ids": [
+              "row.v1:sha256:98a99a2da4a92a2d948ce1006b158260f7445070578df78d64134e44c7334475",
+              "row.v1:sha256:646299c47784a66cfedf331bdeb4050d40941fd8c6f88ea59a2e8d9c7434a7a4"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "g",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 2,
+            "record_row_ids": [
+              "row.v1:sha256:48c06c2bfa330c2ad9d575261d0205602aa0fe7f8ff53b6b398df5e2c21d6437",
+              "row.v1:sha256:5903534126e72b9fc1ec5021ac6996ba784faaaa958cefbdc76797317a4b4202"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          }
+        ],
+        "offset": 0,
+        "limit": 20,
+        "next_offset": null
+      },
+      "second": {
+        "schema_version": 1,
+        "message_type": "bpic19_operator_answer",
+        "request_id": "bpic19-compared-fifo",
+        "query_revision": 1,
+        "workspace_id": "workspace.v1:60e21ad349a64a7d8a461fc9c4e50580",
+        "identity": {
+          "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+          "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+          "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+          "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+          "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+          "implementation_version": "0.1.0"
+        },
+        "parent_identity": {
+          "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+          "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+          "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+          "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+          "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+          "implementation_version": "0.1.0"
+        },
+        "query": {
+          "policy_id": "bpic19.declared_operators.v1",
+          "roles": {
+            "event_id": 3,
+            "item_category": 4,
+            "net_worth": 5
+          },
+          "recipe": {
+            "kind": "fifo",
+            "order": "source_position",
+            "stages": "gr_ir_ci",
+            "receipt": "goods",
+            "cancellation": "retain",
+            "ties": "strict_time"
+          },
+          "offset": 0,
+          "limit": 20
+        },
+        "operation": "bpic19_fifo",
+        "definition_id": "bpic19-operator-definition.v1:sha256:c68a4e9a12c1c2f8f93b6a45255bc158aadfc64961c9f1ff011f55c9fd5f7b59",
+        "result_id": "bpic19-operator-result.v1:sha256:b0497ab4c71249b7de05f10974d1582e11faca34edac92bc78866f20e0f58ab9",
+        "definition": {
+          "policy_id": "bpic19.declared_operators.v1",
+          "roles": {
+            "event_id": 3,
+            "item_category": 4,
+            "net_worth": 5
+          },
+          "recipe": {
+            "kind": "fifo",
+            "order": "source_position",
+            "stages": "gr_ir_ci",
+            "receipt": "goods",
+            "cancellation": "retain",
+            "ties": "strict_time"
+          },
+          "source_evidence": [
+            "merged_reports.pdf R08 pp172\u2013176: ordered receipt, invoice and clearing vectors; Table5 consuming FIFO triples (1,3,5),(2,4,15),(7,11,20)",
+            "Panel-declared source-position and timestamp alternatives; strict-later positions may have equal parsed timestamps"
+          ],
+          "original_history_policy": "immutable_complete_item_histories",
+          "inferred_invoice_id_policy": "none",
+          "representative_policy": "source_position_first_with_all_tied_candidates",
+          "definition_id": "bpic19-operator-definition.v1:sha256:c68a4e9a12c1c2f8f93b6a45255bc158aadfc64961c9f1ff011f55c9fd5f7b59"
+        },
+        "catalogue": {
+          "columns": [
+            {
+              "index": 0,
+              "name": "case"
+            },
+            {
+              "index": 1,
+              "name": "activity"
+            },
+            {
+              "index": 2,
+              "name": "time"
+            },
+            {
+              "index": 3,
+              "name": "eventID"
+            },
+            {
+              "index": 4,
+              "name": "category"
+            },
+            {
+              "index": 5,
+              "name": "value"
+            }
+          ],
+          "activities": [
+            "A",
+            "B",
+            "Cancel Invoice Receipt",
+            "Change Price",
+            "Clear Invoice",
+            "Record Goods Receipt",
+            "Record Invoice Receipt",
+            "X"
+          ],
+          "clock_kind": "wall_clock",
+          "trusted_cutoff": "2018-01-21T00:00:00"
+        },
+        "population_case_count": 7,
+        "population_record_count": 21,
+        "summary": {
+          "case_state_counts": {
+            "evaluated": 7
+          },
+          "observation_state_counts": {
+            "matched": 1
+          },
+          "truth_case_counts": {},
+          "activation_count": 1,
+          "known_activation_count": 1,
+          "observation_count": 1,
+          "interval_distributions": {
+            "stage_1_to_2": {
+              "per_episode": {
+                "available_count": 1,
+                "unavailable_count": 0,
+                "zero_count": 0,
+                "minimum": 1.0,
+                "maximum": 1.0,
+                "mean": 1.0,
+                "median": 1.0,
+                "known_sum": 1.0,
+                "known_sum_reason": null
+              },
+              "per_item_mean": {
+                "available_count": 1,
+                "unavailable_count": 6,
+                "zero_count": 0,
+                "minimum": 1.0,
+                "maximum": 1.0,
+                "mean": 1.0,
+                "median": 1.0,
+                "known_sum": 1.0,
+                "known_sum_reason": null
+              }
+            },
+            "stage_2_to_3": {
+              "per_episode": {
+                "available_count": 1,
+                "unavailable_count": 0,
+                "zero_count": 0,
+                "minimum": 2.0,
+                "maximum": 2.0,
+                "mean": 2.0,
+                "median": 2.0,
+                "known_sum": 2.0,
+                "known_sum_reason": null
+              },
+              "per_item_mean": {
+                "available_count": 1,
+                "unavailable_count": 6,
+                "zero_count": 0,
+                "minimum": 2.0,
+                "maximum": 2.0,
+                "mean": 2.0,
+                "median": 2.0,
+                "known_sum": 2.0,
+                "known_sum_reason": null
+              }
+            }
+          },
+          "total_distributions": {
+            "cancellation_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 3,
+              "mean": 0.42857142857142855,
+              "median": 0,
+              "known_sum": 3.0,
+              "known_sum_reason": null
+            },
+            "paired_endpoint_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 3,
+              "mean": 0.42857142857142855,
+              "median": 0,
+              "known_sum": 3.0,
+              "known_sum_reason": null
+            },
+            "paired_episode_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 1,
+              "mean": 0.14285714285714285,
+              "median": 0,
+              "known_sum": 1.0,
+              "known_sum_reason": null
+            },
+            "stage_1_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 1,
+              "mean": 0.14285714285714285,
+              "median": 0,
+              "known_sum": 1.0,
+              "known_sum_reason": null
+            },
+            "stage_1_unmatched_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 7,
+              "minimum": 0,
+              "maximum": 0,
+              "mean": 0.0,
+              "median": 0,
+              "known_sum": 0.0,
+              "known_sum_reason": null
+            },
+            "stage_2_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 5,
+              "minimum": 0,
+              "maximum": 2,
+              "mean": 0.42857142857142855,
+              "median": 0,
+              "known_sum": 3.0,
+              "known_sum_reason": null
+            },
+            "stage_2_unmatched_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 2,
+              "mean": 0.2857142857142857,
+              "median": 0,
+              "known_sum": 2.0,
+              "known_sum_reason": null
+            },
+            "stage_3_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 1,
+              "mean": 0.14285714285714285,
+              "median": 0,
+              "known_sum": 1.0,
+              "known_sum_reason": null
+            },
+            "stage_3_unmatched_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 7,
+              "minimum": 0,
+              "maximum": 0,
+              "mean": 0.0,
+              "median": 0,
+              "known_sum": 0.0,
+              "known_sum_reason": null
+            },
+            "unmatched_event_count": {
+              "available_count": 7,
+              "unavailable_count": 0,
+              "zero_count": 6,
+              "minimum": 0,
+              "maximum": 2,
+              "mean": 0.2857142857142857,
+              "median": 0,
+              "known_sum": 2.0,
+              "known_sum_reason": null
+            }
+          },
+          "occupancy": null
+        },
+        "selection_groups": [
+          {
+            "key": "evaluated",
+            "label": "evaluated",
+            "case_ids": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g"
+            ],
+            "case_count": 7,
+            "record_count": 21
+          },
+          {
+            "key": "observation_matched",
+            "label": "observation matched",
+            "case_ids": [
+              "a"
+            ],
+            "case_count": 1,
+            "record_count": 4
+          }
+        ],
+        "cases": [
+          {
+            "case_id": "a",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 4,
+            "record_row_ids": [
+              "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+              "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+              "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54",
+              "row.v1:sha256:4f50b17babc516b09f7258018aa3eda09f53bfcb180e378cb3cec94b059b51b5"
+            ],
+            "observations": [
+              {
+                "ordinal": 1,
+                "state": "matched",
+                "reason": null,
+                "activation_row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328"
+                ],
+                "response_row_ids": [
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ],
+                "candidate_row_ids": [],
+                "unknown_row_ids": [],
+                "truth": null,
+                "intervals": {
+                  "stage_1_to_2": {
+                    "value": 1.0,
+                    "available": true,
+                    "reason": null,
+                    "unit": "days",
+                    "row_ids": [
+                      "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                      "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a"
+                    ],
+                    "recorded_difference_days": 1.0
+                  },
+                  "stage_2_to_3": {
+                    "value": 2.0,
+                    "available": true,
+                    "reason": null,
+                    "unit": "days",
+                    "row_ids": [
+                      "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                      "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                    ],
+                    "recorded_difference_days": 2.0
+                  }
+                },
+                "start": null,
+                "end": null,
+                "native_invoice_id": null,
+                "stage_row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ],
+                "selected_row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ],
+                "observation_id": "bpic19-observation.v1:sha256:2d5219db131ad274ded55f4e7c5235e5385b8a64fa4738c20baa3fb6cf2a2cbb"
+              }
+            ],
+            "unmatched_row_ids": [],
+            "included_row_ids": [
+              "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+              "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+              "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+            ],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 1,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ]
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 3,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328",
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a",
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ]
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 1,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:1bd21ba57d953c30af555581f4bd4db63502aa44fb2fee512e57285c9c0d0328"
+                ]
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 1,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:52dd41388007d7c02ccf5abc148f0457d9eb6a84a1f8b224c1d3985de255c05a"
+                ]
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 1,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ]
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 1,
+            "known_activation_count": 1
+          },
+          {
+            "case_id": "b",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 5,
+            "record_row_ids": [
+              "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+              "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6",
+              "row.v1:sha256:f9c938a4914e68c07c8672604638869a6bb6b77abb53720ad87db75b5c49e387",
+              "row.v1:sha256:2cf670c44750b201f64fd6b44aaa298086f4bbfd6c4033b9d1a689ef2af08594",
+              "row.v1:sha256:d7341eb2cefadd96cd1b4ec87c5600242c75c032b0461f8b285776a7e7a3aba5"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [
+              "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+              "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+            ],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 2,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+                  "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                ]
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 3,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:f9c938a4914e68c07c8672604638869a6bb6b77abb53720ad87db75b5c49e387",
+                  "row.v1:sha256:2cf670c44750b201f64fd6b44aaa298086f4bbfd6c4033b9d1a689ef2af08594",
+                  "row.v1:sha256:d7341eb2cefadd96cd1b4ec87c5600242c75c032b0461f8b285776a7e7a3aba5"
+                ]
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 2,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+                  "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                ]
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 2,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": [
+                  "row.v1:sha256:88bff524f0515e29b2edad932a6f9e01ce1b15a60693ac5cc96c0cf0b970fa29",
+                  "row.v1:sha256:696f3ec658ec44830e7add51684d1d6e2164898a8a542d555d84907f381b6bc6"
+                ]
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "c",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 4,
+            "record_row_ids": [
+              "row.v1:sha256:03b96ecc1f501afc8e9abe8b98b34827c9f1f9ed59ed4b889c2b11e10eec2200",
+              "row.v1:sha256:18c73a3e41e7c866490d59864b52ea1a56e16fbd9fd2549e6102dde18626bd3b",
+              "row.v1:sha256:43bf446dc6bb94267a3245e8aa63f6c8742922908d6e0edcb29fba0caae53916",
+              "row.v1:sha256:c62c17cadb080fee204c56c210a2b843ad567de039af96f91e787442851c6345"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "d",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 3,
+            "record_row_ids": [
+              "row.v1:sha256:ed1a9d5f8d240ce59c702893a80b2ac4b3e3dbf89bf6976202324ac72866088a",
+              "row.v1:sha256:96598fe0f217ec87c7997b9c73c1e577cc0d607d910d5313791a27822c2b99e3",
+              "row.v1:sha256:33633590b8db605d7d0ee9c0e30e2d7a2887bc11182ae83903e3f4acb9327c5a"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "e",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 1,
+            "record_row_ids": [
+              "row.v1:sha256:f801d142b3d754210ac91039b124082d0b956c1c8c35f196a80a9ac8fc97457a"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "f",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 2,
+            "record_row_ids": [
+              "row.v1:sha256:98a99a2da4a92a2d948ce1006b158260f7445070578df78d64134e44c7334475",
+              "row.v1:sha256:646299c47784a66cfedf331bdeb4050d40941fd8c6f88ea59a2e8d9c7434a7a4"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          },
+          {
+            "case_id": "g",
+            "state": "evaluated",
+            "reason": null,
+            "record_count": 2,
+            "record_row_ids": [
+              "row.v1:sha256:48c06c2bfa330c2ad9d575261d0205602aa0fe7f8ff53b6b398df5e2c21d6437",
+              "row.v1:sha256:5903534126e72b9fc1ec5021ac6996ba784faaaa958cefbdc76797317a4b4202"
+            ],
+            "observations": [],
+            "unmatched_row_ids": [],
+            "included_row_ids": [],
+            "excluded_row_ids": [],
+            "unknown_row_ids": [],
+            "totals": {
+              "paired_episode_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "inferred_episodes",
+                "row_ids": []
+              },
+              "unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "paired_endpoint_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "cancellation_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_1_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_2_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              },
+              "stage_3_unmatched_event_count": {
+                "value": 0,
+                "available": true,
+                "reason": null,
+                "unit": "original_events",
+                "row_ids": []
+              }
+            },
+            "truth": null,
+            "activation_count": 0,
+            "known_activation_count": 0
+          }
+        ],
+        "offset": 0,
+        "limit": 20,
+        "next_offset": null
+      },
+      "completion_transitions": [],
+      "support_differences": []
+    }
+  },
+  "cohort": {
+    "schema_version": 1,
+    "message_type": "bpic19_recipe_comparison_answer",
+    "operation": "bpic19_cohort_comparison",
+    "request_id": "request-1",
+    "query_revision": 1,
+    "workspace_id": "workspace.v1:60e21ad349a64a7d8a461fc9c4e50580",
+    "identity": {
+      "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+      "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+      "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+      "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+      "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+      "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+      "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+      "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+      "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+      "implementation_version": "0.1.0"
+    },
+    "query": {
+      "policy_id": "bpic19.same_parent_completion_comparison.v1",
+      "target": {
+        "name": "flow_presence",
+        "query": {
+          "policy_id": "bpic19.flow_completion_cohorts.v1",
+          "roles": {
+            "item_category": 4,
+            "purchasing_document": 5
+          },
+          "inclusion": {
+            "kind": "all_items",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "completion": {
+            "recipe": "flow_presence",
+            "receipt": "goods_only",
+            "tie_policy": "unknown"
+          },
+          "retain": "all_included",
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "page": {
+            "offset": 0,
+            "limit": 10
+          }
+        },
+        "definition_id": "bpic19-cohorts.v1:sha256:f31da04c98016ae7c7482406519e68aa26b61e760e3c53d27341d065b4300001"
+      },
+      "reference": {
+        "name": "kpmg_last_ending",
+        "query": {
+          "policy_id": "bpic19.flow_completion_cohorts.v1",
+          "roles": {
+            "item_category": 4,
+            "purchasing_document": 5
+          },
+          "inclusion": {
+            "kind": "all_items",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "completion": {
+            "recipe": "kpmg_last_ending",
+            "receipt": "goods_only",
+            "tie_policy": "unknown"
+          },
+          "retain": "all_included",
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "page": {
+            "offset": 0,
+            "limit": 10
+          }
+        },
+        "definition_id": "bpic19-cohorts.v1:sha256:83a77494e9c524f9edb9018aaf0b2943db4dfc8d8b2be0234a539c771378e07f"
+      }
+    },
+    "definition_id": "bpic19-recipe-comparison.v1:sha256:1255ce73ea5dcaad5b50451598964c432ffb713f750f906e7ae97eed90dc57f5",
+    "definition": {
+      "identity": {
+        "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+        "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+        "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+        "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+        "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+        "implementation_version": "0.1.0"
+      },
+      "query": {
+        "policy_id": "bpic19.same_parent_completion_comparison.v1",
+        "target": {
+          "name": "flow_presence",
+          "query": {
+            "policy_id": "bpic19.flow_completion_cohorts.v1",
+            "roles": {
+              "item_category": 4,
+              "purchasing_document": 5
+            },
+            "inclusion": {
+              "kind": "all_items",
+              "timestamp_kind": "wall_clock",
+              "start_inclusive": null,
+              "end_exclusive": null
+            },
+            "completion": {
+              "recipe": "flow_presence",
+              "receipt": "goods_only",
+              "tie_policy": "unknown"
+            },
+            "retain": "all_included",
+            "horizon": {
+              "timestamp_kind": "wall_clock",
+              "value": null,
+              "provenance": null
+            },
+            "page": {
+              "offset": 0,
+              "limit": 10
+            }
+          },
+          "definition_id": "bpic19-cohorts.v1:sha256:f31da04c98016ae7c7482406519e68aa26b61e760e3c53d27341d065b4300001"
+        },
+        "reference": {
+          "name": "kpmg_last_ending",
+          "query": {
+            "policy_id": "bpic19.flow_completion_cohorts.v1",
+            "roles": {
+              "item_category": 4,
+              "purchasing_document": 5
+            },
+            "inclusion": {
+              "kind": "all_items",
+              "timestamp_kind": "wall_clock",
+              "start_inclusive": null,
+              "end_exclusive": null
+            },
+            "completion": {
+              "recipe": "kpmg_last_ending",
+              "receipt": "goods_only",
+              "tie_policy": "unknown"
+            },
+            "retain": "all_included",
+            "horizon": {
+              "timestamp_kind": "wall_clock",
+              "value": null,
+              "provenance": null
+            },
+            "page": {
+              "offset": 0,
+              "limit": 10
+            }
+          },
+          "definition_id": "bpic19-cohorts.v1:sha256:83a77494e9c524f9edb9018aaf0b2943db4dfc8d8b2be0234a539c771378e07f"
+        }
+      }
+    },
+    "comparison": {
+      "policy_id": "bpic19.same_parent_completion_comparison.v1",
+      "definition_id": "bpic19-recipe-comparison.v1:sha256:1255ce73ea5dcaad5b50451598964c432ffb713f750f906e7ae97eed90dc57f5",
+      "first": {
+        "schema_version": 1,
+        "message_type": "bpic19_cohorts_answer",
+        "request_id": "bpic19-compared-target",
+        "query_revision": 1,
+        "workspace_id": "workspace.v1:60e21ad349a64a7d8a461fc9c4e50580",
+        "identity": {
+          "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+          "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+          "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+          "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+          "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+          "implementation_version": "0.1.0"
+        },
+        "parent_identity": {
+          "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+          "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+          "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+          "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+          "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+          "implementation_version": "0.1.0"
+        },
+        "query": {
+          "policy_id": "bpic19.flow_completion_cohorts.v1",
+          "roles": {
+            "item_category": 4,
+            "purchasing_document": 5
+          },
+          "inclusion": {
+            "kind": "all_items",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "completion": {
+            "recipe": "flow_presence",
+            "receipt": "goods_only",
+            "tie_policy": "unknown"
+          },
+          "retain": "all_included",
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "page": {
+            "offset": 0,
+            "limit": 10
+          }
+        },
+        "definition_id": "bpic19-cohorts.v1:sha256:f31da04c98016ae7c7482406519e68aa26b61e760e3c53d27341d065b4300001",
+        "definition": {
+          "policy_id": "bpic19.flow_completion_cohorts.v1",
+          "roles": {
+            "item_category": 4,
+            "purchasing_document": 5
+          },
+          "inclusion": {
+            "kind": "all_items",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "completion": {
+            "recipe": "flow_presence",
+            "receipt": "goods_only",
+            "tie_policy": "unknown"
+          },
+          "retain": "all_included",
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          }
+        },
+        "cohorts": {
+          "definition_id": "bpic19-cohorts.v1:sha256:f31da04c98016ae7c7482406519e68aa26b61e760e3c53d27341d065b4300001",
+          "definition": {
+            "policy_id": "bpic19.flow_completion_cohorts.v1",
+            "roles": {
+              "item_category": 4,
+              "purchasing_document": 5
+            },
+            "inclusion": {
+              "kind": "all_items",
+              "timestamp_kind": "wall_clock",
+              "start_inclusive": null,
+              "end_exclusive": null
+            },
+            "completion": {
+              "recipe": "flow_presence",
+              "receipt": "goods_only",
+              "tie_policy": "unknown"
+            },
+            "retain": "all_included",
+            "horizon": {
+              "timestamp_kind": "wall_clock",
+              "value": null,
+              "provenance": null
+            }
+          },
+          "original": {
+            "case_count": 7,
+            "record_count": 21,
+            "document_count": 2,
+            "document_unknown_case_count": 1
+          },
+          "inclusion": {
+            "before": {
+              "case_count": 7,
+              "record_count": 21,
+              "document_count": 2,
+              "document_unknown_case_count": 1
+            },
+            "retained": {
+              "case_count": 7,
+              "record_count": 21,
+              "document_count": 2,
+              "document_unknown_case_count": 1,
+              "case_ids": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g"
+              ]
+            },
+            "excluded": {
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            },
+            "unknown": {
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            }
+          },
+          "completion_groups": [
+            {
+              "state": "observed_closed",
+              "case_count": 1,
+              "record_count": 4,
+              "document_count": 1,
+              "document_unknown_case_count": 0,
+              "case_ids": [
+                "a"
+              ]
+            },
+            {
+              "state": "open_recorded",
+              "case_count": 6,
+              "record_count": 17,
+              "document_count": 2,
+              "document_unknown_case_count": 1,
+              "case_ids": [
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g"
+              ]
+            },
+            {
+              "state": "unknown",
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            }
+          ],
+          "retention": {
+            "before": {
+              "case_count": 7,
+              "record_count": 21,
+              "document_count": 2,
+              "document_unknown_case_count": 1
+            },
+            "retained": {
+              "case_count": 7,
+              "record_count": 21,
+              "document_count": 2,
+              "document_unknown_case_count": 1,
+              "case_ids": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g"
+              ]
+            },
+            "excluded": {
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            },
+            "unknown": {
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            }
+          },
+          "selection": {
+            "kind": "case_id_in",
+            "case_ids": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g"
+            ],
+            "negate": false
+          },
+          "partition": {
+            "covers_included": true,
+            "is_disjoint": true
+          },
+          "page": {
+            "offset": 0,
+            "limit": 10,
+            "total": 7,
+            "items": [
+              {
+                "case_id": "a",
+                "flow_id": "after_gr",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "observed_closed",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "required_recorded_milestones_present"
+                ],
+                "witness_row_ids": [
+                  "row.v1:sha256:4b0eaae5ef7b415c719ac6998f334a8735d7a429b2255e39d84c8ffab25e4d54"
+                ],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice"
+                  ]
+                ],
+                "record_count": 4,
+                "document": "100",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "b",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "missing_recorded_milestone:Clear Invoice"
+                ],
+                "witness_row_ids": [],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice"
+                  ]
+                ],
+                "record_count": 5,
+                "document": "100",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "c",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "missing_recorded_milestone:Clear Invoice"
+                ],
+                "witness_row_ids": [],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice"
+                  ]
+                ],
+                "record_count": 4,
+                "document": "0",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "d",
+                "flow_id": "consignment",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "missing_recorded_milestone:Record Goods Receipt"
+                ],
+                "witness_row_ids": [],
+                "required_activity_sets": [
+                  [
+                    "Record Goods Receipt"
+                  ]
+                ],
+                "record_count": 3,
+                "document": null,
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "e",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "missing_recorded_milestone:Clear Invoice"
+                ],
+                "witness_row_ids": [],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice"
+                  ]
+                ],
+                "record_count": 1,
+                "document": "0",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "f",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "missing_recorded_milestone:Clear Invoice"
+                ],
+                "witness_row_ids": [],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice"
+                  ]
+                ],
+                "record_count": 2,
+                "document": "0",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "g",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "missing_recorded_milestone:Clear Invoice"
+                ],
+                "witness_row_ids": [],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice"
+                  ]
+                ],
+                "record_count": 2,
+                "document": "0",
+                "due_state": "unavailable"
+              }
+            ]
+          },
+          "limitations": [
+            "Recorded completion is not compliance, payment receipt or a due-obligation judgement.",
+            "The declared horizon is retained as reviewed provenance; no payment terms are supplied, so due assessment is unavailable.",
+            "Document supports overlap across item cohorts; document inclusion uses siblings within the frozen parent.",
+            "All selected items retain complete original histories; no event projection is applied."
+          ]
+        }
+      },
+      "second": {
+        "schema_version": 1,
+        "message_type": "bpic19_cohorts_answer",
+        "request_id": "bpic19-compared-reference",
+        "query_revision": 1,
+        "workspace_id": "workspace.v1:60e21ad349a64a7d8a461fc9c4e50580",
+        "identity": {
+          "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+          "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+          "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+          "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+          "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+          "implementation_version": "0.1.0"
+        },
+        "parent_identity": {
+          "source_id": "source.v1:sha256:054b176a504ef00e3327484bf9128df6def508aa755f0e790a6c63ac7a3b19a6",
+          "preparation_id": "preparation.v1:sha256:34dfae246d877d1855e1a534f4df556f1ebed57a017c022f15cd7247819508c3",
+          "representation_id": "representation.v1:sha256:2bb65c079af0f435b879a84255b7d7832e8a6a9aec5780b9d671a5b7ec9c3a0d",
+          "case_dictionary_id": "case-dictionary.v1:sha256:b57285e7e0ddf3042274879f4b3443c96ecb3e7df5529edcb2b0e5d8476a5261",
+          "population_id": "population.v1:sha256:601169696ea5b5e800c342c3499796879414b95ae2a6385c4c32462dd381ffe8",
+          "implementation_version": "0.1.0"
+        },
+        "query": {
+          "policy_id": "bpic19.flow_completion_cohorts.v1",
+          "roles": {
+            "item_category": 4,
+            "purchasing_document": 5
+          },
+          "inclusion": {
+            "kind": "all_items",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "completion": {
+            "recipe": "kpmg_last_ending",
+            "receipt": "goods_only",
+            "tie_policy": "unknown"
+          },
+          "retain": "all_included",
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          },
+          "page": {
+            "offset": 0,
+            "limit": 10
+          }
+        },
+        "definition_id": "bpic19-cohorts.v1:sha256:83a77494e9c524f9edb9018aaf0b2943db4dfc8d8b2be0234a539c771378e07f",
+        "definition": {
+          "policy_id": "bpic19.flow_completion_cohorts.v1",
+          "roles": {
+            "item_category": 4,
+            "purchasing_document": 5
+          },
+          "inclusion": {
+            "kind": "all_items",
+            "timestamp_kind": "wall_clock",
+            "start_inclusive": null,
+            "end_exclusive": null
+          },
+          "completion": {
+            "recipe": "kpmg_last_ending",
+            "receipt": "goods_only",
+            "tie_policy": "unknown"
+          },
+          "retain": "all_included",
+          "horizon": {
+            "timestamp_kind": "wall_clock",
+            "value": null,
+            "provenance": null
+          }
+        },
+        "cohorts": {
+          "definition_id": "bpic19-cohorts.v1:sha256:83a77494e9c524f9edb9018aaf0b2943db4dfc8d8b2be0234a539c771378e07f",
+          "definition": {
+            "policy_id": "bpic19.flow_completion_cohorts.v1",
+            "roles": {
+              "item_category": 4,
+              "purchasing_document": 5
+            },
+            "inclusion": {
+              "kind": "all_items",
+              "timestamp_kind": "wall_clock",
+              "start_inclusive": null,
+              "end_exclusive": null
+            },
+            "completion": {
+              "recipe": "kpmg_last_ending",
+              "receipt": "goods_only",
+              "tie_policy": "unknown"
+            },
+            "retain": "all_included",
+            "horizon": {
+              "timestamp_kind": "wall_clock",
+              "value": null,
+              "provenance": null
+            }
+          },
+          "original": {
+            "case_count": 7,
+            "record_count": 21,
+            "document_count": 2,
+            "document_unknown_case_count": 1
+          },
+          "inclusion": {
+            "before": {
+              "case_count": 7,
+              "record_count": 21,
+              "document_count": 2,
+              "document_unknown_case_count": 1
+            },
+            "retained": {
+              "case_count": 7,
+              "record_count": 21,
+              "document_count": 2,
+              "document_unknown_case_count": 1,
+              "case_ids": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g"
+              ]
+            },
+            "excluded": {
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            },
+            "unknown": {
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            }
+          },
+          "completion_groups": [
+            {
+              "state": "observed_closed",
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            },
+            {
+              "state": "open_recorded",
+              "case_count": 6,
+              "record_count": 19,
+              "document_count": 2,
+              "document_unknown_case_count": 1,
+              "case_ids": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "g"
+              ]
+            },
+            {
+              "state": "unknown",
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "document_unknown_case_count": 0,
+              "case_ids": [
+                "f"
+              ]
+            }
+          ],
+          "retention": {
+            "before": {
+              "case_count": 7,
+              "record_count": 21,
+              "document_count": 2,
+              "document_unknown_case_count": 1
+            },
+            "retained": {
+              "case_count": 7,
+              "record_count": 21,
+              "document_count": 2,
+              "document_unknown_case_count": 1,
+              "case_ids": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g"
+              ]
+            },
+            "excluded": {
+              "case_count": 0,
+              "record_count": 0,
+              "document_count": 0,
+              "document_unknown_case_count": 0,
+              "case_ids": []
+            },
+            "unknown": {
+              "case_count": 1,
+              "record_count": 2,
+              "document_count": 1,
+              "document_unknown_case_count": 0,
+              "case_ids": [
+                "f"
+              ]
+            }
+          },
+          "selection": {
+            "kind": "case_id_in",
+            "case_ids": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g"
+            ],
+            "negate": false
+          },
+          "partition": {
+            "covers_included": true,
+            "is_disjoint": true
+          },
+          "page": {
+            "offset": 0,
+            "limit": 10,
+            "total": 7,
+            "items": [
+              {
+                "case_id": "a",
+                "flow_id": "after_gr",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "last_recorded_activity"
+                ],
+                "witness_row_ids": [
+                  "row.v1:sha256:4f50b17babc516b09f7258018aa3eda09f53bfcb180e378cb3cec94b059b51b5"
+                ],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice",
+                    "Delete Purchase Order Item"
+                  ]
+                ],
+                "record_count": 4,
+                "document": "100",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "b",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "last_recorded_activity"
+                ],
+                "witness_row_ids": [
+                  "row.v1:sha256:d7341eb2cefadd96cd1b4ec87c5600242c75c032b0461f8b285776a7e7a3aba5"
+                ],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice",
+                    "Delete Purchase Order Item"
+                  ]
+                ],
+                "record_count": 5,
+                "document": "100",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "c",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "last_recorded_activity"
+                ],
+                "witness_row_ids": [
+                  "row.v1:sha256:c62c17cadb080fee204c56c210a2b843ad567de039af96f91e787442851c6345"
+                ],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice",
+                    "Delete Purchase Order Item"
+                  ]
+                ],
+                "record_count": 4,
+                "document": "0",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "d",
+                "flow_id": "consignment",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "last_recorded_activity"
+                ],
+                "witness_row_ids": [
+                  "row.v1:sha256:33633590b8db605d7d0ee9c0e30e2d7a2887bc11182ae83903e3f4acb9327c5a"
+                ],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice",
+                    "Delete Purchase Order Item"
+                  ]
+                ],
+                "record_count": 3,
+                "document": null,
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "e",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "last_recorded_activity"
+                ],
+                "witness_row_ids": [
+                  "row.v1:sha256:f801d142b3d754210ac91039b124082d0b956c1c8c35f196a80a9ac8fc97457a"
+                ],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice",
+                    "Delete Purchase Order Item"
+                  ]
+                ],
+                "record_count": 1,
+                "document": "0",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "f",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "unknown",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "ending_order_unavailable"
+                ],
+                "witness_row_ids": [
+                  "row.v1:sha256:646299c47784a66cfedf331bdeb4050d40941fd8c6f88ea59a2e8d9c7434a7a4"
+                ],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice",
+                    "Delete Purchase Order Item"
+                  ]
+                ],
+                "record_count": 2,
+                "document": "0",
+                "due_state": "unavailable"
+              },
+              {
+                "case_id": "g",
+                "flow_id": "two_way",
+                "category_state": "classified",
+                "inclusion_state": "retained",
+                "inclusion_reason": "all_original_items",
+                "completion_state": "open_recorded",
+                "inclusion_witnesses": [],
+                "reasons": [
+                  "last_recorded_activity"
+                ],
+                "witness_row_ids": [
+                  "row.v1:sha256:5903534126e72b9fc1ec5021ac6996ba784faaaa958cefbdc76797317a4b4202"
+                ],
+                "required_activity_sets": [
+                  [
+                    "Clear Invoice",
+                    "Delete Purchase Order Item"
+                  ]
+                ],
+                "record_count": 2,
+                "document": "0",
+                "due_state": "unavailable"
+              }
+            ]
+          },
+          "limitations": [
+            "Recorded completion is not compliance, payment receipt or a due-obligation judgement.",
+            "The declared horizon is retained as reviewed provenance; no payment terms are supplied, so due assessment is unavailable.",
+            "Document supports overlap across item cohorts; document inclusion uses siblings within the frozen parent.",
+            "All selected items retain complete original histories; no event projection is applied."
+          ]
+        }
+      },
+      "completion_transitions": [
+        {
+          "target_state": "observed_closed",
+          "reference_state": "observed_closed",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "observed_closed",
+          "reference_state": "open_recorded",
+          "case_count": 1,
+          "case_ids": [
+            "a"
+          ]
+        },
+        {
+          "target_state": "observed_closed",
+          "reference_state": "unknown",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "observed_closed",
+          "reference_state": "outside_inclusion",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "open_recorded",
+          "reference_state": "observed_closed",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "open_recorded",
+          "reference_state": "open_recorded",
+          "case_count": 5,
+          "case_ids": [
+            "b",
+            "c",
+            "d",
+            "e",
+            "g"
+          ]
+        },
+        {
+          "target_state": "open_recorded",
+          "reference_state": "unknown",
+          "case_count": 1,
+          "case_ids": [
+            "f"
+          ]
+        },
+        {
+          "target_state": "open_recorded",
+          "reference_state": "outside_inclusion",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "unknown",
+          "reference_state": "observed_closed",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "unknown",
+          "reference_state": "open_recorded",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "unknown",
+          "reference_state": "unknown",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "unknown",
+          "reference_state": "outside_inclusion",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "outside_inclusion",
+          "reference_state": "observed_closed",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "outside_inclusion",
+          "reference_state": "open_recorded",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "outside_inclusion",
+          "reference_state": "unknown",
+          "case_count": 0,
+          "case_ids": []
+        },
+        {
+          "target_state": "outside_inclusion",
+          "reference_state": "outside_inclusion",
+          "case_count": 0,
+          "case_ids": []
+        }
+      ],
+      "support_differences": [
+        {
+          "support": "included",
+          "both": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f",
+            "g"
+          ],
+          "target_only": [],
+          "reference_only": []
+        },
+        {
+          "support": "retained",
+          "both": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f",
+            "g"
+          ],
+          "target_only": [],
+          "reference_only": []
+        }
+      ]
+    }
+  }
+}

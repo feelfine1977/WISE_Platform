@@ -1,0 +1,932 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/bpic19-cohorts.v1.schema.json",
+  "title": "Bpic19CohortsMessage",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Bpic19CohortsRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19CohortsAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19CohortsRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CohortRoles": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_category": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "purchasing_document": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "item_category",
+        "purchasing_document"
+      ],
+      "title": "CohortRoles"
+    },
+    "CohortInclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "all_items",
+            "item_start_window",
+            "document_start_window",
+            "item_any_event_window"
+          ]
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "start_inclusive": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end_exclusive": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "timestamp_kind",
+        "start_inclusive",
+        "end_exclusive"
+      ],
+      "title": "CohortInclusion"
+    },
+    "CohortCompletion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "recipe": {
+          "type": "string",
+          "enum": [
+            "flow_presence",
+            "kpmg_last_ending",
+            "botti_mandatory_presence"
+          ]
+        },
+        "receipt": {
+          "type": "string",
+          "enum": [
+            "goods_only",
+            "goods_or_service"
+          ]
+        },
+        "tie_policy": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "source_position"
+          ]
+        }
+      },
+      "required": [
+        "recipe",
+        "receipt",
+        "tie_policy"
+      ],
+      "title": "CohortCompletion"
+    },
+    "CohortHorizon": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "value",
+        "provenance"
+      ],
+      "title": "CohortHorizon"
+    },
+    "CohortPageQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "offset",
+        "limit"
+      ],
+      "title": "CohortPageQuery"
+    },
+    "CohortDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "const": "bpic19.flow_completion_cohorts.v1"
+        },
+        "roles": {
+          "$ref": "#/$defs/CohortRoles"
+        },
+        "inclusion": {
+          "$ref": "#/$defs/CohortInclusion"
+        },
+        "completion": {
+          "$ref": "#/$defs/CohortCompletion"
+        },
+        "retain": {
+          "type": "string",
+          "enum": [
+            "all_included",
+            "observed_closed",
+            "open_recorded",
+            "unknown"
+          ]
+        },
+        "horizon": {
+          "$ref": "#/$defs/CohortHorizon"
+        }
+      },
+      "required": [
+        "policy_id",
+        "roles",
+        "inclusion",
+        "completion",
+        "retain",
+        "horizon"
+      ],
+      "title": "CohortDefinition"
+    },
+    "CohortQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "const": "bpic19.flow_completion_cohorts.v1"
+        },
+        "roles": {
+          "$ref": "#/$defs/CohortRoles"
+        },
+        "inclusion": {
+          "$ref": "#/$defs/CohortInclusion"
+        },
+        "completion": {
+          "$ref": "#/$defs/CohortCompletion"
+        },
+        "retain": {
+          "type": "string",
+          "enum": [
+            "all_included",
+            "observed_closed",
+            "open_recorded",
+            "unknown"
+          ]
+        },
+        "horizon": {
+          "$ref": "#/$defs/CohortHorizon"
+        },
+        "page": {
+          "$ref": "#/$defs/CohortPageQuery"
+        }
+      },
+      "required": [
+        "policy_id",
+        "roles",
+        "inclusion",
+        "completion",
+        "retain",
+        "horizon",
+        "page"
+      ],
+      "title": "CohortQuery"
+    },
+    "CohortTotals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_unknown_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "case_count",
+        "record_count",
+        "document_count",
+        "document_unknown_case_count"
+      ],
+      "title": "CohortTotals"
+    },
+    "CohortSupport": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_unknown_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "case_count",
+        "record_count",
+        "document_count",
+        "document_unknown_case_count",
+        "case_ids"
+      ],
+      "title": "CohortSupport"
+    },
+    "CohortStage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "before": {
+          "$ref": "#/$defs/CohortTotals"
+        },
+        "retained": {
+          "$ref": "#/$defs/CohortSupport"
+        },
+        "excluded": {
+          "$ref": "#/$defs/CohortSupport"
+        },
+        "unknown": {
+          "$ref": "#/$defs/CohortSupport"
+        }
+      },
+      "required": [
+        "before",
+        "retained",
+        "excluded",
+        "unknown"
+      ],
+      "title": "CohortStage"
+    },
+    "CohortGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "observed_closed",
+            "open_recorded",
+            "unknown"
+          ]
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document_unknown_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "state",
+        "case_count",
+        "record_count",
+        "document_count",
+        "document_unknown_case_count",
+        "case_ids"
+      ],
+      "title": "CohortGroup"
+    },
+    "CohortItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "type": "string"
+        },
+        "flow_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "after_gr",
+                "before_gr",
+                "two_way",
+                "consignment"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category_state": {
+          "type": "string",
+          "enum": [
+            "classified",
+            "missing",
+            "conflicting",
+            "unrecognized"
+          ]
+        },
+        "inclusion_state": {
+          "type": "string",
+          "enum": [
+            "retained",
+            "excluded",
+            "unknown"
+          ]
+        },
+        "inclusion_reason": {
+          "type": "string"
+        },
+        "completion_state": {
+          "type": "string",
+          "enum": [
+            "observed_closed",
+            "open_recorded",
+            "unknown"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "witness_row_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "required_activity_sets": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "document": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "due_state": {
+          "const": "unavailable"
+        },
+        "inclusion_witnesses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "case_id": {
+                "type": "string"
+              },
+              "row_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "case_id",
+              "row_ids"
+            ]
+          }
+        }
+      },
+      "required": [
+        "case_id",
+        "flow_id",
+        "category_state",
+        "inclusion_state",
+        "inclusion_reason",
+        "completion_state",
+        "reasons",
+        "witness_row_ids",
+        "required_activity_sets",
+        "record_count",
+        "document",
+        "due_state",
+        "inclusion_witnesses"
+      ],
+      "title": "CohortItem"
+    },
+    "CohortPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CohortItem"
+          }
+        }
+      },
+      "required": [
+        "offset",
+        "limit",
+        "total",
+        "items"
+      ],
+      "title": "CohortPage"
+    },
+    "CohortResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-cohorts\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "definition": {
+          "$ref": "#/$defs/CohortDefinition"
+        },
+        "original": {
+          "$ref": "#/$defs/CohortTotals"
+        },
+        "inclusion": {
+          "$ref": "#/$defs/CohortStage"
+        },
+        "completion_groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CohortGroup"
+          }
+        },
+        "retention": {
+          "$ref": "#/$defs/CohortStage"
+        },
+        "selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "case_id_in"
+            },
+            "case_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "negate": {
+              "const": false
+            }
+          },
+          "required": [
+            "kind",
+            "case_ids",
+            "negate"
+          ]
+        },
+        "partition": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "covers_included": {
+              "type": "boolean"
+            },
+            "is_disjoint": {
+              "const": true
+            }
+          },
+          "required": [
+            "covers_included",
+            "is_disjoint"
+          ]
+        },
+        "page": {
+          "$ref": "#/$defs/CohortPage"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "definition_id",
+        "definition",
+        "original",
+        "inclusion",
+        "completion_groups",
+        "retention",
+        "selection",
+        "partition",
+        "page",
+        "limitations"
+      ],
+      "title": "CohortResult"
+    },
+    "Bpic19CohortsRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "message_type": {
+          "const": "bpic19_cohorts_request"
+        },
+        "query": {
+          "$ref": "#/$defs/CohortQuery"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "message_type",
+        "query"
+      ],
+      "title": "Bpic19CohortsRequest"
+    },
+    "Bpic19CohortsAnswer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "message_type": {
+          "const": "bpic19_cohorts_answer"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/CohortQuery"
+        },
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-cohorts\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "definition": {
+          "$ref": "#/$defs/CohortDefinition"
+        },
+        "cohorts": {
+          "$ref": "#/$defs/CohortResult"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "message_type",
+        "parent_identity",
+        "query",
+        "definition_id",
+        "definition",
+        "cohorts"
+      ],
+      "title": "Bpic19CohortsAnswer"
+    },
+    "Bpic19CohortsRefusal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_cohorts_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "const": "bpic19_cohorts"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_parent",
+            "unknown_case",
+            "memory_unavailable",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ],
+      "title": "Bpic19CohortsRefusal"
+    }
+  }
+}

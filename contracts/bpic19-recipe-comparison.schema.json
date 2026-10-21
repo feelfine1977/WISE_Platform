@@ -1,0 +1,513 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/bpic19-recipe-comparison.schema.json",
+  "title": "Bpic19RecipeComparison",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Bpic19RecipeComparisonRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19RecipeComparisonAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19RecipeComparisonRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "RecipeReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "definition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "query": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "definition_id",
+        "query"
+      ]
+    },
+    "NamedRecipeReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "definition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "query": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "definition_id",
+        "query"
+      ]
+    },
+    "RecipeComparisonQuery": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "policy_id": {
+              "const": "bpic19.ordinal_fifo_comparison.v1",
+              "type": "string"
+            },
+            "ordinal": {
+              "$ref": "#/$defs/RecipeReference"
+            },
+            "fifo": {
+              "$ref": "#/$defs/RecipeReference"
+            }
+          },
+          "required": [
+            "policy_id",
+            "ordinal",
+            "fifo"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "policy_id": {
+              "const": "bpic19.same_parent_completion_comparison.v1",
+              "type": "string"
+            },
+            "target": {
+              "$ref": "#/$defs/NamedRecipeReference"
+            },
+            "reference": {
+              "$ref": "#/$defs/NamedRecipeReference"
+            }
+          },
+          "required": [
+            "policy_id",
+            "target",
+            "reference"
+          ]
+        }
+      ]
+    },
+    "Bpic19RecipeComparisonRequest": {
+      "title": "Bpic19RecipeComparisonRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_recipe_comparison_request"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/RecipeComparisonQuery"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "identity",
+        "query"
+      ]
+    },
+    "CompletionTransition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_state": {
+          "type": "string",
+          "enum": [
+            "observed_closed",
+            "open_recorded",
+            "unknown",
+            "outside_inclusion"
+          ]
+        },
+        "reference_state": {
+          "type": "string",
+          "enum": [
+            "observed_closed",
+            "open_recorded",
+            "unknown",
+            "outside_inclusion"
+          ]
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "case_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        }
+      },
+      "required": [
+        "target_state",
+        "reference_state",
+        "case_count",
+        "case_ids"
+      ]
+    },
+    "SupportDifference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "support": {
+          "type": "string",
+          "enum": [
+            "included",
+            "retained"
+          ]
+        },
+        "both": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        },
+        "target_only": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        },
+        "reference_only": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        }
+      },
+      "required": [
+        "support",
+        "both",
+        "target_only",
+        "reference_only"
+      ]
+    },
+    "RecipeComparisonResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "enum": [
+            "bpic19.ordinal_fifo_comparison.v1",
+            "bpic19.same_parent_completion_comparison.v1"
+          ]
+        },
+        "definition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "first": {
+          "type": "object"
+        },
+        "second": {
+          "type": "object"
+        },
+        "completion_transitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CompletionTransition"
+          }
+        },
+        "support_differences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SupportDifference"
+          }
+        }
+      },
+      "required": [
+        "policy_id",
+        "definition_id",
+        "first",
+        "second",
+        "completion_transitions",
+        "support_differences"
+      ]
+    },
+    "Bpic19RecipeComparisonAnswer": {
+      "title": "Bpic19RecipeComparisonAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_recipe_comparison_answer"
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "bpic19_operator_comparison",
+            "bpic19_cohort_comparison"
+          ]
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/RecipeComparisonQuery"
+        },
+        "definition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definition": {
+          "type": "object"
+        },
+        "comparison": {
+          "$ref": "#/$defs/RecipeComparisonResult"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "message_type",
+        "operation",
+        "identity",
+        "parent_identity",
+        "query",
+        "definition_id",
+        "definition",
+        "comparison"
+      ]
+    },
+    "Bpic19RecipeComparisonRefusal": {
+      "title": "Bpic19RecipeComparisonRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "bpic19_recipe_comparison_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "bpic19_recipe_comparison"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "invalid_parent",
+            "unknown_case",
+            "memory_unavailable",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+import {render,screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {expect,it,vi} from 'vitest';
+import type {Bpic19CohortsAnswer} from '../generated/bpic19-cohorts';
+import type {Bpic19PipelineAction} from '../generated/saving';
+import {Bpic19RetainedCohorts} from './Bpic19RetainedCohorts';
+import {cohortsContract,type CohortsClient} from './cohorts-client';
+import literal from './retained-cohort-h7-test-answer.json';
+if(!cohortsContract.answer(literal))throw new Error('H7 fixture must obey the public cohort contract');
+const answer:Bpic19CohortsAnswer=literal;
+const action:Bpic19PipelineAction={operation:'bpic19_cohorts',definition_id:answer.definition_id,identity:answer.identity,query:{...answer.query},selection_prefix_length:null};
+const currentIdentity={...answer.identity,population_id:'population.v1:sha256:'+'f'.repeat(64)};
+it('reads excluded B on the retained parent and opens its sibling A as the exact original inclusion witness',async()=>{
+ const client:CohortsClient={cohorts:vi.fn(async request=>({ok:true as const,answer:{...answer,request_id:request.request_id,query_revision:request.query_revision,workspace_id:request.workspace_id,identity:request.identity,query:request.query}}))};
+ const onInspect=vi.fn();render(<Bpic19RetainedCohorts workspaceId={answer.workspace_id} currentIdentity={currentIdentity} actions={[action]} revision={2} client={client} onInspect={onInspect}/>);
+ const user=userEvent.setup();await user.click(screen.getByText('Inspect retained parent inclusion and exclusion evidence'));
+ await user.selectOptions(screen.getByLabelText('Retained parent cohort'),JSON.stringify([action.definition_id,action.identity]));
+ const witness=await screen.findByRole('button',{name:'Inspect retained inclusion witness A for B'});await user.click(witness);
+ const parentB=answer.cohorts.page.items.find(item=>item.case_id==='B')!;
+ expect(onInspect).toHaveBeenCalledWith(answer.identity,'A',parentB.inclusion_witnesses[0].row_ids,expect.stringContaining('B: excluded'));
+ expect(client.cohorts).toHaveBeenCalledWith(expect.objectContaining({identity:answer.identity}),expect.any(AbortSignal));
+ expect(screen.getByRole('table',{name:'Retained parent complete-item witnesses'}).textContent).toContain('Bexcluded');
+ expect(currentIdentity.population_id).not.toBe(answer.identity.population_id);
+});

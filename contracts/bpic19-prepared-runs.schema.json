@@ -1,0 +1,2324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/bpic19-prepared-runs.v1.schema.json",
+  "title": "Bpic19PreparedRuns",
+  "description": "Closed public declared-measurement review/native-run/read/export boundary. Assessment items are independent of any original-source context. No raw population or caller-supplied norms, deviations, layer weights or scores are admitted.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Bpic19PreparedReviewRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19PreparedReviewAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19PreparedRunRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19PreparedReadRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19PreparedExportRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19PreparedRunAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19PreparedReadAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19PreparedRefusal"
+    }
+  ],
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "\\S"
+    },
+    "DeclaredOriginalRowReference": {
+      "description": "An unverified declaration only; never manufacture or load a source row to satisfy it.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "row_id": {
+          "type": "string",
+          "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "source_id",
+        "row_id"
+      ]
+    },
+    "Provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "declared_prepared_measurement"
+        },
+        "declaration_ref": {
+          "$ref": "#/$defs/Text"
+        },
+        "assessment_row_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "original_row_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeclaredOriginalRowReference"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "kind",
+        "declaration_ref",
+        "assessment_row_refs",
+        "original_row_refs"
+      ],
+      "description": "Provenance is declared, never verified by this contract. Assessment references must name rows in this artifact and include the owning row. Original references may be empty and assert neither source presence nor a raw witness. Array order is part of content identity."
+    },
+    "Measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "available",
+            "unavailable"
+          ]
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "$ref": "#/$defs/Text"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        }
+      },
+      "required": [
+        "state",
+        "value",
+        "reason",
+        "unit",
+        "provenance"
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "available"
+            },
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1.7976931348623157e+308
+            },
+            "reason": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "unavailable"
+            },
+            "value": {
+              "type": "null"
+            },
+            "reason": {
+              "$ref": "#/$defs/Text"
+            }
+          }
+        }
+      ],
+      "description": "An available numeric zero is evidence distinct from unavailable. Numbers must be finite JSON numbers; booleans, NaN and Infinity are forbidden. Availability is independent of flow applicability; no cross-cell physical history consistency is asserted."
+    },
+    "Measurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "c_l1_invoice_present": {
+          "description": "Invoice evidence should exist for invoice-bearing flows.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ],
+          "x-source-operator": "presence_any",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l1_clear_invoice_present": {
+          "description": "Invoice-bearing flows should eventually be cleared.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ],
+          "x-source-operator": "presence",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l1_goods_or_ses_present": {
+          "description": "3-way flows should contain goods or service receipt evidence.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2"
+          ],
+          "x-source-operator": "presence_any",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l2_df1_invoice_after_goods": {
+          "description": "In DF1, invoice evidence should not precede the first goods/service event.",
+          "x-applicable-flows": [
+            "DF1"
+          ],
+          "x-source-operator": "order",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "boolean_observation"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "enum": [
+                        0,
+                        1
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l2_df2_release_after_goods": {
+          "description": "In DF2, payment-block release should happen after the first goods/service event.",
+          "x-applicable-flows": [
+            "DF2"
+          ],
+          "x-source-operator": "order",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "boolean_observation"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "enum": [
+                        0,
+                        1
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l2_2way_no_goods_expected": {
+          "description": "2-way match should not show goods/service receipt postings.",
+          "x-applicable-flows": [
+            "two_way"
+          ],
+          "x-source-operator": "absence_any",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l2_consignment_no_clear_invoice": {
+          "description": "Consignment should normally not be settled through standard Clear Invoice in this log scope.",
+          "x-applicable-flows": [
+            "Consignment"
+          ],
+          "x-source-operator": "absence",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l3_df1_goods_to_invoice_days": {
+          "description": "In DF1, invoice should follow goods/service within a target time.",
+          "x-applicable-flows": [
+            "DF1"
+          ],
+          "x-source-operator": "lag",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "days"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1.7976931348623157e+308
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l3_invoice_to_clear_days": {
+          "description": "Invoice-bearing flows should clear in a reasonable time.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ],
+          "x-source-operator": "lag",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "days"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1.7976931348623157e+308
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l3_df2_goods_to_rpb_days": {
+          "description": "In DF2, goods/service to Remove Payment Block should be timely.",
+          "x-applicable-flows": [
+            "DF2"
+          ],
+          "x-source-operator": "lag",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "days"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1.7976931348623157e+308
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l3_df2_rpb_to_clear_days": {
+          "description": "In DF2, released items should clear quickly.",
+          "x-applicable-flows": [
+            "DF2"
+          ],
+          "x-source-operator": "lag",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "days"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1.7976931348623157e+308
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l4_goods_fragmentation": {
+          "description": "Too many goods/service receipt events indicate fragmentation.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "Consignment"
+          ],
+          "x-source-operator": "count_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l4_change_approval_repeats": {
+          "description": "Approval changes should be rare.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "count_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l4_repeated_invoice_receipt": {
+          "description": "Repeated invoice receipt events indicate invoice handling churn.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ],
+          "x-source-operator": "count_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l4_change_payment_terms_repeats": {
+          "description": "Repeated payment-term changes indicate unstable commercial handling.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "count_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l5_cancel_invoice_receipt": {
+          "description": "Invoice receipt cancellations should be exceptional.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ],
+          "x-source-operator": "absence",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l5_cancel_goods_receipt": {
+          "description": "Goods receipt cancellations should be exceptional.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "Consignment"
+          ],
+          "x-source-operator": "absence",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l5_delete_item": {
+          "description": "PO item deletion should be exceptional once execution is underway.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "absence",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l5_debit_memo": {
+          "description": "Vendor debit memos should be rare.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "absence",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l5_credit_memo": {
+          "description": "Vendor credit memos should be rare.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "absence",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l6_change_price": {
+          "description": "Price changes after ordering indicate commercial inconsistency risk.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "count_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l6_change_quantity": {
+          "description": "Quantity changes after ordering indicate commercial inconsistency risk.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "count_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l6_high_exposure_memo": {
+          "description": "Correction documents on high-exposure cases matter more financially.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "any_of_with_multiplier",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "normalized_proxy"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l6_high_exposure_price_change": {
+          "description": "Price changes on high-exposure cases are financially more critical.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "activity_with_multiplier",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "normalized_proxy"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l7_manual_touches": {
+          "description": "Too many manual touches reduce touchless processing potential.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "threshold_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "resource_proxy_events"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l7_distinct_human_resources": {
+          "description": "Too many human handoffs indicate coordination cost.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "threshold_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "resource_proxy_identities"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l7_total_events": {
+          "description": "Very long event chains indicate execution friction.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "threshold_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "event_occurrences"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l7_manual_share": {
+          "description": "High manual share indicates low straight-through processing.",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ],
+          "x-source-operator": "threshold_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "share_of_original_events"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "c_l6_bal_networth_volatility": {
+          "description": "Large swings in cumulative net worth across events indicate commercial inconsistency (paper: balance constraint pattern, Table V c3/c4).",
+          "x-applicable-flows": [
+            "DF1",
+            "DF2",
+            "two_way"
+          ],
+          "x-source-operator": "threshold_excess",
+          "allOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "properties": {
+                "unit": {
+                  "const": "coefficient_of_variation"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1.7976931348623157e+308
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "c_l1_invoice_present",
+        "c_l1_clear_invoice_present",
+        "c_l1_goods_or_ses_present",
+        "c_l2_df1_invoice_after_goods",
+        "c_l2_df2_release_after_goods",
+        "c_l2_2way_no_goods_expected",
+        "c_l2_consignment_no_clear_invoice",
+        "c_l3_df1_goods_to_invoice_days",
+        "c_l3_invoice_to_clear_days",
+        "c_l3_df2_goods_to_rpb_days",
+        "c_l3_df2_rpb_to_clear_days",
+        "c_l4_goods_fragmentation",
+        "c_l4_change_approval_repeats",
+        "c_l4_repeated_invoice_receipt",
+        "c_l4_change_payment_terms_repeats",
+        "c_l5_cancel_invoice_receipt",
+        "c_l5_cancel_goods_receipt",
+        "c_l5_delete_item",
+        "c_l5_debit_memo",
+        "c_l5_credit_memo",
+        "c_l6_change_price",
+        "c_l6_change_quantity",
+        "c_l6_high_exposure_memo",
+        "c_l6_high_exposure_price_change",
+        "c_l7_manual_touches",
+        "c_l7_distinct_human_resources",
+        "c_l7_total_events",
+        "c_l7_manual_share",
+        "c_l6_bal_networth_volatility"
+      ]
+    },
+    "AssessmentRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assessment_item_id": {
+          "$ref": "#/$defs/Text"
+        },
+        "assessment_row_ref": {
+          "$ref": "#/$defs/Text"
+        },
+        "flow": {
+          "enum": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        },
+        "measurements": {
+          "$ref": "#/$defs/Measurements"
+        }
+      },
+      "required": [
+        "assessment_item_id",
+        "assessment_row_ref",
+        "flow",
+        "measurements"
+      ]
+    },
+    "PreparedInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "artifact_kind": {
+          "const": "bpic19.prepared-input"
+        },
+        "profile_id": {
+          "const": "bpic19.notebook.1.0-paper-aligned.v1"
+        },
+        "catalogue_sha256": {
+          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef",
+          "description": "Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md."
+        },
+        "input_policy": {
+          "const": "declared_prepared_measurements.v1"
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/AssessmentRow"
+          },
+          "description": "Declared assessment order is meaningful and hashed. These are not original event rows."
+        },
+        "content_id": {
+          "type": "string",
+          "pattern": "^bpic19-prepared-input\\.v1:sha256:[a-f0-9]{64}$",
+          "description": "preparation.content_identity convention: SHA-256 of UTF-8 compact sorted-key JSON, ensure_ascii=false, allow_nan=false, excluding content_id and presentation only. All declared array orders and provenance enter the hash."
+        },
+        "presentation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "item_order": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Text"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "item_order"
+          ],
+          "description": "Optional display-only permutation of item identities; excluded from content identity. JSON object field ordering is also immaterial."
+        }
+      },
+      "required": [
+        "schema_version",
+        "artifact_kind",
+        "profile_id",
+        "catalogue_sha256",
+        "input_policy",
+        "rows",
+        "content_id"
+      ]
+    },
+    "InputId": {
+      "type": "string",
+      "pattern": "^bpic19-prepared-input\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "DefinitionId": {
+      "type": "string",
+      "pattern": "^bpic19-prepared-definition\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RunId": {
+      "type": "string",
+      "pattern": "^score-run\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparedBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "declared_prepared_attributes"
+        },
+        "input_id": {
+          "$ref": "#/$defs/InputId"
+        },
+        "assessment_item_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "kind",
+        "input_id",
+        "assessment_item_ids"
+      ]
+    },
+    "PreparedReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basis_kind": {
+          "const": "declared_prepared_attributes"
+        },
+        "input_id": {
+          "$ref": "#/$defs/InputId"
+        },
+        "definition_id": {
+          "$ref": "#/$defs/DefinitionId"
+        },
+        "run_id": {
+          "$ref": "#/$defs/RunId"
+        },
+        "view": {
+          "enum": [
+            "Finance",
+            "Logistics",
+            "Compliance",
+            "Automation"
+          ]
+        },
+        "output_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "basis_kind",
+        "input_id",
+        "definition_id",
+        "run_id",
+        "view",
+        "output_sha256"
+      ]
+    },
+    "MethodArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "distribution": {
+          "const": "wise-pm"
+        },
+        "version": {
+          "type": "string"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "wheel_sha256": {
+          "type": "string"
+        },
+        "qualification": {
+          "type": "string"
+        },
+        "eligible_release": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "distribution",
+        "version",
+        "source_commit",
+        "wheel_sha256",
+        "qualification",
+        "eligible_release"
+      ]
+    },
+    "PreparedBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "criterion_id": {
+          "enum": [
+            "c_l1_invoice_present",
+            "c_l1_clear_invoice_present",
+            "c_l1_goods_or_ses_present",
+            "c_l2_df1_invoice_after_goods",
+            "c_l2_df2_release_after_goods",
+            "c_l2_2way_no_goods_expected",
+            "c_l2_consignment_no_clear_invoice",
+            "c_l3_df1_goods_to_invoice_days",
+            "c_l3_invoice_to_clear_days",
+            "c_l3_df2_goods_to_rpb_days",
+            "c_l3_df2_rpb_to_clear_days",
+            "c_l4_goods_fragmentation",
+            "c_l4_change_approval_repeats",
+            "c_l4_repeated_invoice_receipt",
+            "c_l4_change_payment_terms_repeats",
+            "c_l5_cancel_invoice_receipt",
+            "c_l5_cancel_goods_receipt",
+            "c_l5_delete_item",
+            "c_l5_debit_memo",
+            "c_l5_credit_memo",
+            "c_l6_change_price",
+            "c_l6_change_quantity",
+            "c_l6_high_exposure_memo",
+            "c_l6_high_exposure_price_change",
+            "c_l7_manual_touches",
+            "c_l7_distinct_human_resources",
+            "c_l7_total_events",
+            "c_l7_manual_share",
+            "c_l6_bal_networth_volatility"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "applicable_flows": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "DF1",
+              "DF2",
+              "two_way",
+              "Consignment"
+            ]
+          },
+          "maxItems": 4
+        },
+        "source_operator": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "criterion_id",
+        "label",
+        "unit",
+        "applicable_flows",
+        "source_operator"
+      ]
+    },
+    "PreparedCriterionDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "criterion_id": {
+          "enum": [
+            "c_l1_invoice_present",
+            "c_l1_clear_invoice_present",
+            "c_l1_goods_or_ses_present",
+            "c_l2_df1_invoice_after_goods",
+            "c_l2_df2_release_after_goods",
+            "c_l2_2way_no_goods_expected",
+            "c_l2_consignment_no_clear_invoice",
+            "c_l3_df1_goods_to_invoice_days",
+            "c_l3_invoice_to_clear_days",
+            "c_l3_df2_goods_to_rpb_days",
+            "c_l3_df2_rpb_to_clear_days",
+            "c_l4_goods_fragmentation",
+            "c_l4_change_approval_repeats",
+            "c_l4_repeated_invoice_receipt",
+            "c_l4_change_payment_terms_repeats",
+            "c_l5_cancel_invoice_receipt",
+            "c_l5_cancel_goods_receipt",
+            "c_l5_delete_item",
+            "c_l5_debit_memo",
+            "c_l5_credit_memo",
+            "c_l6_change_price",
+            "c_l6_change_quantity",
+            "c_l6_high_exposure_memo",
+            "c_l6_high_exposure_price_change",
+            "c_l7_manual_touches",
+            "c_l7_distinct_human_resources",
+            "c_l7_total_events",
+            "c_l7_manual_share",
+            "c_l6_bal_networth_volatility"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "direction": {
+          "enum": [
+            "high",
+            "low"
+          ]
+        },
+        "within_layer_weight": {
+          "type": "number"
+        },
+        "applicable_flows": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "DF1",
+              "DF2",
+              "two_way",
+              "Consignment"
+            ]
+          },
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "criterion_id",
+        "label",
+        "layer",
+        "unit",
+        "threshold",
+        "width",
+        "direction",
+        "within_layer_weight",
+        "applicable_flows"
+      ]
+    },
+    "LayerValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layer": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "layer",
+        "value"
+      ]
+    },
+    "LayerWeight": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layer": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "layer",
+        "value"
+      ]
+    },
+    "PreparedDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "definition_id": {
+          "$ref": "#/$defs/DefinitionId"
+        },
+        "profile_id": {
+          "const": "bpic19.notebook.1.0-paper-aligned.v1"
+        },
+        "catalogue_sha256": {
+          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef",
+          "description": "Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md."
+        },
+        "mode": {
+          "const": "layer_balanced"
+        },
+        "view": {
+          "enum": [
+            "Finance",
+            "Logistics",
+            "Compliance",
+            "Automation"
+          ]
+        },
+        "norm_fingerprint": {
+          "type": "string"
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PreparedCriterionDefinition"
+          },
+          "maxItems": 29
+        },
+        "layer_weights": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LayerWeight"
+          },
+          "maxItems": 7
+        },
+        "method_artifact": {
+          "$ref": "#/$defs/MethodArtifact"
+        }
+      },
+      "required": [
+        "definition_id",
+        "profile_id",
+        "catalogue_sha256",
+        "mode",
+        "view",
+        "norm_fingerprint",
+        "criteria",
+        "layer_weights",
+        "method_artifact"
+      ]
+    },
+    "PreparedCriterionResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "criterion_id": {
+          "enum": [
+            "c_l1_invoice_present",
+            "c_l1_clear_invoice_present",
+            "c_l1_goods_or_ses_present",
+            "c_l2_df1_invoice_after_goods",
+            "c_l2_df2_release_after_goods",
+            "c_l2_2way_no_goods_expected",
+            "c_l2_consignment_no_clear_invoice",
+            "c_l3_df1_goods_to_invoice_days",
+            "c_l3_invoice_to_clear_days",
+            "c_l3_df2_goods_to_rpb_days",
+            "c_l3_df2_rpb_to_clear_days",
+            "c_l4_goods_fragmentation",
+            "c_l4_change_approval_repeats",
+            "c_l4_repeated_invoice_receipt",
+            "c_l4_change_payment_terms_repeats",
+            "c_l5_cancel_invoice_receipt",
+            "c_l5_cancel_goods_receipt",
+            "c_l5_delete_item",
+            "c_l5_debit_memo",
+            "c_l5_credit_memo",
+            "c_l6_change_price",
+            "c_l6_change_quantity",
+            "c_l6_high_exposure_memo",
+            "c_l6_high_exposure_price_change",
+            "c_l7_manual_touches",
+            "c_l7_distinct_human_resources",
+            "c_l7_total_events",
+            "c_l7_manual_share",
+            "c_l6_bal_networth_volatility"
+          ]
+        },
+        "unit": {
+          "type": "string"
+        },
+        "declared_state": {
+          "enum": [
+            "available",
+            "unavailable"
+          ]
+        },
+        "declared_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "declared_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "native_in_scope": {
+          "type": "boolean"
+        },
+        "native_evaluated": {
+          "type": "boolean"
+        },
+        "native_reason": {
+          "type": "string"
+        },
+        "native_deviation": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "native_raw_weight": {
+          "type": "number"
+        },
+        "native_effective_weight": {
+          "type": "number"
+        },
+        "native_penalty": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "criterion_id",
+        "unit",
+        "declared_state",
+        "declared_value",
+        "declared_reason",
+        "provenance",
+        "native_in_scope",
+        "native_evaluated",
+        "native_reason",
+        "native_deviation",
+        "native_raw_weight",
+        "native_effective_weight",
+        "native_penalty"
+      ]
+    },
+    "PreparedCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assessment_item_id": {
+          "$ref": "#/$defs/Text"
+        },
+        "assessment_row_ref": {
+          "$ref": "#/$defs/Text"
+        },
+        "flow": {
+          "enum": [
+            "DF1",
+            "DF2",
+            "two_way",
+            "Consignment"
+          ]
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "score_state": {
+          "enum": [
+            "complete",
+            "partial_evidence",
+            "unscored"
+          ]
+        },
+        "coverage": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "coverage_state": {
+          "enum": [
+            "complete",
+            "partial_not_qualified"
+          ]
+        },
+        "in_scope_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "evaluated_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PreparedCriterionResult"
+          },
+          "maxItems": 29
+        },
+        "layer_contributions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LayerValue"
+          },
+          "maxItems": 7
+        }
+      },
+      "required": [
+        "assessment_item_id",
+        "assessment_row_ref",
+        "flow",
+        "score",
+        "score_state",
+        "coverage",
+        "coverage_state",
+        "in_scope_count",
+        "evaluated_count",
+        "criteria",
+        "layer_contributions"
+      ]
+    },
+    "PreparedSavedManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basis_kind": {
+          "const": "declared_prepared_attributes"
+        },
+        "input_id": {
+          "$ref": "#/$defs/InputId"
+        },
+        "assessment_item_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "maxItems": 1000
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PreparedReference"
+          },
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "basis_kind",
+        "input_id",
+        "assessment_item_ids",
+        "references"
+      ]
+    },
+    "Bpic19PreparedReviewRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_prepared_review_request"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "query_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workspace_id": {
+          "type": "string",
+          "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AssessmentRow"
+          },
+          "maxItems": 1000,
+          "minItems": 1
+        },
+        "presentation_order": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "rows"
+      ],
+      "title": "Bpic19PreparedReviewRequest"
+    },
+    "Bpic19PreparedReviewAnswer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_prepared_review_answer"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "query_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workspace_id": {
+          "type": "string",
+          "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+        },
+        "input": {
+          "$ref": "#/$defs/PreparedInput"
+        },
+        "basis": {
+          "$ref": "#/$defs/PreparedBasis"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PreparedBinding"
+          },
+          "maxItems": 29
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "input",
+        "basis",
+        "bindings"
+      ],
+      "title": "Bpic19PreparedReviewAnswer"
+    },
+    "Bpic19PreparedRunRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_prepared_run_request"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "query_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workspace_id": {
+          "type": "string",
+          "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+        },
+        "input_id": {
+          "$ref": "#/$defs/InputId"
+        },
+        "profile_id": {
+          "const": "bpic19.notebook.1.0-paper-aligned.v1"
+        },
+        "catalogue_sha256": {
+          "const": "498d0464d11ede078bf75818d0b329ff946077ffbe93a4b6f5f4aaf27eeddaef",
+          "description": "Immutable upstream historical29 catalogue authority for prepared-v1 declarations; not the digest of a distribution copy. The separately verified distribution omits only the unused private source default. Native norm metadata reports its actual packaged digest, upstream digest and named adaptation; see docs/prepared-catalogue-provenance.md."
+        },
+        "mode": {
+          "const": "layer_balanced"
+        },
+        "view": {
+          "enum": [
+            "Finance",
+            "Logistics",
+            "Compliance",
+            "Automation"
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "input_id",
+        "profile_id",
+        "catalogue_sha256",
+        "mode",
+        "view"
+      ],
+      "title": "Bpic19PreparedRunRequest"
+    },
+    "Bpic19PreparedReadRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_prepared_read_request"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "query_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workspace_id": {
+          "type": "string",
+          "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+        },
+        "run_id": {
+          "$ref": "#/$defs/RunId"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "run_id",
+        "offset",
+        "limit"
+      ],
+      "title": "Bpic19PreparedReadRequest"
+    },
+    "Bpic19PreparedExportRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_prepared_export_request"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "query_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workspace_id": {
+          "type": "string",
+          "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+        },
+        "run_id": {
+          "$ref": "#/$defs/RunId"
+        },
+        "format": {
+          "enum": [
+            "json",
+            "markdown",
+            "native_zip"
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "run_id",
+        "format"
+      ],
+      "title": "Bpic19PreparedExportRequest"
+    },
+    "Bpic19PreparedRunAnswer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_prepared_run_answer"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "query_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workspace_id": {
+          "type": "string",
+          "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+        },
+        "reference": {
+          "$ref": "#/$defs/PreparedReference"
+        },
+        "basis": {
+          "$ref": "#/$defs/PreparedBasis"
+        },
+        "definition": {
+          "$ref": "#/$defs/PreparedDefinition"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PreparedCase"
+          },
+          "maxItems": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "next_offset": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "reference",
+        "basis",
+        "definition",
+        "cases",
+        "offset",
+        "total",
+        "complete",
+        "next_offset"
+      ],
+      "title": "Bpic19PreparedRunAnswer"
+    },
+    "Bpic19PreparedReadAnswer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_prepared_read_answer"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "query_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "workspace_id": {
+          "type": "string",
+          "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+        },
+        "reference": {
+          "$ref": "#/$defs/PreparedReference"
+        },
+        "basis": {
+          "$ref": "#/$defs/PreparedBasis"
+        },
+        "definition": {
+          "$ref": "#/$defs/PreparedDefinition"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PreparedCase"
+          },
+          "maxItems": 100
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "next_offset": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "reference",
+        "basis",
+        "definition",
+        "cases",
+        "offset",
+        "total",
+        "complete",
+        "next_offset"
+      ],
+      "title": "Bpic19PreparedReadAnswer"
+    },
+    "Bpic19PreparedRefusal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_prepared_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "code": {
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "input_limit_exceeded",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "input_unavailable",
+            "run_unavailable",
+            "artifact_unavailable",
+            "checksum_mismatch",
+            "identity_mismatch",
+            "native_unavailable",
+            "publication_failed",
+            "memory_unavailable",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ],
+      "title": "Bpic19PreparedRefusal"
+    }
+  }
+}

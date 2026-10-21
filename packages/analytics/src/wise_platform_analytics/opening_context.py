@@ -182,8 +182,8 @@ def _opening(prepared: PreparedData, case_id: str, columns: Sequence[int]) -> tu
     records = prepared.histories[case_id]
     if not records or not prepared.sequence_evaluable(case_id):
         return None
-    found: Mapping[int, str | None] = {value.column_index: value.value for value in records[0].context}
-    return tuple(_MISSING if found.get(index) is None else found[index] for index in columns)
+    first = records[0]
+    return tuple(_MISSING if (value := first.context_value(index)) is None else value for index in columns)
 
 
 def _coverage(ids: tuple[str, ...], openings: Mapping[str, tuple[object, ...] | None]) -> GroupCoverage:

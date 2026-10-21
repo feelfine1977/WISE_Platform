@@ -212,6 +212,7 @@ describe("the Data area", () => {
       "Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45) — reads 0 filled cells of 4 filled cells",
       "Day.Month.Year, 24-hour clock (31.12.2026 17:45) — reads 3 filled cells of 4 filled cells",
       "Day.Month.Year, 24-hour clock with seconds (31.12.2026 17:45:10) — reads 0 filled cells of 4 filled cells",
+      "Day-Month-Year, 24-hour clock with seconds and optional fractional seconds (31-12-2026 17:45:10.123) — not inspected",
       "Month.Day.Year, 24-hour clock (12.31.2026 17:45) — reads 3 filled cells of 4 filled cells",
       "Month.Day.Year, 24-hour clock with seconds (12.31.2026 17:45:10) — reads 0 filled cells of 4 filled cells",
       "Day/Month/Year, 24-hour clock (31/12/2026 17:45) — reads 0 filled cells of 4 filled cells",
@@ -399,6 +400,7 @@ describe("the Data area", () => {
       "Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45) — reads 0 filled cells of 3 filled cells",
       "Day.Month.Year, 24-hour clock (31.12.2026 17:45) — reads 0 filled cells of 3 filled cells",
       "Day.Month.Year, 24-hour clock with seconds (31.12.2026 17:45:10) — reads 3 filled cells of 3 filled cells",
+      "Day-Month-Year, 24-hour clock with seconds and optional fractional seconds (31-12-2026 17:45:10.123) — not inspected",
       "Month.Day.Year, 24-hour clock (12.31.2026 17:45) — reads 0 filled cells of 3 filled cells",
       "Month.Day.Year, 24-hour clock with seconds (12.31.2026 17:45:10) — reads 2 filled cells of 3 filled cells",
       "Day/Month/Year, 24-hour clock (31/12/2026 17:45) — reads 0 filled cells of 3 filled cells",
@@ -431,7 +433,7 @@ describe("the Data area", () => {
     const question = screen.getByRole("group", { name: "These times can be read in more than one way. Which comes first: the day or the month?" });
     const choices = formatChoices(question);
     expect(choices[1]).toBe("Day.Month.Year, 24-hour clock (31.12.2026 17:45) — reads 4 filled cells of 4 filled cells");
-    expect(choices[3]).toBe("Month.Day.Year, 24-hour clock (12.31.2026 17:45) — reads 4 filled cells of 4 filled cells");
+    expect(choices[4]).toBe("Month.Day.Year, 24-hour clock (12.31.2026 17:45) — reads 4 filled cells of 4 filled cells");
     expect(within(question).queryByRole("radio", { checked: true })).toBeNull();
     expect(within(question).getByText(/^2 formats read every filled cell, so none is proposed\./)).toBeTruthy();
     expect(within(question).queryByText(/^Proposed:/)).toBeNull();
@@ -794,9 +796,9 @@ describe("choosing columns and time formats the inspection did not suggest", () 
 
     const formats = screen.getByRole("group", { name: "Time format" });
     const choices = formatChoices(formats);
-    expect(choices).toHaveLength(11);
+    expect(choices).toHaveLength(12);
     expect(choices[0]).toBe("Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45) — reads 0 filled cells of 4 filled cells");
-    expect(choices.every((choice) => choice.endsWith("— reads 0 filled cells of 4 filled cells"))).toBe(true);
+    expect(choices.filter(choice => !choice.endsWith("— not inspected")).every((choice) => choice.endsWith("— reads 0 filled cells of 4 filled cells"))).toBe(true);
     expect(within(formats).queryByRole("radio", { checked: true })).toBeNull();
     expect(
       within(formats).getByText(

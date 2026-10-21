@@ -1,0 +1,1794 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/bpic19-operators.v1.schema.json",
+  "title": "Bpic19OperatorMessage",
+  "description": "Finite declarative recorded-event operators, immutable complete PO-item populations and original witness rows. Descriptive and source-qualified, never a parallel norm/scorer.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Bpic19OperatorRequest"
+    },
+    {
+      "$ref": "#/$defs/Bpic19OperatorAnswer"
+    },
+    {
+      "$ref": "#/$defs/Bpic19OperatorRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "OperatorRoles": {
+      "title": "OperatorRoles",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "item_category": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "net_worth": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "event_id",
+        "item_category",
+        "net_worth"
+      ]
+    },
+    "OrdinalRecipe": {
+      "title": "OrdinalRecipe",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "ordinal"
+        },
+        "order": {
+          "type": "string",
+          "enum": [
+            "numeric_event_id",
+            "timestamp_source_position"
+          ]
+        },
+        "stages": {
+          "type": "string",
+          "enum": [
+            "gr_ir_ci",
+            "ir_gr_ci",
+            "ir_ci",
+            "auto_flow"
+          ]
+        },
+        "receipt": {
+          "type": "string",
+          "enum": [
+            "goods",
+            "goods_or_service"
+          ]
+        },
+        "cancellation": {
+          "type": "string",
+          "enum": [
+            "retain",
+            "exclude_item"
+          ]
+        },
+        "ties": {
+          "type": "string",
+          "enum": [
+            "source_position",
+            "ambiguous"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "order",
+        "stages",
+        "receipt",
+        "cancellation",
+        "ties"
+      ]
+    },
+    "FifoRecipe": {
+      "title": "FifoRecipe",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "fifo"
+        },
+        "order": {
+          "type": "string",
+          "enum": [
+            "source_position",
+            "timestamp_source_position",
+            "timestamp_numeric_event_id"
+          ]
+        },
+        "stages": {
+          "type": "string",
+          "enum": [
+            "gr_ir_ci",
+            "ir_gr_ci",
+            "ir_ci",
+            "auto_flow"
+          ]
+        },
+        "receipt": {
+          "type": "string",
+          "enum": [
+            "goods",
+            "goods_or_service"
+          ]
+        },
+        "cancellation": {
+          "type": "string",
+          "enum": [
+            "retain",
+            "exclude_item"
+          ]
+        },
+        "ties": {
+          "type": "string",
+          "enum": [
+            "allow_equal",
+            "strict_time"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "order",
+        "stages",
+        "receipt",
+        "cancellation",
+        "ties"
+      ]
+    },
+    "CancellationRecipe": {
+      "title": "CancellationRecipe",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "cancellation"
+        },
+        "target_activities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "cancellation_activities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "reuse": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "consume"
+          ]
+        },
+        "ties": {
+          "type": "string",
+          "enum": [
+            "strict_before",
+            "allow_equal_source_before"
+          ]
+        },
+        "ambiguity": {
+          "type": "string",
+          "enum": [
+            "refuse",
+            "source_position"
+          ]
+        },
+        "amount_filter": {
+          "type": "string",
+          "enum": [
+            "ignore",
+            "equal",
+            "opposite"
+          ]
+        },
+        "tolerance": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_window_days": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "target_activities",
+        "cancellation_activities",
+        "reuse",
+        "ties",
+        "ambiguity",
+        "amount_filter",
+        "tolerance",
+        "max_window_days"
+      ]
+    },
+    "RuleRecipe": {
+      "title": "RuleRecipe",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "rule"
+        },
+        "left_activities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "right_activities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "relation": {
+          "type": "string",
+          "enum": [
+            "response",
+            "precedence"
+          ]
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "raw_direct",
+            "eventual"
+          ]
+        },
+        "quantifier": {
+          "type": "string",
+          "enum": [
+            "some",
+            "every"
+          ]
+        },
+        "reuse": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "consume"
+          ]
+        },
+        "ties": {
+          "type": "string",
+          "enum": [
+            "allow_equal",
+            "strict"
+          ]
+        },
+        "vacuity": {
+          "type": "string",
+          "enum": [
+            "not_activated",
+            "logical"
+          ]
+        },
+        "flow_scope": {
+          "type": "string",
+          "enum": [
+            "all",
+            "after_gr",
+            "before_gr",
+            "two_way",
+            "consignment"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "left_activities",
+        "right_activities",
+        "relation",
+        "position",
+        "quantifier",
+        "reuse",
+        "ties",
+        "vacuity",
+        "flow_scope"
+      ]
+    },
+    "WaitingRecipe": {
+      "title": "WaitingRecipe",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "waiting"
+        },
+        "activation_activities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "response_activities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "endpoints": {
+          "type": "string",
+          "enum": [
+            "first_first",
+            "first_last",
+            "first_after"
+          ]
+        },
+        "completion": {
+          "type": "string",
+          "enum": [
+            "completed_only",
+            "right_censored"
+          ]
+        },
+        "horizon_start": {
+          "type": "string"
+        },
+        "horizon_end": {
+          "type": "string"
+        },
+        "horizon_provenance": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "horizon_policy": {
+          "type": "string",
+          "description": "refuse_outside refuses the whole operator query with incompatible_horizon when a known required selected endpoint exceeds horizon_end; unselected or nonstage rows do not trigger that refusal. Intervals before horizon_start retain local exclusion. clip is an explicitly selected interval projection. Unknown endpoint selection remains unavailable rather than guessed.",
+          "enum": [
+            "refuse_outside",
+            "clip"
+          ]
+        },
+        "calendar": {
+          "type": "string",
+          "enum": [
+            "elapsed_segments",
+            "daily_snapshots"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "activation_activities",
+        "response_activities",
+        "endpoints",
+        "completion",
+        "horizon_start",
+        "horizon_end",
+        "horizon_provenance",
+        "horizon_policy",
+        "calendar"
+      ]
+    },
+    "OperatorRecipe": {
+      "title": "OperatorRecipe",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/OrdinalRecipe"
+        },
+        {
+          "$ref": "#/$defs/FifoRecipe"
+        },
+        {
+          "$ref": "#/$defs/CancellationRecipe"
+        },
+        {
+          "$ref": "#/$defs/RuleRecipe"
+        },
+        {
+          "$ref": "#/$defs/WaitingRecipe"
+        }
+      ]
+    },
+    "OperatorQuery": {
+      "title": "OperatorQuery",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "const": "bpic19.declared_operators.v1"
+        },
+        "roles": {
+          "$ref": "#/$defs/OperatorRoles"
+        },
+        "recipe": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OperatorRecipe"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "policy_id",
+        "roles",
+        "recipe",
+        "offset",
+        "limit"
+      ]
+    },
+    "OperatorDefinition": {
+      "title": "OperatorDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "const": "bpic19.declared_operators.v1"
+        },
+        "roles": {
+          "$ref": "#/$defs/OperatorRoles"
+        },
+        "recipe": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OperatorRecipe"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "original_history_policy": {
+          "const": "immutable_complete_item_histories"
+        },
+        "inferred_invoice_id_policy": {
+          "const": "none"
+        },
+        "representative_policy": {
+          "enum": [
+            "source_position_first_with_all_tied_candidates",
+            "parsed_time_then_numeric_event_id_then_original_source_position"
+          ]
+        },
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-operator-definition\\.v1:sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "policy_id",
+        "roles",
+        "recipe",
+        "source_evidence",
+        "original_history_policy",
+        "inferred_invoice_id_policy",
+        "representative_policy",
+        "definition_id"
+      ]
+    },
+    "OperatorCatalogue": {
+      "title": "OperatorCatalogue",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "columns": {
+          "type": "array",
+          "items": {
+            "title": "OperatorColumn",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "name"
+            ]
+          }
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "clock_kind": {
+          "type": "string",
+          "enum": [
+            "wall_clock",
+            "utc_instant"
+          ]
+        },
+        "trusted_cutoff": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "columns",
+        "activities",
+        "clock_kind",
+        "trusted_cutoff"
+      ]
+    },
+    "OperatorMeasure": {
+      "title": "OperatorMeasure",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "type": "string"
+        },
+        "row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "recorded_difference_days": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "value",
+        "available",
+        "reason",
+        "unit",
+        "row_ids"
+      ]
+    },
+    "OperatorObservation": {
+      "title": "OperatorObservation",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ordinal": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "matched",
+            "unmatched",
+            "unknown",
+            "ambiguous",
+            "reversed",
+            "zero",
+            "censored",
+            "excluded",
+            "not_activated"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "activation_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "response_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "candidate_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "unknown_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "truth": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "true",
+                "false",
+                "unknown",
+                "not_activated"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "intervals": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/OperatorMeasure"
+          }
+        },
+        "start": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "native_invoice_id": {
+          "type": "null"
+        },
+        "observation_id": {
+          "type": "string",
+          "pattern": "^bpic19-observation\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "selected_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "stage_row_ids": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/CaseId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "cancellation_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "ordinal",
+        "state",
+        "reason",
+        "activation_row_ids",
+        "response_row_ids",
+        "candidate_row_ids",
+        "unknown_row_ids",
+        "truth",
+        "intervals",
+        "start",
+        "end",
+        "native_invoice_id",
+        "observation_id",
+        "selected_row_ids"
+      ]
+    },
+    "OperatorCase": {
+      "title": "OperatorCase",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "evaluated",
+            "unknown",
+            "outside_scope",
+            "excluded",
+            "not_activated",
+            "unmatched",
+            "reversed"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperatorObservation"
+          }
+        },
+        "unmatched_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "included_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "excluded_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "unknown_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "totals": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/OperatorMeasure"
+          }
+        },
+        "truth": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "true",
+                "false",
+                "unknown",
+                "not_activated"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "activation_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "known_activation_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "case_id",
+        "state",
+        "reason",
+        "record_count",
+        "record_row_ids",
+        "observations",
+        "unmatched_row_ids",
+        "included_row_ids",
+        "excluded_row_ids",
+        "unknown_row_ids",
+        "totals",
+        "truth",
+        "activation_count",
+        "known_activation_count"
+      ]
+    },
+    "OperatorDistribution": {
+      "title": "OperatorDistribution",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "available_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unavailable_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "zero_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mean": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "median": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "known_sum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "known_sum_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "available_count",
+        "unavailable_count",
+        "zero_count",
+        "minimum",
+        "maximum",
+        "mean",
+        "median",
+        "known_sum",
+        "known_sum_reason"
+      ]
+    },
+    "OccupancySegment": {
+      "title": "OccupancySegment",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "type": "string"
+        },
+        "end": {
+          "type": "string"
+        },
+        "occupancy": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "occupancy"
+      ]
+    },
+    "OccupancySummary": {
+      "title": "OccupancySummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "const": "PO_items"
+        },
+        "horizon_start": {
+          "type": "string"
+        },
+        "horizon_end": {
+          "type": "string"
+        },
+        "horizon_days": {
+          "type": "number"
+        },
+        "available_interval_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "positive_duration_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "zero_duration_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peak": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peak_start": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "peak_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "peak_case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "item_days": {
+          "type": "number"
+        },
+        "duration_weighted_mean": {
+          "type": "number"
+        },
+        "duration_weighted_lower_median": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OccupancySegment"
+          }
+        },
+        "segment_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted_segment_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duration_by_occupancy": {
+          "type": "array",
+          "items": {
+            "title": "OccupancyDuration",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "occupancy": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "days": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "occupancy",
+              "days"
+            ]
+          }
+        },
+        "daily_snapshots": {
+          "type": "array",
+          "items": {
+            "title": "OccupancySnapshot",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "type": "string"
+              },
+              "occupancy": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "timestamp",
+              "occupancy"
+            ]
+          }
+        }
+      },
+      "required": [
+        "unit",
+        "horizon_start",
+        "horizon_end",
+        "horizon_days",
+        "available_interval_count",
+        "positive_duration_count",
+        "zero_duration_count",
+        "peak",
+        "peak_start",
+        "peak_end",
+        "peak_case_ids",
+        "item_days",
+        "duration_weighted_mean",
+        "duration_weighted_lower_median",
+        "segments",
+        "segment_count",
+        "omitted_segment_count",
+        "duration_by_occupancy",
+        "daily_snapshots"
+      ]
+    },
+    "OperatorSummary": {
+      "title": "OperatorSummary",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_state_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "observation_state_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "truth_case_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "activation_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "known_activation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "interval_distributions": {
+          "type": "object",
+          "additionalProperties": {
+            "title": "IntervalDistributions",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "per_episode": {
+                "$ref": "#/$defs/OperatorDistribution"
+              },
+              "per_item_mean": {
+                "$ref": "#/$defs/OperatorDistribution"
+              }
+            },
+            "required": [
+              "per_episode",
+              "per_item_mean"
+            ]
+          }
+        },
+        "total_distributions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/OperatorDistribution"
+          }
+        },
+        "occupancy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OccupancySummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "case_state_counts",
+        "observation_state_counts",
+        "truth_case_counts",
+        "activation_count",
+        "known_activation_count",
+        "observation_count",
+        "interval_distributions",
+        "total_distributions",
+        "occupancy"
+      ]
+    },
+    "OperatorSelectionGroup": {
+      "title": "OperatorSelectionGroup",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          },
+          "uniqueItems": true
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "case_ids",
+        "case_count",
+        "record_count"
+      ]
+    },
+    "Bpic19OperatorRequest": {
+      "title": "Bpic19OperatorRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "message_type": {
+          "const": "bpic19_operator_request"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/OperatorQuery"
+        },
+        "intent": {
+          "type": "string",
+          "enum": [
+            "descriptive",
+            "normative_admission"
+          ],
+          "description": "Omitted or descriptive retains recorded-event evidence. normative_admission asks actual Method admission for this exact rule, without supplying a Norm or grade; intent is outside descriptive query identity."
+        }
+      },
+      "required": [
+        "message_type",
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "query"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "intent": {
+                "const": "normative_admission"
+              }
+            },
+            "required": [
+              "intent"
+            ]
+          },
+          "then": {
+            "properties": {
+              "query": {
+                "properties": {
+                  "recipe": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "rule"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Bpic19OperatorAnswer": {
+      "title": "Bpic19OperatorAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "message_type": {
+          "const": "bpic19_operator_answer"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/OperatorQuery"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "bpic19_catalogue",
+            "bpic19_ordinal",
+            "bpic19_fifo",
+            "bpic19_cancellation",
+            "bpic19_rule",
+            "bpic19_waiting"
+          ]
+        },
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-operator-definition\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "result_id": {
+          "type": "string",
+          "pattern": "^bpic19-operator-result\\.v1:sha256:[a-f0-9]{64}$"
+        },
+        "definition": {
+          "$ref": "#/$defs/OperatorDefinition"
+        },
+        "catalogue": {
+          "$ref": "#/$defs/OperatorCatalogue"
+        },
+        "population_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "population_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "summary": {
+          "$ref": "#/$defs/OperatorSummary"
+        },
+        "selection_groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperatorSelectionGroup"
+          }
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperatorCase"
+          }
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "message_type",
+        "schema_version",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "query",
+        "parent_identity",
+        "operation",
+        "definition_id",
+        "result_id",
+        "definition",
+        "catalogue",
+        "population_case_count",
+        "population_record_count",
+        "summary",
+        "selection_groups",
+        "cases",
+        "offset",
+        "limit",
+        "next_offset"
+      ]
+    },
+    "Bpic19OperatorRefusal": {
+      "title": "Bpic19OperatorRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "message_type": {
+          "const": "bpic19_operator_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "const": "bpic19_operators"
+        },
+        "code": {
+          "type": "string",
+          "description": "Operator horizon conflicts use incompatible_clock or incompatible_horizon; raw-source and preparation failures retain their original codes. method_binding_unavailable means no admitted actual Method binding for this finite rule family, independently of native installation; method_context identifies the validated descriptive rule."
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "method_context": {
+          "$ref": "#/$defs/RuleMethodContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "method_binding_unavailable"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "required": [
+              "method_context"
+            ],
+            "properties": {
+              "field": {
+                "const": "intent"
+              },
+              "retryable": {
+                "const": false
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "method_context"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "RuleMethodContext": {
+      "title": "RuleMethodContext",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "intent": {
+          "const": "normative_admission"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "query": {
+          "$ref": "#/$defs/OperatorQuery"
+        },
+        "definition_id": {
+          "type": "string",
+          "pattern": "^bpic19-operator-definition\\.v1:sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "intent",
+        "identity",
+        "query",
+        "definition_id"
+      ]
+    }
+  }
+}

@@ -5,6 +5,7 @@ import type { SavedInvestigationSummary } from "../generated/saving";
 import type { SavingProblem } from "./client";
 import type { SavingCoordinator } from "./coordinator";
 import { describeSavingProblem } from "./wording";
+import { SavedMetadataRecovery } from "./SavedMetadataRecovery";
 import "./saved.css";
 
 interface SavedInvestigationsProps {
@@ -126,7 +127,9 @@ export function SavedInvestigations({ saving, data, onReopened, onShowData }: Sa
               {reopen.phase === "reopening" ? `Reopening “${reopen.summary.name}”: computing it again from the stored source…` : ""}
             </p>
             {reopen.phase === "failed" && (
-              <SavedProblemNotice title={`“${reopen.summary.name}” could not be reopened`} problem={reopen.problem} onRetry={() => reopenOne(reopen.summary)} />
+              <><SavedProblemNotice title={`“${reopen.summary.name}” could not be reopened`} problem={reopen.problem} onRetry={() => reopenOne(reopen.summary)} />
+              {workspaceId && reopen.problem.kind === "refusal" && ["artifact_unavailable", "checksum_mismatch"].includes(reopen.problem.refusal.code) &&
+                <SavedMetadataRecovery key={`${workspaceId}-${reopen.summary.latest_revision_id}`} workspaceId={workspaceId} savedRevisionId={reopen.summary.latest_revision_id} />}</>
             )}
           </section>
         )}

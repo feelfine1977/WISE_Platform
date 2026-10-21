@@ -1,0 +1,942 @@
+{
+  "target": {
+    "schema_version": 1,
+    "message_type": "bpic19_interval_comparison_answer",
+    "operation": "bpic19_interval_comparison",
+    "workspace_id": "workspace.v1:literal-fixture",
+    "request_id": "request-1",
+    "query_revision": 1,
+    "identity": {
+      "source_id": "source.v1:sha256:f1312306ebd9cce1a821402b4e5565c0d720f4832ea7c0018bb5d7f6d9c58753",
+      "preparation_id": "preparation.v1:sha256:010340394df6ce227320151daebdf565cff37b1d211602f94e2f625f51cd7e41",
+      "representation_id": "representation.v1:sha256:9dc219ac07d3cf07a29a0baa7f45dd54b8f8b3dd4bc5a4c4bce0c362e6ea9d7a",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6cdd2b352b80570d6ff4f3e5c3b4d6f7b19af60d589f6457ad13f19cced2e895",
+      "population_id": "population.v1:sha256:9088e7f1b63138bf45c08f2ed3ad1540294a241cda112760f1fb21c258c13ff5",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:f1312306ebd9cce1a821402b4e5565c0d720f4832ea7c0018bb5d7f6d9c58753",
+      "preparation_id": "preparation.v1:sha256:010340394df6ce227320151daebdf565cff37b1d211602f94e2f625f51cd7e41",
+      "representation_id": "representation.v1:sha256:9dc219ac07d3cf07a29a0baa7f45dd54b8f8b3dd4bc5a4c4bce0c362e6ea9d7a",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6cdd2b352b80570d6ff4f3e5c3b4d6f7b19af60d589f6457ad13f19cced2e895",
+      "population_id": "population.v1:sha256:9088e7f1b63138bf45c08f2ed3ad1540294a241cda112760f1fb21c258c13ff5",
+      "implementation_version": "0.1.0"
+    },
+    "query": {
+      "policy_id": "bpic19.interval_distribution_comparison.v1",
+      "interval_policy": "independent_minimum",
+      "interval_source": [
+        "Record Invoice Receipt"
+      ],
+      "interval_target": [
+        "Clear Invoice"
+      ],
+      "target": {
+        "label": "Target zero, one, two and missing",
+        "recipe": {
+          "kind": "complete_case_ids",
+          "case_ids": [
+            "T0",
+            "T1",
+            "T2",
+            "TM"
+          ]
+        }
+      },
+      "reference": {
+        "label": "Comparator two and reversed",
+        "recipe": {
+          "kind": "complete_case_ids",
+          "case_ids": [
+            "R2",
+            "RN"
+          ]
+        }
+      },
+      "page": {
+        "role": "target",
+        "offset": 0,
+        "limit": 100
+      }
+    },
+    "definition_id": "bpic19-interval-comparison.v1:sha256:2be39c91f0f81e760073d0ead4287fbd8371edda4f4704ec72cf8d2e29e06e82",
+    "definition": {
+      "policy_id": "bpic19.interval_distribution_comparison.v1",
+      "time_policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+      "membership_policy_id": "bpic19.explicit_complete_case_ids.v1",
+      "interval_policy": "independent_minimum",
+      "interval_source": [
+        "Record Invoice Receipt"
+      ],
+      "interval_target": [
+        "Clear Invoice"
+      ],
+      "target": {
+        "label": "Target zero, one, two and missing",
+        "recipe": {
+          "kind": "complete_case_ids",
+          "case_ids": [
+            "T0",
+            "T1",
+            "T2",
+            "TM"
+          ]
+        }
+      },
+      "reference": {
+        "label": "Comparator two and reversed",
+        "recipe": {
+          "kind": "complete_case_ids",
+          "case_ids": [
+            "R2",
+            "RN"
+          ]
+        }
+      },
+      "parent_case_ids": [
+        "BAD",
+        "OLD",
+        "OUTSIDE",
+        "R2",
+        "RN",
+        "T0",
+        "T1",
+        "T2",
+        "TM",
+        "UNKNOWN",
+        "UPPER"
+      ],
+      "activity_column": 1,
+      "clock_kind": "wall_clock",
+      "clock_policy_id": "incident.time.wall_clock_as_recorded.v1",
+      "endpoint_admissibility": "select_parsed_minimum_then_2017_inclusive_2020_exclusive",
+      "direction_policy": "nonnegative_recorded_difference",
+      "elapsed_unit": "days",
+      "source_representation": "complete_original_item_histories"
+    },
+    "comparison": {
+      "definition_id": "bpic19-interval-comparison.v1:sha256:2be39c91f0f81e760073d0ead4287fbd8371edda4f4704ec72cf8d2e29e06e82",
+      "definition": {
+        "policy_id": "bpic19.interval_distribution_comparison.v1",
+        "time_policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+        "membership_policy_id": "bpic19.explicit_complete_case_ids.v1",
+        "interval_policy": "independent_minimum",
+        "interval_source": [
+          "Record Invoice Receipt"
+        ],
+        "interval_target": [
+          "Clear Invoice"
+        ],
+        "target": {
+          "label": "Target zero, one, two and missing",
+          "recipe": {
+            "kind": "complete_case_ids",
+            "case_ids": [
+              "T0",
+              "T1",
+              "T2",
+              "TM"
+            ]
+          }
+        },
+        "reference": {
+          "label": "Comparator two and reversed",
+          "recipe": {
+            "kind": "complete_case_ids",
+            "case_ids": [
+              "R2",
+              "RN"
+            ]
+          }
+        },
+        "parent_case_ids": [
+          "BAD",
+          "OLD",
+          "OUTSIDE",
+          "R2",
+          "RN",
+          "T0",
+          "T1",
+          "T2",
+          "TM",
+          "UNKNOWN",
+          "UPPER"
+        ],
+        "activity_column": 1,
+        "clock_kind": "wall_clock",
+        "clock_policy_id": "incident.time.wall_clock_as_recorded.v1",
+        "endpoint_admissibility": "select_parsed_minimum_then_2017_inclusive_2020_exclusive",
+        "direction_policy": "nonnegative_recorded_difference",
+        "elapsed_unit": "days",
+        "source_representation": "complete_original_item_histories"
+      },
+      "parent": {
+        "case_ids": [
+          "BAD",
+          "OLD",
+          "OUTSIDE",
+          "R2",
+          "RN",
+          "T0",
+          "T1",
+          "T2",
+          "TM",
+          "UNKNOWN",
+          "UPPER"
+        ],
+        "case_count": 11,
+        "record_count": 25
+      },
+      "target": {
+        "label": "Target zero, one, two and missing",
+        "case_ids": [
+          "T0",
+          "T1",
+          "T2",
+          "TM"
+        ],
+        "case_count": 4,
+        "record_count": 10,
+        "available_case_ids": [
+          "T0",
+          "T1",
+          "T2"
+        ],
+        "zero_case_ids": [
+          "T0"
+        ],
+        "unavailable_case_ids": [
+          "TM"
+        ],
+        "unavailable_reasons": {
+          "no_parsed_endpoint": 1
+        },
+        "summary": {
+          "available_case_count": 3,
+          "zero_case_count": 1,
+          "minimum": 0.0,
+          "maximum": 2.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "reason": null,
+          "unavailable_case_count": 1
+        }
+      },
+      "reference": {
+        "label": "Comparator two and reversed",
+        "case_ids": [
+          "R2",
+          "RN"
+        ],
+        "case_count": 2,
+        "record_count": 4,
+        "available_case_ids": [
+          "R2"
+        ],
+        "zero_case_ids": [],
+        "unavailable_case_ids": [
+          "RN"
+        ],
+        "unavailable_reasons": {
+          "reversed_interval": 1
+        },
+        "summary": {
+          "available_case_count": 1,
+          "zero_case_count": 0,
+          "minimum": 2.0,
+          "maximum": 2.0,
+          "mean": 2.0,
+          "median": 2.0,
+          "reason": null,
+          "unavailable_case_count": 1
+        }
+      },
+      "union_case_ids": [
+        "R2",
+        "RN",
+        "T0",
+        "T1",
+        "T2",
+        "TM"
+      ],
+      "overlap_case_ids": [],
+      "outside_case_ids": [
+        "BAD",
+        "OLD",
+        "OUTSIDE",
+        "UNKNOWN",
+        "UPPER"
+      ],
+      "page": {
+        "role": "target",
+        "offset": 0,
+        "limit": 100,
+        "total": 4,
+        "items": [
+          {
+            "case_id": "T0",
+            "record_count": 5,
+            "record_row_ids": [
+              "row.v1:sha256:25b27b5c1270e50e1c7de456bd76b9799a4d6a5dd3f765187716d3f1dbb3a8d6",
+              "row.v1:sha256:e49b99e48467d3f502635e5c0326f0fb01f301aabbd711c6923cc2597c93717b",
+              "row.v1:sha256:e755884d49c411d82ab1360e852d23624ebaecd46997a55e6044fdcead21f36e",
+              "row.v1:sha256:d9e0755442574af30dd21db9d4ec055dfa7f28f3e943770946fa81181275eec3",
+              "row.v1:sha256:3d7333e02943bbb301e6f236933506683b6db03d5b33f078b36d1a967ee79c80"
+            ],
+            "source": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-01T00:00:00",
+              "selected_row_id": "row.v1:sha256:25b27b5c1270e50e1c7de456bd76b9799a4d6a5dd3f765187716d3f1dbb3a8d6",
+              "row_ids": [
+                "row.v1:sha256:25b27b5c1270e50e1c7de456bd76b9799a4d6a5dd3f765187716d3f1dbb3a8d6",
+                "row.v1:sha256:e49b99e48467d3f502635e5c0326f0fb01f301aabbd711c6923cc2597c93717b"
+              ],
+              "later_row_ids": [
+                "row.v1:sha256:d9e0755442574af30dd21db9d4ec055dfa7f28f3e943770946fa81181275eec3"
+              ],
+              "candidate_row_ids": [
+                "row.v1:sha256:25b27b5c1270e50e1c7de456bd76b9799a4d6a5dd3f765187716d3f1dbb3a8d6",
+                "row.v1:sha256:e49b99e48467d3f502635e5c0326f0fb01f301aabbd711c6923cc2597c93717b",
+                "row.v1:sha256:d9e0755442574af30dd21db9d4ec055dfa7f28f3e943770946fa81181275eec3",
+                "row.v1:sha256:3d7333e02943bbb301e6f236933506683b6db03d5b33f078b36d1a967ee79c80"
+              ],
+              "unparseable_row_ids": [
+                "row.v1:sha256:3d7333e02943bbb301e6f236933506683b6db03d5b33f078b36d1a967ee79c80"
+              ],
+              "unknown_activity_row_ids": []
+            },
+            "target": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-01T00:00:00",
+              "selected_row_id": "row.v1:sha256:e755884d49c411d82ab1360e852d23624ebaecd46997a55e6044fdcead21f36e",
+              "row_ids": [
+                "row.v1:sha256:e755884d49c411d82ab1360e852d23624ebaecd46997a55e6044fdcead21f36e"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:e755884d49c411d82ab1360e852d23624ebaecd46997a55e6044fdcead21f36e"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "interval": {
+              "value": 0.0,
+              "available": true,
+              "reason": null,
+              "row_ids": [
+                "row.v1:sha256:25b27b5c1270e50e1c7de456bd76b9799a4d6a5dd3f765187716d3f1dbb3a8d6",
+                "row.v1:sha256:e49b99e48467d3f502635e5c0326f0fb01f301aabbd711c6923cc2597c93717b",
+                "row.v1:sha256:e755884d49c411d82ab1360e852d23624ebaecd46997a55e6044fdcead21f36e"
+              ],
+              "interval_state": "available",
+              "activation_row_ids": [
+                "row.v1:sha256:25b27b5c1270e50e1c7de456bd76b9799a4d6a5dd3f765187716d3f1dbb3a8d6",
+                "row.v1:sha256:e49b99e48467d3f502635e5c0326f0fb01f301aabbd711c6923cc2597c93717b"
+              ],
+              "response_row_ids": [
+                "row.v1:sha256:e755884d49c411d82ab1360e852d23624ebaecd46997a55e6044fdcead21f36e"
+              ],
+              "activation_timestamp": "2018-01-01T00:00:00",
+              "response_timestamp": "2018-01-01T00:00:00",
+              "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+              "unit": "days",
+              "recorded_difference_days": 0.0
+            }
+          },
+          {
+            "case_id": "T1",
+            "record_count": 2,
+            "record_row_ids": [
+              "row.v1:sha256:eebd6895c40137de0913b408c66ab45c34114eae445f27a8bbe2bcb3011b2374",
+              "row.v1:sha256:899337f38a7cc9f11e45bae2d6cdb866118d250036813b17ff7e45ba774202ba"
+            ],
+            "source": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-01T00:00:00",
+              "selected_row_id": "row.v1:sha256:eebd6895c40137de0913b408c66ab45c34114eae445f27a8bbe2bcb3011b2374",
+              "row_ids": [
+                "row.v1:sha256:eebd6895c40137de0913b408c66ab45c34114eae445f27a8bbe2bcb3011b2374"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:eebd6895c40137de0913b408c66ab45c34114eae445f27a8bbe2bcb3011b2374"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "target": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-02T00:00:00",
+              "selected_row_id": "row.v1:sha256:899337f38a7cc9f11e45bae2d6cdb866118d250036813b17ff7e45ba774202ba",
+              "row_ids": [
+                "row.v1:sha256:899337f38a7cc9f11e45bae2d6cdb866118d250036813b17ff7e45ba774202ba"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:899337f38a7cc9f11e45bae2d6cdb866118d250036813b17ff7e45ba774202ba"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "interval": {
+              "value": 1.0,
+              "available": true,
+              "reason": null,
+              "row_ids": [
+                "row.v1:sha256:eebd6895c40137de0913b408c66ab45c34114eae445f27a8bbe2bcb3011b2374",
+                "row.v1:sha256:899337f38a7cc9f11e45bae2d6cdb866118d250036813b17ff7e45ba774202ba"
+              ],
+              "interval_state": "available",
+              "activation_row_ids": [
+                "row.v1:sha256:eebd6895c40137de0913b408c66ab45c34114eae445f27a8bbe2bcb3011b2374"
+              ],
+              "response_row_ids": [
+                "row.v1:sha256:899337f38a7cc9f11e45bae2d6cdb866118d250036813b17ff7e45ba774202ba"
+              ],
+              "activation_timestamp": "2018-01-01T00:00:00",
+              "response_timestamp": "2018-01-02T00:00:00",
+              "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+              "unit": "days",
+              "recorded_difference_days": 1.0
+            }
+          },
+          {
+            "case_id": "T2",
+            "record_count": 2,
+            "record_row_ids": [
+              "row.v1:sha256:eadb78d2c78d6def8195d00756d3ddb8869e43f27806c645adfe0e7c7c3fc681",
+              "row.v1:sha256:10742d7591db6d46a619fadf4170bb29cd1fa4abc9b0833db456516c59c6d2fb"
+            ],
+            "source": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-01T00:00:00",
+              "selected_row_id": "row.v1:sha256:eadb78d2c78d6def8195d00756d3ddb8869e43f27806c645adfe0e7c7c3fc681",
+              "row_ids": [
+                "row.v1:sha256:eadb78d2c78d6def8195d00756d3ddb8869e43f27806c645adfe0e7c7c3fc681"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:eadb78d2c78d6def8195d00756d3ddb8869e43f27806c645adfe0e7c7c3fc681"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "target": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-03T00:00:00",
+              "selected_row_id": "row.v1:sha256:10742d7591db6d46a619fadf4170bb29cd1fa4abc9b0833db456516c59c6d2fb",
+              "row_ids": [
+                "row.v1:sha256:10742d7591db6d46a619fadf4170bb29cd1fa4abc9b0833db456516c59c6d2fb"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:10742d7591db6d46a619fadf4170bb29cd1fa4abc9b0833db456516c59c6d2fb"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "interval": {
+              "value": 2.0,
+              "available": true,
+              "reason": null,
+              "row_ids": [
+                "row.v1:sha256:eadb78d2c78d6def8195d00756d3ddb8869e43f27806c645adfe0e7c7c3fc681",
+                "row.v1:sha256:10742d7591db6d46a619fadf4170bb29cd1fa4abc9b0833db456516c59c6d2fb"
+              ],
+              "interval_state": "available",
+              "activation_row_ids": [
+                "row.v1:sha256:eadb78d2c78d6def8195d00756d3ddb8869e43f27806c645adfe0e7c7c3fc681"
+              ],
+              "response_row_ids": [
+                "row.v1:sha256:10742d7591db6d46a619fadf4170bb29cd1fa4abc9b0833db456516c59c6d2fb"
+              ],
+              "activation_timestamp": "2018-01-01T00:00:00",
+              "response_timestamp": "2018-01-03T00:00:00",
+              "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+              "unit": "days",
+              "recorded_difference_days": 2.0
+            }
+          },
+          {
+            "case_id": "TM",
+            "record_count": 1,
+            "record_row_ids": [
+              "row.v1:sha256:0c31b5c5e1044f57e39a2cc899f67a1b204fce0951a375002d55553d231192f4"
+            ],
+            "source": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-01T00:00:00",
+              "selected_row_id": "row.v1:sha256:0c31b5c5e1044f57e39a2cc899f67a1b204fce0951a375002d55553d231192f4",
+              "row_ids": [
+                "row.v1:sha256:0c31b5c5e1044f57e39a2cc899f67a1b204fce0951a375002d55553d231192f4"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:0c31b5c5e1044f57e39a2cc899f67a1b204fce0951a375002d55553d231192f4"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "target": {
+              "available": false,
+              "reason": "no_parsed_endpoint",
+              "endpoint_state": "missing",
+              "timestamp": null,
+              "selected_row_id": null,
+              "row_ids": [],
+              "later_row_ids": [],
+              "candidate_row_ids": [],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "interval": {
+              "value": null,
+              "available": false,
+              "reason": "no_parsed_endpoint",
+              "row_ids": [
+                "row.v1:sha256:0c31b5c5e1044f57e39a2cc899f67a1b204fce0951a375002d55553d231192f4"
+              ],
+              "interval_state": "endpoint_unavailable",
+              "activation_row_ids": [
+                "row.v1:sha256:0c31b5c5e1044f57e39a2cc899f67a1b204fce0951a375002d55553d231192f4"
+              ],
+              "response_row_ids": [],
+              "activation_timestamp": "2018-01-01T00:00:00",
+              "response_timestamp": null,
+              "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+              "unit": "days"
+            }
+          }
+        ],
+        "next_offset": null
+      },
+      "limitations": [
+        "Descriptive elapsed days do not establish active work, contractual lateness or a causal cohort effect.",
+        "Missing, reversed and out-of-range intervals are unavailable; they never become zero-day observations.",
+        "The two explicitly named sides can overlap. The reference is not an implicit target complement.",
+        "Independent minima preserve every co-minimum and later or unparseable candidate in complete original histories."
+      ]
+    }
+  },
+  "reference": {
+    "schema_version": 1,
+    "message_type": "bpic19_interval_comparison_answer",
+    "operation": "bpic19_interval_comparison",
+    "workspace_id": "workspace.v1:literal-fixture",
+    "request_id": "request-1",
+    "query_revision": 1,
+    "identity": {
+      "source_id": "source.v1:sha256:f1312306ebd9cce1a821402b4e5565c0d720f4832ea7c0018bb5d7f6d9c58753",
+      "preparation_id": "preparation.v1:sha256:010340394df6ce227320151daebdf565cff37b1d211602f94e2f625f51cd7e41",
+      "representation_id": "representation.v1:sha256:9dc219ac07d3cf07a29a0baa7f45dd54b8f8b3dd4bc5a4c4bce0c362e6ea9d7a",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6cdd2b352b80570d6ff4f3e5c3b4d6f7b19af60d589f6457ad13f19cced2e895",
+      "population_id": "population.v1:sha256:9088e7f1b63138bf45c08f2ed3ad1540294a241cda112760f1fb21c258c13ff5",
+      "implementation_version": "0.1.0"
+    },
+    "parent_identity": {
+      "source_id": "source.v1:sha256:f1312306ebd9cce1a821402b4e5565c0d720f4832ea7c0018bb5d7f6d9c58753",
+      "preparation_id": "preparation.v1:sha256:010340394df6ce227320151daebdf565cff37b1d211602f94e2f625f51cd7e41",
+      "representation_id": "representation.v1:sha256:9dc219ac07d3cf07a29a0baa7f45dd54b8f8b3dd4bc5a4c4bce0c362e6ea9d7a",
+      "case_dictionary_id": "case-dictionary.v1:sha256:6cdd2b352b80570d6ff4f3e5c3b4d6f7b19af60d589f6457ad13f19cced2e895",
+      "population_id": "population.v1:sha256:9088e7f1b63138bf45c08f2ed3ad1540294a241cda112760f1fb21c258c13ff5",
+      "implementation_version": "0.1.0"
+    },
+    "query": {
+      "policy_id": "bpic19.interval_distribution_comparison.v1",
+      "interval_policy": "independent_minimum",
+      "interval_source": [
+        "Record Invoice Receipt"
+      ],
+      "interval_target": [
+        "Clear Invoice"
+      ],
+      "target": {
+        "label": "Target zero, one, two and missing",
+        "recipe": {
+          "kind": "complete_case_ids",
+          "case_ids": [
+            "T0",
+            "T1",
+            "T2",
+            "TM"
+          ]
+        }
+      },
+      "reference": {
+        "label": "Comparator two and reversed",
+        "recipe": {
+          "kind": "complete_case_ids",
+          "case_ids": [
+            "R2",
+            "RN"
+          ]
+        }
+      },
+      "page": {
+        "role": "reference",
+        "offset": 0,
+        "limit": 100
+      }
+    },
+    "definition_id": "bpic19-interval-comparison.v1:sha256:2be39c91f0f81e760073d0ead4287fbd8371edda4f4704ec72cf8d2e29e06e82",
+    "definition": {
+      "policy_id": "bpic19.interval_distribution_comparison.v1",
+      "time_policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+      "membership_policy_id": "bpic19.explicit_complete_case_ids.v1",
+      "interval_policy": "independent_minimum",
+      "interval_source": [
+        "Record Invoice Receipt"
+      ],
+      "interval_target": [
+        "Clear Invoice"
+      ],
+      "target": {
+        "label": "Target zero, one, two and missing",
+        "recipe": {
+          "kind": "complete_case_ids",
+          "case_ids": [
+            "T0",
+            "T1",
+            "T2",
+            "TM"
+          ]
+        }
+      },
+      "reference": {
+        "label": "Comparator two and reversed",
+        "recipe": {
+          "kind": "complete_case_ids",
+          "case_ids": [
+            "R2",
+            "RN"
+          ]
+        }
+      },
+      "parent_case_ids": [
+        "BAD",
+        "OLD",
+        "OUTSIDE",
+        "R2",
+        "RN",
+        "T0",
+        "T1",
+        "T2",
+        "TM",
+        "UNKNOWN",
+        "UPPER"
+      ],
+      "activity_column": 1,
+      "clock_kind": "wall_clock",
+      "clock_policy_id": "incident.time.wall_clock_as_recorded.v1",
+      "endpoint_admissibility": "select_parsed_minimum_then_2017_inclusive_2020_exclusive",
+      "direction_policy": "nonnegative_recorded_difference",
+      "elapsed_unit": "days",
+      "source_representation": "complete_original_item_histories"
+    },
+    "comparison": {
+      "definition_id": "bpic19-interval-comparison.v1:sha256:2be39c91f0f81e760073d0ead4287fbd8371edda4f4704ec72cf8d2e29e06e82",
+      "definition": {
+        "policy_id": "bpic19.interval_distribution_comparison.v1",
+        "time_policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+        "membership_policy_id": "bpic19.explicit_complete_case_ids.v1",
+        "interval_policy": "independent_minimum",
+        "interval_source": [
+          "Record Invoice Receipt"
+        ],
+        "interval_target": [
+          "Clear Invoice"
+        ],
+        "target": {
+          "label": "Target zero, one, two and missing",
+          "recipe": {
+            "kind": "complete_case_ids",
+            "case_ids": [
+              "T0",
+              "T1",
+              "T2",
+              "TM"
+            ]
+          }
+        },
+        "reference": {
+          "label": "Comparator two and reversed",
+          "recipe": {
+            "kind": "complete_case_ids",
+            "case_ids": [
+              "R2",
+              "RN"
+            ]
+          }
+        },
+        "parent_case_ids": [
+          "BAD",
+          "OLD",
+          "OUTSIDE",
+          "R2",
+          "RN",
+          "T0",
+          "T1",
+          "T2",
+          "TM",
+          "UNKNOWN",
+          "UPPER"
+        ],
+        "activity_column": 1,
+        "clock_kind": "wall_clock",
+        "clock_policy_id": "incident.time.wall_clock_as_recorded.v1",
+        "endpoint_admissibility": "select_parsed_minimum_then_2017_inclusive_2020_exclusive",
+        "direction_policy": "nonnegative_recorded_difference",
+        "elapsed_unit": "days",
+        "source_representation": "complete_original_item_histories"
+      },
+      "parent": {
+        "case_ids": [
+          "BAD",
+          "OLD",
+          "OUTSIDE",
+          "R2",
+          "RN",
+          "T0",
+          "T1",
+          "T2",
+          "TM",
+          "UNKNOWN",
+          "UPPER"
+        ],
+        "case_count": 11,
+        "record_count": 25
+      },
+      "target": {
+        "label": "Target zero, one, two and missing",
+        "case_ids": [
+          "T0",
+          "T1",
+          "T2",
+          "TM"
+        ],
+        "case_count": 4,
+        "record_count": 10,
+        "available_case_ids": [
+          "T0",
+          "T1",
+          "T2"
+        ],
+        "zero_case_ids": [
+          "T0"
+        ],
+        "unavailable_case_ids": [
+          "TM"
+        ],
+        "unavailable_reasons": {
+          "no_parsed_endpoint": 1
+        },
+        "summary": {
+          "available_case_count": 3,
+          "zero_case_count": 1,
+          "minimum": 0.0,
+          "maximum": 2.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "reason": null,
+          "unavailable_case_count": 1
+        }
+      },
+      "reference": {
+        "label": "Comparator two and reversed",
+        "case_ids": [
+          "R2",
+          "RN"
+        ],
+        "case_count": 2,
+        "record_count": 4,
+        "available_case_ids": [
+          "R2"
+        ],
+        "zero_case_ids": [],
+        "unavailable_case_ids": [
+          "RN"
+        ],
+        "unavailable_reasons": {
+          "reversed_interval": 1
+        },
+        "summary": {
+          "available_case_count": 1,
+          "zero_case_count": 0,
+          "minimum": 2.0,
+          "maximum": 2.0,
+          "mean": 2.0,
+          "median": 2.0,
+          "reason": null,
+          "unavailable_case_count": 1
+        }
+      },
+      "union_case_ids": [
+        "R2",
+        "RN",
+        "T0",
+        "T1",
+        "T2",
+        "TM"
+      ],
+      "overlap_case_ids": [],
+      "outside_case_ids": [
+        "BAD",
+        "OLD",
+        "OUTSIDE",
+        "UNKNOWN",
+        "UPPER"
+      ],
+      "page": {
+        "role": "reference",
+        "offset": 0,
+        "limit": 100,
+        "total": 2,
+        "items": [
+          {
+            "case_id": "R2",
+            "record_count": 2,
+            "record_row_ids": [
+              "row.v1:sha256:ae951d7da34823b165920fbb3ccabb03b35feb7d4a2627ef3e5c33ef0896d65a",
+              "row.v1:sha256:e0b462492be6c7cbc7b9f78cb93e20f95522e7a1d22c600d9f886155a220fa22"
+            ],
+            "source": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-01T00:00:00",
+              "selected_row_id": "row.v1:sha256:ae951d7da34823b165920fbb3ccabb03b35feb7d4a2627ef3e5c33ef0896d65a",
+              "row_ids": [
+                "row.v1:sha256:ae951d7da34823b165920fbb3ccabb03b35feb7d4a2627ef3e5c33ef0896d65a"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:ae951d7da34823b165920fbb3ccabb03b35feb7d4a2627ef3e5c33ef0896d65a"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "target": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-03T00:00:00",
+              "selected_row_id": "row.v1:sha256:e0b462492be6c7cbc7b9f78cb93e20f95522e7a1d22c600d9f886155a220fa22",
+              "row_ids": [
+                "row.v1:sha256:e0b462492be6c7cbc7b9f78cb93e20f95522e7a1d22c600d9f886155a220fa22"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:e0b462492be6c7cbc7b9f78cb93e20f95522e7a1d22c600d9f886155a220fa22"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "interval": {
+              "value": 2.0,
+              "available": true,
+              "reason": null,
+              "row_ids": [
+                "row.v1:sha256:ae951d7da34823b165920fbb3ccabb03b35feb7d4a2627ef3e5c33ef0896d65a",
+                "row.v1:sha256:e0b462492be6c7cbc7b9f78cb93e20f95522e7a1d22c600d9f886155a220fa22"
+              ],
+              "interval_state": "available",
+              "activation_row_ids": [
+                "row.v1:sha256:ae951d7da34823b165920fbb3ccabb03b35feb7d4a2627ef3e5c33ef0896d65a"
+              ],
+              "response_row_ids": [
+                "row.v1:sha256:e0b462492be6c7cbc7b9f78cb93e20f95522e7a1d22c600d9f886155a220fa22"
+              ],
+              "activation_timestamp": "2018-01-01T00:00:00",
+              "response_timestamp": "2018-01-03T00:00:00",
+              "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+              "unit": "days",
+              "recorded_difference_days": 2.0
+            }
+          },
+          {
+            "case_id": "RN",
+            "record_count": 2,
+            "record_row_ids": [
+              "row.v1:sha256:e2e3d2e30b7493fb31396008fa2f729a827e4f34168043b171451f5fdee601d1",
+              "row.v1:sha256:d37c1c463eb6125f81386d4d0a560a3d04f5f20f9a5057f7d322aa369e49bc52"
+            ],
+            "source": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-02T00:00:00",
+              "selected_row_id": "row.v1:sha256:d37c1c463eb6125f81386d4d0a560a3d04f5f20f9a5057f7d322aa369e49bc52",
+              "row_ids": [
+                "row.v1:sha256:d37c1c463eb6125f81386d4d0a560a3d04f5f20f9a5057f7d322aa369e49bc52"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:d37c1c463eb6125f81386d4d0a560a3d04f5f20f9a5057f7d322aa369e49bc52"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "target": {
+              "available": true,
+              "reason": null,
+              "endpoint_state": "available",
+              "timestamp": "2018-01-01T00:00:00",
+              "selected_row_id": "row.v1:sha256:e2e3d2e30b7493fb31396008fa2f729a827e4f34168043b171451f5fdee601d1",
+              "row_ids": [
+                "row.v1:sha256:e2e3d2e30b7493fb31396008fa2f729a827e4f34168043b171451f5fdee601d1"
+              ],
+              "later_row_ids": [],
+              "candidate_row_ids": [
+                "row.v1:sha256:e2e3d2e30b7493fb31396008fa2f729a827e4f34168043b171451f5fdee601d1"
+              ],
+              "unparseable_row_ids": [],
+              "unknown_activity_row_ids": []
+            },
+            "interval": {
+              "value": null,
+              "available": false,
+              "reason": "reversed_interval",
+              "row_ids": [
+                "row.v1:sha256:d37c1c463eb6125f81386d4d0a560a3d04f5f20f9a5057f7d322aa369e49bc52",
+                "row.v1:sha256:e2e3d2e30b7493fb31396008fa2f729a827e4f34168043b171451f5fdee601d1"
+              ],
+              "interval_state": "reversed",
+              "activation_row_ids": [
+                "row.v1:sha256:d37c1c463eb6125f81386d4d0a560a3d04f5f20f9a5057f7d322aa369e49bc52"
+              ],
+              "response_row_ids": [
+                "row.v1:sha256:e2e3d2e30b7493fb31396008fa2f729a827e4f34168043b171451f5fdee601d1"
+              ],
+              "activation_timestamp": "2018-01-02T00:00:00",
+              "response_timestamp": "2018-01-01T00:00:00",
+              "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+              "unit": "days",
+              "recorded_difference_days": -1.0
+            }
+          }
+        ],
+        "next_offset": null
+      },
+      "limitations": [
+        "Descriptive elapsed days do not establish active work, contractual lateness or a causal cohort effect.",
+        "Missing, reversed and out-of-range intervals are unavailable; they never become zero-day observations.",
+        "The two explicitly named sides can overlap. The reference is not an implicit target complement.",
+        "Independent minima preserve every co-minimum and later or unparseable candidate in complete original histories."
+      ]
+    }
+  }
+}

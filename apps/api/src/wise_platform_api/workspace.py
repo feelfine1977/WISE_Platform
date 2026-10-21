@@ -40,6 +40,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
+from typing import Literal
+
+from wise_platform_analytics.csv_inspection import SourceFile
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +70,16 @@ class Problem:
     code: str
     message: str
     field: str | None = None
+
+
+@dataclass(frozen=True)
+class ReferenceIntegrity:
+    """Read-only reference state; existing import/Resolution refusals stay unchanged."""
+
+    state: Literal["available", "unavailable", "checksum_invalid", "invalid_reference"]
+    reference_id: str
+    path: str
+    record: Mapping[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -215,31 +228,52 @@ class Workspace:
 
     # Sources -----------------------------------------------------------------------------
 
-    def store_source(self, raw: bytes, filename: str) -> StoredSource | Problem:
-        """Keep the bytes unchanged under their SHA-256; the same bytes are stored once."""
+    def store_source(self, raw: bytes | Iterable[bytes], filename: str) -> StoredSource | Problem:
+        """Keep the bytes unchanged under their SHA-256; the same bytes are stored once.
+
+        The bytes may arrive in chunks. They are written beside the store while they are hashed and then moved
+        into place, so no whole source is held in memory.
+        """
         problem = self.check()
         if problem is not None:
             return problem
-        digest = hashlib.sha256(raw).hexdigest()
-        source_id = "source.v1:sha256:" + digest
-        data_path = self.path / SOURCES / f"{digest}.csv"
-        meta_path = self.path / SOURCES / f"{digest}.json"
-        with self._lock:
-            try:
-                (self.path / SOURCES).mkdir(exist_ok=True)
-                if not _holds(data_path, digest, len(raw)):
-                    write_atomically(data_path, raw)
+        sources = self.path / SOURCES
+        try:
+            sources.mkdir(exist_ok=True)
+            handle, temporary = tempfile.mkstemp(prefix=".upload.", suffix=".partial", dir=sources)
+        except OSError as error:
+            return _write_problem(error, "The source cannot be stored in the workspace", "workspace_id")
+        try:
+            hasher, size = hashlib.sha256(), 0
+            with os.fdopen(handle, "wb") as stream:
+                for chunk in (raw,) if isinstance(raw, bytes) else raw:
+                    stream.write(chunk)
+                    hasher.update(chunk)
+                    size += len(chunk)
+                stream.flush()
+                os.fsync(stream.fileno())
+            digest = hasher.hexdigest()
+            data_path = sources / f"{digest}.csv"
+            meta_path = sources / f"{digest}.json"
+            with self._lock:
+                if not _holds(data_path, digest, size):
+                    os.replace(temporary, data_path)
                 existing = self._source_record(meta_path, digest)
                 if existing is not None:
                     return existing
-                record = StoredSource(source_id, filename, len(raw), _now())
+                record = StoredSource("source.v1:sha256:" + digest, filename, size, _now())
                 write_atomically(
                     meta_path,
                     _json_bytes({**record.to_dict(), "stored_utc": record.stored_utc}),
                 )
                 return record
-            except OSError as error:
-                return _write_problem(error, "The source cannot be stored in the workspace", "workspace_id")
+        except OSError as error:
+            return _write_problem(error, "The source cannot be stored in the workspace", "workspace_id")
+        finally:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
 
     def source(self, source_id: str) -> StoredSource | Problem:
         match = _SOURCE_ID.fullmatch(source_id)
@@ -277,6 +311,24 @@ class Workspace:
             )
         return raw
 
+    def source_file(self, source_id: str) -> SourceFile | Problem:
+        """A stored source to read as it is parsed. Its bytes are verified as they are read, and a reader that finds
+        them changed raises ``SourceChanged``, which ``source_changed`` answers."""
+        problem = self.check()
+        if problem is not None:
+            return problem
+        record = self.source(source_id)
+        if isinstance(record, Problem):
+            return record
+        path = self.path / SOURCES / f"{source_id.rsplit(':', 1)[1]}.csv"
+        if not path.is_file():
+            return Problem(
+                "source_unavailable",
+                "The stored bytes of this source cannot be read. Add the file again.",
+                "source_id",
+            )
+        return SourceFile(path, source_id)
+
     def source_unchanged(self, source_id: str) -> Problem | None:
         """Nothing while the stored bytes of a source are the stored ones, else the refusal for them.
 
@@ -310,6 +362,54 @@ class Workspace:
         except OSError:
             return "missing"
         return "stored" if _holds(data_path, digest, size) else "changed"
+
+    def reference_integrity(self, kind: Literal["source", "definition", "run"], reference_id: str) -> ReferenceIntegrity:
+        """Inspect only a declared source or immutable native reference, without repair.
+
+        Callers decide their public refusal vocabulary. Resolution continues to
+        use source/run/definition and their established failure codes.
+        """
+        folder, pattern = {"source": (SOURCES, _SOURCE_ID), "definition": (DEFINITIONS, _DEFINITION_ID),
+                           "run": (SCORE_RUNS, _RUN_ID)}[kind]
+        match = pattern.fullmatch(reference_id) if isinstance(reference_id, str) else None
+        if match is None:
+            return ReferenceIntegrity("invalid_reference", reference_id, folder)
+        digest = match.group(1)
+        path = self.path / folder / (digest + ".json")
+        try:
+            encoded = path.read_bytes()
+        except OSError:
+            return ReferenceIntegrity("unavailable", reference_id, str(path))
+        try:
+            stored = json.loads(encoded)
+        except (ValueError, UnicodeError, RecursionError):
+            # A source descriptor has no recorded checksum of its own. Its id
+            # authenticates CSV bytes, unlike immutable native record wrappers.
+            return ReferenceIntegrity("unavailable" if kind == "source" else "checksum_invalid", reference_id, str(path))
+        if kind == "source":
+            if (not isinstance(stored, dict) or stored.get("source_id") != reference_id
+                    or not isinstance(stored.get("filename"), str) or not stored["filename"]
+                    or type(stored.get("byte_count")) is not int or stored["byte_count"] < 0
+                    or not isinstance(stored.get("stored_utc"), str)):
+                return ReferenceIntegrity("unavailable", reference_id, str(path))
+            record = StoredSource(reference_id, stored["filename"], stored["byte_count"], stored["stored_utc"])
+            path = self.path / folder / (digest + ".csv")
+            try:
+                hasher, size = hashlib.sha256(), 0
+                with path.open("rb") as stream:
+                    for block in iter(lambda: stream.read(1 << 20), b""):
+                        size += len(block)
+                        hasher.update(block)
+            except OSError:
+                return ReferenceIntegrity("unavailable", reference_id, str(path))
+            if hasher.hexdigest() != digest or size != record.byte_count:
+                return ReferenceIntegrity("checksum_invalid", reference_id, str(path))
+            return ReferenceIntegrity("available", reference_id, str(path), record.to_dict())
+        record = stored.get("record") if isinstance(stored, dict) else None
+        checksum = _checksum_or_none(record) if isinstance(record, dict) else None
+        if not isinstance(stored, dict) or stored.get("id") != reference_id or checksum is None or stored.get("sha256") != checksum:
+            return ReferenceIntegrity("checksum_invalid", reference_id, str(path))
+        return ReferenceIntegrity("available", reference_id, str(path), record)
 
     def sources(self) -> list[StoredSource]:
         """Every complete stored source, oldest first."""
@@ -512,6 +612,15 @@ class Workspace:
                 None,
             )
         return record
+
+
+def source_changed() -> Problem:
+    """The refusal for a stored source whose bytes no longer match its identity, or cannot be read."""
+    return Problem(
+        "source_unavailable",
+        "The stored bytes of this source were changed outside the application. Add the file again.",
+        "source_id",
+    )
 
 
 def write_atomically(target: Path, data: bytes, *, keep: bool = True) -> None:

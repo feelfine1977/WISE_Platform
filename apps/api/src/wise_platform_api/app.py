@@ -1,7 +1,9 @@
 """Serve the local API and the built browser application."""
 
+from collections.abc import Iterator
 from pathlib import Path
 
+import anyio
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
@@ -9,12 +11,22 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .boundary import read_object
+from .bpic19_profiles import Bpic19Profiles
+from .bpic19_cohorts import register_bpic19_cohort_routes
+from .bpic19_scoring import register_bpic19_scoring_routes
+from .bpic19_prepared_runs import register_bpic19_prepared_routes
+from .bpic19_operators import register_bpic19_operator_routes
+from .bpic19_flow_comparison import register_bpic19_flow_comparison_routes
+from .bpic19_interval_comparison import register_bpic19_interval_comparison_routes
+from .bpic19_recipe_comparison import register_bpic19_recipe_comparison_routes
+from .bpic19_measures import Bpic19Measures
 from .case_lists import CaseLists
 from .comparisons import ComparisonReply, Comparisons
 from .examples import CATALOG, PACKAGED_EXAMPLES, read_example
 from .expectations import Expectations, ScoringReply
 from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
+from .memory_budget import BudgetScope, MemoryBudget
 from .investigations import Investigations, Reply
 from .population_views import PopulationViews, ViewReply
 from .rule_groups import RuleGroups
@@ -40,17 +52,22 @@ class _BrowserFiles(StaticFiles):
 
 
 def create_app(
-    static_dir: Path | None = None, examples_dir: Path | None = None, *, workspace_path: Path | None = None
+    static_dir: Path | None = None, examples_dir: Path | None = None, *, workspace_path: Path | None = None,
+    memory_budget_bytes: int | None = None,
 ) -> FastAPI:
     """Build the application; ``examples_dir`` replaces the packaged synthetic examples.
 
     Workspaces are refused inside the program's own folders, so that nothing is written there.
-    The selections made are held in ``application.state.selections``.
+    The selections made are held in ``application.state.selections``. Memory-heavy work is admitted against
+    one budget, ``memory_budget_bytes`` or the configured default, held in ``application.state.memory``.
     """
     application = FastAPI(title="WISE Platform", version=__version__)
+    budget = MemoryBudget(memory_budget_bytes)
+    application.add_middleware(BudgetScope, budget=budget)
+    application.state.memory = budget
     examples = examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
     investigations = Investigations(examples)
-    imports = Imports(forbidden=program_folders(), workspace_path=workspace_path)
+    imports = Imports(forbidden=program_folders(), workspace_path=workspace_path, budget=budget)
     selections = Selections(imports)
     views = PopulationViews(imports)
     case_lists = CaseLists(imports)
@@ -58,6 +75,15 @@ def create_app(
     rule_group_views = RuleGroups(imports)
     comparisons = Comparisons(imports)
     expectations = Expectations(imports)
+    bpic19_profiles = Bpic19Profiles(imports)
+    bpic19_measures = Bpic19Measures(imports)
+    register_bpic19_cohort_routes(application, imports)
+    register_bpic19_scoring_routes(application, imports)
+    register_bpic19_prepared_routes(application, imports)
+    register_bpic19_operator_routes(application, imports)
+    register_bpic19_flow_comparison_routes(application, imports)
+    register_bpic19_interval_comparison_routes(application, imports)
+    register_bpic19_recipe_comparison_routes(application, imports)
     saving = Saving(imports)
     application.state.selections = imports.selections
 
@@ -99,13 +125,24 @@ def create_app(
 
     @application.put("/api/sources")
     async def upload_source(request: Request) -> JSONResponse:
-        raw = await request.body()
+        body = request.stream()
+
+        def chunks() -> Iterator[bytes]:
+            # The worker thread pulls the body as it stores it, so no whole source is held in memory.
+            while True:
+                try:
+                    chunk = anyio.from_thread.run(body.__anext__)
+                except StopAsyncIteration:
+                    return
+                if chunk:
+                    yield chunk
+
         return _sent_import(
             await run_in_threadpool(
                 imports.upload_source,
                 request.query_params.multi_items(),
                 request.headers.get("content-type"),
-                raw,
+                chunks(),
             )
         )
 
@@ -132,6 +169,16 @@ def create_app(
     @application.post("/api/investigations/process-graph")
     async def process_graph(request: Request) -> JSONResponse:
         return _sent_selection(await run_in_threadpool(selections.process_graph, await request.body()))
+
+    @application.post("/api/investigations/bpic19-profile")
+    async def bpic19_profile(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(bpic19_profiles.profile, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/investigations/bpic19-measures")
+    async def bpic19_measure(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(bpic19_measures.measures, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/case-list")
     async def case_list(request: Request) -> JSONResponse:
@@ -191,6 +238,10 @@ def create_app(
     @application.post("/api/investigations/reopen")
     async def reopen_investigation(request: Request) -> JSONResponse:
         return _sent_saving(await run_in_threadpool(saving.reopen, await request.body()))
+
+    @application.post("/api/investigations/recover-metadata")
+    async def recover_investigation_metadata(request: Request) -> JSONResponse:
+        return _sent_saving(await run_in_threadpool(saving.recover_metadata, await request.body()))
 
     @application.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:

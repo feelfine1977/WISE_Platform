@@ -1,0 +1,94 @@
+"""Registered BPIC19 flow/subtype comparison boundary, ready for the shared immutable pipeline."""
+from __future__ import annotations
+
+import json
+import logging
+import re
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+from starlette.concurrency import run_in_threadpool
+from wise_platform_analytics.bpic19_flow_comparison import compare_flow_subtypes
+from wise_platform_analytics.mapping import ImportRefusal
+
+from .boundary import first_difference, read_object
+from .generated.bpic19_flow_comparison import Bpic19FlowComparisonAnswer, Bpic19FlowComparisonRefusal, Bpic19FlowComparisonRequest
+from .import_boundary import import_echo
+from .imports import ImportReply, Imports
+from .population_views import resolve_population
+from .workspace import Problem
+
+logger = logging.getLogger(__name__)
+
+
+def _refused(given, code, message, field=None):
+    allowed = {"invalid_request", "unsupported_schema", "unsupported_policy", "invalid_parameter", "workspace_unavailable", "workspace_not_writable", "workspace_incompatible", "source_unavailable", "preparation_unavailable", "identity_mismatch", "population_unavailable", "invalid_parent", "unknown_case", "memory_unavailable", "computation_failed"}
+    if code not in allowed: code = "computation_failed"
+    status = 503 if code == "memory_unavailable" else 400 if code == "invalid_request" else 422 if code in {"unsupported_schema", "unsupported_policy", "invalid_parameter", "invalid_parent", "unknown_case"} else 500 if code == "computation_failed" else 409
+    body = {"schema_version": 1, "message_type": "bpic19_flow_comparison_refusal", **import_echo(given),
+            "operation": "bpic19_flow_comparison", "code": code, "message": message, "field": field,
+            "retryable": code in {"memory_unavailable", "computation_failed", "workspace_unavailable", "source_unavailable", "preparation_unavailable", "population_unavailable"}}
+    Bpic19FlowComparisonRefusal.model_validate_json(json.dumps(body), strict=True)
+    return ImportReply(status, body)
+
+
+class Bpic19FlowComparisons:
+    def __init__(self, imports: Imports):
+        self._imports = imports
+
+    def compare(self, body: bytes) -> ImportReply:
+        given = read_object(body)
+        if isinstance(given, str): return _refused({}, "invalid_request", given)
+        if type(given.get("schema_version")) is int and given["schema_version"] != 1:
+            return _refused(given, "unsupported_schema", "Only flow comparison schema version 1 is registered.", "schema_version")
+        try:
+            parsed = Bpic19FlowComparisonRequest.model_validate_json(json.dumps(given, allow_nan=False), strict=True)
+            difference = first_difference(given, parsed.model_dump(mode="json", exclude_unset=True))
+            if difference is not None:
+                return _refused(given, "invalid_request", "A field has a different JSON type.", ".".join(map(str, difference)))
+            if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", given["identity"]["implementation_version"]):
+                return _refused(given, "invalid_request", "Implementation versions use ASCII digits.", "identity.implementation_version")
+        except (ValidationError, ValueError, TypeError) as error:
+            field = ".".join(map(str, error.errors()[0]["loc"])) if isinstance(error, ValidationError) else None
+            return _refused(given, "invalid_request", "The flow comparison request does not match its registered contract.", field)
+        try:
+            lineage = given["query"]["profile_query"].get("category_lineage")
+            if lineage is not None:
+                # Both sources are admitted together, before either is read.
+                refused = self._imports.admit_preparations(given["workspace_id"], (given["identity"]["preparation_id"], lineage["origin_preparation_id"]))
+                if refused is not None: return _refused(given, refused.code, refused.message, refused.field)
+            resolved = resolve_population(self._imports, given)
+            if isinstance(resolved, Problem): return _refused(given, resolved.code, resolved.message, resolved.field)
+            prepared, population = resolved
+            origin = None
+            if lineage is not None:
+                found = self._imports.prepared(given["workspace_id"], lineage["origin_preparation_id"])
+                if not isinstance(found, tuple):
+                    return _refused(given, found.code, found.message, "query.profile_query.category_lineage.origin_preparation_id")
+                origin = found[0]
+            result = compare_flow_subtypes(prepared, given["query"], population.case_ids, origin)
+            if isinstance(result, ImportRefusal): return _refused(given, result.code, result.message, result.field)
+            answer = {"schema_version": 1, "message_type": "bpic19_flow_comparison_answer", "operation": "bpic19_flow_comparison",
+                      "request_id": given["request_id"], "query_revision": given["query_revision"], "workspace_id": given["workspace_id"],
+                      "identity": population.identity, "parent_identity": population.parent_identity,
+                      "query": given["query"], "definition_id": result["definition_id"], "definition": result["definition"], "comparison": result}
+            checked = Bpic19FlowComparisonAnswer.model_validate_json(json.dumps(answer, allow_nan=False), strict=True)
+            if first_difference(answer, checked.model_dump(mode="json", exclude_unset=True), integers_as_numbers=True) is not None:
+                raise ValueError("Flow comparison contract changed supplied values")
+            return ImportReply(200, answer)
+        except Exception:
+            logger.exception("The flow comparison operation failed")
+            return _refused(given, "computation_failed", "The flow comparison could not be computed. Retry; repeated failures need application repair.")
+
+
+def register_bpic19_flow_comparison_routes(app: FastAPI, imports: Imports) -> Bpic19FlowComparisons:
+    """Explicit integration hook; does not replace the app or persistence registries."""
+    service = Bpic19FlowComparisons(imports)
+
+    @app.post("/api/investigations/bpic19-flow-comparison")
+    async def bpic19_flow_comparison(request: Request):
+        reply = await run_in_threadpool(service.compare, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status, headers={"Cache-Control": "no-store"})
+
+    return service

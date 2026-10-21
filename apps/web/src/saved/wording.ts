@@ -6,12 +6,14 @@ import type { SavingProblem } from "./client";
 /** What the analyst can do about each refusal of saving, listing or reopening. */
 const remedies: Record<SavingRefusal["code"], string> = {
   invalid_request: "This screen and the local service do not agree on the request. Reload the page; if it repeats, restart the application.",
+  unsupported_action: "This pipeline action is not supported. Remove it or choose a reviewed application operation; source code cannot be executed by a saved pipeline.",
   unsupported_schema: "This screen and the local service are different versions. Reload the page or restart the application.",
   unsupported_policy: "This screen asked for a policy the local service does not support. Reload the page or restart the application.",
   invalid_parameter: "This screen and the local service do not agree on the request. Reload the page; if it repeats, restart the application.",
   workspace_unavailable: "Open the workspace folder again in the Data area, then try again.",
   workspace_not_writable: "Get write permission for the workspace folder, then save again.",
   source_unavailable: "Add the same source file again in the Data area; it is recognised by its bytes. Then reopen.",
+  memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   source_changed: "Add the original source file again in the Data area, then reopen. A changed file is a new source.",
   preparation_unavailable: "Read the source again with the same choices in the Data area, then reopen.",
   preparation_changed: "Read the source again in the Data area and save the investigation anew; the saved revision keeps its meaning.",
@@ -29,6 +31,8 @@ const remedies: Record<SavingRefusal["code"], string> = {
   incompatible_saved_revision: "Reopen it with the application version that saved it, or read its source again and save a new investigation.",
   publication_failed: "Try again in a moment; the earlier revisions are unchanged.",
   computation_failed: "Try again. If it fails again, restart the application.",
+  artifact_unavailable: "Restore the same missing native artifact from its matching backup. You can read integrity-checked saved notes and independently resolvable original source evidence without restoring computed outputs.",
+  checksum_mismatch: "Restore the original native artifact from its matching backup; do not overwrite it with a new computation. Read saved notes and original source evidence separately while the stored output remains unverified.",
 };
 
 export interface SavingProblemText {

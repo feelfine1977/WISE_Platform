@@ -28,7 +28,8 @@ from pydantic import BaseModel
 
 from .boundary import SCHEMA_VERSION, read_object
 from .generated import saving as saving_models
-from .generated.saving import SaveInvestigationRequest1, SavingRefusal
+from .generated.saving import SaveInvestigationRequest1, SavingRefusal, Bpic19PipelineAction
+from typing import get_args
 from .import_boundary import import_echo
 from .selection_boundary import predicate_wire_failures, _value_at
 from .strict_reading import (
@@ -45,15 +46,18 @@ RequestModel = TypeVar("RequestModel", bound=BaseModel)
 SAVE = "save_investigation"
 LIST_SAVED = "list_saved"
 REOPEN = "reopen_investigation"
+RECOVER_METADATA = "recover_investigation_metadata"
 
 STATUS: dict[str, int] = {
     "invalid_request": 400,
+    "unsupported_action": 400,
     "unsupported_schema": 400,
     "unsupported_policy": 400,
     "invalid_parameter": 400,
     "workspace_unavailable": 404,
     "workspace_not_writable": 403,
     "source_unavailable": 404,
+    "memory_unavailable": 503,
     "source_changed": 409,
     "preparation_unavailable": 404,
     "preparation_changed": 409,
@@ -71,8 +75,10 @@ STATUS: dict[str, int] = {
     "incompatible_saved_revision": 409,
     "publication_failed": 503,
     "computation_failed": 500,
+    "artifact_unavailable": 409,
+    "checksum_mismatch": 409,
 }
-RETRYABLE = frozenset({"workspace_unavailable", "publication_failed", "computation_failed"})
+RETRYABLE = frozenset({"workspace_unavailable", "publication_failed", "memory_unavailable", "computation_failed"})
 """Codes for a state of this computer rather than of the request: the same request can succeed later."""
 
 _ALTERNATIVES = alternatives_of(saving_models)
@@ -143,6 +149,8 @@ def parse_saving_body(
     if isinstance(message, str):
         return saving_refusal(operation, "invalid_request", message)
     echo = import_echo(message)
+    if "bpic19_prepared_assessments" in message and message["bpic19_prepared_assessments"] is None:
+        return saving_refusal(operation, "invalid_request", "Omit absent prepared references; an explicit null cannot retain an assessment.", echo=echo, field="bpic19_prepared_assessments")
     version = message.get("schema_version")
     if type(version) is int and version != SCHEMA_VERSION:
         return saving_refusal(
@@ -153,6 +161,13 @@ def parse_saving_body(
             field="schema_version",
         )
     read = read_strictly(message, model, _ALTERNATIVES)
+    pipeline = message.get("bpic19_pipeline")
+    if isinstance(pipeline, dict) and isinstance(pipeline.get("actions"), list):
+        registered = set(get_args(Bpic19PipelineAction.model_fields["operation"].annotation))
+        for index, action in enumerate(pipeline["actions"]):
+            if isinstance(action, dict) and isinstance(action.get("operation"), str) and action["operation"] not in registered:
+                return saving_refusal(operation, "unsupported_action", "This pipeline action is not registered; supplied code is never executed.",
+                                      echo=echo, field=f"bpic19_pipeline.actions.{index}.operation")
     failures = read if isinstance(read, list) else _beyond_the_models(message, model)
     if not failures:
         assert not isinstance(read, list)
@@ -186,6 +201,11 @@ def _beyond_the_models(message: dict, model: type[BaseModel]) -> list[Failure]:
                        ("comparison", "definition", "target", "definition", "predicates"),
                        ("comparison", "definition", "reference", "definition", "predicates"))
     failures += predicate_wire_failures(message, predicate_paths)
+    pipeline = message.get("bpic19_pipeline")
+    if isinstance(pipeline, dict):
+        for index, action in enumerate(pipeline.get("actions", [])):
+            if isinstance(action, dict) and "selection_keep" in action and action["selection_keep"] is None:
+                failures.append(Failure(("bpic19_pipeline", "actions", index, "selection_keep"), "a supplied profile Keep association cannot be null"))
     failures += repeated_failures(message, _UNIQUE)
     failures += version_failures(message, _VERSIONS)
     comparison = message.get("comparison")

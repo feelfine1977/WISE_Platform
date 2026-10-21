@@ -1,4 +1,5 @@
 import type { WorkspaceId } from "../generated/imports";
+import { sameJson } from "../data/coordinator";
 import type {
   EvidenceBookmark,
   ListSavedAnswer,
@@ -11,6 +12,9 @@ import type {
   SavedComparison,
   SavedInvestigationSummary,
   ScoreRunReference,
+  Bpic19Pipeline,
+  Bpic19PipelineManifest,
+  Bpic19PreparedAssessmentReference,
 } from "../generated/saving";
 import {
   type ImportedInvestigationCoordinator,
@@ -45,6 +49,10 @@ export interface SavingState {
   save: SaveState;
 }
 
+/** An immutable server-verified result, separate from the save form's status. */
+export type VerifiedSavedExportReceipt = Readonly<Pick<SaveInvestigationAnswer,
+  "workspace_id" | "revision" | "bpic19_outputs" | "bpic19_prepared_outputs">>;
+
 /** The part of the comparison view that saving needs: the comparison shown on a reading, in its saved form. */
 export interface ComparisonSource {
   savedComparisonFor(workspaceId: WorkspaceId, identity: SaveInvestigationRequest["base_identity"]): SavedComparison | null;
@@ -57,6 +65,18 @@ export interface ScoreSource {
   savedReference(): ScoreRunReference | null;
   /** Shows the score run of a reopened investigation again by reading it, or none when it refers to none. */
   restore(reference: ScoreRunReference | null): void;
+}
+
+export interface PipelineSource {
+  readyForSave(): boolean;
+  savedPipeline(): Bpic19Pipeline | null;
+}
+
+/** Declared assessment references use their own basis, never an incident population. */
+export interface PreparedAssessmentSource {
+  readyForSave(): boolean;
+  savedPreparedAssessments(): SaveInvestigationRequest["bpic19_prepared_assessments"];
+  restore(workspaceId: string, references: readonly Bpic19PreparedAssessmentReference[]): void;
 }
 
 /** What a save of the question shown would hold, or why it cannot be saved now. */
@@ -73,6 +93,10 @@ export type SaveDraft =
     };
 
 const initialState: SavingState = { list: { phase: "idle" }, reopen: { phase: "idle" }, save: { phase: "idle" } };
+
+function metadataRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
 const unreachable: SavingOutcome<never> = { ok: false, problem: { kind: "unreachable" } };
 
@@ -107,6 +131,8 @@ export class SavingCoordinator {
   private readonly listeners = new Set<() => void>();
   /** Ends the wait for a reopened investigation to be shown, while such a wait is on. */
   private awaited: (() => void) | null = null;
+  private nativeLabels: { revisionId: string; labels: Readonly<Record<string, string>> } | null = null;
+  private exportReceipt: VerifiedSavedExportReceipt | null = null;
 
   constructor(
     private readonly client: SavingClient,
@@ -115,6 +141,8 @@ export class SavingCoordinator {
     private readonly comparisons?: ComparisonSource,
     /** Where the score run shown is found, so that saving the investigation refers to it. */
     private readonly scores?: ScoreSource,
+    private readonly pipeline?: PipelineSource,
+    private readonly prepared?: PreparedAssessmentSource,
   ) {}
 
   subscribe = (listener: () => void): (() => void) => {
@@ -124,9 +152,84 @@ export class SavingCoordinator {
 
   getState = (): SavingState => this.state;
 
+  /** Export only the verified saved revision still shown on this exact reading. */
+  verifiedExportReceipt(): VerifiedSavedExportReceipt | null {
+    const receipt = this.exportReceipt;
+    if (!receipt || (!receipt.bpic19_outputs && !receipt.bpic19_prepared_outputs)) return null;
+    const state = this.investigation.getState();
+    const { population, selection, saved } = state;
+    const target = state.replacement?.asked.target ?? (population.phase === "idle" ? null : population.target);
+    if (target && (target.workspaceId !== receipt.workspace_id ||
+        target.preparationId !== receipt.revision.content.base_identity.preparation_id)) {
+      this.exportReceipt = null;
+      return null;
+    }
+    if (state.replacement === null && population.phase === "ready" &&
+        (population.answer.workspace_id !== receipt.workspace_id ||
+         !sameIdentity(population.answer.identity, receipt.revision.content.base_identity))) {
+      this.exportReceipt = null;
+      return null;
+    }
+    if (this.current.has("save") || this.current.has("reopen") || state.replacement !== null ||
+        population.phase !== "ready" || selection.phase !== "ready" || !saved ||
+        saved.revisionId !== receipt.revision.saved_revision_id ||
+        !sameJson(saved.content, receipt.revision.content)) return null;
+    const shown = shownSelection(selection);
+    if (!shown || !sameIdentity(shown.answer.identity, receipt.revision.content.selection_identity)) return null;
+    if (this.pipeline && (!this.pipeline.readyForSave() ||
+        !sameJson(this.pipeline.savedPipeline(), receipt.revision.content.bpic19_pipeline ?? null))) return null;
+    if (this.prepared && (!this.prepared.readyForSave() ||
+        !sameJson(this.prepared.savedPreparedAssessments() ?? null, receipt.revision.content.bpic19_prepared_assessments ?? null))) return null;
+    return receipt;
+  }
+
+  private rememberExportReceipt(answer: SaveInvestigationAnswer | ReopenInvestigationAnswer): void {
+    this.exportReceipt = answer.bpic19_outputs || answer.bpic19_prepared_outputs ? structuredClone({
+      workspace_id: answer.workspace_id, revision: answer.revision,
+      ...(answer.bpic19_outputs ? { bpic19_outputs: answer.bpic19_outputs } : {}),
+      ...(answer.bpic19_prepared_outputs ? { bpic19_prepared_outputs: answer.bpic19_prepared_outputs } : {}),
+    }) : null;
+  }
+
+  /** Presentation labels come only from a verified immutable save/reopen answer. */
+  nativeRunLabels(revisionId?: string): Readonly<Record<string, string>> {
+    const stored = this.nativeLabels;
+    return stored && revisionId === stored.revisionId ? stored.labels : {};
+  }
+
+  private rememberNativeLabels(revisionId: string, manifest?: Bpic19PipelineManifest): void {
+    const labels: Record<string, string> = {};
+    for (const entry of manifest?.outputs ?? []) {
+      const output = entry.output, report = output.report;
+      if (entry.operation !== "bpic19_score" || typeof output.run_id !== "string" || !metadataRecord(report)) continue;
+      const settings = report.settings;
+      if (!metadataRecord(settings) || typeof settings.view !== "string" || !["flat", "layer_balanced"].includes(String(settings.mode)) || typeof settings.gamma !== "number" || !Number.isFinite(settings.gamma) || typeof report.profile_id !== "string") continue;
+      const profile = report.profile_id.startsWith("bpic19.notebook") ? "Historical notebook" : report.profile_id.startsWith("bpic19.paper") ? "WISE paper" : null;
+      if (profile === null) continue;
+      let multiplier = "Multiplier not retained";
+      if (settings.volume === "cases") multiplier = "Scored item count";
+      else if (settings.volume === "exposure") {
+        const calibration = metadataRecord(report.exposure_calibration) ? report.exposure_calibration : null;
+        const definition = metadataRecord(output.definition) ? output.definition : null;
+        const frozenSettings = metadataRecord(definition?.settings) ? definition.settings : null;
+        const policy = frozenSettings?.exposure_policy ?? calibration?.policy ?? settings.exposure_policy;
+        const recipes: Readonly<Record<string, string>> = {creation_value: "creation value", creation_unique_value: "unique finite creation value",
+          creation_unique_event: "unique creation event value", max_absolute_p95: "maximum absolute value · frozen P95"};
+        const recipe = typeof policy === "string" ? recipes[policy] ?? "Unsupported stored recipe" : "Recipe not retained";
+        const unit = calibration?.unit_provenance === "explicit_raw_measures_definition.v1" && typeof calibration.source_unit === "string" && calibration.source_unit.trim()
+          ? `reviewed source unit ${calibration.source_unit.trim()}` : "generic source units";
+        multiplier = `Exposure · ${recipe} · ${unit}`;
+      }
+      labels[output.run_id] = `${profile} · ${settings.view} · ${settings.mode === "flat" ? "flat" : "layer balanced"} · gamma ${settings.gamma} · ${multiplier}`;
+    }
+    this.nativeLabels = { revisionId, labels };
+  }
+
   /** What saving the question shown now would hold, from the investigation's state. */
   draft(investigation: ImportedInvestigationState): SaveDraft {
     const { population, selection, saved } = investigation;
+    if (this.prepared && !this.prepared.readyForSave()) return { ready: false, reason: "Review, run and retain the declared assessment changes, or discard them before saving." };
+    if (this.pipeline && !this.pipeline.readyForSave()) return { ready: false, reason: "Review the changed BPIC19 definitions or finish the pending analysis before saving." };
     if (population.phase !== "ready") return { ready: false, reason: "The incidents are not open yet." };
     if (investigation.replacement?.phase === "running") return { ready: false, reason: "Saving is possible once the other incidents asked for are open." };
     const shown = shownSelection(selection);
@@ -145,6 +248,8 @@ export class SavingCoordinator {
 
   /** Saves the question shown under a name and a note; a question saved before gets a new revision. */
   save(name: string, notes: string, view: InvestigationView): void {
+    if (this.prepared && !this.prepared.readyForSave()) return;
+    if (this.pipeline && !this.pipeline.readyForSave()) return;
     const investigation = this.investigation.getState();
     const { population, selection, saved, parentCaseIds } = investigation;
     const shown = shownSelection(selection);
@@ -157,6 +262,8 @@ export class SavingCoordinator {
       graph_positions: null,
     };
     const scoreReference = this.scores?.savedReference() ?? saved?.content.score_run_ref ?? null;
+    const pipeline = this.pipeline?.savedPipeline() ?? (saved && sameIdentity(saved.content.selection_identity, shown.answer.identity) ? saved.content.bpic19_pipeline : null);
+    const prepared = this.prepared ? this.prepared.savedPreparedAssessments() : saved?.content.bpic19_prepared_assessments;
     const question = {
       schema_version: 1 as const,
       message_type: "save_investigation_request" as const,
@@ -179,11 +286,14 @@ export class SavingCoordinator {
       // The score run shown on this reading is referred to; without one, a run the saved investigation
       // refers to stays referred to until it is taken away on purpose.
       ...(scoreReference ? { score_run_ref: scoreReference } : {}),
+      ...(pipeline ? { bpic19_pipeline: pipeline } : {}),
+      ...(prepared ? { bpic19_prepared_assessments: prepared } : {}),
     };
     // A new investigation names neither an investigation nor the revision it replaces; a new revision names both.
     const request: SaveInvestigationRequest = saved
       ? { ...question, investigation_id: saved.investigationId, expected_revision_id: saved.revisionId }
       : { ...question, investigation_id: null, expected_revision_id: null };
+    this.exportReceipt = null;
     this.publish({ ...this.state, save: { phase: "saving", name } });
     this.client.save(request, signal).then(
       (outcome) => this.receiveSave(request, outcome),
@@ -220,6 +330,7 @@ export class SavingCoordinator {
   reopen(summary: SavedInvestigationSummary, workspaceId: WorkspaceId): Promise<boolean> {
     this.forgetAwaited();
     const { requestId, revision, signal } = this.issue("reopen", "reopen");
+    this.exportReceipt = null;
     const request: ReopenInvestigationRequest = {
       schema_version: 1,
       message_type: "reopen_investigation_request",
@@ -239,6 +350,7 @@ export class SavingCoordinator {
   stop(): void {
     for (const kind of [...this.current.keys()]) this.cancel(kind);
     this.forgetAwaited();
+    this.exportReceipt = null;
   }
 
   /**
@@ -272,6 +384,7 @@ export class SavingCoordinator {
     const hand = (): void => {
       this.comparisons?.restore(workspaceId, content.base_identity, content.comparison);
       this.scores?.restore(content.score_run_ref ?? null);
+      this.prepared?.restore(workspaceId, content.bpic19_prepared_assessments ?? []);
     };
     if (accepted()) {
       hand();
@@ -306,14 +419,19 @@ export class SavingCoordinator {
       return;
     }
     this.investigation.markSaved({ investigationId: revision.investigation_id, revisionId: revision.saved_revision_id, content: revision.content });
+    this.rememberNativeLabels(revision.saved_revision_id, checked.answer.bpic19_outputs);
+    this.rememberExportReceipt(checked.answer);
     this.publish({ ...this.state, save: { phase: "saved", answer: checked.answer } });
   }
 
   /** Whether the investigation still shows the question a save request was made for. */
   private stillShows(request: SaveInvestigationRequest): boolean {
-    const { population, selection } = this.investigation.getState();
+    const { population, selection, saved } = this.investigation.getState();
     const shown = shownSelection(selection);
+    const currentPipeline = this.pipeline?.savedPipeline() ?? (saved && shown && sameIdentity(saved.content.selection_identity, shown.answer.identity) ? saved.content.bpic19_pipeline : null);
     return (
+      (!this.pipeline || (this.pipeline.readyForSave() && sameJson(request.bpic19_pipeline ?? null, currentPipeline ?? null))) &&
+      (!this.prepared || (this.prepared.readyForSave() && sameJson(request.bpic19_prepared_assessments ?? null, this.prepared.savedPreparedAssessments() ?? null))) &&
       population.phase === "ready" &&
       selection.phase === "ready" &&
       shown !== null &&
@@ -347,6 +465,7 @@ export class SavingCoordinator {
       return false;
     }
     const { revision, restored_selection, recovery } = checked.answer;
+    this.rememberNativeLabels(revision.saved_revision_id, checked.answer.bpic19_outputs);
     const { content } = revision;
     // The population shown before this reopening: only a later one can be the reopened question.
     const shownBefore = populationRevision(this.investigation.getState());
@@ -359,6 +478,7 @@ export class SavingCoordinator {
       view: recovery.presentation_state?.active_view === "process_map" ? "map" : "incidents",
     });
     this.restoreWhenAccepted(request.workspace_id, revision, shownBefore);
+    this.rememberExportReceipt(checked.answer);
     this.publish({ ...this.state, reopen: { phase: "idle" }, save: { phase: "idle" } });
     return true;
   }
@@ -415,12 +535,25 @@ function checkEcho<Answer extends Echoed>(request: Echoed, answer: Answer): Savi
   return { ok: true, answer };
 }
 
+function preparedOutputsMatch(answer: SaveInvestigationAnswer | ReopenInvestigationAnswer): boolean {
+  const references = answer.revision.content.bpic19_prepared_assessments;
+  const manifest = answer.bpic19_prepared_outputs;
+  if (!references) return manifest === undefined;
+  return manifest !== undefined && sameJson(manifest.references, references) &&
+    references.every(reference => reference.input_id === manifest.input_id) &&
+    new Set(references.map(reference => reference.view)).size === references.length;
+}
+
 function checkSave(request: SaveInvestigationRequest, answer: SaveInvestigationAnswer): SavingOutcome<SaveInvestigationAnswer> {
   const echoed = checkEcho(request, answer);
   if (!echoed.ok) return echoed;
   const { content, investigation_id } = answer.revision;
   if (request.investigation_id !== null && investigation_id !== request.investigation_id) {
     return mismatch("The reply saved a different investigation.");
+  }
+  if (!sameJson(content.bpic19_prepared_assessments ?? null, request.bpic19_prepared_assessments ?? null) ||
+      !preparedOutputsMatch(answer)) {
+    return mismatch("The reply saved different declared prepared assessments or omitted their verified stored outputs.");
   }
   if (content.selection_identity.population_id !== request.selection_identity.population_id || content.name !== request.name) {
     return mismatch("The reply saved a different question.");
@@ -432,6 +565,7 @@ function checkReopen(request: ReopenInvestigationRequest, answer: ReopenInvestig
   const echoed = checkEcho(request, answer);
   if (!echoed.ok) return echoed;
   if (answer.revision.saved_revision_id !== request.saved_revision_id) return mismatch("The reply reopened a different revision.");
+  if (!preparedOutputsMatch(answer)) return mismatch("The reopened prepared outputs do not match their exact retained input and references.");
   return { ok: true, answer };
 }
 

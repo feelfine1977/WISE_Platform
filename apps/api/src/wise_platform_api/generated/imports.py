@@ -145,6 +145,7 @@ class TimestampFormat(
             'mdy_slash_minute',
             'mdy_dot_minute',
             'dmy_dot_second',
+            'dmy_dash_second',
             'mdy_dot_second',
             'dmy_slash_second',
             'mdy_slash_second',
@@ -160,6 +161,7 @@ class TimestampFormat(
         'mdy_slash_minute',
         'mdy_dot_minute',
         'dmy_dot_second',
+        'dmy_dash_second',
         'mdy_dot_second',
         'dmy_slash_second',
         'mdy_slash_second',
@@ -666,6 +668,7 @@ class ImportRefusal(BaseModel):
         'interpretation_not_ready',
         'case_not_found',
         'identity_mismatch',
+        'memory_unavailable',
         'computation_failed',
     ]
     message: constr(min_length=1)

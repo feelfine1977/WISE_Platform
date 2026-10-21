@@ -1,0 +1,19 @@
+.bpic19-scoring { display: grid; gap: var(--space-4); padding: var(--space-4); color: var(--color-ink); }
+.bpic19-scoring h2, .bpic19-scoring p { margin: 0; }
+.bpic19-controls { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; }
+.bpic19-controls label { display: grid; gap: var(--space-half); color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.bpic19-controls select, .bpic19-controls input, .bpic19-scoring button { font: inherit; color: var(--color-ink); background: var(--color-surface); border: var(--line-width) solid var(--color-line-strong); border-radius: var(--radius); min-height: var(--size-row); padding: var(--space-1) var(--space-2); }
+.bpic19-scoring button { cursor: pointer; }
+.bpic19-scoring button:disabled { opacity: var(--opacity-disabled); cursor: default; }
+.bpic19-scoring :focus-visible { outline: var(--focus-width) solid var(--color-accent); outline-offset: var(--focus-offset); }
+.bpic19-muted { color: var(--color-ink-muted); font-size: var(--font-size-small); }
+.bpic19-scoring [role="alert"] { color: var(--color-error); }
+.bpic19-table-wrap { overflow-x: auto; }
+.bpic19-scoring table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.bpic19-scoring caption { text-align: left; padding: var(--space-2) 0; font-weight: var(--font-weight-strong); }
+.bpic19-scoring small { display: block; font-size: var(--font-size-small); color: var(--color-ink-muted); }
+.bpic19-scoring th, .bpic19-scoring td { text-align: left; padding: var(--space-2); border-bottom: var(--line-width) solid var(--color-line-row); vertical-align: top; }
+.bpic19-scoring th { font-size: var(--font-size-small); font-weight: var(--font-weight-plain); color: var(--color-ink-muted); border-bottom-color: var(--color-line); }
+.bpic19-scoring .bpic19-text-button { color: var(--color-accent); border: none; background: transparent; padding: 0; min-height: 0; }
+.bpic19-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.bpic19-scoring pre { overflow: auto; padding: var(--space-3); background: var(--color-tint); font-size: var(--font-size-small); }

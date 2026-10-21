@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import (
     AwareDatetime,
@@ -359,7 +359,12 @@ class SavingRefusal(BaseModel):
     request_id: RequestId | None
     query_revision: QueryRevision | None
     workspace_id: WorkspaceId | None
-    operation: Literal['save_investigation', 'list_saved', 'reopen_investigation']
+    operation: Literal[
+        'save_investigation',
+        'list_saved',
+        'reopen_investigation',
+        'recover_investigation_metadata',
+    ]
     code: Literal[
         'invalid_request',
         'unsupported_schema',
@@ -384,7 +389,11 @@ class SavingRefusal(BaseModel):
         'malformed_saved_revision',
         'incompatible_saved_revision',
         'publication_failed',
+        'memory_unavailable',
         'computation_failed',
+        'unsupported_action',
+        'artifact_unavailable',
+        'checksum_mismatch',
     ]
     message: constr(min_length=1)
     field: str | None
@@ -469,6 +478,264 @@ class MaxRawGapAtLeast(BaseModel):
     negate: bool
 
 
+class Bpic19PipelineOutput(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    operation: Literal[
+        'bpic19_profile',
+        'bpic19_measures',
+        'bpic19_cohorts',
+        'bpic19_score',
+        'bpic19_ordinal',
+        'bpic19_fifo',
+        'bpic19_cancellation',
+        'bpic19_rule',
+        'bpic19_waiting',
+        'bpic19_flow_comparison',
+        'bpic19_interval_comparison',
+        'bpic19_operator_comparison',
+        'bpic19_cohort_comparison',
+    ]
+    definition_id: constr(min_length=1)
+    sha256: constr(pattern=r'^[a-f0-9]{64}$')
+    output: dict[str, Any]
+
+
+class RecordAttributeCondition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+
+
+class RecordAttributeCaseEvidence(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_id: CaseId
+    matching_row_ids: list[RowId]
+    unevaluable_row_ids: list[RowId]
+
+
+class Bpic19LiteratureClaim(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    claim_id: constr(min_length=1, max_length=128)
+    report_id: Literal[
+        'R01',
+        'R02',
+        'R03',
+        'R04',
+        'R05',
+        'R06',
+        'R07',
+        'R08',
+        'R09',
+        'R10',
+        'R11',
+        'R12',
+        'R13',
+        'R14',
+        'R15',
+        'notebook',
+        'wise-paper',
+    ]
+    source_locator: constr(pattern=r'\S', min_length=1, max_length=2000)
+    claim: constr(pattern=r'\S', min_length=1, max_length=4000)
+    claim_level: Literal['reported_not_rerun']
+    compared_run_id: constr(min_length=1) | None
+
+
+class MetadataRecoveryPage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    notes_offset: conint(ge=0, le=9007199254740991)
+    bookmarks_offset: conint(ge=0, le=9007199254740991)
+    claims_offset: conint(ge=0, le=9007199254740991)
+
+
+class RecoverInvestigationMetadataRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['recover_investigation_metadata_request']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    saved_revision_id: SavedRevisionId
+    page: MetadataRecoveryPage
+
+
+class RecoveredClaimPage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    offset: conint(ge=0, le=9007199254740991)
+    total: conint(ge=0, le=9007199254740991)
+    items: list[Bpic19LiteratureClaim] = Field(..., max_length=10)
+    next_offset: conint(ge=0, le=9007199254740991) | None
+
+
+class RecoveredNotesPage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    offset: conint(ge=0, le=9007199254740991)
+    total: conint(ge=0, le=9007199254740991)
+    text: constr(max_length=4000)
+    next_offset: conint(ge=0, le=9007199254740991) | None
+
+
+class Bpic19ProfileKeepGroup1(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['flow']
+    flow_id: Literal['after_gr', 'before_gr', 'two_way', 'consignment']
+
+
+class Bpic19ProfileKeepGroup2(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['flow_item_type']
+    flow_id: Literal['after_gr', 'before_gr', 'two_way', 'consignment']
+    state: Literal['invariant']
+    item_type_value: str
+
+
+class Bpic19ProfileKeepGroup3(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['flow_item_type']
+    flow_id: Literal['after_gr', 'before_gr', 'two_way', 'consignment']
+    state: Literal['missing', 'conflicting']
+    item_type_value: None
+
+
+class Bpic19ProfileKeepGroup4(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['unresolved']
+    state: Literal['missing', 'conflicting', 'unrecognized']
+
+
+class Bpic19ProfileKeepGroup5(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['cross_check']
+    state: Literal['valid', 'unavailable', 'flag_disagreement']
+
+
+class Bpic19ProfileKeepGroup6(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['grain_issue']
+    state: Literal[
+        'missing_document_or_item',
+        'conflicting_document_or_item',
+        'source_case_mismatch',
+        'duplicate_document_item',
+    ]
+
+
+class Bpic19ProfileKeepGroup7(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['source_inclusion']
+    state: Literal['retained']
+
+
+class Bpic19ProfileKeepGroup8(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['attribute_value']
+    column_index: conint(ge=0)
+    value: str | None
+
+
+class Bpic19ProfileKeepGroup(
+    RootModel[
+        Bpic19ProfileKeepGroup1
+        | Bpic19ProfileKeepGroup2
+        | Bpic19ProfileKeepGroup3
+        | Bpic19ProfileKeepGroup4
+        | Bpic19ProfileKeepGroup5
+        | Bpic19ProfileKeepGroup6
+        | Bpic19ProfileKeepGroup7
+        | Bpic19ProfileKeepGroup8
+    ]
+):
+    root: (
+        Bpic19ProfileKeepGroup1
+        | Bpic19ProfileKeepGroup2
+        | Bpic19ProfileKeepGroup3
+        | Bpic19ProfileKeepGroup4
+        | Bpic19ProfileKeepGroup5
+        | Bpic19ProfileKeepGroup6
+        | Bpic19ProfileKeepGroup7
+        | Bpic19ProfileKeepGroup8
+    ) = Field(..., title='Bpic19ProfileKeepGroup')
+
+
+class Bpic19SelectionKeep(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['bpic19.profile_group_keep.v1']
+    step_index: conint(ge=0, le=99)
+    group: Bpic19ProfileKeepGroup
+
+
+class PreparedInputId(
+    RootModel[constr(pattern=r'^bpic19-prepared-input\.v1:sha256:[a-f0-9]{64}$')]
+):
+    root: constr(pattern=r'^bpic19-prepared-input\.v1:sha256:[a-f0-9]{64}$')
+
+
+class PreparedDefinitionId(
+    RootModel[constr(pattern=r'^bpic19-prepared-definition\.v1:sha256:[a-f0-9]{64}$')]
+):
+    root: constr(pattern=r'^bpic19-prepared-definition\.v1:sha256:[a-f0-9]{64}$')
+
+
+class PreparedRunId(RootModel[constr(pattern=r'^score-run\.v1:sha256:[a-f0-9]{64}$')]):
+    root: constr(pattern=r'^score-run\.v1:sha256:[a-f0-9]{64}$')
+
+
+class Bpic19PreparedAssessmentReference(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    basis_kind: Literal['declared_prepared_attributes']
+    input_id: PreparedInputId
+    definition_id: PreparedDefinitionId
+    run_id: PreparedRunId
+    view: Literal['Finance', 'Logistics', 'Compliance', 'Automation']
+    output_sha256: constr(pattern=r'^[a-f0-9]{64}$')
+
+
+class Bpic19PreparedAssessmentManifest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    basis_kind: Literal['declared_prepared_attributes']
+    input_id: PreparedInputId
+    assessment_item_ids: list[CaseId] = Field(..., max_length=1000)
+    references: list[Bpic19PreparedAssessmentReference] = Field(..., max_length=4)
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -490,69 +757,12 @@ class PopulationSupport(BaseModel):
     record_count: conint(ge=0)
 
 
-class SelectionPredicate(
-    RootModel[
-        ContainsActivity
-        | DirectlyFollows
-        | OpeningAttributeEquals
-        | StartsWithActivity
-        | EndsWithActivity
-        | CaseIdIn
-        | CaseStartInWindow
-        | OpeningAttributeIn
-        | RecordAttributeIn
-        | ObservedSpanAtLeast
-        | MaxRawGapAtLeast
-    ]
-):
-    root: (
-        ContainsActivity
-        | DirectlyFollows
-        | OpeningAttributeEquals
-        | StartsWithActivity
-        | EndsWithActivity
-        | CaseIdIn
-        | CaseStartInWindow
-        | OpeningAttributeIn
-        | RecordAttributeIn
-        | ObservedSpanAtLeast
-        | MaxRawGapAtLeast
-    ) = Field(..., title='SelectionPredicate')
-
-
-class FrozenSelectionRecipe(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    parent_case_ids: list[CaseId]
-    predicates: list[SelectionPredicate]
-
-
-class PredicateGroupDefinition(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    kind: Literal['predicates']
-    predicates: list[SelectionPredicate]
-
-
 class ExplicitCaseGroupDefinition(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
     kind: Literal['explicit_case_ids']
     case_ids: CaseIds
-
-
-class SelectionPartition(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    mode: Literal['selection_partition']
-    target_name: Name
-    reference_name: Name
-    predicates: list[SelectionPredicate]
-    target_side: Literal['kept', 'removed']
 
 
 class NamedUtcPeriod(BaseModel):
@@ -591,22 +801,200 @@ class EvidenceBookmark(BaseModel):
     note: constr(min_length=0)
 
 
-class PredicateResult(BaseModel):
+class Bpic19PipelineAction(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    predicate: SelectionPredicate
-    kept: PopulationSupport
-    removed: PopulationSupport
-    unevaluable: PopulationSupport
-
-
-class NamedGroupDefinition(
-    RootModel[PredicateGroupDefinition | ExplicitCaseGroupDefinition]
-):
-    root: PredicateGroupDefinition | ExplicitCaseGroupDefinition = Field(
-        ..., title='NamedGroupDefinition'
+    operation: Literal[
+        'bpic19_profile',
+        'bpic19_measures',
+        'bpic19_cohorts',
+        'bpic19_score',
+        'bpic19_ordinal',
+        'bpic19_fifo',
+        'bpic19_cancellation',
+        'bpic19_rule',
+        'bpic19_waiting',
+        'bpic19_flow_comparison',
+        'bpic19_method_gate',
+        'bpic19_interval_comparison',
+        'bpic19_operator_comparison',
+        'bpic19_cohort_comparison',
+    ]
+    identity: AnswerIdentity
+    query: dict[str, Any] = Field(
+        ...,
+        description='Validated against the registered operation request before save or replay.',
     )
+    definition_id: constr(min_length=1)
+    selection_prefix_length: conint(ge=0, le=100) | None = Field(
+        None,
+        description='Verified position in the saved complete-case selection recipe; null names the preparation base. Registered replay verifies the identity at this position.',
+    )
+    selection_keep: Bpic19SelectionKeep | None = Field(
+        None,
+        description='Exact complete-case selection step justified by this frozen parent profile. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.',
+    )
+
+
+class Bpic19Pipeline(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    actions: list[Bpic19PipelineAction] = Field(..., max_length=32, min_length=1)
+    replay_mode: Literal['require_all', 'partial'] | None = Field(
+        None,
+        description='Explicit partial mode omits only registered unresolved source-method gates; it never omits a failed admitted operation.',
+    )
+    literature_claims: list[Bpic19LiteratureClaim] | None = Field(None, max_length=100)
+
+
+class Bpic19PipelineOmission(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    step: conint(ge=1, le=32)
+    operation: Literal['bpic19_method_gate']
+    definition_id: str
+    method_id: str
+    source_locator: str
+    gate_reason: str
+    identity: AnswerIdentity
+
+
+class RecordAttributesAll(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['record_attributes_all']
+    policy_id: Literal['incident.raw.same_record_all.v1']
+    conditions: list[RecordAttributeCondition] = Field(..., max_length=32, min_length=1)
+    negate: bool
+
+
+class RecordAttributeEvidence(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.raw.same_record_all.v1']
+    cases: list[RecordAttributeCaseEvidence]
+
+
+class RecoveredBookmark(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    label: constr(min_length=1, max_length=256)
+    identity: AnswerIdentity
+    case_id: CaseId
+    row_ids: list[RowId] = Field(..., max_length=200)
+    note: constr(min_length=0, max_length=4000)
+    label_truncated: bool
+    row_count: conint(ge=0, le=9007199254740991)
+    row_ids_complete: bool
+    note_truncated: bool
+
+
+class RecoveredBookmarkPage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    offset: conint(ge=0, le=9007199254740991)
+    total: conint(ge=0, le=9007199254740991)
+    items: list[RecoveredBookmark] = Field(..., max_length=20)
+    next_offset: conint(ge=0, le=9007199254740991) | None
+
+
+class HistoricalInvestigationMetadata(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: constr(max_length=256)
+    name_truncated: bool
+    base_identity: AnswerIdentity
+    selection_identity: AnswerIdentity
+    notes: RecoveredNotesPage
+    bookmarks: RecoveredBookmarkPage
+    literature_claims: RecoveredClaimPage
+
+
+class RecoverInvestigationMetadataAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    saved_revision_id: SavedRevisionId
+    message_type: Literal['recover_investigation_metadata_answer']
+    investigation_id: InvestigationId
+    status: Literal['historical_metadata_only']
+    metadata_integrity: Literal['saved_content_hash_verified']
+    outputs_restored: Literal[False]
+    selection_restored: Literal[False]
+    source_verified: Literal[False]
+    metadata: HistoricalInvestigationMetadata
+
+
+class SelectionPredicate(
+    RootModel[
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
+        | RecordAttributesAll
+    ]
+):
+    root: (
+        ContainsActivity
+        | DirectlyFollows
+        | OpeningAttributeEquals
+        | StartsWithActivity
+        | EndsWithActivity
+        | CaseIdIn
+        | CaseStartInWindow
+        | OpeningAttributeIn
+        | RecordAttributeIn
+        | ObservedSpanAtLeast
+        | MaxRawGapAtLeast
+        | RecordAttributesAll
+    ) = Field(..., title='SelectionPredicate')
+
+
+class FrozenSelectionRecipe(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    parent_case_ids: list[CaseId]
+    predicates: list[SelectionPredicate]
+
+
+class PredicateGroupDefinition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['predicates']
+    predicates: list[SelectionPredicate]
+
+
+class SelectionPartition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    mode: Literal['selection_partition']
+    target_name: Name
+    reference_name: Name
+    predicates: list[SelectionPredicate]
+    target_side: Literal['kept', 'removed']
 
 
 class UtcPeriodComparisonDefinition(BaseModel):
@@ -629,25 +1017,35 @@ class WallPeriodComparisonDefinition(BaseModel):
     endpoint_activity: constr(min_length=1) | None
 
 
-class RestoredSelection(BaseModel):
+class Bpic19PipelineManifest(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
-    identity: AnswerIdentity
-    parent_identity: AnswerIdentity
-    parent: PopulationSupport
+    schema_version: Literal[1]
+    outputs: list[Bpic19PipelineOutput] = Field(..., max_length=32, min_length=1)
+    claim_level: Literal['complete_registered_pipeline', 'partial'] | None = None
+    run_id: constr(pattern=r'^bpic19-pipeline\.v1:sha256:[a-f0-9]{64}$') | None = None
+    omissions: list[Bpic19PipelineOmission] | None = Field(None, max_length=32)
+    literature_claims: list[Bpic19LiteratureClaim] | None = Field(None, max_length=100)
+
+
+class PredicateResult(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    predicate: SelectionPredicate
     kept: PopulationSupport
     removed: PopulationSupport
     unevaluable: PopulationSupport
-    predicate_results: list[PredicateResult]
+    record_evidence: RecordAttributeEvidence | None = None
 
 
-class NamedGroup(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
+class NamedGroupDefinition(
+    RootModel[PredicateGroupDefinition | ExplicitCaseGroupDefinition]
+):
+    root: PredicateGroupDefinition | ExplicitCaseGroupDefinition = Field(
+        ..., title='NamedGroupDefinition'
     )
-    name: Name
-    definition: NamedGroupDefinition
 
 
 class PeriodComparisonDefinition(
@@ -668,6 +1066,27 @@ class SavedPeriodComparison(BaseModel):
     context_column_index: ColumnIndex
     context_policy: ContextPolicy
     definition: PeriodComparisonDefinition
+
+
+class RestoredSelection(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    identity: AnswerIdentity
+    parent_identity: AnswerIdentity
+    parent: PopulationSupport
+    kept: PopulationSupport
+    removed: PopulationSupport
+    unevaluable: PopulationSupport
+    predicate_results: list[PredicateResult]
+
+
+class NamedGroup(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: Name
+    definition: NamedGroupDefinition
 
 
 class TwoNamedGroups(BaseModel):
@@ -717,6 +1136,13 @@ class SavedInvestigationContent(BaseModel):
     notes: constr(min_length=0)
     bookmarks: list[EvidenceBookmark]
     score_run_ref: ScoreRunReference | None
+    bpic19_pipeline: Bpic19Pipeline | None = None
+    bpic19_prepared_assessments: list[Bpic19PreparedAssessmentReference] | None = Field(
+        None,
+        description='Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.',
+        max_length=4,
+        min_length=1,
+    )
 
 
 class SavedRevision(BaseModel):
@@ -749,6 +1175,13 @@ class SaveInvestigationRequest1(BaseModel):
     bookmarks: list[EvidenceBookmark]
     score_run_ref: ScoreRunReference | None = None
     presentation_state: PresentationRecovery | None = None
+    bpic19_pipeline: Bpic19Pipeline | None = None
+    bpic19_prepared_assessments: list[Bpic19PreparedAssessmentReference] | None = Field(
+        None,
+        description='Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.',
+        max_length=4,
+        min_length=1,
+    )
 
 
 class SaveInvestigationRequest2(BaseModel):
@@ -776,6 +1209,13 @@ class SaveInvestigationRequest2(BaseModel):
     bookmarks: list[EvidenceBookmark]
     score_run_ref: ScoreRunReference | None = None
     presentation_state: PresentationRecovery | None = None
+    bpic19_pipeline: Bpic19Pipeline | None = None
+    bpic19_prepared_assessments: list[Bpic19PreparedAssessmentReference] | None = Field(
+        None,
+        description='Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items.',
+        max_length=4,
+        min_length=1,
+    )
 
 
 class SaveInvestigationRequest(
@@ -799,6 +1239,8 @@ class SaveInvestigationAnswer(BaseModel):
     created_investigation: bool
     semantic_change: bool
     recovery: RecoveryAnswer
+    bpic19_outputs: Bpic19PipelineManifest | None = None
+    bpic19_prepared_outputs: Bpic19PreparedAssessmentManifest | None = None
 
 
 class ReopenInvestigationAnswer(BaseModel):
@@ -814,6 +1256,8 @@ class ReopenInvestigationAnswer(BaseModel):
     restored_selection: RestoredSelection
     restored_comparison_id: ComparisonId | None
     recovery: RecoveryAnswer
+    bpic19_outputs: Bpic19PipelineManifest | None = None
+    bpic19_prepared_outputs: Bpic19PreparedAssessmentManifest | None = None
 
 
 class SavingMessage(
@@ -825,6 +1269,8 @@ class SavingMessage(
         | ReopenInvestigationRequest
         | ReopenInvestigationAnswer
         | SavingRefusal
+        | RecoverInvestigationMetadataRequest
+        | RecoverInvestigationMetadataAnswer
     ]
 ):
     root: (
@@ -835,6 +1281,8 @@ class SavingMessage(
         | ReopenInvestigationRequest
         | ReopenInvestigationAnswer
         | SavingRefusal
+        | RecoverInvestigationMetadataRequest
+        | RecoverInvestigationMetadataAnswer
     ) = Field(
         ...,
         description='Unscored immutable investigation revisions with verified source/interpretation/selection meaning and atomic expected-head publication.',

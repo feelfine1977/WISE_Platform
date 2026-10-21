@@ -30,6 +30,8 @@ from wise_platform_analytics.selection import (
     CaseStartInWindow,
     OpeningAttributeIn,
     RecordAttributeIn,
+    RecordAttributeCondition,
+    RecordAttributesAll,
     ObservedSpanAtLeast,
     MaxRawGapAtLeast,
     DirectlyFollows,
@@ -202,6 +204,9 @@ def package_predicate(given: Mapping[str, object]) -> Predicate:
     if kind in ("opening_attribute_in", "record_attribute_in"):
         constructor = OpeningAttributeIn if kind == "opening_attribute_in" else RecordAttributeIn
         return constructor(given["column_index"], tuple(given["values"]), negate)
+    if kind == "record_attributes_all":
+        return RecordAttributesAll(tuple(RecordAttributeCondition(condition["column_index"], tuple(condition["values"]))
+                                         for condition in given["conditions"]), negate, given["policy_id"])
     if kind in ("observed_span_at_least", "max_raw_gap_at_least"):
         constructor = ObservedSpanAtLeast if kind == "observed_span_at_least" else MaxRawGapAtLeast
         return constructor(given["hours"], negate)

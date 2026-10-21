@@ -328,6 +328,7 @@ class SelectionRefusal(BaseModel):
         'inconsistent_sequence',
         'mixed_time_kinds',
         'inconsistent_time_kind',
+        'memory_unavailable',
         'computation_failed',
         'case_outside_parent',
     ]
@@ -394,6 +395,41 @@ class MaxRawGapAtLeast(BaseModel):
     kind: Literal['max_raw_gap_at_least']
     hours: confloat(ge=0.0)
     negate: bool
+
+
+class RecordAttributeCondition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    column_index: conint(ge=0)
+    values: list[constr(min_length=1) | None] = Field(..., min_length=1)
+
+
+class RecordAttributesAll(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['record_attributes_all']
+    policy_id: Literal['incident.raw.same_record_all.v1']
+    conditions: list[RecordAttributeCondition] = Field(..., max_length=32, min_length=1)
+    negate: bool
+
+
+class RecordAttributeCaseEvidence(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    case_id: CaseId
+    matching_row_ids: list[RowId]
+    unevaluable_row_ids: list[RowId]
+
+
+class RecordAttributeEvidence(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy_id: Literal['incident.raw.same_record_all.v1']
+    cases: list[RecordAttributeCaseEvidence]
 
 
 class FollowsEdge(BaseModel):
@@ -475,6 +511,7 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | RecordAttributesAll
     ]
 ):
     root: (
@@ -489,6 +526,7 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | RecordAttributesAll
     ) = Field(..., title='SelectionPredicate')
 
 
@@ -500,6 +538,7 @@ class PredicateResult(BaseModel):
     kept: PopulationSupport
     removed: PopulationSupport
     unevaluable: PopulationSupport
+    record_evidence: RecordAttributeEvidence | None = None
 
 
 class SelectCasesRequest(BaseModel):

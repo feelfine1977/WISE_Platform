@@ -126,6 +126,7 @@ const remedies: Record<ComparisonRefusal["code"], string> = {
   invalid_parameter: "Check the names and the minimum follow-up, then compare again.",
   workspace_unavailable: "Open the workspace again in the Data area.",
   source_unavailable: "Add the file again in the Data area; the workspace no longer holds these bytes.",
+  memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   preparation_unavailable: "Read the source again with the same choices in the Data area.",
   identity_mismatch: "The source or its reading changed. Open the incidents again from the Data area.",
   population_unavailable: "Open the incidents again from the Data area.",

@@ -394,6 +394,7 @@ class RuleGroupsRefusal(BaseModel):
         'unknown_case',
         'inconsistent_sequence',
         'inconsistent_time_kind',
+        'memory_unavailable',
         'computation_failed',
         'unmapped_context_column',
     ]
