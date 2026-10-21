@@ -108,6 +108,11 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - An incident of the tail opens with both endpoint records, and the focus returns to the button it was opened with.
   - Undo restores the exact parent; the strict tail leaves exactly four hours out.
 
+- `tools/qualify_variants.py` (#13): the actual variants of the invented `tests/fixtures/variants` file (ordinary, repeated, tied-order, missing-label and empty sequences, and an incident of unknown order), against its own `expected.json`.
+  - The Variants view is found in the side panel. Every sequence, its counts and shares, and the inventory reconcile with the population.
+  - Listing a variant's incidents takes no step. A listed history opens with its unlabelled record, and the focus returns.
+  - Each variant is previewed and kept by keyboard with its exact members, the incident of unknown order not evaluable. Cancel takes nothing, and Undo restores the exact parent.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

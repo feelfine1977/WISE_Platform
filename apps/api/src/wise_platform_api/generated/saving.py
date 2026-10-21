@@ -487,6 +487,15 @@ class IntervalDefinition(BaseModel):
     response_activity: constr(min_length=1)
 
 
+class VariantDefinition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: constr(pattern=r'^variant\.v1:sha256:[0-9a-f]{64}$')
+    activities: list[constr(min_length=1)]
+    projection_policy: Literal['incident.activity.omit_missing_retain_raw_gaps.v1']
+
+
 class Bpic19PipelineOutput(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -914,6 +923,15 @@ class IntervalThreshold(BaseModel):
     negate: bool
 
 
+class VariantIs(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['variant_is']
+    variant: VariantDefinition
+    negate: bool
+
+
 class Bpic19PipelineAction(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -1065,6 +1083,7 @@ class SelectionPredicate(
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
         | IntervalThreshold
+        | VariantIs
         | RecordAttributesAll
     ]
 ):
@@ -1081,6 +1100,7 @@ class SelectionPredicate(
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
         | IntervalThreshold
+        | VariantIs
         | RecordAttributesAll
     ) = Field(..., title='SelectionPredicate')
 

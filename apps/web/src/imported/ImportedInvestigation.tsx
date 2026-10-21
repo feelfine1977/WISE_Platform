@@ -322,6 +322,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   onClear={() => clearVariant(false)}
                   onRetry={() => coordinator.retryVariants()}
                   waitingFor={waitingFor}
+                  onStep={addStep}
+                  previewStep={previewStep}
                 />
               </div>
             </div>

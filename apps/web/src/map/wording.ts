@@ -76,6 +76,12 @@ export function stepWording(step: SelectionPredicate): string {
       const relation = step.operator === "gt" ? (step.negate ? "at most" : "more than") : step.negate ? "less than" : "at least";
       return `Keep incidents whose interval from the first ${quoted(step.interval.start_activity)} to the first ${quoted(step.interval.response_activity)} at or after it is ${relation} ${step.hours} hours`;
     }
+    case "variant_is": {
+      const sequence = variantSequence(step.variant.activities);
+      return step.negate
+        ? `Keep incidents whose complete sequence is not exactly ${sequence}`
+        : `Keep incidents whose complete sequence is exactly ${sequence}`;
+    }
     case "starts_with_activity":
       return step.negate
         ? `Keep incidents that do not begin with ${quoted(step.activity)}`
@@ -85,6 +91,11 @@ export function stepWording(step: SelectionPredicate): string {
         ? `Keep incidents that do not end with ${quoted(step.activity)}`
         : `Keep incidents that end with ${quoted(step.activity)}`;
   }
+}
+
+/** A whole sequence of labelled activities, repeats kept, or the sequence without a labelled record. */
+export function variantSequence(activities: readonly string[]): string {
+  return activities.length === 0 ? "the empty sequence (no labelled record)" : activities.map(quoted).join(" → ");
 }
 
 /** How many incidents on the map begin or end with the activity of a flow from Start or to End. */
@@ -127,6 +138,8 @@ export function unevaluableReason(step: SelectionPredicate): string | null {
       return "the order of their records is not known, or no span or gap can be measured from their times";
     case "record_attributes_all":
       return "a record lacks a cell of a named column, so whether it matches cannot be told";
+    case "variant_is":
+      return "the order of their records is not known, so they have no sequence; for other views and steps they stay evaluable";
     case "interval_threshold":
       return "they have no such interval: their order is not known, the start is missing, or no response follows at or after it";
     case "contains_activity":

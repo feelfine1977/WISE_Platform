@@ -79,6 +79,7 @@ _KINDS = {
     "ObservedSpanAtLeast": "observed_span_at_least",
     "MaxRawGapAtLeast": "max_raw_gap_at_least",
     "IntervalThreshold": "interval_threshold",
+    "VariantIs": "variant_is",
 }
 
 # Order in which failing places are named, first one first.
