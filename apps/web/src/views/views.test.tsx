@@ -70,7 +70,7 @@ describe("the views of the population of an imported preparation", () => {
       expect(request.workspace_id).toBe(workspaceId);
       expect(request.identity).toEqual(app.population.identity);
     }
-    expect(within(panel("Opened as")).getByText("Reading the first record of every incident…")).toBeTruthy();
+    expect(within(panel("At the first recorded observation")).getByText("Reading the first record of every incident…")).toBeTruthy();
     expect(within(panel("Variants")).getByText("Reading the sequence of every incident…")).toBeTruthy();
     expect(populationViewMessages.openingContextAnswer(openingContextAnswer(opening))).toBe(true);
     expect(populationViewMessages.openingContextAnswer(selectionOpeningContextAnswer(opening))).toBe(true);
@@ -80,7 +80,7 @@ describe("the views of the population of an imported preparation", () => {
   it("shows how the incidents were opened, missing as not recorded and apart from the text Unknown", async () => {
     const app = await openInvestigation();
     await deliver(() => app.views.openings[0].reply({ ok: true, answer: openingContextAnswer(app.views.openings[0].request) }));
-    const opened = panel("Opened as");
+    const opened = panel("At the first recorded observation");
     expect(opened.textContent).toContain("These incidents are the whole parent population, so both bars are the same.");
     expect(opened.textContent).toContain("1 incident of the parent has no readable first record because its order is not known; it is in no share.");
 
@@ -118,7 +118,7 @@ describe("the views of the population of an imported preparation", () => {
       }).identity,
     };
     render(<OpenedAs state={{ phase: "ready", answer: selectionOpeningContextAnswer(request) }} onRetry={() => undefined} />);
-    const opened = panel("Opened as");
+    const opened = panel("At the first recorded observation");
     expect(opened.textContent).not.toContain("both bars are the same");
     expect(opened.textContent).toContain("These incidents: 2 incidents with a readable first record");
     expect(opened.textContent).toContain("Parent population: 4 incidents with a readable first record");
@@ -269,8 +269,8 @@ describe("the views of the population of an imported preparation", () => {
         viewRefusal(opening, "opening_context", "no_context_columns", "No context column is mapped in this preparation.", "mapping.context_columns"),
       ),
     );
-    const refused = within(panel("Opened as")).getByRole("alert");
-    expect(refused.textContent).toContain("How the incidents were opened cannot be shown");
+    const refused = within(panel("At the first recorded observation")).getByRole("alert");
+    expect(refused.textContent).toContain("The first recorded observations cannot be shown");
     expect(refused.textContent).toContain("What to do Choose one or more context columns when you read the source in the Data area.");
     expect(within(refused).queryByRole("button", { name: "Try again" })).toBeNull();
 

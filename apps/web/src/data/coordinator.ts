@@ -51,8 +51,25 @@ export type InspectionState =
 export type InterpretationState =
   | { phase: "none" }
   | { phase: "preparing"; request: ConfirmMappingRequest; startedAt: number }
-  | { phase: "answered"; request: ConfirmMappingRequest; answer: InterpretationAnswer }
+  | { phase: "answered"; request: ConfirmMappingRequest; answer: InterpretationAnswer; previous?: EarlierReading }
   | { phase: "failed"; request: ConfirmMappingRequest; problem: ImportProblem };
+
+/** The report of the reading of the same source with other choices that came before the one shown, to compare with. */
+export interface EarlierReading {
+  report: InterpretationAnswer["report"];
+  preparationId: string | null;
+}
+
+/** The last reading answered, kept across a change of choices so that the next reading can be compared with it. */
+interface LastReading {
+  request: ConfirmMappingRequest;
+  answer: InterpretationAnswer;
+  previous: EarlierReading | undefined;
+}
+
+function sameChoices(a: ConfirmMappingRequest, b: ConfirmMappingRequest): boolean {
+  return JSON.stringify([a.workspace_id, a.source_id, a.dialect, a.mapping, a.policies]) === JSON.stringify([b.workspace_id, b.source_id, b.dialect, b.mapping, b.policies]);
+}
 
 /** The cutoff proposed from the data for the current reading, while every choice but the cutoff is made. */
 export type ProposalState =
@@ -121,6 +138,9 @@ export class DataCoordinator {
   private revision = 0;
   /** The column names of the last inspection of the current source, to keep choices that still apply. */
   private columns: string[] | null = null;
+  private lastReading: LastReading | null = null;
+  /** The control incidents were last opened from, so that coming back to the Data area returns the focus to it. */
+  private opened: { preparationId: string; place: "report" | "table" } | null = null;
   /** The reading the current proposal was asked for, without its envelope; null when none was. */
   private proposalKey: string | null = null;
   private exampleLoads = 0;
@@ -539,7 +559,26 @@ export class DataCoordinator {
       preparation === null || this.state.preparations.some((item) => item.preparation_id === preparation.preparation_id)
         ? this.state.preparations
         : [...this.state.preparations, { preparation_id: preparation.preparation_id, source_id: preparation.source_id }];
-    this.publish({ ...this.state, preparations, interpretation: { phase: "answered", request, answer: checked.answer } });
+    // The reading before this one, of the same source in the same workspace with other choices, is kept beside it; a
+    // confirmation of the same choices keeps the comparison the reading itself had.
+    const last = this.lastReading;
+    const sameSource = last !== null && last.request.workspace_id === request.workspace_id && last.request.source_id === request.source_id;
+    const previous = !sameSource ? undefined : sameChoices(last.request, request) ? last.previous
+      : { report: last.answer.report, preparationId: last.answer.preparation?.preparation_id ?? null };
+    this.lastReading = { request, answer: checked.answer, previous };
+    this.publish({ ...this.state, preparations, interpretation: { phase: "answered", request, answer: checked.answer, ...(previous ? { previous } : {}) } });
+  }
+
+  /** Notes the control the incidents of a preparation are being opened from. */
+  noteOpened(preparationId: string, place: "report" | "table"): void {
+    this.opened = { preparationId, place };
+  }
+
+  /** The control incidents were last opened from, once: the Data area takes it when it is shown again. */
+  takeOpened(): { preparationId: string; place: "report" | "table" } | null {
+    const opened = this.opened;
+    this.opened = null;
+    return opened;
   }
 
   private publish(state: DataState): void {

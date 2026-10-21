@@ -103,6 +103,7 @@ function History({ answer, highlightedRowIds = [], documents }: { answer: Import
         <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this incident · {countOf(coverage.mapped_record_count, "record")} in the
         activity sequence · {countOf(coverage.omitted_activity_record_count, "record")} without an activity label
       </p>
+      <p className="order-rule">{orderRule(answer.records)}</p>
       {!answer.sequence_evaluable && (
         <p className="order-note">
           The order of this incident is not fully known: records without a usable time follow the timed records in source order, which is
@@ -200,4 +201,15 @@ function TimeText({ record }: { record: ImportedSourceRecord }) {
   if (record.utc_instant !== null) return <>{utcText(record.utc_instant)}</>;
   if (record.local_timestamp !== null) return <>{wallText(record.local_timestamp)}</>;
   return <span className="flag">no time</span>;
+}
+
+/**
+ * The declared order of an incident's records in words: the registered order policy reads the usable time first, then a
+ * mapped sequence number, then the position in the file; records without a usable time follow in file order.
+ */
+export function orderRule(records: readonly ImportedSourceRecord[]): string {
+  const sequenced = records.some((record) => record.source_sequence !== null);
+  return sequenced
+    ? "Records are in the declared order: by their usable time; records with the same time by their sequence number, then by their place in the file. Where a sequence number disagrees with the times, the time decides."
+    : "Records are in the declared order: by their usable time; records with the same time by their place in the file.";
 }

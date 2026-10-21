@@ -58,6 +58,14 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - the incidents and their records are opened;
   - a saved investigation is made, and a corrected reading is published as a new preparation, after which the saved investigation reopens on its own;
   - a malformed file is refused and never published.
+- `tools/qualify_chronology.py` (#5): the invented `tests/fixtures/chronology/chronology.csv` against its own `expected.json`, in two phases.
+  - Review:
+    - the summary names the clock, the order authority, where the cutoff came from, and each policy with its version;
+    - by keyboard, the evidence of a tie whose sequence numbers disagree with the times, of records without activity label, and of a date-only time (not readable, never midnight);
+    - the path over missing labels says what it passes over, and no end is made after an unlabelled last record;
+    - the focus returns to the preparation control;
+    - a reading without the sequence number is compared with the first and published as its own preparation.
+  - Reopen, after an actual restart: a fresh browser opens the first preparation, which keeps its order.
 
 ## Human release checklist
 

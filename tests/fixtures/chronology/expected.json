@@ -1,0 +1,22 @@
+{
+ "about": "Hand-written expectations for #5 (tests/test_issue5_chronology.py and tools/qualify_chronology.py). Invented incidents. Source positions are zero-based data records after the header. Order policy: usable time, then the sequence number, then the position; records without a usable time last, in file order. A record whose sequence number is below the highest one at an earlier time disagrees with the times; time decides. Never read by product code.",
+ "file": "chronology.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": [4]},
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "report": {"raw_record_count": 11, "identified_record_count": 11, "unassigned_record_count": 0, "case_count": 3,
+            "usable_timestamp_record_count": 10, "unavailable_timestamp_record_count": 1,
+            "sequence_evaluable_case_count": 2, "sequence_unevaluable_case_count": 1,
+            "tied_timestamp_groups": 1, "tied_timestamp_record_count": 3,
+            "mapped_activity_record_count": 9, "omitted_activity_record_count": 2},
+ "issues": {"timestamp_sequence_disagreement": [1, 2, 3], "missing_activity": [5, 7], "invalid_timestamp": [9]},
+ "cases": {
+  "T-1": {"order": [0, 2, 3, 1], "activities": ["Opened", "Commented", "Resolved", "Assigned"], "omitted": [], "sequence_evaluable": true,
+          "timestamp_status": {"0": "usable", "1": "usable", "2": "usable", "3": "usable"}},
+  "T-2": {"order": [4, 5, 6, 7], "activities": ["Opened", "Resolved"], "omitted": [5, 7], "sequence_evaluable": true,
+          "timestamp_status": {"4": "usable", "5": "usable", "6": "usable", "7": "usable"}},
+  "T-3": {"order": [8, 10, 9], "activities": ["Opened", "Resolved", "Assigned"], "omitted": [], "sequence_evaluable": false,
+          "timestamp_status": {"8": "usable", "9": "invalid", "10": "usable"}}
+ },
+ "without_sequence": {"T-1": {"order": [0, 1, 2, 3]}},
+ "refused_cutoffs": ["2026-12-31", "2026-12-31T00:00Z"]
+}

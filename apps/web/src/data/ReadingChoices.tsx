@@ -431,6 +431,8 @@ function Choices({
             request={interpretation.request}
             answer={interpretation.answer}
             filename={state.source.phase === "stored" ? state.source.source.filename : undefined}
+            cutoffEntered={draft.cutoffEdited}
+            previous={interpretation.previous}
             names={names}
             onAccept={() => coordinator.confirm(true)}
             onOpenIncidents={(preparationId) =>

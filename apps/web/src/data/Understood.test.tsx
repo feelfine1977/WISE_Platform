@@ -40,7 +40,13 @@ describe("#4 what WISE understood, before the incidents open", () => {
       "Written as": "UTF-8; Semicolon ; as the delimiter; the first record as the header",
       Source: sourceId,
       Preparation: preparationId,
+      // #5: the ordering authority, the clock and where the cutoff came from are named; each policy with its version.
+      Order:
+        "by the usable time; records with the same time by their place in the file; records without a usable time follow in file order, and their incident's order is then not fully known",
+      Clock: "instants in UTC: a duration is elapsed time",
+      "Export taken at": "2027-01-01 00:00:00 UTC; proposed from the latest usable time",
     });
+    for (const policy of Object.values(sent.policies)) expect(summary.textContent).toContain(policy.id);
     // Empty cells and literal values are described as the fixed policy reads them, and no other policy is offered.
     expect(summary.textContent).toContain("such as 0, False or Unknown, is kept exactly as written and is never read as missing");
     expect(screen.queryByRole("note")).toBeNull();

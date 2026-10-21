@@ -12,15 +12,15 @@ interface OpenedAsProps {
   waitingFor?: string;
 }
 
-/** How the incidents were opened: each context column's value at the first record, beside the parent. */
+/** Each context column's value at the first recorded observation of the incidents, beside the parent. */
 export function OpenedAs({ state, onRetry, waitingFor }: OpenedAsProps) {
   return (
     <section className="view-panel" aria-labelledby="opened-as-title" aria-busy={state.phase === "loading"}>
       <h3 id="opened-as-title" className="view-title">
-        Opened as
+        At the first recorded observation
       </h3>
       {state.phase === "loading" && <p className="working-text">Reading the first record of every incident…</p>}
-      {state.phase === "failed" && <ViewProblemNotice title="How the incidents were opened cannot be shown" problem={state.problem} onRetry={onRetry} waitingFor={waitingFor} />}
+      {state.phase === "failed" && <ViewProblemNotice title="The first recorded observations cannot be shown" problem={state.problem} onRetry={onRetry} waitingFor={waitingFor} />}
       {state.phase === "ready" && <Opening answer={state.answer} />}
     </section>
   );
@@ -32,8 +32,8 @@ function Opening({ answer }: { answer: OpeningContextAnswer }) {
   return (
     <>
       <p className="muted view-hint">
-        The value of each context column at the first record of every incident, in the declared order. A value recorded later does not
-        count.
+        The value of each context column at the first recorded observation of every incident, in the declared order. It is the first record, not a
+        business event such as an opening, and not the first value that is filled in: a value recorded later does not count.
       </p>
       <ul className="share-legend" aria-label="Bars">
         <li>

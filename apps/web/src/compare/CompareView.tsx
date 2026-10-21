@@ -222,7 +222,7 @@ function GroupsSetup({ coordinator, draft, selection, activities, openings }: Gr
   return (
     <>
       <p className="compare-muted">
-        Choose each group from the data: the incidents with or without an activity, that begin or end with an activity, or opened with a value. A
+        Choose each group from the data: the incidents with or without an activity, that begin or end with an activity, or whose first recorded observation has a value. A
         group can also be the current selection of the investigation, and "Kept against removed" compares the two sides of that selection in one
         step.
       </p>
@@ -350,8 +350,8 @@ function GroupSlot({ role, coordinator, draft, selection, activities, openings }
           <option value="not-begins">do not begin with the activity</option>
           <option value="ends">end with the activity</option>
           <option value="not-ends">do not end with the activity</option>
-          {openings.length > 0 && <option value="opened">were opened with</option>}
-          {openings.length > 0 && <option value="not-opened">were not opened with</option>}
+          {openings.length > 0 && <option value="opened">were first recorded with</option>}
+          {openings.length > 0 && <option value="not-opened">were not first recorded with</option>}
         </select>
         {byActivity ? (
           <select aria-label={`Activity for group ${letter}`} value={activity} onChange={(event) => setActivity(event.target.value)}>
@@ -737,7 +737,7 @@ function profileRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer, col
   const names: [string, string] = [answer.target.name, answer.reference.name];
   return answer.context_profile.categories.map((category: CategoryComparison) => {
     const value = valueText(category.value);
-    const opened = category.value === null ? `Opened with ${columnName} not recorded` : `Opened with ${columnName} ${value}`;
+    const opened = category.value === null ? `First recorded with ${columnName} not recorded` : `First recorded with ${columnName} ${value}`;
     return {
       key: `value-${JSON.stringify(category.value)}`,
       measure: opened,
@@ -753,7 +753,7 @@ function profileRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer, col
           negate: false,
           anchor_policy: contextPolicy,
         },
-        label: category.value === null ? `Keep incidents opened with ${columnName} not recorded` : `Keep incidents opened with ${columnName} ${value}`,
+        label: category.value === null ? `Keep incidents first recorded with ${columnName} not recorded` : `Keep incidents first recorded with ${columnName} ${value}`,
       },
     };
   });
@@ -768,7 +768,7 @@ function ProfileNotes({ profile, columnName }: { profile: ContextProfile; column
     );
   }
   if (profile.parent_fixed.status === "fixed") {
-    notes.push(`Every incident of the parent opened with ${columnName} ${valueText(profile.parent_fixed.value)}, so this column cannot tell the groups apart.`);
+    notes.push(`Every incident of the parent was first recorded with ${columnName} ${valueText(profile.parent_fixed.value)}, so this column cannot tell the groups apart.`);
   }
   if (notes.length === 0) return null;
   return (
