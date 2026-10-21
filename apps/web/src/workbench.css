@@ -359,6 +359,18 @@
 .chip-counts dt { color: var(--color-ink-muted); }
 .chip-counts dd { margin: 0; }
 .chip-remove { justify-self: start; }
+/* The trail: a chip is its step in a few words and the incidents kept after it; the rest opens on demand. */
+.chip > details > summary { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); cursor: pointer; list-style: none; }
+.chip > details > summary::-webkit-details-marker { display: none; }
+/* A flex summary loses its marker: the chip draws its own, closed or open. */
+.chip > details > summary::before { content: "▸"; color: var(--color-ink-muted); }
+.chip > details[open] > summary::before { content: "▾"; }
+.chip[aria-current="step"] > details > summary .chip-short { font-weight: var(--font-weight-strong); }
+.chip-kept { color: var(--color-ink-muted); font-size: var(--font-size-small); font-variant-numeric: tabular-nums; }
+.chip-after,
+.chip-actions { margin: 0; font-size: var(--font-size-small); }
+.chip-later { opacity: 0.75; border-style: dashed; }
+.trail-start { margin: 0; }
 .overlap-line { font-size: var(--font-size-small); }
 
 /*

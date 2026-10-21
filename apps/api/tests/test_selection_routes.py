@@ -167,7 +167,8 @@ def test_one_predicate_keeps_and_removes_whole_incidents_of_the_parent(client, w
     assert answer["removed"] == support(["B"], 2)
     assert answer["unevaluable"] == support([], 0)
     assert answer["predicate_results"] == [{"predicate": contains("Assigned"), "kept": support(["A", "C", "D"], 8),
-                                            "removed": support(["B"], 2), "unevaluable": support([], 0)}]
+                                            "removed": support(["B"], 2), "unevaluable": support([], 0),
+                                            "kept_after_step": {"case_count": 3, "record_count": 8}}]
     for field in ("source_id", "preparation_id", "representation_id", "case_dictionary_id", "implementation_version"):
         assert answer["identity"][field] == base["identity"][field]
     assert answer["identity"]["population_id"] != base["identity"]["population_id"]
@@ -257,7 +258,8 @@ def test_incidents_that_begin_with_an_activity_are_those_whose_first_record_carr
     assert answer["removed"] == support([], 0)
     assert answer["unevaluable"] == support(["D"], 2)
     assert answer["predicate_results"] == [{"predicate": begins("Opened"), "kept": support(["A", "B", "C"], 8),
-                                            "removed": support([], 0), "unevaluable": support(["D"], 2)}]
+                                            "removed": support([], 0), "unevaluable": support(["D"], 2),
+                                            "kept_after_step": {"case_count": 3, "record_count": 8}}]
     opposite = selected(client, workspace_id, base, [begins("Opened", negate=True)], revision=3)
     assert (opposite["kept"], opposite["removed"], opposite["unevaluable"]) == (
         support([], 0), support(["A", "B", "C"], 8), support(["D"], 2))

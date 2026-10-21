@@ -54,3 +54,25 @@ export function redone(history: StepHistory): StepHistory {
   if (!canRedo(history)) return history;
   return { past: [...history.past, history.present], present: history.future[0], future: history.future.slice(1) };
 }
+
+/**
+ * The steps of the trail: the steps asked for now, and after them the later steps an earlier state of the trail was
+ * chosen from, which are kept until a new step is taken.
+ */
+export function trailOf(history: StepHistory): Steps {
+  const next = history.future[0];
+  const extends_ = next !== undefined && next.length > history.present.length && history.present.every((step, index) => sameJson(step, next[index]));
+  return extends_ ? next : history.present;
+}
+
+/**
+ * The state after the first `count` steps of the trail, the later steps kept as the next to redo until a new step is
+ * taken; choosing a later step goes forward along the same trail.
+ */
+export function backTo(history: StepHistory, count: number): StepHistory {
+  const trail = trailOf(history);
+  if (count === history.present.length || count < 0 || count > trail.length) return history;
+  const ahead = trail === history.present ? [history.present, ...history.future] : history.future;
+  if (count === trail.length) return { past: history.past, present: trail, future: ahead.slice(1) };
+  return { past: history.past, present: trail.slice(0, count), future: ahead };
+}

@@ -76,8 +76,21 @@ export function selectionAnswer(request: SelectCasesRequest, figures: Figures): 
     kept: figures.kept,
     removed: figures.removed,
     unevaluable: figures.unevaluable,
-    predicate_results: request.predicates.map((predicate, index) => ({ predicate, ...figures.results[index] })),
+    predicate_results: request.predicates.map((predicate, index) => ({
+      predicate,
+      // Kept after step k, as the local service supplies it: what every step up to k keeps.
+      kept_after_step: keptAfter(figures.results.slice(0, index + 1)),
+      ...figures.results[index],
+    })),
   };
+}
+
+/** The records of each incident of the parent: A-1 has two, B-2 one. */
+const RECORDS: Record<string, number> = { "A-1": 2, "B-2": 1 };
+
+function keptAfter(results: Figures["results"]): { case_count: number; record_count: number } {
+  const kept = results.reduce<string[]>((still, result) => still.filter((caseId) => result.kept.case_ids.includes(caseId)), ["A-1", "B-2"]);
+  return { case_count: kept.length, record_count: kept.reduce((sum, caseId) => sum + RECORDS[caseId], 0) };
 }
 
 /** No step: every incident is kept. */

@@ -278,12 +278,16 @@ class PredicateResult:
     removed: PopulationSupport
     unevaluable: PopulationSupport
     record_evidence: RecordAttributeEvidence | None = None
+    # "Kept after step k": the incidents and records every step up to this one keeps, as (incidents, records).
+    kept_after: tuple[int, int] | None = None
 
     def to_dict(self) -> dict[str, object]:
         result = {"predicate": predicate_descriptor(self.predicate), "kept": self.kept.to_dict(),
                   "removed": self.removed.to_dict(), "unevaluable": self.unevaluable.to_dict()}
         if self.record_evidence is not None:
             result["record_evidence"] = self.record_evidence.to_dict()
+        if self.kept_after is not None:
+            result["kept_after_step"] = {"case_count": self.kept_after[0], "record_count": self.kept_after[1]}
         return result
 
 
@@ -599,8 +603,14 @@ def select_cases(prepared: PreparedDataLike, predicates: Sequence[Predicate] = (
         values = [evaluation[case_id] for evaluation in evaluations]
         combined[case_id] = False if False in values else None if None in values else True
     kept, removed, unevaluable = _partition(prepared, combined)
-    individual = tuple(PredicateResult(predicate, *_partition(prepared, evaluation), record_evidence=rows)
-                       for predicate, evaluation, rows in zip(predicates, evaluations, evidence))
+    # Kept after step k: the incidents every step up to k keeps, in the order the steps were taken.
+    kept_after = []
+    still = list(parent)
+    for evaluation in evaluations:
+        still = [case_id for case_id in still if evaluation[case_id] is True]
+        kept_after.append((len(still), sum(len(prepared.histories[case_id]) for case_id in still)))
+    individual = tuple(PredicateResult(predicate, *_partition(prepared, evaluation), record_evidence=rows, kept_after=after)
+                       for predicate, evaluation, rows, after in zip(predicates, evaluations, evidence, kept_after))
     source_identity = prepared.identity_dict()
     meaning = {
         "kind": "complete_case_selection.v1", "source_id": source_identity["source_id"],

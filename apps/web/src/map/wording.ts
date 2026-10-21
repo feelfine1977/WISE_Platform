@@ -113,6 +113,55 @@ function rangeWording(step: Extract<SelectionPredicate, { kind: "measure_between
   return `Keep incidents with ${measure}${less} than ${minimum} or more than ${maximum} ${records ? "records" : unit}`;
 }
 
+/** A step in the few words of a chip of the trail; its full wording opens on demand. */
+export function shortStepWording(step: SelectionPredicate): string {
+  const name = (index: number) => contextColumnNames.get(index)?.trim() || `column ${index}`;
+  const values = (list: readonly (string | null)[]) => list.length > 2 ? `${list.length} values` : list.map((value) => (value === null ? "no value" : quoted(value))).join(" or ");
+  const hours = (value: number) => `${value} h`;
+  switch (step.kind) {
+    case "contains_activity":
+      return step.negate ? `Without ${quoted(step.activity)}` : `With ${quoted(step.activity)}`;
+    case "directly_follows":
+      return `${step.negate ? "Never " : ""}${quoted(step.source_activity)} → ${quoted(step.target_activity)}`;
+    case "starts_with_activity":
+      return step.negate ? `Does not begin ${quoted(step.activity)}` : `Begins ${quoted(step.activity)}`;
+    case "ends_with_activity":
+      return step.negate ? `Does not end ${quoted(step.activity)}` : `Ends ${quoted(step.activity)}`;
+    case "case_id_in":
+      // A long list of incident numbers is named by its count.
+      return `${step.negate ? "Outside " : ""}${step.case_ids.length > 2 ? countOf(step.case_ids.length, "incident number") : step.case_ids.map(quoted).join(", ")}`;
+    case "case_start_in_window":
+      return `First record ${step.negate ? "outside " : ""}${step.window.start_inclusive.slice(0, 10)} to ${step.window.end_exclusive.slice(0, 10)}`;
+    case "opening_attribute_equals":
+      return `First ${name(step.column_index)}${step.negate ? " not" : ":"} ${step.value === null ? "no value" : quoted(step.value)}`;
+    case "opening_attribute_in":
+      return `First ${name(step.column_index)}${step.negate ? " not" : ":"} ${values(step.values)}`;
+    case "record_attribute_in":
+      return `${step.negate ? "No" : "A"} record ${name(step.column_index)}: ${values(step.values)}`;
+    case "record_attributes_all":
+      return `${step.negate ? "No" : "A"} record with ${countOf(step.conditions.length, "condition")}`;
+    case "observed_span_at_least":
+      return `Span ${step.negate ? "<" : "≥"} ${hours(step.hours)}`;
+    case "max_raw_gap_at_least":
+      return `Longest gap ${step.negate ? "<" : "≥"} ${hours(step.hours)}`;
+    case "interval_threshold":
+      return `Interval ${quoted(step.interval.start_activity)} → ${quoted(step.interval.response_activity)} ${step.negate ? "not " : ""}${step.operator === "gt" ? ">" : "≥"} ${hours(step.hours)}`;
+    case "variant_is":
+      return `${step.negate ? "Not the variant" : "The variant"} of ${countOf(step.variant.activities.length, "activity", "activities")}`;
+    case "measure_between": {
+      const measure = step.measure === "raw_record_count" ? "Records" : step.measure === "observed_span_hours" ? "Span" : "Longest gap";
+      const unit = step.measure === "raw_record_count" ? "" : " h";
+      const range = step.maximum === null ? `≥ ${step.minimum}${unit}` : `${step.minimum}–${step.maximum}${unit}`;
+      return `${measure} ${step.negate ? "outside " : ""}${range}`;
+    }
+    case "path_lag_in_range": {
+      const low = step.minimum_hours === null ? "" : `${step.minimum_inclusive ? "≥" : ">"} ${hours(step.minimum_hours)}`;
+      const high = step.maximum_hours === null ? "" : `${step.maximum_inclusive ? "≤" : "<"} ${hours(step.maximum_hours)}`;
+      return `${step.negate ? "No " : ""}${quoted(step.source_activity)} → ${quoted(step.target_activity)} ${[low, high].filter(Boolean).join(", ")}${step.passages === "every" ? ", every passage" : ""}`;
+    }
+  }
+}
+
 /** Hours as a step says them, with the days beside them where they are whole days of two or more. */
 export function lagHours(hours: number): string {
   return hours >= 48 && hours % 24 === 0 ? `${hours} hours (${hours / 24} days)` : `${hours} ${hours === 1 ? "hour" : "hours"}`;

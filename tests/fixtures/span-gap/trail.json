@@ -1,0 +1,128 @@
+{
+ "about": "Hand-written trail for #93 (tests/test_issue93_step_trail.py and tools/qualify_step_trail.py) over span-gap.csv: the incidents and records kept after each step, in the order the steps were taken. Records: S-A 3, S-ALLTIE 2, S-B 2, S-LONG 4, S-ONE 1, S-TIE 3, S-UNK 2, S-UNLAB 3. Spans: S-ALLTIE 0, S-ONE 0, S-TIE 2, S-UNLAB 7, S-A 10, S-B 10, S-LONG 72, S-UNK unknown. Assigned is in S-A, S-TIE, S-LONG. Never read by product code. The browser trail ends with any record whose Agent is Cy: S-A, S-TIE and S-UNLAB of the four kept after the span (S-B has only Ben).",
+ "steps": [
+  {
+   "kind": "measure_between",
+   "measure": "raw_record_count",
+   "minimum": 2,
+   "maximum": 3,
+   "negate": false
+  },
+  {
+   "kind": "observed_span_at_least",
+   "hours": 2,
+   "negate": false
+  },
+  {
+   "kind": "contains_activity",
+   "activity": "Assigned",
+   "negate": false
+  }
+ ],
+ "kept_after": [
+  {
+   "case_ids": [
+    "S-A",
+    "S-ALLTIE",
+    "S-B",
+    "S-TIE",
+    "S-UNK",
+    "S-UNLAB"
+   ],
+   "record_count": 15
+  },
+  {
+   "case_ids": [
+    "S-A",
+    "S-B",
+    "S-TIE",
+    "S-UNLAB"
+   ],
+   "record_count": 11
+  },
+  {
+   "case_ids": [
+    "S-A",
+    "S-TIE"
+   ],
+   "record_count": 6
+  }
+ ],
+ "reversed_kept_after": [
+  {
+   "case_count": 3,
+   "record_count": 10
+  },
+  {
+   "case_count": 3,
+   "record_count": 10
+  },
+  {
+   "case_count": 2,
+   "record_count": 6
+  }
+ ],
+ "parent": {
+  "case_count": 8,
+  "record_count": 20
+ },
+ "browser": {
+  "steps": [
+   {
+    "kind": "measure_between",
+    "measure": "raw_record_count",
+    "minimum": 2,
+    "maximum": 3,
+    "negate": false
+   },
+   {
+    "kind": "observed_span_at_least",
+    "hours": 2,
+    "negate": false
+   },
+   {
+    "kind": "record_attribute_in",
+    "column_index": 5,
+    "values": [
+     "Cy"
+    ],
+    "negate": false
+   }
+  ],
+  "short": [
+   "Records 2–3",
+   "Span ≥ 2 h",
+   "A record Agent: “Cy”"
+  ],
+  "kept_after": [
+   {
+    "case_ids": [
+     "S-A",
+     "S-ALLTIE",
+     "S-B",
+     "S-TIE",
+     "S-UNK",
+     "S-UNLAB"
+    ],
+    "record_count": 15
+   },
+   {
+    "case_ids": [
+     "S-A",
+     "S-B",
+     "S-TIE",
+     "S-UNLAB"
+    ],
+    "record_count": 11
+   },
+   {
+    "case_ids": [
+     "S-A",
+     "S-TIE",
+     "S-UNLAB"
+    ],
+    "record_count": 9
+   }
+  ]
+ }
+}

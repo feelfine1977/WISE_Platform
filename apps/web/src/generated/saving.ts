@@ -821,6 +821,7 @@ export interface PredicateResult {
   removed: PopulationSupport;
   unevaluable: PopulationSupport;
   record_evidence?: RecordAttributeEvidence;
+  kept_after_step?: KeptAfterStep;
 }
 /**
  * Nonempty matching or unknown original-row support before optional negation, ordered by case ID then original source position. Absence is evaluated over the complete history; not-matching rows are never deleted.
@@ -833,6 +834,13 @@ export interface RecordAttributeCaseEvidence {
   case_id: CaseId;
   matching_row_ids: RowId[];
   unevaluable_row_ids: RowId[];
+}
+/**
+ * The incidents and records kept after this step and every step before it, in the order the steps were taken (the measure 'kept after step k', the owner's decision of 14 October): those every one of these steps keeps, a false step dominating an unknown one, over the same parent and under the same request and revision as the selection.
+ */
+export interface KeptAfterStep {
+  case_count: number;
+  record_count: number;
 }
 export interface SavingRefusal1 {
   schema_version: 1;
