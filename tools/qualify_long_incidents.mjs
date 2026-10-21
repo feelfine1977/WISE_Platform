@@ -55,6 +55,8 @@ try {
     await chart.focus();
     for (let step = 0; step < 3; step++) await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Enter');
+    // The column is previewed first, then applied.
+    await page.getByRole('group', {name: 'Step from the time charts not yet applied'}).getByRole('button', {name: 'Apply', exact: true}).click();
     await settled(1);
     const fromChart = selections.at(-1);
     check('chart_step_matches_the_oracle', partitionMatches(fromChart), [fromChart.kept, fromChart.unevaluable]);

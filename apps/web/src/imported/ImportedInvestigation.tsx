@@ -12,7 +12,7 @@ import { supportText } from "../map/wording";
 import { ReplacementNotice } from "../replacement/ReplacementNotice";
 import "./data-row.css";
 import { type AskedQuestion, type ImportedInvestigationCoordinator, type InvestigationView, type ShownSelection, shownSelection } from "./coordinator";
-import { ImportedInspector } from "./ImportedInspector";
+import { type Observation, ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
 import type { SavingCoordinator } from "../saved/coordinator";
 import { SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
@@ -343,7 +343,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   waitingFor={waitingFor}
                   initiallyInPlace={mapInPlace}
                   showing={view}
-                  aside={<TimeColumn workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep} waitingFor={waitingFor} />}
+                  aside={<TimeColumn workspaceId={answer.workspace_id} revision={revision} identity={shown.answer.identity} onStep={addStep} previewStep={previewStep} waitingFor={waitingFor} />}
                 />
               ) : state.selection.phase === "failed" ? (
                 <p className="working-text">{view === "map" ? "The map is shown once the incidents are selected." : "The paths are listed once the incidents are selected."}</p>
@@ -478,6 +478,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onLayout={setLayout}
             onReturn={returnToIncidents}
             onRetry={() => coordinator.retryCase()}
+            observation={observationOf(answer)}
             waitingFor={waitingFor}
             headingRef={inspectorHeading}
             documents={answer.preparation.mapping.document_reference_column != null
@@ -634,4 +635,13 @@ function DataDetails({ answer, revision }: { answer: ImportedPopulationAnswer; r
       </dl>
     </section>
   );
+}
+
+/** The export's cutoff of the population shown, on its clock, for the evidence of an incident. */
+function observationOf(answer: ImportedPopulationAnswer | null): Observation | undefined {
+  if (!answer) return undefined;
+  const time = answer.preparation.policies.time;
+  return time.id === "incident.time.wall_clock_as_recorded.v1"
+    ? { timestamp_kind: "wall_clock", cutoff: time.parameters.snapshot_cutoff_local }
+    : { timestamp_kind: "utc_instant", cutoff: time.parameters.snapshot_cutoff_utc };
 }

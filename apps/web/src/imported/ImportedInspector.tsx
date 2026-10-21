@@ -22,6 +22,14 @@ interface ImportedInspectorProps {
   highlightedRowIds?: readonly string[];
   /** Where the records' documents are read: present only when the preparation declares a document reference column. */
   documents?: RecordDocuments;
+  /** When the export the incident was read from was taken, on the preparation's clock. */
+  observation?: Observation;
+}
+
+export interface Observation {
+  timestamp_kind: "utc_instant" | "wall_clock";
+  /** The snapshot cutoff of the preparation, as its policy declares it. */
+  cutoff: string;
 }
 
 export interface RecordDocuments {
@@ -32,7 +40,7 @@ export interface RecordDocuments {
 }
 
 /** Every record of one imported incident in the declared order, as a vertical sequence. */
-export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds, documents }: ImportedInspectorProps) {
+export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds, documents, observation }: ImportedInspectorProps) {
   const collapsed = layout === "collapsed";
   return (
     <section className="imported-inspector" aria-labelledby="imported-inspector-title">
@@ -69,14 +77,14 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
         {inspected.phase === "failed" && (
           <ImportProblemNotice title={`The records of ${inspected.caseId} could not be shown`} problem={inspected.problem} onRetry={onRetry} waitingFor={waitingFor} />
         )}
-        {inspected.phase === "ready" && <History answer={inspected.answer} highlightedRowIds={highlightedRowIds} documents={documents} />}
+        {inspected.phase === "ready" && <History answer={inspected.answer} highlightedRowIds={highlightedRowIds} documents={documents} observation={observation} />}
       </div>
     </section>
   );
 }
 
 /** The records in the declared order, and above them their elapsed time: the strip of the recorded times and the longest gap. */
-function History({ answer, highlightedRowIds = [], documents }: { answer: ImportedCaseEvidenceAnswer; highlightedRowIds?: readonly string[]; documents?: RecordDocuments }) {
+function History({ answer, highlightedRowIds = [], documents, observation }: { answer: ImportedCaseEvidenceAnswer; highlightedRowIds?: readonly string[]; documents?: RecordDocuments; observation?: Observation }) {
   const { coverage } = answer;
   const omitted = new Set(answer.omitted_activity_row_ids);
   const names = new Map(answer.columns.map((column) => [column.index, column.name]));
@@ -104,6 +112,7 @@ function History({ answer, highlightedRowIds = [], documents }: { answer: Import
         activity sequence · {countOf(coverage.omitted_activity_record_count, "record")} without an activity label
       </p>
       <p className="order-rule">{orderRule(answer.records)}</p>
+      {observation && <p className="observation-line">{observationLine(answer.records, observation)}</p>}
       {!answer.sequence_evaluable && (
         <p className="order-note">
           The order of this incident is not fully known: records without a usable time follow the timed records in source order, which is
@@ -212,4 +221,23 @@ export function orderRule(records: readonly ImportedSourceRecord[]): string {
   return sequenced
     ? "Records are in the declared order: by their usable time; records with the same time by their sequence number, then by their place in the file. Where a sequence number disagrees with the times, the time decides."
     : "Records are in the declared order: by their usable time; records with the same time by their place in the file.";
+}
+
+/**
+ * How long the incident was observed after its last usable record: the export's cutoff, on the preparation's clock, and
+ * the time from the last usable time to it. A later record could still have come; the cutoff is not a completion.
+ */
+export function observationLine(records: readonly ImportedSourceRecord[], observation: Observation): string {
+  const wall = observation.timestamp_kind === "wall_clock";
+  const times = records.flatMap((record) => {
+    const value = wall ? record.local_timestamp : record.utc_instant;
+    return record.timestamp_status === "usable" && value ? [value] : [];
+  });
+  const cutoff = wall ? `${observation.cutoff.replace("T", " ")}, as recorded` : observation.cutoff.replace("T", " ").replace("Z", " UTC");
+  if (times.length === 0) return `The export was taken at ${cutoff}; no record of this incident has a usable time, so how long it was observed is not known.`;
+  const parse = (value: string) => Date.parse(wall ? `${value}Z` : value);
+  const last = Math.max(...times.map(parse));
+  const hours = (parse(observation.cutoff) - last) / 3_600_000;
+  const age = hours >= 48 ? `${Math.floor(hours / 24).toLocaleString("en")} days` : `${Math.round(hours * 10) / 10} hours`;
+  return `The export was taken at ${cutoff}, ${age} after the last usable time of this incident; records after the export are not in it, so this is no sign that the incident was complete.`;
 }
