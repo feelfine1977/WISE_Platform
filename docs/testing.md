@@ -186,6 +186,10 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - The card of the path selected in the list of paths, and on the map, offers the step with the path's median lag as a bound.
   - Every range of the oracle, typed with each bound included or excluded, for one or every passage, kept or removed: previewed, taken as one step whose words name its pair and bounds, keeping the oracle's incidents, and undone exactly. On the map it is also typed in days.
 
+- `tools/qualify_sortable_heads.py` (#91): the heads of the incident list over the invented `tests/fixtures/span-gap` file, against its `expected.json` and `heads.json`.
+  - A click on the head of Records, Span, Longest gap or First record orders the list as the oracle does; a second click reverses it.
+  - The head says the direction (`aria-sort`), and the order is said in words with its ties and its unavailable values.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.

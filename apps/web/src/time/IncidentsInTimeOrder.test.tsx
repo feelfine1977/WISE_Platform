@@ -84,7 +84,7 @@ describe("the kept incidents in an order by time", () => {
     const { caseLists } = setup();
     const table = await screen.findByRole("table", { name: "Kept incidents" });
     expect(caseLists.list.mock.calls[0][0].query).toEqual({ search_text: null, sort: { field: "observed_span_hours", direction: "descending" }, offset: 0, limit: PAGE });
-    expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Incident", "Records", "Mapped records", "Without activity label", "Order of records", "Span", "Longest gap", "First record", "Longest gap between", "Records over time, 0 to 10.4 d"]);
+    expect(within(table).getAllByRole("columnheader").map((head) => head.textContent)).toEqual(["Incident", "Records", "Mapped records", "Without activity label", "Order of records", "Span▼", "Longest gap", "First record", "Longest gap between", "Records over time, 0 to 10.4 d"]);
     const first = within(table).getAllByRole("row")[1];
     expect(within(first).getByRole("button").textContent).toBe("I-249");
     expect(within(first).getAllByRole("cell").map((cell) => cell.textContent).slice(4, 8)).toEqual(["10.4 d", "5.2 d", "2026-01-01 08:00:00 UTC", "Assigned → no activity label"]);

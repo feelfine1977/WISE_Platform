@@ -1,0 +1,4 @@
+{
+ "about": "Hand-written order for #91 (tests/test_issue91_sortable_heads.py and tools/qualify_sortable_heads.py) over span-gap.csv: the one direction of the measure columns that expected.json does not list. Record counts: S-ONE 1; S-ALLTIE, S-B, S-UNK 2; S-A, S-TIE, S-UNLAB 3 (its unlabelled record counts); S-LONG 4. Equal values by number. Never read by product code.",
+ "record_count ascending": ["S-ONE", "S-ALLTIE", "S-B", "S-UNK", "S-A", "S-TIE", "S-UNLAB", "S-LONG"]
+}
