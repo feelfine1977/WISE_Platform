@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Bpic19PipelineManifest, SavedRevision } from "../generated/saving";
 import { baseIdentity, containingOpenedIdentity, investigationId, firstRevisionId, savedContent } from "../test/saving";
-import { purchasingReportMarkdown } from "./purchasing-report";
+import { frozenScope, purchasingReportMarkdown } from "./purchasing-report";
 
 const runId="score-run.v1:sha256:"+"7".repeat(64),profileId="profile-definition-literal",scoreId="native-definition-literal";
 const digest="a".repeat(64),filename=digest+".json.gz";
@@ -142,6 +142,24 @@ describe("human-readable frozen purchasing report",()=>{
     expect(md).toContain("| proposed\\_change | proposed |");expect(md).toContain("| adoption | unknown |");expect(md).toContain("| tested\\_outcome | untested |");
     expect(md).toContain("original-row-A1");expect(md).toContain("matching complete native-run ZIP must accompany");expect(md).toContain(`](artifacts/${filename})`);
     expect(md).not.toContain("z-old.png");expect(purchasingReportMarkdown(revision,manifest)).toBe(md);
+  });
+  it("declares the service-supplied frozen scope: source, preparation, grain, clock, cutoff, parent [A,B] and selected [A] (#125 AC01)",()=>{
+    const {revision,manifest}=literal();
+    const population={source:{source_id:baseIdentity.source_id,filename:"literal-ac01.csv",byte_count:321},
+      preparation:{preparation_id:baseIdentity.preparation_id,policies:{time:{id:"incident.time.explicit_format_wall_clock.v1",parameters:{timestamp_kind:"wall_clock",snapshot_cutoff_local:"2019-01-28T00:00:00"}}}}};
+    const scope=frozenScope(population,{identity:containingOpenedIdentity,parent:{case_ids:["A","B"],case_count:2,record_count:3},kept:{case_ids:["A"],case_count:1,record_count:2}});
+    expect(scope).toEqual(expect.objectContaining({source:{source_id:baseIdentity.source_id,filename:"literal-ac01.csv",byte_count:321},preparation_id:baseIdentity.preparation_id,
+      time_policy:"incident.time.explicit_format_wall_clock.v1",parent:{case_ids:["A","B"],case_count:2,record_count:3},selected:{case_ids:["A"],case_count:1,record_count:2}}));
+    const md=purchasingReportMarkdown(revision,manifest,scope);
+    expect(md).toContain("Frozen scope supplied by the service for this revision");
+    expect(md).toContain("| Grain | complete PO item: one purchasing document item with its whole original event history |");
+    expect(md).toContain("| Source file / bytes | literal-ac01.csv / 321 |");
+    expect(md).toContain("| Clock and time policy | incident.time.explicit\\_format\\_wall\\_clock.v1 |");
+    expect(md).toContain("| Time policy snapshot\\_cutoff\\_local | 2019-01-28T00:00:00 |");
+    expect(md).toContain("| Parent items / records | 2 / 3 |");expect(md).toContain("| Parent item IDs | A, B |");
+    expect(md).toContain("| Selected items / records | 1 / 2 |");expect(md).toContain("| Selected item IDs | A |");
+    // A scope for another selection is never rendered as this revision's.
+    expect(purchasingReportMarkdown(revision,manifest,{...scope,selection_identity:baseIdentity})).not.toContain("Frozen scope supplied");
   });
   it("accounts for explicit partial omissions and retains the source/formula gate without claiming reproduction",()=>{
     const {revision,manifest}=literal();revision.content.bpic19_pipeline!.replay_mode="partial";
