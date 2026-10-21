@@ -66,9 +66,9 @@ def test_shares_carry_their_denominators_and_the_difference_in_percentage_points
     assert whole["anchor_policy"] == OPENING_CONTEXT_POLICY
     # D's order cannot be evaluated: it stays in the parent's count but has no opening value.
     assert whole["population"] == {"case_count": 3, "evaluable_case_count": 3, "unevaluable_case_count": 0,
-                                   "unevaluable_case_ids": []}
+                                   "unevaluable_case_ids": [], "tied_first_record_case_count": 0}
     assert whole["parent"] == {"case_count": 6, "evaluable_case_count": 5, "unevaluable_case_count": 1,
-                               "unevaluable_case_ids": ["D"]}
+                               "unevaluable_case_ids": ["D"], "tied_first_record_case_count": 0}
     entry = column(answer, 3)
     assert entry["column_name"] == "Desk"
     east = by_value(entry)[("value", "East")]
@@ -142,3 +142,17 @@ def test_the_category_limit_is_a_positive_whole_number(limit):
     refused = opening_context(prepared_from(LOG), ["A"], PARENT, category_limit=limit)
     assert isinstance(refused, ImportRefusal)
     assert refused.code == "invalid_parameter"
+
+
+def test_a_first_record_tied_in_time_is_chosen_by_the_declared_order_and_counted():
+    # G's two first records share their time: the declared order (here the place in the file) chooses North.
+    tied = [*LOG, "G;Open;2026-10-01T08:00:00Z;North;P1", "G;Note;2026-10-01T08:00:00Z;South;P1"]
+    answer = opening_context(prepared_from(tied), ["G"], [*PARENT, "G"]).to_dict()
+    assert answer["population"]["tied_first_record_case_count"] == 1
+    assert answer["parent"]["tied_first_record_case_count"] == 1
+    assert by_value(column_of(answer, 3))[("value", "North")]["population"]["count"] == 1
+    assert ("value", "South") not in by_value(column_of(answer, 3))
+
+
+def column_of(whole, index):
+    return next(item for item in whole["columns"] if item["column_index"] == index)

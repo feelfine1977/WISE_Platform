@@ -156,6 +156,10 @@ class GroupCoverage(BaseModel):
     evaluable_case_count: Count
     unevaluable_case_count: Count
     unevaluable_case_ids: list[CaseId]
+    tied_first_record_case_count: Count = Field(
+        ...,
+        description='Incidents whose first record shares its usable time with the next record; the declared order (time, then the sequence number, then the place in the file) chose their first record.',
+    )
 
 
 class OpeningContext(BaseModel):

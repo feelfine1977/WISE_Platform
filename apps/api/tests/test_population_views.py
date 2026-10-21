@@ -108,7 +108,7 @@ def test_the_opening_context_of_the_parent_is_compared_with_itself(client, works
     context = answer["opening_context"]
     assert context["anchor_policy"] == "incident.context.first_record_in_declared_order.v1"
     assert context["parent"] == {"case_count": 4, "evaluable_case_count": 3, "unevaluable_case_count": 1,
-                                 "unevaluable_case_ids": ["D"]}
+                                 "unevaluable_case_ids": ["D"], "tied_first_record_case_count": 0}
     assert context["columns"][0]["column_name"] == "Desk"
     shown = categories(answer)
     assert set(shown) == {("value", "East"), ("value", "Unknown"), ("missing", None)}

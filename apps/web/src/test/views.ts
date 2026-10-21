@@ -63,8 +63,8 @@ export function openingContextAnswer(request: OpeningContextRequest): OpeningCon
     opening_context: {
       anchor_policy: "incident.context.first_record_in_declared_order.v1",
       category_limit: 2,
-      population: { case_count: 5, evaluable_case_count: 4, unevaluable_case_count: 1, unevaluable_case_ids: ["K-5"] },
-      parent: { case_count: 5, evaluable_case_count: 4, unevaluable_case_count: 1, unevaluable_case_ids: ["K-5"] },
+      population: { case_count: 5, evaluable_case_count: 4, unevaluable_case_count: 1, unevaluable_case_ids: ["K-5"], tied_first_record_case_count: 0 },
+      parent: { case_count: 5, evaluable_case_count: 4, unevaluable_case_count: 1, unevaluable_case_ids: ["K-5"], tied_first_record_case_count: 0 },
       columns: [
         {
           column_index: 3,
@@ -100,7 +100,7 @@ export function selectionOpeningContextAnswer(request: OpeningContextRequest): O
     identity: { ...request.identity, population_id: `population.v1:sha256:${hex("4")}` },
     opening_context: {
       ...parent.opening_context,
-      population: { case_count: 2, evaluable_case_count: 2, unevaluable_case_count: 0, unevaluable_case_ids: [] },
+      population: { case_count: 2, evaluable_case_count: 2, unevaluable_case_count: 0, unevaluable_case_ids: [], tied_first_record_case_count: 0 },
       columns: [
         {
           column_index: 3,
