@@ -113,3 +113,18 @@ describe("#8 a value of the chart inspected, previewed, applied or cancelled, as
     expect(screen.getByText(/^Fixed in the parent: every incident with a readable first record has Nord here/)).toBeTruthy();
   });
 });
+
+describe("#8 back from an inspected incident", () => {
+  it("returns the focus to the button the incident was opened with", async () => {
+    const previewStep = vi.fn(async () => ({ ok: true as const, parent: 5, kept: 2, removed: 2, unevaluable: 1, keptIds: ["K-1", "K-2"] }));
+    const props = { state: { phase: "ready" as const, answer: answer() }, onRetry: () => undefined, onStep: vi.fn(), previewStep, onOpenCase: vi.fn() };
+    const view = render(<OpenedAs {...props} openCaseId={null} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Inspect Büro" }));
+    await user.click(await screen.findByRole("button", { name: "K-2" }));
+    view.rerender(<OpenedAs {...props} openCaseId="K-2" />);
+    (document.activeElement as HTMLElement | null)?.blur();
+    view.rerender(<OpenedAs {...props} openCaseId={null} />);
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "K-2" }));
+  });
+});

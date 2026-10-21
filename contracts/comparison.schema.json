@@ -298,6 +298,9 @@
           "$ref": "#/$defs/MaxRawGapAtLeast"
         },
         {
+          "$ref": "#/$defs/IntervalThreshold"
+        },
+        {
           "$ref": "#/$defs/RecordAttributesAll"
         }
       ]
@@ -1884,6 +1887,66 @@
         "kind",
         "hours",
         "negate"
+      ]
+    },
+    "IntervalThreshold": {
+      "title": "IntervalThreshold",
+      "description": "Keeps the incidents whose interval from the first record of the start activity to the first record of the response activity at or after it (the registered pairing policy) exceeds (gt) or reaches (ge) a number of hours on the preparation's clock. An incident without that interval (order not known, no start, no response at or after it) is not evaluable.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "interval_threshold"
+        },
+        "interval": {
+          "$ref": "#/$defs/IntervalDefinition"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "gt",
+            "ge"
+          ]
+        },
+        "hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "negate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "interval",
+        "operator",
+        "hours",
+        "negate"
+      ]
+    },
+    "IntervalDefinition": {
+      "title": "IntervalDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "const": "incident.interval.first_start_first_response_at_or_after.v1"
+        },
+        "start_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "response_activity": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "policy",
+        "start_activity",
+        "response_activity"
       ]
     },
     "RecordAttributesAll": {

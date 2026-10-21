@@ -1,0 +1,15 @@
+{
+ "about": "Hand-written expectations for #10 (tests/test_issue10_interval_tail.py and tools/qualify_interval_tail.py). Invented incidents. Interval: the first Opened record in declared order (time, then Seq), then the first other Resolved record whose time is at or after it; elapsed UTC hours. Never read by product code.",
+ "file": "intervals.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": []},
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "interval": {"policy": "incident.interval.first_start_first_response_at_or_after.v1", "start_activity": "Opened", "response_activity": "Resolved"},
+ "hours": {"I-3H": 3, "I-4H": 4, "I-5H": 5, "I-REP": 2, "I-ZERO": 0, "I-TIE": 0, "I-LONG": 48},
+ "reasons": {"I-EARLY": "missing_response", "I-NOSTART": "missing_start", "I-NORESP": "missing_response", "I-UNK": "order_unknown"},
+ "edges_hours": [0, 1, 4, 24, 72],
+ "bins": [2, 2, 2, 1, 0],
+ "unavailable": {"order_unknown": 1, "missing_start": 1, "missing_response": 2},
+ "strict_4": {"operator": "gt", "hours": 4, "kept": ["I-5H", "I-LONG"], "removed": ["I-3H", "I-4H", "I-REP", "I-TIE", "I-ZERO"], "unevaluable": ["I-EARLY", "I-NORESP", "I-NOSTART", "I-UNK"]},
+ "inclusive_4": {"operator": "ge", "hours": 4, "kept": ["I-4H", "I-5H", "I-LONG"], "removed": ["I-3H", "I-REP", "I-TIE", "I-ZERO"], "unevaluable": ["I-EARLY", "I-NORESP", "I-NOSTART", "I-UNK"]},
+ "witness": {"case": "I-REP", "start_position": 6, "response_position": 8}
+}

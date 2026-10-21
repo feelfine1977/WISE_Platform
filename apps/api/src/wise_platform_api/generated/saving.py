@@ -478,6 +478,15 @@ class MaxRawGapAtLeast(BaseModel):
     negate: bool
 
 
+class IntervalDefinition(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy: Literal['incident.interval.first_start_first_response_at_or_after.v1']
+    start_activity: constr(min_length=1)
+    response_activity: constr(min_length=1)
+
+
 class Bpic19PipelineOutput(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -894,6 +903,17 @@ class EvidenceBookmark(BaseModel):
     note: constr(min_length=0)
 
 
+class IntervalThreshold(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['interval_threshold']
+    interval: IntervalDefinition
+    operator: Literal['gt', 'ge']
+    hours: confloat(ge=0.0)
+    negate: bool
+
+
 class Bpic19PipelineAction(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -1044,6 +1064,7 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | IntervalThreshold
         | RecordAttributesAll
     ]
 ):
@@ -1059,6 +1080,7 @@ class SelectionPredicate(
         | RecordAttributeIn
         | ObservedSpanAtLeast
         | MaxRawGapAtLeast
+        | IntervalThreshold
         | RecordAttributesAll
     ) = Field(..., title='SelectionPredicate')
 

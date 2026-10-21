@@ -1,0 +1,543 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/interval-tail.v1.schema.json",
+  "title": "IntervalTailMessage",
+  "description": "The distribution of one supported interval (the first start, then the first response at or after it) over the frozen parent and the incidents kept, with the unavailable by reason and the kept incidents' intervals and endpoint rows. No resolution inference.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/IntervalDistributionRequest"
+    },
+    {
+      "$ref": "#/$defs/IntervalDistributionAnswer"
+    },
+    {
+      "$ref": "#/$defs/IntervalDistributionRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RowId": {
+      "title": "RowId",
+      "type": "string",
+      "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "IntervalDefinition": {
+      "title": "IntervalDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "const": "incident.interval.first_start_first_response_at_or_after.v1"
+        },
+        "start_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "response_activity": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "policy",
+        "start_activity",
+        "response_activity"
+      ]
+    },
+    "IntervalBin": {
+      "title": "IntervalBin",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Half-open [start, end) in hours; the last bin has no end. Edges are fixed by the request, counted over the frozen parent and over the incidents kept.",
+      "properties": {
+        "start_inclusive_hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end_exclusive_hours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "parent_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kept_case_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "start_inclusive_hours",
+        "end_exclusive_hours",
+        "parent_case_count",
+        "kept_case_count"
+      ]
+    },
+    "IntervalUnavailable": {
+      "title": "IntervalUnavailable",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": [
+            "order_unknown",
+            "missing_start",
+            "missing_response"
+          ]
+        },
+        "parent_case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kept_case_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "reason",
+        "parent_case_count",
+        "kept_case_count"
+      ]
+    },
+    "IntervalCase": {
+      "title": "IntervalCase",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One kept incident's interval in hours, or the reason it has none, with the rows of its endpoints.",
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "reason": {
+          "enum": [
+            "order_unknown",
+            "missing_start",
+            "missing_response",
+            null
+          ]
+        },
+        "start_row_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RowId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "response_row_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RowId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_source_position": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "response_source_position": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": [
+        "case_id",
+        "hours",
+        "reason",
+        "start_row_id",
+        "response_row_id",
+        "start_source_position",
+        "response_source_position"
+      ]
+    },
+    "IntervalClock": {
+      "title": "IntervalClock",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "duration_basis": {
+          "type": "string",
+          "enum": [
+            "elapsed_utc",
+            "recorded_wall_clock"
+          ]
+        },
+        "snapshot_cutoff": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "timestamp_kind",
+        "duration_basis",
+        "snapshot_cutoff"
+      ]
+    },
+    "IntervalDistributionRequest": {
+      "title": "IntervalDistributionRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "interval_distribution_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "interval": {
+          "$ref": "#/$defs/IntervalDefinition"
+        },
+        "edges_hours": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 40,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "case_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "interval",
+        "edges_hours",
+        "case_limit"
+      ]
+    },
+    "IntervalDistributionAnswer": {
+      "title": "IntervalDistributionAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "interval_distribution_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "parent_identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "interval": {
+          "$ref": "#/$defs/IntervalDefinition"
+        },
+        "unit": {
+          "type": "string",
+          "const": "hours"
+        },
+        "clock": {
+          "$ref": "#/$defs/IntervalClock"
+        },
+        "edges_hours": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "bins": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/IntervalBin"
+          }
+        },
+        "measured": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "parent_case_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "kept_case_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "parent_case_count",
+            "kept_case_count"
+          ]
+        },
+        "unavailable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/IntervalUnavailable"
+          }
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/IntervalCase"
+          }
+        },
+        "cases_truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "parent_identity",
+        "interval",
+        "unit",
+        "clock",
+        "edges_hours",
+        "bins",
+        "measured",
+        "unavailable",
+        "cases",
+        "cases_truncated"
+      ]
+    },
+    "IntervalDistributionRefusal": {
+      "title": "IntervalDistributionRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "interval_distribution_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "interval_distribution"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "unsupported_policy",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "memory_unavailable",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

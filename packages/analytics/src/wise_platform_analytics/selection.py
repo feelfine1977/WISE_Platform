@@ -11,6 +11,8 @@ import json
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Protocol, TypeAlias
 
+from .intervals import INTERVAL_POLICY, OPERATORS, Interval, measure, satisfies
+
 if TYPE_CHECKING:
     from .mapping import ImportRefusal
     from .preparation import PreparedData
@@ -152,9 +154,23 @@ class MaxRawGapAtLeast:
     negate: bool = False
 
 
+@dataclass(frozen=True)
+class IntervalThreshold:
+    """The interval from a start to the first response at or after it (``intervals.INTERVAL_POLICY``) exceeds (gt) or
+    reaches (ge) a number of hours. An incident without that interval is not evaluable, never false."""
+
+    start_activity: str
+    response_activity: str
+    operator: str
+    hours: float
+    negate: bool = False
+    policy: str = INTERVAL_POLICY
+
+
 Predicate: TypeAlias = (ContainsActivity | DirectlyFollows | OpeningAttributeEquals
                         | StartsWithActivity | EndsWithActivity | CaseIdIn | CaseStartInWindow
-                        | OpeningAttributeIn | RecordAttributeIn | RecordAttributesAll | ObservedSpanAtLeast | MaxRawGapAtLeast)
+                        | OpeningAttributeIn | RecordAttributeIn | RecordAttributesAll | ObservedSpanAtLeast | MaxRawGapAtLeast
+                        | IntervalThreshold)
 
 
 class SelectionError(ValueError):
@@ -274,6 +290,16 @@ def predicate_descriptor(predicate: Predicate) -> dict[str, object]:
         if isinstance(predicate, OpeningAttributeIn):
             descriptor["anchor_policy"] = OPENING_CONTEXT_POLICY
         return descriptor
+    if isinstance(predicate, IntervalThreshold):
+        _hours(predicate.hours)
+        _label(predicate.start_activity)
+        _label(predicate.response_activity)
+        if predicate.policy != INTERVAL_POLICY:
+            raise SelectionError("unsupported_policy", "Only the first start and the first response at or after it are paired.")
+        if predicate.operator not in OPERATORS:
+            raise SelectionError("invalid_predicate", "The threshold is exceeded (gt) or reached (ge).")
+        return {"kind": "interval_threshold", "interval": {"policy": predicate.policy, "start_activity": predicate.start_activity,
+                "response_activity": predicate.response_activity}, "operator": predicate.operator, "hours": predicate.hours, "negate": predicate.negate}
     if isinstance(predicate, (ObservedSpanAtLeast, MaxRawGapAtLeast)):
         _hours(predicate.hours)
         return {"kind": "observed_span_at_least" if isinstance(predicate, ObservedSpanAtLeast) else "max_raw_gap_at_least",
@@ -358,7 +384,7 @@ def semantic_predicate(descriptor: Mapping[str, object]) -> dict[str, object]:
         result["conditions"] = sorted(({"column_index": condition["column_index"],
             "values": sorted(condition["values"], key=lambda value: (value is not None, value or ""))}
             for condition in result["conditions"]), key=lambda condition: condition["column_index"])
-    elif kind in ("observed_span_at_least", "max_raw_gap_at_least"):
+    elif kind in ("observed_span_at_least", "max_raw_gap_at_least", "interval_threshold"):
         hours = result["hours"]
         if isinstance(hours, float) and hours.is_integer():
             result["hours"] = int(hours)
@@ -513,6 +539,9 @@ def _evaluate(prepared: PreparedDataLike, case_id: str, predicate: Predicate, su
         value = any(record.context_value(predicate.column_index) in predicate.values for record in records)
     elif isinstance(predicate, ContainsActivity):
         value = any(record.activity == predicate.activity for record in records)
+    elif isinstance(predicate, IntervalThreshold):
+        measured = measure(records, prepared.sequence_evaluable(case_id), Interval(predicate.start_activity, predicate.response_activity))
+        value = satisfies(measured, predicate.operator, predicate.hours)
     elif not prepared.sequence_evaluable(case_id):
         value = None
     elif isinstance(predicate, CaseStartInWindow):

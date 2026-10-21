@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { sameJson } from "../data/coordinator";
 import { countOf } from "../data/wording";
 import type { SelectionPredicate } from "../generated/selection";
@@ -19,6 +19,8 @@ interface OpenedAsProps {
   previewStep?: StepPreviewer;
   /** Opens one incident with its whole history beside the panel. */
   onOpenCase?: (caseId: string) => void;
+  /** The incident open beside the panel, if any; when the one opened from here closes, the focus returns to its button. */
+  openCaseId?: string | null;
 }
 
 /** What the panel can do with a value, beyond showing it. */
@@ -32,10 +34,20 @@ interface Actions {
 const ANCHOR = "incident.context.first_record_in_declared_order.v1";
 
 /** Each context column's value at the first recorded observation of the incidents, beside the parent. */
-export function OpenedAs({ state, onRetry, waitingFor, onStep, previewStep, onOpenCase }: OpenedAsProps) {
-  const actions = onStep ? { onStep, previewStep, onOpenCase, waitingFor } : undefined;
+export function OpenedAs({ state, onRetry, waitingFor, onStep, previewStep, onOpenCase, openCaseId = null }: OpenedAsProps) {
+  const root = useRef<HTMLElement>(null);
+  const opener = useRef<string | null>(null);
+  // Back from an incident opened here, the focus returns to the button it was opened with.
+  useEffect(() => {
+    if (openCaseId !== null || opener.current === null) return;
+    const caseId = opener.current;
+    opener.current = null;
+    [...(root.current?.querySelectorAll<HTMLElement>("[data-open-case]") ?? [])].find((button) => button.dataset.openCase === caseId)?.focus();
+  }, [openCaseId]);
+  const open = onOpenCase && ((caseId: string) => { opener.current = caseId; onOpenCase(caseId); });
+  const actions = onStep ? { onStep, previewStep, onOpenCase: open, waitingFor } : undefined;
   return (
-    <section className="view-panel" aria-labelledby="opened-as-title" aria-busy={state.phase === "loading"}>
+    <section className="view-panel" aria-labelledby="opened-as-title" aria-busy={state.phase === "loading"} ref={root}>
       <h3 id="opened-as-title" className="view-title">
         At the first recorded observation
       </h3>
@@ -245,7 +257,7 @@ function Inspection({ category, name, step, previewer, onOpenCase, onClose }: {
         <ul aria-label={title}>
           {found.keptIds.map((caseId) => (
             <li key={caseId}>
-              {onOpenCase ? <button type="button" onClick={() => onOpenCase(caseId)}>{caseId}</button> : caseId}
+              {onOpenCase ? <button type="button" data-open-case={caseId} onClick={() => onOpenCase(caseId)}>{caseId}</button> : caseId}
             </li>
           ))}
         </ul>

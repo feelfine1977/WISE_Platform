@@ -20,6 +20,7 @@ import { FilterPanel } from "../filters/FilterPanel";
 import { IncidentsInTimeOrder, type TimeOrder } from "../time/IncidentsInTimeOrder";
 import { TimeColumn } from "../time/TimeColumn";
 import { GroupsPanel } from "../groups/GroupsPanel";
+import { IntervalPanel } from "../intervals/IntervalPanel";
 import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
@@ -38,7 +39,7 @@ interface ImportedInvestigationProps {
 /** What the centre shows: the map, the incidents, or every path of the map in one list. */
 type View = InvestigationView | "paths";
 /** What the side panel shows beside the map or the table. */
-type Rail = "filters" | "context" | "patterns";
+type Rail = "filters" | "context" | "patterns" | "interval";
 
 /** The orders of the list of kept incidents, with the words of their buttons. */
 const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
@@ -287,6 +288,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 >
                   {variants.phase === "failed" ? "Patterns · not shown" : "Patterns"}
                 </button>
+                <button type="button" aria-pressed={rail === "interval"} onClick={() => setRail("interval")}>Interval</button>
               </div>
               <button type="button" aria-label="Hide the side panel" onClick={() => setRailOpen(false)}>
                 Hide
@@ -297,8 +299,21 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 parentIdentity={shown?.answer.parent_identity ?? answer.identity} revision={revision}
                 opening={openingContext} onStep={addStep} previewStep={previewStep} waitingFor={waitingFor} />}
               <div hidden={rail !== "context"}>
-                <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} onStep={addStep} previewStep={previewStep} onOpenCase={openCase} />
+                <OpenedAs state={openingContext} onRetry={() => coordinator.retryOpeningContext()} waitingFor={waitingFor} onStep={addStep} previewStep={previewStep} onOpenCase={openCase} openCaseId={openCaseId} />
               </div>
+              {rail === "interval" && (
+                <IntervalPanel
+                  workspaceId={answer.workspace_id}
+                  revision={revision}
+                  identity={shown?.answer.identity ?? answer.identity}
+                  activities={[...new Set((state.parentGraph?.nodes ?? []).map((node) => node.label))].sort()}
+                  onStep={addStep}
+                  previewStep={previewStep}
+                  onOpenCase={openCase}
+                  openCaseId={openCaseId}
+                  waitingFor={waitingFor}
+                />
+              )}
               <div hidden={rail !== "patterns"}>
                 <Variants
                   state={variants}

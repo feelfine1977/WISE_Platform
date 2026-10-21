@@ -102,6 +102,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - A late reply for an earlier selection does not replace the chart.
   - Undo is exact, and the kept incident keeps every later record.
 
+- `tools/qualify_interval_tail.py` (#10): one supported interval (the first start, then the first response at or after it) over the invented `tests/fixtures/intervals` file, against its own `expected.json`.
+  - It names the pairing, clock and cutoff, checks the parent's bins and the incidents without an interval by reason, and tells a measured zero from a missing endpoint.
+  - The same inclusive tail is taken from a bin and from the form; it is previewed, cancelled and applied.
+  - An incident of the tail opens with both endpoint records, and the focus returns to the button it was opened with.
+  - Undo restores the exact parent; the strict tail leaves exactly four hours out.
+
 `tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
 
 - It reads the file through the product's operations in a temporary workspace.

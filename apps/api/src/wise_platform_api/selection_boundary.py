@@ -78,6 +78,7 @@ _KINDS = {
     "RecordAttributesAll": "record_attributes_all",
     "ObservedSpanAtLeast": "observed_span_at_least",
     "MaxRawGapAtLeast": "max_raw_gap_at_least",
+    "IntervalThreshold": "interval_threshold",
 }
 
 # Order in which failing places are named, first one first.
