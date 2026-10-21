@@ -169,14 +169,16 @@ def ocel() -> bytes:
 
 def archive(rows: list[list[str]], log: bytes) -> bytes:
     buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+    # These small invented members are stored without compression: zlib and zlib-ng
+    # produce different valid DEFLATE bytes for the same input on supported hosts.
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_STORED) as bundle:
         scores = {"note": "Invented scores from an earlier analysis; not an event log.",
                   "scores": [{"ticket": f"T-{n:03d}", "score": round(0.1 * (n % 10), 1)} for n in range(1, 11)]}
         for name, content in [("tickets-copy.csv", log), ("tickets-2026-09.csv", csv_text(TICKET_HEADER, september(rows))),
                               ("scores/earlier-scores.json", (json.dumps(scores, indent=1) + "\n").encode("utf-8"))]:
             info = zipfile.ZipInfo(name, ZIP_TIME)
             info.create_system = 3  # Keep the committed Unix ZIP metadata on every host.
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
             info.external_attr = 0o644 << 16
             bundle.writestr(info, content)
     return buffer.getvalue()

@@ -69,6 +69,20 @@ def test_archive_metadata_and_bytes_do_not_depend_on_the_host(monkeypatch, host_
     assert make_catalogue_fixture.collection()["desk/exports.zip"] == (COLLECTION / "desk/exports.zip").read_bytes()
 
 
+def test_archive_is_reproducible_without_a_compression_backend(monkeypatch):
+    # Official Windows Python 3.14 uses zlib-ng, whose valid DEFLATE streams differ
+    # from zlib's. The invented fixture must not depend on either compressor.
+    monkeypatch.setattr(zipfile, "zlib", None)
+    generated = make_catalogue_fixture.collection()
+    assert generated["desk/exports.zip"] == (COLLECTION / "desk/exports.zip").read_bytes()
+    with zipfile.ZipFile(io.BytesIO(generated["desk/exports.zip"])) as archive:
+        assert archive.namelist() == ["tickets-copy.csv", "tickets-2026-09.csv", "scores/earlier-scores.json"]
+        assert all(member.compress_type == zipfile.ZIP_STORED for member in archive.infolist())
+        assert archive.read("tickets-copy.csv") == generated["desk/tickets.csv"]
+        assert len(rows(archive.read("tickets-2026-09.csv"))) == 128
+        assert len(json.loads(archive.read("scores/earlier-scores.json"))["scores"]) == 10
+
+
 def test_every_file_and_member_has_a_record_with_identity_alias_and_role():
     found = catalogue_.inventory(declared(), COLLECTION)
     assert set(found.items) == {"note", "tickets", "teams", "exports", "tickets-copy", "tickets-september", "earlier-scores",
