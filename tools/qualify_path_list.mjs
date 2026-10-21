@@ -32,7 +32,7 @@ async function settled(steps) {
   await page.waitForFunction(() => !document.querySelector('.selection-status')?.textContent);
   await page.waitForFunction(n => document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length === n || (n === 0 && !document.querySelector('ul[aria-label="Steps of the selection"]')), steps);
 }
-const list = () => page.getByRole('table', {name: 'Paths of the kept incidents'});
+const list = () => page.getByRole('table', {name: 'Paths of the kept cases'});
 const rows = () => list().locator('tbody tr').evaluateAll(trs => trs.map(tr => [...tr.children].map(cell => cell.textContent)));
 const row = (from, to) => list().locator('tbody tr').filter({has: page.locator('th', {hasText: new RegExp(`^${from}$`)})}).filter({has: page.locator('td', {hasText: new RegExp(`^${to}$`)})}).first();
 const lag = hours => new Intl.NumberFormat('en', {minimumFractionDigits: 1, maximumFractionDigits: 1}).format(hours);
@@ -58,13 +58,13 @@ try {
   const flows = listed.filter(cells => cells[0] === 'Start' || cells[1] === 'End').map(cells => [cells[0], cells[1], cells[2]]).sort();
   const wantedFlows = [...Object.entries(expected.starts).map(([activity, n]) => ['Start', activity, String(n)]), ...Object.entries(expected.ends).map(([activity, n]) => [activity, 'End', String(n)])].sort();
   check('every_flow_with_its_incidents', same(flows, wantedFlows), [flows, wantedFlows]);
-  check('unknown_order_named', await page.getByText(`${expected.not_evaluable_for_paths} incident not evaluable for paths`).count() > 0, null);
+  check('unknown_order_named', await page.getByText(`${expected.not_evaluable_for_paths} case not evaluable for paths`).count() > 0, null);
 
   // At the lowest detail a path the map leaves out is drawn on request, without a step.
   const slider = page.getByRole('form', {name: 'Detail'}).getByRole('slider', {name: 'Paths'});
   await slider.focus();
   await page.keyboard.press('Home');
-  await page.waitForFunction(() => [...document.querySelectorAll('table[aria-label="Paths of the kept incidents"] tbody tr')].some(tr => tr.lastElementChild?.textContent === 'Not drawn'));
+  await page.waitForFunction(() => [...document.querySelectorAll('table[aria-label="Paths of the kept cases"] tbody tr')].some(tr => tr.lastElementChild?.textContent === 'Not drawn'));
   check('hidden_path_said_not_drawn', (await row(target.from, target.to).locator('td').last().textContent()) === 'Not drawn', await rows());
   await row(target.from, target.to).locator('th button').click();
   await page.getByRole('button', {name: 'Draw on the map', exact: true}).click();
@@ -76,7 +76,7 @@ try {
     && selections.length === asked && await page.getByRole('list', {name: 'Steps of the selection'}).count() === 0, null);
 
   // Keep and remove the whole incidents through the path; each is undone exactly.
-  for (const [label, name] of [[`Keep incidents where “${target.to}” directly follows “${target.from}”`, 'keep_resolved_to_assigned'], ['Keep incidents where it never does', 'never_resolved_to_assigned']]) {
+  for (const [label, name] of [[`Keep cases where “${target.to}” directly follows “${target.from}”`, 'keep_resolved_to_assigned'], ['Keep cases where it never does', 'never_resolved_to_assigned']]) {
     if (await row(target.from, target.to).locator('th button').getAttribute('aria-pressed') !== 'true') await row(target.from, target.to).locator('th button').click();
     await page.getByRole('button', {name: label, exact: true}).click();
     await settled(1);
@@ -92,11 +92,11 @@ try {
   await page.getByRole('button', {name: 'Filters and views'}).click();
   await page.getByRole('group', {name: 'Side panel'}).getByRole('button', {name: 'Variants', exact: true}).click();
   const rank = variants.variants.findIndex(variant => variant.activities.length === 0) + 1;
-  await page.getByRole('button', {name: `Preview keeping the 1 incident of variant ${rank}`}).click();
+  await page.getByRole('button', {name: `Preview keeping the 1 case of variant ${rank}`}).click();
   await page.getByRole('group', {name: `Variant ${rank} not yet applied`}).getByRole('button', {name: 'Apply', exact: true}).click();
   await settled(1);
   check('empty_selection_kept', same(selections.at(-1).kept.case_ids, expected.empty_variant_members), selections.at(-1).kept);
-  await page.getByText('The kept incidents have no path between two activities and no flow from Start or to End.').waitFor();
+  await page.getByText('The kept cases have no path between two activities and no flow from Start or to End.').waitFor();
   check('empty_list_said', true);
   assert.deepEqual(errors, []);
   await writeFile(output, JSON.stringify({checks}));

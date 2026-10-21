@@ -71,25 +71,25 @@ try {
   await settled(0);
   const parent = selections.at(-1);
   const text = (await panel.textContent()) ?? '';
-  check('fixed_column_labelled', text.includes(`Fixed in the parent: every incident with a readable first record has ${expected.tenant.fixed} here`), null);
-  check('denominator_and_unavailable_support_shown', text.includes(`These incidents: ${count(expected.evaluable, 'incident')} with a readable first record`)
+  check('fixed_column_labelled', text.includes(`Fixed in the parent: every case with a readable first record has ${expected.tenant.fixed} here`), null);
+  check('denominator_and_unavailable_support_shown', text.includes(`These cases: ${count(expected.evaluable, 'incident')} with a readable first record`)
     && text.includes(`${count(expected.unevaluable.length, 'incident')} of the parent has no readable first record`), null);
 
   // Inspect: the incidents of a value, one opened with its whole history, the selection unchanged.
   const asked = selections.length;
   await panel.getByRole('button', {name: 'Inspect Service Desk', exact: true}).first().click();
-  const found = panel.getByRole('list', {name: `Incidents first recorded with ${team.name} Service Desk`});
+  const found = panel.getByRole('list', {name: `Cases first recorded with ${team.name} Service Desk`});
   await found.waitFor();
   check('inspect_lists_the_value_s_incidents', same(await found.getByRole('button').allTextContents(), team.values['Service Desk']), null);
   await found.getByRole('button', {name: team.values['Service Desk'][0], exact: true}).click();
-  await page.getByRole('list', {name: `Records of incident ${team.values['Service Desk'][0]} in the declared order`}).waitFor();
+  await page.getByRole('list', {name: `Records of case ${team.values['Service Desk'][0]} in the declared order`}).waitFor();
   check('inspect_changes_nothing', selections.length === asked && await page.getByRole('list', {name: 'Steps of the selection'}).count() === 0, null);
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
   await panel.getByRole('button', {name: 'Stop inspecting', exact: true}).click();
 
   // Preview, Cancel, Preview again, Apply: Service Desk or not recorded.
   for (const value of ['Service Desk', 'not recorded']) await panel.getByRole('list', {name: `Opening values of ${team.name}, most frequent first`}).getByRole('checkbox', {name: `Choose ${value}`, exact: true}).check();
-  const previewButton = panel.getByRole('button', {name: 'Preview keeping incidents first recorded with these values', exact: true});
+  const previewButton = panel.getByRole('button', {name: 'Preview keeping cases first recorded with these values', exact: true});
   await previewButton.click();
   const pending = panel.getByRole('group', {name: `Values of ${team.name} not yet applied`});
   await pending.getByText(/^Preview:/).waitFor();
@@ -116,8 +116,8 @@ try {
   check('undo_restores_the_exact_identity', same(selections.at(-1).identity, parent.identity), null);
   await page.waitForTimeout(3500);
   const legend = (await panel.getByRole('list', {name: 'Bars'}).textContent()) ?? '';
-  check('late_reply_does_not_replace_the_chart', legend.includes(`These incidents: ${count(expected.evaluable, 'incident')} with a readable first record`)
-    && ((await panel.textContent()) ?? '').includes('These incidents are the whole parent population'), legend);
+  check('late_reply_does_not_replace_the_chart', legend.includes(`These cases: ${count(expected.evaluable, 'incident')} with a readable first record`)
+    && ((await panel.textContent()) ?? '').includes('These cases are the whole parent population'), legend);
   await page.unroute('**/api/investigations/opening-context');
 
   // Table rows resolve the same incidents as the bars, and the kept incident keeps every later record.
@@ -134,9 +134,9 @@ try {
   await pending.getByRole('button', {name: 'Apply', exact: true}).focus();
   await page.keyboard.press('Enter');
   await settled(1);
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
   await page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${team.changes_of.case}$`)}).first().click();
-  const records = page.getByRole('list', {name: `Records of incident ${team.changes_of.case} in the declared order`});
+  const records = page.getByRole('list', {name: `Records of case ${team.changes_of.case} in the declared order`});
   await records.waitFor();
   const items = await records.getByRole('listitem').allTextContents();
   const shown = items.map(item => item.includes('Service Desk') ? 'Service Desk' : item.includes('missing') ? null : '?');

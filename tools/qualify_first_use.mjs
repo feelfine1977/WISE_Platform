@@ -29,9 +29,9 @@ const areas = page.getByRole('navigation', {name: 'Areas'});
 try {
   await page.goto(base);
   const main = page.locator('main').first();
-  await page.getByRole('heading', {name: /^Incident|incidents/i}).first().waitFor();
+  await page.getByRole('heading', {name: /^Case|cases/i}).first().waitFor();
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0
-    && !document.body.textContent.includes('Selecting the incidents and drawing their map'));
+    && !document.body.textContent.includes('Selecting the cases and drawing their map'));
   if (process.env.WISE_BROWSER_DUMP_TEXT) await writeFile(process.env.WISE_BROWSER_DUMP_TEXT, (await main.textContent()) ?? '');
   const shown = (await main.textContent()) ?? '';
   for (const text of expected.texts) check(`shows: ${text}`, shown.includes(text), text);
@@ -41,21 +41,21 @@ try {
   const row = id => page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${id}$`)}).first();
   // The investigation opens on its map; the analyst switches to the incident list, enters it at its first incident,
   // moves with the arrow keys to the chosen one and opens it with Enter.
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
   await page.locator('table tbody tr button.row-open').first().waitFor({state: 'visible'});
   await page.locator('table tbody tr button.row-open').first().focus();
   const place = expected.order.indexOf(expected.keyboard_case);
   for (let step = 0; step < place; step++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await page.getByRole('heading', {name: 'Incident ' + expected.keyboard_case, exact: true}).waitFor();
-  const keyboardList = page.getByRole('list', {name: `Records of incident ${expected.keyboard_case} in the declared order`});
+  await page.getByRole('heading', {name: 'Case ' + expected.keyboard_case, exact: true}).waitFor();
+  const keyboardList = page.getByRole('list', {name: `Records of case ${expected.keyboard_case} in the declared order`});
   await keyboardList.waitFor();
   const keyboardRecords = await keyboardList.getByRole('listitem').count();
   check('keyboard_opens_every_record', keyboardRecords === expected.case_records[expected.keyboard_case], keyboardRecords);
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
   await row(expected.pointer_case).click();
-  await page.getByRole('heading', {name: 'Incident ' + expected.pointer_case, exact: true}).waitFor();
-  const pointerList = page.getByRole('list', {name: `Records of incident ${expected.pointer_case} in the declared order`});
+  await page.getByRole('heading', {name: 'Case ' + expected.pointer_case, exact: true}).waitFor();
+  const pointerList = page.getByRole('list', {name: `Records of case ${expected.pointer_case} in the declared order`});
   await pointerList.waitFor();
   const pointerRecords = await pointerList.getByRole('listitem').count();
   check('pointer_opens_every_record', pointerRecords === expected.case_records[expected.pointer_case], pointerRecords);

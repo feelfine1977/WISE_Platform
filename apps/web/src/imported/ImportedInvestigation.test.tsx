@@ -25,7 +25,7 @@ function renderInvestigation() {
 }
 
 function shownIncidents(): string[] {
-  const table = screen.getByRole("table", { name: "Kept incidents" });
+  const table = screen.getByRole("table", { name: "Kept cases" });
   return within(table).getAllByRole("rowheader").map((cell) => cell.textContent ?? "");
 }
 
@@ -34,22 +34,22 @@ function focusedText(): string {
 }
 
 describe("the investigation of an imported preparation", () => {
-  it("renders only the rows in view of 40,000 incidents and keeps keyboard operation and focus restoration", async () => {
+  it("renders only the rows in view of 40,000 cases and keeps keyboard operation and focus restoration", async () => {
     const app = renderInvestigation();
     const request = app.populations[0].request;
     expect(importContract.openPopulationRequest(request)).toBe(true);
-    expect(screen.getByText("Opening the incidents of this preparation…")).toBeTruthy();
+    expect(screen.getByText("Opening the cases of this preparation…")).toBeTruthy();
     const answer = populationAnswer(request, caseSummaries(40000));
     expect(importContract.populationAnswer(answer)).toBe(true);
     await deliver(() => app.populations[0].reply({ ok: true, answer }));
 
-    const table = screen.getByRole("table", { name: "Kept incidents" });
+    const table = screen.getByRole("table", { name: "Kept cases" });
     expect(table.getAttribute("aria-rowcount")).toBe("40001");
     const first = shownIncidents();
     expect(first[0]).toBe("INC-00000");
     // A 480 px view with 32 px rows shows 15 rows; 8 more are kept ready below them.
     expect(first.length).toBe(23);
-    expect(screen.getByLabelText("Population").textContent).toContain("being selected of 40,000 incidents · 240,000 records");
+    expect(screen.getByLabelText("Population").textContent).toContain("being selected of 40,000 cases · 240,000 records");
 
     await app.user.tab();
     expect(focusedText()).toBe("Data");
@@ -62,7 +62,7 @@ describe("the investigation of an imported preparation", () => {
     await app.user.tab();
     expect(focusedText()).toBe("Map");
     await app.user.tab();
-    expect(focusedText()).toBe("Incidents");
+    expect(focusedText()).toBe("Cases");
     await app.user.tab();
     expect(focusedText()).toBe("Variants");
     await app.user.tab();
@@ -98,25 +98,25 @@ describe("the investigation of an imported preparation", () => {
     expect(importContract.caseEvidenceRequest(evidence.request)).toBe(true);
     expect(evidence.request.case_id).toBe("INC-39984");
     expect(evidence.request.identity).toEqual(answer.identity);
-    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Incident INC-39984" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Case INC-39984" }));
 
     await app.user.keyboard("{Home}");
     await app.user.keyboard("{Escape}");
-    expect(screen.queryByRole("heading", { name: "Incident INC-39984" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Case INC-39984" })).toBeNull();
     expect(focusedText()).toBe("INC-39984");
     expect(shownIncidents()).toContain("INC-39984");
 
     await app.user.keyboard("{Home}");
     expect(focusedText()).toBe("INC-00000");
     await app.user.keyboard("{Enter}");
-    await app.user.click(screen.getByRole("button", { name: "Return to incidents" }));
+    await app.user.click(screen.getByRole("button", { name: "Return to cases" }));
     expect(focusedText()).toBe("INC-00000");
   });
 
   it("follows scrolling by rendering the rows that come into view, and keeps the focused row", async () => {
     const app = renderInvestigation();
     await deliver(() => app.populations[0].reply({ ok: true, answer: populationAnswer(app.populations[0].request, caseSummaries(40000)) }));
-    const scroller = screen.getByRole("table", { name: "Kept incidents" }).parentElement!;
+    const scroller = screen.getByRole("table", { name: "Kept cases" }).parentElement!;
     // Data, the button about the data and the keys, then the five views, the bar of steps, "+ Add step", the switch of the side panel, then the table.
     for (let stop = 0; stop < 12; stop += 1) await app.user.tab();
     await app.user.keyboard("{End}");
@@ -133,7 +133,7 @@ describe("the investigation of an imported preparation", () => {
     expect(app.evidence[0].request.case_id).toBe("INC-39999");
   });
 
-  it("shows every record of an incident: missing cells as missing, distinct from the text Unknown", async () => {
+  it("shows every record of a case: missing cells as missing, distinct from the text Unknown", async () => {
     const app = renderInvestigation();
     await deliver(() => app.populations[0].reply({ ok: true, answer: populationAnswer(app.populations[0].request) }));
     await app.user.click(screen.getByRole("button", { name: "A-1" }));
@@ -141,8 +141,8 @@ describe("the investigation of an imported preparation", () => {
     expect(importContract.caseEvidenceAnswer(answer)).toBe(true);
     await deliver(() => app.evidence[0].reply({ ok: true, answer }));
 
-    expect(screen.getByText("The order of this incident is not fully known", { exact: false })).toBeTruthy();
-    const history = screen.getByRole("list", { name: "Records of incident A-1 in the declared order" });
+    expect(screen.getByText("The order of this case is not fully known", { exact: false })).toBeTruthy();
+    const history = screen.getByRole("list", { name: "Records of case A-1 in the declared order" });
     const entries = within(history).getAllByRole("listitem");
     expect(entries.map((entry) => entry.querySelector(".history-activity")?.textContent)).toEqual(["Eröffnet", "no activity label", "Prüfung"]);
     expect(entries.map((entry) => entry.querySelector(".history-meta")?.textContent)).toEqual([
@@ -169,7 +169,7 @@ describe("the investigation of an imported preparation", () => {
       ),
     );
     const alert = screen.getByRole("alert");
-    expect(alert.textContent).toContain("The incidents could not be opened");
+    expect(alert.textContent).toContain("The cases could not be opened");
     expect(alert.textContent).toContain("What to do Read the source again with the same choices in the Data area.");
 
     await app.user.click(within(alert).getByRole("button", { name: "Try again" }));
@@ -183,7 +183,7 @@ describe("the investigation of an imported preparation", () => {
   });
 });
 
-describe("#52 a reading whose every incident has an unknown order", () => {
+describe("#52 a reading whose every case has an unknown order", () => {
   it("says why there are no paths, variants or durations, and leads to the Data area to change how the times are read", async () => {
     const scripted = scriptedImportClient();
     const coordinator = new ImportedInvestigationCoordinator(scripted.client, scriptedSelectionClient().client, scriptedViewClient().client);
@@ -193,18 +193,18 @@ describe("#52 a reading whose every incident has an unknown order", () => {
     const unordered = caseSummaries(3).map((summary) => ({ ...summary, sequence_evaluable: false }));
     await deliver(() => scripted.populations[0].reply({ ok: true, answer: populationAnswer(scripted.populations[0].request, unordered) }));
     const note = screen.getByRole("note");
-    expect(note.textContent).toContain("The order of no incident is known");
+    expect(note.textContent).toContain("The order of no case is known");
     expect(note.textContent).toContain("no paths, no variants and no durations");
     await userEvent.setup().click(within(note).getByRole("button", { name: "Change how the times are read, in the Data area" }));
     expect(onShowData).toHaveBeenCalledTimes(1);
   });
 
-  it("says nothing of it while some incident has a known order", async () => {
+  it("says nothing of it while some case has a known order", async () => {
     const scripted = scriptedImportClient();
     const coordinator = new ImportedInvestigationCoordinator(scripted.client, scriptedSelectionClient().client, scriptedViewClient().client);
     render(<ImportedInvestigation coordinator={coordinator} initialView="incidents" onShowData={() => undefined} />);
     act(() => coordinator.open({ workspaceId, preparationId }));
     await deliver(() => scripted.populations[0].reply({ ok: true, answer: populationAnswer(scripted.populations[0].request) }));
-    expect(screen.queryByText(/The order of no incident is known/)).toBeNull();
+    expect(screen.queryByText(/The order of no case is known/)).toBeNull();
   });
 });

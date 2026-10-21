@@ -236,7 +236,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
 
   /** A duration where the service supplied one; a muted dash where it has none. */
   function durationCell(hours: number | null) {
-    return hours === null ? <span className="muted" title="Not available for this incident">–</span> : duration(hours);
+    return hours === null ? <span className="muted" title="Not available for this case">–</span> : duration(hours);
   }
 
   /** Rendered rows with spacers of the height of the rows between them, so every row keeps its place. */
@@ -258,7 +258,7 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
       <table className={extras.length > 1 ? "window-table wide" : "window-table"} aria-labelledby={labelledBy} aria-describedby={describedBy} aria-rowcount={cases.length + 1}>
         <thead>
           <tr aria-rowindex={1}>
-            <th scope="col">Incident</th>
+            <th scope="col">Case</th>
             {head("Records", "record_count", "number")}
             <th scope="col" className="number">Mapped records</th>
             <th scope="col" className="number">Records without activity label</th>

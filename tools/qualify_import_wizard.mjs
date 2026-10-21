@@ -105,7 +105,7 @@ async function upload(path, filename) {
     if (process.env.WISE_BROWSER_DUMP_TEXT) await writeFile(process.env.WISE_BROWSER_DUMP_TEXT, (await page.locator('main').first().textContent()) ?? '');
     throw error;
   });
-  await page.getByLabel('Incident id', {exact: true}).waitFor();
+  await page.getByLabel('Case id', {exact: true}).waitFor();
 }
 
 try {
@@ -117,7 +117,7 @@ try {
   await page.getByText('How WISE reads a CSV file', {exact: true}).click();
   const guide = page.locator('details.import-guide');
   const guideText = (await guide.textContent()) ?? '';
-  check('guide_names_the_roles_and_options', ['Incident id', 'Activity', 'Time', 'Sequence number (optional)', 'Context attributes (optional)',
+  check('guide_names_the_roles_and_options', ['Case id', 'Activity', 'Time', 'Sequence number (optional)', 'Context attributes (optional)',
     'Semicolon ;', 'Windows-1252', journey.time_format, 'Each row of the file is one recorded event or change'].every(text => guideText.includes(text)), null);
   await press(guide.getByRole('button', {name: 'Load the synthetic example and read it', exact: true}));
   const example = page.getByRole('region', {name: 'What WISE understood'});
@@ -151,16 +151,16 @@ try {
   const issuePositions = (await report.locator('.issues .issue-positions').allTextContents()).sort();
   const expectedPositions = Object.values(journey.issues).map(positions => `Source position${positions.length === 1 ? '' : 's'} ${positions.join(', ')}`).sort();
   check('issues_name_their_rows', JSON.stringify(issuePositions) === JSON.stringify(expectedPositions), issuePositions);
-  const outside = (await page.getByRole('table', {name: 'Records outside every incident, as written in the file'}).textContent()) ?? '';
+  const outside = (await page.getByRole('table', {name: 'Records outside every case, as written in the file'}).textContent()) ?? '';
   check('rows_outside_keep_their_original_text', outside.includes(journey.outside_original_text), null);
   let understood = (await summary.textContent()) ?? '';
-  check('summary_reconciles_the_records', understood.includes(`${count(journey.records_read, 'record')} read from ${journey.file}: ${count(journey.with_incident_id, 'record')} in ${count(journey.incidents, 'incident')}, and ${count(journey.outside, 'record')} outside every incident.`), understood);
+  check('summary_reconciles_the_records', understood.includes(`${count(journey.records_read, 'record')} read from ${journey.file}: ${count(journey.with_incident_id, 'record')} in ${count(journey.incidents, 'incident')}, and ${count(journey.outside, 'record')} outside every case.`), understood);
   const roles = await figures(summary);
   check('summary_names_each_role', Object.entries(journey.roles).every(([label, column]) => (roles[label] ?? '').startsWith(`“${column}”`))
     && journey.context.every(column => (roles['Context attributes'] ?? '').includes(`“${column}”`)), roles);
   check('summary_explains_empty_and_literal_values', understood.includes('such as 0, False or Unknown, is kept exactly as written and is never read as missing'), null);
   check('summary_waits_for_the_confirmation', roles.Preparation === 'given once the rows with issues are confirmed', roles.Preparation);
-  check('no_one_record_note', !understood.includes('Every incident has exactly one record'), null);
+  check('no_one_record_note', !understood.includes('Every case has exactly one record'), null);
   await press(page.getByRole('checkbox', {name: 'I have read the rows with issues; keep them as described above.'}), 'Space');
   await press(page.getByRole('button', {name: 'Confirm and prepare', exact: true}));
   await page.getByRole('status').filter({hasText: 'Ready: the source is read with these choices'}).waitFor();
@@ -170,7 +170,7 @@ try {
   check('confirmation_returns_the_focus_to_the_summary', await page.evaluate(() => document.activeElement?.textContent) === 'What WISE understood', null);
 
   // On a laptop the final action stays reachable, and the long column name does not widen the page.
-  const open = page.getByRole('button', {name: 'Open incidents', exact: true});
+  const open = page.getByRole('button', {name: 'Open cases', exact: true});
   await open.scrollIntoViewIfNeeded();
   const box = await open.boundingBox();
   check('final_action_within_a_laptop_window', box && box.x >= 0 && box.x + box.width <= viewport.width && box.y >= 0 && box.y + box.height <= viewport.height, box);
@@ -182,23 +182,23 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
   check('opened_population_is_the_confirmed_reading', population?.identity?.preparation_id === first && population.population.case_count === journey.incidents
     && JSON.stringify(population.population.case_ids) === JSON.stringify(journey.case_ids), population?.population);
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
   const rowButton = id => page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${escape(id)}$`)}).first();
   await rowButton(journey.case_ids[0]).focus();
   for (let step = 0; step < journey.case_ids.indexOf(journey.missing_value_of.case); step++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  const keyboardList = page.getByRole('list', {name: `Records of incident ${journey.missing_value_of.case} in the declared order`});
+  const keyboardList = page.getByRole('list', {name: `Records of case ${journey.missing_value_of.case} in the declared order`});
   await keyboardList.waitFor();
   check('keyboard_opens_every_record', await keyboardList.getByRole('listitem').count() === journey.case_records[journey.missing_value_of.case], null);
   const gruppe = journey.columns.indexOf(journey.missing_value_of.column);
   const missingRecord = evidence[journey.missing_value_of.case]?.records.find(record => record.source_position === journey.missing_value_of.position);
   check('empty_cell_stays_missing', missingRecord && missingRecord.context.find(value => value.column_index === gruppe)?.value === null
     && missingRecord.original_cells[gruppe] === '', missingRecord?.context);
-  await press(page.getByRole('button', {name: 'Return to incidents', exact: true}));
+  await press(page.getByRole('button', {name: 'Return to cases', exact: true}));
   await page.waitForFunction(id => document.activeElement?.textContent === id, journey.missing_value_of.case);
   check('return_puts_the_focus_back_on_the_incident', true, null);
   await rowButton(journey.literal_values_of.case).click();
-  const pointerList = page.getByRole('list', {name: `Records of incident ${journey.literal_values_of.case} in the declared order`});
+  const pointerList = page.getByRole('list', {name: `Records of case ${journey.literal_values_of.case} in the declared order`});
   await pointerList.waitFor();
   check('pointer_opens_every_record', await pointerList.getByRole('listitem').count() === journey.case_records[journey.literal_values_of.case], null);
   const literalColumn = journey.columns.indexOf(journey.literal_values_of.column);
@@ -206,7 +206,7 @@ try {
   check('literal_zero_false_unknown_kept_as_written', JSON.stringify(literals) === JSON.stringify(journey.literal_values_of.values), literals);
 
   // The investigation is saved on this reading.
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
   await page.getByRole('button', {name: 'Save', exact: true}).first().click();
   const form = page.locator('#saved-form');
   await form.getByLabel('Name').fill(config.saved_name);
@@ -225,7 +225,7 @@ try {
   await page.getByRole('status').filter({hasText: 'Ready: the source is read with these choices'}).waitFor();
   const second = (await figures(page.getByRole('region', {name: 'What WISE understood'}))).Preparation;
   check('corrected_reading_is_a_new_preparation', /^preparation\.v1:sha256:[0-9a-f]{64}$/.test(second) && second !== first, [first, second]);
-  population = await (await answered('/api/investigations/open-population', () => press(page.getByRole('button', {name: 'Open incidents', exact: true})))).json();
+  population = await (await answered('/api/investigations/open-population', () => press(page.getByRole('button', {name: 'Open cases', exact: true})))).json();
   check('corrected_reading_opens', population?.identity?.preparation_id === second, population?.identity);
 
   // The saved investigation reopens on its own reading.
@@ -243,7 +243,7 @@ try {
   check('malformed_file_refused_in_words', ((await page.locator('main').first().textContent()) ?? '').includes(`${broken.ragged_records} of ${broken.records_read} nonblank source records are ragged`), null);
   await answered('/api/sources/inspect', () => page.getByLabel('Delimiter', {exact: true}).selectOption(';'));
   const readButton = page.getByRole('button', {name: 'Read the source with these choices', exact: true});
-  if (await page.getByLabel('Incident id', {exact: true}).count()) {
+  if (await page.getByLabel('Case id', {exact: true}).count()) {
     await choose();
     await press(readButton);
     await page.getByRole('alert').filter({hasText: 'The source cannot be read with these choices'})
@@ -252,7 +252,7 @@ try {
     await refusedInspection.waitFor();
     check('malformed_file_cannot_be_read_by_hand', (await readButton.count()) === 0 || (await readButton.isDisabled()), null);
   }
-  check('malformed_file_not_offered_for_opening', await page.getByRole('button', {name: 'Open incidents', exact: true}).count() === 0, null);
+  check('malformed_file_not_offered_for_opening', await page.getByRole('button', {name: 'Open cases', exact: true}).count() === 0, null);
 
   check('nothing_requested_from_elsewhere', elsewhere.length === 0, [...new Set(elsewhere)]);
   assert.deepEqual(errors, []);

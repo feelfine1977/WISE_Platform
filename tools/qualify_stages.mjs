@@ -97,14 +97,14 @@ async function reopen(name) {
   await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, expected.incidents.length);
   await settled(0);
   await views().getByRole('button', {name: 'Map', exact: true}).click();
-  await page.getByLabel('Process map of the kept incidents').waitFor();
+  await page.getByLabel('Process map of the kept cases').waitFor();
 }
 
 try {
   if (phase === 'define') {
     await openReading();
     await views().getByRole('button', {name: 'Map', exact: true}).click();
-    await page.getByLabel('Process map of the kept incidents').waitFor();
+    await page.getByLabel('Process map of the kept cases').waitFor();
     const before = {selections: selections.length, graphs: graphs.length, identity: answers.at(-1).identity, kept: answers.at(-1).kept.case_ids, counts: await counts()};
     check('map_without_stages_at_first', same(await boxes(), []), await boxes());
 
@@ -113,7 +113,7 @@ try {
     await count();
     check('values_counted_on_every_record_as_the_oracle', same(await rows(), wanted(expected.every_incident.activities)), {rows: await rows(), wanted: wanted(expected.every_incident.activities)});
     const kept = expected.every_incident.kept;
-    check('counted_records_and_unlabelled_said', (await editor().textContent()).includes(`Phase: counted on ${kept.labelled_record_count} records with an activity label of the ${kept.case_count} kept incidents; ${kept.unlabelled_record_count} record without an activity label is in no activity.`), null);
+    check('counted_records_and_unlabelled_said', (await editor().textContent()).includes(`Phase: counted on ${kept.labelled_record_count} records with an activity label of the ${kept.case_count} kept cases; ${kept.unlabelled_record_count} record without an activity label is in no activity.`), null);
     check('nothing_put_into_a_stage_by_the_proposal', Object.values(await assigned()).every(([stage]) => stage === 'No stage') && same(await boxes(), []), await assigned());
     check('phase_column_named', (await editor().textContent()).includes('Phase column: Phase.'), null);
 
@@ -137,7 +137,7 @@ try {
     // ---- counted again for the incidents a step keeps ----
     await closeEditor();
     await page.locator(`[data-id="${nodeId('Work')}"]`).first().click();
-    await page.getByRole('button', {name: 'Keep incidents that contain it', exact: true}).click();
+    await page.getByRole('button', {name: 'Keep cases that contain it', exact: true}).click();
     await settled(1);
     check('step_keeps_the_oracles_incidents', same(answers.at(-1).kept.case_ids, expected.with_work.kept), answers.at(-1).kept.case_ids);
     await openEditor();

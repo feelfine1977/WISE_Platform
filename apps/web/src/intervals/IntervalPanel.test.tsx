@@ -40,7 +40,7 @@ function panel() {
 }
 
 describe("#10 one supported interval, its distribution and its tail", () => {
-  it("measures the named interval over bins the parent fixes, with the incidents without it by reason", async () => {
+  it("measures the named interval over bins the parent fixes, with the cases without it by reason", async () => {
     const app = panel();
     await app.user.selectOptions(screen.getByLabelText("Response activity"), "Resolved");
     await app.user.click(screen.getByRole("button", { name: "Measure the interval" }));
@@ -49,10 +49,10 @@ describe("#10 one supported interval, its distribution and its tail", () => {
     expect(app.requests[0].edges_hours).toEqual(INTERVAL_EDGES_HOURS);
     expect(await screen.findByText(/^From the first “Opened” to the first “Resolved” at or after it, in hours, as elapsed time in UTC\./)).toBeTruthy();
     expect(screen.getByText(/Other pairings, such as the last start, the final response or cycles, are not offered/)).toBeTruthy();
-    const reasons = screen.getByRole("table", { name: "Incidents without this interval, by reason" });
+    const reasons = screen.getByRole("table", { name: "Cases without this interval, by reason" });
     expect(within(reasons).getAllByRole("rowheader").map((cell) => cell.textContent)).toEqual(["Order not known: a record has no usable time", "No start", "No response at or after the start"]);
     expect(screen.getByText(/they are in no bin and in no tail/)).toBeTruthy();
-    const listed = screen.getByRole("list", { name: "Intervals of these incidents, longest first" });
+    const listed = screen.getByRole("list", { name: "Intervals of these cases, longest first" });
     expect(within(listed).getAllByRole("listitem").map((item) => item.firstChild?.textContent)).toEqual([
       "I-5H: from the record at source position 4 to the record at source position 5, 5 h.",
       "I-4H: from the record at source position 2 to the record at source position 3, 4 h.",
@@ -83,17 +83,17 @@ describe("#10 one supported interval, its distribution and its tail", () => {
     await app.user.click(screen.getByRole("button", { name: "Preview this tail" }));
     const strict = { ...fromBin, operator: "gt" };
     expect(app.previewStep.mock.calls.at(-1)![0]).toEqual(strict);
-    expect(await screen.findByText(/^Preview: would keep 2 incidents of 5 incidents/)).toBeTruthy();
+    expect(await screen.findByText(/^Preview: would keep 2 cases of 5 cases/)).toBeTruthy();
     await app.user.click(screen.getByRole("button", { name: "Apply" }));
     expect(app.onStep).toHaveBeenCalledWith(strict);
-    expect(stepWording(strict as SelectionPredicate)).toBe("Keep incidents whose interval from the first “Opened” to the first “Resolved” at or after it is more than 4 hours");
-    expect(stepWording(fromBin as SelectionPredicate)).toBe("Keep incidents whose interval from the first “Opened” to the first “Resolved” at or after it is at least 4 hours");
+    expect(stepWording(strict as SelectionPredicate)).toBe("Keep cases whose interval from the first “Opened” to the first “Resolved” at or after it is more than 4 hours");
+    expect(stepWording(fromBin as SelectionPredicate)).toBe("Keep cases whose interval from the first “Opened” to the first “Resolved” at or after it is at least 4 hours");
     expect(unevaluableReason(strict as SelectionPredicate)).toContain("no response follows at or after it");
   });
 });
 
-describe("#10 back from an incident of the tail", () => {
-  it("returns the focus to the button the incident was opened with", async () => {
+describe("#10 back from a case of the tail", () => {
+  it("returns the focus to the button the case was opened with", async () => {
     const client = { distribution: vi.fn(async (request: IntervalDistributionRequest) => ({ ok: true as const, answer: answerFor(request) })) };
     const props = { workspaceId, revision: 3, identity, activities: ["Opened", "Resolved"], onStep: vi.fn(), onOpenCase: vi.fn(), client };
     const view = render(<IntervalPanel {...props} openCaseId={null} />);

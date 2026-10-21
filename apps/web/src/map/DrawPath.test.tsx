@@ -12,11 +12,11 @@ class StillObserver {
 }
 (globalThis as { ResizeObserver?: unknown }).ResizeObserver = StillObserver;
 
-const list = () => screen.getByRole("table", { name: "Paths of the kept incidents" });
+const list = () => screen.getByRole("table", { name: "Paths of the kept cases" });
 
 /** The paths the map library lists in the table view of its map: what it draws, without its dashed lines. */
 async function drawnByTheMap() {
-  const map = await screen.findByLabelText("Process map of the kept incidents");
+  const map = await screen.findByLabelText("Process map of the kept cases");
   const paths = await within(map).findByRole("table", { name: "Paths of the process map with their metrics" });
   return within(paths)
     .getAllByRole("row")
@@ -32,7 +32,7 @@ describe("#55 a path of the list drawn on the map", () => {
     const onShowMap = vi.fn();
     const view = (showing: "map" | "paths") => <MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={onStep} showing={showing} onShowMap={onShowMap} />;
     const { rerender } = render(view("map"));
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(map.querySelectorAll(".react-flow__node-activity").length).toBe(BUSY_ACTIVITIES));
     fireEvent.click(within(screen.getByRole("form", { name: "Detail" })).getByRole("button", { name: "Table view" }));
     const opening = await drawnByTheMap();

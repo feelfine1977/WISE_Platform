@@ -13,7 +13,7 @@ const request: ScoreExpectationRequest = {
   query_revision: 2,
   workspace_id: workspaceId,
   base_identity: identity,
-  named_population: { name: "every incident", identity },
+  named_population: { name: "every case", identity },
   definition_version_id: `definition-version.v1:sha256:${"1".repeat(64)}`,
 };
 
@@ -21,11 +21,11 @@ describe("the definition as one sentence", () => {
   it("names both activities, target, width and the meaning of a missing response", () => {
     expect(definitionSentence({ start: "Eröffnet", response: "Geschlossen", target: 4, width: 2, missing: "violate" })).toBe(
       "After “Eröffnet”, “Geschlossen” is recorded within 4 hours; up to 2 hours later the expectation is partly met, and after that it is not met. " +
-        "An incident with “Eröffnet” but no “Geschlossen” at or after it counts as not met. An incident without “Eröffnet” gets no value.",
+        "A case with “Eröffnet” but no “Geschlossen” at or after it counts as not met. A case without “Eröffnet” gets no value.",
     );
     expect(definitionSentence({ start: "A", response: "B", target: 1, width: 0, missing: "skip" })).toBe(
-      "After “A”, “B” is recorded within 1 hour; any later the expectation is not met. An incident with “A” but no “B” at or after it gets no value. " +
-        "An incident without “A” gets no value.",
+      "After “A”, “B” is recorded within 1 hour; any later the expectation is not met. A case with “A” but no “B” at or after it gets no value. " +
+        "A case without “A” gets no value.",
     );
   });
 
@@ -71,7 +71,7 @@ describe("the definition of the form", () => {
 describe("the states of a run", () => {
   const run = runAnswer(request, definitionOf(form, "utc_instant", 1)!).run;
 
-  it("puts each incident in the states its supplied value and measurement name", () => {
+  it("puts each case in the states its supplied value and measurement name", () => {
     const members = (state: Parameters<typeof inState>[1]) => verdicts.filter((verdict) => inState(verdict, state)).map((verdict) => verdict.case_id);
     expect(members("met")).toEqual(["A-1"]);
     expect(members("partly")).toEqual(["B-2"]);
@@ -81,14 +81,14 @@ describe("the states of a run", () => {
     expect(members("out_of_scope")).toEqual([]);
   });
 
-  it("counts them from the run's support, splitting the affected incidents into partly and not met", () => {
+  it("counts them from the run's support, splitting the affected cases into partly and not met", () => {
     expect(stateCounts(run)).toEqual({ met: 1, partly: 1, not_met: 2, out_of_scope: 0, scope_unknown: 0, no_start: 1, no_response: 1 });
     expect(checkStateCounts(run)).toBeNull();
     expect(checkStateCounts({ ...run, support: { ...run.support, affected_case_count: 2 } })).not.toBeNull();
     expect(checkStateCounts({ ...run, support: { ...run.support, zero_value_case_count: 0 } })).not.toBeNull();
   });
 
-  it("lists the incidents worst first and those without a value last, in the order supplied", () => {
+  it("lists the cases worst first and those without a value last, in the order supplied", () => {
     expect(worstFirst(verdicts).map((verdict) => verdict.case_id)).toEqual(["C-3", "D-4", "B-2", "A-1", "E-5"]);
   });
 

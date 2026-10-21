@@ -37,7 +37,7 @@ export function IncidentTimeline({ caseId, records, timeline, onShowRecord, docu
   // Elapsed times are given only where the order is known: then the line says where they come from.
   const supplied = withheld === null && (strip.kind === "axis" || timeline.gaps.some((gap) => gap.kind === "elapsed"));
   return (
-    <section className="timeline" aria-label={`Elapsed time of incident ${caseId}`}>
+    <section className="timeline" aria-label={`Elapsed time of case ${caseId}`}>
       {strip.kind === "axis" ? (
         <TimeStrip caseId={caseId} records={records} strip={strip} longest={longest} ordered={withheld === null} onShowRecord={onShowRecord}
           documentPlaces={documentPlaces} onOpenDocument={onOpenDocument} />
@@ -142,7 +142,7 @@ function TimeStrip({ caseId, records, strip, longest, ordered, onShowRecord, doc
         <svg
           className="timeline-strip"
           role="group"
-          aria-label={`Recorded times of incident ${caseId}, the earliest at the left and the latest at the right`}
+          aria-label={`Recorded times of case ${caseId}, the earliest at the left and the latest at the right`}
           aria-describedby="timeline-hint"
         >
           <line className="timeline-axis" x1="0" x2="100%" y1={AXIS} y2={AXIS} />

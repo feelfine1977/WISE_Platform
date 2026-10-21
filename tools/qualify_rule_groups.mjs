@@ -30,7 +30,7 @@ const check = (name, passed, detail) => { checks[name] = Boolean(passed); assert
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const areas = page.getByRole('navigation', {name: 'Areas'});
 const view = name => page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name, exact: true});
-const panel = () => page.getByRole('region', {name: 'Groups of the kept incidents'});
+const panel = () => page.getByRole('region', {name: 'Groups of the kept cases'});
 const incidents = 6;
 async function settled(steps) {
   await page.waitForFunction(() => !document.querySelector('.selection-status')?.textContent);
@@ -63,17 +63,17 @@ try {
   await settled(0);
   const parent = selections.at(-1);
   const asked = selections.length;
-  await view('Incidents').click();
+  await view('Cases').click();
   await page.getByRole('button', {name: 'Groups', exact: true}).click();
   await panel().waitFor();
 
   // First activity: the rule said, who is eligible, and the incident of unknown order that it cannot evaluate.
   const first = await listed();
   check('first_activity_groups', same(first, wanted('first_raw_activity')), first);
-  check('first_activity_rule_said', await panel().getByText(/^Each incident is in the group of the activity of its first record in the declared order\. An incident whose order is not fully known cannot be evaluated/).count() === 1, null);
-  check('eligibility_said', await panel().getByText(`Eligible for the rule: ${incidents - 1} of ${incidents} kept incidents, and ${incidents - 1} of ${incidents} incidents in the parent.`, {exact: true}).count() === 1,
+  check('first_activity_rule_said', await panel().getByText(/^Each case is in the group of the activity of its first record in the declared order\. A case whose order is not fully known cannot be evaluated/).count() === 1, null);
+  check('eligibility_said', await panel().getByText(`Eligible for the rule: ${incidents - 1} of ${incidents} kept cases, and ${incidents - 1} of ${incidents} cases in the parent.`, {exact: true}).count() === 1,
     await panel().locator('.groups-eligible').textContent());
-  check('unknown_order_unevaluable_said', await panel().getByText('1 incident the rule cannot evaluate (parent 1): the order of their records is not fully known', {exact: true}).count() === 1, null);
+  check('unknown_order_unevaluable_said', await panel().getByText('1 case the rule cannot evaluate (parent 1): the order of their records is not fully known', {exact: true}).count() === 1, null);
   check('no_class_no_cause_said', await panel().getByText('A group is what its stated rule puts together: it is not a business class, and a difference between groups is not a cause.', {exact: true}).count() === 1, null);
 
   // The other rules, each as the oracle groups the parent.
@@ -87,8 +87,8 @@ try {
   }
   // The shared reference: the incident in no group, the records without a value, the values too rare.
   const coverage = expected.parent.shared_reference.coverage;
-  check('reference_in_no_group_said', await panel().getByText(`1 incident in no group (parent 1): each value of Ref they have is recorded in too few incidents of the parent`, {exact: true}).count() === 1, null);
-  check('reference_missing_values_said', await panel().getByText(`${coverage.population_missing_reference_record_count} record of the kept incidents without a value of Ref (parent ${coverage.parent_missing_reference_record_count}); ${coverage.parent_suppressed_nonmissing_value_count} of the ${coverage.parent_distinct_nonmissing_value_count} values in the parent form no group.`, {exact: true}).count() === 1,
+  check('reference_in_no_group_said', await panel().getByText(`1 case in no group (parent 1): each value of Ref they have is recorded in too few cases of the parent`, {exact: true}).count() === 1, null);
+  check('reference_missing_values_said', await panel().getByText(`${coverage.population_missing_reference_record_count} record of the kept cases without a value of Ref (parent ${coverage.parent_missing_reference_record_count}); ${coverage.parent_suppressed_nonmissing_value_count} of the ${coverage.parent_distinct_nonmissing_value_count} values in the parent form no group.`, {exact: true}).count() === 1,
     await panel().locator('.groups-limit').allTextContents());
 
   // A chosen group states its rule, its support, its distributions against the whole parent and its exemplars.
@@ -97,17 +97,17 @@ try {
   await panel().locator('.groups-row', {hasText: 'Opened'}).click();
   const detail = panel().locator('.groups-detail');
   await detail.waitFor();
-  check('group_rule_said', await detail.getByText('Incidents whose first record in the declared order has the activity “Opened”.', {exact: true}).count() === 1, null);
+  check('group_rule_said', await detail.getByText('Cases whose first record in the declared order has the activity “Opened”.', {exact: true}).count() === 1, null);
   const figures = await detail.locator('.groups-figures > div').allTextContents();
   check('group_support_in_parent_and_kept', same(figures, ['In the parent4 of 5 eligible · 80%', 'Kept4 of 5 eligible · 80%']), figures);
-  check('group_distributions_against_the_whole_parent', await detail.getByRole('group', {name: "Recorded spans of the group's kept incidents against the whole parent"}).count() === 1
-    && await detail.getByRole('group', {name: "Longest gaps of the group's kept incidents against the whole parent"}).count() === 1, null);
+  check('group_distributions_against_the_whole_parent', await detail.getByRole('group', {name: "Recorded spans of the group's kept cases against the whole parent"}).count() === 1
+    && await detail.getByRole('group', {name: "Longest gaps of the group's kept cases against the whole parent"}).count() === 1, null);
   check('group_exemplars', await detail.getByRole('button', {name: 'Shortest: G-5, 0 min'}).count() === 1 && await detail.getByRole('button', {name: 'Longest: G-4, 24 h'}).count() === 1,
     await detail.locator('.groups-exemplars').textContent());
 
   // Choosing takes no step; keeping takes one with the group's incidents, undone exactly.
   check('choosing_takes_no_step', selections.length === asked && await page.getByRole('list', {name: 'Steps of the selection'}).count() === 0, selections.length);
-  await page.getByRole('button', {name: 'Keep these incidents', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep these cases', exact: true}).click();
   await settled(1);
   const keptGroup = expected.parent.first_raw_activity.groups[0][2];
   check('keep_applies_the_group_incidents_inside_the_parent', same(selections.at(-1).kept.case_ids, keptGroup) && selections.at(-1).parent.case_count === parent.parent.case_count, selections.at(-1).kept);

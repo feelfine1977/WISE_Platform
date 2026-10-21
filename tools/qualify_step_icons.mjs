@@ -61,7 +61,7 @@ async function journey(width, height) {
     const noneRows = await rows();
     check(`${size}_three_icon_buttons_named_with_tooltips`, same(none.map(slot => slot.name), NAMES) && none.every(slot => slot.icon && slot.words === '' && slot.title.startsWith(slot.name + '\n')), none);
     check(`${size}_unusable_disabled_with_reason`, none.every(slot => slot.disabled) && same(none.map(slot => slot.description), [
-      'Nothing to undo: the steps have not been changed.', 'Nothing to redo: no change of the steps has been undone.', 'No step to clear: every incident of the parent is kept.']), none);
+      'Nothing to undo: the steps have not been changed.', 'Nothing to redo: no change of the steps has been undone.', 'No step to clear: every case of the parent is kept.']), none);
     if (process.env.WISE_SCREENSHOT_DIR) await page.screenshot({path: `${process.env.WISE_SCREENSHOT_DIR}/issue92-step-icons-${size}.png`, clip: {x: 0, y: 0, width, height: 200}});
 
     // A step from "+ Add step" (#94), applied at once.

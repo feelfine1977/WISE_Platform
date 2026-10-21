@@ -26,7 +26,7 @@ it("suggests the families within the edits allowed, by a stated method, and keep
   expect(similarContract.request(asked[0]) && asked[0].maximum_edits === 1).toBe(true);
   await act(async () => replies[0]({ ok: true, answer: answerOf(asked[0]) }));
   expect(screen.getByText(/the least number of activities to insert, remove or replace/)).toBeTruthy();
-  expect(screen.getByText(/2 families of exactly equal sequences within 1 edit: 4 incidents of the 5 eligible incidents of the parent, 3 kept incidents of 5\. 1 incident of the parent is not eligible/)).toBeTruthy();
+  expect(screen.getByText(/2 families of exactly equal sequences within 1 edit: 4 cases of the 5 eligible cases of the parent, 3 kept cases of 5\. 1 case of the parent is not eligible/)).toBeTruthy();
   expect(onStep).not.toHaveBeenCalled();
   await user.click(screen.getByRole("radio", { name: "At most 2 edits" }));
   expect(asked[1].maximum_edits).toBe(2);
@@ -34,7 +34,7 @@ it("suggests the families within the edits allowed, by a stated method, and keep
   expect(screen.getAllByRole("listitem")).toHaveLength(3);
   await user.click(screen.getByRole("button", { name: "Open K-3, a complete history of this family" }));
   expect(onOpenCase).toHaveBeenCalledWith("K-3");
-  await user.click(screen.getByRole("button", { name: "Keep the 4 kept incidents suggested" }));
+  await user.click(screen.getByRole("button", { name: "Keep the 4 kept cases suggested" }));
   expect(onStep).toHaveBeenCalledWith({ kind: "case_id_in", case_ids: ["K-1", "K-2", "K-3", "K-4"], negate: false });
   expect(screen.getByText(/A family is not a business class, a cause or a prediction\./)).toBeTruthy();
 });

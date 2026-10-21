@@ -61,17 +61,17 @@ export function noAxisLine(strip: Exclude<Strip, { kind: "axis" }>, recordCount:
   const nothing = "there is no elapsed time to draw.";
   switch (strip.kind) {
     case "no_time":
-      return `No record of this incident has a readable time; ${nothing}`;
+      return `No record of this case has a readable time; ${nothing}`;
     case "not_supplied":
       return strip.reason === "omitted"
-        ? "Time diagnostics were not supplied for this incident, so no elapsed time is drawn or computed here."
-        : "The time diagnostics do not match the records of this incident, so no elapsed time is drawn.";
+        ? "Time diagnostics were not supplied for this case, so no elapsed time is drawn or computed here."
+        : "The time diagnostics do not match the records of this case, so no elapsed time is drawn.";
     case "one_time": {
       const timed = strip.mark.records.length;
       const untimed = recordCount - timed;
-      if (recordCount === 1) return `This incident has one record, at ${time}; ${nothing}`;
-      if (timed === 1) return `Only one of the ${countOf(recordCount, "record")} of this incident has a readable time, ${time}; ${nothing}`;
-      if (untimed === 0) return `${timed === 2 ? "Both records" : `All ${countOf(timed, "record")}`} of this incident carry the same recorded time, ${time}; ${nothing}`;
+      if (recordCount === 1) return `This case has one record, at ${time}; ${nothing}`;
+      if (timed === 1) return `Only one of the ${countOf(recordCount, "record")} of this case has a readable time, ${time}; ${nothing}`;
+      if (untimed === 0) return `${timed === 2 ? "Both records" : `All ${countOf(timed, "record")}`} of this case carry the same recorded time, ${time}; ${nothing}`;
       return (
         `The ${countOf(timed, "record")} with a readable time carry the same recorded time, ${time}, ` +
         `and ${countOf(untimed, "record")} ${untimed === 1 ? "has" : "have"} no readable time; ${nothing}`
@@ -114,7 +114,7 @@ export function longestGapWords(longest: LongestGap, from: ListedRecord, to: Lis
 
 /** Why no gap is given for any record of the incident. */
 export function withheldLine(): string {
-  return "No gap is given for this incident: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which.";
+  return "No gap is given for this case: the local service says that the order of its records cannot be evaluated, so it is not known which record follows which.";
 }
 
 /** The clock of the times of an incident where they are wall-clock times as recorded, and what the local service says of their durations. */

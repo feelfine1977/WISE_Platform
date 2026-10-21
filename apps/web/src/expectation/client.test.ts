@@ -12,7 +12,7 @@ function refusal(caseIds: string[]) {
 }
 
 describe("the scoring contract in the browser", () => {
-  it("holds a refusal for an unevaluable sequence to naming its incidents and a way out", () => {
+  it("holds a refusal for an unevaluable sequence to naming its cases and a way out", () => {
     expect(scoringContract.refusal(refusal(["E-5"]))).toBe(true);
     expect(scoringContract.refusal(refusal([]))).toBe(false);
     expect(scoringContract.refusal({ ...refusal(["E-5"]), recovery_actions: ["retry"] })).toBe(false);

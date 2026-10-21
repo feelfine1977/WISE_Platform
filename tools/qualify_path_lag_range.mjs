@@ -29,7 +29,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const areas = page.getByRole('navigation', {name: 'Areas'});
 const view = name => page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name, exact: true});
 const control = () => page.locator('fieldset.path-lag');
-const list = () => page.getByRole('table', {name: 'Paths of the kept incidents'});
+const list = () => page.getByRole('table', {name: 'Paths of the kept cases'});
 const pathRow = () => list().locator('tbody tr').filter({has: page.locator('th', {hasText: new RegExp(`^${expected.source}$`)})}).filter({has: page.locator('td', {hasText: new RegExp(`^${expected.target}$`)})}).first();
 async function settled(steps) {
   await page.waitForFunction(() => !document.querySelector('.selection-status')?.textContent);
@@ -47,8 +47,8 @@ function words(range) {
   const low = range.minimum_hours === null ? null : `${range.minimum_inclusive ? 'at least' : 'more than'} ${hoursText(range.minimum_hours)}`;
   const high = range.maximum_hours === null ? null : `${range.maximum_inclusive ? 'at most' : 'less than'} ${hoursText(range.maximum_hours)}`;
   const bounds = [low, high].filter(Boolean).join(' and ');
-  if (range.passages === 'every') return range.negate ? `Keep incidents that never pass ${pair}, or have a passage of it that does not take ${bounds}` : `Keep incidents that pass ${pair} with every passage taking ${bounds}`;
-  return range.negate ? `Keep incidents with no passage ${pair} taking ${bounds}` : `Keep incidents with at least one passage ${pair} taking ${bounds}`;
+  if (range.passages === 'every') return range.negate ? `Keep cases that never pass ${pair}, or have a passage of it that does not take ${bounds}` : `Keep cases that pass ${pair} with every passage taking ${bounds}`;
+  return range.negate ? `Keep cases with no passage ${pair} taking ${bounds}` : `Keep cases with at least one passage ${pair} taking ${bounds}`;
 }
 /** Takes the previewed step, checks its words, its preview and its incidents against the oracle, and undoes it. */
 async function takeAndCheck(name, range) {
@@ -58,7 +58,7 @@ async function takeAndCheck(name, range) {
   await page.waitForFunction(() => /^Preview: would keep/.test(document.querySelector('[aria-label="Lag step not yet taken"] .step-preview')?.textContent ?? ''));
   const previewed = await pending.locator('.step-preview').textContent();
   const kept = range.kept.length;
-  check(`${name}_previewed`, previewed.startsWith(`Preview: would keep ${kept} incident${kept === 1 ? '' : 's'} of ${incidents} incidents; ${range.removed.length} removed, ${range.unevaluable.length} not evaluable.`), previewed);
+  check(`${name}_previewed`, previewed.startsWith(`Preview: would keep ${kept} case${kept === 1 ? '' : 's'} of ${incidents} cases; ${range.removed.length} removed, ${range.unevaluable.length} not evaluable.`), previewed);
   await pending.getByRole('button', {name: 'Take this step', exact: true}).click();
   await settled(1);
   const taken = selections.at(-1);
@@ -96,7 +96,7 @@ try {
     await control().getByLabel('Unit').selectOption('hours');
     await set('Lower bound (hours; empty for none)', range.minimum_hours);
     await set('Upper bound (hours; empty for none)', range.maximum_hours);
-    for (const [label, wanted] of [['Lower bound included', range.minimum_inclusive], ['Upper bound included', range.maximum_inclusive], [/^Every passage of an incident in the range/, range.passages === 'every']]) {
+    for (const [label, wanted] of [['Lower bound included', range.minimum_inclusive], ['Upper bound included', range.maximum_inclusive], [/^Every passage of a case in the range/, range.passages === 'every']]) {
       const box = control().getByLabel(label);
       if (await box.isChecked() !== wanted && !(wanted === false && (label === 'Lower bound included' ? range.minimum_hours === null : label === 'Upper bound included' && range.maximum_hours === null))) await box.click();
     }

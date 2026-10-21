@@ -48,14 +48,14 @@ try {
   await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, incidents);
   await settled(0);
   const parent = selections.at(-1);
-  await view('Incidents').click();
+  await view('Cases').click();
   await openControl();
 
   // The control says that both bounds are included and which incidents have each measure.
-  check('equality_at_a_bound_said', await control().getByText(/^Both bounds are included: an incident exactly at a bound is in the range\./).count() === 1, null);
-  for (const [measure, said] of [['raw_record_count', 'Every incident has a number of records; records without an activity label count.'],
-    ['observed_span_hours', 'An incident whose order is not known has no recorded span: it is not evaluable and is counted apart, neither kept nor removed.'],
-    ['maximum_adjacent_raw_gap_hours', 'An incident whose order is not known, or with one record, has no longest gap: it is not evaluable and is counted apart, neither kept nor removed.']]) {
+  check('equality_at_a_bound_said', await control().getByText(/^Both bounds are included: a case exactly at a bound is in the range\./).count() === 1, null);
+  for (const [measure, said] of [['raw_record_count', 'Every case has a number of records; records without an activity label count.'],
+    ['observed_span_hours', 'A case whose order is not known has no recorded span: it is not evaluable and is counted apart, neither kept nor removed.'],
+    ['maximum_adjacent_raw_gap_hours', 'A case whose order is not known, or with one record, has no longest gap: it is not evaluable and is counted apart, neither kept nor removed.']]) {
     await control().getByLabel('Measure of the range').selectOption(measure);
     check(`${measure}_evaluability_said`, (await control().locator('p.muted').textContent()).includes(said), await control().locator('p.muted').textContent());
   }
@@ -77,7 +77,7 @@ try {
       && taken.predicate_results.length === 1 && taken.predicate_results[0].predicate.kind === 'measure_between', [taken.kept.case_ids, taken.unevaluable.case_ids]);
     const chip = page.getByRole('list', {name: 'Steps of the selection'}).locator('li').first();
     const chipText = await chip.textContent();
-    check(`${range.name}_not_evaluable_counted_on_the_step`, chipText.includes(`Not evaluable${unevaluable} incident${unevaluable === 1 ? '' : 's'}`), chipText);
+    check(`${range.name}_not_evaluable_counted_on_the_step`, chipText.includes(`Not evaluable${unevaluable} case${unevaluable === 1 ? '' : 's'}`), chipText);
     await page.waitForFunction(n => document.querySelectorAll('.incident-table table tbody tr button.row-open').length === n, kept);
     const listed = (await page.locator('.incident-table table tbody tr button.row-open').allTextContents()).sort();
     check(`${range.name}_table_shows_only_the_kept`, same(listed, range.kept), listed);

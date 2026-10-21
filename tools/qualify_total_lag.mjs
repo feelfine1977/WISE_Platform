@@ -19,7 +19,7 @@ page.on('pageerror', error => errors.push(error.message));
 const checks = {};
 const check = (name, passed, detail) => { checks[name] = Boolean(passed); assert.ok(passed, `${name}: ${JSON.stringify(detail ?? null)}`); };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const list = () => page.getByRole('table', {name: 'Paths of the kept incidents'});
+const list = () => page.getByRole('table', {name: 'Paths of the kept cases'});
 const rows = () => list().locator('tbody tr').evaluateAll(trs => trs.map(tr => [...tr.children].map(cell => cell.textContent)));
 const day = hours => new Intl.NumberFormat('en', {minimumFractionDigits: 1, maximumFractionDigits: 1}).format(hours / 24);
 

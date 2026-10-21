@@ -47,7 +47,7 @@ async function answer(app: { selecting: ReturnType<typeof scriptedSelectionClien
   await deliver(() => graph.reply({ ok: true, answer: graphAnswer(graph.request, figures.kept.case_ids) }));
 }
 
-const list = () => screen.getByRole("table", { name: "Paths of the kept incidents" });
+const list = () => screen.getByRole("table", { name: "Paths of the kept cases" });
 /** The rows of the list as they read: every cell of each. */
 const listed = () =>
   within(list())
@@ -62,16 +62,16 @@ describe("the list of every path in the investigation", () => {
   it("is a view of the centre beside the map, lists the supplied paths and flows, and takes the steps the map takes", async () => {
     const app = await renderInvestigation();
     // The variants of this harness are not answered: their button says so, as a view that cannot be shown does.
-    expect(within(screen.getByRole("group", { name: "View" })).getAllByRole("button").map((button) => button.textContent)).toEqual(["Map", "Incidents", "Variants · not shown", "Paths", "Matrix"]);
+    expect(within(screen.getByRole("group", { name: "View" })).getAllByRole("button").map((button) => button.textContent)).toEqual(["Map", "Cases", "Variants · not shown", "Paths", "Matrix"]);
 
     await app.user.click(viewButton("Paths"));
-    expect([pressed("Map"), pressed("Incidents"), pressed("Paths"), pressed("Matrix")]).toEqual(["false", "false", "true", "false"]);
-    expect(screen.getByRole("heading", { name: "Paths of the kept incidents" })).toBeTruthy();
-    expect(screen.queryByLabelText("Process map of the kept incidents")).toBeNull();
-    expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Incidents", "Passages", "Median lag of the passages (h)", "Total time (days, all passages)▼", "On the map"]);
+    expect([pressed("Map"), pressed("Cases"), pressed("Paths"), pressed("Matrix")]).toEqual(["false", "false", "true", "false"]);
+    expect(screen.getByRole("heading", { name: "Paths of the kept cases" })).toBeTruthy();
+    expect(screen.queryByLabelText("Process map of the kept cases")).toBeNull();
+    expect(within(list()).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual(["From", "To", "Cases", "Passages", "Median lag of the passages (h)", "Total time (days, all passages)▼", "On the map"]);
     // The heading that sorts by the incidents is not taken for the view of that name.
-    expect(within(list()).getByRole("button", { name: "Incidents: sort the list" })).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: "Incidents" })).toHaveLength(1);
+    expect(within(list()).getByRole("button", { name: "Cases: sort the list" })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Cases" })).toHaveLength(1);
     // A-1 begins with "Eröffnet", goes on to "Geschlossen" 25.5 hours later and ends there; B-2 has no known order.
     // A flow has incidents only: where a path has its passages and its lag, a flow has a dash.
     // The list opens on the time spent on each path, the largest first (#88): 25.5 hours are 1.1 days; flows have none.
@@ -85,29 +85,29 @@ describe("the list of every path in the investigation", () => {
     await app.user.click(within(list()).getByRole("button", { name: "Path from “Eröffnet” to “Geschlossen”" }));
     expect(within(list()).getByRole("button", { name: "Path from “Eröffnet” to “Geschlossen”" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("heading", { name: "Path from “Eröffnet” to “Geschlossen”" })).toBeTruthy();
-    expect(offered()).toEqual(["Keep incidents where “Geschlossen” directly follows “Eröffnet”", "Keep incidents where it never does"]);
+    expect(offered()).toEqual(["Keep cases where “Geschlossen” directly follows “Eröffnet”", "Keep cases where it never does"]);
 
     // The selection is the map's: the map shows the same path selected, and the list still does after.
     await app.user.click(viewButton("Map"));
-    expect(screen.getByRole("heading", { name: "Map of the kept incidents" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Map of the kept cases" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Path from “Eröffnet” to “Geschlossen”" })).toBeTruthy();
     await app.user.click(viewButton("Paths"));
     expect(within(list()).getByRole("button", { name: "Path from “Eröffnet” to “Geschlossen”" }).getAttribute("aria-pressed")).toBe("true");
 
     await app.user.click(within(list()).getByRole("button", { name: "Flow from Start to “Eröffnet”" }));
     expect(screen.getByRole("heading", { name: "Flow from Start to “Eröffnet”" })).toBeTruthy();
-    expect(screen.getByText("1 incident on the map begins with “Eröffnet”.")).toBeTruthy();
-    expect(offered()).toEqual(["Keep incidents that begin with it", "Keep incidents that do not begin with it"]);
+    expect(screen.getByText("1 case on the map begins with “Eröffnet”.")).toBeTruthy();
+    expect(offered()).toEqual(["Keep cases that begin with it", "Keep cases that do not begin with it"]);
     // The row itself selects too, and the same row once more selects nothing.
     fireEvent.click(within(list()).getAllByRole("row")[3]);
     expect(screen.getByRole("heading", { name: "Flow from “Geschlossen” to End" })).toBeTruthy();
-    expect(offered()).toEqual(["Keep incidents that end with it", "Keep incidents that do not end with it"]);
+    expect(offered()).toEqual(["Keep cases that end with it", "Keep cases that do not end with it"]);
     fireEvent.click(within(list()).getAllByRole("row")[3]);
-    expect(screen.getByText("Select a row of the list to keep or remove the incidents through it.")).toBeTruthy();
+    expect(screen.getByText("Select a row of the list to keep or remove the cases through it.")).toBeTruthy();
     expect(offered()).toEqual([]);
 
     await app.user.click(within(list()).getByRole("button", { name: "Path from “Eröffnet” to “Geschlossen”" }));
-    await app.user.click(screen.getByRole("button", { name: "Keep incidents where “Geschlossen” directly follows “Eröffnet”" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep cases where “Geschlossen” directly follows “Eröffnet”" }));
     expect(app.selecting.selections[1].request.predicates).toEqual([follows(opened, closed)]);
     // The list stays while the incidents are selected again, and then lists the paths of those kept.
     expect(listed()).toHaveLength(3);
@@ -121,7 +121,7 @@ describe("the list of every path in the investigation", () => {
     // What was selected on the list of other incidents is not carried over.
     expect(offered()).toEqual([]);
     await app.user.click(within(list()).getByRole("button", { name: "Flow from Start to “Eröffnet”" }));
-    await app.user.click(screen.getByRole("button", { name: "Keep incidents that begin with it" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep cases that begin with it" }));
     expect(app.selecting.selections[2].request.predicates).toEqual([follows(opened, closed), begins(opened)]);
   });
 });
@@ -138,7 +138,7 @@ describe("the list of every path beside the map", () => {
 
   /** The paths the map library lists in the table view of its map: what it draws, without its dashed lines, which are no recorded paths. */
   async function drawnByTheMap() {
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     const paths = await within(map).findByRole("table", { name: "Paths of the process map with their metrics" });
     return within(paths)
       .getAllByRole("row")
@@ -150,7 +150,7 @@ describe("the list of every path beside the map", () => {
 
   it("says of each row whether the map draws it, at the detail the map opens on and at any other", async () => {
     const { rerender } = render(view("map"));
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(map.querySelectorAll(".react-flow__node-activity").length).toBe(BUSY_ACTIVITIES));
     fireEvent.click(within(detail()).getByRole("button", { name: "Table view" }));
     const opening = await drawnByTheMap();
@@ -185,17 +185,17 @@ describe("the list of every path beside the map", () => {
     expect(heading("Total time (days, all passages)").getAttribute("aria-sort")).toBe("descending");
     expect(first()).toEqual([stepName(0), stepName(1), "105"]);
 
-    sort("Incidents");
-    expect(heading("Incidents").getAttribute("aria-sort")).toBe("descending");
+    sort("Cases");
+    expect(heading("Cases").getAttribute("aria-sort")).toBe("descending");
     expect(first()).toEqual([stepName(0), stepName(1), "105"]);
-    sort("Incidents");
-    expect(heading("Incidents").getAttribute("aria-sort")).toBe("ascending");
-    expect(heading("Incidents").textContent).toBe("Incidents▲");
+    sort("Cases");
+    expect(heading("Cases").getAttribute("aria-sort")).toBe("ascending");
+    expect(heading("Cases").textContent).toBe("Cases▲");
     // Two paths carry one incident; of equals the one supplied first.
     expect(first()).toEqual([stepName(11), stepName(10), "1"]);
 
     sort("From");
-    expect(heading("Incidents").getAttribute("aria-sort")).toBeNull();
+    expect(heading("Cases").getAttribute("aria-sort")).toBeNull();
     expect(heading("From").getAttribute("aria-sort")).toBe("ascending");
     expect(first()).toEqual([stepName(0), stepName(1), "105"]);
     sort("From");
@@ -220,8 +220,8 @@ describe("the list of every path beside the map", () => {
     const description = document.getElementById(list().getAttribute("aria-describedby")!)!;
     expect(description.className).toBe("visually-hidden");
     expect(description.textContent).toBe(
-      "Every path between two activities of the kept incidents and every flow from Start and to End, with its supplied numbers; a flow has incidents only. " +
-        "“On the map” says whether the map draws it at the detail above. Select a row to keep or remove the incidents through it. " +
+      "Every path between two activities of the kept cases and every flow from Start and to End, with its supplied numbers; a flow has cases only. " +
+        "“On the map” says whether the map draws it at the detail above. Select a row to keep or remove the cases through it. " +
         "Tab enters the list; the arrow keys, Page Up, Page Down, Home and End move.",
     );
     // Nothing else is printed above the rows.
@@ -229,10 +229,10 @@ describe("the list of every path beside the map", () => {
     expect(within(list()).getAllByRole("columnheader").map((heading) => [heading.getAttribute("aria-label"), heading.getAttribute("title")])).toEqual([
       ["From", null],
       ["To", null],
-      ["Incidents", null],
-      ["Passages", "A flow has incidents only"],
-      ["Median lag of the passages (h)", "A flow has incidents only"],
-      ["Total time (days, all passages)", "The sum of the lags of all the path's passages: the time spent on it. A flow has incidents only"],
+      ["Cases", null],
+      ["Passages", "A flow has cases only"],
+      ["Median lag of the passages (h)", "A flow has cases only"],
+      ["Total time (days, all passages)", "The sum of the lags of all the path's passages: the time spent on it. A flow has cases only"],
       ["On the map", "Drawn at the current detail"],
     ]);
   });
@@ -292,6 +292,6 @@ describe("the list of every path beside the map", () => {
     rowButtons().find((button) => button.tabIndex === 0)!.focus();
     await user.keyboard("{Enter}");
     expect(screen.getByRole("heading", { name: `Flow from Start to “${stepName(0)}”` })).toBeTruthy();
-    expect(offered()).toEqual(["Keep incidents that begin with it", "Keep incidents that do not begin with it"]);
+    expect(offered()).toEqual(["Keep cases that begin with it", "Keep cases that do not begin with it"]);
   });
 });

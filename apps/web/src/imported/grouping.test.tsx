@@ -7,7 +7,7 @@ import { scriptedViewClient } from "../test/views";
 import { ImportedInvestigation } from "./ImportedInvestigation";
 import { ImportedInvestigationCoordinator } from "./coordinator";
 
-vi.mock("../map/MapView", () => ({ MapView: () => <p>Map of the kept incidents</p> }));
+vi.mock("../map/MapView", () => ({ MapView: () => <p>Map of the kept cases</p> }));
 // The groups panel hands a chosen group to the investigation; here a button stands for choosing one.
 vi.mock("../groups/GroupsPanel", () => ({
   GroupsPanel: ({ onChoose }: { onChoose: (group: { id: string; label: string; caseIds: readonly string[] }) => void }) => (
@@ -35,10 +35,10 @@ it("makes a group a side of Compare without changing the selection, apart from K
   await user.click(screen.getByRole("button", { name: "Groups" }));
   await user.click(screen.getByRole("button", { name: "Choose the group Unknown" }));
   // Four distinct actions on the chosen group: inspect is already done by listing it; Keep, Remove and two sides of Compare.
-  for (const name of ["Keep these incidents", "Remove these incidents", "Compare as A", "Compare as B", "Show every incident"]) expect(screen.getByRole("button", { name })).toBeTruthy();
+  for (const name of ["Keep these cases", "Remove these cases", "Compare as A", "Compare as B", "Show every case"]) expect(screen.getByRole("button", { name })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Compare as A" }));
   expect(onCompareGroup).toHaveBeenCalledWith("target", "Unknown", ["A-1"]);
-  expect(screen.getByText(/“Unknown” is side A in Compare, as its 1 incident; the selection is unchanged\./)).toBeTruthy();
+  expect(screen.getByText(/“Unknown” is side A in Compare, as its 1 case; the selection is unchanged\./)).toBeTruthy();
   expect(selecting.selections.length).toBe(asked);
   expect(coordinator.getState().selection).toEqual(before);
   await user.click(screen.getByRole("button", { name: "Show the comparison" }));

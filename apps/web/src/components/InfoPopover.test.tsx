@@ -18,7 +18,7 @@ function setup(mark?: string) {
       </label>
       <InfoPopover label="About this map" mark={mark}>
         <h4>What the map counts</h4>
-        <p>Every incident on the map.</p>
+        <p>Every case on the map.</p>
       </InfoPopover>
       <button type="button">After</button>
       <p>Beside it</p>
@@ -39,14 +39,14 @@ describe("the panel behind an info button", () => {
     expect(button().hasAttribute("aria-controls")).toBe(false);
     expect(panel()).toBeNull();
     // What it says is not in the page before it is asked for.
-    expect(screen.queryByText("Every incident on the map.")).toBeNull();
+    expect(screen.queryByText("Every case on the map.")).toBeNull();
 
     await user.click(button());
     expect(button().getAttribute("aria-expanded")).toBe("true");
     expect(button().getAttribute("aria-controls")).toBe(panel()!.id);
     expect(button().nextElementSibling).toBe(panel());
     expect(within(panel()!).getByRole("heading", { name: "What the map counts" })).toBeTruthy();
-    expect(within(panel()!).getByText("Every incident on the map.")).toBeTruthy();
+    expect(within(panel()!).getByText("Every case on the map.")).toBeTruthy();
     // It can be long: it takes the keyboard after its button, so that it can be scrolled from there.
     await user.tab();
     expect(document.activeElement).toBe(panel());
@@ -82,7 +82,7 @@ describe("the panel behind an info button", () => {
   it("closes at a click outside it, not at one inside it, and gives the keyboard back to the button unless the click gave it to something else", async () => {
     const { user } = setup();
     await user.click(button());
-    await user.click(within(panel()!).getByText("Every incident on the map."));
+    await user.click(within(panel()!).getByText("Every case on the map."));
     expect(panel()).not.toBeNull();
 
     // A click on what takes no keyboard: the button has it again.

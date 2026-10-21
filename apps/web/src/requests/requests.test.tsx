@@ -22,7 +22,7 @@ describe("the definition of requests and answers", () => {
     expect(draftProblem({ ...draft, answers: ["Asked customer"] })).toBe("“Asked customer” cannot be both a request and an answer.");
     expect(definitionWords(draft, turnColumn)).toBe(
       "A request is a record of “Asked customer” recorded while Turn is “Customer”; an answer is a record of “Customer replied”. A record more than 72 hours after " +
-        "the record before it starts a new matter, and only the latest matter of an incident is read. An incident is listed when its last request in that matter has no later answer in the records of the export.",
+        "the record before it starts a new matter, and only the latest matter of a case is read. A case is listed when its last request in that matter has no later answer in the records of the export.",
     );
     const store = new RequestsStore(memory());
     // A review is given to the definition as it stands: given together with a new meaning it is not taken.
@@ -76,22 +76,22 @@ describe("requests without a later answer beside the investigation", () => {
     render(<RequestsPanel workspaceId={workspaceId} preparationId={preparationId} identity={identity} revision={2} activities={["Asked customer", "Customer replied"]}
       columns={[{ index: 4, name: "Turn" }]} onOpenCase={vi.fn()} openCaseId={null} client={client} proposalClient={proposalClient} store={store} />);
 
-    await user.click(screen.getByRole("button", { name: "Find the incidents" }));
+    await user.click(screen.getByRole("button", { name: "Find the cases" }));
     expect(asked).toHaveLength(1);
     await user.type(screen.getByLabelText(/starts a new matter after a gap/), "48");
     await act(async () => replies[0](replyKind === "success" ? { ok: true, answer: answerOf(asked[0]) } : { ok: false, problem: { kind: "unreachable" } }));
-    expect(screen.queryByRole("table", { name: "Incidents whose last request has no later answer" })).toBeNull();
+    expect(screen.queryByRole("table", { name: "Cases whose last request has no later answer" })).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
     expect(signals[0].aborted).toBe(true);
 
     // Reviewing the edited meaning permits a new request; it does not issue one by itself.
     await user.click(screen.getByRole("checkbox", { name: /I have reviewed this definition/ }));
     expect(asked).toHaveLength(1);
-    await user.click(screen.getByRole("button", { name: "Find the incidents" }));
+    await user.click(screen.getByRole("button", { name: "Find the cases" }));
     expect(asked).toHaveLength(2);
     expect(asked[1].definition.gap_hours).toBe(48);
     await act(async () => replies[1]({ ok: true, answer: answerOf(asked[1]) }));
-    expect(screen.getByRole("table", { name: "Incidents whose last request has no later answer" })).toBeTruthy();
+    expect(screen.getByRole("table", { name: "Cases whose last request has no later answer" })).toBeTruthy();
   });
 
   it.each(["success", "failure"])("discards obsolete turn-column %s without replacing the current values", async (replyKind) => {
@@ -154,7 +154,7 @@ describe("requests without a later answer beside the investigation", () => {
     const user = userEvent.setup();
     render(<RequestsPanel workspaceId={workspaceId} preparationId={preparationId} identity={identity} revision={2} activities={["Opened", "Asked customer", "Customer replied", "Note added"]}
       columns={[{ index: 4, name: "Turn" }]} onOpenCase={onOpenCase} openCaseId={null} client={client} proposalClient={proposalClient} store={store} />);
-    const find = screen.getByRole("button", { name: "Find the incidents" });
+    const find = screen.getByRole("button", { name: "Find the cases" });
     expect((find as HTMLButtonElement).disabled).toBe(true);
 
     // The proposal from the observed values of the turn column, used, then the answer chosen and the definition reviewed.
@@ -177,11 +177,11 @@ describe("requests without a later answer beside the investigation", () => {
     expect(requestsContract.answer(answer)).toBe(true);
     await act(async () => replies[0]({ ok: true, answer }));
 
-    const outcomes = screen.getByLabelText("Kept incidents by their last request").textContent;
-    expect(outcomes).toContain("Last request without a later answer2 incidents");
-    expect(outcomes).toContain("Order of records not known, not read1 incident");
-    expect(screen.getByText(/to the export cutoff accepted at import, 2026-10-20 00:00 UTC: how long the export holds no further record of the incident\. It is not a waiting time/)).toBeTruthy();
-    const rows = within(screen.getByRole("table", { name: "Incidents whose last request has no later answer" })).getAllByRole("row").slice(1).map((row) => row.textContent);
+    const outcomes = screen.getByLabelText("Kept cases by their last request").textContent;
+    expect(outcomes).toContain("Last request without a later answer2 cases");
+    expect(outcomes).toContain("Order of records not known, not read1 case");
+    expect(screen.getByText(/to the export cutoff accepted at import, 2026-10-20 00:00 UTC: how long the export holds no further record of the case\. It is not a waiting time/)).toBeTruthy();
+    const rows = within(screen.getByRole("table", { name: "Cases whose last request has no later answer" })).getAllByRole("row").slice(1).map((row) => row.textContent);
     expect(rows[0]).toContain("“Asked customer”, record 2, 2026-10-10 10:00 UTC");
     // The outcomes and the evidence name no resolution: only what the export recorded.
     expect(`${outcomes} ${rows.join(" ")}`).not.toMatch(/resolv|rate|clos/i);
@@ -191,6 +191,6 @@ describe("requests without a later answer beside the investigation", () => {
     // A changed definition asks for a new review, and the earlier answer is no longer shown as its answer.
     await user.clear(screen.getByLabelText(/starts a new matter after a gap/));
     expect(store.stateOf(reading).draft.reviewed).toBe(false);
-    expect(screen.queryByRole("table", { name: "Incidents whose last request has no later answer" })).toBeNull();
+    expect(screen.queryByRole("table", { name: "Cases whose last request has no later answer" })).toBeNull();
   });
 });

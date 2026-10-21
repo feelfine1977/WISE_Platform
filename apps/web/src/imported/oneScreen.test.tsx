@@ -11,7 +11,7 @@ import { ImportedInvestigationCoordinator } from "./coordinator";
 import { KEYS } from "./KeysGuide";
 
 vi.mock("../map/MapView", () => ({
-  MapView: () => <p>Map of the kept incidents</p>,
+  MapView: () => <p>Map of the kept cases</p>,
 }));
 // The matrix opens the history of an incident from one of its passages; here a button stands for such a passage.
 vi.mock("../matrix/TransitionMatrix", () => ({
@@ -70,57 +70,57 @@ async function openInvestigation({ answerSelection = true } = {}) {
 
 const viewButton = (name: string) => within(screen.getByRole("group", { name: "View" })).getByRole("button", { name });
 
-it("names Map, Incidents and Variants as views of the centre, and the variants there list a variant's incidents in the table", async () => {
+it("names Map, Cases and Variants as views of the centre, and the variants there list a variant's cases in the table", async () => {
   const { coordinator, user } = await openInvestigation();
   expect(within(screen.getByRole("group", { name: "View" })).getAllByRole("button").map((button) => button.textContent)).toEqual([
-    "Map", "Incidents", "Variants", "Paths", "Matrix",
+    "Map", "Cases", "Variants", "Paths", "Matrix",
   ]);
   const before = structuredClone(coordinator.getState().selection);
 
   await user.click(viewButton("Variants"));
   expect(viewButton("Variants").getAttribute("aria-pressed")).toBe("true");
-  const pane = screen.getByRole("region", { name: "Variants of the kept incidents" });
+  const pane = screen.getByRole("region", { name: "Variants of the kept cases" });
   // The side panel, opened beside it, does not show the same list twice.
   await user.click(screen.getByRole("button", { name: "Filters and views" }));
   await user.click(within(screen.getByRole("group", { name: "Side panel" })).getByRole("button", { name: "Variants" }));
   expect(screen.getByText("The variants are shown in the centre.")).toBeTruthy();
-  expect(screen.getAllByRole("button", { name: "List the 1 incident of variant 1 in the table" })).toHaveLength(1);
+  expect(screen.getAllByRole("button", { name: "List the 1 case of variant 1 in the table" })).toHaveLength(1);
 
-  await user.click(within(pane).getByRole("button", { name: "List the 1 incident of variant 1 in the table" }));
-  expect(viewButton("Incidents").getAttribute("aria-pressed")).toBe("true");
-  expect(within(screen.getByRole("table", { name: "Kept incidents of variant 1" })).getAllByRole("rowheader").map((cell) => cell.textContent)).toEqual(["A-1"]);
+  await user.click(within(pane).getByRole("button", { name: "List the 1 case of variant 1 in the table" }));
+  expect(viewButton("Cases").getAttribute("aria-pressed")).toBe("true");
+  expect(within(screen.getByRole("table", { name: "Kept cases of variant 1" })).getAllByRole("rowheader").map((cell) => cell.textContent)).toEqual(["A-1"]);
   // Listing is a view: the selection is the one it was.
   expect(coordinator.getState().selection).toEqual(before);
   // Beside the table the side panel lists the variants again, so that another can be listed.
-  expect(within(screen.getByRole("complementary")).getByRole("button", { name: "List the 1 incident of variant 1 in the table" })).toBeTruthy();
+  expect(within(screen.getByRole("complementary")).getByRole("button", { name: "List the 1 case of variant 1 in the table" })).toBeTruthy();
 });
 
-it("gives the keyboard back to what opened the history of an incident, outside the table as in it, and keeps the view and the selection", async () => {
+it("gives the keyboard back to what opened the history of a case, outside the table as in it, and keeps the view and the selection", async () => {
   const { coordinator, user, imports } = await openInvestigation();
   const before = structuredClone(coordinator.getState().selection);
   await user.click(viewButton("Matrix"));
   const passage = screen.getByRole("button", { name: "A passage of A-1" });
   await user.click(passage);
   expect(imports.evidence.at(-1)!.request.case_id).toBe("A-1");
-  expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Incident A-1" }));
+  expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Case A-1" }));
   await user.keyboard("{Escape}");
   await act(async () => await new Promise((done) => requestAnimationFrame(() => done(undefined))));
-  expect(screen.queryByRole("heading", { name: "Incident A-1" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Case A-1" })).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "A passage of A-1" }));
   expect(viewButton("Matrix").getAttribute("aria-pressed")).toBe("true");
   expect(coordinator.getState().selection).toEqual(before);
 
   // From the table, the keyboard goes back to the incident's row.
-  await user.click(viewButton("Incidents"));
+  await user.click(viewButton("Cases"));
   await user.click(screen.getByRole("button", { name: "B-2" }));
   await user.keyboard("{Escape}");
   expect(document.activeElement?.textContent).toBe("B-2");
 });
 
-it("says that the matrix is shown once the incidents are selected, rather than showing nothing", async () => {
+it("says that the matrix is shown once the cases are selected, rather than showing nothing", async () => {
   const { user } = await openInvestigation({ answerSelection: false });
   await user.click(viewButton("Matrix"));
-  expect(screen.getByText("Selecting the incidents for the matrix of their paths…")).toBeTruthy();
+  expect(screen.getByText("Selecting the cases for the matrix of their paths…")).toBeTruthy();
 });
 
 it("has a guide of the keys of every action, of this build, behind one button of the data row", async () => {
@@ -130,7 +130,7 @@ it("has a guide of the keys of every action, of this build, behind one button of
   const rows = Array.from(guide.querySelectorAll(".keys-guide > div"), (row) => [row.querySelector("dt")?.textContent, row.querySelector("dd")?.textContent]);
   expect(rows).toEqual(KEYS.map(([part, keys]) => [part, keys]));
   expect(rows.map(([part]) => part)).toEqual([
-    "Views", "Steps", "Trail of steps", "+ Add step", "Map", "Charts of starts and numbers", "Table of incidents", "History of an incident", "Panels like this one",
+    "Views", "Steps", "Trail of steps", "+ Add step", "Map", "Charts of starts and numbers", "Table of cases", "History of a case", "Panels like this one",
   ]);
   expect(guide.querySelector(".keys-version")?.textContent).toBe(
     `This guide is part of this build: web ${webPackage.version}, local service 0.1.0. It is shown from this computer, without a network.`,
@@ -139,7 +139,7 @@ it("has a guide of the keys of every action, of this build, behind one button of
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "Keys" }));
 });
 
-it("says in place of the map that the selection keeps no incident, with the way back (#71)", async () => {
+it("says in place of the map that the selection keeps no case, with the way back (#71)", async () => {
   const imports = scriptedImportClient();
   const selecting = scriptedSelectionClient();
   const views = scriptedViewClient();
@@ -150,6 +150,6 @@ it("says in place of the map that the selection keeps no incident, with the way 
   const none = { ...everyIncident, population: "0", kept: { ...everyIncident.kept, case_ids: [], case_count: 0, record_count: 0 }, removed: everyIncident.kept };
   await deliver(() => selecting.selections[0].reply({ ok: true, answer: selectionAnswer(selecting.selections[0].request, none) }));
   await deliver(() => selecting.graphs[0]?.reply({ ok: true, answer: graphAnswer(selecting.graphs[0].request, []) }));
-  expect(document.querySelector(".map-empty")?.textContent).toMatch(/^The selection keeps no incident of the 2 incidents of its parent, so the map has nothing to draw\.\s+Remove a step or undo it to keep incidents again\.$/);
-  expect(screen.queryByText("Map of the kept incidents", { selector: "p" })).toBeNull();
+  expect(document.querySelector(".map-empty")?.textContent).toMatch(/^The selection keeps no case of the 2 cases of its parent, so the map has nothing to draw\.\s+Remove a step or undo it to keep cases again\.$/);
+  expect(screen.queryByText("Map of the kept cases", { selector: "p" })).toBeNull();
 });

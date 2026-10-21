@@ -49,8 +49,8 @@ export function scoringSubject(state: ImportedInvestigationState): ScoringSubjec
       baseIdentity: answer.identity,
       population:
         whole
-          ? { name: `every incident of ${answer.source.filename}`, identity: answer.identity }
-          : { name: (steps ? `the incidents of ${answer.source.filename} kept by ${countOf(steps, "step")}` : `the incidents of ${answer.source.filename} in the frozen parent`), identity: shown.answer.identity },
+          ? { name: `every case of ${answer.source.filename}`, identity: answer.identity }
+          : { name: (steps ? `the cases of ${answer.source.filename} kept by ${countOf(steps, "step")}` : `the cases of ${answer.source.filename} in the frozen parent`), identity: shown.answer.identity },
     },
     caseCount: shown.answer.kept.case_count,
     activities: shown.graph.nodes.map((node) => node.label).sort((one, other) => one.localeCompare(other)),
@@ -124,7 +124,7 @@ export function ExpectationView({ investigation, coordinator, onShowData, onShow
       </div>
       {subject === null ? (
         <div className="expectation-note">
-          <InvestigationPrerequisite state={investigated} purpose="An expectation is scored for the incidents an investigation shows." needsSelection
+          <InvestigationPrerequisite state={investigated} purpose="An expectation is scored for the cases an investigation shows." needsSelection
             onShowData={onShowData} onShowInvestigation={onShowInvestigation} onRetryPopulation={() => investigation.retryPopulation()}
             onRetrySelection={() => investigation.retrySelection()} />
         </div>

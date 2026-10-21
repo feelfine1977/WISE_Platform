@@ -274,11 +274,11 @@ export class SavingCoordinator {
     const { population, selection, saved } = investigation;
     if (this.prepared && !this.prepared.readyForSave()) return { ready: false, reason: "Review, run and retain the declared assessment changes, or discard them before saving." };
     if (this.pipeline && !this.pipeline.readyForSave()) return { ready: false, reason: "Review the changed BPIC19 definitions or finish the pending analysis before saving." };
-    if (population.phase !== "ready") return { ready: false, reason: "The incidents are not open yet." };
-    if (investigation.replacement?.phase === "running") return { ready: false, reason: "Saving is possible once the other incidents asked for are open." };
+    if (population.phase !== "ready") return { ready: false, reason: "The cases are not open yet." };
+    if (investigation.replacement?.phase === "running") return { ready: false, reason: "Saving is possible once the other cases asked for are open." };
     const shown = shownSelection(selection);
     if (selection.phase !== "ready" || shown === null) {
-      return { ready: false, reason: "Saving is possible once the incidents of the current steps are selected." };
+      return { ready: false, reason: "Saving is possible once the cases of the current steps are selected." };
     }
     const savable = savablePins(investigation);
     return {

@@ -15,30 +15,30 @@ export function ImportGuide({ onLoadExample }: { onLoadExample: (example: Worksp
     <details className="report-more import-guide">
       <summary>How WISE reads a CSV file</summary>
       <p>
-        Each row of the file is one recorded event or change of an incident: an email received, a status set, a field changed. A file with one row per
-        incident (a list of incidents rather than their histories) can be read, but its incidents have one record each; the report says so before they are
+        Each row of the file is one recorded event or change of a case: an email received, a status set, a field changed. A file with one row per
+        case (a list of cases rather than their histories) can be read, but its cases have one record each; the report says so before they are
         opened.
       </p>
       <dl className="report-figures">
         <div>
-          <dt>Incident id</dt>
-          <dd>The column naming the incident each row belongs to. A row without one stays outside every incident, listed with its original text.</dd>
+          <dt>Case id</dt>
+          <dd>The column naming the case each row belongs to. A row without one stays outside every case, listed with its original text.</dd>
         </div>
         <div>
           <dt>Activity</dt>
-          <dd>The column naming what happened, or the state or change recorded. A row without one stays in its incident as a record without activity label.</dd>
+          <dd>The column naming what happened, or the state or change recorded. A row without one stays in its case as a record without activity label.</dd>
         </div>
         <div>
           <dt>Time</dt>
-          <dd>The column with when it happened. A row whose time cannot be read stays in its incident; that incident's order is then not fully known.</dd>
+          <dd>The column with when it happened. A row whose time cannot be read stays in its case; that case's order is then not fully known.</dd>
         </div>
         <div>
           <dt>Sequence number (optional)</dt>
-          <dd>A column of whole numbers that orders the records of an incident with equal times; without it, equal times keep the order of the file.</dd>
+          <dd>A column of whole numbers that orders the records of a case with equal times; without it, equal times keep the order of the file.</dd>
         </div>
         <div>
           <dt>Context attributes (optional)</dt>
-          <dd>Columns describing the incident or the record, such as a service or a group; every other column also stays in each record as written.</dd>
+          <dd>Columns describing the case or the record, such as a service or a group; every other column also stays in each record as written.</dd>
         </div>
       </dl>
       <h4 className="label-text-strong">Options of this installation</h4>
@@ -50,7 +50,7 @@ export function ImportGuide({ onLoadExample }: { onLoadExample: (example: Worksp
         <li>Zones: as recorded, with no zone applied; the offset written in each value; or one fixed offset for every time.</li>
         <li>
           Rows that do not fit: tolerant (blank lines skipped and counted; records with another number of cells than the header kept as written outside
-          every incident, up to 5 % of the records) or strict (a blank line or such a record stops the reading).
+          every case, up to 5 % of the records) or strict (a blank line or such a record stops the reading).
         </li>
         <li>{EMPTY_CELLS}</li>
       </ul>

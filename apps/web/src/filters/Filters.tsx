@@ -29,7 +29,7 @@ interface FiltersProps {
 
 /** The kinds of step "+ Add step" offers, with the words of each. */
 export const STEP_KINDS = {
-  numbers: "Incident numbers",
+  numbers: "Case numbers",
   time: "Recorded time",
   range: "A range of records, span or longest gap",
   period: "First record in a period",
@@ -47,17 +47,17 @@ const RANGE_MEASURES: Record<RangeMeasure, { name: string; unit: string; has: st
   raw_record_count: {
     name: "Number of records",
     unit: "records",
-    has: "Every incident has a number of records; records without an activity label count.",
+    has: "Every case has a number of records; records without an activity label count.",
   },
   observed_span_hours: {
     name: "Recorded span, first to last recorded time",
     unit: "hours",
-    has: "An incident whose order is not known has no recorded span: it is not evaluable and is counted apart, neither kept nor removed.",
+    has: "A case whose order is not known has no recorded span: it is not evaluable and is counted apart, neither kept nor removed.",
   },
   maximum_adjacent_raw_gap_hours: {
     name: "Longest gap between two records",
     unit: "hours",
-    has: "An incident whose order is not known, or with one record, has no longest gap: it is not evaluable and is counted apart, neither kept nor removed.",
+    has: "A case whose order is not known, or with one record, has no longest gap: it is not evaluable and is counted apart, neither kept nor removed.",
   },
 };
 
@@ -119,8 +119,8 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
 
   return (
     <section className="incident-filters" aria-labelledby={title}>
-      <h3 id={title} className={only ? "visually-hidden" : "view-title"}>{only ? STEP_KINDS[only] : "Filter whole incidents"}</h3>
-      {!only && <p className="muted">Each filter adds a step inside the same parent. Every record of a kept incident remains available. Undo removes the last step.</p>}
+      <h3 id={title} className={only ? "visually-hidden" : "view-title"}>{only ? STEP_KINDS[only] : "Filter whole cases"}</h3>
+      {!only && <p className="muted">Each filter adds a step inside the same parent. Every record of a kept case remains available. Undo removes the last step.</p>}
       {error && <p className="inline-error" role="alert">{error}</p>}
       {pending && previewStep && (
         <div className="filter-preview" role="group" aria-label="Filter not yet taken">
@@ -137,17 +137,17 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
         <form onSubmit={(event) => {
           event.preventDefault();
           const entered = ids.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
-          if (!entered.length) return setError("Enter at least one incident number, one per line.");
+          if (!entered.length) return setError("Enter at least one case number, one per line.");
           if (new Set(entered).size !== entered.length) return setError("A number appears more than once. Remove the duplicate; nothing was applied.");
           const unknown = entered.filter((value) => !known.has(value));
           const outside = entered.filter((value) => known.has(value) && !parent.has(value));
-          if (unknown.length) return setError(`Unknown incident numbers: ${unknown.join(", ")}. Correct them; nothing was applied.`);
+          if (unknown.length) return setError(`Unknown case numbers: ${unknown.join(", ")}. Correct them; nothing was applied.`);
           if (outside.length) return setError(`Outside this parent: ${outside.join(", ")}. Nothing was applied.`);
           submit({ kind: "case_id_in", case_ids: [entered[0], ...entered.slice(1)], negate: false });
         }}>
-          <label>Exact incident numbers<textarea value={ids} onChange={(event) => setIds(event.target.value)} rows={3} spellCheck={false} /></label>
+          <label>Exact case numbers<textarea value={ids} onChange={(event) => setIds(event.target.value)} rows={3} spellCheck={false} /></label>
           <p className="muted">One number per line. The filter keeps any of these numbers, together with every existing step.</p>
-          <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep these incidents</button>
+          <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep these cases</button>
         </form>
       </Section>
       <Section kind="time" only={only}>
@@ -159,7 +159,7 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
         }}>
           <label>Measure<select value={measure} onChange={(event) => setMeasure(event.target.value as typeof measure)}><option value="observed_span_at_least">First to last recorded time</option><option value="max_raw_gap_at_least">Longest gap between records</option></select></label>
           <label>At least this many hours<input type="number" min="0" step="any" value={hours} onChange={(event) => setHours(event.target.value)} /></label>
-          <p className="muted">Equality is included. Unknown chronology is not evaluable; an incident with one record has no adjacent gap. These are recorded times, not proof of working time or resolution.</p>
+          <p className="muted">Equality is included. Unknown chronology is not evaluable; a case with one record has no adjacent gap. These are recorded times, not proof of working time or resolution.</p>
           <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep by recorded time</button>
         </form>
       </Section>
@@ -173,7 +173,7 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
           </select></label>
           <label>From, included ({RANGE_MEASURES[ranged].unit})<input type="number" min="0" step={ranged === "raw_record_count" ? "1" : "any"} value={low} onChange={(event) => setLow(event.target.value)} /></label>
           <label>To, included ({RANGE_MEASURES[ranged].unit}; empty for no upper bound)<input type="number" min="0" step={ranged === "raw_record_count" ? "1" : "any"} value={high} onChange={(event) => setHigh(event.target.value)} /></label>
-          <p className="muted">Both bounds are included: an incident exactly at a bound is in the range. {RANGE_MEASURES[ranged].has} The range is one step; Undo takes it back.</p>
+          <p className="muted">Both bounds are included: a case exactly at a bound is in the range. {RANGE_MEASURES[ranged].has} The range is one step; Undo takes it back.</p>
           <button type="submit" disabled={waitingFor !== undefined} aria-describedby={waitingFor}>Keep this range</button>
           <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor} onClick={() => takeRange(true)}>Remove this range</button>
         </form>
@@ -217,7 +217,7 @@ export function Filters({ population, parentIds, opening, onStep, previewStep, r
             {population.preparation.mapping.context_columns.map((index) => <option key={index} value={index}>{columns.find((item) => item.column_index === index)?.column_name || `Column ${index}`}</option>)}
           </select></label>
           <label>Where to look<select value={anchor} onChange={(event) => setAnchor(event.target.value as typeof anchor)}><option value="any">Any raw record</option><option value="opening">First raw record</option></select></label>
-          {anchor === "any" && <p className="muted">With any raw record, an incident counts for every value any of its records holds, so incidents kept by different values can overlap.</p>}
+          {anchor === "any" && <p className="muted">With any raw record, a case counts for every value any of its records holds, so cases kept by different values can overlap.</p>}
           {selectedColumn && <fieldset><legend>Suggestions from first records</legend>{selectedColumn.categories.map((category) => {
             const checked = category.value === null ? missing : suggested.includes(category.value);
             return <label className="filter-value" key={category.value === null ? "missing" : `value:${category.value}`}><input type="checkbox" checked={checked} onChange={(event) => {

@@ -26,11 +26,11 @@ try {
   for (const [index, pilot] of pilots.entries()) {
     await areas.getByRole('button', {name: 'Data', exact: true}).click();
     await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${pilot.preparation_id}$`)}).click();
-    await page.waitForFunction(n => (document.querySelector('.population')?.textContent ?? '').includes(`${n} of ${n} incidents`), pilot.incidents);
-    await view('Incidents').click();
-    const row = page.getByRole('table', {name: 'Kept incidents'}).getByRole('button', {name: pilot.case_id, exact: true});
+    await page.waitForFunction(n => (document.querySelector('.population')?.textContent ?? '').includes(`${n} of ${n} cases`), pilot.incidents);
+    await view('Cases').click();
+    const row = page.getByRole('table', {name: 'Kept cases'}).getByRole('button', {name: pilot.case_id, exact: true});
     const [evidence] = await Promise.all([page.waitForResponse(r => new URL(r.url()).pathname === '/api/investigations/case-evidence'), row.click()]);
-    await page.getByRole('heading', {name: `Incident ${pilot.case_id}`}).waitFor();
+    await page.getByRole('heading', {name: `Case ${pilot.case_id}`}).waitFor();
     const shown = await page.locator('ol.history > li').count();
     check(`pilot_${index + 1}_complete_history_shown`, shown === pilot.records && (await evidence.json()).records.length === pilot.records, {shown, expected: pilot.records});
     await page.keyboard.press('Escape');

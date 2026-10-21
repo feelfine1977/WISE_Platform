@@ -227,9 +227,9 @@ export function readingConsequences(draft: Draft, answer: CsvInspectionAnswer): 
 
   const incident = suggestionOf(draft.caseColumn);
   if (incident !== undefined && incident.nonempty_count === 0) {
-    consequences.push("The incident id column has no filled cell: every row stays outside every incident, and there is no incident.");
+    consequences.push("The case id column has no filled cell: every row stays outside every case, and there is no case.");
   } else if (incident !== undefined && someEmpty(incident)) {
-    consequences.push("The incident id column has empty cells: rows without an incident id stay outside every incident.");
+    consequences.push("The case id column has empty cells: rows without a case id stay outside every case.");
   }
 
   const activity = suggestionOf(draft.activityColumn);
@@ -245,19 +245,19 @@ export function readingConsequences(draft: Draft, answer: CsvInspectionAnswer): 
   if (time !== undefined) {
     const parsed = time.timestamp_matches.find((match) => match.format === draft.timeFormat)?.parsed_count;
     if (time.nonempty_count === 0) {
-      consequences.push("The time column has no filled cell: no record has a usable time, so no incident's order can be evaluated.");
+      consequences.push("The time column has no filled cell: no record has a usable time, so no case's order can be evaluated.");
     } else if (draft.timeFormat !== null && parsed === 0) {
       consequences.push(
-        "The chosen time format reads no filled cell of the time column: no record has a usable time, so no incident's order can be evaluated.",
+        "The chosen time format reads no filled cell of the time column: no record has a usable time, so no case's order can be evaluated.",
       );
     } else if (draft.timeFormat !== null && parsed !== undefined && parsed < time.nonempty_count) {
       consequences.push(
-        "The chosen time format does not read every filled cell of the time column: a record whose time it does not read stays in its incident without a usable time, and that incident's order cannot be evaluated.",
+        "The chosen time format does not read every filled cell of the time column: a record whose time it does not read stays in its case without a usable time, and that case's order cannot be evaluated.",
       );
     }
     if (time.nonempty_count > 0 && someEmpty(time)) {
       consequences.push(
-        "The time column has empty cells: a record without a time stays in its incident without a usable time, and that incident's order cannot be evaluated.",
+        "The time column has empty cells: a record without a time stays in its case without a usable time, and that case's order cannot be evaluated.",
       );
     }
   }
@@ -377,11 +377,11 @@ export function missingChoices(draft: Draft): string[] {
   const missing: string[] = [];
   if (draft.encoding === null) missing.push("the encoding");
   if (draft.delimiter === null) missing.push("the delimiter");
-  if (draft.caseColumn === null) missing.push("the incident column");
+  if (draft.caseColumn === null) missing.push("the case column");
   if (draft.activityColumn === null) missing.push("the activity column");
   if (draft.timestampColumn === null) missing.push("the time column");
   const roles = [draft.caseColumn, draft.activityColumn, draft.timestampColumn, draft.sequenceColumn].filter((column) => column !== null);
-  if (new Set(roles).size !== roles.length) missing.push("a different column for each of incident, activity, time and sequence");
+  if (new Set(roles).size !== roles.length) missing.push("a different column for each of case, activity, time and sequence");
   if (draft.timeFormat === null) missing.push("the time format");
   if (draft.zone === null) missing.push("the zone of the times");
   if (cutoffText(draft.cutoff) === null) missing.push("when the export was taken");

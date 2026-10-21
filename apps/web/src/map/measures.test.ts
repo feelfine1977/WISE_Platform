@@ -25,7 +25,7 @@ async function written(measure: Measure) {
 }
 
 describe("the measures of the map", () => {
-  it("opens on the counts: the incidents on every path and on every activity", async () => {
+  it("opens on the counts: the cases on every path and on every activity", async () => {
     expect(OPENING_MEASURE).toBe("frequency");
     // Only the widths of the paths are laid over the library's style of the counts.
     expect(styleOver(OPENING_MEASURE)).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
@@ -40,7 +40,7 @@ describe("the measures of the map", () => {
     expect(line(checked)).toEqual(["1", "· 50 %"]);
   });
 
-  it.each<Measure>(["frequency", "performance"])("draws a path between 1 and 6 wide by its incidents, on the library's scale (%s)", async (measure) => {
+  it.each<Measure>(["frequency", "performance"])("draws a path between 1 and 6 wide by its cases, on the library's scale (%s)", async (measure) => {
     const graph = toFlowGraph(suppliedGraph(["A-1", "B-2"]));
     // Three paths of 1, 25 and 100 incidents between the same activities, as the map library scales them: by the square root, from nothing to the strongest.
     const several = { ...graph, edges: [1, 25, 100].map((cases) => ({ ...graph.edges.find((edge) => edge.id === pathId)!, id: `path:${cases}`, metrics: { count: cases, cases } })) };
@@ -49,7 +49,7 @@ describe("the measures of the map", () => {
     expect(scene.edgeMarks.map((edge) => edge.width)).toEqual([1, 3, 6]);
   });
 
-  it("writes the supplied median lag before the incidents of a path in the performance measure", async () => {
+  it("writes the supplied median lag before the cases of a path in the performance measure", async () => {
     const { scene, path } = await written("performance");
     expect(scene.style.edgeColor?.metric).toBe("medianLagHours");
     expect(scene.style.pathLabel).toEqual({ metric: "medianLagHours" });

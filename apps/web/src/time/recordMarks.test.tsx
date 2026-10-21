@@ -13,8 +13,8 @@ function client(supplied: (caseId: string) => SuppliedMarks) {
   };
 }
 
-describe("the records of many incidents on one axis (#67)", () => {
-  it("asks for the incidents in view together, in bounded batches, each once", async () => {
+describe("the records of many cases on one axis (#67)", () => {
+  it("asks for the cases in view together, in bounded batches, each once", async () => {
     const marks = client((case_id) => ({ case_id, record_count: 1, order_known: true, span_microseconds: 0, marks: [{ offset_microseconds: 0, record_count: 1 }], untimed_record_count: 0 }));
     const loader = new MarksLoader(marks, { workspaceId: "w", revision: 3, identity });
     const ids = Array.from({ length: 150 }, (_, n) => `I-${n}`);
@@ -34,7 +34,7 @@ describe("the records of many incidents on one axis (#67)", () => {
     expect(drawn.querySelector(".record-marks-untimed")?.textContent).toBe("+1 without a time");
   });
 
-  it("says when no record of an incident has a usable time", async () => {
+  it("says when no record of a case has a usable time", async () => {
     const marks = client((case_id) => ({ case_id, record_count: 2, order_known: false, span_microseconds: null, marks: [], untimed_record_count: 2 }));
     render(<RecordMarks caseId="T-5" loader={new MarksLoader(marks, { workspaceId: "w", revision: 3, identity })} axisHours={20} />);
     expect((await screen.findByRole("img")).getAttribute("aria-label")).toBe("2 records, none with a usable time; 2 without a usable time");

@@ -21,19 +21,19 @@ describe("a range of records, span or longest gap", () => {
   it("adds one step that keeps the range of records, both bounds included, and says so in the control", async () => {
     const { onStep, user } = start();
     await user.click(screen.getByText("A range of records, span or longest gap"));
-    expect(screen.getByText(/^Both bounds are included: an incident exactly at a bound is in the range\. Every incident has a number of records; records without an activity label count\./)).toBeTruthy();
+    expect(screen.getByText(/^Both bounds are included: a case exactly at a bound is in the range\. Every case has a number of records; records without an activity label count\./)).toBeTruthy();
     await user.type(screen.getByLabelText("From, included (records)"), "2");
     await user.type(screen.getByLabelText("To, included (records; empty for no upper bound)"), "4");
     await user.click(screen.getByRole("button", { name: "Keep this range" }));
     expect(onStep).toHaveBeenCalledExactlyOnceWith({ kind: "measure_between", measure: "raw_record_count", minimum: 2, maximum: 4, negate: false });
   });
 
-  it("removes a range of hours of span, and says that an incident without the measure is counted apart", async () => {
+  it("removes a range of hours of span, and says that a case without the measure is counted apart", async () => {
     const { onStep, user } = start();
     await user.click(screen.getByText("A range of records, span or longest gap"));
     const control = screen.getByText("A range of records, span or longest gap").closest("details")!;
     await user.selectOptions(within(control).getByLabelText("Measure of the range"), "observed_span_hours");
-    expect(screen.getByText(/An incident whose order is not known has no recorded span: it is not evaluable and is counted apart, neither kept nor removed\./)).toBeTruthy();
+    expect(screen.getByText(/A case whose order is not known has no recorded span: it is not evaluable and is counted apart, neither kept nor removed\./)).toBeTruthy();
     await user.type(screen.getByLabelText("From, included (hours)"), "1.5");
     await user.click(screen.getByRole("button", { name: "Remove this range" }));
     expect(onStep).toHaveBeenCalledExactlyOnceWith({ kind: "measure_between", measure: "observed_span_hours", minimum: 1.5, maximum: null, negate: true });
@@ -48,7 +48,7 @@ describe("a range of records, span or longest gap", () => {
     expect(rangeStep("maximum_adjacent_raw_gap_hours", "3", "3", false)).toEqual({ kind: "measure_between", measure: "maximum_adjacent_raw_gap_hours", minimum: 3, maximum: 3, negate: false });
   });
 
-  it("words every range and its negation, and why an incident is not evaluable for it", () => {
+  it("words every range and its negation, and why a case is not evaluable for it", () => {
     const step = (measure: "raw_record_count" | "observed_span_hours" | "maximum_adjacent_raw_gap_hours", minimum: number, maximum: number | null, negate = false) =>
       ({ kind: "measure_between", measure, minimum, maximum, negate }) as SelectionPredicate;
     expect([
@@ -60,13 +60,13 @@ describe("a range of records, span or longest gap", () => {
       stepWording(step("observed_span_hours", 3, null, true)),
       stepWording(step("observed_span_hours", 2, 10)),
     ]).toEqual([
-      "Keep incidents with 2 to 4 records, both included",
-      "Keep incidents with exactly 1 record",
-      "Keep incidents with fewer than 2 or more than 4 records",
-      "Keep incidents with recorded span at least 2 hours",
-      "Keep incidents with longest adjacent recorded gap less than 0 or more than 5 hours",
-      "Keep incidents with recorded span less than 3 hours",
-      "Keep incidents with recorded span from 2 to 10 hours, both included",
+      "Keep cases with 2 to 4 records, both included",
+      "Keep cases with exactly 1 record",
+      "Keep cases with fewer than 2 or more than 4 records",
+      "Keep cases with recorded span at least 2 hours",
+      "Keep cases with longest adjacent recorded gap less than 0 or more than 5 hours",
+      "Keep cases with recorded span less than 3 hours",
+      "Keep cases with recorded span from 2 to 10 hours, both included",
     ]);
     expect(unevaluableReason(step("raw_record_count", 1, 2))).toBeNull();
     expect(unevaluableReason(step("observed_span_hours", 1, 2))).toBe("the order of their records is not known, so they have no recorded span");

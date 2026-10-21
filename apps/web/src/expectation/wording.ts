@@ -42,9 +42,9 @@ export function definitionSentence({ start, response, target, width, missing }: 
       : "; any later the expectation is not met";
   const without =
     missing === "violate"
-      ? `. An incident with “${start}” but no “${response}” at or after it counts as not met.`
-      : `. An incident with “${start}” but no “${response}” at or after it gets no value.`;
-  return `${within}${partly}${without} An incident without “${start}” gets no value.`;
+      ? `. A case with “${start}” but no “${response}” at or after it counts as not met.`
+      : `. A case with “${start}” but no “${response}” at or after it gets no value.`;
+  return `${within}${partly}${without} A case without “${start}” gets no value.`;
 }
 
 /** Whether an incident of a run is in a state; a response missing under "counted as not met" is in two. */
@@ -90,12 +90,12 @@ export function checkStateCounts(run: ScoreRun): string | null {
   const counts = stateCounts(run);
   const listed = (state: OutcomeState) => run.cases.filter((verdict) => inState(verdict, state)).length;
   if (counts.partly + counts.not_met !== run.support.affected_case_count) {
-    return "The partly met and not met incidents do not add up to the affected incidents of the run.";
+    return "The partly met and not met cases do not add up to the affected cases of the run.";
   }
   for (const state of ["met", "out_of_scope", "scope_unknown", "no_start", "no_response"] as const) {
-    if (listed(state) !== counts[state]) return "The incidents listed in the run do not match its counts.";
+    if (listed(state) !== counts[state]) return "The cases listed in the run do not match its counts.";
   }
-  if (run.cases.length !== run.support.scored_case_count) return "The run lists another number of incidents than it scored.";
+  if (run.cases.length !== run.support.scored_case_count) return "The run lists another number of cases than it scored.";
   return null;
 }
 
@@ -176,17 +176,17 @@ const remedies: Partial<Record<string, string>> = {
   unsupported_definition: "Change the definition and check again.",
   clock_mismatch: "Use the clock of the preparation and check again.",
   definition_not_reviewed: "Mark the definition as reviewed, check it again and then score it.",
-  unevaluable_sequence: "Inspect the data quality of these incidents, or choose a population without them, for example by selecting the incidents whose order can be evaluated.",
-  empty_population: "Choose a population with incidents.",
+  unevaluable_sequence: "Inspect the data quality of these cases, or choose a population without them, for example by selecting the cases whose order can be evaluated.",
+  empty_population: "Choose a population with cases.",
   method_unavailable: "Install the method library as described, start the application again and try again.",
-  population_unavailable: "Select the incidents again in the investigation, then check and score again.",
+  population_unavailable: "Select the cases again in the investigation, then check and score again.",
   definition_unavailable: "Check the definition again, then score it.",
   run_unavailable: "Score the expectation again.",
   workspace_unavailable: "Open the workspace again in the Data area.",
   source_unavailable: "Add the source file to the workspace again.",
   memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   preparation_unavailable: "Confirm the interpretation of the source again in the Data area.",
-  identity_mismatch: "Open the incidents of the preparation again.",
+  identity_mismatch: "Open the cases of the preparation again.",
   computation_failed: "Try again; if it fails again, the application needs to be repaired.",
 };
 
@@ -194,7 +194,7 @@ export function describeScoringProblem(problem: ScoringProblem): ScoringProblemT
   switch (problem.kind) {
     case "refusal": {
       const { refusal } = problem;
-      const named = refusal.case_count > 0 ? ` (${countOf(refusal.case_count, "incident")}: ${refusal.case_ids.slice(0, 10).join(", ")}${refusal.case_count > 10 ? ", …" : ""})` : "";
+      const named = refusal.case_count > 0 ? ` (${countOf(refusal.case_count, "case")}: ${refusal.case_ids.slice(0, 10).join(", ")}${refusal.case_count > 10 ? ", …" : ""})` : "";
       return {
         message: `${refusal.message}${named}`,
         remedy: remedies[refusal.code] ?? "Reload the page; if it repeats, restart the application.",
@@ -217,7 +217,7 @@ export function blockerPlace(blocker: ScoringBlocker): string {
     "definition.clock_kind": "Clock",
     "definition.endpoints.activation_activity": "Start activity",
     "definition.endpoints.response_activity": "Response activity",
-    named_population: "Incidents",
+    named_population: "Cases",
   };
   return places[blocker.field] ?? "Definition";
 }

@@ -50,7 +50,7 @@ describe("the actions of the bar of steps", () => {
     expect(slots()).toEqual([
       ["Undo", true, "Undo\nNothing to undo: the steps have not been changed.", "Nothing to undo: the steps have not been changed.", "icon-button", "Nothing to undo: the steps have not been changed."],
       ["Redo", true, "Redo\nNothing to redo: no change of the steps has been undone.", "Nothing to redo: no change of the steps has been undone.", "icon-button", "Nothing to redo: no change of the steps has been undone."],
-      ["Clear all", true, "Clear all\nNo step to clear: every incident of the parent is kept.", "No step to clear: every incident of the parent is kept.", "icon-button", "No step to clear: every incident of the parent is kept."],
+      ["Clear all", true, "Clear all\nNo step to clear: every case of the parent is kept.", "No step to clear: every case of the parent is kept.", "icon-button", "No step to clear: every case of the parent is kept."],
     ]);
     // An icon in place of the words: the buttons draw no word of their own.
     for (const button of within(screen.getByRole("group", { name: "Steps" })).getAllByRole("button")) expect(button.querySelector("svg.icon")).not.toBeNull();
@@ -63,7 +63,7 @@ describe("the actions of the bar of steps", () => {
     expect(slots().map(([name, disabled, title]) => [name, disabled, title])).toEqual([
       ["Undo", false, "Undo\nTakes back the last change of the steps."],
       ["Redo", true, "Redo\nNothing to redo: no change of the steps has been undone."],
-      ["Clear all", false, "Clear all\nRemoves every step: every incident of the parent is kept again."],
+      ["Clear all", false, "Clear all\nRemoves every step: every case of the parent is kept again."],
     ]);
     await app.user.click(screen.getByRole("button", { name: "Undo" }));
     await answer(app, everyIncident);
@@ -85,15 +85,15 @@ describe("the actions of the bar of steps", () => {
       shown: { revision: 1, steps: [contains(opened)], answer: selectionAnswer(request, containingOpened), graph: suppliedGraph(["A-1"]) } };
     render(
       <>
-        <p id="waiting">The incidents are being opened.</p>
+        <p id="waiting">The cases are being opened.</p>
         <SelectionSteps selection={selection} onRemove={() => undefined} onClear={() => undefined} onUndo={() => undefined} onRedo={() => undefined}
           onRetry={() => undefined} onStay={() => undefined} waitingFor="waiting" />
       </>,
     );
     expect(slots().map(([name, disabled, , description]) => [name, disabled, description])).toEqual([
-      ["Undo", true, "Takes back the last change of the steps. | The incidents are being opened."],
-      ["Redo", true, "Nothing to redo: no change of the steps has been undone. | The incidents are being opened."],
-      ["Clear all", true, "Removes every step: every incident of the parent is kept again. | The incidents are being opened."],
+      ["Undo", true, "Takes back the last change of the steps. | The cases are being opened."],
+      ["Redo", true, "Nothing to redo: no change of the steps has been undone. | The cases are being opened."],
+      ["Clear all", true, "Removes every step: every case of the parent is kept again. | The cases are being opened."],
     ]);
   });
 });

@@ -22,7 +22,7 @@ export function outcomeName(activity: string, counted: "presence" | "absence"): 
 export function liftText(lift: OutcomeRatesAnswer["categories"][number]["lift"]): string {
   if (lift.status === "available") return twoDecimals.format(lift.value);
   if (lift.reason === "zero_parent_rate") return "not available: the parent's rate is 0";
-  if (lift.reason === "empty_category") return "not available: no incident of this value is known";
+  if (lift.reason === "empty_category") return "not available: no case of this value is known";
   return "not available: the outcome is not recorded in this source";
 }
 
@@ -95,8 +95,8 @@ export function OutcomeSection({ answer, columnName, activities, investigation, 
     <section className="compare-outcome" aria-labelledby="compare-outcome-title">
       <h4 id="compare-outcome-title">Outcome by opening value</h4>
       <p className="compare-muted">
-        An outcome is named apart from the groups: whether each incident of the parent has a record of an activity in the export, at its snapshot cutoff.
-        Its rate by the value the incidents were first recorded with is set beside the parent's rate. Durations are not offered as an outcome here.
+        An outcome is named apart from the groups: whether each case of the parent has a record of an activity in the export, at its snapshot cutoff.
+        Its rate by the value the cases were first recorded with is set beside the parent's rate. Durations are not offered as an outcome here.
       </p>
       <div className="compare-outcome-choice">
         <label>
@@ -121,7 +121,7 @@ export function OutcomeSection({ answer, columnName, activities, investigation, 
           Show the outcome by value
         </button>
       </div>
-      {shown.phase === "loading" && <p className="working-text">Reading the outcome of every incident of the parent…</p>}
+      {shown.phase === "loading" && <p className="working-text">Reading the outcome of every case of the parent…</p>}
       {shown.phase === "failed" && <p role="alert">{shown.message}</p>}
       {shown.phase === "ready" && (
         <OutcomeTable answer={shown.answer} name={name} columnName={columnName} listed={listed} onList={setListed} onOpen={openCase} />
@@ -129,7 +129,7 @@ export function OutcomeSection({ answer, columnName, activities, investigation, 
       {open && (
         <section className="compare-history" aria-labelledby="outcome-history-title" onKeyDown={(event) => event.key === "Escape" && close()}>
           <h4 id="outcome-history-title" tabIndex={-1} ref={heading}>
-            Incident <span className="identifier">{open.caseId}</span>, of the parent
+            Case <span className="identifier">{open.caseId}</span>, of the parent
           </h4>
           {open.loaded === null ? <p className="working-text">Reading every record of {open.caseId}…</p>
             : typeof open.loaded === "string" ? <p role="alert">{open.loaded}</p> : <RecordsTable answer={open.loaded} />}
@@ -147,7 +147,7 @@ function OutcomeTable({ answer, name, columnName, listed, onList, onOpen }: {
   if (answer.status === "unavailable") {
     return (
       <p className="compare-problem" role="note">
-        No record of “{answer.outcome.activity}” is in this source, so it names no outcome: the {countOf(answer.unknown_case_count, "incident")} of the parent have an
+        No record of “{answer.outcome.activity}” is in this source, so it names no outcome: the {countOf(answer.unknown_case_count, "case")} of the parent have an
         unknown outcome, not a favourable or an unfavourable one.
       </p>
     );
@@ -158,23 +158,23 @@ function OutcomeTable({ answer, name, columnName, listed, onList, onOpen }: {
     <>
       <p>
         Outcome O: <strong>{name}</strong> at the snapshot cutoff {answer.snapshot_cutoff.replace("T", " ").replace("Z", " UTC")}. Known for{" "}
-        {countOf(answer.known_case_count, "incident")} of the {countOf(answer.parent_case_count, "incident")} of the parent (K
+        {countOf(answer.known_case_count, "case")} of the {countOf(answer.parent_case_count, "case")} of the parent (K
         {answer.known_case_count === answer.parent_case_count ? " = P" : ""}): whether a history holds a record is always known, even where the business state of the
-        incident is not. In the parent, O holds for {answer.counted_case_count} of {answer.known_case_count} ({answer.rate === null ? "no rate" : percent.format(answer.rate)}).
+        case is not. In the parent, O holds for {answer.counted_case_count} of {answer.known_case_count} ({answer.rate === null ? "no rate" : percent.format(answer.rate)}).
       </p>
       {answer.outcome.counted === "absence" && (
-        <p className="compare-muted">“{name}” says only that the export holds no such record: it is not a verdict that the incident is unresolved or open.</p>
+        <p className="compare-muted">“{name}” says only that the export holds no such record: it is not a verdict that the case is unresolved or open.</p>
       )}
       <div className="compare-scroll">
         <table className="compare-table" aria-label={`${name} by the first recorded ${columnName}`}>
           <thead>
             <tr>
               <th scope="col">First recorded {columnName}</th>
-              <th scope="col">Known incidents</th>
+              <th scope="col">Known cases</th>
               <th scope="col">With O</th>
               <th scope="col">Rate of O</th>
               <th scope="col">Rate ÷ parent rate</th>
-              <th scope="col"><span className="compare-hidden">Incidents</span></th>
+              <th scope="col"><span className="compare-hidden">Cases</span></th>
             </tr>
           </thead>
           <tbody>
@@ -204,7 +204,7 @@ function OutcomeTable({ answer, name, columnName, listed, onList, onOpen }: {
       {listed !== null && chosen !== null && (
         <div>
           <p>
-            {listed.with ? "Witnesses" : "Counterexamples"}: the incidents first recorded with {columnName} {valueText(chosen.value)} {listed.with ? "with" : "without"} O.{" "}
+            {listed.with ? "Witnesses" : "Counterexamples"}: the cases first recorded with {columnName} {valueText(chosen.value)} {listed.with ? "with" : "without"} O.{" "}
             <button type="button" className="link-button" onClick={() => onList(null)}>Close the list</button>
           </p>
           <ul className="compare-side-list" aria-label={`${listed.with ? "Witnesses" : "Counterexamples"} for ${valueText(chosen.value)}`}>

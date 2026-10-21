@@ -165,19 +165,19 @@ function SaveSummary({ investigation, held, pins }: {
       <div>
         <dt>Parent and selection</dt>
         <dd>
-          {investigation.parentCaseIds === null ? `every incident, ${countOf(shown.answer.parent.case_count, "incident")}` : `${countOf(shown.answer.parent.case_count, "listed incident")}`};
-          kept by {steps}: {countOf(shown.answer.kept.case_count, "incident")}
+          {investigation.parentCaseIds === null ? `every case, ${countOf(shown.answer.parent.case_count, "case")}` : `${countOf(shown.answer.parent.case_count, "listed case")}`};
+          kept by {steps}: {countOf(shown.answer.kept.case_count, "case")}
         </dd>
       </div>
       <div>
         <dt>Context</dt>
-        <dd>the value at each incident's first record in the declared order (incident.context.first_record_in_declared_order.v1)</dd>
+        <dd>the value at each case's first record in the declared order (incident.context.first_record_in_declared_order.v1)</dd>
       </div>
       <div>
         <dt>Comparison</dt>
         <dd>
           {held.comparison === null ? "none" : comparisonRoles(held.comparison)}
-          {held.parent && held.comparison && ` Its parent: ${countOf(held.comparison.parent_case_ids.length, "incident")} ${held.parent.label ?? (held.parent.retained_predicates.length > 0
+          {held.parent && held.comparison && ` Its parent: ${countOf(held.comparison.parent_case_ids.length, "case")} ${held.parent.label ?? (held.parent.retained_predicates.length > 0
             ? `kept by ${held.parent.retained_predicates.map(stepWording).join("; and ")}` : "")}.`}
         </dd>
       </div>

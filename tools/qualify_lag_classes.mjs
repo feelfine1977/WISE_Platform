@@ -28,7 +28,7 @@ try {
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
   await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Map', exact: true}).click();
-  const map = page.getByLabel('Process map of the kept incidents');
+  const map = page.getByLabel('Process map of the kept cases');
   await map.waitFor();
   await page.getByRole('group', {name: 'What the map counts'}).getByRole('button', {name: 'Time on the map', exact: true}).click();
   // The stroke of every path in the Time measure, and what the legend says.

@@ -51,7 +51,7 @@ export function OpenedAs({ state, onRetry, waitingFor, onStep, previewStep, onOp
       <h3 id="opened-as-title" className="view-title">
         At the first recorded observation
       </h3>
-      {state.phase === "loading" && <p className="working-text">Reading the first record of every incident…</p>}
+      {state.phase === "loading" && <p className="working-text">Reading the first record of every case…</p>}
       {state.phase === "failed" && <ViewProblemNotice title="The first recorded observations cannot be shown" problem={state.problem} onRetry={onRetry} waitingFor={waitingFor} />}
       {state.phase === "ready" && <Opening answer={state.answer} actions={actions} />}
     </section>
@@ -64,7 +64,7 @@ function Opening({ answer, actions }: { answer: OpeningContextAnswer; actions?: 
   return (
     <>
       <p className="muted view-hint">
-        The value of each context column at the first recorded observation of every incident, in the declared order. It is the first record, not a
+        The value of each context column at the first recorded observation of every case, in the declared order. It is the first record, not a
         business event such as an opening, and not the first value that is filled in: a value recorded later does not count.
       </p>
       <p className="muted view-hint">
@@ -73,33 +73,33 @@ function Opening({ answer, actions }: { answer: OpeningContextAnswer; actions?: 
       <ul className="share-legend" aria-label="Bars">
         <li>
           <span className="swatch swatch-population" aria-hidden="true" />
-          These incidents: {countOf(population.evaluable_case_count, "incident")} with a readable first record
+          These cases: {countOf(population.evaluable_case_count, "case")} with a readable first record
         </li>
         <li>
           <span className="swatch swatch-parent" aria-hidden="true" />
-          Parent population: {countOf(parent.evaluable_case_count, "incident")} with a readable first record
+          Parent population: {countOf(parent.evaluable_case_count, "case")} with a readable first record
         </li>
       </ul>
-      {isParent && <p className="muted view-hint">These incidents are the whole parent population, so both bars are the same.</p>}
+      {isParent && <p className="muted view-hint">These cases are the whole parent population, so both bars are the same.</p>}
       {parent.unevaluable_case_count > 0 && (
         <p className="order-note">
-          {countOf(parent.unevaluable_case_count, "incident")} of the parent {parent.unevaluable_case_count === 1 ? "has" : "have"} no readable
+          {countOf(parent.unevaluable_case_count, "case")} of the parent {parent.unevaluable_case_count === 1 ? "has" : "have"} no readable
           first record because {parent.unevaluable_case_count === 1 ? "its" : "their"} order is not known
-          {!isParent && population.unevaluable_case_count > 0 && <>, {countOf(population.unevaluable_case_count, "incident")} of them among these incidents</>}
+          {!isParent && population.unevaluable_case_count > 0 && <>, {countOf(population.unevaluable_case_count, "case")} of them among these cases</>}
           ; {parent.unevaluable_case_count === 1 ? "it is" : "they are"} in no share.
         </p>
       )}
       {parent.tied_first_record_case_count > 0 && (
         <p className="order-note">
-          {countOf(parent.tied_first_record_case_count, "incident")} of the parent {parent.tied_first_record_case_count === 1 ? "has" : "have"} a first
+          {countOf(parent.tied_first_record_case_count, "case")} of the parent {parent.tied_first_record_case_count === 1 ? "has" : "have"} a first
           record that shares its time with the next record
-          {!isParent && <>, {countOf(population.tied_first_record_case_count, "incident")} of them among these incidents</>}: the declared order
+          {!isParent && <>, {countOf(population.tied_first_record_case_count, "case")} of them among these cases</>}: the declared order
           decides which is first, by the sequence number, then by the place in the file. A different sequence column, chosen in the Data area,
           would decide differently.
         </p>
       )}
       <p className="muted view-hint">
-        Only the value at the first recorded observation is shown. The latest value and any value ever recorded are not offered here: an incident can
+        Only the value at the first recorded observation is shown. The latest value and any value ever recorded are not offered here: a case can
         hold several values over its records, so their shares would overlap.
       </p>
       {columns.map((column) => (
@@ -164,7 +164,7 @@ function OpeningColumn({ column, evaluable, actions }: { column: ContextColumn; 
       </div>
       {fixed && (
         <p className="muted view-hint">
-          Fixed in the parent: every incident with a readable first record has {label(categories[0]).text} here, so this column cannot tell incidents apart.
+          Fixed in the parent: every case with a readable first record has {label(categories[0]).text} here, so this column cannot tell cases apart.
         </p>
       )}
       {view === "bars" ? (
@@ -181,7 +181,7 @@ function OpeningColumn({ column, evaluable, actions }: { column: ContextColumn; 
           <thead>
             <tr>
               <th scope="col">Value</th>
-              <th scope="col" className="number">These incidents</th>
+              <th scope="col" className="number">These cases</th>
               <th scope="col" className="number">Parent population</th>
               <th scope="col" className="number">Difference</th>
               {actions && <th scope="col">Choose or inspect</th>}
@@ -201,8 +201,8 @@ function OpeningColumn({ column, evaluable, actions }: { column: ContextColumn; 
         </table>
       )}
       <p className="muted view-hint">
-        Each incident with a readable first record has exactly one value here: the values listed
-        {column.remainder ? " and the other values" : ""} add up to {countOf(sum(column), "incident")} of {countOf(evaluable, "incident")}.
+        Each case with a readable first record has exactly one value here: the values listed
+        {column.remainder ? " and the other values" : ""} add up to {countOf(sum(column), "case")} of {countOf(evaluable, "case")}.
       </p>
       {actions && inspected && actions.previewStep && (
         <Inspection category={inspected} name={name} step={stepOf([inspected])} previewer={actions.previewStep} onOpenCase={actions.onOpenCase} onClose={() => setInspected(null)} />
@@ -215,7 +215,7 @@ function OpeningColumn({ column, evaluable, actions }: { column: ContextColumn; 
           </p>
           <button type="button" disabled={actions.waitingFor !== undefined} aria-describedby={actions.waitingFor}
             onClick={() => (actions.previewStep ? setPending(stepOf(chosenCategories)) : (actions.onStep(stepOf(chosenCategories)), setChosen([])))}>
-            {actions.previewStep ? "Preview keeping incidents first recorded with these values" : "Keep incidents first recorded with these values"}
+            {actions.previewStep ? "Preview keeping cases first recorded with these values" : "Keep cases first recorded with these values"}
           </button>
         </div>
       )}
@@ -246,13 +246,13 @@ function Inspection({ category, name, step, previewer, onOpenCase, onClose }: {
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, previewer]);
-  const title = `Incidents first recorded with ${name} ${label(category).text}`;
+  const title = `Cases first recorded with ${name} ${label(category).text}`;
   return (
     <section className="opening-inspection" aria-label={title}>
       <p className="label-text-strong">{title}</p>
       <p className="muted">Inspecting changes nothing: the selection and its steps stay as they are.</p>
-      {found === null && <p className="muted">Finding these incidents…</p>}
-      {found !== null && !found.ok && <p className="muted">These incidents cannot be found now.</p>}
+      {found === null && <p className="muted">Finding these cases…</p>}
+      {found !== null && !found.ok && <p className="muted">These cases cannot be found now.</p>}
       {found !== null && found.ok && (
         <ul aria-label={title}>
           {found.keptIds.map((caseId) => (
@@ -287,7 +287,7 @@ function ShareRow({ entry, chosen = false, children }: { entry: ContextCategory 
   const { text, quiet } = label(entry);
   const difference = entry.difference_percentage_points;
   const described =
-    `${text}. These incidents: ${shareOf(entry.population)}. Parent population: ${shareOf(entry.parent)}.` +
+    `${text}. These cases: ${shareOf(entry.population)}. Parent population: ${shareOf(entry.parent)}.` +
     (difference === null ? "" : ` Difference ${points(difference, "percentage points")}.`);
   return (
     <li className={chosen ? "opening-value opening-chosen" : "opening-value"} title={described}>

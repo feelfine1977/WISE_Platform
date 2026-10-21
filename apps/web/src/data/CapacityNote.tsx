@@ -33,7 +33,7 @@ export function CapacityNote({ checkHealth = fetchHealth }: { checkHealth?: (sig
   const tier = MEASURED_TIER;
   return (
     <p className="muted capacity-note">
-      Measured: the incident journey with up to {tier.incidents.toLocaleString("en")} incidents and {tier.records.toLocaleString("en")} records with{" "}
+      Measured: the case journey with up to {tier.incidents.toLocaleString("en")} cases and {tier.records.toLocaleString("en")} records with{" "}
       {tier.contextColumns} context columns, on {tier.machine}: each step within {tier.slowestStepSeconds} seconds and at most {tier.peakGigabytes} GB of
       memory. Larger files are not measured. Work that would not fit the memory this service may use{budget === null ? "" : `, ${gib(budget)}`}, is refused
       before it starts, with what to do. Every figure is exact: nothing is sampled.

@@ -55,13 +55,13 @@ export function ExpectationForm(props: ExpectationFormProps) {
         Definition
       </h3>
       <p className="expectation-muted">
-        Scored for {populationName}: {countOf(caseCount, "incident")}. Times are hours on the clock of the preparation.
+        Scored for {populationName}: {countOf(caseCount, "case")}. Times are hours on the clock of the preparation.
       </p>
       <ol className="expectation-guide" aria-label="How an expectation is scored">
         <li>Say what is expected: the activity that starts the time, the activity expected after it, and the target in hours.</li>
         <li>Say who stands behind it: a name, an owner, a source and the reason. They are kept with every result.</li>
         <li>Tick that you have reviewed it, then choose "Check the definition".</li>
-        <li>Choose "Score" for the incidents named above. Nothing is scored before that.</li>
+        <li>Choose "Score" for the cases named above. Nothing is scored before that.</li>
       </ol>
       <div className="expectation-fields">
         <Field id="expectation-start" label="Start activity">
@@ -109,7 +109,7 @@ export function ExpectationForm(props: ExpectationFormProps) {
         </Field>
       </div>
       <fieldset className="expectation-choice">
-        <legend>An incident with the start but without a response</legend>
+        <legend>A case with the start but without a response</legend>
         {meanings.map((meaning) => (
           <label key={meaning.value} className="expectation-option">
             <input type="radio" name="expectation-missing" value={meaning.value} checked={form.missing === meaning.value} onChange={() => set("missing", meaning.value)} />
@@ -162,7 +162,7 @@ export function ExpectationForm(props: ExpectationFormProps) {
           Check the definition
         </button>
         <button type="button" className="expectation-primary" disabled={waiting || !ready || !reviewed || scoring} onClick={props.onScore}>
-          Score {countOf(caseCount, "incident")}
+          Score {countOf(caseCount, "case")}
         </button>
       </div>
       <CheckOutcome validation={validation} checkedNow={checkedNow} reviewed={reviewed} onRetry={props.onRetryCheck} />
@@ -192,12 +192,12 @@ function CheckOutcome({ validation, checkedNow, reviewed, onRetry }: { validatio
   }
   if (validation.phase === "failed") return <ExpectationProblem title="The definition could not be checked" problem={validation.problem} onRetry={onRetry} />;
   const { answer } = validation;
-  const stale = checkedNow ? null : <p className="expectation-muted">The definition or the incidents changed since this check. Check again to score.</p>;
+  const stale = checkedNow ? null : <p className="expectation-muted">The definition or the cases changed since this check. Check again to score.</p>;
   if (answer.state === "ready") {
     return (
       <div role="status" className="expectation-ready">
         <p>
-          <strong>Ready.</strong> The method library accepts this definition for these incidents.{" "}
+          <strong>Ready.</strong> The method library accepts this definition for these cases.{" "}
           {reviewed ? "It can be scored." : "It is a draft: it can be explored but not scored. Mark it as reviewed and check it again to score it."}
         </p>
         {stale}
@@ -207,7 +207,7 @@ function CheckOutcome({ validation, checkedNow, reviewed, onRetry }: { validatio
   return (
     <div role="alert" className="expectation-blocked">
       <p>
-        <strong>Not ready.</strong> The definition cannot be scored for these incidents:
+        <strong>Not ready.</strong> The definition cannot be scored for these cases:
       </p>
       <ul>
         {answer.blockers.map((blocker, index) => (

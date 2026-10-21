@@ -54,8 +54,8 @@ function chips(app: Opened) {
   return shownSelection(app.coordinator.getState().selection)?.answer.predicate_results.map((result) => result.predicate) ?? null;
 }
 
-describe("the selection of whole incidents of an imported preparation", () => {
-  it("selects every incident of the parent first and keeps that map as the parent's", async () => {
+describe("the selection of whole cases of an imported preparation", () => {
+  it("selects every case of the parent first and keeps that map as the parent's", async () => {
     const app = await opening();
     const request = app.selecting.selections[0].request;
     expect(selectionContract.selectCasesRequest(request)).toBe(true);
@@ -235,7 +235,7 @@ describe("the selection of whole incidents of an imported preparation", () => {
     expect(app.selecting.graphs).toHaveLength(1);
   });
 
-  it("opens the complete history of a kept incident under the selection shown, and follows the selection", async () => {
+  it("opens the complete history of a kept case under the selection shown, and follows the selection", async () => {
     const app = await opening();
     await answer(app, 0, everyIncident);
     app.coordinator.openCase("A-1");
@@ -303,7 +303,7 @@ describe("#6 a preview before a step, and an undo that restores the exact select
     expect(app.coordinator.getState()).toBe(before);
   });
 
-  it("refuses an undo whose answer is not exactly the selection those steps had, however many incidents it keeps", async () => {
+  it("refuses an undo whose answer is not exactly the selection those steps had, however many cases it keeps", async () => {
     const app = await opening();
     await answer(app, 0, everyIncident);
     app.coordinator.addStep(contains(opened));
@@ -316,7 +316,7 @@ describe("#6 a preview before a step, and an undo that restores the exact select
     const selection = app.coordinator.getState().selection;
     expect(selection.phase).toBe("failed");
     expect(selection.phase === "failed" && selection.problem.kind === "unsupported_reply" && selection.problem.detail).toBe(
-      "The incidents selected now are not exactly those these steps kept before.",
+      "The cases selected now are not exactly those these steps kept before.",
     );
     // Answered with the same incidents, the undo restores the selection with its identity.
     app.coordinator.retrySelection();

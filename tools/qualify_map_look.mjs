@@ -57,12 +57,12 @@ try {
   await areas.getByRole('button', {name: 'Data', exact: true}).click();
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   // The table renders only the rows in view; the data row says how many incidents are kept.
-  await page.waitForFunction(n => (document.querySelector('.population')?.textContent ?? '').includes(`${n} of ${n} incidents`), expected.incidents);
+  await page.waitForFunction(n => (document.querySelector('.population')?.textContent ?? '').includes(`${n} of ${n} cases`), expected.incidents);
   await settled(0);
 
   // ---- the opening of a large map ----
   await view('Map').click();
-  await page.getByLabel('Process map of the kept incidents').waitFor();
+  await page.getByLabel('Process map of the kept cases').waitFor();
   await page.locator(`[data-id="${nodeId(expected.first_activity)}"]`).first().waitFor();
   const detail = (await page.locator('.map-detail').textContent()) ?? '';
   check('large_map_opens_on_a_detail_it_says', /of 36 activities|of 36 events|36/.test(detail) && await page.locator('.map-frame .wf-legend, .map-frame .wf-controls').count() === 0
@@ -80,7 +80,7 @@ try {
   const timedStrokes = await strokes();
   check('counts_and_times_distinguishable_and_explained', counted.startsWith('Frequency') && timed.startsWith('Performance') && !same(timedStrokes, before.strokes), {counted, timed, before: before.strokes, timedStrokes});
   check('appearance_changes_no_metric_or_selection', analytic() === before.analytic && same(selections.at(-1).identity, before.identity), null);
-  await page.getByRole('button', {name: 'Incidents on the map', exact: true}).click();
+  await page.getByRole('button', {name: 'Cases on the map', exact: true}).click();
 
   // ---- no expectation mark without a score run, said so ----
   await page.getByRole('button', {name: 'About this map', exact: true}).click();
@@ -120,26 +120,26 @@ try {
   await shot('panel-and-drawer');
 
   // ---- a filtered population that keeps nothing ----
-  await page.getByRole('button', {name: 'Keep incidents that do not contain it', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep cases that do not contain it', exact: true}).click();
   await settled(1);
   await page.locator(`[data-id="${nodeId(expected.first_activity)}"]`).first().click();
-  await page.getByRole('button', {name: 'Keep incidents that do not contain it', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep cases that do not contain it', exact: true}).click();
   await settled(2);
   const empty = (await page.locator('.map-empty').textContent()) ?? '';
-  check('empty_population_said_in_place_of_the_map', selections.at(-1).kept.case_count === 0 && empty.startsWith('The selection keeps no incident of the 240 incidents of its parent')
-    && empty.includes('Remove a step or undo it') && await page.getByLabel('Process map of the kept incidents').count() === 0, empty);
+  check('empty_population_said_in_place_of_the_map', selections.at(-1).kept.case_count === 0 && empty.startsWith('The selection keeps no case of the 240 cases of its parent')
+    && empty.includes('Remove a step or undo it') && await page.getByLabel('Process map of the kept cases').count() === 0, empty);
   steady(await screen(), 'empty_population');
   await shot('empty');
   await page.getByRole('group', {name: 'Steps', exact: true}).getByRole('button', {name: 'Clear all', exact: true}).click();
   await settled(0);
 
   // ---- a complete incident history ----
-  await view('Incidents').click();
+  await view('Cases').click();
   await page.getByRole('button', {name: 'Filters and views', exact: true}).click();
-  const row = page.getByRole('table', {name: 'Kept incidents'}).locator('tbody tr').first();
+  const row = page.getByRole('table', {name: 'Kept cases'}).locator('tbody tr').first();
   const first = (await row.locator('button.row-open').textContent()) ?? '';
   const [evidence] = await Promise.all([page.waitForResponse(r => new URL(r.url()).pathname === '/api/investigations/case-evidence'), row.locator('button.row-open').click()]);
-  await page.getByRole('heading', {name: `Incident ${first}`}).waitFor();
+  await page.getByRole('heading', {name: `Case ${first}`}).waitFor();
   const records = (await evidence.json()).records.length;
   const history = await page.locator('.imported-inspector').evaluate(panel => ({entries: panel.querySelectorAll('ol.history > li').length, sideways: panel.scrollWidth > panel.clientWidth + 1}));
   check('complete_history_whole_and_readable', history.entries === records && records > 0 && !history.sideways, {history, records});

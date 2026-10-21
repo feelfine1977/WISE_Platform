@@ -36,37 +36,37 @@ try {
   await page.getByRole('navigation', {name: 'Areas'}).getByRole('button', {name: 'Data', exact: true}).click();
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length === 8);
-  await page.waitForFunction(() => /8 of 8 incidents/.test(document.querySelector('dl.population')?.textContent ?? ''));
+  await page.waitForFunction(() => /8 of 8 cases/.test(document.querySelector('dl.population')?.textContent ?? ''));
   const before = await figures();
 
   await view('Map').click();
-  await page.getByLabel('Process map of the kept incidents').waitFor();
+  await page.getByLabel('Process map of the kept cases').waitFor();
   const map = await lead('About this map');
-  check('about_this_map_opens_with_what_is_counted', map.isLead && /kept incidents/.test(map.first) && /records/.test(map.first) && /passages/.test(map.first), map);
+  check('about_this_map_opens_with_what_is_counted', map.isLead && /kept cases/.test(map.first) && /records/.test(map.first) && /passages/.test(map.first), map);
   const charts = await lead('About these charts');
-  check('about_these_charts_opens_with_what_is_counted', charts.isLead && charts.first.startsWith('Each column counts incidents') && /kept incidents/.test(charts.first) && /parent/.test(charts.first), charts);
+  check('about_these_charts_opens_with_what_is_counted', charts.isLead && charts.first.startsWith('Each column counts cases') && /kept cases/.test(charts.first) && /parent/.test(charts.first), charts);
   await page.getByRole('button', {name: 'Edit stages', exact: true}).click();
   const stages = await lead('About stages');
   check('about_stages_opens_with_what_is_counted', stages.isLead && /counts nothing of its own/.test(stages.first) && /incidents and records/.test(stages.first), stages);
   await page.getByRole('button', {name: 'Edit stages', exact: true}).click();
   const data = await lead('About this data');
-  check('about_this_data_opens_with_what_is_counted', data.isLead && data.first.startsWith('The figures above count incidents and their records') && /parent/.test(data.first), data);
+  check('about_this_data_opens_with_what_is_counted', data.isLead && data.first.startsWith('The figures above count cases and their records') && /parent/.test(data.first), data);
 
   // The charts of the time column and the heads of the tables name what they count.
   const titles = await page.locator('.time-chart-title').allTextContents();
-  check('time_charts_name_incidents', titles.includes('Incidents by recorded span') && titles.some(title => /^Incident starts per /.test(title)), titles);
-  await view('Incidents').click();
+  check('time_charts_name_incidents', titles.includes('Cases by recorded span') && titles.some(title => /^Case starts per /.test(title)), titles);
+  await view('Cases').click();
   const incidentHeads = await page.locator('.incident-table table thead th').allTextContents();
   check('incident_table_heads_name_records', ['Records', 'Mapped records', 'Records without activity label', 'Order of records'].every(head => incidentHeads.includes(head)), incidentHeads);
   await view('Paths').click();
-  const pathHeads = await page.getByRole('table', {name: 'Paths of the kept incidents'}).locator('thead th').evaluateAll(heads => heads.map(head => head.getAttribute('aria-label') ?? head.textContent));
-  check('path_table_heads_name_incidents_and_passages', ['Incidents', 'Passages', 'Median lag of the passages (h)'].every(head => pathHeads.includes(head)), pathHeads);
+  const pathHeads = await page.getByRole('table', {name: 'Paths of the kept cases'}).locator('thead th').evaluateAll(heads => heads.map(head => head.getAttribute('aria-label') ?? head.textContent));
+  check('path_table_heads_name_incidents_and_passages', ['Cases', 'Passages', 'Median lag of the passages (h)'].every(head => pathHeads.includes(head)), pathHeads);
   await view('Matrix').click();
   // The matrix shows its pairs as a table on request.
   await page.getByRole('group', {name: 'Matrix layout'}).getByRole('button', {name: 'Table', exact: true}).click();
   await page.getByRole('table', {name: 'Pairs of the transition matrix'}).locator('thead th').first().waitFor();
   const matrixHeads = await page.getByRole('table', {name: 'Pairs of the transition matrix'}).locator('thead th').allTextContents();
-  check('matrix_heads_name_incidents_and_passages', ['Incidents', 'Passages', 'Median lag of the passages (h)', 'Mean lag of the passages (h)'].every(head => matrixHeads.includes(head)), matrixHeads);
+  check('matrix_heads_name_incidents_and_passages', ['Cases', 'Passages', 'Median lag of the passages (h)', 'Mean lag of the passages (h)'].every(head => matrixHeads.includes(head)), matrixHeads);
   // Only words changed: the data row's numbers are the same.
   check('no_number_changes', (await figures()) === before, [before, await figures()]);
   assert.deepEqual(errors, []);

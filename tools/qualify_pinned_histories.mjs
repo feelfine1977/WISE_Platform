@@ -38,15 +38,15 @@ const rail = name => page.getByRole('group', {name: 'Side panel'}).getByRole('bu
 const tableIds = () => page.locator('table tbody tr button.row-open').allTextContents();
 const longLabel = `Seen twice at the East desk before it moved West — ${'a long label that must wrap and stay whole '.repeat(3).trim()}`;
 const paired = () => page.getByRole('region', {name: 'Two pinned histories'});
-const side = (role, caseId) => paired().getByRole('region', {name: `${role} · Incident ${caseId}`});
+const side = (role, caseId) => paired().getByRole('region', {name: `${role} · Case ${caseId}`});
 async function sideRows(role, caseId) {
-  const table = side(role, caseId).getByRole('table', {name: new RegExp(`^All \\d+ records? of incident ${caseId} in the declared order`)});
+  const table = side(role, caseId).getByRole('table', {name: new RegExp(`^All \\d+ records? of case ${caseId} in the declared order`)});
   await table.waitFor();
   return table.locator('tbody tr').evaluateAll(rows => rows.map(row => [...row.children].map(cell => cell.textContent)));
 }
 async function pinOpen(caseId, role, label, observation) {
   await page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${caseId}$`)}).click();
-  await page.getByRole('heading', {name: `Incident ${caseId}`}).waitFor();
+  await page.getByRole('heading', {name: `Case ${caseId}`}).waitFor();
   const control = page.getByRole('region', {name: 'Pin this history'});
   if (label) await control.getByLabel('Label').fill(label);
   if (observation) {
@@ -70,24 +70,24 @@ try {
   await rail('Context').click();
   const context = page.getByRole('region', {name: 'At the first recorded observation'});
   await context.getByRole('list', {name: `Opening values of ${expected.step.column}, most frequent first`}).getByRole('checkbox', {name: `Choose ${expected.step.value}`, exact: true}).check();
-  await context.getByRole('button', {name: 'Preview keeping incidents first recorded with these values', exact: true}).click();
+  await context.getByRole('button', {name: 'Preview keeping cases first recorded with these values', exact: true}).click();
   await context.getByRole('group', {name: `Values of ${expected.step.column} not yet applied`}).getByRole('button', {name: 'Apply', exact: true}).click();
   await settled(1);
   const question = selections.at(-1);
   check('category_step_as_the_oracle', same(question.kept.case_ids, expected.kept) && same(question.removed.case_ids, expected.removed) && same(question.unevaluable.case_ids, expected.unevaluable), question.kept);
   const asked = selections.length;
-  await page.getByRole('group', {name: 'View'}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View'}).getByRole('button', {name: 'Cases', exact: true}).click();
 
   // A kept incident pinned as supporting; the focus returns to its row.
   const supporting = expected.supporting, contrary = expected.contrary;
   await pinOpen(supporting.case, 'supporting', longLabel, 'Assigned twice; the desk changed.');
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).focus();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).focus();
   await page.keyboard.press('Enter');
   await page.waitForFunction(id => document.activeElement?.textContent === id, supporting.case);
   check('return_from_a_kept_history_restores_its_row', true);
 
   // A removed incident is listed, opened in the selection's parent and pinned as contrary.
-  const listed = page.getByRole('group', {name: 'Incidents listed'});
+  const listed = page.getByRole('group', {name: 'Cases listed'});
   await listed.getByRole('button', {name: `Removed (${expected.removed.length})`}).click();
   await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, expected.removed.length);
   check('removed_incidents_listed', same((await tableIds()).sort(), expected.removed), await tableIds());
@@ -95,15 +95,15 @@ try {
   const contraryAsk = evidence.filter(body => body.case_id === contrary.case).at(-1);
   check('contrary_read_in_the_parent', same(contraryAsk.identity, question.parent_identity), contraryAsk.identity);
   const focusLine = (await page.locator('.focus-line').textContent()) ?? '';
-  check('contrary_named_as_removed', focusLine.startsWith(`You are reading one incident of the ${expected.removed.length} incidents the selection removes, in its parent of ${expected.incidents} incidents`), focusLine);
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+  check('contrary_named_as_removed', focusLine.startsWith(`You are reading one case of the ${expected.removed.length} cases the selection removes, in its parent of ${expected.incidents} cases`), focusLine);
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
   await listed.getByRole('button', {name: `Kept (${expected.kept.length})`}).click();
 
   // The index names both, with role and origin; the two are read side by side.
   await rail('Pinned').click();
   const index = page.getByRole('region', {name: 'Pinned histories'});
   const indexText = (await index.textContent()) ?? '';
-  check('index_names_roles_origins_and_populations', indexText.includes(`Supporting · Incident ${supporting.case}`) && indexText.includes(`Contrary · Incident ${contrary.case}`)
+  check('index_names_roles_origins_and_populations', indexText.includes(`Supporting · Case ${supporting.case}`) && indexText.includes(`Contrary · Case ${contrary.case}`)
     && indexText.includes('Kept by the selection: one of') && indexText.includes('Removed by the selection: one of') && indexText.includes(longLabel), indexText);
   const pairButton = index.getByRole('button', {name: 'Read the two chosen side by side'});
   check('two_pins_chosen_by_default', !(await pairButton.isDisabled()), await index.locator('input[type=checkbox]').evaluateAll(boxes => boxes.map(box => box.checked)));
@@ -122,18 +122,18 @@ try {
   const contextRows = await paired().getByRole('region', {name: 'Context at the first record of each'}).locator('tbody tr').evaluateAll(rows => rows.map(row => [...row.children].map(cell => cell.textContent)));
   check('context_beside_each_other_as_recorded', same(contextRows, expected.context_at_first.map(row => [row.name, row.supporting ?? 'not recorded', row.contrary ?? 'not recorded', row.reading])), contextRows);
   const pairedText = (await paired().textContent()) ?? '';
-  check('nothing_matched_or_concluded', pairedText.includes('WISE does not match, score or explain them') && pairedText.includes('no other incident is looked for to match either one'), null);
-  check('origins_on_both_sides', pairedText.includes('Kept by the selection: one of 2 incidents of 5 incidents') && pairedText.includes('Removed by the selection: one of 2 incidents it removes, read in its parent of 5 incidents'), null);
+  check('nothing_matched_or_concluded', pairedText.includes('WISE does not match, score or explain them') && pairedText.includes('no other case is looked for to match either one'), null);
+  check('origins_on_both_sides', pairedText.includes('Kept by the selection: one of 2 cases of 5 cases') && pairedText.includes('Removed by the selection: one of 2 cases it removes, read in its parent of 5 cases'), null);
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => document.activeElement?.textContent === 'Read the two chosen side by side');
   check('return_restores_the_focus_and_the_question', selections.length === asked && await page.getByRole('list', {name: 'Steps of the selection'}).getByRole('listitem').count() === 1, selections.length);
 
   // A pin opens from the index in its own population, and the focus returns to its Open button.
-  await index.getByRole('button', {name: `Open the history of Incident ${contrary.case}`}).click();
-  await page.getByRole('heading', {name: `Incident ${contrary.case}`}).waitFor();
+  await index.getByRole('button', {name: `Open the history of Case ${contrary.case}`}).click();
+  await page.getByRole('heading', {name: `Case ${contrary.case}`}).waitFor();
   check('pin_opens_in_its_population', (await page.locator('.focus-line').textContent()).startsWith('You are reading a pinned history in the population it was pinned in'), null);
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
-  await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label')?.startsWith('Open the history of Incident'));
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
+  await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label')?.startsWith('Open the history of Case'));
   check('return_from_a_pin_restores_its_button', true);
 
   // A narrow window: one side under the other, both named, the long label whole, every record reachable.
@@ -168,12 +168,12 @@ try {
     if (body.case_id !== contrary.case) return route.continue();
     await route.fulfill({status: 404, contentType: 'application/json', body: JSON.stringify({schema_version: 1, message_type: 'import_refusal', request_id: body.request_id,
       query_revision: body.query_revision, workspace_id: body.workspace_id, operation: 'case_evidence', code: 'case_not_found',
-      message: `The incident ${contrary.case} is not in this population.`, field: 'case_id', retryable: false})});
+      message: `The case ${contrary.case} is not in this population.`, field: 'case_id', retryable: false})});
   });
   await pairButton.click();
   await paired().waitFor();
   const alert = await side('Contrary', contrary.case).getByRole('alert').textContent();
-  check('refused_handle_said_on_its_side', alert.includes(`The history of incident ${contrary.case} cannot be read in the population it was pinned in.`), alert);
+  check('refused_handle_said_on_its_side', alert.includes(`The history of case ${contrary.case} cannot be read in the population it was pinned in.`), alert);
   check('other_side_stays', (await sideRows('Supporting', supporting.case)).length === supporting.source_positions.length, null);
   await page.unroute('**/api/investigations/case-evidence');
   assert.deepEqual(errors, []);

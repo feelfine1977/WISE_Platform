@@ -41,7 +41,7 @@ describe("the steps of a row of the list of every path", () => {
     ] as const;
 
     rerender(<MapView shown={shownWhole(graph)} parentGraph={graph} onStep={onList} showing="paths" />);
-    const list = screen.getByRole("table", { name: "Paths of the kept incidents" });
+    const list = screen.getByRole("table", { name: "Paths of the kept cases" });
     for (const [row, menu] of menus) {
       fireEvent.click(within(list).getByRole("button", { name: row }));
       const offered = Array.from(document.querySelectorAll<HTMLButtonElement>(".map-choices button"));

@@ -441,7 +441,7 @@ export class ImportedInvestigationCoordinator {
         removed: shown.answer.removed.case_count,
         parent: shown.answer.parent.case_count,
       },
-      label: words.label.trim() === "" ? `Incident ${inspected.caseId}` : words.label.trim(),
+      label: words.label.trim() === "" ? `Case ${inspected.caseId}` : words.label.trim(),
       observation: words.observation.trim(),
       limitation: words.limitation.trim(),
       nextCheck: words.nextCheck.trim(),
@@ -689,10 +689,10 @@ export class ImportedInvestigationCoordinator {
     this.expectedIdentity = null;
     let checked = outcome.ok ? checkSelection(request, population, outcome.answer) : checkSelectionProblem(request, outcome.problem);
     if (checked.ok && restored !== null && !sameJson(checked.answer.identity, restored)) {
-      checked = mismatch("The incidents selected now are not those of the saved investigation.");
+      checked = mismatch("The cases selected now are not those of the saved investigation.");
     }
     if (checked.ok && expected !== null && !sameJson(checked.answer.identity, expected)) {
-      checked = mismatch("The incidents selected now are not exactly those these steps kept before.");
+      checked = mismatch("The cases selected now are not exactly those these steps kept before.");
     }
     if (checked.ok) this.answeredIdentities.set(this.stepsKey(history.present), checked.answer.identity);
     if (!checked.ok) {
@@ -1009,7 +1009,7 @@ function checkCase(request: ImportedCaseEvidenceRequest, answer: ImportedCaseEvi
   if (answer.request_id !== request.request_id || answer.query_revision !== request.query_revision) {
     return mismatch("The reply names a different request or query revision.");
   }
-  if (answer.case_id !== request.case_id) return mismatch("The reply describes a different incident.");
+  if (answer.case_id !== request.case_id) return mismatch("The reply describes a different case.");
   if (!sameJson(answer.identity, request.identity)) return mismatch("The reply belongs to a different population identity.");
   return { ok: true, answer };
 }
@@ -1061,7 +1061,7 @@ function checkGraph(request: ProcessGraphRequest, selected: SelectionAnswer, ans
   }
   if (answer.workspace_id !== request.workspace_id) return mismatch("The reply belongs to a different workspace.");
   if (!sameJson(answer.identity, request.identity)) return mismatch("The map belongs to a different population identity.");
-  if (!sameJson(answer.graph.meta.selected_case_ids, selected.kept.case_ids)) return mismatch("The map is of different incidents than the selection.");
+  if (!sameJson(answer.graph.meta.selected_case_ids, selected.kept.case_ids)) return mismatch("The map is of different cases than the selection.");
   return { ok: true, answer };
 }
 

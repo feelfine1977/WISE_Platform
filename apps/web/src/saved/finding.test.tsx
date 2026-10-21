@@ -65,7 +65,7 @@ describe("#25 structured notes and pinned witnesses in one saved revision", () =
     await app.user.click(screen.getByRole("button", { name: "Save" }));
     const form = screen.getByRole("region", { name: "Save this investigation" });
     const summary = within(form).getByLabelText("What this save holds");
-    expect(summary.textContent).toContain("Pinned witnessesSupporting · Incident A-1 (A-1); Contrary · The other one (B-2)");
+    expect(summary.textContent).toContain("Pinned witnessesSupporting · Case A-1 (A-1); Contrary · The other one (B-2)");
     await app.user.type(within(form).getByLabelText("Question"), "Which opened first?");
     await app.user.type(within(form).getByLabelText("Counterexample"), "B-2");
     // Closed and opened again: the words come back, said to be an unsaved draft.

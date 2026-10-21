@@ -22,17 +22,17 @@ function report(answer: InterpretationAnswer, sent: ConfirmMappingRequest) {
   return { onOpenIncidents, onAccept, user: userEvent.setup() };
 }
 
-describe("#4 what WISE understood, before the incidents open", () => {
+describe("#4 what WISE understood, before the cases open", () => {
   it("reconciles the records, names each role's column and the reading, and gives the identities", async () => {
     const sent = request(true);
     const { onOpenIncidents, user } = report(interpretationAnswer(sent), sent);
     const summary = screen.getByRole("region", { name: "What WISE understood" });
     // The service's figures: 4 records read, 3 in 2 incidents, 1 outside every incident.
-    expect(summary.textContent).toContain("4 records read from Vorgänge.csv: 3 records in 2 incidents, and 1 record outside every incident.");
-    expect(summary.textContent).toContain("Each row is read as one recorded event or change of its incident.");
+    expect(summary.textContent).toContain("4 records read from Vorgänge.csv: 3 records in 2 cases, and 1 record outside every case.");
+    expect(summary.textContent).toContain("Each row is read as one recorded event or change of its case.");
     const roles = Object.fromEntries(within(summary).getAllByRole("term").map((term) => [term.textContent, term.nextElementSibling?.textContent]));
     expect(roles).toMatchObject({
-      "Incident id": "“Vorgang”",
+      "Case id": "“Vorgang”",
       Activity: "“Aktivität”",
       Time: `“Zeitpunkt”, read as ${formatLabels.dmy_dot_minute}, one fixed offset for every time, UTC+02:00`,
       "Sequence number": "none: equal times keep the order of the file",
@@ -42,7 +42,7 @@ describe("#4 what WISE understood, before the incidents open", () => {
       Preparation: preparationId,
       // #5: the ordering authority, the clock and where the cutoff came from are named; each policy with its version.
       Order:
-        "by the usable time; records with the same time by their place in the file; records without a usable time follow in file order, and their incident's order is then not fully known",
+        "by the usable time; records with the same time by their place in the file; records without a usable time follow in file order, and their case's order is then not fully known",
       Clock: "instants in UTC: a duration is elapsed time",
       "Export taken at": "2027-01-01 00:00:00 UTC; proposed from the latest usable time",
     });
@@ -52,7 +52,7 @@ describe("#4 what WISE understood, before the incidents open", () => {
     expect(screen.queryByRole("note")).toBeNull();
     // A new report takes the focus, so that the keyboard continues from what the reading gave.
     expect(document.activeElement?.textContent).toBe("What WISE understood");
-    await user.click(screen.getByRole("button", { name: "Open incidents" }));
+    await user.click(screen.getByRole("button", { name: "Open cases" }));
     expect(onOpenIncidents).toHaveBeenCalledWith(preparationId);
   });
 
@@ -64,15 +64,15 @@ describe("#4 what WISE understood, before the incidents open", () => {
     expect(screen.getByRole("button", { name: "Confirm and prepare" })).toBeTruthy();
   });
 
-  it("explains a file of one record per incident and opens it only when chosen", async () => {
+  it("explains a file of one record per case and opens it only when chosen", async () => {
     const sent = request(true);
     const base = interpretationAnswer(sent);
     const answer = { ...base, report: { ...base.report, raw_record_count: 3, identified_record_count: 3, unassigned_record_count: 0, case_count: 3 } };
     const { onOpenIncidents, user } = report(answer, sent);
-    expect(screen.getByRole("note").textContent).toContain("Every incident has exactly one record.");
-    const open = screen.getByRole("button", { name: "Open incidents" });
+    expect(screen.getByRole("note").textContent).toContain("Every case has exactly one record.");
+    const open = screen.getByRole("button", { name: "Open cases" });
     expect((open as HTMLButtonElement).disabled).toBe(true);
-    await user.click(screen.getByRole("checkbox", { name: "Open them as incidents of one record each." }));
+    await user.click(screen.getByRole("checkbox", { name: "Open them as cases of one record each." }));
     await user.click(open);
     expect(onOpenIncidents).toHaveBeenCalledWith(preparationId);
   });
@@ -82,7 +82,7 @@ describe("#4 what WISE understood, before the incidents open", () => {
     const base = interpretationAnswer(sent);
     report({ ...base, report: { ...base.report, usable_timestamp_record_count: 0, unavailable_timestamp_record_count: 4 } }, sent);
     const note = screen.getByRole("note");
-    expect(note.textContent).toContain("No record has a usable time with these choices, so the order of no incident is known");
+    expect(note.textContent).toContain("No record has a usable time with these choices, so the order of no case is known");
     expect(note.textContent).toContain("choose one that reads them");
   });
 
@@ -100,11 +100,11 @@ describe("#4 the guide to reading a CSV", () => {
     const user = userEvent.setup();
     await user.click(screen.getByText("How WISE reads a CSV file"));
     const guide = screen.getByText("How WISE reads a CSV file").closest("details")!;
-    for (const role of ["Incident id", "Activity", "Time", "Sequence number (optional)", "Context attributes (optional)"]) expect(within(guide).getByText(role)).toBeTruthy();
+    for (const role of ["Case id", "Activity", "Time", "Sequence number (optional)", "Context attributes (optional)"]) expect(within(guide).getByText(role)).toBeTruthy();
     for (const option of [...encodings.map((item) => item.label), ...delimiters.map((item) => item.label), ...timeFormats.map((format) => formatLabels[format])]) {
       expect(guide.textContent).toContain(option);
     }
-    expect(guide.textContent).toContain("Each row of the file is one recorded event or change of an incident");
+    expect(guide.textContent).toContain("Each row of the file is one recorded event or change of a case");
     expect(guide.textContent).toContain("nothing is sent elsewhere");
     await user.click(screen.getByRole("button", { name: "Load the synthetic example and read it" }));
     expect(onLoadExample).toHaveBeenCalledWith(workspaceExamples.find((item) => item.id === "S3"));

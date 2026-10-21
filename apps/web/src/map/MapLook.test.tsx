@@ -72,14 +72,14 @@ describe("the look the map is given", () => {
 
   it("says on the frame of the map which way it runs, for the stylesheet of its look", async () => {
     render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} />);
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     expect(map.closest(".map-frame")?.getAttribute("data-direction")).toBe("DOWN");
   });
 
   it("says on the frame whether an activity of the map is in a stage: without one the stylesheet leaves the bands of the cards out", async () => {
     const { rerender } = render(<MapView shown={shown} parentGraph={supplied} onStep={() => undefined} />);
-    const frame = () => screen.getByLabelText("Process map of the kept incidents").closest(".map-frame");
-    await screen.findByLabelText("Process map of the kept incidents");
+    const frame = () => screen.getByLabelText("Process map of the kept cases").closest(".map-frame");
+    await screen.findByLabelText("Process map of the kept cases");
     expect(frame()?.getAttribute("data-stages")).toBe("none");
     // A stage without an activity changes nothing; one with an activity of the map does.
     const named = withStage(noStages, "Intake");
@@ -93,7 +93,7 @@ describe("the look the map is given", () => {
 
   it("draws an activity as a card of 200 by 64 with rounded corners, its share as a bar along the bottom edge", async () => {
     render(<MapView shown={shown} parentGraph={supplied} onStep={() => undefined} />);
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"), { timeout: LAYOUT_WITHIN });
     const card = map.querySelector<HTMLElement>(`[id="wf-node-${busyIds.activity(0)}"]`)!;
     expect(["width", "height", "--wf-node-radius", "--wf-node-stroke", "--wf-node-fill"].map((name) => card.style.getPropertyValue(name))).toEqual(["200px", "64px", "8px", "1px", "var(--wf-paper)"]);
@@ -106,7 +106,7 @@ describe("the look the map is given", () => {
 
   it("draws Start as a ring and End as a disc in their colours, with their names", async () => {
     render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} />);
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"), { timeout: LAYOUT_WITHIN });
     const node = (id: string) => map.querySelector<HTMLElement>(`[id="wf-node-${id}"]`)!;
     const paints = (id: string) => ["--wf-node-fill", "--wf-node-outline", "--wf-node-stroke", "--wf-node-radius"].map((name) => node(id).style.getPropertyValue(name));

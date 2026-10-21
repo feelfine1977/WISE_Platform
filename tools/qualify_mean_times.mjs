@@ -38,7 +38,7 @@ try {
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
   await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Map', exact: true}).click();
-  await page.getByLabel('Process map of the kept incidents').waitFor();
+  await page.getByLabel('Process map of the kept cases').waitFor();
 
   for (const [label, times] of Object.entries(expected.activities)) {
     const rows = await select(label);
@@ -46,8 +46,8 @@ try {
       ? `${name}Not available: ${none}.`
       : `${name}median ${hours(median)} · mean ${hours(mean)} · ${count} ${count === 1 ? 'passage' : 'passages'} of ${records[label]} ${records[label] === 1 ? 'record' : 'records'}`;
     const wanted = [
-      row('From previous', times.medianPreviousHours, times.meanPreviousHours, times.usablePreviousCount, 'no labelled record comes before it in an incident whose order is known'),
-      row('To next', times.medianNextHours, times.meanNextHours, times.usableNextCount, 'no labelled record follows it in an incident whose order is known'),
+      row('From previous', times.medianPreviousHours, times.meanPreviousHours, times.usablePreviousCount, 'no labelled record comes before it in a case whose order is known'),
+      row('To next', times.medianNextHours, times.meanNextHours, times.usableNextCount, 'no labelled record follows it in a case whose order is known'),
     ];
     check(`${label}_median_and_mean_over_the_same_passages`, JSON.stringify(rows) === JSON.stringify(wanted), {rows, wanted});
   }

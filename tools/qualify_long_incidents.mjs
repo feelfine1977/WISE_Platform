@@ -51,7 +51,7 @@ try {
     await settled(0);
     const parent = selections.at(-1);
     // The chart of spans: the third column (4 h to 1 d) by keyboard keeps the incidents of at least four hours.
-    const chart = page.getByRole('group', {name: 'Incidents by recorded span'});
+    const chart = page.getByRole('group', {name: 'Cases by recorded span'});
     await chart.waitFor();
     await chart.focus();
     for (let step = 0; step < 3; step++) await page.keyboard.press('ArrowRight');
@@ -63,9 +63,9 @@ try {
     check('chart_step_matches_the_oracle', partitionMatches(fromChart), [fromChart.kept, fromChart.unevaluable]);
     check('exactly_four_hours_is_kept', fromChart.kept.case_ids.includes('I-4H'), null);
     const chip = (await page.getByRole('list', {name: 'Steps of the selection'}).locator('.chip-wording').first().textContent()) ?? '';
-    check('chip_names_the_definition', chip === 'Keep incidents with recorded span at least 4 hours', chip);
+    check('chip_names_the_definition', chip === 'Keep cases with recorded span at least 4 hours', chip);
     // The incident list ordered by span shows the same incidents at or above the threshold.
-    await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+    await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
     await page.getByRole('button', {name: 'Longest span first', exact: true}).click();
     await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
     const listAnswer = lists.at(-1);

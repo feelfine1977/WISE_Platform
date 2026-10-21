@@ -27,7 +27,7 @@ export function valueText(value: string | null): string {
 
 /** "4 of 8 incidents · 10 records": a supplied part of a supplied whole, both counted in incidents. */
 export function partOf(part: PopulationSupport, whole: PopulationSupport, wholeName: string): string {
-  return `${part.case_count} of ${countOf(whole.case_count, "incident")} ${wholeName} · ${countOf(part.record_count, "record")}`;
+  return `${part.case_count} of ${countOf(whole.case_count, "case")} ${wholeName} · ${countOf(part.record_count, "record")}`;
 }
 
 /** "3 of 4 (75.0%)", or what stands in for the share of a group without denominator. */
@@ -68,11 +68,11 @@ export function ratioText(ratio: ConcentrationRatio, names: [string, string]): s
 function emptyReason(reason: "empty_target_profile" | "empty_reference_profile" | "empty_both_profiles", [a, b]: [string, string]): string {
   switch (reason) {
     case "empty_target_profile":
-      return `${a} has no incident whose first record can be read`;
+      return `${a} has no case whose first record can be read`;
     case "empty_reference_profile":
-      return `${b} has no incident whose first record can be read`;
+      return `${b} has no case whose first record can be read`;
     case "empty_both_profiles":
-      return "neither group has an incident whose first record can be read";
+      return "neither group has a case whose first record can be read";
   }
 }
 
@@ -81,9 +81,9 @@ export function groupWording(definition: NamedGroupDefinition): string {
   if (definition.kind === "explicit_case_ids") {
     const shown = definition.case_ids.slice(0, 10);
     const rest = definition.case_ids.length - shown.length;
-    return `${countOf(definition.case_ids.length, "listed incident id")} (${shown.join(", ")}${rest > 0 ? ` and ${rest} more` : ""}); the list says nothing about why these incidents belong together`;
+    return `${countOf(definition.case_ids.length, "listed case id")} (${shown.join(", ")}${rest > 0 ? ` and ${rest} more` : ""}); the list says nothing about why these cases belong together`;
   }
-  if (definition.predicates.length === 0) return "every incident of the parent (a selection without steps)";
+  if (definition.predicates.length === 0) return "every case of the parent (a selection without steps)";
   return definition.predicates.map(stepWording).join("; and ");
 }
 
@@ -92,21 +92,21 @@ export function overlapSentences(pair: PairSupport, [a, b]: [string, string], ki
   const sentences: string[] = [];
   if (pair.overlap.case_count > 0) {
     sentences.push(
-      `Membership: overlapping. ${countOf(pair.overlap.case_count, "incident")} with ${countOf(pair.overlap.record_count, "record")} ` +
+      `Membership: overlapping. ${countOf(pair.overlap.case_count, "case")} with ${countOf(pair.overlap.record_count, "record")} ` +
         `${pair.overlap.case_count === 1 ? "is" : "are"} in both ${a} and ${b}. ` +
         "They are counted in each group, so the counts and records of the two groups overlap and cannot be added.",
     );
   } else {
-    sentences.push(`Membership: disjoint. No incident is in both ${a} and ${b}.`);
+    sentences.push(`Membership: disjoint. No case is in both ${a} and ${b}.`);
   }
   if (pair.unevaluable.case_count > 0) {
     sentences.push(
-      `${countOf(pair.unevaluable.case_count, "incident")} of the parent cannot be placed in or outside ${a} or ${b}, ` +
+      `${countOf(pair.unevaluable.case_count, "case")} of the parent cannot be placed in or outside ${a} or ${b}, ` +
         `as what decides their membership cannot be evaluated; they are counted in neither ${kind}.`,
     );
   }
   if (pair.neither.case_count > 0) {
-    sentences.push(`${countOf(pair.neither.case_count, "incident")} of the parent ${pair.neither.case_count === 1 ? "is" : "are"} in neither ${kind}.`);
+    sentences.push(`${countOf(pair.neither.case_count, "case")} of the parent ${pair.neither.case_count === 1 ? "is" : "are"} in neither ${kind}.`);
   }
   return sentences;
 }
@@ -133,15 +133,15 @@ const remedies: Record<ComparisonRefusal["code"], string> = {
   source_unavailable: "Add the file again in the Data area; the workspace no longer holds these bytes.",
   memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   preparation_unavailable: "Read the source again with the same choices in the Data area.",
-  identity_mismatch: "The source or its reading changed. Open the incidents again from the Data area.",
-  population_unavailable: "Open the incidents again from the Data area.",
+  identity_mismatch: "The source or its reading changed. Open the cases again from the Data area.",
+  population_unavailable: "Open the cases again from the Data area.",
   invalid_predicate: "Take the group again from a selection in Investigations.",
-  invalid_parent: "Open the incidents again from the Data area.",
-  unknown_case: "Take the group again from the incidents of this preparation.",
-  case_outside_parent: "A group lists incidents outside the parent: take the group again from the incidents of the parent, or use every incident as the parent.",
+  invalid_parent: "Open the cases again from the Data area.",
+  unknown_case: "Take the group again from the cases of this preparation.",
+  case_outside_parent: "A group lists cases outside the parent: take the group again from the cases of the parent, or use every case as the parent.",
   unmapped_context_column: "Choose one of the context columns of this preparation.",
   invalid_window: "Pick a last day on or after the first day of each period.",
-  clock_mismatch: "Open the incidents again from the Data area, then pick the periods again.",
+  clock_mismatch: "Open the cases again from the Data area, then pick the periods again.",
   computation_failed: "Try again. If it fails again, restart the application.",
 };
 

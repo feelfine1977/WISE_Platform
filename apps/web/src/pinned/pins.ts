@@ -10,8 +10,8 @@ export function originLine(pin: Pin): string {
   const { question } = pin;
   const steps = question.steps.length === 0 ? "no step" : `${countOf(question.steps.length, "step")}: ${question.steps.map(stepWording).join("; ")}`;
   return pin.side === "kept"
-    ? `Kept by the selection: one of ${countOf(question.kept, "incident")} of ${countOf(question.parent, "incident")}, under ${steps}.`
-    : `Removed by the selection: one of ${countOf(question.removed, "incident")} it removes, read in its parent of ${countOf(question.parent, "incident")}, under ${steps}.`;
+    ? `Kept by the selection: one of ${countOf(question.kept, "case")} of ${countOf(question.parent, "case")}, under ${steps}.`
+    : `Removed by the selection: one of ${countOf(question.removed, "case")} it removes, read in its parent of ${countOf(question.parent, "case")}, under ${steps}.`;
 }
 
 /** The start of a population identity, enough to tell two populations apart on screen; the pin holds all of it. */

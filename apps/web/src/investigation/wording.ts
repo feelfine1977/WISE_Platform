@@ -4,12 +4,12 @@ import type { Problem } from "./client";
 const integer = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 
 /** A supplied count, formatted, and the unit it counts: "12" and "incidents". */
-export function countParts(count: number, singular: "incident" | "record"): { figure: string; unit: string } {
+export function countParts(count: number, singular: "case" | "record"): { figure: string; unit: string } {
   return { figure: integer.format(count), unit: count === 1 ? singular : `${singular}s` };
 }
 
 /** Formats a supplied count with the unit it counts, for example "12 incidents". */
-export function countOf(count: number, singular: "incident" | "record"): string {
+export function countOf(count: number, singular: "case" | "record"): string {
   const { figure, unit } = countParts(count, singular);
   return `${figure} ${unit}`;
 }
@@ -26,8 +26,8 @@ const refusalReasons: Record<Refusal["code"], string> = {
   source_unavailable: "The example source is not available on this computer.",
   memory_unavailable: "The application does not have enough memory for this now. Close other work you have open, then try again.",
   malformed_source: "The example source could not be read as an event history.",
-  case_not_found: "This incident is not recorded in the source.",
-  case_not_in_population: "This incident is outside the current population.",
+  case_not_found: "This case is not recorded in the source.",
+  case_not_in_population: "This case is outside the current population.",
   identity_mismatch: "The source or its interpretation is no longer the one this population was opened with.",
   computation_failed: "The local service could not complete the calculation.",
 };
@@ -73,5 +73,5 @@ export function partitionLabel(partition: CaseSummary["partition"], policies: In
 /** States what separates kept from removed incidents, from the supplied predicate policy. */
 export function partitionRule(policies: InputPolicies): string {
   const activity = policies.predicate.parameters.contains_activity;
-  return `Kept incidents have ${activity} recorded; removed incidents have no ${activity} recorded.`;
+  return `Kept cases have ${activity} recorded; removed cases have no ${activity} recorded.`;
 }

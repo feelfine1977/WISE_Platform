@@ -71,7 +71,7 @@ function setup(order: TimeOrder = "observed_span_hours", caseLists = listing()) 
   const onShowRecords = vi.fn();
   render(
     <>
-      <h3 id="title">Kept incidents</h3>
+      <h3 id="title">Kept cases</h3>
       <IncidentsInTimeOrder workspaceId="workspace-1" revision={2} identity={kept} kept={keptCases} order={order} openCaseId={null} onOpen={vi.fn()}
         focusRequest={null} labelledBy="title" caseLists={caseLists} marks={noMarks} onShowRecords={onShowRecords} />
     </>,
@@ -81,10 +81,10 @@ function setup(order: TimeOrder = "observed_span_hours", caseLists = listing()) 
 
 const focus = () => screen.getByRole("region", { name: /^S-/ });
 
-describe("the list of kept incidents by span and longest gap", () => {
-  it("says of the incident in focus its first and last records, its span, and its longest gap with its two activities, offset and share", async () => {
+describe("the list of kept cases by span and longest gap", () => {
+  it("says of the case in focus its first and last records, its span, and its longest gap with its two activities, offset and share", async () => {
     const { onShowRecords, user } = setup();
-    await screen.findByRole("table", { name: "Kept incidents" });
+    await screen.findByRole("table", { name: "Kept cases" });
     expect(within(focus()).getByRole("heading").textContent).toBe("S-UNLAB: 3 records, 1 without activity label");
     expect(focus().textContent).toContain("First record 2026-05-04 08:00:00 UTC, “Opened”; last record 2026-05-04 15:00:00 UTC, “Resolved”.");
     expect(focus().textContent).toContain("Recorded span 7 h.");
@@ -96,7 +96,7 @@ describe("the list of kept incidents by span and longest gap", () => {
 
   it("shows the context of the two records of the gap from the chosen context columns only, an empty value as not recorded", async () => {
     setup();
-    await screen.findByRole("table", { name: "Kept incidents" });
+    await screen.findByRole("table", { name: "Kept cases" });
     const table = within(focus()).getByRole("table", { name: /^Context at the two records of the longest gap/ });
     expect(within(table).getAllByRole("row").map((row) => Array.from(row.children, (cell) => cell.textContent))).toEqual([
       ["Context column", "Where the gap begins", "Where it ends"],
@@ -109,13 +109,13 @@ describe("the list of kept incidents by span and longest gap", () => {
 
   it("says that there is no context when no context column was chosen", async () => {
     setup("observed_span_hours", listing([]));
-    await screen.findByRole("table", { name: "Kept incidents" });
+    await screen.findByRole("table", { name: "Kept cases" });
     expect(within(focus()).getByText("No context column was chosen for this source, so the gap has no context to show.")).toBeTruthy();
   });
 
   it("follows the current row: tied times are zero gaps, one record spans zero without a gap, and an unknown order has neither", async () => {
     const { user } = setup();
-    const table = await screen.findByRole("table", { name: "Kept incidents" });
+    const table = await screen.findByRole("table", { name: "Kept cases" });
     await user.click(within(table).getByRole("button", { name: "S-UNLAB" }));
     await user.keyboard("{ArrowDown}");
     expect(focus().textContent).toContain("One group of records shares a time; the gaps within it are zero.");
@@ -134,9 +134,9 @@ describe("the list of kept incidents by span and longest gap", () => {
 
   it("asks for each order in its first direction, says it in words, and reverses it on request from the first page", async () => {
     const { caseLists, user } = setup("record_count");
-    await screen.findByRole("table", { name: "Kept incidents" });
+    await screen.findByRole("table", { name: "Kept cases" });
     expect(caseLists.list.mock.calls.at(-1)![0].query.sort).toEqual({ field: "record_count", direction: "descending" });
-    expect(screen.getByText("By number of records, the most first; equal values in the order of their numbers, and incidents without a value last.")).toBeTruthy();
+    expect(screen.getByText("By number of records, the most first; equal values in the order of their numbers, and cases without a value last.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Reverse" }));
     expect(caseLists.list.mock.calls.at(-1)![0].query).toMatchObject({ sort: { field: "record_count", direction: "ascending" }, offset: 0 });
     expect(screen.getByRole("button", { name: "Reverse" }).getAttribute("aria-pressed")).toBe("true");
@@ -145,30 +145,30 @@ describe("the list of kept incidents by span and longest gap", () => {
 
   it("orders by first record the earliest first", async () => {
     const { caseLists } = setup("first_recorded_time");
-    await screen.findByRole("table", { name: "Kept incidents" });
+    await screen.findByRole("table", { name: "Kept cases" });
     expect(caseLists.list.mock.calls.at(-1)![0].query.sort).toEqual({ field: "first_recorded_time", direction: "ascending" });
     expect(screen.getByText(/^By time of the first record, the earliest first/)).toBeTruthy();
   });
 
-  it("finds incidents by number in the same order, narrowing only the rows shown, and shows every kept incident again", async () => {
+  it("finds cases by number in the same order, narrowing only the rows shown, and shows every kept case again", async () => {
     const { caseLists, user } = setup();
-    await screen.findByRole("table", { name: "Kept incidents" });
-    await user.type(screen.getByRole("searchbox", { name: "Incident number contains" }), "TIE");
+    await screen.findByRole("table", { name: "Kept cases" });
+    await user.type(screen.getByRole("searchbox", { name: "Case number contains" }), "TIE");
     await user.click(screen.getByRole("button", { name: "Find" }));
     expect(caseLists.list.mock.calls.at(-1)![0].query).toMatchObject({ search_text: "TIE", sort: { field: "observed_span_hours", direction: "descending" }, offset: 0 });
     const said = await screen.findByRole("status");
-    expect(said.textContent).toBe("2 kept incidents of 5 have “TIE” in their numbers. The search narrows only the rows shown: the kept incidents, their counts and their distribution stay the same.");
-    const table = screen.getByRole("table", { name: "Kept incidents" });
+    expect(said.textContent).toBe("2 kept cases of 5 have “TIE” in their numbers. The search narrows only the rows shown: the kept cases, their counts and their distribution stay the same.");
+    const table = screen.getByRole("table", { name: "Kept cases" });
     expect(within(table).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("button")[0].textContent)).toEqual(["S-TIE", "S-ALLTIE"]);
-    await user.click(screen.getByRole("button", { name: "Show every kept incident" }));
+    await user.click(screen.getByRole("button", { name: "Show every kept case" }));
     expect(caseLists.list.mock.calls.at(-1)![0].query.search_text).toBeNull();
-    expect(await screen.findByText("5 incidents of 5")).toBeTruthy();
+    expect(await screen.findByText("5 cases of 5")).toBeTruthy();
   });
 
-  it("says when no kept incident has the text in its number", async () => {
+  it("says when no kept case has the text in its number", async () => {
     const { user } = setup();
-    await screen.findByRole("table", { name: "Kept incidents" });
-    await user.type(screen.getByRole("searchbox", { name: "Incident number contains" }), "nothing{Enter}");
-    expect((await screen.findByRole("status")).textContent).toMatch(/^No kept incident has “nothing” in its number\./);
+    await screen.findByRole("table", { name: "Kept cases" });
+    await user.type(screen.getByRole("searchbox", { name: "Case number contains" }), "nothing{Enter}");
+    expect((await screen.findByRole("status")).textContent).toMatch(/^No kept case has “nothing” in its number\./);
   });
 });

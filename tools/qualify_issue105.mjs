@@ -49,10 +49,10 @@ async function visible(column,scope){
   const evidence=await post('/api/investigations/case-evidence',()=>table.locator('tbody tr').nth(3).getByRole('button',{name:'Inspect an item',exact:true}).click());
   assert.equal(evidence.case_id,'D2_1');assert.deepEqual(evidence.identity,scope.identity);
   assert.deepEqual(evidence.records.map(r=>r.original_cells),[fixture.rows[4]]);
-  const inspector=page.getByRole('region',{name:'Incident D2_1',exact:true});
+  const inspector=page.getByRole('region',{name:'Case D2_1',exact:true});
   await inspector.getByText('Original cells',{exact:true}).click();
   assert.deepEqual(await inspector.locator('.history-cells dd').allTextContents(),fixture.rows[4].map(v=>v||'missing'));
-  await inspector.getByRole('button',{name:'Return to incidents',exact:true}).click();
+  await inspector.getByRole('button',{name:'Return to cases',exact:true}).click();
 }
 const nativeRequests=[];
 page.on('pageerror', error=>errors.push(error.message));

@@ -28,7 +28,7 @@ async function setup() {
 }
 async function scored() {
   const s = await setup(); s.coordinator.setForm(authored);
-  s.coordinator.check({ workspaceId, baseIdentity: identity, population: { name: "Every incident", identity } }, definition);
+  s.coordinator.check({ workspaceId, baseIdentity: identity, population: { name: "Every case", identity } }, definition);
   s.validations[0].reply({ ok: true, answer: readyAnswer(s.validations[0].request) }); await settle();
   s.coordinator.score(); const answer = runAnswer(s.scores[0].request, definition);
   s.scores[0].reply({ ok: true, answer }); await settle();
@@ -125,7 +125,7 @@ describe("restored run binding and pending publication", () => {
 
   it("aborts pending checks and explicit scores at a preparation change", async () => {
     const s = await setup();
-    const target = { workspaceId, baseIdentity: identity, population: { name: "Every incident", identity } };
+    const target = { workspaceId, baseIdentity: identity, population: { name: "Every case", identity } };
     s.coordinator.check(target, definition); s.validations[0].reply({ ok: true, answer: readyAnswer(s.validations[0].request) }); await settle();
     s.coordinator.score(); s.coordinator.check(target, definition);
     s.investigation.open({ workspaceId, preparationId: `preparation.v1:sha256:${"e".repeat(64)}` });

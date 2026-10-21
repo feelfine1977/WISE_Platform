@@ -44,7 +44,7 @@ function states() {
 }
 
 describe("the area tabs of the app bar", () => {
-  it("list the areas in the order of the work, start in Investigations, and can all be entered before incidents are open", async () => {
+  it("list the areas in the order of the work, start in Investigations, and can all be entered before cases are open", async () => {
     const app = renderApp();
     expect(states()).toEqual([
       { name: "Data", current: null, disabled: null, reason: null },
@@ -64,7 +64,7 @@ describe("the area tabs of the app bar", () => {
     await app.user.click(tab("Expectation"));
     expect(states().map((item) => item.current)).toEqual([null, null, null, null, "page", null]);
     expect(screen.getByRole("heading", { name: "Expectation" })).toBeTruthy();
-    expect(screen.getByText(/An expectation is scored for the incidents an investigation shows\./)).toBeTruthy();
+    expect(screen.getByText(/An expectation is scored for the cases an investigation shows\./)).toBeTruthy();
 
     await app.user.click(tab("Saved"));
     expect(states().map((item) => item.current)).toEqual([null, null, null, null, null, "page"]);

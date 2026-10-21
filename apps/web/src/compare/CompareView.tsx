@@ -99,7 +99,7 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
           </h2>
         </div>
         <div className="compare-empty">
-          <InvestigationPrerequisite state={investigated} purpose="Comparisons are made in the incidents of a source read in the Data area." needsSelection={false}
+          <InvestigationPrerequisite state={investigated} purpose="Comparisons are made in the cases of a source read in the Data area." needsSelection={false}
             onShowData={onShowData} onShowInvestigation={onShowInvestigation} onRetryPopulation={() => investigation.retryPopulation()}
             onRetrySelection={() => investigation.retrySelection()} />
         </div>
@@ -194,7 +194,7 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
           )}
           {waitingFor && (
             <p id={waitingFor} className="compare-hidden">
-              No step can be added while other incidents are opening in Investigations.
+              No step can be added while other cases are opening in Investigations.
             </p>
           )}
           {shown && <ComparisonTable shown={shown} columnName={columnName(shown.answer.context_column_index)} onStep={addStep} waitingFor={waitingFor}
@@ -265,7 +265,7 @@ function GroupsSetup({ coordinator, draft, selection, activities, openings, inve
   return (
     <>
       <p className="compare-muted">
-        Choose each group from the data: the incidents with or without an activity, that begin or end with an activity, or whose first recorded observation has a value. A
+        Choose each group from the data: the cases with or without an activity, that begin or end with an activity, or whose first recorded observation has a value. A
         group can also be the current selection of the investigation, and "Kept against removed" compares the two sides of that selection in one
         step.
       </p>
@@ -275,7 +275,7 @@ function GroupsSetup({ coordinator, draft, selection, activities, openings, inve
           {selection === null
             ? "not answered yet"
             : steps.length === 0
-              ? `no step: keeps every incident, ${supportText(selection.answer.kept)}`
+              ? `no step: keeps every case, ${supportText(selection.answer.kept)}`
               : `${steps.map(stepWording).join("; and ")}. Kept ${supportText(selection.answer.kept)}; removed ${supportText(selection.answer.removed)}; not evaluable ${supportText(selection.answer.unevaluable)}.`}
         </p>
         <button
@@ -287,13 +287,13 @@ function GroupsSetup({ coordinator, draft, selection, activities, openings, inve
           Kept against removed
         </button>
         <p id="compare-split-hint" className="compare-muted">
-          The last step splits the parent: A holds what it keeps, B what it removes. The parent is frozen after every earlier step, so an incident an
+          The last step splits the parent: A holds what it keeps, B what it removes. The parent is frozen after every earlier step, so a case an
           earlier step removed is in neither side.
         </p>
         {freezing.phase === "working" && <p className="working-text">Freezing the parent of the earlier steps…</p>}
         {freezing.phase === "failed" && <p role="alert">{freezing.message}</p>}
         {selection !== null && steps.length === 0 && (
-          <p className="compare-muted">Add a step to the selection in Investigations to compare its kept and removed incidents.</p>
+          <p className="compare-muted">Add a step to the selection in Investigations to compare its kept and removed cases.</p>
         )}
       </div>
       <div className="compare-groups">
@@ -358,7 +358,7 @@ function GroupSlot({ role, coordinator, draft, selection, activities, openings }
     const side = role === "target" ? draft.split.targetSide : draft.split.targetSide === "kept" ? "removed" : "kept";
     description = (
       <>
-        The incidents of the frozen parent the clause {side === "kept" ? "keeps (included)" : "removes (excluded)"}: {draft.split.predicates.map(stepWording).join("; and ")}.
+        The cases of the frozen parent the clause {side === "kept" ? "keeps (included)" : "removes (excluded)"}: {draft.split.predicates.map(stepWording).join("; and ")}.
         Those it cannot evaluate belong to neither side.
       </>
     );
@@ -367,7 +367,7 @@ function GroupSlot({ role, coordinator, draft, selection, activities, openings }
     const support = side === "kept" ? draft.split.taken.kept : draft.split.taken.removed;
     description = (
       <>
-        The {side} incidents of the selection: {draft.split.predicates.map(stepWording).join("; and ")}. When it was taken it {side}{" "}
+        The {side} cases of the selection: {draft.split.predicates.map(stepWording).join("; and ")}. When it was taken it {side}{" "}
         {supportText(support)}
         {draft.split.taken.unevaluable.case_count > 0 && <>; {supportText(draft.split.taken.unevaluable)} not evaluable belong to neither side</>}.
       </>
@@ -392,7 +392,7 @@ function GroupSlot({ role, coordinator, draft, selection, activities, openings }
       <p className="compare-group-definition">{description}</p>
       <div className="compare-define">
         <label htmlFor={kindId} className="compare-label">
-          Incidents that
+          Cases that
         </label>
         <select id={kindId} value={kind} onChange={(event) => setKind(event.target.value as ConditionKind)}>
           <option value="with">contain the activity</option>
@@ -462,9 +462,9 @@ function GroupSlot({ role, coordinator, draft, selection, activities, openings }
         Take the current selection as {letter}
       </button>
       <details className="compare-ids">
-        <summary>List incident ids for {letter}</summary>
+        <summary>List case ids for {letter}</summary>
         <label htmlFor={idsId} className="compare-label">
-          Incident ids, separated by spaces, commas or new lines
+          Case ids, separated by spaces, commas or new lines
         </label>
         <textarea id={idsId} value={ids} rows={3} onChange={(event) => setIds(event.target.value)} />
         <button type="button" disabled={listed.length === 0} onClick={() => coordinator.takeIds(role, listed)}>
@@ -488,8 +488,8 @@ function PeriodsSetup({ coordinator, draft, clock, activities }: PeriodsSetupPro
   return (
     <>
       <p className="compare-muted">
-        An incident belongs to a period when its first record falls on one of its days ({clock === "wall_clock" ? "days as recorded" : "days in UTC"}
-        ). Every record of the incident counts, also those after the period.
+        A case belongs to a period when its first record falls on one of its days ({clock === "wall_clock" ? "days as recorded" : "days in UTC"}
+        ). Every record of the case counts, also those after the period.
       </p>
       <div className="compare-groups">
         {(["target", "reference"] as const).map((role) => (
@@ -663,10 +663,10 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor, onInspect }: C
         <strong>A</strong> is {kind} {names[0]}; <strong>B</strong> is {kind} {names[1]}. {roleDefinitions(shown)}
       </p>
       <p className="compare-muted">
-        In a parent of {countOf(answer.parent.case_count, "incident")}: A has {countOf(answer.target.included.case_count, "incident")} and B{" "}
-        {countOf(answer.reference.included.case_count, "incident")}
-        {answer.target.included.case_count !== answer.reference.included.case_count && ", so their sizes differ: every share is of a group's own incidents"}. The context
-        compared is the value of {columnName} at each incident's first record in the declared order ({answer.context_policy}), common to both groups; values recorded later
+        In a parent of {countOf(answer.parent.case_count, "case")}: A has {countOf(answer.target.included.case_count, "case")} and B{" "}
+        {countOf(answer.reference.included.case_count, "case")}
+        {answer.target.included.case_count !== answer.reference.included.case_count && ", so their sizes differ: every share is of a group's own cases"}. The context
+        compared is the value of {columnName} at each case's first record in the declared order ({answer.context_policy}), common to both groups; values recorded later
         or last are not offered.
       </p>
       <div className="compare-actions">
@@ -676,7 +676,7 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor, onInspect }: C
       </div>
       {ratio && (
         <p className="compare-muted">
-          The ratio divides the share of a value in A ({names[0]}) by its share in B ({names[1]}), each of its own incidents with a readable first
+          The ratio divides the share of a value in A ({names[0]}) by its share in B ({names[1]}), each of its own cases with a readable first
           record: above 1 the value is more frequent in A, below 1 in B. Exchanging A and B turns it over. A share of 0 in B gives no ratio, only no
           reference support. It describes this snapshot; it is not a risk, a lift or a priority.
         </p>
@@ -712,7 +712,7 @@ function ComparisonTable({ shown, columnName, onStep, waitingFor, onInspect }: C
                 <td>
                   {row.inspect && onInspect && (
                     <button type="button" className="compare-step" onClick={() => row.inspect && onInspect({ columnIndex: answer.context_column_index, ...row.inspect })}>
-                      Inspect the incidents first recorded with {row.inspect.label}
+                      Inspect the cases first recorded with {row.inspect.label}
                     </button>
                   )}
                   {row.step && (
@@ -752,9 +752,9 @@ function roleDefinitions(shown: ShownComparison): string {
     const { target, reference, minimum_followup_hours: minimum, endpoint_activity: endpoint } = shown.request.definition;
     const window = (period: typeof target) => `${period.window.start_inclusive.replace("T00:00:00Z", "").replace("T00:00:00", "")} to ${period.window.end_exclusive.replace("T00:00:00Z", "").replace("T00:00:00", "")} (end excluded)`;
     return (
-      `Periods take incidents by the start of their first record: A from ${window(target)}, B from ${window(reference)}. Both are measured the same way, to the ` +
+      `Periods take cases by the start of their first record: A from ${window(target)}, B from ${window(reference)}. Both are measured the same way, to the ` +
       `snapshot cutoff stored with the preparation, with a minimum follow-up of ${hoursText(minimum)}${endpoint ? ` and the recorded activity “${endpoint}”` : ""}, and the same ` +
-      "context. Each incident keeps its whole history, also after its period."
+      "context. Each case keeps its whole history, also after its period."
     );
   }
   const definition = shown.request.definition;
@@ -763,9 +763,9 @@ function roleDefinitions(shown: ShownComparison): string {
     const clause = definition.predicates.map(stepWording).join("; and ");
     const absent = definition.predicates.length === 1 && definition.predicates[0].kind === "contains_activity" ? definition.predicates[0].activity : null;
     return (
-      `A is the target and B the reference: A holds the incidents of the parent the clause ${included ? "includes" : "excludes"}, B those it ${included ? "excludes" : "includes"}, ` +
-      `and the incidents it cannot evaluate are in neither. The clause: ${clause}.` +
-      (absent === null ? "" : ` “No recorded “${absent}”” says only that the export holds no record of it: not that the incident is open or unresolved.`)
+      `A is the target and B the reference: A holds the cases of the parent the clause ${included ? "includes" : "excludes"}, B those it ${included ? "excludes" : "includes"}, ` +
+      `and the cases it cannot evaluate are in neither. The clause: ${clause}.` +
+      (absent === null ? "" : ` “No recorded “${absent}”” says only that the export holds no record of it: not that the case is open or unresolved.`)
     );
   }
   return `A: ${groupWording(definition.target.definition)}. B: ${groupWording(definition.reference.definition)}.`;
@@ -779,8 +779,8 @@ function cohortRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer): Row
   return [
     {
       key: "included",
-      measure: periods ? "Incidents started in the period" : "Incidents in the group",
-      detail: `of the ${countOf(parent.case_count, "incident")} of the parent`,
+      measure: periods ? "Cases started in the period" : "Cases in the group",
+      detail: `of the ${countOf(parent.case_count, "case")} of the parent`,
       a: partOf(target.included, parent, "of the parent"),
       b: partOf(reference.included, parent, "of the parent"),
       difference: null,
@@ -788,7 +788,7 @@ function cohortRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer): Row
     {
       key: "unevaluable",
       measure: "Not evaluable for membership",
-      detail: `incidents of the parent in neither the ${noun} nor outside it`,
+      detail: `cases of the parent in neither the ${noun} nor outside it`,
       a: partOf(target.unevaluable, parent, "of the parent"),
       b: partOf(reference.unevaluable, parent, "of the parent"),
       difference: null,
@@ -806,7 +806,7 @@ function cohortRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer): Row
 
 /** "2 of 3 incidents in the group": a supplied part of the supplied incidents of one side. */
 function ofIncluded(part: PopulationSupport, included: PopulationSupport, member: string): string {
-  return `${part.case_count} of ${countOf(included.case_count, "incident")} ${member}`;
+  return `${part.case_count} of ${countOf(included.case_count, "case")} ${member}`;
 }
 
 function periodRows(answer: PeriodComparisonAnswer, minimum: number): Row[] {
@@ -814,7 +814,7 @@ function periodRows(answer: PeriodComparisonAnswer, minimum: number): Row[] {
     {
       key: "adequate",
       measure: `Followed for at least ${hoursText(minimum)}`,
-      detail: "from the incident's start to the snapshot cutoff",
+      detail: "from the case's start to the snapshot cutoff",
       a: ofIncluded(answer.target.exposure.adequate, answer.target.included, "in the period"),
       b: ofIncluded(answer.reference.exposure.adequate, answer.reference.included, "in the period"),
       difference: null,
@@ -845,7 +845,7 @@ function endpointRow(target: PeriodCohort, reference: PeriodCohort): Row | null 
     a: ofIncluded(target.endpoint_coverage.recorded, target.included, "in the period"),
     b: ofIncluded(reference.endpoint_coverage.recorded, reference.included, "in the period"),
     difference: null,
-    step: { predicate: { kind: "contains_activity", activity, negate: false }, label: `Keep incidents that contain “${activity}”` },
+    step: { predicate: { kind: "contains_activity", activity, negate: false }, label: `Keep cases that contain “${activity}”` },
   };
 }
 
@@ -855,7 +855,7 @@ function missingEndpointRow(target: PeriodCohort, reference: PeriodCohort): Row 
   return {
     key: "endpoint-missing",
     measure: `No recorded “${activity}”`,
-    detail: "in the export at its cutoff: not a verdict that the incident is unfinished",
+    detail: "in the export at its cutoff: not a verdict that the case is unfinished",
     a: ofIncluded(target.endpoint_coverage.not_recorded, target.included, "in the period"),
     b: ofIncluded(reference.endpoint_coverage.not_recorded, reference.included, "in the period"),
     difference: null,
@@ -884,7 +884,7 @@ function profileRows(answer: GroupComparisonAnswer | PeriodComparisonAnswer, col
           negate: false,
           anchor_policy: contextPolicy,
         },
-        label: category.value === null ? `Keep incidents first recorded with ${columnName} not recorded` : `Keep incidents first recorded with ${columnName} ${value}`,
+        label: category.value === null ? `Keep cases first recorded with ${columnName} not recorded` : `Keep cases first recorded with ${columnName} ${value}`,
       },
     };
   });
@@ -895,16 +895,16 @@ function ProfileNotes({ profile, columnName }: { profile: ContextProfile; column
   if (profile.parent_unevaluable.case_count > 0) {
     const count = profile.parent_unevaluable.case_count;
     notes.push(
-      `${countOf(count, "incident")} of the parent ${count === 1 ? "has" : "have"} no readable first record, as ${count === 1 ? "its" : "their"} order is not known; ${count === 1 ? "it is" : "they are"} in no share.`,
+      `${countOf(count, "case")} of the parent ${count === 1 ? "has" : "have"} no readable first record, as ${count === 1 ? "its" : "their"} order is not known; ${count === 1 ? "it is" : "they are"} in no share.`,
     );
   }
   notes.push(
-    `Each incident has exactly one first recorded ${columnName}, so the shares of a side add up. Values ever recorded later would overlap and not add up; they are not offered here.`,
+    `Each case has exactly one first recorded ${columnName}, so the shares of a side add up. Values ever recorded later would overlap and not add up; they are not offered here.`,
   );
   if (profile.parent_fixed.status === "fixed") {
-    notes.push(`${columnName} is fixed in the parent: every incident of the parent was first recorded with ${columnName} ${valueText(profile.parent_fixed.value)}, so this column cannot tell the groups apart.`);
+    notes.push(`${columnName} is fixed in the parent: every case of the parent was first recorded with ${columnName} ${valueText(profile.parent_fixed.value)}, so this column cannot tell the groups apart.`);
   } else if (profile.parent_fixed.status === "varying") {
-    notes.push(`${columnName} varies in the parent: its incidents were first recorded with more than one value.`);
+    notes.push(`${columnName} varies in the parent: its cases were first recorded with more than one value.`);
   }
   if (notes.length === 0) return null;
   return (
@@ -919,12 +919,12 @@ function ProfileNotes({ profile, columnName }: { profile: ContextProfile; column
 function ExposureNote({ answer, minimum }: { answer: PeriodComparisonAnswer; minimum: number }) {
   const clock = answer.followup_clock;
   const short = (cohort: PeriodCohort) =>
-    `${cohort.name}: ${cohort.exposure.inadequate.case_count} of ${countOf(cohort.included.case_count, "incident")} followed for less than ${hoursText(minimum)}`;
+    `${cohort.name}: ${cohort.exposure.inadequate.case_count} of ${countOf(cohort.included.case_count, "case")} followed for less than ${hoursText(minimum)}`;
   return (
     <div className="compare-notice" role="note" aria-label="Exposure">
       <p>
-        Follow-up runs from each incident's start to the snapshot cutoff stored with this preparation, {cutoffText(clock)}, not to the last record
-        in the source. {short(answer.target)}; {short(answer.reference)}. An activity not yet recorded for an incident followed only briefly may
+        Follow-up runs from each case's start to the snapshot cutoff stored with this preparation, {cutoffText(clock)}, not to the last record
+        in the source. {short(answer.target)}; {short(answer.reference)}. An activity not yet recorded for a case followed only briefly may
         still be recorded later.
       </p>
       {clock.clock_limitation && <p>{clock.clock_limitation}</p>}
@@ -953,17 +953,17 @@ function ComparisonProblemNotice({ title, problem, onRetry }: { title: string; p
 
 /** The parent of the comparisons: every incident, or the parent frozen after retained steps, with the way back to every incident. */
 function ParentLine({ filename, every, parent, onRebase }: { filename: string; every: string; parent: FrozenParent | null; onRebase: () => void }) {
-  if (parent === null) return <p className="compare-muted">In {filename}: the parent is every incident, {every}.</p>;
+  if (parent === null) return <p className="compare-muted">In {filename}: the parent is every case, {every}.</p>;
   const retained = parent.label ?? (parent.retained.length === 0 ? "the investigation's parent" : `kept by ${parent.retained.map(stepWording).join("; and ")}`);
   return (
     <div className="compare-parent" role="note" aria-label="Parent">
       <p>
-        In {filename}: the parent P is frozen (parent {parent.revision}): {countOf(parent.count, "incident")} {retained}.
+        In {filename}: the parent P is frozen (parent {parent.revision}): {countOf(parent.count, "case")} {retained}.
         {parent.eligibilityUnknown > 0 &&
-          ` ${countOf(parent.eligibilityUnknown, "incident")} whose eligibility is unknown, as a step could not evaluate ${parent.eligibilityUnknown === 1 ? "it" : "them"}, ${parent.eligibilityUnknown === 1 ? "is" : "are"} outside it.`}
+          ` ${countOf(parent.eligibilityUnknown, "case")} whose eligibility is unknown, as a step could not evaluate ${parent.eligibilityUnknown === 1 ? "it" : "them"}, ${parent.eligibilityUnknown === 1 ? "is" : "are"} outside it.`}
       </p>
       <button type="button" onClick={onRebase}>
-        Use every incident as the parent
+        Use every case as the parent
       </button>
     </div>
   );
@@ -975,11 +975,11 @@ function EmptySide({ shown, frozen, onRebase, onSwap, onShowInvestigation }: { s
   if (empty.length === 0) return null;
   return (
     <div className="compare-problem" role="note" aria-label="Empty side">
-      <p className="compare-problem-title">{empty.map((cohort) => cohort.name).join(" and ")} {empty.length === 1 ? "has" : "have"} no incident in this parent.</p>
-      <p>Choose another clause in Investigations{frozen ? ", or compare in every incident instead of the frozen parent" : ""}; exchanging A and B changes only which side is the target.</p>
+      <p className="compare-problem-title">{empty.map((cohort) => cohort.name).join(" and ")} {empty.length === 1 ? "has" : "have"} no case in this parent.</p>
+      <p>Choose another clause in Investigations{frozen ? ", or compare in every case instead of the frozen parent" : ""}; exchanging A and B changes only which side is the target.</p>
       <div className="compare-actions">
         <button type="button" onClick={onShowInvestigation}>Choose another clause in Investigations</button>
-        {frozen && <button type="button" onClick={onRebase}>Use every incident as the parent</button>}
+        {frozen && <button type="button" onClick={onRebase}>Use every case as the parent</button>}
         <button type="button" onClick={onSwap}>Exchange A and B</button>
       </div>
     </div>
@@ -1003,7 +1003,7 @@ function SideIncidents({ shown, investigation, inspected = null }: { shown: Show
     setSide("both");
     Promise.all([shown.answer.target, shown.answer.reference].map((cohort) => investigation.keptBy([step], controller.signal, cohort.included.case_ids))).then(([a, b]) => {
       if (controller.signal.aborted) return;
-      setValued(a.ok && b.ok ? { label: inspected.label, target: a.keptIds, reference: b.keptIds } : { label: inspected.label, failed: "The incidents of this value could not be selected; try again." });
+      setValued(a.ok && b.ok ? { label: inspected.label, target: a.keptIds, reference: b.keptIds } : { label: inspected.label, failed: "The cases of this value could not be selected; try again." });
     });
     return () => controller.abort();
   }, [inspected, shown, investigation]);
@@ -1035,8 +1035,8 @@ function SideIncidents({ shown, investigation, inspected = null }: { shown: Show
   const roleName = (role: Role) => `${role === "target" ? "A" : "B"}, ${role === "target" ? target.name : reference.name}`;
   return (
     <section className="compare-sides" aria-labelledby="compare-sides-title">
-      <h4 id="compare-sides-title">Incidents of the sides</h4>
-      <div className="compare-modes" role="group" aria-label="Inspect the incidents of">
+      <h4 id="compare-sides-title">Cases of the sides</h4>
+      <div className="compare-modes" role="group" aria-label="Inspect the cases of">
         {(["target", "reference", "both"] as const).map((choice) => (
           <button key={choice} type="button" aria-pressed={side === choice} onClick={() => setSide(side === choice ? null : choice)}>
             {choice === "target" ? `A: ${target.name}` : choice === "reference" ? `B: ${reference.name}` : "Both"}
@@ -1045,14 +1045,14 @@ function SideIncidents({ shown, investigation, inspected = null }: { shown: Show
       </div>
       {valued !== null && (
         <p className="compare-muted">
-          {"failed" in valued ? valued.failed : `Listed: the incidents first recorded with ${valued.label}, ${valued.target.length} of A and ${valued.reference.length} of B. Listing them takes no step.`}{" "}
+          {"failed" in valued ? valued.failed : `Listed: the cases first recorded with ${valued.label}, ${valued.target.length} of A and ${valued.reference.length} of B. Listing them takes no step.`}{" "}
           <button type="button" className="link-button" onClick={() => setValued(null)}>
-            List every incident of the sides
+            List every case of the sides
           </button>
         </p>
       )}
       {side !== null && (
-        <ul className="compare-side-list" aria-label={side === "both" ? "Incidents of A and B" : `Incidents of ${roleName(side)}`}>
+        <ul className="compare-side-list" aria-label={side === "both" ? "Cases of A and B" : `Cases of ${roleName(side)}`}>
           {listed.map((caseId) => {
             const role: Role = inTarget.has(caseId) ? "target" : "reference";
             const of = inTarget.has(caseId) && inReference.has(caseId) ? "A and B" : role === "target" ? "A" : "B";
@@ -1070,7 +1070,7 @@ function SideIncidents({ shown, investigation, inspected = null }: { shown: Show
       {open && (
         <section className="compare-history" aria-labelledby="compare-history-title" onKeyDown={(event) => event.key === "Escape" && close()}>
           <h4 id="compare-history-title" tabIndex={-1} ref={heading}>
-            Incident <span className="identifier">{open.caseId}</span>, of {roleName(open.role)}
+            Case <span className="identifier">{open.caseId}</span>, of {roleName(open.role)}
           </h4>
           <p className="compare-muted">Read in the population of its side; the comparison and its parent stay as they are. Escape returns.</p>
           {open.loaded === null ? (
@@ -1118,7 +1118,7 @@ function StratumChoice({ coordinator, investigation, openings, parentCaseIds }: 
     <fieldset className="compare-stratum">
       <legend className="compare-label">Within a stratum</legend>
       <p className="compare-muted">
-        Compare only the incidents first recorded with one value, for example one priority or one service. A difference within a stratum is still an
+        Compare only the cases first recorded with one value, for example one priority or one service. A difference within a stratum is still an
         association of this log: not the quality of a team, and not a cause.
       </p>
       <label>
@@ -1167,23 +1167,23 @@ function FollowupChoice({ shown, restricted, onRestrict, onRebase }: {
   return (
     <div className="compare-notice" role="note" aria-label="Follow-up">
       {comparable ? (
-        <p>Every incident of both periods was followed for at least {hoursText(minimum)} before the snapshot cutoff.</p>
+        <p>Every case of both periods was followed for at least {hoursText(minimum)} before the snapshot cutoff.</p>
       ) : (
         <p>
-          Coverage is not comparable: {target.exposure.inadequate.case_count} of {countOf(target.included.case_count, "incident")} of {target.name} (
-          {Math.round(share(target) * 100)} %) and {reference.exposure.inadequate.case_count} of {countOf(reference.included.case_count, "incident")} of{" "}
+          Coverage is not comparable: {target.exposure.inadequate.case_count} of {countOf(target.included.case_count, "case")} of {target.name} (
+          {Math.round(share(target) * 100)} %) and {reference.exposure.inadequate.case_count} of {countOf(reference.included.case_count, "case")} of{" "}
           {reference.name} ({Math.round(share(reference) * 100)} %) were followed for less than {hoursText(minimum)}. A difference in what is recorded may be a
           difference in follow-up.
         </p>
       )}
       {minimum <= 0 ? (
-        <p className="compare-muted">Choose a minimum follow-up above 0 hours to restrict the periods to incidents observed at least that long.</p>
+        <p className="compare-muted">Choose a minimum follow-up above 0 hours to restrict the periods to cases observed at least that long.</p>
       ) : restricted ? (
-        <button type="button" onClick={onRebase}>Compare every incident of the periods again</button>
+        <button type="button" onClick={onRebase}>Compare every case of the periods again</button>
       ) : (
         <button type="button" disabled={comparable} onClick={() => onRestrict({ caseIds: [...new Set(adequate)].sort(), retained: [], count: new Set(adequate).size, eligibilityUnknown: 0,
           label: `followed for at least ${hoursText(minimum)} to the snapshot cutoff` })}>
-          Keep only incidents followed for at least {hoursText(minimum)}
+          Keep only cases followed for at least {hoursText(minimum)}
         </button>
       )}
       {!comparable && (

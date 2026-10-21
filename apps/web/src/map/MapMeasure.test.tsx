@@ -63,7 +63,7 @@ describe("the measure the map is asked for", () => {
     expect(asked().graph).toBe(counted.graph);
     expect(asked().layoutResetKey).toBe(counted.layoutResetKey);
 
-    act(() => screen.getByRole("button", { name: "Incidents on the map" }).click());
+    act(() => screen.getByRole("button", { name: "Cases on the map" }).click());
     expect(asked().measure).toBe("frequency");
     expect(asked().style).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] } });
   });

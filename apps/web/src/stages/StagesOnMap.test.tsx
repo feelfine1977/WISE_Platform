@@ -79,7 +79,7 @@ async function openMap(inPlace = false, supplied?: SuppliedGraph) {
   await deliver(() => imports.populations[0].reply({ ok: true, answer: populationAnswer(imports.populations[0].request) }));
   const app = { selecting, coordinator, user };
   await answer(app, 0, everyIncident, supplied);
-  const map = await screen.findByLabelText("Process map of the kept incidents");
+  const map = await screen.findByLabelText("Process map of the kept cases");
   await waitFor(() => expect(nodeOf(map, (supplied ?? suppliedGraph(["A-1"])).nodes[0].id)).not.toBeNull());
   return { ...app, map };
 }
@@ -126,7 +126,7 @@ describe("the stages of a log on its map", () => {
     expect(panel.parentElement?.className).toBe("map-view");
     expect(panel.parentElement?.getAttribute("data-beside")).toBe("stages");
     expect(panel.previousElementSibling?.className).toBe("map-main");
-    expect(screen.getByLabelText("Process map of the kept incidents")).toBe(map);
+    expect(screen.getByLabelText("Process map of the kept cases")).toBe(map);
     expect(within(panel).getByRole("heading", { name: "Stages of this log" })).toBeTruthy();
     expect(within(panel).getByRole("region", { name: "Stages of this log" }).textContent).toContain("Stages stay in this browser for this reading and are saved with the investigation");
     expect(within(panel).getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
@@ -211,7 +211,7 @@ describe("the stages of a log on its map", () => {
     expect(offered()).toEqual([]);
     // An activity outside the stages offers its steps as ever.
     fireEvent.click(nodeOf(map, nodeIds[checked])!);
-    expect(offered()).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it"]);
+    expect(offered()).toEqual(["Keep cases that contain it", "Keep cases that do not contain it"]);
 
     await user.click(screen.getByRole("button", { name: "Show activities" }));
     await waitFor(() => expect(nodeOf(map, nodeIds[opened])).not.toBeNull());
@@ -221,13 +221,13 @@ describe("the stages of a log on its map", () => {
     // A step from an activity in a stage is the step it always was.
     fireEvent.click(nodeOf(map, nodeIds[opened])!);
     expect(screen.getByRole("heading", { name: "Activity “Eröffnet”" })).toBeTruthy();
-    expect(offered()).toEqual(["Keep incidents that contain it", "Keep incidents that do not contain it", "Keep incidents that begin with it"]);
-    await user.click(screen.getByRole("button", { name: "Keep incidents that contain it" }));
+    expect(offered()).toEqual(["Keep cases that contain it", "Keep cases that do not contain it", "Keep cases that begin with it"]);
+    await user.click(screen.getByRole("button", { name: "Keep cases that contain it" }));
     expect(selecting.selections[1].request.predicates).toEqual([contains(opened)]);
 
     // The selection keeps A-1 alone: its map has both stages still and no activity outside them.
     await answer({ selecting }, 1, containingOpened);
-    const after = screen.getByLabelText("Process map of the kept incidents");
+    const after = screen.getByLabelText("Process map of the kept cases");
     await waitFor(() => expect(nodeOf(after, nodeIds[checked])).toBeNull());
     expect(stageBoxes(after)).toEqual(["Intake", "Closure"]);
   });
@@ -244,7 +244,7 @@ describe("the stages of a log on its map", () => {
 
     app.coordinator.addStep(contains(opened));
     await answer(app, 1, containingOpened);
-    const after = screen.getByLabelText("Process map of the kept incidents");
+    const after = screen.getByLabelText("Process map of the kept cases");
     await waitFor(() => expect(nodeOf(after, nodeIds[checked])).toBeNull());
     expect([nodeOf(after, nodeIds[opened])!.style.transform, nodeOf(after, `group:${intake}`)!.style.transform]).toEqual(placed);
     expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
@@ -253,7 +253,7 @@ describe("the stages of a log on its map", () => {
     await deliver(() => browserStages.change(reading, (definitions) => moved(definitions, closure, "earlier")));
     await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(2));
     expect(vi.mocked(flow.layoutUnion).mock.calls[1][0][0].groups?.map((group) => group.label)).toEqual(["Closure", "Intake"]);
-    const again = await screen.findByLabelText("Process map of the kept incidents");
+    const again = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(topOf(again, closure)).toBeLessThan(topOf(again, intake)));
   });
 

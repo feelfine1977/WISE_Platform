@@ -83,7 +83,7 @@ function row(table: HTMLElement, measure: string): string[] {
 }
 
 describe("the Compare view", () => {
-  it("asks the analyst to open incidents in the Data area while none are open", async () => {
+  it("asks the analyst to open cases in the Data area while none are open", async () => {
     const investigation = new ImportedInvestigationCoordinator(scriptedImportClient().client, scriptedSelectionClient().client, scriptedViewClient().client);
     const onShowData = vi.fn();
     const user = userEvent.setup();
@@ -95,7 +95,7 @@ describe("the Compare view", () => {
         onShowInvestigation={() => undefined}
       />,
     );
-    expect(screen.getByText(/Comparisons are made in the incidents of a source read in the Data area/)).toBeTruthy();
+    expect(screen.getByText(/Comparisons are made in the cases of a source read in the Data area/)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Go to the Data area" }));
     expect(onShowData).toHaveBeenCalledOnce();
   });
@@ -106,7 +106,7 @@ describe("the Compare view", () => {
     const groupB = screen.getByRole("group", { name: "Group B" });
     expect(within(groupB).queryByRole("button", { name: "The opposite of A as B" })).toBeNull();
 
-    await app.user.selectOptions(within(groupA).getByLabelText("Incidents that"), "with");
+    await app.user.selectOptions(within(groupA).getByLabelText("Cases that"), "with");
     const activities = within(groupA).getByLabelText("Activity for group A") as HTMLSelectElement;
     const chosen = Array.from(activities.options).map((option) => option.value).filter((name) => name !== "")[0];
     expect(chosen).toBeTruthy();
@@ -124,10 +124,10 @@ describe("the Compare view", () => {
     });
   });
 
-  it("chooses a group by how its incidents begin or end, and the other as its opposite", async () => {
+  it("chooses a group by how its cases begin or end, and the other as its opposite", async () => {
     const app = await openCompare();
     const groupA = screen.getByRole("group", { name: "Group A" });
-    const kinds = within(groupA).getByLabelText("Incidents that") as HTMLSelectElement;
+    const kinds = within(groupA).getByLabelText("Cases that") as HTMLSelectElement;
     // No opening value is known here, so only the conditions on an activity are offered.
     expect(Array.from(kinds.options).map((option) => option.textContent)).toEqual([
       "contain the activity",
@@ -144,9 +144,9 @@ describe("the Compare view", () => {
     expect((within(groupA).getByRole("button", { name: "Use as A" }) as HTMLButtonElement).disabled).toBe(true);
     await app.user.selectOptions(activities, "Opened");
     await app.user.click(within(groupA).getByRole("button", { name: "Use as A" }));
-    expect(groupA.textContent).toContain("Keep incidents that begin with “Opened”");
+    expect(groupA.textContent).toContain("Keep cases that begin with “Opened”");
     await app.user.click(within(screen.getByRole("group", { name: "Group B" })).getByRole("button", { name: "The opposite of A as B" }));
-    expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("Keep incidents that do not begin with “Opened”");
+    expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("Keep cases that do not begin with “Opened”");
 
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     const request = app.comparisons.groups[0].request;
@@ -159,7 +159,7 @@ describe("the Compare view", () => {
 
     // The other way round, by the end: B first, A as its opposite.
     const groupB = screen.getByRole("group", { name: "Group B" });
-    await app.user.selectOptions(within(groupB).getByLabelText("Incidents that"), "do not end with the activity");
+    await app.user.selectOptions(within(groupB).getByLabelText("Cases that"), "do not end with the activity");
     await app.user.selectOptions(within(groupB).getByLabelText("Activity for group B"), "Resolved");
     await app.user.click(within(groupB).getByRole("button", { name: "Use as B" }));
     await app.user.click(within(screen.getByRole("group", { name: "Group A" })).getByRole("button", { name: "The opposite of B as A" }));
@@ -180,12 +180,12 @@ describe("the Compare view", () => {
 
     await app.user.click(screen.getByRole("button", { name: "Take the current selection as A" }));
     await rename(app, "Name of group A", "With assignment");
-    await app.user.click(screen.getByText("List incident ids for B"));
-    await app.user.type(screen.getAllByLabelText("Incident ids, separated by spaces, commas or new lines")[1], "C-1, C-2{Enter}C-3");
+    await app.user.click(screen.getByText("List case ids for B"));
+    await app.user.type(screen.getAllByLabelText("Case ids, separated by spaces, commas or new lines")[1], "C-1, C-2{Enter}C-3");
     await app.user.click(screen.getByRole("button", { name: "Use these ids as B" }));
     await rename(app, "Name of group B", "Listed");
     const groupB = screen.getByRole("group", { name: "Group B" });
-    expect(groupB.textContent).toContain("3 listed incident ids (C-1, C-2, C-3); the list says nothing about why these incidents belong together");
+    expect(groupB.textContent).toContain("3 listed case ids (C-1, C-2, C-3); the list says nothing about why these cases belong together");
 
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     expect(app.comparisons.groups).toHaveLength(1);
@@ -212,21 +212,21 @@ describe("the Compare view", () => {
     const table = screen.getByRole("table", { name: /With assignment \(A\) and Listed \(B\), each figure with what it is a share of/ });
     const head = within(table).getAllByRole("columnheader").map((cell) => cell.textContent);
     expect(head).toEqual(["Measure", "A: With assignment", "B: Listed", "Difference A − B", "Selection step"]);
-    expect(row(table, "Incidents in the group")).toEqual([
-      "Incidents in the groupof the 4 incidents of the parent",
-      "2 of 4 incidents of the parent · 5 records",
-      "3 of 4 incidents of the parent · 7 records",
+    expect(row(table, "Cases in the group")).toEqual([
+      "Cases in the groupof the 4 cases of the parent",
+      "2 of 4 cases of the parent · 5 records",
+      "3 of 4 cases of the parent · 7 records",
       "—",
       "",
     ]);
-    expect(row(table, "First record readable").slice(1, 3)).toEqual(["2 of 2 incidents in the group", "3 of 3 incidents in the group"]);
+    expect(row(table, "First record readable").slice(1, 3)).toEqual(["2 of 2 cases in the group", "3 of 3 cases in the group"]);
     // The paired counts and the difference first; the ratio only on request.
     expect(row(table, "First recorded with column 3 not recorded")).toEqual([
       "First recorded with column 3 not recordedparent: 1 of 4 (25.0%)",
       "1 of 2 (50.0%)",
       "1 of 3 (33.3%)",
       "+16.7 pp",
-      "Inspect the incidents first recorded with column 3 not recordedKeep incidents first recorded with column 3 not recorded",
+      "Inspect the cases first recorded with column 3 not recordedKeep cases first recorded with column 3 not recorded",
     ]);
     expect(row(table, "First recorded with column 3 East").slice(1, 4)).toEqual(["1 of 2 (50.0%)", "0 of 3 (0.0%)", "+50.0 pp"]);
     expect(row(table, "First recorded with column 3 North").slice(1, 4)).toEqual(["0 of 2 (0.0%)", "1 of 3 (33.3%)", "−33.3 pp"]);
@@ -240,7 +240,7 @@ describe("the Compare view", () => {
 
     const overlap = screen.getByRole("note", { name: "Overlap" });
     expect(overlap.textContent).toContain(
-      "Membership: overlapping. 1 incident with 3 records is in both With assignment and Listed. They are counted in each group, so the counts and records of the two groups overlap and cannot be added.",
+      "Membership: overlapping. 1 case with 3 records is in both With assignment and Listed. They are counted in each group, so the counts and records of the two groups overlap and cannot be added.",
     );
     const view = screen.getByRole("main");
     expect(view.textContent).toContain("These figures say how With assignment and Listed differ. They do not say why they differ.");
@@ -257,7 +257,7 @@ describe("the Compare view", () => {
     // The roles are named from the clause as what is recorded, apart from the kept and removed membership.
     expect((screen.getByLabelText("Name of group A") as HTMLInputElement).value).toBe("Recorded “Assigned”");
     expect((screen.getByLabelText("Name of group B") as HTMLInputElement).value).toBe("No recorded “Assigned”");
-    expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("The removed incidents of the selection");
+    expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("The removed cases of the selection");
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     const request = app.comparisons.groups[0].request;
     expect(comparisonContract.groupRequest(request)).toBe(true);
@@ -280,7 +280,7 @@ describe("the Compare view", () => {
     });
   });
 
-  it("compares two periods of incident starts and notes their follow-up to the stored cutoff", async () => {
+  it("compares two periods of case starts and notes their follow-up to the stored cutoff", async () => {
     const app = await openCompare();
     await app.user.click(screen.getByRole("button", { name: "Two periods" }));
     expect(screen.getByText("Pick the first and the last day of both periods.")).toBeTruthy();
@@ -307,26 +307,26 @@ describe("the Compare view", () => {
     await deliver(() => app.comparisons.periods[0].reply({ ok: true, answer }));
 
     const table = screen.getByRole("table", { name: /Period A \(A\) and Period B \(B\)/ });
-    expect(row(table, "Incidents started in the period").slice(1, 3)).toEqual([
-      "2 of 4 incidents of the parent · 5 records",
-      "2 of 4 incidents of the parent · 4 records",
+    expect(row(table, "Cases started in the period").slice(1, 3)).toEqual([
+      "2 of 4 cases of the parent · 5 records",
+      "2 of 4 cases of the parent · 4 records",
     ]);
-    expect(row(table, "Not evaluable for membership")[0]).toBe("Not evaluable for membershipincidents of the parent in neither the period nor outside it");
-    expect(row(table, "Followed for at least 4 hours").slice(1, 4)).toEqual(["2 of 2 incidents in the period", "1 of 2 incidents in the period", "—"]);
+    expect(row(table, "Not evaluable for membership")[0]).toBe("Not evaluable for membershipcases of the parent in neither the period nor outside it");
+    expect(row(table, "Followed for at least 4 hours").slice(1, 4)).toEqual(["2 of 2 cases in the period", "1 of 2 cases in the period", "—"]);
     expect(row(table, "“Resolved” recorded")).toEqual([
       "“Resolved” recordedanywhere in the complete history; not a business outcome",
-      "2 of 2 incidents in the period",
-      "1 of 2 incidents in the period",
+      "2 of 2 cases in the period",
+      "1 of 2 cases in the period",
       "—",
-      "Keep incidents that contain “Resolved”",
+      "Keep cases that contain “Resolved”",
     ]);
     const exposure = screen.getByRole("note", { name: "Exposure" });
     expect(exposure.textContent).toBe(
-      "Follow-up runs from each incident's start to the snapshot cutoff stored with this preparation, 2026-10-10 12:00 UTC, not to the last record in the source. " +
-        "Period A: 0 of 2 incidents followed for less than 4 hours; Period B: 1 of 2 incidents followed for less than 4 hours. " +
-        "An activity not yet recorded for an incident followed only briefly may still be recorded later.",
+      "Follow-up runs from each case's start to the snapshot cutoff stored with this preparation, 2026-10-10 12:00 UTC, not to the last record in the source. " +
+        "Period A: 0 of 2 cases followed for less than 4 hours; Period B: 1 of 2 cases followed for less than 4 hours. " +
+        "An activity not yet recorded for a case followed only briefly may still be recorded later.",
     );
-    expect(screen.getByRole("note", { name: "Overlap" }).textContent).toContain("No incident is in both Period A and Period B.");
+    expect(screen.getByRole("note", { name: "Overlap" }).textContent).toContain("No case is in both Period A and Period B.");
     expect(screen.getByRole("main").textContent).not.toMatch(/because/i);
   });
 
@@ -340,13 +340,13 @@ describe("the Compare view", () => {
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     await deliver(() => app.comparisons.periods[0].reply({ ok: true, answer: periodAnswer(app.comparisons.periods[0].request) }));
 
-    await app.user.click(screen.getByRole("button", { name: "Keep incidents that contain “Resolved”" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep cases that contain “Resolved”" }));
     expect(app.selections.selections).toHaveLength(2);
     expect(app.selections.selections[1].request.predicates).toEqual([contains("Resolved")]);
-    expect(screen.getByText("Added to the selection in Investigations: Keep incidents that contain “Resolved”.")).toBeTruthy();
+    expect(screen.getByText("Added to the selection in Investigations: Keep cases that contain “Resolved”.")).toBeTruthy();
     await answerSelection(app, 1);
 
-    await app.user.click(screen.getByRole("button", { name: "Keep incidents first recorded with column 3 East" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep cases first recorded with column 3 East" }));
     expect(app.selections.selections[2].request.predicates).toEqual([
       contains("Resolved"),
       { kind: "opening_attribute_equals", column_index: teamColumn, value: "East", negate: false, anchor_policy: "incident.context.first_record_in_declared_order.v1" },
@@ -357,7 +357,7 @@ describe("the Compare view", () => {
     expect(app.comparisons.periods).toHaveLength(1);
   });
 
-  it("lets the steps of a comparison wait, with the reason, while other incidents open in Investigations", async () => {
+  it("lets the steps of a comparison wait, with the reason, while other cases open in Investigations", async () => {
     const app = await openCompare();
     await app.user.click(screen.getByRole("button", { name: "Two periods" }));
     for (const [label, date] of [["First day of A", "2026-10-01"], ["Last day of A", "2026-10-02"], ["First day of B", "2026-10-09"], ["Last day of B", "2026-10-10"]]) {
@@ -368,17 +368,17 @@ describe("the Compare view", () => {
     await deliver(() => app.comparisons.periods[0].reply({ ok: true, answer: periodAnswer(app.comparisons.periods[0].request) }));
     act(() => app.investigation.open({ workspaceId, preparationId }));
 
-    const step = screen.getByRole("button", { name: "Keep incidents that contain “Resolved”" }) as HTMLButtonElement;
+    const step = screen.getByRole("button", { name: "Keep cases that contain “Resolved”" }) as HTMLButtonElement;
     expect(step.disabled).toBe(true);
     expect(document.getElementById(step.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
-      "No step can be added while other incidents are opening in Investigations.",
+      "No step can be added while other cases are opening in Investigations.",
     );
     await app.user.click(step);
     expect(app.selections.selections).toHaveLength(1);
     expect(screen.queryByText(/^Added to the selection/)).toBeNull();
 
     await deliver(() => app.imports.populations[1].reply({ ok: false, problem: { kind: "unreachable" } }));
-    const again = screen.getByRole("button", { name: "Keep incidents that contain “Resolved”" }) as HTMLButtonElement;
+    const again = screen.getByRole("button", { name: "Keep cases that contain “Resolved”" }) as HTMLButtonElement;
     expect(again.disabled).toBe(false);
     expect(again.getAttribute("aria-describedby")).toBeNull();
   });
@@ -438,7 +438,7 @@ describe("the Compare view", () => {
 });
 
 describe("the areas of the application", () => {
-  it("list Compare as one area beside Data and Investigations, and it says what it needs before incidents are open", async () => {
+  it("list Compare as one area beside Data and Investigations, and it says what it needs before cases are open", async () => {
     const user = userEvent.setup();
     render(<App importClient={scriptedImportClient().client} checkHealth={healthy} comparisonClient={scriptedComparisonClient().client} />);
     const areas = screen.getByRole("navigation", { name: "Areas" });
@@ -454,7 +454,7 @@ describe("the areas of the application", () => {
 });
 
 describe("#14 the sides of the last step within a parent frozen after the earlier steps", () => {
-  it("freezes the parent the earlier steps keep, names the roles apart from kept and removed, and makes every incident the parent again on request", async () => {
+  it("freezes the parent the earlier steps keep, names the roles apart from kept and removed, and makes every case the parent again on request", async () => {
     const app = await openCompare();
     await selectAssigned(app);
     act(() => app.investigation.addStep(contains("Resolved")));
@@ -466,27 +466,27 @@ describe("#14 the sides of the last step within a parent frozen after the earlie
     expect(parentCall.request.predicates).toEqual([contains("Assigned")]);
     await deliver(() => parentCall.reply({ ok: true, answer: comparedSelection(parentCall.request) }));
     const parentLine = await screen.findByRole("note", { name: "Parent" });
-    expect(parentLine.textContent).toContain("the parent P is frozen (parent 1): 2 incidents kept by Keep incidents that contain “Assigned”.");
+    expect(parentLine.textContent).toContain("the parent P is frozen (parent 1): 2 cases kept by Keep cases that contain “Assigned”.");
     expect((screen.getByLabelText("Name of group A") as HTMLInputElement).value).toBe("Recorded “Resolved”");
     expect((screen.getByLabelText("Name of group B") as HTMLInputElement).value).toBe("No recorded “Resolved”");
-    expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("The incidents of the frozen parent the clause removes (excluded)");
+    expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("The cases of the frozen parent the clause removes (excluded)");
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     const request = app.comparisons.groups[0].request;
     expect(request.parent_case_ids).toEqual(["C-2", "C-4"]);
     expect(request.definition).toMatchObject({ mode: "selection_partition", predicates: [contains("Resolved")], target_side: "kept" });
     await deliver(() => app.comparisons.groups[0].reply({ ok: true, answer: groupAnswer(request) }));
     const roles = document.querySelector(".compare-roles")!.textContent ?? "";
-    expect(roles).toContain("A is the target and B the reference: A holds the incidents of the parent the clause includes, B those it excludes");
-    expect(roles).toContain("says only that the export holds no record of it: not that the incident is open or unresolved");
+    expect(roles).toContain("A is the target and B the reference: A holds the cases of the parent the clause includes, B those it excludes");
+    expect(roles).toContain("says only that the export holds no record of it: not that the case is open or unresolved");
 
     // Back to every incident, explicitly: the next comparison is made in the whole population.
-    await app.user.click(within(parentLine).getByRole("button", { name: "Use every incident as the parent" }));
+    await app.user.click(within(parentLine).getByRole("button", { name: "Use every case as the parent" }));
     expect(screen.queryByRole("note", { name: "Parent" })).toBeNull();
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     expect(app.comparisons.groups[1].request.parent_case_ids).toBeNull();
   });
 
-  it("opens an incident of either side in its side's population and returns the focus, the comparison kept", async () => {
+  it("opens a case of either side in its side's population and returns the focus, the comparison kept", async () => {
     const app = await openCompare();
     await selectAssigned(app);
     await app.user.click(screen.getByRole("button", { name: "Kept against removed" }));
@@ -495,23 +495,23 @@ describe("#14 the sides of the last step within a parent frozen after the earlie
     const answer = groupAnswer(request);
     await deliver(() => app.comparisons.groups[0].reply({ ok: true, answer }));
     await app.user.click(screen.getByRole("button", { name: "Both" }));
-    const list = screen.getByRole("list", { name: "Incidents of A and B" });
+    const list = screen.getByRole("list", { name: "Cases of A and B" });
     expect(within(list).getAllByRole("listitem").map((item) => item.textContent?.split(" Open")[0])).toEqual(["C-1 · B", "C-2 · A and B", "C-3 · B", "C-4 · A"]);
     const open = within(list).getByRole("button", { name: "Open C-4" });
     await app.user.click(open);
     const call = app.imports.evidence.at(-1)!;
     expect(call.request.identity).toEqual(answer.target.identity);
     await deliver(() => call.reply({ ok: true, answer: evidenceAnswer(call.request) }));
-    const history = screen.getByRole("region", { name: /^Incident C-4, of A/ });
-    expect(within(history).getByRole("table", { name: /^All 3 records of incident C-4/ })).toBeTruthy();
+    const history = screen.getByRole("region", { name: /^Case C-4, of A/ });
+    expect(within(history).getByRole("table", { name: /^All 3 records of case C-4/ })).toBeTruthy();
     expect(screen.getByRole("table", { name: /each figure with what it is a share of/ })).toBeTruthy();
     await app.user.click(within(history).getByRole("button", { name: "Return to the comparison" }));
-    await vi.waitFor(() => expect(document.activeElement).toBe(within(screen.getByRole("list", { name: "Incidents of A and B" })).getByRole("button", { name: "Open C-4" })));
+    await vi.waitFor(() => expect(document.activeElement).toBe(within(screen.getByRole("list", { name: "Cases of A and B" })).getByRole("button", { name: "Open C-4" })));
   });
 });
 
 describe("#14 an empty side", () => {
-  it("says which side has no incident and offers the ways on", async () => {
+  it("says which side has no case and offers the ways on", async () => {
     const app = await openCompare();
     await selectAssigned(app);
     await app.user.click(screen.getByRole("button", { name: "Kept against removed" }));
@@ -521,11 +521,11 @@ describe("#14 an empty side", () => {
     const emptied = { ...answer, target: { ...answer.target, included: { case_ids: [], case_count: 0, record_count: 0 } } };
     await deliver(() => app.comparisons.groups[0].reply({ ok: true, answer: emptied }));
     const note = screen.getByRole("note", { name: "Empty side" });
-    expect(note.textContent).toContain(`${answer.target.name} has no incident in this parent.`);
+    expect(note.textContent).toContain(`${answer.target.name} has no case in this parent.`);
     await app.user.click(within(note).getByRole("button", { name: "Choose another clause in Investigations" }));
     expect(app.onShowInvestigation).toHaveBeenCalledOnce();
     // The parent is the investigation's own, every incident: no rebase is offered where there is nothing to rebase.
-    expect(within(note).queryByRole("button", { name: "Use every incident as the parent" })).toBeNull();
+    expect(within(note).queryByRole("button", { name: "Use every case as the parent" })).toBeNull();
     expect(within(note).getByRole("button", { name: "Exchange A and B" })).toBeTruthy();
   });
 });

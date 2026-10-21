@@ -28,7 +28,7 @@ export function StepPreviewLine({ id, step, previewer }: { id: string; step: Sel
   if (!preview.ok) return <p id={id} className="muted step-preview">What this step would keep cannot be counted: {describeSelectionProblem(preview.problem).message}</p>;
   return (
     <p id={id} className="muted step-preview">
-      Preview: would keep {countOf(preview.kept, "incident")} of {countOf(preview.parent, "incident")}; {preview.removed.toLocaleString("en")} removed,{" "}
+      Preview: would keep {countOf(preview.kept, "case")} of {countOf(preview.parent, "case")}; {preview.removed.toLocaleString("en")} removed,{" "}
       {preview.unevaluable.toLocaleString("en")} not evaluable. Nothing changes until the step is taken.
     </p>
   );

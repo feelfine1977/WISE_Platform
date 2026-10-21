@@ -51,10 +51,10 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
   await settled(0);
   const parent = selections.at(-1);
-  const chart = page.getByRole('group', {name: 'Incident starts per week'});
+  const chart = page.getByRole('group', {name: 'Case starts per week'});
   await chart.waitFor();
   const column = (await page.locator('section.time-column').textContent()) ?? '';
-  check('anchor_periods_clock_and_cutoff_named', /Each incident counts once, at the time of its first record in the declared order, not at its first labelled activity\. A period includes its start\s+and excludes its end, in UTC; the export was taken at 2026-03-31 00:00:00 UTC\./.test(column), null);
+  check('anchor_periods_clock_and_cutoff_named', /Each case counts once, at the time of its first record in the declared order, not at its first labelled activity\. A period includes its start\s+and excludes its end, in UTC; the export was taken at 2026-03-31 00:00:00 UTC\./.test(column), null);
   check('short_follow_up_warned', /a recent period with fewer late records does\s+not by itself show an improvement/.test(column), null);
   check('parent_starts_per_week_match_the_oracle', trend && same(trend.bins.slice(0, expected.bins.length).map(bin => bin.parent_support.case_count), expected.bins)
     && trend.unevaluable.parent_support.case_count === expected.unevaluable, trend && trend.bins.map(bin => bin.parent_support.case_count));
@@ -70,7 +70,7 @@ try {
   await pending.getByRole('button', {name: 'Cancel', exact: true}).click();
   // Expanded: the table row of the same week gives the same step; closing returns the focus to Expand.
   await page.getByRole('button', {name: 'Expand the starts', exact: true}).click();
-  const expanded = page.getByRole('region', {name: 'Incident starts per week, expanded'});
+  const expanded = page.getByRole('region', {name: 'Case starts per week, expanded'});
   await expanded.locator('tbody tr').nth(expected.week_index_in_browser).getByRole('button').click();
   await page.waitForFunction(() => document.activeElement?.textContent === 'Expand the starts');
   check('closing_the_expanded_view_returns_the_focus', true);
@@ -81,15 +81,15 @@ try {
   const applied = selections.at(-1);
   check('applied_period_matches_the_oracle', matches(applied), [applied.kept, applied.unevaluable]);
   // The kept incident keeps its later record outside the period; its evidence names the cutoff.
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
   await page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${expected.later_record.case}$`)}).first().click();
-  const records = page.getByRole('list', {name: `Records of incident ${expected.later_record.case} in the declared order`});
+  const records = page.getByRole('list', {name: `Records of case ${expected.later_record.case} in the declared order`});
   await records.waitFor();
   const items = await records.getByRole('listitem').allTextContents();
   check('later_record_outside_the_period_kept', items.length === expected.later_record.records && items.some(item => item.includes(`source position ${expected.later_record.outside_period_position}`)), items.length);
   const observed = (await page.locator('p.observation-line').textContent()) ?? '';
-  check('evidence_names_the_cutoff_and_age', observed.startsWith('The export was taken at 2026-03-31 00:00:00 UTC, ') && observed.includes('no sign that the incident was complete'), observed);
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+  check('evidence_names_the_cutoff_and_age', observed.startsWith('The export was taken at 2026-03-31 00:00:00 UTC, ') && observed.includes('no sign that the case was complete'), observed);
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
   await page.getByRole('group', {name: 'Steps'}).getByRole('button', {name: 'Undo', exact: true}).click();
   await settled(0);
   check('undo_restores_the_exact_parent', same(selections.at(-1).identity, parent.identity), null);

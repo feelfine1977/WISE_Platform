@@ -58,11 +58,11 @@ describe("the editor of the stages of a log", () => {
         "investigation shows them again, also in another browser; stages saved for another reading are not applied to this one.",
     );
     expect(panel.textContent).toContain("nothing is built in, and a value of a context column becomes a stage only when you take it from a proposal.");
-    expect(panel.textContent).toContain("Stages change how the map is drawn, never an incident, a step or a count.");
+    expect(panel.textContent).toContain("Stages change how the map is drawn, never a case, a step or a count.");
     expect(screen.getByText("No stage is defined for this log yet, so the map is drawn without stages.")).toBeTruthy();
   });
 
-  it("lists every activity of the parent's map with its incidents, the most frequent first, and nothing to choose before a stage is defined", () => {
+  it("lists every activity of the parent's map with its cases, the most frequent first, and nothing to choose before a stage is defined", () => {
     setup();
     const table = screen.getByRole("table", { name: "Activities and their stage" });
     const rows = within(table).getAllByRole("row").slice(1);
@@ -71,7 +71,7 @@ describe("the editor of the stages of a log", () => {
       [opened, "7"],
       [checked, "7"],
     ]);
-    expect(editor().textContent).toContain("3 activities on the map of every incident of the parent, the most frequent first.");
+    expect(editor().textContent).toContain("3 activities on the map of every case of the parent, the most frequent first.");
     for (const activity of [opened, closed, checked]) {
       expect(stageOf(activity).disabled).toBe(true);
       expect(stageOf(activity).value).toBe("");

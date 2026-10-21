@@ -112,7 +112,7 @@ export function RequestsPanel({ workspaceId, preparationId, identity, revision, 
     <section className="view-panel requests-panel" aria-labelledby={`${asked}-title`}>
       <h3 id={`${asked}-title`} className="view-title">Requests without a later answer</h3>
       <p className="muted view-hint">
-        You say which activities are requests and which are answers in this log. The incidents whose last request has no later answer in the export are
+        You say which activities are requests and which are answers in this log. The cases whose last request has no later answer in the export are
         listed; none is called resolved or unresolved, and no rate is formed.
       </p>
       {notice?.kind === "restored" && <p className="muted">The definition saved with the investigation “{notice.investigation}”.</p>}
@@ -187,28 +187,28 @@ export function RequestsPanel({ workspaceId, preparationId, identity, revision, 
       )}
       <p>
         <button type="button" className="primary" disabled={problem !== null || !draft.reviewed} onClick={() => setAsking((previous) => ({ draft, sequence: (previous?.sequence ?? 0) + 1 }))}>
-          Find the incidents
+          Find the cases
         </button>
       </p>
-      {read.phase === "loading" && <p className="working-text">Reading the last request of every kept incident…</p>}
+      {read.phase === "loading" && <p className="working-text">Reading the last request of every kept case…</p>}
       {read.phase === "failed" && <p className="inline-error" role="alert">{read.message}</p>}
       {answer && (
         <div className="requests-result">
-          <dl className="pairs requests-outcomes" aria-label="Kept incidents by their last request">
-            <div><dt>Last request without a later answer</dt><dd>{countOf(answer.outcomes.without_answer, "incident")}</dd></div>
-            <div><dt>Last request answered later</dt><dd>{countOf(answer.outcomes.answered, "incident")}</dd></div>
-            <div><dt>No request in the latest matter</dt><dd>{countOf(answer.outcomes.no_request, "incident")}</dd></div>
-            <div><dt>Order of records not known, not read</dt><dd>{countOf(answer.outcomes.order_unknown, "incident")}</dd></div>
+          <dl className="pairs requests-outcomes" aria-label="Kept cases by their last request">
+            <div><dt>Last request without a later answer</dt><dd>{countOf(answer.outcomes.without_answer, "case")}</dd></div>
+            <div><dt>Last request answered later</dt><dd>{countOf(answer.outcomes.answered, "case")}</dd></div>
+            <div><dt>No request in the latest matter</dt><dd>{countOf(answer.outcomes.no_request, "case")}</dd></div>
+            <div><dt>Order of records not known, not read</dt><dd>{countOf(answer.outcomes.order_unknown, "case")}</dd></div>
           </dl>
           <p className="limitation">
-            Hours since the last record run from an incident's last record to the export cutoff accepted at import, {when(answer.clock.snapshot_cutoff, answer.clock.timestamp_kind)}:
-            how long the export holds no further record of the incident. It is not a waiting time, and a later record may exist outside the export.
+            Hours since the last record run from a case's last record to the export cutoff accepted at import, {when(answer.clock.snapshot_cutoff, answer.clock.timestamp_kind)}:
+            how long the export holds no further record of the case. It is not a waiting time, and a later record may exist outside the export.
             {answer.clock.timestamp_kind === "wall_clock" ? " The times are on the clock as recorded, without an offset, so a change of daylight saving time is not taken into account." : ""}
           </p>
           {answer.cases.length > 0 && (
-            <table className="requests-table" aria-label="Incidents whose last request has no later answer">
+            <table className="requests-table" aria-label="Cases whose last request has no later answer">
               <thead>
-                <tr><th scope="col">Incident</th><th scope="col">Last request</th><th scope="col">Records after it</th><th scope="col">Last record</th><th scope="col">Hours since the last record</th></tr>
+                <tr><th scope="col">Case</th><th scope="col">Last request</th><th scope="col">Records after it</th><th scope="col">Last record</th><th scope="col">Hours since the last record</th></tr>
               </thead>
               <tbody>
                 {answer.cases.map((item) => (
@@ -227,7 +227,7 @@ export function RequestsPanel({ workspaceId, preparationId, identity, revision, 
               </tbody>
             </table>
           )}
-          {answer.cases_truncated && <p className="muted">The {CASES_LISTED} incidents longest without a further record are listed; the counts above are of every kept incident.</p>}
+          {answer.cases_truncated && <p className="muted">The {CASES_LISTED} cases longest without a further record are listed; the counts above are of every kept case.</p>}
         </div>
       )}
     </section>

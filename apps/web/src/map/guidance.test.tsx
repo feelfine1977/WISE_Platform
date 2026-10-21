@@ -39,7 +39,7 @@ const lines = () => Array.from(document.querySelectorAll(".guide-line"), (line) 
 describe("the line of guidance", () => {
   it("names the ways to a first step in the empty state, each leading to its control", async () => {
     const app = await start();
-    expect(lines()).toEqual(["No step yet: every incident of the parent is kept. Take a first step: select an activity or a path on the map, drag over a period of starts, or add a step."]);
+    expect(lines()).toEqual(["No step yet: every case of the parent is kept. Take a first step: select an activity or a path on the map, drag over a period of starts, or add a step."]);
     const line = document.querySelector<HTMLElement>(".guide-line")!;
     await app.user.click(within(line).getByRole("button", { name: "add a step" }));
     expect(screen.getByRole("group", { name: "Add a step" })).toBeTruthy();

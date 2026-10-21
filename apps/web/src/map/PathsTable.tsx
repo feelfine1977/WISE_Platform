@@ -11,13 +11,13 @@ const oneDecimal = new Intl.NumberFormat("en", { minimumFractionDigits: 1, maxim
 const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 });
 
 /** Why a row of a flow from Start or to End has a dash in a column. */
-const FLOW_NOTE = "A flow has incidents only";
+const FLOW_NOTE = "A flow has cases only";
 
 /** The columns in their order; a number stands at the right of its column. What a heading leaves unsaid is its tooltip. */
 const COLUMNS: { column: PathColumn; label: string; number?: true; note?: string }[] = [
   { column: "from", label: "From" },
   { column: "to", label: "To" },
-  { column: "incidents", label: "Incidents", number: true },
+  { column: "incidents", label: "Cases", number: true },
   { column: "passages", label: "Passages", number: true, note: FLOW_NOTE },
   { column: "lag", label: "Median lag of the passages (h)", number: true, note: FLOW_NOTE },
   { column: "total", label: "Total time (days, all passages)", number: true, note: `The sum of the lags of all the path's passages: the time spent on it. ${FLOW_NOTE}` },
@@ -95,14 +95,14 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
   return (
     <div className="path-list">
       <p className="visually-hidden" id={hint}>
-        Every path between two activities of the kept incidents and every flow from Start and to End, with its supplied numbers; a flow has incidents
-        only. “On the map” says whether the map draws it at the detail above. Select a row to keep or remove the incidents through it. Tab enters the
+        Every path between two activities of the kept cases and every flow from Start and to End, with its supplied numbers; a flow has cases
+        only. “On the map” says whether the map draws it at the detail above. Select a row to keep or remove the cases through it. Tab enters the
         list; the arrow keys, Page Up, Page Down, Home and End move.
       </p>
       {rows.length === 0 ? (
-        <p className="working-text">The kept incidents have no path between two activities and no flow from Start or to End.</p>
+        <p className="working-text">The kept cases have no path between two activities and no flow from Start or to End.</p>
       ) : (
-        <table className="path-table" aria-label="Paths of the kept incidents" aria-describedby={hint}>
+        <table className="path-table" aria-label="Paths of the kept cases" aria-describedby={hint}>
           <thead>
             <tr>
               {COLUMNS.map(({ column, label, number, note }) => (

@@ -23,7 +23,7 @@ try {
   const note = page.locator('.capacity-note');
   await note.filter({hasText: 'MiB, is refused before it starts'}).waitFor();
   const said = (await note.textContent()) ?? '';
-  check('tier_and_budget_stated_beside_the_import', said.startsWith('Measured: the incident journey with up to 50,000 incidents and 394,433 records')
+  check('tier_and_budget_stated_beside_the_import', said.startsWith('Measured: the case journey with up to 50,000 cases and 394,433 records')
     && said.includes(`may use, ${config.budget_mib} MiB, is refused before it starts`) && said.includes('Larger files are not measured') && said.includes('nothing is sampled'), said);
   await page.getByLabel('Add an event-history CSV').setInputFiles(config.file);
   const refusal = page.getByRole('alert').filter({hasText: 'more memory than the service may use now'});

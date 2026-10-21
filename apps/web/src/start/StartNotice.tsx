@@ -48,7 +48,7 @@ export function StartNotice({ start, onShowData }: StartNoticeProps) {
             <p>The built-in sample was read, and its reading waits for a confirmation in the Data area.</p>
           )}
           {state.phase === "done" && (
-            <p>No incidents are open. Add a CSV file in the Data area, or open the incidents of a reading listed there.</p>
+            <p>No cases are open. Add a CSV file in the Data area, or open the cases of a reading listed there.</p>
           )}
           {(state.phase === "failed" || state.phase === "done") && (
             <div>

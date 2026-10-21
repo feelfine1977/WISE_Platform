@@ -58,10 +58,10 @@ describe("the numbers of a context column", () => {
 
   it("asks for the parent's bins of the chosen column and projection, and says the range, the overlaps and what has no number", async () => {
     const { client, user } = start();
-    expect(await screen.findByText("Range in the parent: 0.75 to 0.9; 3 kept incidents of 6 have a number.")).toBeTruthy();
+    expect(await screen.findByText("Range in the parent: 0.75 to 0.9; 3 kept cases of 6 have a number.")).toBeTruthy();
     expect(client.numbers.mock.calls[0][0]).toMatchObject({ column_index: 5, projection: "first_record", bin_count: 10, query_revision: 3 });
-    expect(screen.getByRole("group", { name: "Incidents by Confidence at the first record" })).toBeTruthy();
-    expect(screen.getByText(/^Without a number here: 1 kept incident \(order not known\), 1 kept incident \(no value\), 1 kept incident \(not a number\)/)).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Cases by Confidence at the first record" })).toBeTruthy();
+    expect(screen.getByText(/^Without a number here: 1 kept case \(order not known\), 1 kept case \(no value\), 1 kept case \(not a number\)/)).toBeTruthy();
     expect(screen.getByText(/^2 records of the parent hold text that is not a number in this column; it stays as written and is never read as zero\./)).toBeTruthy();
     await user.selectOptions(screen.getByLabelText("Read at"), "any_record");
     expect(client.numbers.mock.calls.at(-1)![0].projection).toBe("any_record");
@@ -77,8 +77,8 @@ describe("the numbers of a context column", () => {
     await user.type(screen.getByLabelText("From, included"), "0,8");
     await user.click(screen.getByRole("button", { name: "Keep this range of numbers" }));
     const pending = screen.getByRole("group", { name: "Number step not yet taken" });
-    expect(within(pending).getByText("Keep incidents whose number in column 5 (its name is not known) at the first record is at least 0.8")).toBeTruthy();
-    expect(await within(pending).findByText(/^Preview: would keep 3 incidents of 7 incidents; 1 removed, 3 not evaluable\./)).toBeTruthy();
+    expect(within(pending).getByText("Keep cases whose number in column 5 (its name is not known) at the first record is at least 0.8")).toBeTruthy();
+    expect(await within(pending).findByText(/^Preview: would keep 3 cases of 7 cases; 1 removed, 3 not evaluable\./)).toBeTruthy();
     await user.click(within(pending).getByRole("button", { name: "Take this step" }));
     expect(onStep).toHaveBeenCalledExactlyOnceWith({ kind: "context_number_in_range", column_index: 5, projection: "first_record", minimum: 0.8, maximum: null, negate: false });
   });
@@ -86,7 +86,7 @@ describe("the numbers of a context column", () => {
   it("takes the bounds of the bins chosen on the chart, the exact edges the parent fixed", async () => {
     const { onStep, user } = start();
     await screen.findByText(/^Range in the parent/);
-    const chart = screen.getByRole("group", { name: "Incidents by Confidence at the first record" });
+    const chart = screen.getByRole("group", { name: "Cases by Confidence at the first record" });
     chart.focus();
     await user.keyboard("{Home}{Enter}");
     expect(onStep).toHaveBeenCalledWith({ kind: "context_number_in_range", column_index: 5, projection: "first_record", minimum: 0.75, maximum: 0.825, negate: false });
@@ -94,15 +94,15 @@ describe("the numbers of a context column", () => {
 
   it("says when no column was declared a number", async () => {
     start([]);
-    expect(screen.getByText("No context column was declared a number. Declare one in Data, with its unit, to keep incidents by a range of its numbers.")).toBeTruthy();
+    expect(screen.getByText("No context column was declared a number. Declare one in Data, with its unit, to keep cases by a range of its numbers.")).toBeTruthy();
   });
 
-  it("words the step, its chip and why an incident is not evaluable, and the contract takes it", () => {
+  it("words the step, its chip and why a case is not evaluable, and the contract takes it", () => {
     const step = (projection: "first_record" | "latest_record" | "any_record", minimum: number | null, maximum: number | null, negate = false) =>
       ({ kind: "context_number_in_range", column_index: 5, projection, minimum, maximum, negate }) as SelectionPredicate;
     expect([stepWording(step("latest_record", 0.7, 0.9)), stepWording(step("any_record", null, 10, true)), shortStepWording(step("latest_record", 0.7, 0.9))]).toEqual([
-      "Keep incidents whose number in column 5 (its name is not known) at the latest record with a value is from 0.7 up to, not including, 0.9",
-      "Keep incidents whose number in column 5 (its name is not known) at any record is not below 10",
+      "Keep cases whose number in column 5 (its name is not known) at the latest record with a value is from 0.7 up to, not including, 0.9",
+      "Keep cases whose number in column 5 (its name is not known) at any record is not below 10",
       "column 5 (latest) 0.7–<0.9",
     ]);
     expect(unevaluableReason(step("first_record", 1, null))).toBe("their order is not known, or the value there is empty or not a number");

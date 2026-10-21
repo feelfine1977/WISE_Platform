@@ -65,7 +65,7 @@ it("applies no stages the local service left out, or that name another preparati
   const requested = saving.reopen(savedSummary, workspaceId);
   const call = saved.reopens[0];
   const answer = reopenAnswer(call.request);
-  const message = "The stages saved with this investigation were not applied: the stages were defined for another reading of the source. The incidents and every count are as saved.";
+  const message = "The stages saved with this investigation were not applied: the stages were defined for another reading of the source. The cases and every count are as saved.";
   answer.recovery = { ...answer.recovery, warnings: [{ code: "stages_not_applied", message }] };
   call.reply({ ok: true, answer }); await requested; await tick();
   expect(stages.stateOf(reading).definitions).toBe(before);

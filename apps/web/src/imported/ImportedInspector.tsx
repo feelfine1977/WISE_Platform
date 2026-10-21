@@ -51,11 +51,11 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
       <div className="inspector-head">
         <div>
           <h2 id="imported-inspector-title" tabIndex={-1} ref={headingRef}>
-            Incident <span className="identifier">{inspected.caseId}</span>
+            Case <span className="identifier">{inspected.caseId}</span>
           </h2>
           <p className="muted">
             {summary && <>{countOf(summary.record_count, "record")} · </>}
-            Complete history in the declared order. Escape returns to the incidents.
+            Complete history in the declared order. Escape returns to the cases.
           </p>
           {inspected.side === "pinned" ? (
             <p className="muted focus-line">You are reading a pinned history in the population it was pinned in; reading it changes no step.</p>
@@ -73,7 +73,7 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
             </button>
           )}
           <button type="button" className="primary" onClick={onReturn}>
-            Return to incidents
+            Return to cases
           </button>
         </div>
       </div>
@@ -122,14 +122,14 @@ function History({ answer, highlightedRowIds = [], documents, observation }: { a
   return (
     <>
       <p className="coverage">
-        <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this incident · {countOf(coverage.mapped_record_count, "record")} in the
+        <strong>{countOf(coverage.raw_record_count, "record")}</strong> of this case · {countOf(coverage.mapped_record_count, "record")} in the
         activity sequence · {countOf(coverage.omitted_activity_record_count, "record")} without an activity label
       </p>
       <p className="order-rule">{orderRule(answer.records)}</p>
       {observation && <p className="observation-line">{observationLine(answer.records, observation)}</p>}
       {!answer.sequence_evaluable && (
         <p className="order-note">
-          The order of this incident is not fully known: records without a usable time follow the timed records in source order, which is
+          The order of this case is not fully known: records without a usable time follow the timed records in source order, which is
           not their recorded order.
         </p>
       )}
@@ -137,7 +137,7 @@ function History({ answer, highlightedRowIds = [], documents, observation }: { a
       <div>
       <IncidentTimeline caseId={answer.case_id} records={answer.records} timeline={timeline} onShowRecord={showRecord}
         documentPlaces={documents ? documentPlaces : undefined} onOpenDocument={documents ? setDocumentPlace : undefined} />
-      <ol className="history" ref={list} aria-label={`Records of incident ${answer.case_id} in the declared order`}>
+      <ol className="history" ref={list} aria-label={`Records of case ${answer.case_id} in the declared order`}>
         {answer.records.map((record, place) => (
           <HistoryEntry
             key={record.row_id}
@@ -248,19 +248,19 @@ export function observationLine(records: readonly ImportedSourceRecord[], observ
     return record.timestamp_status === "usable" && value ? [value] : [];
   });
   const cutoff = wall ? `${observation.cutoff.replace("T", " ")}, as recorded` : observation.cutoff.replace("T", " ").replace("Z", " UTC");
-  if (times.length === 0) return `The export was taken at ${cutoff}; no record of this incident has a usable time, so how long it was observed is not known.`;
+  if (times.length === 0) return `The export was taken at ${cutoff}; no record of this case has a usable time, so how long it was observed is not known.`;
   const parse = (value: string) => Date.parse(wall ? `${value}Z` : value);
   const last = Math.max(...times.map(parse));
   const hours = (parse(observation.cutoff) - last) / 3_600_000;
   const age = hours >= 48 ? `${Math.floor(hours / 24).toLocaleString("en")} days` : `${Math.round(hours * 10) / 10} hours`;
-  return `The export was taken at ${cutoff}, ${age} after the last usable time of this incident; records after the export are not in it, so this is no sign that the incident was complete.`;
+  return `The export was taken at ${cutoff}, ${age} after the last usable time of this case; records after the export are not in it, so this is no sign that the case was complete.`;
 }
 
 /** The incident read beside the selection it comes from: reading one incident changes no step and no membership. */
 export function focusLine({ kept, parent, steps, removed = 0 }: { kept: number; parent: number; steps: number; removed?: number }, fromRemoved = false): string {
   if (fromRemoved)
-    return `You are reading one incident of the ${countOf(removed, "incident")} the selection removes, in its parent of ${countOf(parent, "incident")} (${countOf(steps, "step")}); reading it changes no step.`;
+    return `You are reading one case of the ${countOf(removed, "case")} the selection removes, in its parent of ${countOf(parent, "case")} (${countOf(steps, "step")}); reading it changes no step.`;
   return steps === 0
-    ? `You are reading one incident of all ${countOf(parent, "incident")}; no step is taken, and reading it takes none.`
-    : `You are reading one incident of the ${countOf(kept, "incident")} the selection keeps of ${countOf(parent, "incident")} (${countOf(steps, "step")}); reading it changes no step.`;
+    ? `You are reading one case of all ${countOf(parent, "case")}; no step is taken, and reading it takes none.`
+    : `You are reading one case of the ${countOf(kept, "case")} the selection keeps of ${countOf(parent, "case")} (${countOf(steps, "step")}); reading it changes no step.`;
 }

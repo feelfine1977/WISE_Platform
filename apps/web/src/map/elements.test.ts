@@ -46,22 +46,22 @@ describe("the element selected on the map", () => {
     expect(stepChoices(element)).toEqual([]);
   });
 
-  it("offers to keep the incidents through an activity or a path, or those not through it", () => {
+  it("offers to keep the cases through an activity or a path, or those not through it", () => {
     expect(stepChoices({ kind: "activity", id: nodeIds[opened], label: opened, starts: 0, ends: 0, times: noPassage })).toEqual([
-      { label: "Keep incidents that contain it", step: contains(opened) },
-      { label: "Keep incidents that do not contain it", step: contains(opened, true) },
+      { label: "Keep cases that contain it", step: contains(opened) },
+      { label: "Keep cases that do not contain it", step: contains(opened, true) },
     ]);
     expect(stepChoices({ kind: "path", source: opened, target: closed, passages: 1, bridged: 0 })).toEqual([
-      { label: "Keep incidents where “Geschlossen” directly follows “Eröffnet”", step: follows(opened, closed) },
-      { label: "Keep incidents where it never does", step: follows(opened, closed, true) },
+      { label: "Keep cases where “Geschlossen” directly follows “Eröffnet”", step: follows(opened, closed) },
+      { label: "Keep cases where it never does", step: follows(opened, closed, true) },
     ]);
     // #5: a path over records without activity label says that it passes over them.
     expect(stepChoices({ kind: "path", source: opened, target: closed, passages: 2, bridged: 1 })[0].label).toBe(
-      "Keep incidents where “Geschlossen” directly follows “Eröffnet” in the activity sequence, records without activity label between them passed over",
+      "Keep cases where “Geschlossen” directly follows “Eröffnet” in the activity sequence, records without activity label between them passed over",
     );
   });
 
-  it("names a flow the map adds from Start or to End by the activity incidents begin or end with", () => {
+  it("names a flow the map adds from Start or to End by the activity cases begin or end with", () => {
     expect(selectedElement(graph, { nodes: [], edges: [startFlowId(nodeIds[opened])], groups: [] })).toEqual({
       kind: "boundary",
       side: "start",
@@ -86,30 +86,30 @@ describe("the element selected on the map", () => {
     expect(stepChoices({ kind: "unrecorded" })).toEqual([]);
   });
 
-  it("offers to keep the incidents that begin or end with the activity of a flow, or those that do not", () => {
+  it("offers to keep the cases that begin or end with the activity of a flow, or those that do not", () => {
     expect(stepChoices(elementOf(graph, "edge", startFlowId(nodeIds[opened])))).toEqual([
-      { label: "Keep incidents that begin with it", step: begins(opened) },
-      { label: "Keep incidents that do not begin with it", step: begins(opened, true) },
+      { label: "Keep cases that begin with it", step: begins(opened) },
+      { label: "Keep cases that do not begin with it", step: begins(opened, true) },
     ]);
     expect(stepChoices(elementOf(graph, "edge", endFlowId(nodeIds[closed])))).toEqual([
-      { label: "Keep incidents that end with it", step: ends(closed) },
-      { label: "Keep incidents that do not end with it", step: ends(closed, true) },
+      { label: "Keep cases that end with it", step: ends(closed) },
+      { label: "Keep cases that do not end with it", step: ends(closed, true) },
     ]);
   });
 
-  it("offers the beginning and the end of an activity after its own steps, only where incidents begin or end with it", () => {
+  it("offers the beginning and the end of an activity after its own steps, only where cases begin or end with it", () => {
     const own = (activity: string) => [
-      { label: "Keep incidents that contain it", step: contains(activity) },
-      { label: "Keep incidents that do not contain it", step: contains(activity, true) },
+      { label: "Keep cases that contain it", step: contains(activity) },
+      { label: "Keep cases that do not contain it", step: contains(activity, true) },
     ];
-    expect(stepChoices(elementOf(graph, "node", nodeIds[opened]))).toEqual([...own(opened), { label: "Keep incidents that begin with it", step: begins(opened) }]);
-    expect(stepChoices(elementOf(graph, "node", nodeIds[closed]))).toEqual([...own(closed), { label: "Keep incidents that end with it", step: ends(closed) }]);
+    expect(stepChoices(elementOf(graph, "node", nodeIds[opened]))).toEqual([...own(opened), { label: "Keep cases that begin with it", step: begins(opened) }]);
+    expect(stepChoices(elementOf(graph, "node", nodeIds[closed]))).toEqual([...own(closed), { label: "Keep cases that end with it", step: ends(closed) }]);
     // No incident whose order is known begins or ends with "Prüfung".
     expect(stepChoices(elementOf(graph, "node", nodeIds[checked]))).toEqual(own(checked));
     expect(stepChoices({ kind: "activity", id: nodeIds[checked], label: checked, starts: 2, ends: 3, times: noPassage })).toEqual([
       ...own(checked),
-      { label: "Keep incidents that begin with it", step: begins(checked) },
-      { label: "Keep incidents that end with it", step: ends(checked) },
+      { label: "Keep cases that begin with it", step: begins(checked) },
+      { label: "Keep cases that end with it", step: ends(checked) },
     ]);
   });
 });

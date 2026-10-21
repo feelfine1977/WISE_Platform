@@ -218,7 +218,7 @@ function checkCaseAnswer(request: CaseEvidenceRequest, answer: CaseEvidenceAnswe
   if (answer.request_id !== request.request_id || answer.query_revision !== request.query_revision) {
     return mismatch("The reply names a different request or query revision.");
   }
-  if (answer.case_id !== request.case_id) return mismatch("The reply describes a different incident.");
+  if (answer.case_id !== request.case_id) return mismatch("The reply describes a different case.");
   if (!sameIdentity(answer.identity, request.identity)) return mismatch("The reply belongs to a different population identity.");
   return { ok: true, answer };
 }

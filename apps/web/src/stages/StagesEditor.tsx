@@ -39,7 +39,7 @@ const STAGES_ARE =
   "A stage holds activities that belong together in this log. The map draws a box around the activities of a stage, lays the stages out in the " +
   "order given here, and offers “Show stages” in its Detail panel to draw each stage as one node. Start and End belong to no stage. Which stages " +
   "there are and what belongs to them is yours to say for this log: nothing is built in, and a value of a context column becomes a stage only " +
-  "when you take it from a proposal. Stages change how the map is drawn, never an incident, a step or a count.";
+  "when you take it from a proposal. Stages change how the map is drawn, never a case, a step or a count.";
 /** Where the stages are kept, in full. */
 const STAGES_KEPT =
   "The stages are kept in this browser for this reading, and saving the investigation saves them with it, bound to this reading. Reopening the " +
@@ -146,7 +146,7 @@ export function StagesEditor({ reading, parentGraph, store = browserStages, prop
       <div className="stages-head">
         <p className={kept ? "stages-note" : "stages-note stages-not-kept"}>{kept ? STAGES_KEPT_LINE : STAGES_NOT_KEPT_LINE}</p>
         <InfoPopover label="About stages">
-          <p className="about-lead">A stage counts nothing of its own: it groups activities for drawing, and every number stays that of its activities' incidents and records.</p>
+          <p className="about-lead">A stage counts nothing of its own: it groups activities for drawing, and every number stays that of its activities' cases and records.</p>
           <section className="popover-section">
             <p>{kept ? STAGES_KEPT : STAGES_NOT_KEPT}</p>
             <p>{STAGES_ARE}</p>
@@ -233,7 +233,7 @@ export function StagesEditor({ reading, parentGraph, store = browserStages, prop
             Activities and their stage
           </h4>
           <p className="stages-note">
-            {activities(listed.length)} on the map of every incident of the parent, the most frequent first
+            {activities(listed.length)} on the map of every case of the parent, the most frequent first
             {definitions.stages.length > 0 && `; ${without} in no stage`}.
           </p>
           <table className="stages-table" aria-labelledby={activitiesTitle}>
@@ -241,7 +241,7 @@ export function StagesEditor({ reading, parentGraph, store = browserStages, prop
               <tr>
                 <th scope="col">Activity</th>
                 <th scope="col" className="stages-number">
-                  Incidents
+                  Cases
                 </th>
                 <th scope="col">Stage</th>
                 <th scope="col">From</th>

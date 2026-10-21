@@ -5,7 +5,7 @@ import { STEP_KINDS, type StepKind } from "./Filters";
 import "./filters.css";
 
 /** The line that says what a step is, wherever steps are offered. */
-export const STEP_GLOSS = "A step keeps or removes whole incidents: every record of a kept incident stays with it, and Undo takes a step back.";
+export const STEP_GLOSS = "A step keeps or removes whole cases: every record of a kept case stays with it, and Undo takes a step back.";
 
 type AddStepProps = Omit<ComponentProps<typeof FilterPanel>, "only" | "previewStep"> & {
   /** A new number opens the panel, as the line of guidance asks. */

@@ -37,7 +37,7 @@ function client() {
 }
 
 describe("the longest recorded gaps", () => {
-  it("lists each pair with its incidents and share, passages, median and 90th percentile for the kept incidents and the parent", async () => {
+  it("lists each pair with its cases and share, passages, median and 90th percentile for the kept cases and the parent", async () => {
     const gaps = client();
     render(<GapPairs workspaceId="w" revision={3} identity={kept} onOrder={vi.fn()} ordered={null} client={gaps} />);
     const table = await screen.findByRole("table", { name: "Pairs with their recorded gaps, the longest 90th percentile first" });
@@ -47,8 +47,8 @@ describe("the longest recorded gaps", () => {
       ["(no activity label) → Resolve", "1 · 16.7%", "1", "20", "20", "0 in 0", "1 · 16.7%", "1", "20", "20"],
     ]);
     expect(screen.getByText(/^A gap is the recorded time from one record to the next\. It is not a working or a waiting time/)).toBeTruthy();
-    expect(screen.getByText(/each passage of a pair counts once, an incident passing it twice twice\. The median is the middle passage/)).toBeTruthy();
-    expect(screen.getByText(/^0 kept incidents \(parent 1\) whose order of records is not known/)).toBeTruthy();
+    expect(screen.getByText(/each passage of a pair counts once, a case passing it twice twice\. The median is the middle passage/)).toBeTruthy();
+    expect(screen.getByText(/^0 kept cases \(parent 1\) whose order of records is not known/)).toBeTruthy();
     expect(gaps.gaps.mock.calls[0][0]).toMatchObject({ relation: "raw_adjacent", threshold_hours: 24, chosen: null });
   });
 
@@ -66,7 +66,7 @@ describe("the longest recorded gaps", () => {
     expect(gaps.gaps.mock.calls.at(-1)![0].threshold_hours).toBe(48);
   });
 
-  it("orders the incident list by a chosen pair's longest gap, without a step, and lets the order go on a second choice", async () => {
+  it("orders the case list by a chosen pair's longest gap, without a step, and lets the order go on a second choice", async () => {
     const gaps = client();
     const onOrder = vi.fn();
     const user = userEvent.setup();
@@ -75,7 +75,7 @@ describe("the longest recorded gaps", () => {
     expect(gaps.gaps.mock.calls.at(-1)![0].chosen).toEqual({ from_activity: "Assign", to_activity: "Resolve" });
     const order = onOrder.mock.calls[0][0];
     expect(order).toMatchObject({ label: "Assign → Resolve", caseIds: ["G-4", "G-1", "G-3", "G-6"], ordered: true });
-    expect(order.note).toBe("The table lists the 4 kept incidents with a gap Assign → Resolve, the longest of their gaps first. This is an order of the list: the selection and every count stay as they are until a step is taken.");
+    expect(order.note).toBe("The table lists the 4 kept cases with a gap Assign → Resolve, the longest of their gaps first. This is an order of the list: the selection and every count stay as they are until a step is taken.");
     rerender(<GapPairs workspaceId="w" revision={3} identity={kept} onOrder={onOrder} ordered={order.id} client={gaps} />);
     expect(screen.getByRole("button", { name: "Assign → Resolve" }).getAttribute("aria-pressed")).toBe("true");
     await user.click(screen.getByRole("button", { name: "Assign → Resolve" }));
@@ -86,7 +86,7 @@ describe("the longest recorded gaps", () => {
     const gaps = client();
     render(<PathGaps workspaceId="w" revision={3} identity={kept} source="Assign" target="Resolve" client={gaps} />);
     expect((await screen.findByText(/^90th percentile lag/)).textContent).toBe(
-      "90th percentile lag 97 h over 4 passages; 2 passages are longer than 24 h, in 2 incidents. A recorded gap, not a working or waiting time.");
+      "90th percentile lag 97 h over 4 passages; 2 passages are longer than 24 h, in 2 cases. A recorded gap, not a working or waiting time.");
     expect(gaps.gaps.mock.calls[0][0]).toMatchObject({ relation: "mapped_path", threshold_hours: 24 });
   });
 
@@ -119,7 +119,7 @@ describe("the longest recorded gaps", () => {
     await act(async () => finish({ ok: true, answer }));
     expect(onOrder).toHaveBeenCalledTimes(1);
     expect(onOrder.mock.calls[0][0].caseIds).toEqual(members.map((member) => member.case_id));
-    expect(onOrder.mock.calls[0][0].note).toContain("1,001 kept incidents");
+    expect(onOrder.mock.calls[0][0].note).toContain("1,001 kept cases");
   });
 
   it("does not publish an old chosen group after the population changes", async () => {
@@ -150,7 +150,7 @@ describe("the longest recorded gaps", () => {
     const onOrder = vi.fn();
     render(<GapPairs workspaceId="w" revision={3} identity={kept} onOrder={onOrder} ordered={null} client={gaps} />);
     await userEvent.setup().click(await screen.findByRole("button", { name: "Assign → Resolve" }));
-    expect((await screen.findByRole("alert")).textContent).toContain("Every incident of this pair could not be read");
+    expect((await screen.findByRole("alert")).textContent).toContain("Every case of this pair could not be read");
     expect(onOrder).not.toHaveBeenCalled();
   });
 
@@ -160,7 +160,7 @@ describe("the longest recorded gaps", () => {
     render(<PathGaps workspaceId="w" revision={3} identity={kept} source="Assign" target="Resolve" client={gaps} />);
     expect((await screen.findByText(/^90th percentile lag/)).textContent).toContain("97 h over 4 passages");
     expect(gaps.gaps.mock.calls[0][0].chosen).toEqual({ from_activity: "Assign", to_activity: "Resolve" });
-    expect(screen.queryByText(/^No kept incident passes/)).toBeNull();
+    expect(screen.queryByText(/^No kept case passes/)).toBeNull();
   });
 
   it("rejects a reply for another chosen pair or member page", () => {

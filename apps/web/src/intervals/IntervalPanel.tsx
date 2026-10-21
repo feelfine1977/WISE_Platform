@@ -107,7 +107,7 @@ export function IntervalPanel({ workspaceId, revision, identity, activities, onS
         <label>Response activity<select value={response} onChange={(event) => setResponse(event.target.value)}>{activities.map((name) => <option key={name}>{name}</option>)}</select></label>
         <button type="submit">Measure the interval</button>
       </form>
-      {shown.phase === "loading" && <p className="working-text">Measuring the interval of every incident of the parent…</p>}
+      {shown.phase === "loading" && <p className="working-text">Measuring the interval of every case of the parent…</p>}
       {shown.phase === "failed" && <p className="inline-error" role="alert">{shown.message}</p>}
       {shown.phase === "ready" && (
         <Distribution answer={shown.answer} onTail={(threshold) => { setHours(String(threshold)); setOperator("ge"); propose(tail(threshold, "ge")); }}
@@ -122,7 +122,7 @@ export function IntervalPanel({ workspaceId, revision, identity, activities, onS
         }}>
           <label>Threshold in hours<input type="number" min="0" step="any" value={hours} onChange={(event) => setHours(event.target.value)} /></label>
           <fieldset>
-            <legend>Keep the incidents whose interval is</legend>
+            <legend>Keep the cases whose interval is</legend>
             <label className="check"><input type="radio" name={`${title}-operator`} checked={operator === "gt"} onChange={() => setOperator("gt")} />more than the threshold (strict, &gt;)</label>
             <label className="check"><input type="radio" name={`${title}-operator`} checked={operator === "ge"} onChange={() => setOperator("ge")} />at least the threshold (inclusive, ≥)</label>
           </fieldset>
@@ -162,11 +162,11 @@ function Distribution({ answer, onTail, onOpen, canOpen, waitingFor }: {
       </p>
       <p className="muted">Policy: <code className="identifier">{interval.policy}</code></p>
       <p>
-        Measured: {countOf(measured.kept_case_count, "incident")} of these incidents, {countOf(measured.parent_case_count, "incident")} of the parent.
-        Without this interval: {countOf(missing, "incident")} of these incidents; they are in no bin and in no tail.
+        Measured: {countOf(measured.kept_case_count, "case")} of these cases, {countOf(measured.parent_case_count, "case")} of the parent.
+        Without this interval: {countOf(missing, "case")} of these cases; they are in no bin and in no tail.
       </p>
-      <table className="plain-table compact-table" aria-label="Incidents without this interval, by reason">
-        <thead><tr><th scope="col">Reason</th><th scope="col" className="number">These incidents</th><th scope="col" className="number">Parent</th></tr></thead>
+      <table className="plain-table compact-table" aria-label="Cases without this interval, by reason">
+        <thead><tr><th scope="col">Reason</th><th scope="col" className="number">These cases</th><th scope="col" className="number">Parent</th></tr></thead>
         <tbody>
           {unavailable.map((item) => (
             <tr key={item.reason}><th scope="row">{REASONS[item.reason]}</th><td className="number">{item.kept_case_count}</td><td className="number">{item.parent_case_count}</td></tr>
@@ -175,7 +175,7 @@ function Distribution({ answer, onTail, onOpen, canOpen, waitingFor }: {
       </table>
       <table className="plain-table compact-table interval-bins" aria-label="Measured intervals in bins the parent fixes">
         <thead>
-          <tr><th scope="col">Interval</th><th scope="col" className="number">These incidents</th><th scope="col" className="number">Parent</th><th scope="col">Bars</th><th scope="col">Tail</th></tr>
+          <tr><th scope="col">Interval</th><th scope="col" className="number">These cases</th><th scope="col" className="number">Parent</th><th scope="col">Bars</th><th scope="col">Tail</th></tr>
         </thead>
         <tbody>
           {bins.map((bin) => (
@@ -200,7 +200,7 @@ function Distribution({ answer, onTail, onOpen, canOpen, waitingFor }: {
           ))}
         </tbody>
       </table>
-      <ul className="interval-cases" aria-label="Intervals of these incidents, longest first">
+      <ul className="interval-cases" aria-label="Intervals of these cases, longest first">
         {cases.map((item) => {
           const text = item.hours === null
             ? `${item.case_id}: no interval (${REASONS[item.reason!].toLowerCase()}).`
@@ -213,7 +213,7 @@ function Distribution({ answer, onTail, onOpen, canOpen, waitingFor }: {
           );
         })}
       </ul>
-      {answer.cases_truncated && <p className="muted">The {cases.length} longest are listed; the counts above cover every incident.</p>}
+      {answer.cases_truncated && <p className="muted">The {cases.length} longest are listed; the counts above cover every case.</p>}
     </>
   );
 }

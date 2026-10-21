@@ -52,26 +52,26 @@ describe("the bar of steps by keyboard", () => {
     await app.user.keyboard("{Home}");
     expect(focusedName()).toBe("Undo");
     await app.user.keyboard("{Escape}");
-    expect(document.activeElement?.textContent).toBe("Incidents");
+    expect(document.activeElement?.textContent).toBe("Cases");
   });
 
-  it("keeps the focus on an action that can still be used after Undo and Clear all, and says what changed with the incidents kept", async () => {
+  it("keeps the focus on an action that can still be used after Undo and Clear all, and says what changed with the cases kept", async () => {
     const app = await start();
     act(() => app.coordinator.addStep(contains(opened)));
     await answer(app, containingOpened);
-    expect(said()).toBe("Step added: With “Eröffnet”. 1 of 2 incidents kept.");
+    expect(said()).toBe("Step added: With “Eröffnet”. 1 of 2 cases kept.");
     await app.user.click(within(bar()).getByRole("button", { name: "Undo" }));
     await answer(app, everyIncident);
     // Undo cannot be used any more: the focus goes to Redo, never to the page.
     expect(focusedName()).toBe("Redo");
-    expect(said()).toBe("Undone: With “Eröffnet”. 2 of 2 incidents kept.");
+    expect(said()).toBe("Undone: With “Eröffnet”. 2 of 2 cases kept.");
     await app.user.click(within(bar()).getByRole("button", { name: "Redo" }));
     await answer(app, containingOpened);
-    expect(said()).toBe("Redone: With “Eröffnet”. 1 of 2 incidents kept.");
+    expect(said()).toBe("Redone: With “Eröffnet”. 1 of 2 cases kept.");
     await app.user.click(within(bar()).getByRole("button", { name: "Clear all" }));
     await answer(app, everyIncident);
     expect(focusedName()).toBe("Undo");
-    expect(said()).toBe("Every step removed. 2 of 2 incidents kept.");
+    expect(said()).toBe("Every step removed. 2 of 2 cases kept.");
   });
 
   it("takes the focus to the new chip after a new step, where it would otherwise be lost, and moves along the trail by the arrow keys", async () => {
@@ -84,7 +84,7 @@ describe("the bar of steps by keyboard", () => {
     const chips = Array.from(document.querySelectorAll<HTMLElement>('ul[aria-label="Steps of the selection"] > li > details > summary'));
     expect(document.activeElement).toBe(chips[1]);
     // One tab stop in the trail: the chip in focus.
-    const parentButton = screen.getByRole("button", { name: "Every incident of the parent · 2" });
+    const parentButton = screen.getByRole("button", { name: "Every case of the parent · 2" });
     expect([parentButton.tabIndex, chips[0].tabIndex, chips[1].tabIndex]).toEqual([-1, -1, 0]);
     await app.user.keyboard("{ArrowLeft}");
     expect(document.activeElement).toBe(chips[0]);
@@ -93,6 +93,6 @@ describe("the bar of steps by keyboard", () => {
     await app.user.keyboard("{End}");
     expect(document.activeElement).toBe(chips[1]);
     await app.user.keyboard("{Escape}");
-    expect(document.activeElement?.textContent).toBe("Incidents");
+    expect(document.activeElement?.textContent).toBe("Cases");
   });
 });

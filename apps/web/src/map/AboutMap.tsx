@@ -5,7 +5,7 @@ import { coverageRows, mapCaption } from "./wording";
 
 /** The one line "About this map" opens with: what its numbers are, what each counts, and over which incidents. */
 export const MAP_COUNTS_LINE =
-  "On an activity the map counts kept incidents with a record of it and those records; on a path, kept incidents that pass it and its passages; a time is a wait between records over those passages.";
+  "On an activity the map counts kept cases with a record of it and those records; on a path, kept cases that pass it and its passages; a time is a wait between records over those passages.";
 
 /** The words every flows line begins with. "About this map" says them once, as the heading over all that is not drawn. */
 export const NOT_DRAWN = "Not drawn at this detail";

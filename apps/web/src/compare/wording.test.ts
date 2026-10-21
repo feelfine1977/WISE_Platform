@@ -30,11 +30,11 @@ describe("the wording of a comparison", () => {
   it("says why neither is available when a side has no readable opening", () => {
     const reason = { status: "unavailable" as const, reason: "empty_reference_profile" as const };
     const late = category({ reference: empty, difference_percentage_points: reason, concentration_ratio: reason });
-    expect(differenceCell(late, names)).toBe("not available: Late has no incident whose first record can be read");
-    expect(ratioCell(late, names)).toBe("not available: Late has no incident whose first record can be read");
+    expect(differenceCell(late, names)).toBe("not available: Late has no case whose first record can be read");
+    expect(ratioCell(late, names)).toBe("not available: Late has no case whose first record can be read");
     const both = { status: "unavailable" as const, reason: "empty_both_profiles" as const };
     expect(differenceCell(category({ difference_percentage_points: both, concentration_ratio: both }), names)).toBe(
-      "not available: neither group has an incident whose first record can be read",
+      "not available: neither group has a case whose first record can be read",
     );
   });
 
@@ -58,10 +58,10 @@ describe("the wording of a comparison", () => {
       unevaluable: support(["P-5"], 2),
     };
     expect(overlapSentences(pair, names, "period")).toEqual([
-      "Membership: disjoint. No incident is in both Early and Late.",
-      "1 incident of the parent cannot be placed in or outside Early or Late, as what decides their membership cannot be evaluated; they are counted in neither period.",
-      "2 incidents of the parent are in neither period.",
+      "Membership: disjoint. No case is in both Early and Late.",
+      "1 case of the parent cannot be placed in or outside Early or Late, as what decides their membership cannot be evaluated; they are counted in neither period.",
+      "2 cases of the parent are in neither period.",
     ]);
-    expect(overlapSentences(pair, names, "group")[2]).toBe("2 incidents of the parent are in neither group.");
+    expect(overlapSentences(pair, names, "group")[2]).toBe("2 cases of the parent are in neither group.");
   });
 });

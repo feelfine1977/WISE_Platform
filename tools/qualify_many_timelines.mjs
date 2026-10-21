@@ -25,7 +25,7 @@ page.on('request', request => {
 const checks = {};
 const check = (name, passed, detail) => { checks[name] = Boolean(passed); assert.ok(passed, `${name}: ${JSON.stringify(detail ?? null)}`); };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const table = () => page.getByRole('table', {name: 'Kept incidents'});
+const table = () => page.getByRole('table', {name: 'Kept cases'});
 const row = caseId => table().locator('tbody tr').filter({has: page.getByRole('button', {name: caseId, exact: true})});
 
 try {
@@ -34,8 +34,8 @@ try {
   await page.getByRole('navigation', {name: 'Areas'}).getByRole('button', {name: 'Data', exact: true}).click();
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, 5);
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
-  await page.getByRole('group', {name: 'Order of the incidents'}).getByRole('button', {name: 'Longest span first', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
+  await page.getByRole('group', {name: 'Order of the cases'}).getByRole('button', {name: 'Longest span first', exact: true}).click();
   await page.waitForFunction(() => document.querySelectorAll('.record-marks').length === 5);
   const asked = selections.length;
 
@@ -63,11 +63,11 @@ try {
 
   // ---- page and record support said; no row or record left out ----
   const more = (await page.locator('.incident-more').textContent()) ?? '';
-  check('page_and_record_support_said', more.includes('5 incidents of 5') && more.includes('every one of the 13 records of these incidents is a mark on one axis of 10 h'), more);
+  check('page_and_record_support_said', more.includes('5 cases of 5') && more.includes('every one of the 13 records of these cases is a mark on one axis of 10 h'), more);
 
   // ---- a row opens the same complete evidence; browsing changes no selection ----
   const [evidence] = await Promise.all([page.waitForResponse(r => new URL(r.url()).pathname === '/api/investigations/case-evidence'), table().getByRole('button', {name: 'T-2', exact: true}).click()]);
-  await page.getByRole('heading', {name: 'Incident T-2'}).waitFor();
+  await page.getByRole('heading', {name: 'Case T-2'}).waitFor();
   await page.waitForFunction(() => document.querySelectorAll('ol.history > li').length > 0);
   check('row_opens_the_complete_evidence', (await evidence.json()).records.length === 4 && await page.locator('ol.history > li').count() === 4, null);
   check('browsing_changes_no_selection', selections.length === asked, [asked, selections.length]);

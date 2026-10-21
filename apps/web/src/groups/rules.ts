@@ -75,25 +75,25 @@ export function ruleSentence(rule: GroupRule, columnName: (index: number) => str
     case "first_raw_activity":
     case "last_raw_activity": {
       const which = rule.kind === "first_raw_activity" ? "first" : "last";
-      return `Each incident is in the group of the activity of its ${which} record in the declared order. An incident whose order is not fully known cannot be evaluated; one whose ${which} record has no activity label is in “No activity label”.`;
+      return `Each case is in the group of the activity of its ${which} record in the declared order. A case whose order is not fully known cannot be evaluated; one whose ${which} record has no activity label is in “No activity label”.`;
     }
     case "raw_record_count_bands":
-      return "Each incident is in the band of its number of records, records without an activity label included. Every incident can be evaluated.";
+      return "Each case is in the band of its number of records, records without an activity label included. Every case can be evaluated.";
     case "exact_mapped_sequence":
-      return "Each incident is in the group of its exact sequence of labelled activities in the declared order; records without an activity label are left out of the sequence. An incident whose order is not fully known cannot be evaluated.";
+      return "Each case is in the group of its exact sequence of labelled activities in the declared order; records without an activity label are left out of the sequence. A case whose order is not fully known cannot be evaluated.";
     case "activity_presence":
-      return `Each incident is in “With ${rule.activity}” if at least one of its records has that activity, otherwise in “Without ${rule.activity}”. Every incident can be evaluated.`;
+      return `Each case is in “With ${rule.activity}” if at least one of its records has that activity, otherwise in “Without ${rule.activity}”. Every case can be evaluated.`;
     case "shared_reference": {
       const name = columnName(rule.column_index);
-      const fewer = `A value recorded in fewer than ${rule.minimum_parent_case_count} incidents of the parent forms no group.`;
+      const fewer = `A value recorded in fewer than ${rule.minimum_parent_case_count} cases of the parent forms no group.`;
       // A recorded value such as “Unknown” is a value like any other; only an empty cell is “Not recorded”.
       switch (rule.policy ?? "any_record") {
         case "first_record":
-          return `Each incident is in the group of the value of ${name} on its first record in the declared order, so it is in exactly one group; an empty cell there puts it in “Not recorded”, and a recorded “Unknown” is a value. ${fewer} An incident whose order is not fully known cannot be evaluated.`;
+          return `Each case is in the group of the value of ${name} on its first record in the declared order, so it is in exactly one group; an empty cell there puts it in “Not recorded”, and a recorded “Unknown” is a value. ${fewer} A case whose order is not fully known cannot be evaluated.`;
         case "latest_record":
-          return `Each incident is in the group of the latest value of ${name} recorded in it, in the declared order, so it is in exactly one group; with no value on any record it is in “Not recorded”, and a recorded “Unknown” is a value. ${fewer} An incident whose order is not fully known cannot be evaluated.`;
+          return `Each case is in the group of the latest value of ${name} recorded in it, in the declared order, so it is in exactly one group; with no value on any record it is in “Not recorded”, and a recorded “Unknown” is a value. ${fewer} A case whose order is not fully known cannot be evaluated.`;
         default:
-          return `Each incident is in the group of every value of ${name} recorded in it, so an incident with several values is in several groups. ${fewer} An incident with a record without a value of ${name} is also in “Not recorded”.`;
+          return `Each case is in the group of every value of ${name} recorded in it, so a case with several values is in several groups. ${fewer} A case with a record without a value of ${name} is also in “Not recorded”.`;
       }
     }
   }
@@ -106,29 +106,29 @@ export function groupRuleSentence(key: RuleGroupKey, rule: GroupRule, columnName
     case "missing_activity": {
       const which = rule.kind === "last_raw_activity" ? "last" : "first";
       return key.kind === "activity"
-        ? `Incidents whose ${which} record in the declared order has the activity “${key.activity}”.`
-        : `Incidents whose ${which} record in the declared order has no activity label.`;
+        ? `Cases whose ${which} record in the declared order has the activity “${key.activity}”.`
+        : `Cases whose ${which} record in the declared order has no activity label.`;
     }
     case "raw_record_count_band":
-      return `Incidents with ${groupLabel(key)}, records without an activity label included.`;
+      return `Cases with ${groupLabel(key)}, records without an activity label included.`;
     case "activity_presence":
-      return key.present ? `Incidents with at least one record of “${key.activity}”.` : `Incidents with no record of “${key.activity}”.`;
+      return key.present ? `Cases with at least one record of “${key.activity}”.` : `Cases with no record of “${key.activity}”.`;
     case "reference_value":
     case "missing_reference": {
       const name = columnName(key.column_index);
       const policy = rule.kind === "shared_reference" ? rule.policy ?? "any_record" : "any_record";
       if (key.kind === "reference_value") {
-        return policy === "first_record" ? `Incidents whose first record has ${name} “${key.value}”.`
-          : policy === "latest_record" ? `Incidents whose latest recorded ${name} is “${key.value}”.`
-            : `Incidents with at least one record whose ${name} is “${key.value}”.`;
+        return policy === "first_record" ? `Cases whose first record has ${name} “${key.value}”.`
+          : policy === "latest_record" ? `Cases whose latest recorded ${name} is “${key.value}”.`
+            : `Cases with at least one record whose ${name} is “${key.value}”.`;
       }
-      return policy === "first_record" ? `Incidents whose first record has no value of ${name}.`
-        : policy === "latest_record" ? `Incidents with no value of ${name} on any record.`
-          : `Incidents with at least one record without a value of ${name}.`;
+      return policy === "first_record" ? `Cases whose first record has no value of ${name}.`
+        : policy === "latest_record" ? `Cases with no value of ${name} on any record.`
+          : `Cases with at least one record without a value of ${name}.`;
     }
     case "exact_sequence":
       return key.activities.length === 0
-        ? "Incidents without a labelled activity in the declared order."
-        : `Incidents whose labelled activities in the declared order are exactly ${key.activities.map((activity) => `“${activity}”`).join(", then ")}.`;
+        ? "Cases without a labelled activity in the declared order."
+        : `Cases whose labelled activities in the declared order are exactly ${key.activities.map((activity) => `“${activity}”`).join(", then ")}.`;
   }
 }

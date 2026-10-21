@@ -130,7 +130,7 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
       return time?.status === "available" ? time : null;
     };
     const witnessOf = (caseId: CaseId) => timeOf(caseId)?.maximum_gap_witness ?? null;
-    const dash = <span className="muted" title="Not available for this incident">–</span>;
+    const dash = <span className="muted" title="Not available for this case">–</span>;
     return [
       { head: "First record", sort: "first_recorded_time", cell: (caseId) => { const row = byId.get(caseId); const first = row ? firstRecordCell(row) : null; return first ?? dash; } },
       { head: "Longest gap between", cell: (caseId) => { const witness = witnessOf(caseId); return witness ? <span title={gapBetween(witness)}>{gapBetween(witness)}</span> : dash; } },
@@ -155,31 +155,31 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
   const tools = (
     <div className="incident-search-line">
       <p className="muted incident-order-said">
-        By {said.measure}, {said.said[direction]}; equal values in the order of their numbers, and incidents without a value last.
+        By {said.measure}, {said.said[direction]}; equal values in the order of their numbers, and cases without a value last.
       </p>
       <button type="button" aria-pressed={direction !== said.first} onClick={() => setDirection(direction === "ascending" ? "descending" : "ascending")}>
         Reverse
       </button>
-      <form className="incident-search" role="search" aria-label="Find incidents by number" onSubmit={find}>
-        <label htmlFor={searchId}>Incident number contains</label>
+      <form className="incident-search" role="search" aria-label="Find cases by number" onSubmit={find}>
+        <label htmlFor={searchId}>Case number contains</label>
         <input id={searchId} type="search" value={typed} onChange={(event) => setTyped(event.target.value)} />
         <button type="submit">Find</button>
         {search !== null && (
           <button type="button" onClick={() => { setTyped(""); setSearch(null); }}>
-            Show every kept incident
+            Show every kept case
           </button>
         )}
       </form>
     </div>
   );
 
-  if (listed.phase === "loading") return <>{tools}<p className="working-text">Ordering the kept incidents…</p></>;
+  if (listed.phase === "loading") return <>{tools}<p className="working-text">Ordering the kept cases…</p></>;
   if (listed.phase === "failed") {
     return (
       <>
       {tools}
       <div className="inline-error" role="alert">
-        <p>The incidents could not be ordered by time: {listed.message}</p>
+        <p>The cases could not be ordered by time: {listed.message}</p>
         <button
           type="button"
           onClick={() => {
@@ -202,9 +202,9 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
       {search !== null && (
         <p className="incident-search-said" role="status">
           {total === 0
-            ? `No kept incident has “${search}” in its number.`
-            : `${countOf(total, "kept incident")} of ${population.toLocaleString("en")} ${total === 1 ? "has" : "have"} “${search}” in ${total === 1 ? "its number" : "their numbers"}.`}{" "}
-          The search narrows only the rows shown: the kept incidents, their counts and their distribution stay the same.
+            ? `No kept case has “${search}” in its number.`
+            : `${countOf(total, "kept case")} of ${population.toLocaleString("en")} ${total === 1 ? "has" : "have"} “${search}” in ${total === 1 ? "its number" : "their numbers"}.`}{" "}
+          The search narrows only the rows shown: the kept cases, their counts and their distribution stay the same.
         </p>
       )}
       <IncidentWindow cases={cases} times={times} duration={durationName} extras={extras} onActive={setActiveCase} {...table}
@@ -222,11 +222,11 @@ export function IncidentsInTimeOrder({ workspaceId, revision, identity, kept, or
       )}
       <div className="incident-more">
         <span className="muted">
-          {countOf(cases.length, "incident")} of {total.toLocaleString("en")}{search !== null ? ` found` : ""}
+          {countOf(cases.length, "case")} of {total.toLocaleString("en")}{search !== null ? ` found` : ""}
         </span>
         {/* What the column of marks draws, so that no row or record is left out unsaid (#67). */}
         <span className="muted marks-support">
-          Records over time: every one of the {countOf(rows.reduce((sum, row) => sum + row.record_count, 0), "record")} of these incidents is a mark on one
+          Records over time: every one of the {countOf(rows.reduce((sum, row) => sum + row.record_count, 0), "record")} of these cases is a mark on one
           axis of {durationName(axisHours)}, records at the same time one mark with their count, or counted apart without a usable time.
         </span>
         {listed.more && (

@@ -60,7 +60,7 @@ describe("the detail controls above the canvas of the map", () => {
   async function renderBusyMap() {
     const supplied = busyGraph();
     render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} />);
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     const inside = () => within(map).getByRole("form", { name: "Detail" });
     /** How many activities the map draws. */
     const nodesDrawn = () => map.querySelectorAll(".react-flow__node-activity").length;

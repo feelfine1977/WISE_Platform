@@ -38,8 +38,8 @@ async function settled(steps) {
 async function shown(count) {
   await page.waitForFunction(n => document.querySelectorAll('.similar-sequences .similar-families > li').length === n && !document.querySelector('.similar-sequences .working-text'), count);
 }
-const wantedHeads = list => list.map(item => [named(item.activities), item.distance === 0 ? `The chosen sequence itself · ${item.cases.length} incident${item.cases.length === 1 ? '' : 's'} of the parent, ${item.cases.length} kept`
-  : `${item.distance} edit${item.distance === 1 ? '' : 's'} away · ${item.cases.length} incident${item.cases.length === 1 ? '' : 's'} of the parent, ${item.cases.length} kept`]);
+const wantedHeads = list => list.map(item => [named(item.activities), item.distance === 0 ? `The chosen sequence itself · ${item.cases.length} case${item.cases.length === 1 ? '' : 's'} of the parent, ${item.cases.length} kept`
+  : `${item.distance} edit${item.distance === 1 ? '' : 's'} away · ${item.cases.length} case${item.cases.length === 1 ? '' : 's'} of the parent, ${item.cases.length} kept`]);
 
 try {
   await page.goto(base);
@@ -51,14 +51,14 @@ try {
   const parent = selections.at(-1);
   const before = selections.length;
   await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Variants', exact: true}).click();
-  await page.getByRole('button', {name: 'Incidents with a sequence similar to variant 1', exact: true}).click();
+  await page.getByRole('button', {name: 'Cases with a sequence similar to variant 1', exact: true}).click();
   await shown(oracle.one_edit.families.length);
 
   // ---- the families within one edit, then two, by the stated method; nothing applied ----
   check('one_edit_families_as_the_oracle', same(await families(), wantedHeads(oracle.one_edit.families)), await families());
   const said = (await panel().textContent()) ?? '';
-  check('measure_threshold_eligibility_and_support_said', said.includes('the least number of activities to insert, remove or replace') && said.includes('does not change with the kept incidents')
-    && said.includes(`5 families of exactly equal sequences within 1 edit: ${oracle.one_edit.suggested} incidents of the 10 eligible incidents of the parent, ${oracle.one_edit.suggested} kept incidents of 10.`), said.slice(0, 700));
+  check('measure_threshold_eligibility_and_support_said', said.includes('the least number of activities to insert, remove or replace') && said.includes('does not change with the kept cases')
+    && said.includes(`5 families of exactly equal sequences within 1 edit: ${oracle.one_edit.suggested} cases of the 10 eligible cases of the parent, ${oracle.one_edit.suggested} kept cases of 10.`), said.slice(0, 700));
   check('asking_applies_nothing', selections.length === before, [before, selections.length]);
   await panel().getByRole('radio', {name: 'At most 2 edits'}).check();
   await shown(oracle.one_edit.families.length + oracle.two_edits.added.length);
@@ -68,24 +68,24 @@ try {
 
   // ---- a representative complete history ----
   await panel().getByRole('button', {name: 'Open L-03, a complete history of this family', exact: true}).click();
-  await page.getByRole('heading', {name: 'Incident L-03'}).waitFor();
+  await page.getByRole('heading', {name: 'Case L-03'}).waitFor();
   await page.waitForFunction(() => document.querySelectorAll('ol.history > li').length > 0);
   check('representative_complete_history_opens', await page.locator('ol.history > li').count() === expected.records['L-03'], null);
   await page.keyboard.press('Escape');
 
   // ---- kept as a step of explicit identifiers in the existing parent, then undone ----
   await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Variants', exact: true}).click();
-  if (!(await panel().count())) await page.getByRole('button', {name: 'Incidents with a sequence similar to variant 1', exact: true}).click();
+  if (!(await panel().count())) await page.getByRole('button', {name: 'Cases with a sequence similar to variant 1', exact: true}).click();
   await panel().getByRole('radio', {name: 'At most 1 edit'}).check();
   await shown(oracle.one_edit.families.length);
-  await panel().getByRole('button', {name: `Keep the ${oracle.one_edit.suggested} kept incidents suggested`, exact: true}).click();
+  await panel().getByRole('button', {name: `Keep the ${oracle.one_edit.suggested} kept cases suggested`, exact: true}).click();
   await settled(1);
   const kept = selections.at(-1);
   const suggestion = oracle.one_edit.families.flatMap(item => item.cases).sort();
   check('suggestion_kept_as_explicit_identifiers_in_the_existing_parent', same(kept.kept.case_ids, suggestion) && kept.predicate_results[0].predicate.kind === 'case_id_in'
     && same([...kept.predicate_results[0].predicate.case_ids].sort(), suggestion) && same(kept.parent.case_ids, parent.kept.case_ids), kept.kept.case_ids);
   // The suggestions are the parent's: with the step taken the families stay, only the kept counts follow.
-  await page.getByRole('button', {name: 'Incidents with a sequence similar to variant 1', exact: true}).click().catch(() => undefined);
+  await page.getByRole('button', {name: 'Cases with a sequence similar to variant 1', exact: true}).click().catch(() => undefined);
   await page.getByRole('group', {name: 'Steps', exact: true}).getByRole('button', {name: 'Undo', exact: true}).click();
   await settled(0);
   check('undo_restores_the_selection', same(selections.at(-1).identity, parent.identity), null);

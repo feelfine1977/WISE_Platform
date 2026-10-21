@@ -98,23 +98,23 @@ export function TimeColumn({ workspaceId, revision, identity, onStep, previewSte
   const per = periods?.per ?? "week";
 
   return (
-    <section className="time-column" aria-label="Time of the kept incidents">
+    <section className="time-column" aria-label="Time of the kept cases">
       <div className="time-column-head">
         <h4 className="time-column-title">Time</h4>
         <InfoPopover label="About these charts">
-          <p className="about-lead">Each column counts incidents, each incident once per chart: the kept incidents solid, the parent's pale.</p>
+          <p className="about-lead">Each column counts cases, each case once per chart: the kept cases solid, the parent's pale.</p>
           <section className="popover-section">
             <p>
-              Recorded span: the time from the first to the last record of an incident, over its whole history. An incident with one record has a
-              span of zero and no longest gap; an incident whose order of records is not known has neither.
+              Recorded span: the time from the first to the last record of a case, over its whole history. A case with one record has a
+              span of zero and no longest gap; a case whose order of records is not known has neither.
             </p>
             <p>
-              Starts: each incident counts once, in the {per} of its first record in the declared order. The periods are fixed by the parent: weeks
+              Starts: each case counts once, in the {per} of its first record in the declared order. The periods are fixed by the parent: weeks
               from Monday, or months, quarters or years where the parent spans more than 64 weeks. Records per period are not shown yet.
             </p>
             <p>
-              Pale columns are the parent, solid columns the kept incidents. A column of spans keeps the incidents of at least that span; a band of
-              periods keeps the incidents whose first record lies in it, with all their later records. Each is a step, and Undo takes it back.
+              Pale columns are the parent, solid columns the kept cases. A column of spans keeps the cases of at least that span; a band of
+              periods keeps the cases whose first record lies in it, with all their later records. Each is a step, and Undo takes it back.
             </p>
             {starts.phase === "ready" && (
               <p>
@@ -184,24 +184,24 @@ function SpanChart({ state, onStep, waitingFor, onRetry }: { state: Loaded<CaseL
   const startOf = (place: number) => distribution?.bins[place]?.start_inclusive_hours ?? 0;
   return (
     <section className="time-chart" aria-labelledby={title}>
-      <h5 id={title} className="time-chart-title">Incidents by recorded span</h5>
+      <h5 id={title} className="time-chart-title">Cases by recorded span</h5>
       {state.phase === "loading" && <p className="working-text">Counting spans…</p>}
       {state.phase === "failed" && <NotShown what="Spans" message={state.message} onRetry={onRetry} />}
       {distribution !== null && (
         <>
           <ColumnChart
-            name="Incidents by recorded span"
+            name="Cases by recorded span"
             bins={bins}
             band={false}
             applicable={(from) => startOf(from) > 0}
             chosenName={(from) => bins[from].label}
-            stepName={(from) => `Keep incidents with a span of at least ${hoursName(startOf(from))}`}
+            stepName={(from) => `Keep cases with a span of at least ${hoursName(startOf(from))}`}
             onApply={(from) => onStep({ kind: "observed_span_at_least", hours: startOf(from), negate: false })}
             waitingFor={waitingFor}
             ticks={[bins[0]?.label ?? "", bins.at(-1)?.label ?? ""]}
           />
           {distribution.unavailable.kept_case_count > 0 && (
-            <p className="time-chart-limit">{countOf(distribution.unavailable.kept_case_count, "incident")} without a span</p>
+            <p className="time-chart-limit">{countOf(distribution.unavailable.kept_case_count, "case")} without a span</p>
           )}
         </>
       )}
@@ -238,19 +238,19 @@ function StartsChart({ state, per, onStep, waitingFor, onRetry }: { state: Loade
   const outside = answer === null ? 0 : answer.before_range.kept_support.case_count + answer.after_range.kept_support.case_count;
   return (
     <section className="time-chart" aria-labelledby={title}>
-      <h5 id={title} className="time-chart-title">Incident starts per {per}</h5>
+      <h5 id={title} className="time-chart-title">Case starts per {per}</h5>
       {state.phase === "loading" && <p className="working-text">Counting starts…</p>}
       {state.phase === "failed" && <NotShown what="Starts" message={state.message} onRetry={onRetry} />}
       {state.phase === "unasked" && <NotShown what="Starts" message={state.message} />}
       {answer !== null && (
         <>
           <ColumnChart
-            name={`Incident starts per ${per}`}
+            name={`Case starts per ${per}`}
             bins={bins}
             band
             applicable={() => true}
             chosenName={(from, to) => periodName(answer.bins[from].start_inclusive, answer.bins[to].end_exclusive)}
-            stepName={(from, to) => `Keep incidents that start from ${periodName(answer.bins[from].start_inclusive, answer.bins[to].end_exclusive)}`}
+            stepName={(from, to) => `Keep cases that start from ${periodName(answer.bins[from].start_inclusive, answer.bins[to].end_exclusive)}`}
             onApply={(from, to) => {
               const step = window(from, to);
               if (step !== null) onStep(step);
@@ -259,27 +259,27 @@ function StartsChart({ state, per, onStep, waitingFor, onRetry }: { state: Loade
             ticks={[bins.length > 0 ? dayName(answer.bins[0].start_inclusive) : "", bins.length > 0 ? periodName(answer.bins.at(-1)!.start_inclusive, answer.bins.at(-1)!.end_exclusive).split(" to ")[1] : ""]}
           />
           {answer.unevaluable.kept_support.case_count > 0 && (
-            <p className="time-chart-limit">{countOf(answer.unevaluable.kept_support.case_count, "incident")} without a first time</p>
+            <p className="time-chart-limit">{countOf(answer.unevaluable.kept_support.case_count, "case")} without a first time</p>
           )}
-          {outside > 0 && <p className="time-chart-limit">{countOf(outside, "incident")} start outside these periods</p>}
+          {outside > 0 && <p className="time-chart-limit">{countOf(outside, "case")} start outside these periods</p>}
           <p className="muted time-chart-note">
-            Each incident counts once, at the time of its first record in the declared order, not at its first labelled activity. A period includes its start
+            Each case counts once, at the time of its first record in the declared order, not at its first labelled activity. A period includes its start
             and excludes its end, {answer.clock.timestamp_kind === "wall_clock" ? "on the wall clock as recorded" : "in UTC"}; the export was taken at{" "}
             {answer.clock.timestamp_kind === "wall_clock" ? answer.clock.snapshot_cutoff.replace("T", " ") : answer.clock.snapshot_cutoff.replace("T", " ").replace("Z", " UTC")}.
           </p>
           <p className="muted time-chart-note">
-            Incidents that started shortly before the export have had little time to be resolved or reopened: a recent period with fewer late records does
+            Cases that started shortly before the export have had little time to be resolved or reopened: a recent period with fewer late records does
             not by itself show an improvement.
           </p>
           <button type="button" ref={expand} aria-expanded={expanded} onClick={() => setExpanded(true)}>
             Expand the starts
           </button>
           {expanded && (
-            <section className="time-expanded" aria-label={`Incident starts per ${per}, expanded`}>
+            <section className="time-expanded" aria-label={`Case starts per ${per}, expanded`}>
               <table className="plain-table compact-table">
-                <caption className="caption">Incident starts per {per}, with these incidents and the parent</caption>
+                <caption className="caption">Case starts per {per}, with these cases and the parent</caption>
                 <thead>
-                  <tr><th scope="col">Period</th><th scope="col" className="number">These incidents</th><th scope="col" className="number">Parent</th><th scope="col">Step</th></tr>
+                  <tr><th scope="col">Period</th><th scope="col" className="number">These cases</th><th scope="col" className="number">Parent</th><th scope="col">Step</th></tr>
                 </thead>
                 <tbody>
                   {answer.bins.map((bin, place) => (
@@ -290,7 +290,7 @@ function StartsChart({ state, per, onStep, waitingFor, onRetry }: { state: Loade
                       <td>
                         <button type="button" disabled={waitingFor !== undefined} aria-describedby={waitingFor}
                           onClick={() => { const step = window(place, place); if (step !== null) { onStep(step); close(); } }}>
-                          Keep incidents that start in {periodName(bin.start_inclusive, bin.end_exclusive)}
+                          Keep cases that start in {periodName(bin.start_inclusive, bin.end_exclusive)}
                         </button>
                       </td>
                     </tr>

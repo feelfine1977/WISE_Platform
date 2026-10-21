@@ -168,10 +168,10 @@ interface MapViewProps {
 const FLOWS_NOT_DRAWN = "Some flows from Start and to End are not drawn at this detail";
 
 /** That the arrangement of the whole parent is missing and what follows from it: short enough for one line above the map, and in full as its tooltip. */
-const NOT_ARRANGED = "The arrangement of every incident of the parent could not be computed, so activities can move from one selection to the next.";
+const NOT_ARRANGED = "The arrangement of every case of the parent could not be computed, so activities can move from one selection to the next.";
 const NOT_ARRANGED_IN_FULL =
-  "The arrangement of every incident of the parent could not be computed. " +
-  "The map arranges the kept incidents by itself, so activities can move from one selection to the next.";
+  "The arrangement of every case of the parent could not be computed. " +
+  "The map arranges the kept cases by itself, so activities can move from one selection to the next.";
 
 /**
  * The process map of the kept incidents, with the steps an activity, a path or a flow from Start or
@@ -195,7 +195,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
    * keeps its own from one selection to the next.
    */
   const activityLabels = useMemo<ActivityLabelOptions>(
-    () => ({ mode: "names", references: activityReferences(parent), showCounts: true, caseLabel: "incidents" }),
+    () => ({ mode: "names", references: activityReferences(parent), showCounts: true, caseLabel: "cases" }),
     [parent],
   );
   const opening = useMemo(() => openingDetail(parentGraph.nodes.length, parentGraph.edges.length), [parentGraph]);
@@ -391,7 +391,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
       {!listed && (
       <p className="map-arrangement">
         {inPlace
-          ? `Places from the map of the parent's ${countOf(parentGraph.meta.selected_case_count, "incident")}; they stay through previews, steps, Undo and the detail.`
+          ? `Places from the map of the parent's ${countOf(parentGraph.meta.selected_case_count, "case")}; they stay through previews, steps, Undo and the detail.`
           : "Arranged for what is shown, anew after each step and each change of the detail."}{" "}
         {direction === TOP_TO_BOTTOM ? "Runs top to bottom." : "Runs left to right."}{" "}
         <button type="button" className="link-button" onClick={() => setInPlace(!inPlace)}>
@@ -464,7 +464,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
           // The stylesheet of the map's look reads from the frame which way the map runs and whether any activity on it is in a stage.
           <div className="map-frame" data-direction={direction} data-stages={graph.groups?.length ? "drawn" : "none"}>
             {inPlace && arrangement.phase === "arranging" ? (
-              <p className="working-text map-arranging">Arranging the map of every incident of the parent…</p>
+              <p className="working-text map-arranging">Arranging the map of every case of the parent…</p>
             ) : (
               <ProcessMap
                 graph={graph}
@@ -511,7 +511,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 selection={selection}
                 onSelect={setSelection}
                 onContextMenu={menu}
-                ariaLabel="Process map of the kept incidents"
+                ariaLabel="Process map of the kept cases"
               >
                 {/* Fitted after each arrangement by the library, and here again when the frame changes its size. */}
                 {fitToFrame}
@@ -565,8 +565,8 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
         {element === null && (
           <p>
             {listed
-              ? "Select a row of the list to keep or remove the incidents through it."
-              : "Select an activity or a path on the map, or a row of its table view, to keep or remove the incidents through it."}
+              ? "Select a row of the list to keep or remove the cases through it."
+              : "Select an activity or a path on the map, or a row of its table view, to keep or remove the cases through it."}
           </p>
         )}
         {element?.kind === "several" && <p className="muted">Select one activity or one path; a step is taken from one of them.</p>}
@@ -578,7 +578,7 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
             <span className="muted">
               {selectedPathDrawn
                 ? "The map draws this path at its detail."
-                : "The detail leaves this path out; drawing it adds it with both its activities. The incidents and the steps stay as they are."}
+                : "The detail leaves this path out; drawing it adds it with both its activities. The cases and the steps stay as they are."}
             </span>
           </p>
         )}

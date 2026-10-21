@@ -24,7 +24,7 @@ export function InvestigationPrerequisite({ state, purpose, needsSelection, onSh
   if (population.phase === "idle") {
     return (
       <div className="area-prerequisite">
-        <p>{purpose} No incidents are open at the moment: open the incidents of a reading in the Data area, for example of the packaged example.</p>
+        <p>{purpose} No cases are open at the moment: open the cases of a reading in the Data area, for example of the packaged example.</p>
         <button type="button" onClick={onShowData}>Go to the Data area</button>
       </div>
     );
@@ -32,7 +32,7 @@ export function InvestigationPrerequisite({ state, purpose, needsSelection, onSh
   if (population.phase === "loading") {
     return (
       <div className="area-prerequisite">
-        <p role="status">{purpose} The incidents of {population.target.sourceName ?? "the reading"} are being opened; this area is ready as soon as they are there.</p>
+        <p role="status">{purpose} The cases of {population.target.sourceName ?? "the reading"} are being opened; this area is ready as soon as they are there.</p>
         <button type="button" onClick={onShowInvestigation}>Show the investigation</button>
       </div>
     );
@@ -41,7 +41,7 @@ export function InvestigationPrerequisite({ state, purpose, needsSelection, onSh
     const text = describeImportProblem(population.problem);
     return (
       <div className="area-prerequisite inline-error" role="alert">
-        <p className="inline-error-title">The incidents could not be opened, so this area has nothing to work on.</p>
+        <p className="inline-error-title">The cases could not be opened, so this area has nothing to work on.</p>
         <p>{text.message}</p>
         {text.remedy && <p><span className="label-text">What to do</span> {text.remedy}</p>}
         <p>
@@ -55,7 +55,7 @@ export function InvestigationPrerequisite({ state, purpose, needsSelection, onSh
     const text = describeSelectionProblem(selection.problem);
     return (
       <div className="area-prerequisite inline-error" role="alert">
-        <p className="inline-error-title">The incidents could not be selected, so this area has nothing to work on.</p>
+        <p className="inline-error-title">The cases could not be selected, so this area has nothing to work on.</p>
         <p>{text.message}</p>
         <p>
           <button type="button" onClick={onRetrySelection}>Try again</button>{" "}
@@ -66,7 +66,7 @@ export function InvestigationPrerequisite({ state, purpose, needsSelection, onSh
   }
   return (
     <div className="area-prerequisite">
-      <p role="status">{purpose} The incidents are being selected; this area is ready as soon as they are.</p>
+      <p role="status">{purpose} The cases are being selected; this area is ready as soon as they are.</p>
       <button type="button" onClick={onShowInvestigation}>Show the investigation</button>
     </div>
   );

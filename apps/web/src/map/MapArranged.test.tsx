@@ -102,14 +102,14 @@ describe("what stays in view above the map", () => {
   const limit = () => document.querySelector(".map-basis-limit");
   const tag = () => document.querySelector(".map-basis-tag");
 
-  it("says how many incidents are not evaluable for paths while there are any, without opening About this map", () => {
+  it("says how many cases are not evaluable for paths while there are any, without opening About this map", () => {
     const graph = suppliedGraph(["A-1", "B-2"]);
     render(<MapView shown={{ revision: 1, steps: [], answer: selectionAnswer(request, everyIncident), graph }} parentGraph={graph} onStep={() => undefined} />);
-    expect(limit()?.textContent).toBe("1 incident not evaluable for paths");
+    expect(limit()?.textContent).toBe("1 case not evaluable for paths");
     expect(tag()).toBeNull();
   });
 
-  it("says nothing there when every incident is evaluable and times are UTC instants", () => {
+  it("says nothing there when every case is evaluable and times are UTC instants", () => {
     const graph = suppliedGraph(["A-1"]);
     render(<MapView shown={{ revision: 1, steps: [], answer: selectionAnswer(request, everyIncident), graph }} parentGraph={graph} onStep={() => undefined} />);
     expect(document.querySelector(".map-basis")).toBeNull();
@@ -127,14 +127,14 @@ describe("what stays in view above the map", () => {
 });
 
 describe("what the map counts", () => {
-  it("is switched between incidents and times at the start of the map's row, and the map is asked for that measure", async () => {
+  it("is switched between cases and times at the start of the map's row, and the map is asked for that measure", async () => {
     const user = userEvent.setup();
     const graph = suppliedGraph(["A-1"]);
     render(<MapView shown={{ revision: 1, steps: [], answer: selectionAnswer(request, everyIncident), graph }} parentGraph={graph} onStep={() => undefined} />);
     const counts = screen.getByRole("group", { name: "What the map counts" });
     expect(counts.parentElement?.firstElementChild).toBe(counts);
     const [incidents, time] = Array.from(counts.querySelectorAll("button"));
-    expect([incidents.textContent, incidents.getAttribute("aria-pressed"), time.textContent, time.getAttribute("aria-pressed")]).toEqual(["Incidents", "true", "Time", "false"]);
+    expect([incidents.textContent, incidents.getAttribute("aria-pressed"), time.textContent, time.getAttribute("aria-pressed")]).toEqual(["Cases", "true", "Time", "false"]);
     await user.click(time);
     expect(time.getAttribute("aria-pressed")).toBe("true");
     await waitFor(() => expect((asked() as { measure?: string } | null)?.measure).toBe("performance"));

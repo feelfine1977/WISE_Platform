@@ -37,7 +37,7 @@ async function keepValue(value) {
   const box = panel().getByRole('checkbox', {name: `Choose ${value}`, exact: true});
   await box.focus();
   await page.keyboard.press('Space');
-  await panel().getByRole('button', {name: 'Preview keeping incidents first recorded with these values', exact: true}).click();
+  await panel().getByRole('button', {name: 'Preview keeping cases first recorded with these values', exact: true}).click();
   const apply = panel().getByRole('button', {name: 'Apply', exact: true});
   await apply.focus();
   await page.keyboard.press('Enter');
@@ -80,11 +80,11 @@ try {
   await keepValue(first);
   await settled(1);
   check('recorded_value_kept', same(selections.at(-1).kept.case_ids, core.values[first]), selections.at(-1).kept);
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
   const row = page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${core.changes_of.case}$`)}).first();
   await row.focus();
   await page.keyboard.press('Enter');
-  const list = page.getByRole('list', {name: `Records of incident ${core.changes_of.case} in the declared order`});
+  const list = page.getByRole('list', {name: `Records of case ${core.changes_of.case} in the declared order`});
   await list.waitFor();
   const items = await list.getByRole('listitem').allTextContents();
   const shownContext = items.map(item => { const value = core.changes_of.context.find(v => v !== null && item.includes(v)); return value ?? (item.includes('missing') ? null : '?'); });

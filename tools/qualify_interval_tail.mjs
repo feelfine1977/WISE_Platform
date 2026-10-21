@@ -63,9 +63,9 @@ try {
   const edges = [0, 1, 2, 4, 8, 24, 72, 168, 720];
   const wanted = edges.map((start, index) => measuredHours.filter(hours => hours >= start && (index + 1 >= edges.length || hours < edges[index + 1])).length);
   check('parent_bins_match_the_oracle', same(parentBins, wanted), [parentBins, wanted]);
-  const reasons = await panel().getByRole('table', {name: 'Incidents without this interval, by reason'}).locator('tbody tr').evaluateAll(rows => rows.map(row => Number(row.children[2].textContent)));
+  const reasons = await panel().getByRole('table', {name: 'Cases without this interval, by reason'}).locator('tbody tr').evaluateAll(rows => rows.map(row => Number(row.children[2].textContent)));
   check('missing_reasons_counted', same(reasons, [expected.unavailable.order_unknown, expected.unavailable.missing_start, expected.unavailable.missing_response]), reasons);
-  const listed = await panel().getByRole('list', {name: 'Intervals of these incidents, longest first'}).getByRole('listitem').allTextContents();
+  const listed = await panel().getByRole('list', {name: 'Intervals of these cases, longest first'}).getByRole('listitem').allTextContents();
   const witness = expected.witness;
   check('witness_names_both_endpoint_rows', listed.some(item => item.startsWith(`${witness.case}: from the record at source position ${witness.start_position} to the record at source position ${witness.response_position}, ${expected.hours[witness.case]} h.`)), listed);
   check('measured_zero_differs_from_missing', listed.some(item => item.startsWith('I-ZERO: from the record')) && listed.some(item => item.startsWith('I-NORESP: no interval')), null);
@@ -83,7 +83,7 @@ try {
   await panel().getByRole('button', {name: 'Preview this tail', exact: true}).click();
   await pending.getByText(/^Preview:/).waitFor();
   check('brush_and_form_give_the_same_step', same(previewed.at(-1), fromBin) && fromBin.operator === 'ge' && fromBin.hours === inclusive.hours, [fromBin, previewed.at(-1)]);
-  check('preview_names_the_tail', ((await pending.textContent()) ?? '').includes(`would keep ${inclusive.kept.length} incidents`), await pending.textContent());
+  check('preview_names_the_tail', ((await pending.textContent()) ?? '').includes(`would keep ${inclusive.kept.length} cases`), await pending.textContent());
   await pending.getByRole('button', {name: 'Apply', exact: true}).click();
   await settled(1);
   const applied = selections.at(-1);
@@ -95,13 +95,13 @@ try {
   // An incident of the tail opens with both endpoints among all its records; the focus returns to it.
   const tailCase = inclusive.kept[0];
   await panel().getByRole('button', {name: `Open ${tailCase}`, exact: true}).click();
-  const records = page.getByRole('list', {name: `Records of incident ${tailCase} in the declared order`});
+  const records = page.getByRole('list', {name: `Records of case ${tailCase} in the declared order`});
   await records.waitFor();
   const items = await records.getByRole('listitem').allTextContents();
   const statusLine = (await panel().locator('.interval-witness').textContent()) ?? '';
   const positions = [...statusLine.matchAll(/source position (\d+)/g)].map(match => match[1]);
   check('endpoint_rows_found_among_all_records', positions.length === 2 && positions.every(position => items.some(item => item.includes(`source position ${position}`))), [positions, items]);
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).focus();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).focus();
   await page.keyboard.press('Enter');
   // Back from the incident, the focus is on the button the incident was opened with.
   await page.waitForFunction(id => document.activeElement?.getAttribute('data-open-case') === id, tailCase);

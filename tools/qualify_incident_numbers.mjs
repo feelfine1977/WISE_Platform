@@ -45,17 +45,17 @@ async function settled(steps) {
 }
 async function enter(numbers) {
   // From the one entry of every step (#94); a refused entry leaves its form open.
-  if (!(await page.getByLabel('Exact incident numbers').isVisible().catch(() => false))) await addStep(page, 'Incident numbers');
-  const box = page.getByLabel('Exact incident numbers');
+  if (!(await page.getByLabel('Exact case numbers').isVisible().catch(() => false))) await addStep(page, 'Case numbers');
+  const box = page.getByLabel('Exact case numbers');
   await box.fill(numbers.join('\n'));
-  await page.getByRole('button', {name: 'Keep these incidents', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep these cases', exact: true}).click();
 }
 async function openRecords(caseId) {
   await page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${caseId}$`)}).first().click();
-  const list = page.getByRole('list', {name: `Records of incident ${caseId} in the declared order`});
+  const list = page.getByRole('list', {name: `Records of case ${caseId} in the declared order`});
   await list.waitFor();
   const items = await list.getByRole('listitem').allTextContents();
-  await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
+  await page.getByRole('button', {name: 'Return to cases', exact: true}).click();
   return {all: items.length, unlabelled: items.filter(text => text.includes('no activity label')).length};
 }
 
@@ -66,8 +66,8 @@ try {
     await areas.getByRole('button', {name: 'Data', exact: true}).click();
     await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
     await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
-    await addStep(page, 'Incident numbers');
-    await page.getByLabel('Exact incident numbers').waitFor().catch(async error => {
+    await addStep(page, 'Case numbers');
+    await page.getByLabel('Exact case numbers').waitFor().catch(async error => {
       if (process.env.WISE_BROWSER_DUMP_TEXT) await writeFile(process.env.WISE_BROWSER_DUMP_TEXT, (await page.locator('main').first().textContent()) ?? '');
       throw error;
     });
@@ -75,7 +75,7 @@ try {
     // Refused whole: an unknown number is named; a repeated one is said; nothing is previewed or asked for.
     const asked = selections.length;
     await enter(expected.unknown_entry);
-    check('unknown_number_refused_by_name', ((await page.getByRole('alert').textContent()) ?? '').includes(`Unknown incident numbers: ${expected.unknown_named}.`) , null);
+    check('unknown_number_refused_by_name', ((await page.getByRole('alert').textContent()) ?? '').includes(`Unknown case numbers: ${expected.unknown_named}.`) , null);
     await enter(expected.duplicate_entry);
     check('repeated_number_refused', ((await page.getByRole('alert').textContent()) ?? '').startsWith('A number appears more than once'), null);
     check('refused_entries_ask_nothing', selections.length === asked, null);
@@ -92,7 +92,7 @@ try {
     const wording = (await chip.locator('.chip-wording').textContent()) ?? '';
     check('chip_names_the_numbers_and_counts', wording.startsWith(expected.chip) && chipText.includes(`Kept${count(expected.kept.ids.length, 'incident')} · ${count(expected.kept.records, 'record')}`), chipText);
     // Every record of each kept incident, the unlabelled ones included.
-    await view('Incidents').click();
+    await view('Cases').click();
     const opened = {};
     for (const id of expected.kept.ids) opened[id] = await openRecords(id);
     check('every_record_of_kept_incidents', same(opened, expected.records), opened);

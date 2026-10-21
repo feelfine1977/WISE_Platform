@@ -100,7 +100,7 @@ async function renderLargeMap(showing: "map" | "paths" = "map") {
   const view = render(element(showing));
   const again = (next: "map" | "paths") => view.rerender(element(next));
   const mapShown = async () => {
-    const map = await screen.findByLabelText("Process map of the kept incidents");
+    const map = await screen.findByLabelText("Process map of the kept cases");
     await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("given"), { timeout: LAYOUT_WITHIN });
     await waitFor(() => expect(map.querySelectorAll(".react-flow__node-activity").length).toBeGreaterThan(0));
     // The map opens 50 and 400 ms after its nodes are drawn, and says what is in view 200 ms after the view rests.
@@ -170,7 +170,7 @@ describe("#65 the map of a large parent", () => {
     // A rare path the detail leaves out: from the first activity to a far one.
     const far = largeIds.path(0, 12);
     again("paths");
-    const list = screen.getByRole("table", { name: "Paths of the kept incidents" });
+    const list = screen.getByRole("table", { name: "Paths of the kept cases" });
     const row = within(list).getByRole("button", { name: `Path from “${largeName(0)}” to “${largeName(12)}”` });
     row.focus();
     fireEvent.keyDown(row, { key: "Enter" });
@@ -215,7 +215,7 @@ describe("#65 the map of a large parent", () => {
     const row = within(table).getByText(largeName(19)).closest("tr")!;
     await user.click(row);
     await user.click(screen.getByRole("button", { name: "Map view" }));
-    const shown = await screen.findByLabelText("Process map of the kept incidents");
+    const shown = await screen.findByLabelText("Process map of the kept cases");
     await settle(900);
     expect(shown.getAttribute("aria-activedescendant")).toBe(`wf-node-${target}`);
     expect(inFrame(shown, target)).toBe(true);

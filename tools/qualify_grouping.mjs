@@ -30,8 +30,8 @@ const checks = {};
 const check = (name, passed, detail) => { checks[name] = Boolean(passed); assert.ok(passed, `${name}: ${JSON.stringify(detail ?? null)}`); };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const areas = page.getByRole('navigation', {name: 'Areas'});
-const panel = () => page.getByRole('region', {name: 'Groups of the kept incidents'});
-const table = () => page.getByRole('table', {name: 'Kept incidents'});
+const panel = () => page.getByRole('region', {name: 'Groups of the kept cases'});
+const table = () => page.getByRole('table', {name: 'Kept cases'});
 
 async function settled(steps) {
   await page.waitForFunction(() => !document.querySelector('.selection-status')?.textContent);
@@ -57,10 +57,10 @@ try {
   await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, 7);
   await settled(0);
   const parent = selections.at(-1);
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
   await page.getByRole('button', {name: 'Groups', exact: true}).click();
   await panel().waitFor();
-  check('operation_named_with_its_distinct_actions', ((await panel().locator('.groups-actions-said').textContent()) ?? '').includes('Choosing a group lists its incidents in the table and changes nothing; Keep or Remove takes a step with exactly its incidents; Compare as A or B makes it a side of a comparison'), null);
+  check('operation_named_with_its_distinct_actions', ((await panel().locator('.groups-actions-said').textContent()) ?? '').includes('Choosing a group lists its cases in the table and changes nothing; Keep or Remove takes a step with exactly its cases; Compare as A or B makes it a side of a comparison'), null);
 
   // ---- three explicit readings of the context column ----
   for (const [label, policy] of [['Desk at the first record', 'first_record'], ['Desk, latest recorded value', 'latest_record'], ['Same Desk, on any record', 'any_record']]) {
@@ -69,7 +69,7 @@ try {
     const wanted = expected.groups[policy];
     const names = wanted.groups.map(([value]) => value ?? 'Not recorded');
     check(`${policy}_groups_as_the_oracle`, names.every(name => said.includes(name)) && (await listed()).length === wanted.groups.length, {listed: await listed(), names});
-    check(`${policy}_reading_explicit`, said.includes(policy === 'any_record' ? 'so an incident with several values is in several groups' : 'so it is in exactly one group')
+    check(`${policy}_reading_explicit`, said.includes(policy === 'any_record' ? 'so a case with several values is in several groups' : 'so it is in exactly one group')
       && (policy === 'any_record' || said.includes('a recorded “Unknown” is a value')), said.slice(0, 600));
     check(`${policy}_unplaced_said`, (wanted.unevaluable.length === 0 || said.includes('the rule cannot evaluate')) && (wanted.in_no_group.length === 0 || said.includes('in no group')), said.slice(0, 900));
   }
@@ -80,8 +80,8 @@ try {
   await choose('Unknown');
   check('listing_a_group_changes_nothing', same(await rows(), expected.compare.target) && selections.length === before, await rows());
   await page.getByRole('button', {name: 'Compare as A', exact: true}).click();
-  await page.getByText(/“Unknown” is side A in Compare, as its 2 incidents; the selection is unchanged\./).waitFor();
-  await page.getByRole('button', {name: 'Show every incident', exact: true}).click();
+  await page.getByText(/“Unknown” is side A in Compare, as its 2 cases; the selection is unchanged\./).waitFor();
+  await page.getByRole('button', {name: 'Show every case', exact: true}).click();
   await choose('North');
   await page.getByRole('button', {name: 'Compare as B', exact: true}).click();
   await page.getByRole('button', {name: 'Show the comparison', exact: true}).click();
@@ -98,16 +98,16 @@ try {
 
   // ---- kept as a step, a history read, and Undo ----
   await areas.getByRole('button', {name: 'Investigations', exact: true}).click();
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
   if (!(await panel().count())) await page.getByRole('button', {name: 'Groups', exact: true}).click();
   await grouped('Desk at the first record');
   await choose('Unknown');
   await page.getByRole('button', {name: 'G-7', exact: true}).click();
-  await page.getByRole('heading', {name: 'Incident G-7'}).waitFor();
+  await page.getByRole('heading', {name: 'Case G-7'}).waitFor();
   await page.waitForFunction(() => document.querySelectorAll('ol.history > li').length > 0);
   check('complete_history_from_a_group', await page.locator('ol.history > li').count() === 3, await page.locator('ol.history > li').count());
   await page.keyboard.press('Escape');
-  await page.getByRole('button', {name: 'Keep these incidents', exact: true}).click();
+  await page.getByRole('button', {name: 'Keep these cases', exact: true}).click();
   await settled(1);
   check('keep_takes_exactly_the_groups_incidents', same(selections.at(-1).kept.case_ids, expected.compare.target) && same(selections.at(-1).parent.case_ids, parent.kept.case_ids), selections.at(-1).kept.case_ids);
   await page.getByRole('group', {name: 'Steps', exact: true}).getByRole('button', {name: 'Undo', exact: true}).click();

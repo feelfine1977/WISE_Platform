@@ -77,7 +77,7 @@ const placesOf = (map: HTMLElement) => Array.from(map.querySelectorAll<HTMLEleme
 async function renderFittedMap() {
   const supplied = busyGraph();
   render(<MapView shown={shownWhole(supplied)} parentGraph={supplied} onStep={() => undefined} />);
-  const map = await screen.findByLabelText("Process map of the kept incidents");
+  const map = await screen.findByLabelText("Process map of the kept cases");
   await waitFor(() => expect(map.querySelectorAll(".react-flow__node-activity").length).toBe(BUSY_ACTIVITIES));
   await waitFor(() => expect(map.getAttribute("data-layout-status")).toBe("ready"), { timeout: LAYOUT_WITHIN });
   // The library fits the arranged map twice, the second time 400 ms after the arrangement.

@@ -151,9 +151,9 @@ async function evidence(swapped){
   assert.deepEqual(result.records.map(r=>r.original_cells),expected);
   const positions=id==='D1_1'?[0,1]:[14];
   assert.deepEqual(result.records.map(r=>r.row_id),positions.map(source_position=>'row.v1:sha256:'+createHash('sha256').update(JSON.stringify({format_version:1,source_id:'source.v1:sha256:'+fixture.source_sha256,source_position})).digest('hex')));
-  const inspector=page.getByRole('region',{name:`Incident ${id}`,exact:true});
+  const inspector=page.getByRole('region',{name:`Case ${id}`,exact:true});
   assert.equal(await inspector.getByText(/^Contributing source record/).count(),expected.length);
-  await inspector.getByRole('button',{name:'Return to incidents',exact:true}).click();
+  await inspector.getByRole('button',{name:'Return to cases',exact:true}).click();
 }
 async function subtypeEvidence(swapped){
   const answer=await post('/api/investigations/bpic19-flow-comparison',()=>comparison.getByRole('combobox',{name:'Evidence side',exact:true}).selectOption('outside'));
@@ -165,9 +165,9 @@ async function subtypeEvidence(swapped){
       await comparison.getByRole('button',{name:`Inspect comparison item ${id}`,exact:true}).focus();await page.keyboard.press('Enter');
     });
     assert.deepEqual(result.records.map(r=>r.original_cells),fixture.rows.filter(r=>r[1]===id));
-    const inspector=page.getByRole('region',{name:`Incident ${id}`,exact:true});
+    const inspector=page.getByRole('region',{name:`Case ${id}`,exact:true});
     assert.equal(await inspector.getByText(/^Contributing source record/).count(),id==='I_1'||id==='Y_1'?2:1);
-    await inspector.getByRole('button',{name:'Return to incidents',exact:true}).click();
+    await inspector.getByRole('button',{name:'Return to cases',exact:true}).click();
   }
   await evidence(swapped);
 }

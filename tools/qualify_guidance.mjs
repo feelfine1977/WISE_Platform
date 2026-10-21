@@ -38,16 +38,16 @@ try {
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
   await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length === 8);
   await settled(0);
-  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Incidents', exact: true}).click();
+  await page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: 'Cases', exact: true}).click();
 
   // The empty state: one line with the three ways, each leading to its control.
   const empty = await lines();
-  check('empty_state_names_the_ways', empty.length === 1 && empty[0] === 'No step yet: every incident of the parent is kept. Take a first step: select an activity or a path on the map, drag over a period of starts, or add a step.', empty);
+  check('empty_state_names_the_ways', empty.length === 1 && empty[0] === 'No step yet: every case of the parent is kept. Take a first step: select an activity or a path on the map, drag over a period of starts, or add a step.', empty);
   await link('select an activity or a path on the map').click();
-  await page.waitForFunction(() => !!document.activeElement?.closest('[aria-label="Process map of the kept incidents"]'));
+  await page.waitForFunction(() => !!document.activeElement?.closest('[aria-label="Process map of the kept cases"]'));
   check('map_link_focuses_the_map', true);
   await link('drag over a period of starts').click();
-  await page.waitForFunction(() => /^Incident starts per /.test(document.activeElement?.getAttribute('aria-label') ?? ''));
+  await page.waitForFunction(() => /^Case starts per /.test(document.activeElement?.getAttribute('aria-label') ?? ''));
   check('starts_link_focuses_the_chart_of_starts', true);
   await link('add a step').click();
   check('add_link_opens_add_step', await page.getByRole('group', {name: 'Add a step'}).isVisible(), null);

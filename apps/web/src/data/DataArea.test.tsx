@@ -78,7 +78,7 @@ const DAY_FIRST_DOTS = /^Day\.Month\.Year, 24-hour clock \(/;
 
 /** Chooses the roles, the day-first format, UTC+02:00 and the cutoff for the hand-made source. */
 async function chooseReading(app: Screen) {
-  await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+  await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
   await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
   await app.user.selectOptions(screen.getByLabelText("Time"), "2");
   // A column whose values repeat is proposed as context; it is ticked here only where it is not yet.
@@ -139,7 +139,7 @@ describe("the Data area", () => {
     const preparations = screen.getByRole("table", { name: "Prepared readings in this workspace" });
     expect(within(preparations).getByRole("rowheader").textContent).toBe("Ältere Vorgänge.csv");
 
-    await app.user.click(within(preparations).getByRole("button", { name: /^Open incidents of Ältere Vorgänge\.csv/ }));
+    await app.user.click(within(preparations).getByRole("button", { name: /^Open cases of Ältere Vorgänge\.csv/ }));
     const population = app.imports.populations[0];
     expect(importContract.openPopulationRequest(population.request)).toBe(true);
     expect(population.request.preparation_id).toBe(`preparation.v1:sha256:${"8".repeat(64)}`);
@@ -203,7 +203,7 @@ describe("the Data area", () => {
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
     expect(screen.getByText("Choose the time column first.")).toBeTruthy();
     await app.user.selectOptions(screen.getByLabelText("Time"), "2");
@@ -249,7 +249,7 @@ describe("the Data area", () => {
     expect(confirmation.accept_report_issues).toBe(false);
   });
 
-  it("shows the report and asks for an explicit confirmation of rows with issues before the incidents open", async () => {
+  it("shows the report and asks for an explicit confirmation of rows with issues before the cases open", async () => {
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app);
@@ -268,14 +268,14 @@ describe("the Data area", () => {
 
     expect(screen.getByText(/Some rows have issues/)).toBeTruthy();
     expect(figure("Records read")).toBe("4 records");
-    expect(figure("With an incident id")).toBe("3 records");
-    expect(figure("Outside every incident")).toBe("1 record");
+    expect(figure("With a case id")).toBe("3 records");
+    expect(figure("Outside every case")).toBe("1 record");
     expect(figure("With a usable time")).toBe("3 records");
     expect(figure("Without a usable time: kept, order not known")).toBe("1 record");
-    expect(figure("Incidents")).toBe("2 incidents");
+    expect(figure("Cases")).toBe("2 cases");
     expect(figure("First usable time")).toBe("2026-04-03 06:00:00 UTC");
     expect(figure("Last usable time")).toBe("2026-04-05 05:15:00 UTC");
-    expect(figure("Tied times within an incident")).toBe("0 groups of 0 records");
+    expect(figure("Tied times within a case")).toBe("0 groups of 0 records");
     const missing = screen.getByRole("table", { name: "Empty cells in the columns with a role, over all records read" });
     expect(within(missing).getAllByRole("row").slice(1).map((row) => row.textContent)).toEqual([
       "Vorgang1 record",
@@ -285,10 +285,10 @@ describe("the Data area", () => {
     ]);
     const issues = screen.getByText("Rows with issues, by reason").parentElement!;
     expect(within(issues).getAllByRole("listitem").map((item) => item.textContent)).toEqual([
-      "No incident id: outside every incidentNeeds your confirmationSource position 2",
-      "Time not readable with the chosen format: kept in its incident, order not knownNeeds your confirmationSource position 3",
+      "No case id: outside every caseNeeds your confirmationSource position 2",
+      "Time not readable with the chosen format: kept in its case, order not knownNeeds your confirmationSource position 3",
     ]);
-    expect(screen.queryByRole("button", { name: "Open incidents" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open cases" })).toBeNull();
 
     const confirm = screen.getByRole("button", { name: "Confirm and prepare" }) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);
@@ -304,7 +304,7 @@ describe("the Data area", () => {
     await deliver(() => second.reply({ ok: true, answer: interpretationAnswer(second.request) }));
     expect(screen.getByText(/Ready: the source is read with these choices/)).toBeTruthy();
 
-    await app.user.click(screen.getByRole("button", { name: "Open incidents" }));
+    await app.user.click(screen.getByRole("button", { name: "Open cases" }));
     const population = app.imports.populations[0];
     expect(population.request.workspace_id).toBe("workspace.v1:0123456789abcdef");
     expect(population.request.preparation_id).toBe(`preparation.v1:sha256:${"6".repeat(64)}`);
@@ -313,10 +313,10 @@ describe("the Data area", () => {
     expect(screen.getByRole("heading", { name: "Vorgänge.csv" })).toBeTruthy();
     // The incidents open on their process map; the table is the second view.
     expect(screen.getByRole("button", { name: "Map" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByRole("heading", { name: "Map of the kept incidents" })).toBeTruthy();
-    await app.user.click(screen.getByRole("button", { name: "Incidents" }));
+    expect(screen.getByRole("heading", { name: "Map of the kept cases" })).toBeTruthy();
+    await app.user.click(screen.getByRole("button", { name: "Cases" }));
     const facts = screen.getByLabelText("Population");
-    expect(facts.textContent).toBe("Kept of the parentbeing selected of 2 incidents · 3 recordsRows outside every incident1 outsideRecords without activity label0 unlabelled");
+    expect(facts.textContent).toBe("Kept of the parentbeing selected of 2 cases · 3 recordsRows outside every case1 outsideRecords without activity label0 unlabelled");
     // The revision shown is said with the details of the data, behind the info button of the data row.
     await app.user.click(screen.getByRole("button", { name: "About this data" }));
     const revision = () => within(screen.getByRole("group", { name: "About this data" })).getByText("Revision").nextElementSibling?.textContent;
@@ -326,9 +326,9 @@ describe("the Data area", () => {
     await deliver(() => selection.reply({ ok: true, answer: selectionAnswer(selection.request, everyIncident) }));
     const graph = app.selecting.graphs[0];
     await deliver(() => graph.reply({ ok: true, answer: graphAnswer(graph.request, ["A-1", "B-2"]) }));
-    expect(facts.textContent).toBe("Kept of the parent2 of 2 incidents3 of 3 recordsRows outside every incident1 outsideRecords without activity label0 unlabelled");
+    expect(facts.textContent).toBe("Kept of the parent2 of 2 cases3 of 3 recordsRows outside every case1 outsideRecords without activity label0 unlabelled");
     expect(revision()).toBe("2");
-    const table = screen.getByRole("table", { name: "Kept incidents" });
+    const table = screen.getByRole("table", { name: "Kept cases" });
     expect(within(table).getAllByRole("row").slice(1).map((row) => Array.from(row.children).map((cell) => cell.textContent))).toEqual([
       ["A-1", "2", "2", "0", "By time"],
       ["B-2", "1", "1", "0", "Not fully known"],
@@ -393,7 +393,7 @@ describe("the Data area", () => {
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app, secondsInspectionAnswer);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
     await app.user.selectOptions(screen.getByLabelText("Time"), "2");
 
@@ -428,7 +428,7 @@ describe("the Data area", () => {
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app, bothWaysInspectionAnswer);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
     await app.user.selectOptions(screen.getByLabelText("Time"), "2");
     await app.user.click(screen.getByLabelText("One fixed offset for every time"));
@@ -452,7 +452,7 @@ describe("the Data area", () => {
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app, secondsInspectionAnswer);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
     await app.user.selectOptions(screen.getByLabelText("Time"), "2");
     expect(app.imports.proposals).toHaveLength(0);
@@ -510,7 +510,7 @@ describe("the Data area", () => {
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app, secondsInspectionAnswer);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
     await app.user.selectOptions(screen.getByLabelText("Time"), "2");
     await app.user.click(screen.getByLabelText("Offsets written in the values, for example Z or +02:00"));
@@ -527,7 +527,7 @@ describe("the Data area", () => {
     expect((screen.getByLabelText("Export taken at (UTC)") as HTMLInputElement).value).toBe("");
   });
 
-  it("shows blank lines and records of another length before confirming, and lists the records outside every incident", async () => {
+  it("shows blank lines and records of another length before confirming, and lists the records outside every case", async () => {
     const tolerant = {
       id: "incident.rows.missing_id_outside_invalid_time_retained.v2",
       parameters: {
@@ -552,10 +552,10 @@ describe("the Data area", () => {
     const tolerantChoice = screen.getByRole("radio", { name: /^Tolerant:/ }) as HTMLInputElement;
     expect(tolerantChoice.checked).toBe(true);
     expect(tolerantChoice.parentElement?.textContent).toBe(
-      "Tolerant: Blank lines are skipped and counted, and records without an incident id or with another number of cells than the header are kept as written outside every incident, as long as those with another number of cells are at most 5 % of the records.",
+      "Tolerant: Blank lines are skipped and counted, and records without a case id or with another number of cells than the header are kept as written outside every case, as long as those with another number of cells are at most 5 % of the records.",
     );
 
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
     await app.user.selectOptions(screen.getByLabelText("Time"), "2");
     await app.user.click(screen.getByLabelText("One fixed offset for every time"));
@@ -568,10 +568,10 @@ describe("the Data area", () => {
 
     expect(figure("Records read")).toBe("4 records");
     expect(figure("Blank lines skipped")).toBe("1 blank line");
-    expect(figure("Outside every incident")).toBe("1 record");
+    expect(figure("Outside every case")).toBe("1 record");
     expect(figure("Of these, with another number of cells than the header")).toBe("1 record");
-    expect(figure("Incidents")).toBe("2 incidents");
-    const excluded = screen.getByRole("table", { name: "Records outside every incident, as written in the file" });
+    expect(figure("Cases")).toBe("2 cases");
+    const excluded = screen.getByRole("table", { name: "Records outside every case, as written in the file" });
     expect(within(excluded).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual([
       "Position",
       "Lines in the file",
@@ -584,14 +584,14 @@ describe("the Data area", () => {
     ]);
     const issues = screen.getByText("Rows with issues, by reason").parentElement!;
     expect(within(issues).getAllByRole("listitem").map((item) => item.textContent)).toEqual([
-      "Another number of cells than the header: kept as a raw row, outside every incidentNeeds your confirmationSource position 2",
+      "Another number of cells than the header: kept as a raw row, outside every caseNeeds your confirmationSource position 2",
     ]);
     // The confirmation of rows with issues stays explicit.
     expect((screen.getByRole("button", { name: "Confirm and prepare" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.queryByRole("button", { name: "Open incidents" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open cases" })).toBeNull();
 
     await app.user.click(screen.getByRole("radio", { name: /^Strict:/ }));
-    expect(screen.queryByRole("table", { name: "Records outside every incident, as written in the file" })).toBeNull();
+    expect(screen.queryByRole("table", { name: "Records outside every case, as written in the file" })).toBeNull();
     await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
     const strict = app.imports.confirmations[1];
     await deliver(() =>
@@ -600,7 +600,7 @@ describe("the Data area", () => {
       ),
     );
     expect(screen.getByRole("alert").textContent).toContain(
-      "What to do Check the encoding and the delimiter. If they are right, some records do not fit the header: the strict rule stops at the first of them, the tolerant rule keeps up to 5 % of the records outside every incident. Choose the rule, or correct the export.",
+      "What to do Check the encoding and the delimiter. If they are right, some records do not fit the header: the strict rule stops at the first of them, the tolerant rule keeps up to 5 % of the records outside every case. Choose the rule, or correct the export.",
     );
     expect(strict.request.policies.rows).toEqual({
       id: "incident.rows.missing_id_outside_invalid_time_retained.v1",
@@ -639,7 +639,7 @@ describe("the Data area", () => {
     expect(Array.from(fixed.children).map((pair) => pair.textContent)).toEqual([
       "EncodingUTF-8",
       "DelimiterComma ,",
-      "Incident idincident_id",
+      "Case idincident_id",
       "Activityactivity",
       "Timetimestamp_utc, Year-Month-Day, ISO 8601 (2026-12-31T17:45:10Z or 2026-12-31 17:45)",
       "Zone of the timesOffsets written in the values",
@@ -648,7 +648,7 @@ describe("the Data area", () => {
       "Export taken at2026-10-02 00:00:00 UTC",
       "Rows that do not fitTolerant",
     ]);
-    expect((screen.getByLabelText("Incident id") as HTMLSelectElement).value).toBe("0");
+    expect((screen.getByLabelText("Case id") as HTMLSelectElement).value).toBe("0");
     expect((screen.getByLabelText("Time") as HTMLSelectElement).value).toBe("4");
     expect((screen.getByLabelText("Export taken at (UTC)") as HTMLInputElement).value).toBe("2026-10-02T00:00");
 
@@ -670,7 +670,7 @@ describe("the Data area", () => {
     expect(within(screen.getByRole("table", { name: "Sources in this workspace" })).getByRole("rowheader").textContent).toBe(
       "Synthetic example S3.csv",
     );
-    await app.user.click(screen.getByRole("button", { name: "Open incidents" }));
+    await app.user.click(screen.getByRole("button", { name: "Open cases" }));
     expect(app.imports.populations[0].request.preparation_id).toBe(`preparation.v1:sha256:${"6".repeat(64)}`);
   });
 });
@@ -694,7 +694,7 @@ function consequences(): string[] {
 }
 
 const NO_TIME =
-  "The chosen time format reads no filled cell of the time column: no record has a usable time, so no incident's order can be evaluated.";
+  "The chosen time format reads no filled cell of the time column: no record has a usable time, so no case's order can be evaluated.";
 
 describe("choosing columns and time formats the inspection did not suggest", () => {
   it("lists the suggested columns of a role first and every other column after them", async () => {
@@ -709,7 +709,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
         ["Vorgang — 3 filled cells, 2 distinct values", "Aktivität — 4 filled cells, 3 distinct values", "Gruppe — 3 filled cells, 3 distinct values"],
       ],
     ]);
-    expect(optionGroups(screen.getByLabelText("Incident id"))).toEqual([
+    expect(optionGroups(screen.getByLabelText("Case id"))).toEqual([
       [
         "Suggested for this role",
         [
@@ -735,7 +735,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     ]);
     expect(within(sequence.parentElement!).getByText("The inspection suggests no column for this role.")).toBeTruthy();
     // The incident id is proposed from the column name, so what it means for the reading is said at once.
-    expect(consequences()).toEqual(["The incident id column has empty cells: rows without an incident id stay outside every incident."]);
+    expect(consequences()).toEqual(["The case id column has empty cells: rows without a case id stay outside every case."]);
   });
 
   it("reads with a column the inspection did not suggest in each role", async () => {
@@ -743,11 +743,11 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     await openWorkspace(app);
     await addSource(app, narrowInspectionAnswer);
 
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "1");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "1");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "0");
     await app.user.selectOptions(screen.getByLabelText("Time"), "3");
     await app.user.selectOptions(screen.getByLabelText("Sequence number (optional)"), "2");
-    for (const label of ["Incident id", "Activity", "Time", "Sequence number (optional)"]) {
+    for (const label of ["Case id", "Activity", "Time", "Sequence number (optional)"]) {
       expect(chosenGroup(screen.getByLabelText(label))).toBe("Other columns");
     }
     expect((screen.getByLabelText("Time") as HTMLSelectElement).selectedOptions[0].textContent).toBe("Gruppe — 3 filled cells, 3 distinct values");
@@ -760,7 +760,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     expect(consequences()).toEqual([
       "The activity column has empty cells: records without an activity are left out of the activity sequence and stay as raw evidence.",
       NO_TIME,
-      "The time column has empty cells: a record without a time stays in its incident without a usable time, and that incident's order cannot be evaluated.",
+      "The time column has empty cells: a record without a time stays in its case without a usable time, and that case's order cannot be evaluated.",
       "Not every value of the sequence column is a whole number: a value that is not stops the reading.",
     ]);
     await app.user.click(screen.getByRole("button", { name: "Read the source with these choices" }));
@@ -790,7 +790,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app, unreadableInspectionAnswer);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "3");
     const time = screen.getByLabelText("Time");
     expect(optionGroups(time).map(([label]) => label)).toEqual(["Other columns"]);
@@ -805,11 +805,11 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     expect(within(formats).queryByRole("radio", { checked: true })).toBeNull();
     expect(
       within(formats).getByText(
-        "No format reads any filled cell of this column, so none is proposed. With any format, no record has a usable time and no incident's order can be evaluated.",
+        "No format reads any filled cell of this column, so none is proposed. With any format, no record has a usable time and no case's order can be evaluated.",
       ),
     ).toBeTruthy();
     expect(within(formats).getByText("früh · spät")).toBeTruthy();
-    expect(consequences()).toEqual(["The incident id column has empty cells: rows without an incident id stay outside every incident."]);
+    expect(consequences()).toEqual(["The case id column has empty cells: rows without a case id stay outside every case."]);
 
     await app.user.click(within(formats).getByLabelText(/^Year-Month-Day, ISO 8601/));
     await app.user.click(screen.getByLabelText("As recorded: no zone is applied"));
@@ -820,7 +820,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     fireEvent.change(screen.getByLabelText("Export taken at (as recorded)"), { target: { value: "2027-01-01T00:00" } });
 
     expect(consequences()).toEqual([
-      "The incident id column has empty cells: rows without an incident id stay outside every incident.",
+      "The case id column has empty cells: rows without a case id stay outside every case.",
       NO_TIME,
     ]);
     const read = screen.getByRole("button", { name: "Read the source with these choices" }) as HTMLButtonElement;
@@ -861,7 +861,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
       ],
       ["Other columns", ["Schritt — 0 filled cells, 0 distinct values"]],
     ]);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "3");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "3");
     await app.user.selectOptions(activity, "1");
     expect(chosenGroup(activity)).toBe("Other columns");
     expect(consequences()).toEqual(["The activity column has no filled cell: no activity is mapped; every record stays as raw evidence."]);
@@ -884,7 +884,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app, unreadableInspectionAnswer);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "3");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "3");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "2");
     const sequence = screen.getByLabelText("Sequence number (optional)");
 
@@ -908,7 +908,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app, unreadableInspectionAnswer);
-    await app.user.selectOptions(screen.getByLabelText("Incident id"), "0");
+    await app.user.selectOptions(screen.getByLabelText("Case id"), "0");
     await app.user.selectOptions(screen.getByLabelText("Activity"), "1");
     await app.user.selectOptions(screen.getByLabelText("Time"), "2");
     await app.user.click(screen.getByLabelText(/^Day\/Month\/Year, 24-hour clock \(/));
@@ -924,7 +924,7 @@ describe("choosing columns and time formats the inspection did not suggest", () 
       /^Day\/Month\/Year, 24-hour clock \(/,
     );
     expect(consequences()).toEqual([
-      "The incident id column has empty cells: rows without an incident id stay outside every incident.",
+      "The case id column has empty cells: rows without a case id stay outside every case.",
       "The activity column has no filled cell: no activity is mapped; every record stays as raw evidence.",
       NO_TIME,
     ]);
@@ -947,7 +947,7 @@ describe("#5 changing a reading, and the way back to it", () => {
     } as InterpretationAnswer;
   }
 
-  it("shows what a change of choices does to the support, beside the previous reading, and returns the focus to where incidents were opened", async () => {
+  it("shows what a change of choices does to the support, beside the previous reading, and returns the focus to where cases were opened", async () => {
     const app = renderApp();
     await openWorkspace(app);
     await addSource(app);
@@ -969,7 +969,7 @@ describe("#5 changing a reading, and the way back to it", () => {
     expect(compared.parentElement?.textContent).toContain(`The previous reading stays as it was, as preparation preparation.v1:sha256:${"a".repeat(64)}`);
 
     // Opened from the report, the incidents are shown; coming back to the Data area returns the focus to that control.
-    await app.user.click(screen.getByRole("button", { name: "Open incidents" }));
+    await app.user.click(screen.getByRole("button", { name: "Open cases" }));
     expect(currentArea()).toBe("Investigations");
     await app.user.click(within(screen.getByRole("navigation", { name: "Areas" })).getByRole("button", { name: "Data" }));
     expect(document.activeElement?.getAttribute("data-open-place")).toBe("report");

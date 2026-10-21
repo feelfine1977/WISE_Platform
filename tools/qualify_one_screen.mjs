@@ -65,7 +65,7 @@ function core(page) {
     'Keys': page.getByRole('button', {name: 'Keys', exact: true}),
     'Save': page.getByRole('button', {name: 'Save', exact: true}),
     'Map': views.getByRole('button', {name: 'Map', exact: true}),
-    'Incidents': views.getByRole('button', {name: 'Incidents', exact: true}),
+    'Incidents': views.getByRole('button', {name: 'Cases', exact: true}),
     'Variants': views.getByRole('button', {name: 'Variants', exact: true}),
     'Paths': views.getByRole('button', {name: 'Paths', exact: true}),
     'Matrix': views.getByRole('button', {name: 'Matrix', exact: true}),
@@ -154,9 +154,9 @@ try {
   const rows = await page.evaluate(() => [document.querySelector('.explorer > .toolbar'), document.querySelector('.explorer > .selection-bar')]
     .map(row => ({height: Math.round(row.getBoundingClientRect().height), text: row.textContent})));
   measures.scope_rows_1280x720 = rows.map(row => row.height);
-  check('first_scope_row_names_source_counts_and_save', rows[0].text.includes(expected.file) && rows[0].text.includes(`${incidents} of ${incidents} incidents`)
+  check('first_scope_row_names_source_counts_and_save', rows[0].text.includes(expected.file) && rows[0].text.includes(`${incidents} of ${incidents} cases`)
     && rows[0].text.includes(`${expected.record_count} of ${expected.record_count} records`) && rows[0].text.includes('Save'), rows[0].text);
-  check('second_scope_row_has_views_steps_and_actions', /Map.*Incidents.*Variants.*Paths.*Matrix/.test(rows[1].text) && rows[1].text.includes('+ Add step')
+  check('second_scope_row_has_views_steps_and_actions', /Map.*Cases.*Variants.*Paths.*Matrix/.test(rows[1].text) && rows[1].text.includes('+ Add step')
     && await page.locator('.selection-bar').getByRole('group', {name: 'Steps', exact: true}).count() === 1, rows[1].text);
   // A question that is not scored shows no comparison roles or outcomes.
   check('no_comparison_roles_before_they_are_defined', !/\b(reference|comparison|outcome)\b/i.test(rows.map(row => row.text).join(' ')), rows.map(row => row.text));
@@ -164,7 +164,7 @@ try {
   check('core_actions_in_view_at_1280x720', first.ok, first.failing);
 
   // ---- the map: its controls above the canvas, its legend under it, nothing of either on it ----
-  await view(page, 'Map', () => page.getByLabel('Process map of the kept incidents').waitFor());
+  await view(page, 'Map', () => page.getByLabel('Process map of the kept cases').waitFor());
   const parts = await page.evaluate(() => ({
     onCanvas: ['.wf-legend', '.wf-controls', '.wf-paths'].filter(part => document.querySelector(`.map-frame ${part}`)).length,
     controlsAbove: document.querySelectorAll('.map-detail .wf-controls').length,
@@ -195,44 +195,44 @@ try {
   check('selected_activity_steps_and_times_beside_the_map', drawer.inView && !drawer.sideways && drawer.beside && drawer.times, drawer);
   const withDrawer = await reachable(page);
   check('core_actions_in_view_with_the_steps_of_an_activity', withDrawer.ok, withDrawer.failing);
-  const choice = page.locator('.map-choice').filter({has: page.getByRole('button', {name: 'Keep incidents that contain it', exact: true})});
+  const choice = page.locator('.map-choice').filter({has: page.getByRole('button', {name: 'Keep cases that contain it', exact: true})});
   await choice.locator('.step-preview').filter({hasText: /^Preview:/}).waitFor();
   const preview = await choice.locator('.step-preview').textContent();
-  check('preview_proposes_the_oracles_membership', preview.startsWith(`Preview: would keep ${expected.contains_C.kept.length} incidents of ${incidents} incidents`), preview);
+  check('preview_proposes_the_oracles_membership', preview.startsWith(`Preview: would keep ${expected.contains_C.kept.length} cases of ${incidents} cases`), preview);
   const answeredBefore = selections.length;
   // Let go: a click on the empty map clears what is selected, and with it the step offered.
   await page.locator('.map-frame .react-flow__pane').click({position: {x: 4, y: 4}});
   await page.waitForFunction(() => document.querySelector('.map-element')?.classList.contains('visually-hidden'));
-  check('preview_let_go_takes_no_step', selections.length === answeredBefore && (await page.locator('.population').textContent()).includes(`${incidents} of ${incidents} incidents`), null);
+  check('preview_let_go_takes_no_step', selections.length === answeredBefore && (await page.locator('.population').textContent()).includes(`${incidents} of ${incidents} cases`), null);
 
   // ---- the step taken and undone, exactly ----
-  const taken = await take(laptop, 'C', 'Keep incidents that contain it', 1);
+  const taken = await take(laptop, 'C', 'Keep cases that contain it', 1);
   check('step_keeps_the_oracles_incidents', same(taken.kept.case_ids, expected.contains_C.kept) && taken.kept.record_count === expected.contains_C.record_count
     && !same(taken.identity, parent.identity) && same(taken.parent_identity, parent.identity), taken.kept);
   timings.undo_ms = await undo(laptop, 0);
   check('undo_returns_to_the_parent_exactly', same(selections.at(-1).identity, parent.identity) && same(selections.at(-1).kept.case_ids, expected.incidents), selections.at(-1).identity);
 
   // ---- the variants: a named view of the centre ----
-  await view(page, 'Variants', () => page.getByRole('region', {name: 'Variants of the kept incidents'}).getByRole('list', {name: 'Variants, most incidents first'}).waitFor());
-  const pane = page.getByRole('region', {name: 'Variants of the kept incidents'});
+  await view(page, 'Variants', () => page.getByRole('region', {name: 'Variants of the kept cases'}).getByRole('list', {name: 'Variants, most cases first'}).waitFor());
+  const pane = page.getByRole('region', {name: 'Variants of the kept cases'});
   const figures = await pane.locator('.variant-figures').evaluateAll(items => items.map(item => item.getAttribute('title')));
   check('variants_view_lists_the_oracles_variants', figures.length === expected.variants.count
     && same(figures.map(title => Number(title.split(' ')[0])), expected.variants.case_counts), figures);
   const listedBefore = selections.length;
-  await pane.getByRole('button', {name: `List the ${expected.variants.first.case_ids.length} incidents of variant 1 in the table`}).click();
-  const listed = await page.getByRole('table', {name: 'Kept incidents of variant 1'}).locator('tbody tr button.row-open').allTextContents();
+  await pane.getByRole('button', {name: `List the ${expected.variants.first.case_ids.length} cases of variant 1 in the table`}).click();
+  const listed = await page.getByRole('table', {name: 'Kept cases of variant 1'}).locator('tbody tr button.row-open').allTextContents();
   check('a_variant_lists_its_incidents_in_the_table_as_a_view', same(listed, expected.variants.first.case_ids) && selections.length === listedBefore
     && await core(page)['Incidents'].getAttribute('aria-pressed') === 'true', listed);
-  await page.getByRole('button', {name: 'Show every incident', exact: true}).click();
+  await page.getByRole('button', {name: 'Show every case', exact: true}).click();
   await view(page, 'Paths', () => page.locator('.path-list').waitFor());
   await view(page, 'Matrix', () => page.locator('.matrix-pane').waitFor());
-  await view(page, 'Incidents', () => page.getByRole('table', {name: 'Kept incidents'}).waitFor());
+  await view(page, 'Cases', () => page.getByRole('table', {name: 'Kept cases'}).waitFor());
 
   // ---- the complete history of an incident, and back to its row ----
-  const row = page.getByRole('table', {name: 'Kept incidents'}).getByRole('button', {name: 'L-03', exact: true});
+  const row = page.getByRole('table', {name: 'Kept cases'}).getByRole('button', {name: 'L-03', exact: true});
   const opening = performance.now();
   const [evidence] = await Promise.all([page.waitForResponse(r => new URL(r.url()).pathname === '/api/investigations/case-evidence'), row.click()]);
-  await page.getByRole('heading', {name: 'Incident L-03'}).waitFor();
+  await page.getByRole('heading', {name: 'Case L-03'}).waitFor();
   timings.history_ms = elapsed(opening);
   const history = await evidence.json();
   check('history_holds_every_record', history.case_id === 'L-03' && history.records.length === expected.records['L-03'] && same(history.identity, selections.at(-1).identity), history.records.length);
@@ -243,10 +243,10 @@ try {
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => document.activeElement?.textContent === 'L-03');
   check('closing_the_history_gives_the_keyboard_back_to_its_row', await page.evaluate(() => document.activeElement?.textContent) === 'L-03'
-    && same(selections.at(-1).identity, identityOpen) && await page.getByRole('heading', {name: 'Incident L-03'}).count() === 0, null);
+    && same(selections.at(-1).identity, identityOpen) && await page.getByRole('heading', {name: 'Case L-03'}).count() === 0, null);
 
   // ---- three steps, each counted on its own against the one frozen parent ----
-  await view(page, 'Map', () => page.getByLabel('Process map of the kept incidents').waitFor());
+  await view(page, 'Map', () => page.getByLabel('Process map of the kept cases').waitFor());
   const plan = expected.three_steps.steps;
   let three;
   for (const [index, entry] of plan.entries()) three = await take(laptop, entry.activity, entry.choice, index + 1);
@@ -255,15 +255,15 @@ try {
     && same(three.predicate_results.map(result => result.kept_after_step.case_count), plan.map(entry => entry.kept_after_step)), three.predicate_results.map(result => [result.kept.case_count, result.kept_after_step]));
   const chips = await page.getByRole('list', {name: 'Steps of the selection'}).locator(':scope > li').evaluateAll(items => items.map(item => item.querySelector('.chip-counts dd')?.textContent ?? ''));
   const overlap = await page.locator('.overlap-line').textContent();
-  check('chips_say_each_steps_own_count_over_the_parent', chips.every((text, index) => text.startsWith(`${plan[index].kept_of_parent} incidents`))
-    && overlap.startsWith(`Each step is counted on its own over all ${incidents} incidents of the parent.`), {chips, overlap});
+  check('chips_say_each_steps_own_count_over_the_parent', chips.every((text, index) => text.startsWith(`${plan[index].kept_of_parent} cases`))
+    && overlap.startsWith(`Each step is counted on its own over all ${incidents} cases of the parent.`), {chips, overlap});
 
   // ---- the side panel and a history open beside three steps, at both sizes ----
   await core(page)['Filters and views'].click();
-  await page.getByRole('complementary', {name: 'Filters and views of the kept incidents'}).waitFor();
-  await view(page, 'Incidents', () => page.getByRole('table', {name: 'Kept incidents'}).waitFor());
-  await page.getByRole('table', {name: 'Kept incidents'}).getByRole('button', {name: 'L-09', exact: true}).click();
-  await page.getByRole('heading', {name: 'Incident L-09'}).waitFor();
+  await page.getByRole('complementary', {name: 'Filters and views of the kept cases'}).waitFor();
+  await view(page, 'Cases', () => page.getByRole('table', {name: 'Kept cases'}).waitFor());
+  await page.getByRole('table', {name: 'Kept cases'}).getByRole('button', {name: 'L-09', exact: true}).click();
+  await page.getByRole('heading', {name: 'Case L-09'}).waitFor();
   const crowded = await reachable(page);
   const crowdedRows = await page.evaluate(() => ['.explorer > .toolbar', '.explorer > .selection-bar'].map(part => Math.round(document.querySelector(part).getBoundingClientRect().height)));
   measures.scope_rows_1280x720_three_steps = crowdedRows;
@@ -295,7 +295,7 @@ try {
   const pending = await page.evaluate(() => ({status: document.querySelector('.selection-status')?.textContent, progress: !!document.querySelector('.explorer > .progress-line'),
     chips: document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length, kept: document.querySelector('.population')?.textContent}));
   check('pending_work_acknowledged_with_the_answer_still_shown', pending.progress && pending.status.length > 0 && pending.chips === 3
-    && pending.kept.includes(`${expected.three_steps.kept.length} of ${incidents} incidents`), pending);
+    && pending.kept.includes(`${expected.three_steps.kept.length} of ${incidents} cases`), pending);
   release();
   hold = null;
   await settled(laptop, 2);
@@ -305,13 +305,13 @@ try {
   const alert = page.getByRole('alert').filter({hasText: 'the earlier selection is still shown'});
   await alert.waitFor();
   const failed = await page.evaluate(() => ({chips: document.querySelectorAll('ul[aria-label="Steps of the selection"] > li').length, kept: document.querySelector('.population')?.textContent}));
-  check('failed_answer_names_the_answer_still_shown_and_offers_recovery', failed.chips === 2 && failed.kept.includes(`${twoSteps.kept.case_count} of ${incidents} incidents`)
+  check('failed_answer_names_the_answer_still_shown_and_offers_recovery', failed.chips === 2 && failed.kept.includes(`${twoSteps.kept.case_count} of ${incidents} cases`)
     && await alert.getByRole('button', {name: 'Try again'}).count() === 1 && await alert.getByRole('button', {name: 'Stay with the earlier selection'}).count() === 1, failed);
   await alert.getByRole('button', {name: 'Stay with the earlier selection'}).click();
   await alert.waitFor({state: 'detached'});
   await settled(laptop, 2);
   check('letting_the_new_answer_go_keeps_the_earlier_one', same(selections.at(-1).identity, twoSteps.identity)
-    && (await page.locator('.population').textContent()).includes(`${twoSteps.kept.case_count} of ${incidents} incidents`), null);
+    && (await page.locator('.population').textContent()).includes(`${twoSteps.kept.case_count} of ${incidents} cases`), null);
   fail = 1;
   await core(page)['Undo'].click();
   await alert.waitFor();
@@ -329,11 +329,11 @@ try {
   const atZoom = await reachable(zoomed.page, true);
   check('zoom_200_every_core_action_reachable', atZoom.ok, atZoom.failing);
   await core(zoomed.page)['Incidents'].click();
-  const zoomRow = zoomed.page.getByRole('table', {name: 'Kept incidents'}).getByRole('button', {name: 'L-01', exact: true});
+  const zoomRow = zoomed.page.getByRole('table', {name: 'Kept cases'}).getByRole('button', {name: 'L-01', exact: true});
   await zoomRow.scrollIntoViewIfNeeded();
   await zoomRow.click();
-  await zoomed.page.getByRole('heading', {name: 'Incident L-01'}).waitFor();
-  const back = zoomed.page.getByRole('button', {name: 'Return to incidents'});
+  await zoomed.page.getByRole('heading', {name: 'Case L-01'}).waitFor();
+  const back = zoomed.page.getByRole('button', {name: 'Return to cases'});
   await back.scrollIntoViewIfNeeded();
   const backPlaced = await placed(back);
   check('zoom_200_history_return_reachable', backPlaced.inView && !backPlaced.covered && !(await pageScroll(zoomed.page)).sideways, backPlaced);

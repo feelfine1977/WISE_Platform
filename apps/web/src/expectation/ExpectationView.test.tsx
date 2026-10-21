@@ -36,7 +36,7 @@ async function renderView() {
   const coordinator = new ExpectationCoordinator(scoring.client, investigation);
   coordinator.start();
   const rendered = render(<ExpectationView investigation={investigation} coordinator={coordinator} onShowData={() => undefined} onShowInvestigation={() => undefined} />);
-  expect(screen.getByText(/No incidents are open at the moment: open the incidents of a reading in the Data area/)).toBeTruthy();
+  expect(screen.getByText(/No cases are open at the moment: open the cases of a reading in the Data area/)).toBeTruthy();
   act(() => investigation.open({ workspaceId, preparationId }));
   await deliver(() => imports.populations[0].reply({ ok: true, answer: scoringPopulationAnswer(imports.populations[0].request) }));
   await deliver(() => selecting.selections[0].reply({ ok: true, answer: scoringSelectionAnswer(selecting.selections[0].request) }));
@@ -63,7 +63,7 @@ async function scored() {
   await fillForm(view.user, { reviewed: true });
   await view.user.click(screen.getByRole("button", { name: "Check the definition" }));
   await deliver(() => view.validations[0].reply({ ok: true, answer: readyAnswer(view.validations[0].request) }));
-  await view.user.click(screen.getByRole("button", { name: "Score 5 incidents" }));
+  await view.user.click(screen.getByRole("button", { name: "Score 5 cases" }));
   const answer = runAnswer(view.scores[0].request, view.validations[0].request.definition);
   await deliver(() => view.scores[0].reply({ ok: true, answer }));
   return { ...view, run: answer.run };
@@ -83,7 +83,7 @@ describe("the expectation form", () => {
     const { user, validations } = await renderView();
     const options = within(screen.getByLabelText("Start activity")).getAllByRole("option").map((option) => option.textContent);
     expect(options).toEqual(["Choose…", "Eröffnet", "Geschlossen", "Prüfung"]);
-    expect(screen.getByText(/Scored for every incident of Vorgänge.csv: 5 incidents/)).toBeTruthy();
+    expect(screen.getByText(/Scored for every case of Vorgänge.csv: 5 cases/)).toBeTruthy();
     const check = screen.getByRole("button", { name: "Check the definition" });
     expect(check).toHaveProperty("disabled", true);
 
@@ -115,16 +115,16 @@ describe("the expectation form", () => {
     await user.click(screen.getByRole("button", { name: "Check the definition" }));
     await deliver(() => validations[0].reply({ ok: true, answer: readyAnswer(validations[0].request) }));
     expect(screen.getByText(/It is a draft: it can be explored but not scored/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Score 5 incidents" })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: "Score 5 cases" })).toHaveProperty("disabled", true);
 
     await user.click(screen.getByRole("checkbox", { name: /I have reviewed this definition/ }));
-    expect(screen.getByText(/The definition or the incidents changed since this check/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Score 5 incidents" })).toHaveProperty("disabled", true);
+    expect(screen.getByText(/The definition or the cases changed since this check/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Score 5 cases" })).toHaveProperty("disabled", true);
     await user.click(screen.getByRole("button", { name: "Check the definition" }));
     // The review mark changes the version, not the meaning: the revision number stays.
     expect(validations[1].request.definition.definition_revision).toBe(1);
     await deliver(() => validations[1].reply({ ok: true, answer: readyAnswer(validations[1].request) }));
-    await user.click(screen.getByRole("button", { name: "Score 5 incidents" }));
+    await user.click(screen.getByRole("button", { name: "Score 5 cases" }));
     expect(scores).toHaveLength(1);
     expect(scoringContract.scoreRequest(scores[0].request)).toBe(true);
 
@@ -154,14 +154,14 @@ describe("the expectation form", () => {
 });
 
 describe("the result of a run", () => {
-  it("counts the incidents in each state, lists them worst first and names the method library", async () => {
+  it("counts the cases in each state, lists them worst first and names the method library", async () => {
     await scored();
-    expect(stateButton("Incidents by how they meet the expectation", "Meet it").textContent).toBe("1Meet it");
-    expect(stateButton("Incidents by how they meet the expectation", "Partly meet it").textContent).toBe("1Partly meet it");
-    expect(stateButton("Incidents by how they meet the expectation", "Do not meet it").textContent).toBe("2Do not meet it");
-    expect(stateButton("Incidents by how they meet the expectation", "Out of scope").textContent).toBe("0Out of scope");
-    expect(stateButton("Incidents without an endpoint", "Without the start").textContent).toBe("1Without the start");
-    expect(stateButton("Incidents without an endpoint", "Without the response").textContent).toBe("1Without the response");
+    expect(stateButton("Cases by how they meet the expectation", "Meet it").textContent).toBe("1Meet it");
+    expect(stateButton("Cases by how they meet the expectation", "Partly meet it").textContent).toBe("1Partly meet it");
+    expect(stateButton("Cases by how they meet the expectation", "Do not meet it").textContent).toBe("2Do not meet it");
+    expect(stateButton("Cases by how they meet the expectation", "Out of scope").textContent).toBe("0Out of scope");
+    expect(stateButton("Cases without an endpoint", "Without the start").textContent).toBe("1Without the start");
+    expect(stateButton("Cases without an endpoint", "Without the response").textContent).toBe("1Without the response");
     expect(tableIncidents()).toEqual(["C-3", "D-4", "B-2", "A-1", "E-5"]);
     const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
     expect(rows.map((row) => within(row).getAllByRole("cell").map((cell) => cell.textContent))).toEqual([
@@ -174,45 +174,45 @@ describe("the result of a run", () => {
     expect(screen.getByText("Scored by the method library wise-pm 0.2.0, built from source 6883db5: an untagged state, not a published release.")).toBeTruthy();
   });
 
-  it("lists the incidents of a chosen state until the choice is cleared, without asking anything", async () => {
+  it("lists the cases of a chosen state until the choice is cleared, without asking anything", async () => {
     const { user, validations, scores, witnesses } = await scored();
-    await user.click(stateButton("Incidents by how they meet the expectation", "Do not meet it"));
+    await user.click(stateButton("Cases by how they meet the expectation", "Do not meet it"));
     expect(tableIncidents()).toEqual(["C-3", "D-4"]);
-    expect(screen.getByText(/The table lists the 2 incidents that do not meet the expectation. This is a view of the run/)).toBeTruthy();
-    expect(stateButton("Incidents by how they meet the expectation", "Meet it").textContent).toBe("1Meet it");
-    await user.click(stateButton("Incidents without an endpoint", "Without the response"));
+    expect(screen.getByText(/The table lists the 2 cases that do not meet the expectation. This is a view of the run/)).toBeTruthy();
+    expect(stateButton("Cases by how they meet the expectation", "Meet it").textContent).toBe("1Meet it");
+    await user.click(stateButton("Cases without an endpoint", "Without the response"));
     expect(tableIncidents()).toEqual(["D-4"]);
-    await user.click(screen.getByRole("button", { name: "Show every incident" }));
+    await user.click(screen.getByRole("button", { name: "Show every case" }));
     expect(tableIncidents()).toEqual(["C-3", "D-4", "B-2", "A-1", "E-5"]);
     expect([validations.length, scores.length, witnesses.length]).toEqual([1, 1, 0]);
   });
 
-  it("shows a refusal with its incidents and what to do", async () => {
+  it("shows a refusal with its cases and what to do", async () => {
     const view = await renderView();
     await fillForm(view.user, { reviewed: true });
     await view.user.click(screen.getByRole("button", { name: "Check the definition" }));
     await deliver(() => view.validations[0].reply({ ok: true, answer: readyAnswer(view.validations[0].request) }));
-    await view.user.click(screen.getByRole("button", { name: "Score 5 incidents" }));
+    await view.user.click(screen.getByRole("button", { name: "Score 5 cases" }));
     await deliver(() =>
-      view.scores[0].reply(scoringRefusal(view.scores[0].request, "score_expectation", "unevaluable_sequence", "The order of 1 incident cannot be evaluated.", ["E-5"])),
+      view.scores[0].reply(scoringRefusal(view.scores[0].request, "score_expectation", "unevaluable_sequence", "The order of 1 case cannot be evaluated.", ["E-5"])),
     );
     const alert = screen.getByRole("alert");
-    expect(alert.textContent).toContain("The incidents could not be scored");
-    expect(alert.textContent).toContain("(1 incident: E-5)");
+    expect(alert.textContent).toContain("The cases could not be scored");
+    expect(alert.textContent).toContain("(1 case: E-5)");
     expect(alert.textContent).toContain("choose a population without them");
   });
 });
 
-describe("the records of a scored incident", () => {
+describe("the records of a scored case", () => {
   it("marks every record that can be the response and says when there are several", async () => {
     const { user, witnesses, run } = await scored();
     await user.click(screen.getByRole("button", { name: "B-2" }));
     expect(witnesses[0].request.case_id).toBe("B-2");
     expect(witnesses[0].request.run_id).toBe(run.identity.run_id);
     await deliver(() => witnesses[0].reply({ ok: true, answer: witnessAnswer(witnesses[0].request, run) }));
-    const witness = screen.getByRole("region", { name: /Incident B-2/ });
-    expect(document.activeElement?.textContent).toBe("Incident B-2");
-    const records = within(witness).getByRole("list", { name: "Records of incident B-2" });
+    const witness = screen.getByRole("region", { name: /Case B-2/ });
+    expect(document.activeElement?.textContent).toBe("Case B-2");
+    const records = within(witness).getByRole("list", { name: "Records of case B-2" });
     expect(within(records).getAllByRole("listitem").map((item) => item.textContent)).toEqual([
       "EröffnetStart2026-10-09 00:00:00 UTC · source position 2",
       "GeschlossenResponse2026-10-09 05:00:00 UTC · source position 3",
@@ -222,18 +222,18 @@ describe("the records of a scored incident", () => {
     expect(witness.textContent).toContain("Value0.5");
   });
 
-  it("marks no response when the library found none, also when the incident is valued as not met", async () => {
+  it("marks no response when the library found none, also when the case is valued as not met", async () => {
     const { user, witnesses, run } = await scored();
     await user.click(screen.getByRole("button", { name: "D-4" }));
     await deliver(() => witnesses[0].reply({ ok: true, answer: witnessAnswer(witnesses[0].request, run) }));
-    const witness = screen.getByRole("region", { name: /Incident D-4/ });
+    const witness = screen.getByRole("region", { name: /Case D-4/ });
     expect(within(witness).getAllByText("Start")).toHaveLength(1);
     expect(within(witness).queryByText("Response")).toBeNull();
     expect(witness.textContent).toContain("No record is marked as the response: the library found no “Geschlossen” at or after the start.");
     expect(witness.textContent).toContain("Measured timeno response");
-    expect(witness.textContent).toContain("The method library read the one record of this incident.");
+    expect(witness.textContent).toContain("The method library read the one record of this case.");
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("region", { name: /Incident D-4/ })).toBeNull();
+    expect(screen.queryByRole("region", { name: /Case D-4/ })).toBeNull();
   });
 });
 
@@ -249,12 +249,12 @@ describe("expectation continuity across areas", () => {
     expect(screen.getByLabelText("Target (hours)")).toHaveProperty("value", "4");
     expect(tableIncidents()).toEqual(["C-3", "D-4", "B-2", "A-1", "E-5"]);
     expect(view.coordinator.savedReference()).toEqual(reference);
-    await view.user.click(stateButton("Incidents by how they meet the expectation", "Partly meet it"));
+    await view.user.click(stateButton("Cases by how they meet the expectation", "Partly meet it"));
     expect(tableIncidents()).toEqual(["B-2"]);
     expect([view.validations.length, view.scores.length, view.witnesses.length]).toEqual([1, 1, 0]);
   });
 
-  it("scores the actual frozen subset with no steps, rather than every source incident", async () => {
+  it("scores the actual frozen subset with no steps, rather than every source case", async () => {
     const view = await renderView();
     const state = view.investigation.getState();
     if (state.selection.phase !== "ready") throw new Error("The displayed selection is ready.");

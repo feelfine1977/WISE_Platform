@@ -61,12 +61,12 @@ function askSecond(app: Shown) {
 }
 
 function shownIncidents(): string[] {
-  const table = screen.getByRole("table", { name: "Kept incidents" });
+  const table = screen.getByRole("table", { name: "Kept cases" });
   return within(table).getAllByRole("rowheader").map((cell) => cell.textContent ?? "");
 }
 
 function history() {
-  return screen.queryByRole("list", { name: "Records of incident A-1 in the declared order" });
+  return screen.queryByRole("list", { name: "Records of case A-1 in the declared order" });
 }
 
 /** What "About this data" says, read with its panel opened for the moment; it stays in reach while another question opens. */
@@ -82,10 +82,10 @@ function aboutData(): string {
 function expectFirstShown() {
   expect(screen.getByRole("heading", { name: "Vorgänge.csv" })).toBeTruthy();
   expect(shownIncidents()).toEqual(["A-1", "B-2"]);
-  expect(screen.getByLabelText("Population").textContent).toContain("2 of 2 incidents3 of 3 records");
+  expect(screen.getByLabelText("Population").textContent).toContain("2 of 2 cases3 of 3 records");
   const details = aboutData();
   // "About this data" opens with what its figures count (#87), then the details of the data.
-  expect(details).toMatch(/^The figures above count incidents and their records: .*Data detailsRevision2Source file/);
+  expect(details).toMatch(/^The figures above count cases and their records: .*Data detailsRevision2Source file/);
   expect(details).toContain(preparationId);
   expect(details).not.toContain(earlierPreparationId);
 }
@@ -279,7 +279,7 @@ describe("keeping the investigation shown while another preparation is opened", 
       }),
     );
     expect(screen.getByText(`Showing ${shownName}; opening the saved investigation “Eröffnungen” …`)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Incidents" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Cases" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.queryByRole("region", { name: "Saved investigation" })).toBeNull();
 
     const reopened = app.populations[app.populations.length - 1];

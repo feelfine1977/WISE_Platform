@@ -20,24 +20,24 @@ function start(parentIds: string[] | null = null) {
 describe("map-side whole-incident filters", () => {
   it("applies the exact union and refuses the entire entry containing an unknown number", async () => {
     const app = start();
-    await app.user.type(screen.getByLabelText("Exact incident numbers"), "A-1\nB-2");
-    await app.user.click(screen.getByRole("button", { name: "Keep these incidents" }));
+    await app.user.type(screen.getByLabelText("Exact case numbers"), "A-1\nB-2");
+    await app.user.click(screen.getByRole("button", { name: "Keep these cases" }));
     expect(app.onStep).toHaveBeenCalledExactlyOnceWith({ kind: "case_id_in", case_ids: ["A-1", "B-2"], negate: false });
-    await app.user.clear(screen.getByLabelText("Exact incident numbers"));
-    await app.user.type(screen.getByLabelText("Exact incident numbers"), "A-1\nNO-SUCH-ID");
-    await app.user.click(screen.getByRole("button", { name: "Keep these incidents" }));
+    await app.user.clear(screen.getByLabelText("Exact case numbers"));
+    await app.user.type(screen.getByLabelText("Exact case numbers"), "A-1\nNO-SUCH-ID");
+    await app.user.click(screen.getByRole("button", { name: "Keep these cases" }));
     expect(app.onStep).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("alert").textContent).toContain("NO-SUCH-ID");
   });
 
   it("refuses a known number outside the fixed parent and a duplicate without applying", async () => {
     const app = start(["A-1"]);
-    await app.user.type(screen.getByLabelText("Exact incident numbers"), "B-2");
-    await app.user.click(screen.getByRole("button", { name: "Keep these incidents" }));
+    await app.user.type(screen.getByLabelText("Exact case numbers"), "B-2");
+    await app.user.click(screen.getByRole("button", { name: "Keep these cases" }));
     expect(screen.getByRole("alert").textContent).toContain("Outside this parent");
-    await app.user.clear(screen.getByLabelText("Exact incident numbers"));
-    await app.user.type(screen.getByLabelText("Exact incident numbers"), "A-1\nA-1");
-    await app.user.click(screen.getByRole("button", { name: "Keep these incidents" }));
+    await app.user.clear(screen.getByLabelText("Exact case numbers"));
+    await app.user.type(screen.getByLabelText("Exact case numbers"), "A-1\nA-1");
+    await app.user.click(screen.getByRole("button", { name: "Keep these cases" }));
     expect(screen.getByRole("alert").textContent).toContain("more than once");
     expect(app.onStep).not.toHaveBeenCalled();
   });
@@ -106,17 +106,17 @@ describe("#6 a filter previewed before it is taken", () => {
     const opening = openingContextAnswer({ schema_version: 1, message_type: "opening_context_request", request_id: "c", query_revision: 1, workspace_id: workspaceId, identity: population.identity });
     render(<Filters population={population} parentIds={null} opening={{ phase: "ready", answer: opening }} onStep={onStep} previewStep={previewStep} />);
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Exact incident numbers"), "A-1");
-    await user.click(screen.getByRole("button", { name: "Keep these incidents" }));
+    await user.type(screen.getByLabelText("Exact case numbers"), "A-1");
+    await user.click(screen.getByRole("button", { name: "Keep these cases" }));
     const step = { kind: "case_id_in", case_ids: ["A-1"], negate: false };
     expect(previewStep).toHaveBeenCalledWith(step, expect.any(AbortSignal));
     expect(onStep).not.toHaveBeenCalled();
     const pending = screen.getByRole("group", { name: "Filter not yet taken" });
-    expect(await screen.findByText("Preview: would keep 1 incident of 2 incidents; 1 removed, 0 not evaluable. Nothing changes until the step is taken.")).toBeTruthy();
+    expect(await screen.findByText("Preview: would keep 1 case of 2 cases; 1 removed, 0 not evaluable. Nothing changes until the step is taken.")).toBeTruthy();
     expect(pending.textContent).toContain(stepWording(step as SelectionPredicate));
     await user.click(screen.getByRole("button", { name: "Change the filter" }));
     expect(screen.queryByRole("group", { name: "Filter not yet taken" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Keep these incidents" }));
+    await user.click(screen.getByRole("button", { name: "Keep these cases" }));
     await user.click(screen.getByRole("button", { name: "Take this step" }));
     expect(onStep).toHaveBeenCalledWith(step);
     expect(screen.queryByRole("group", { name: "Filter not yet taken" })).toBeNull();

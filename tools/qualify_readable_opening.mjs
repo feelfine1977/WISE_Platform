@@ -54,7 +54,7 @@ async function journey(size) {
   const areas = page.getByRole('navigation', {name: 'Areas'});
   const view = text => page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: text, exact: true});
   const analytic = () => selections.length + graphs;
-  const map = () => page.getByLabel('Process map of the kept incidents');
+  const map = () => page.getByLabel('Process map of the kept cases');
   const zoomButton = text => map().getByRole('button', {name: text, exact: true});
   const tool = text => page.getByRole('group', {name: 'Map tools'}).getByRole('button', {name: text, exact: true});
   const rest = (ms = 900) => page.waitForTimeout(ms);
@@ -97,7 +97,7 @@ async function journey(size) {
     await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
     await areas.getByRole('button', {name: 'Data', exact: true}).click();
     await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
-    await page.waitForFunction(n => (document.querySelector('.population')?.textContent ?? '').includes(`${n.toLocaleString('en')} of ${n.toLocaleString('en')} incidents`), expected.incidents);
+    await page.waitForFunction(n => (document.querySelector('.population')?.textContent ?? '').includes(`${n.toLocaleString('en')} of ${n.toLocaleString('en')} cases`), expected.incidents);
     await page.waitForFunction(() => !document.querySelector('.selection-status')?.textContent);
 
     // ---- the opening ----
@@ -188,7 +188,7 @@ async function wholeJourney(size) {
   const areas = page.getByRole('navigation', {name: 'Areas'});
   const view = text => page.getByRole('group', {name: 'View', exact: true}).getByRole('button', {name: text, exact: true});
   const analytic = () => selections.length + graphs;
-  const map = () => page.getByLabel('Process map of the kept incidents');
+  const map = () => page.getByLabel('Process map of the kept cases');
   const zoomButton = text => map().getByRole('button', {name: text, exact: true});
   const tool = text => page.getByRole('group', {name: 'Map tools'}).getByRole('button', {name: text, exact: true});
   const rest = (ms = 900) => page.waitForTimeout(ms);
@@ -221,14 +221,14 @@ async function wholeJourney(size) {
     const r = edge.getBoundingClientRect();
     return {x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height)};
   });
-  const pathRow = (from, to) => page.getByRole('table', {name: 'Paths of the kept incidents'}).getByRole('button', {name: `Path from “${from}” to “${to}”`, exact: true});
+  const pathRow = (from, to) => page.getByRole('table', {name: 'Paths of the kept cases'}).getByRole('button', {name: `Path from “${from}” to “${to}”`, exact: true});
 
   try {
     await page.goto(base);
     await page.waitForFunction(() => document.querySelectorAll('table tbody tr button.row-open').length > 0);
     await areas.getByRole('button', {name: 'Data', exact: true}).click();
     await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${config.preparation_id}$`)}).click();
-    await page.waitForFunction(n => (document.querySelector('.population')?.textContent ?? '').includes(`${n.toLocaleString('en')} of ${n.toLocaleString('en')} incidents`), expected.incidents);
+    await page.waitForFunction(n => (document.querySelector('.population')?.textContent ?? '').includes(`${n.toLocaleString('en')} of ${n.toLocaleString('en')} cases`), expected.incidents);
     await page.waitForFunction(() => !document.querySelector('.selection-status')?.textContent);
     await view('Map').click();
     await map().waitFor();
@@ -244,9 +244,9 @@ async function wholeJourney(size) {
 
     // ---- an omitted low-frequency path: found in the list, drawn on the map and brought into view ----
     await view('Paths').click();
-    const table = page.getByRole('table', {name: 'Paths of the kept incidents'});
+    const table = page.getByRole('table', {name: 'Paths of the kept cases'});
     await table.waitFor();
-    const incidentsHead = table.getByRole('button', {name: 'Incidents: sort the list', exact: true});
+    const incidentsHead = table.getByRole('button', {name: 'Cases: sort the list', exact: true});
     await incidentsHead.click();
     await incidentsHead.click();
     // A path between two activities (not a flow from Start or to End) the detail leaves out, with the fewest incidents.
@@ -262,7 +262,7 @@ async function wholeJourney(size) {
     sized.revealed = {incidents: omittedIncidents, in_view: within(revealed.edge, revealed.frame), zoom: revealed.zoom};
     const limit = (await page.locator('.map-detail .map-limit').allTextContents()).join(' ');
     check(name('omitted_path_drawn_and_brought_into_view'), sized.revealed.in_view && /1 path drawn on request beyond the detail/.test(limit) && revealed.zoom >= sized.floor.zoom - 1e-6, {...sized.revealed, limit});
-    check(name('revealed_path_inspected'), (await page.getByRole('heading', {name: omittedTitle, exact: true}).count()) === 1 && (await page.locator('.map-element').textContent()).includes('Keep incidents'), null);
+    check(name('revealed_path_inspected'), (await page.getByRole('heading', {name: omittedTitle, exact: true}).count()) === 1 && (await page.locator('.map-element').textContent()).includes('Keep cases'), null);
     await shot('revealed');
 
     // ---- back to the opening by pointer, then by keyboard ----
