@@ -11,6 +11,8 @@ import type {
   SavedInvestigationContent,
   SavedInvestigationSummary,
   SavingRefusal,
+  RefreshInvestigationAnswer,
+  RefreshInvestigationRequest,
 } from "../generated/saving";
 import type { SavingClient, SavingOutcome } from "../saved/client";
 import { identity, preparationId, sourceId } from "./imports";
@@ -183,10 +185,12 @@ export function scriptedSavingClient() {
   const saves: Call<SaveInvestigationRequest, SaveInvestigationAnswer>[] = [];
   const lists: Call<ListSavedRequest, ListSavedAnswer>[] = [];
   const reopens: Call<ReopenInvestigationRequest, ReopenInvestigationAnswer>[] = [];
+  const refreshes: Call<RefreshInvestigationRequest, RefreshInvestigationAnswer>[] = [];
   const client: SavingClient = {
     save: (request, signal) => new Promise((reply) => saves.push({ request, signal, reply })),
     listSaved: (request, signal) => new Promise((reply) => lists.push({ request, signal, reply })),
     reopen: (request, signal) => new Promise((reply) => reopens.push({ request, signal, reply })),
+    refresh: (request, signal) => new Promise((reply) => refreshes.push({ request, signal, reply })),
   };
-  return { client, saves, lists, reopens };
+  return { client, saves, lists, reopens, refreshes };
 }

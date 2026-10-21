@@ -124,3 +124,20 @@
 }
 .saved-name { font-weight: var(--font-weight-strong); }
 .saved-notes { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* The save summary, the structured notes, the unsaved draft, the lineage of a saved investigation and the review of a refresh. */
+.saved-summary { display: grid; gap: var(--space-1); margin: 0; font-size: var(--font-size-small); }
+.saved-summary > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); gap: var(--space-2); }
+.saved-summary dt { font-weight: var(--font-weight-strong); }
+.saved-summary dd { margin: 0; overflow-wrap: anywhere; }
+.saved-notes-fields { display: grid; gap: var(--space-1); }
+.saved-note-field { display: grid; gap: var(--space-1); }
+.saved-draft { margin: 0; font-weight: var(--font-weight-strong); }
+.saved-row-name { overflow-wrap: anywhere; }
+.saved-lineage p { margin: 0; overflow-wrap: anywhere; }
+.saved-revisions { margin: 0; padding-left: var(--space-4); }
+.saved-guide ul { margin: 0; padding-left: var(--space-4); }
+.saved-review { display: grid; gap: var(--space-2); padding: var(--space-2); border: var(--line-width) solid var(--color-line); border-radius: var(--radius); }
+.saved-review-list { margin: 0; padding-left: var(--space-4); }
+.saved-notes dt { font-weight: var(--font-weight-strong); }
+.saved-notes dd { margin: 0 0 var(--space-1); }

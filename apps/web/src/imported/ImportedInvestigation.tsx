@@ -15,7 +15,7 @@ import { type AskedQuestion, type ImportedInvestigationCoordinator, type Investi
 import { type Observation, ImportedInspector } from "./ImportedInspector";
 import { type FocusRequest, IncidentWindow } from "./IncidentWindow";
 import type { SavingCoordinator } from "../saved/coordinator";
-import { SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
+import { RefreshReview, SaveButton, SavedLine, SaveForm } from "../saved/SaveControl";
 import { FilterPanel } from "../filters/FilterPanel";
 import { IncidentsInTimeOrder, type TimeOrder } from "../time/IncidentsInTimeOrder";
 import { TimeColumn } from "../time/TimeColumn";
@@ -291,6 +291,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
       {/* A saved investigation opens on its map or on its incidents; the list of paths and the matrix are of the map and are saved as the map. */}
       {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view === "paths" || view === "matrix" ? "map" : view} onClose={() => setSaveOpen(false)} />}
       {state.saved && <SavedLine binding={state.saved} />}
+      {saving && state.saved && <RefreshReview saving={saving} revisionId={state.saved.revisionId} />}
       {answer && answer.cases.length > 0 && answer.cases.every((summary) => !summary.sequence_evaluable) && (
         <div className="state-line state-confirm" role="note">
           <p>

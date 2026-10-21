@@ -291,22 +291,6 @@ class RecoveryAnswer(BaseModel):
     warnings: list[RecoveryWarning]
 
 
-class SavedInvestigationSummary(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    investigation_id: InvestigationId
-    latest_revision_id: SavedRevisionId
-    name: constr(min_length=1)
-    source_id: SourceId
-    preparation_id: PreparationId
-    selected_case_count: conint(ge=0)
-    selected_record_count: conint(ge=0)
-    comparison_kind: Literal['group', 'period'] | None
-    has_score_run: bool
-    source_validation: Literal['not_checked']
-
-
 class InvestigationId1(RootModel[None]):
     root: None = Field(..., title='InvestigationId')
 
@@ -324,18 +308,6 @@ class ListSavedRequest(BaseModel):
     request_id: RequestId
     query_revision: QueryRevision
     workspace_id: WorkspaceId
-
-
-class ListSavedAnswer(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    schema_version: Literal[1]
-    message_type: Literal['list_saved_answer']
-    request_id: RequestId
-    query_revision: QueryRevision
-    workspace_id: WorkspaceId
-    investigations: list[SavedInvestigationSummary]
 
 
 class ReopenInvestigationRequest(BaseModel):
@@ -364,6 +336,7 @@ class SavingRefusal(BaseModel):
         'list_saved',
         'reopen_investigation',
         'recover_investigation_metadata',
+        'refresh_investigation',
     ]
     code: Literal[
         'invalid_request',
@@ -847,6 +820,49 @@ class Bpic19PreparedAssessmentManifest(BaseModel):
     references: list[Bpic19PreparedAssessmentReference] = Field(..., max_length=4)
 
 
+class SavedOutcome(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    policy: Literal['incident.outcome.recorded_activity_presence_at_snapshot.v1']
+    activity: constr(min_length=1)
+    counted: Literal['presence', 'absence']
+    context_column_index: ColumnIndex
+
+
+class SavedRevisionLineage(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    saved_revision_id: SavedRevisionId
+    saved_utc: constr(min_length=1)
+    source_id: SourceId
+    preparation_id: PreparationId
+
+
+class RefreshInvestigationRequest(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['refresh_investigation_request']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    saved_revision_id: SavedRevisionId
+    preparation_id: PreparationId
+
+
+class RefreshReviewItem(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    aspect: Literal['source', 'binding', 'clock', 'parent', 'selection', 'comparison']
+    status: Literal['unchanged', 'changed', 'to_review']
+    before: str | None
+    after: str | None
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -910,6 +926,40 @@ class EvidenceBookmark(BaseModel):
     case_id: CaseId
     row_ids: list[RowId]
     note: constr(min_length=0)
+
+
+class SavedInvestigationSummary(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    investigation_id: InvestigationId
+    latest_revision_id: SavedRevisionId
+    name: constr(min_length=1)
+    source_id: SourceId
+    preparation_id: PreparationId
+    selected_case_count: conint(ge=0)
+    selected_record_count: conint(ge=0)
+    comparison_kind: Literal['group', 'period'] | None
+    has_score_run: bool
+    source_validation: Literal['not_checked']
+    saved_utc: constr(min_length=1) | None = None
+    snapshot_cutoff: constr(min_length=1) | None = None
+    revisions: list[SavedRevisionLineage] | None = Field(
+        None,
+        description='The revisions of the investigation, newest first: each one stays as it was saved.',
+    )
+
+
+class ListSavedAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['list_saved_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    investigations: list[SavedInvestigationSummary]
 
 
 class IntervalThreshold(BaseModel):
@@ -1164,6 +1214,14 @@ class Bpic19PipelineManifest(BaseModel):
     literature_claims: list[Bpic19LiteratureClaim] | None = Field(None, max_length=100)
 
 
+class SavedComparisonParent(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    retained_predicates: list[SelectionPredicate]
+    label: constr(min_length=1, max_length=256) | None
+
+
 class PredicateResult(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -1278,6 +1336,8 @@ class SavedInvestigationContent(BaseModel):
         max_length=4,
         min_length=1,
     )
+    outcome: SavedOutcome | None = None
+    comparison_parent: SavedComparisonParent | None = None
 
 
 class SavedRevision(BaseModel):
@@ -1317,6 +1377,8 @@ class SaveInvestigationRequest1(BaseModel):
         max_length=4,
         min_length=1,
     )
+    outcome: SavedOutcome | None = None
+    comparison_parent: SavedComparisonParent | None = None
 
 
 class SaveInvestigationRequest2(BaseModel):
@@ -1351,6 +1413,8 @@ class SaveInvestigationRequest2(BaseModel):
         max_length=4,
         min_length=1,
     )
+    outcome: SavedOutcome | None = None
+    comparison_parent: SavedComparisonParent | None = None
 
 
 class SaveInvestigationRequest(
@@ -1395,6 +1459,22 @@ class ReopenInvestigationAnswer(BaseModel):
     bpic19_prepared_outputs: Bpic19PreparedAssessmentManifest | None = None
 
 
+class RefreshInvestigationAnswer(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schema_version: Literal[1]
+    message_type: Literal['refresh_investigation_answer']
+    request_id: RequestId
+    query_revision: QueryRevision
+    workspace_id: WorkspaceId
+    revision: SavedRevision
+    preparation_id: PreparationId
+    parent_case_ids: CaseIds | None
+    restored_selection: RestoredSelection
+    review: list[RefreshReviewItem]
+
+
 class SavingMessage(
     RootModel[
         SaveInvestigationRequest
@@ -1406,6 +1486,8 @@ class SavingMessage(
         | SavingRefusal
         | RecoverInvestigationMetadataRequest
         | RecoverInvestigationMetadataAnswer
+        | RefreshInvestigationRequest
+        | RefreshInvestigationAnswer
     ]
 ):
     root: (
@@ -1418,6 +1500,8 @@ class SavingMessage(
         | SavingRefusal
         | RecoverInvestigationMetadataRequest
         | RecoverInvestigationMetadataAnswer
+        | RefreshInvestigationRequest
+        | RefreshInvestigationAnswer
     ) = Field(
         ...,
         description='Unscored immutable investigation revisions with verified source/interpretation/selection meaning and atomic expected-head publication.',

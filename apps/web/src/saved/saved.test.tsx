@@ -78,11 +78,14 @@ describe("saving the investigation shown", () => {
     const app = await renderInvestigation();
     await app.user.click(screen.getByRole("button", { name: "Save" }));
     const form = screen.getByRole("region", { name: "Save this investigation" });
-    expect(within(form).getByText(/Saves the source, how it is read, the steps of the selection and your note/)).toBeTruthy();
+    // Before saving, the form says what the save holds; the notes are fields, none required.
+    const summary = within(form).getByLabelText("What this save holds");
+    expect(summary.textContent).toContain("Pinned witnessesnone");
+    expect(summary.textContent).toContain("Scoringnone: an unscored question is saved as it is");
     expect((within(form).getByLabelText("Name") as HTMLInputElement).value).toBe("Vorgänge.csv");
     await app.user.clear(within(form).getByLabelText("Name"));
     await app.user.type(within(form).getByLabelText("Name"), "Alle Vorgänge");
-    await app.user.type(within(form).getByLabelText("Note"), "Both incidents, before any step.");
+    await app.user.type(within(form).getByLabelText("Other notes"), "Both incidents, before any step.");
     await app.user.click(within(form).getByRole("button", { name: "Save" }));
 
     const first = app.saving.saves[0];
@@ -115,7 +118,7 @@ describe("saving the investigation shown", () => {
     await app.user.click(screen.getByRole("button", { name: "Save" }));
     const again = screen.getByRole("region", { name: "Save a new revision" });
     expect(within(again).getByText("Saving adds a new revision to “Alle Vorgänge”. The earlier revisions stay in the workspace as they were saved.")).toBeTruthy();
-    expect((within(again).getByLabelText("Note") as HTMLTextAreaElement).value).toBe("Both incidents, before any step.");
+    expect((within(again).getByLabelText("Other notes") as HTMLTextAreaElement).value).toBe("Both incidents, before any step.");
     await app.user.click(within(again).getByRole("button", { name: "Save revision" }));
 
     const second = app.saving.saves[1];
@@ -261,7 +264,9 @@ describe("the saved investigations", () => {
     const table = screen.getByRole("table");
     const cells = within(within(table).getAllByRole("row")[1]).getAllByRole("cell").map((cell) => cell.textContent);
     expect(within(table).getByRole("rowheader").textContent).toBe("Eröffnungen");
-    expect(cells.slice(0, 3)).toEqual(["Vorgänge.csv", "1 incident · 2 records", "two groups"]);
+    expect(cells[0]).toMatch(/^Vorgänge\.csvPreparation /);
+    expect(cells[0]).toContain("Listed as saved, not checked yet: the source and the identities are checked when it is reopened.");
+    expect(cells.slice(1, 3)).toEqual(["1 incident · 2 records", "two groups"]);
     expect(screen.getByRole("button", { name: "Reopen Eröffnungen" })).toBeTruthy();
   });
 

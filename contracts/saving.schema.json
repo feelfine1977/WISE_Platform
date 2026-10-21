@@ -30,6 +30,12 @@
     },
     {
       "$ref": "#/$defs/RecoverInvestigationMetadataAnswer"
+    },
+    {
+      "$ref": "#/$defs/RefreshInvestigationRequest"
+    },
+    {
+      "$ref": "#/$defs/RefreshInvestigationAnswer"
     }
   ],
   "$defs": {
@@ -1215,6 +1221,26 @@
             "$ref": "#/$defs/Bpic19PreparedAssessmentReference"
           },
           "description": "Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items."
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedOutcome"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "comparison_parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedComparisonParent"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1337,6 +1363,28 @@
         "source_validation": {
           "type": "string",
           "const": "not_checked"
+        },
+        "saved_utc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "snapshot_cutoff": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revisions": {
+          "description": "The revisions of the investigation, newest first: each one stays as it was saved.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SavedRevisionLineage"
+          }
         }
       },
       "required": [
@@ -1468,6 +1516,26 @@
             "$ref": "#/$defs/Bpic19PreparedAssessmentReference"
           },
           "description": "Optional retained declared-prepared assessments. Raw investigation identities provide context only and never identify the assessed items."
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedOutcome"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "comparison_parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedComparisonParent"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1776,7 +1844,8 @@
             "save_investigation",
             "list_saved",
             "reopen_investigation",
-            "recover_investigation_metadata"
+            "recover_investigation_metadata",
+            "refresh_investigation"
           ]
         },
         "code": {
@@ -3459,6 +3528,247 @@
         "input_id",
         "assessment_item_ids",
         "references"
+      ]
+    },
+    "SavedOutcome": {
+      "title": "SavedOutcome",
+      "description": "A separately named outcome kept with the question: a recorded activity's presence or absence at the snapshot, read by the opening value of a context column. It is asked again on reopening.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "const": "incident.outcome.recorded_activity_presence_at_snapshot.v1"
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "counted": {
+          "type": "string",
+          "enum": [
+            "presence",
+            "absence"
+          ]
+        },
+        "context_column_index": {
+          "$ref": "#/$defs/ColumnIndex"
+        }
+      },
+      "required": [
+        "policy",
+        "activity",
+        "counted",
+        "context_column_index"
+      ]
+    },
+    "SavedComparisonParent": {
+      "title": "SavedComparisonParent",
+      "description": "How the comparison's frozen parent was taken: the retained steps over the selection's parent that give exactly its incidents, checked when saved and reopened, or, where no step describes it, its words.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "retained_predicates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SelectionPredicate"
+          }
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "retained_predicates",
+        "label"
+      ]
+    },
+    "SavedRevisionLineage": {
+      "title": "SavedRevisionLineage",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "saved_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        },
+        "saved_utc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        }
+      },
+      "required": [
+        "saved_revision_id",
+        "saved_utc",
+        "source_id",
+        "preparation_id"
+      ]
+    },
+    "RefreshInvestigationRequest": {
+      "title": "RefreshInvestigationRequest",
+      "description": "Applies a saved revision's question to another reading, for example of a refreshed source, without saving: its steps and parent on that reading, and which of its definitions changed.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "refresh_investigation_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "saved_revision_id": {
+          "$ref": "#/$defs/SavedRevisionId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "saved_revision_id",
+        "preparation_id"
+      ]
+    },
+    "RefreshReviewItem": {
+      "title": "RefreshReviewItem",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "aspect": {
+          "type": "string",
+          "enum": [
+            "source",
+            "binding",
+            "clock",
+            "parent",
+            "selection",
+            "comparison"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "unchanged",
+            "changed",
+            "to_review"
+          ]
+        },
+        "before": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "after": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "aspect",
+        "status",
+        "before",
+        "after"
+      ]
+    },
+    "RefreshInvestigationAnswer": {
+      "title": "RefreshInvestigationAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "refresh_investigation_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "revision": {
+          "$ref": "#/$defs/SavedRevision"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "parent_case_ids": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaseIds"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "restored_selection": {
+          "$ref": "#/$defs/RestoredSelection"
+        },
+        "review": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RefreshReviewItem"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "revision",
+        "preparation_id",
+        "parent_case_ids",
+        "restored_selection",
+        "review"
       ]
     }
   }

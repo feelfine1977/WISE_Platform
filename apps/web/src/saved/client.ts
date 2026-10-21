@@ -6,6 +6,8 @@ import type {
   ListSavedRequest,
   ReopenInvestigationAnswer,
   ReopenInvestigationRequest,
+  RefreshInvestigationAnswer,
+  RefreshInvestigationRequest,
   SaveInvestigationAnswer,
   SaveInvestigationRequest,
   SavingRefusal,
@@ -18,6 +20,7 @@ export const savingRoutes = {
   save: "/api/investigations/save",
   listSaved: "/api/investigations/list-saved",
   reopen: "/api/investigations/reopen",
+  refresh: "/api/investigations/refresh",
   recoverMetadata: "/api/investigations/recover-metadata",
 } as const;
 
@@ -37,6 +40,8 @@ export interface SavingClient {
   save(request: SaveInvestigationRequest, signal: AbortSignal): Promise<SavingOutcome<SaveInvestigationAnswer>>;
   listSaved(request: ListSavedRequest, signal: AbortSignal): Promise<SavingOutcome<ListSavedAnswer>>;
   reopen(request: ReopenInvestigationRequest, signal: AbortSignal): Promise<SavingOutcome<ReopenInvestigationAnswer>>;
+  /** Applies a saved question to another reading without saving; absent where the service offers none. */
+  refresh?(request: RefreshInvestigationRequest, signal: AbortSignal): Promise<SavingOutcome<RefreshInvestigationAnswer>>;
 }
 
 /** A read-only companion; it never restores an investigation or changes the save draft. */
@@ -65,6 +70,8 @@ export const savingContract = {
   listAnswer: validator<ListSavedAnswer>("ListSavedAnswer"),
   reopenRequest: validator<ReopenInvestigationRequest>("ReopenInvestigationRequest"),
   reopenAnswer: validator<ReopenInvestigationAnswer>("ReopenInvestigationAnswer"),
+  refreshRequest: validator<RefreshInvestigationRequest>("RefreshInvestigationRequest"),
+  refreshAnswer: validator<RefreshInvestigationAnswer>("RefreshInvestigationAnswer"),
   metadataRequest: validator<RecoverInvestigationMetadataRequest>("RecoverInvestigationMetadataRequest"),
   metadataAnswer: validator<RecoverInvestigationMetadataAnswer>("RecoverInvestigationMetadataAnswer"),
   refusal: validator<SavingRefusal>("SavingRefusal"),
@@ -107,6 +114,7 @@ export const httpSavingClient: SavingClient = {
   save: (request, signal) => postJson(savingRoutes.save, request, "save_investigation", savingContract.saveAnswer, signal),
   listSaved: (request, signal) => postJson(savingRoutes.listSaved, request, "list_saved", savingContract.listAnswer, signal),
   reopen: (request, signal) => postJson(savingRoutes.reopen, request, "reopen_investigation", savingContract.reopenAnswer, signal),
+  refresh: (request, signal) => postJson(savingRoutes.refresh, request, "refresh_investigation", savingContract.refreshAnswer, signal),
 };
 
 export const httpSavingMetadataClient: SavingMetadataClient = {

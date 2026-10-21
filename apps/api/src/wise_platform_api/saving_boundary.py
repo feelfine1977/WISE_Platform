@@ -46,6 +46,7 @@ RequestModel = TypeVar("RequestModel", bound=BaseModel)
 SAVE = "save_investigation"
 LIST_SAVED = "list_saved"
 REOPEN = "reopen_investigation"
+REFRESH = "refresh_investigation"
 RECOVER_METADATA = "recover_investigation_metadata"
 
 STATUS: dict[str, int] = {
