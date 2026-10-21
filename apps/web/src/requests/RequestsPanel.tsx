@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { formatHours } from "wise-flow";
 import { countOf } from "../data/wording";
 import type { AnswerIdentity } from "../generated/selection";
@@ -51,13 +51,16 @@ export function RequestsPanel({ workspaceId, preparationId, identity, revision, 
   const problem = draftProblem(draft);
   const [read, setRead] = useState<Read<UnansweredRequestsAnswer>>({ phase: "idle" });
   // Asked when the analyst asks for it, and again for other kept incidents while a reviewed definition is shown.
-  const [asking, setAsking] = useState(0);
+  const [asking, setAsking] = useState<{ draft: RequestsDraft; sequence: number } | null>(null);
   const identityKey = JSON.stringify(identity);
   useEffect(() => {
-    if (asking === 0 || problem !== null || !draft.reviewed) return;
+    if (asking === null || asking.draft !== draft || problem !== null || !draft.reviewed) {
+      setRead({ phase: "idle" });
+      return;
+    }
     const controller = new AbortController();
     setRead({ phase: "loading" });
-    client.unanswered({ schema_version: 1, message_type: "unanswered_requests_request", request_id: `requests-${asked}-${revision}-${asking}`, query_revision: revision,
+    client.unanswered({ schema_version: 1, message_type: "unanswered_requests_request", request_id: `requests-${asked}-${revision}-${asking.sequence}`, query_revision: revision,
       workspace_id: workspaceId, identity, definition: definitionOf(draft), case_limit: CASES_LISTED }, controller.signal).then(
       (outcome) => {
         if (controller.signal.aborted) return;
@@ -68,24 +71,33 @@ export function RequestsPanel({ workspaceId, preparationId, identity, revision, 
     );
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [asking, identityKey, revision, workspaceId]);
-  // A definition changed after a reading: its answer no longer says what the definition shown says.
-  useEffect(() => { if (!draft.reviewed) setRead({ phase: "idle" }); }, [draft.reviewed]);
+  }, [asking, draft, problem, client, asked, identityKey, revision, workspaceId, preparationId]);
 
   // The values of the turn column on the records of each activity, from which the request activities can be proposed.
   const [turnColumn, setTurnColumn] = useState<number | null>(draft.turn?.column ?? null);
   const [values, setValues] = useState<Read<StageProposalAnswer>>({ phase: "idle" });
+  const valuesRequest = useRef<AbortController | null>(null);
+  useEffect(() => {
+    setValues({ phase: "idle" });
+    return () => valuesRequest.current?.abort();
+  }, [turnColumn, identityKey, revision, workspaceId, preparationId, proposalClient]);
   const readValues = () => {
     if (turnColumn === null) return;
+    valuesRequest.current?.abort();
+    const controller = new AbortController();
+    valuesRequest.current = controller;
     setValues({ phase: "loading" });
     proposalClient.propose({ schema_version: 1, message_type: "stage_proposal_request", request_id: `turn-${asked}-${revision}-${turnColumn}`, query_revision: revision,
-      workspace_id: workspaceId, identity, column_index: turnColumn, value_limit: 50 }, new AbortController().signal).then(
-      (outcome) => setValues(outcome.ok ? { phase: "ready", answer: outcome.answer } : { phase: "failed", message: outcome.problem.kind === "refusal" ? outcome.problem.refusal.message : "The values could not be read." }),
-      () => setValues({ phase: "failed", message: "The values could not be read." }),
+      workspace_id: workspaceId, identity, column_index: turnColumn, value_limit: 50 }, controller.signal).then(
+      (outcome) => {
+        if (controller.signal.aborted) return;
+        setValues(outcome.ok ? { phase: "ready", answer: outcome.answer } : { phase: "failed", message: outcome.problem.kind === "refusal" ? outcome.problem.refusal.message : "The values could not be read." });
+      },
+      () => !controller.signal.aborted && setValues({ phase: "failed", message: "The values could not be read." }),
     );
   };
   const observed = values.phase === "ready" ? [...new Set(values.answer.activities.flatMap((item) => item.values.map((value) => value.value)))].sort() : [];
-  const proposal = values.phase === "ready" && draft.turn
+  const proposal = values.phase === "ready" && draft.turn && values.answer.column_index === draft.turn.column
     ? values.answer.activities.flatMap((item) => {
       const held = item.values.find((value) => value.value === draft.turn!.value);
       return held ? [{ activity: item.activity, records: held.record_count, of: item.record_count }] : [];
@@ -174,7 +186,7 @@ export function RequestsPanel({ workspaceId, preparationId, identity, revision, 
         </div>
       )}
       <p>
-        <button type="button" className="primary" disabled={problem !== null || !draft.reviewed} onClick={() => setAsking((count) => count + 1)}>
+        <button type="button" className="primary" disabled={problem !== null || !draft.reviewed} onClick={() => setAsking((previous) => ({ draft, sequence: (previous?.sequence ?? 0) + 1 }))}>
           Find the incidents
         </button>
       </p>
