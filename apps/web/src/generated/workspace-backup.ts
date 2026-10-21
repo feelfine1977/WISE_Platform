@@ -28,6 +28,10 @@ export interface BackUpWorkspaceRequest {
   query_revision: QueryRevision;
   workspace_id: WorkspaceId;
   destination: string;
+  /**
+   * Check the destination and say what the backup would hold, without writing anything.
+   */
+  preview_only?: boolean;
 }
 export interface BackUpWorkspaceAnswer {
   schema_version: 1;
@@ -43,6 +47,10 @@ export interface BackUpWorkspaceAnswer {
    * Files of the workspace not backed up: machine settings that name folders of this computer.
    */
   omitted: string[];
+  /**
+   * Whether the backup was written; false for a preview, which writes nothing.
+   */
+  written?: boolean;
 }
 export interface BackupCounts {
   sources: number;

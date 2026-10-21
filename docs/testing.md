@@ -278,6 +278,16 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
 - Its receipt holds the file's SHA-256, the reads of each format, and records, usable times, incidents in a known order, paths and variants, both with the year-first format and with every time unreadable.
 - It holds no path, header or value.
 
+## Without a network (#27)
+
+`tools/qualify_offline.py` runs the incident journey with networking unavailable. The service starts under a guard, a `sitecustomize` written into the run's temporary folder and never into the application, that refuses and records every connection and name lookup that is not to this computer. The browser resolves no host but this computer's and refuses and records any other request. The journey imports an invented CSV through the Data area, takes a step, shows the map, paths, matrix, variants, context and times, opens a complete history, saves, and backs up the workspace after a preview that names the local folder and what the backup holds. An actual restart reopens the saved investigation. A further restart without the method library shows that scoring is refused in words while everything else works. The receipt holds checks and a bounded privacy summary (hosts, request counts by method and path, refused connections), with no identity, value or path.
+
+What the application keeps, and where:
+
+- **The workspace.** Sources, readings, saved investigations, score runs and settings live in the workspace folder. By default this is a per-user folder outside any source checkout (`~/Library/Application Support/…` on macOS, `%LOCALAPPDATA%\WISE\workspace` on Windows, `$XDG_DATA_HOME` elsewhere), or a folder the analyst names.
+- **The browser's local storage.** For each reading it keeps the last reading opened, its stages and its definition of requests. Saving an investigation saves the stages and a reviewed definition with it.
+- **Setup and runtime.** Dependencies are acquired once at setup (`npm ci`, or `pip install` from the bundle's `--no-index` wheelhouse). At runtime nothing is fetched and nothing is sent: the host is `127.0.0.1` or `localhost` only, and there is no telemetry.
+
 ## Human release checklist
 
 On the supported Windows target, a novice follows the README, imports the synthetic event-history input, asks a useful question, compares context, switches to map/matrix/variants, opens full evidence, optionally scores, saves, stops and reopens. Repeat using keyboard/table paths and recover from one intentional error.

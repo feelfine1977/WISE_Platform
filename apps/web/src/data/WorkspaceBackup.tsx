@@ -19,14 +19,23 @@ export function WorkspaceBackup({ workspaceId, onOpen, client = httpBackupClient
   const [backupPath, setBackupPath] = useState("");
   const [restorePath, setRestorePath] = useState("");
   const [backUp, setBackUp] = useState<Step<BackUpWorkspaceAnswer>>({ phase: "idle" });
+  // What a backup into the folder named would hold, said before anything is written; a backup is made only into the folder previewed.
+  const [previewed, setPreviewed] = useState<Step<BackUpWorkspaceAnswer>>({ phase: "idle" });
+  const previewedHere = previewed.phase === "done" && previewed.answer.path === destination.trim();
   const [restored, setRestored] = useState<Step<RestoreWorkspaceAnswer>>({ phase: "idle" });
   const sequence = useRef(0);
   const request = (kind: string) => {
     sequence.current += 1;
     return { schema_version: 1 as const, request_id: `${kind}-${sequence.current}`, query_revision: sequence.current };
   };
+  async function preview() {
+    setPreviewed({ phase: "working" });
+    const outcome = await client.backUp({ ...request("preview"), message_type: "back_up_workspace_request", workspace_id: workspaceId, destination: destination.trim(), preview_only: true });
+    setPreviewed(outcome.ok ? { phase: "done", answer: outcome.answer } : { phase: "failed", message: outcome.message });
+  }
   async function submitBackUp(event: FormEvent) {
     event.preventDefault();
+    if (!previewedHere) return;
     setBackUp({ phase: "working" });
     const outcome = await client.backUp({ ...request("backup"), message_type: "back_up_workspace_request", workspace_id: workspaceId, destination: destination.trim() });
     setBackUp(outcome.ok ? { phase: "done", answer: outcome.answer } : { phase: "failed", message: outcome.message });
@@ -49,8 +58,19 @@ export function WorkspaceBackup({ workspaceId, onOpen, client = httpBackupClient
           Backup folder, a new or empty folder by its whole path
           <input type="text" value={destination} onChange={(event) => setDestination(event.target.value)} />
         </label>
-        <button type="submit" disabled={destination.trim() === "" || backUp.phase === "working"}>Back up this workspace</button>
+        <button type="button" disabled={destination.trim() === "" || previewed.phase === "working"} onClick={() => void preview()}>Preview the backup</button>{" "}
+        <button type="submit" disabled={!previewedHere || backUp.phase === "working"}>Back up this workspace</button>
       </form>
+      <p role="status" className="muted backup-preview">
+        {previewed.phase === "working" && "Listing what the backup would hold…"}
+        {previewed.phase === "done" && previewedHere &&
+          `A backup into ${previewed.answer.path}, a folder of this computer, would hold ${countOf(previewed.answer.file_count, "file")} ` +
+            `(${(previewed.answer.byte_count / 1024).toLocaleString("en", { maximumFractionDigits: 1 })} KiB): ${inventory(previewed.answer.counts)}. ` +
+            "It is written there and nowhere else; nothing is sent over a network." +
+            (previewed.answer.omitted.length > 0 ? " Not in it: the folder of record documents, a folder of this computer." : "")}
+        {previewed.phase === "done" && !previewedHere && "The folder was changed after the preview: preview the backup again."}
+      </p>
+      {previewed.phase === "failed" && <p role="alert">No backup can be made there. {previewed.message}</p>}
       <p role="status" className="muted">
         {backUp.phase === "working" && "Backing up…"}
         {backUp.phase === "done" &&

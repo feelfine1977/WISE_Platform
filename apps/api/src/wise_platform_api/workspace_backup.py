@@ -106,6 +106,17 @@ def _take_name(partial: Path, destination: Path) -> None:
     os.replace(partial, destination)
 
 
+def preview(workspace: Workspace, destination_text: str) -> dict[str, object] | Problem:
+    """What a backup into the destination would hold, the destination checked as for a backup, and nothing written."""
+    destination = _destination(destination_text, "destination", [workspace.path])
+    if isinstance(destination, Problem):
+        return destination
+    files = sorted({MANIFEST, *_listed(workspace.path, APPEND_ONLY), *_listed(workspace.path, LOCKED)})
+    listing = [{"path": relative, "bytes": (workspace.path / relative).stat().st_size} for relative in files]
+    return {"workspace_id": workspace.workspace_id, "path": str(destination), "file_count": len(listing), "byte_count": sum(item["bytes"] for item in listing),
+            "counts": _counts(listing), "omitted": [name for name in _listed(workspace.path, [SETTINGS])], "written": False}
+
+
 def back_up(workspace: Workspace, destination_text: str) -> dict[str, object] | Problem:
     destination = _destination(destination_text, "destination", [workspace.path])
     if isinstance(destination, Problem):
@@ -151,7 +162,7 @@ def back_up(workspace: Workspace, destination_text: str) -> dict[str, object] | 
         return Problem("workspace_not_writable", "The backup could not be written completely, so none was kept. Free some space or choose another folder, then back up again.", "destination")
     omitted = [name for name in _listed(workspace.path, [SETTINGS])]
     return {"workspace_id": workspace.workspace_id, "path": str(destination), "file_count": len(listing), "byte_count": sum(item["bytes"] for item in listing),
-            "counts": _counts(listing), "omitted": omitted}
+            "counts": _counts(listing), "omitted": omitted, "written": True}
 
 
 def restore(backup_text: str, destination_text: str, forbidden: Iterable[Path] = ()) -> dict[str, object] | Problem:

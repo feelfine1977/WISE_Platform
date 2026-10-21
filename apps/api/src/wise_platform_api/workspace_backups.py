@@ -11,7 +11,7 @@ from .generated.workspace_backup import (BackUpWorkspaceAnswer, BackUpWorkspaceR
 from .imports import Imports
 from .strict_reading import alternatives_of, read_strictly
 from .workspace import Problem
-from .workspace_backup import back_up, restore
+from .workspace_backup import preview, back_up, restore
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class WorkspaceBackups:
             workspace = self._imports.opened_workspace(given["workspace_id"])
             if isinstance(workspace, Problem):
                 return refused(BACK_UP, workspace.code, workspace.message, given, "workspace_id")
-            done = back_up(workspace, given["destination"])
+            done = (preview if given.get("preview_only") else back_up)(workspace, given["destination"])
             if isinstance(done, Problem):
                 return refused(BACK_UP, done.code, done.message, given, done.field)
             answer = {"schema_version": SCHEMA_VERSION, "message_type": "back_up_workspace_answer", "request_id": given["request_id"],

@@ -15,7 +15,7 @@ describe("#26 backing up and restoring the workspace in use", () => {
       backUp: async (request) => {
         asked.push(request);
         return { ok: true, answer: { schema_version: 1, message_type: "back_up_workspace_answer", request_id: request.request_id, query_revision: request.query_revision,
-          workspace_id: workspaceId, path: "/backups/one", file_count: 7, byte_count: 900, counts, omitted: ["settings/document-folder.json"] } };
+          workspace_id: workspaceId, path: "/backups/one", file_count: 7, byte_count: 900, counts, omitted: ["settings/document-folder.json"], written: !request.preview_only } };
       },
       restore: async (request) => {
         asked.push(request);
@@ -28,14 +28,20 @@ describe("#26 backing up and restoring the workspace in use", () => {
     const user = userEvent.setup();
     await user.click(screen.getByText("Back up or restore"));
     await user.type(screen.getByLabelText(/^Backup folder/), "/backups/one");
+    // Nothing is written before the backup's destination and content are previewed (#27).
+    expect((screen.getByRole("button", { name: "Back up this workspace" }) as HTMLButtonElement).disabled).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Preview the backup" }));
+    expect(backupContract.backUpRequest(asked[0]) && (asked[0] as BackUpWorkspaceRequest).preview_only).toBe(true);
+    expect((await screen.findByText(/^A backup into \/backups\/one, a folder of this computer, would hold 7 files \(0\.9 KiB\): 1 source, 1 reading, 1 saved investigation, 2 revisions, 0 score runs\. It is written there and nowhere else; nothing is sent over a network\./)).textContent)
+      .toContain("Not in it: the folder of record documents");
     await user.click(screen.getByRole("button", { name: "Back up this workspace" }));
-    expect(backupContract.backUpRequest(asked[0])).toBe(true);
+    expect(backupContract.backUpRequest(asked[1]) && !("preview_only" in asked[1])).toBe(true);
     expect(await screen.findByText(/^Backed up into \/backups\/one: 7 files, 1 source, 1 reading, 1 saved investigation, 2 revisions, 0 score runs\./)).toBeTruthy();
     expect(screen.getByText(/Not backed up: the folder of record documents/)).toBeTruthy();
     await user.type(screen.getByLabelText(/^Backup to restore/), "/backups/one");
     await user.type(screen.getByLabelText(/^Restore into/), "/restored");
     await user.click(screen.getByRole("button", { name: "Restore the backup" }));
-    expect(backupContract.restoreRequest(asked[1])).toBe(true);
+    expect(backupContract.restoreRequest(asked[2])).toBe(true);
     expect(await screen.findByText(/^Restored and checked into \/restored/)).toBeTruthy();
     expect(screen.getByText("The backup was made with analytics version 0.1.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Open the restored workspace" }));
@@ -44,13 +50,18 @@ describe("#26 backing up and restoring the workspace in use", () => {
 
   it("says that nothing was backed up or restored when it is refused", async () => {
     const client: BackupClient = {
-      backUp: async () => ({ ok: false, message: "A save in this workspace is still being written. Back up again in a moment." }),
+      backUp: async (request) => request.preview_only
+        ? { ok: true, answer: { schema_version: 1, message_type: "back_up_workspace_answer", request_id: request.request_id, query_revision: request.query_revision,
+          workspace_id: workspaceId, path: "/b", file_count: 7, byte_count: 900, counts, omitted: [], written: false } }
+        : { ok: false, message: "A save in this workspace is still being written. Back up again in a moment." },
       restore: async () => ({ ok: false, message: "sources/x.csv of the backup is not the file that was backed up: its checksum differs. Restore another backup." }),
     };
     render(<WorkspaceBackup workspaceId={workspaceId} onOpen={() => undefined} client={client} />);
     const user = userEvent.setup();
     await user.click(screen.getByText("Back up or restore"));
     await user.type(screen.getByLabelText(/^Backup folder/), "/b");
+    await user.click(screen.getByRole("button", { name: "Preview the backup" }));
+    await screen.findByText(/^A backup into \/b, a folder of this computer/);
     await user.click(screen.getByRole("button", { name: "Back up this workspace" }));
     expect((await screen.findByRole("alert")).textContent).toBe("No backup was made. A save in this workspace is still being written. Back up again in a moment.");
     await user.type(screen.getByLabelText(/^Backup to restore/), "/b");
