@@ -514,6 +514,7 @@ function ContextChoice({
             contextColumns: event.target.checked
               ? [...draft.contextColumns, item.index]
               : draft.contextColumns.filter((index) => index !== item.index),
+            ...(!event.target.checked && draft.documentColumn === item.index ? { documentColumn: null } : {}),
           })
         }
       />
@@ -526,6 +527,21 @@ function ContextChoice({
       {suggested.map(check)}
       {others.length > 0 && <span className="label-text">Other columns</span>}
       {others.map(check)}
+      {draft.contextColumns.length > 0 && (
+        <label>
+          <span className="label-text">Document reference (optional)</span>
+          <select
+            value={draft.documentColumn !== null && chosen.has(draft.documentColumn) ? String(draft.documentColumn) : ""}
+            onChange={(event) => coordinator.choose({ documentColumn: event.target.value === "" ? null : Number(event.target.value) })}
+          >
+            <option value="">No document reference</option>
+            {[...draft.contextColumns].sort((left, right) => left - right).map((index) => (
+              <option key={index} value={String(index)}>{columnName(names, index)}</option>
+            ))}
+          </select>
+          <span className="muted">The column whose value names each record's document in the workspace's document folder. Nothing of a document is imported.</span>
+        </label>
+      )}
     </fieldset>
   );
 }

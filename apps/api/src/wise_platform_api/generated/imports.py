@@ -229,6 +229,10 @@ class Mapping(BaseModel):
     timestamp_column: ColumnIndex
     sequence_column: ColumnIndex | None
     context_columns: list[ColumnIndex]
+    document_reference_column: ColumnIndex | None = Field(
+        None,
+        description="Optional declared role: one of the context columns whose value names the record's document in the workspace's local document folder. Absent when no document reference is mapped; it is part of the preparation and its identity only when present.",
+    )
 
 
 class RecordedTimezone(BaseModel):

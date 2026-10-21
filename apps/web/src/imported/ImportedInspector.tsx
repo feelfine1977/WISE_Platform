@@ -1,5 +1,7 @@
-import { useMemo, useRef, type RefObject } from "react";
-import type { Column, ImportedCaseEvidenceAnswer, ImportedCaseSummary, ImportedSourceRecord } from "../generated/imports";
+import { useMemo, useRef, useState, type RefObject } from "react";
+import type { AnswerIdentity, Column, ImportedCaseEvidenceAnswer, ImportedCaseSummary, ImportedSourceRecord } from "../generated/imports";
+import type { DocumentClient } from "../documents/client";
+import { DocumentPane, referenceOf } from "../documents/DocumentPane";
 import type { InspectorLayout } from "../components/Inspector";
 import { ImportProblemNotice } from "../data/ImportProblemNotice";
 import { countOf, utcText, wallText } from "../data/wording";
@@ -18,10 +20,19 @@ interface ImportedInspectorProps {
   waitingFor?: string;
   headingRef: RefObject<HTMLHeadingElement | null>;
   highlightedRowIds?: readonly string[];
+  /** Where the records' documents are read: present only when the preparation declares a document reference column. */
+  documents?: RecordDocuments;
+}
+
+export interface RecordDocuments {
+  workspaceId: string;
+  identity: AnswerIdentity;
+  column: number;
+  client?: DocumentClient;
 }
 
 /** Every record of one imported incident in the declared order, as a vertical sequence. */
-export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds }: ImportedInspectorProps) {
+export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds, documents }: ImportedInspectorProps) {
   const collapsed = layout === "collapsed";
   return (
     <section className="imported-inspector" aria-labelledby="imported-inspector-title">
@@ -58,14 +69,14 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
         {inspected.phase === "failed" && (
           <ImportProblemNotice title={`The records of ${inspected.caseId} could not be shown`} problem={inspected.problem} onRetry={onRetry} waitingFor={waitingFor} />
         )}
-        {inspected.phase === "ready" && <History answer={inspected.answer} highlightedRowIds={highlightedRowIds} />}
+        {inspected.phase === "ready" && <History answer={inspected.answer} highlightedRowIds={highlightedRowIds} documents={documents} />}
       </div>
     </section>
   );
 }
 
 /** The records in the declared order, and above them their elapsed time: the strip of the recorded times and the longest gap. */
-function History({ answer, highlightedRowIds = [] }: { answer: ImportedCaseEvidenceAnswer; highlightedRowIds?: readonly string[] }) {
+function History({ answer, highlightedRowIds = [], documents }: { answer: ImportedCaseEvidenceAnswer; highlightedRowIds?: readonly string[]; documents?: RecordDocuments }) {
   const { coverage } = answer;
   const omitted = new Set(answer.omitted_activity_row_ids);
   const names = new Map(answer.columns.map((column) => [column.index, column.name]));
@@ -76,6 +87,15 @@ function History({ answer, highlightedRowIds = [] }: { answer: ImportedCaseEvide
   const showRecord = (place: number) => {
     const entry = list.current?.children[place];
     if (entry instanceof HTMLElement) entry.focus();
+  };
+  // The record whose document is open beside the timeline; closing it returns the focus to that record.
+  const [documentPlace, setDocumentPlace] = useState<number | null>(null);
+  const documentPlaces = useMemo(() => new Set(documents ? answer.records.flatMap((record, place) => referenceOf(record, documents.column) ? [place] : []) : []),
+    [answer, documents]);
+  const closeDocument = () => {
+    const place = documentPlace;
+    setDocumentPlace(null);
+    if (place !== null) requestAnimationFrame(() => showRecord(place));
   };
   return (
     <>
@@ -89,7 +109,10 @@ function History({ answer, highlightedRowIds = [] }: { answer: ImportedCaseEvide
           not their recorded order.
         </p>
       )}
-      <IncidentTimeline caseId={answer.case_id} records={answer.records} timeline={timeline} onShowRecord={showRecord} />
+      <div className={documentPlace !== null ? "history-layout with-document" : "history-layout"}>
+      <div>
+      <IncidentTimeline caseId={answer.case_id} records={answer.records} timeline={timeline} onShowRecord={showRecord}
+        documentPlaces={documents ? documentPlaces : undefined} onOpenDocument={documents ? setDocumentPlace : undefined} />
       <ol className="history" ref={list} aria-label={`Records of incident ${answer.case_id} in the declared order`}>
         {answer.records.map((record, place) => (
           <HistoryEntry
@@ -101,9 +124,16 @@ function History({ answer, highlightedRowIds = [] }: { answer: ImportedCaseEvide
             gap={timeline.gaps[place]}
             longest={timeline.longest?.to === place}
             highlighted={highlightedRowIds.includes(record.row_id)}
+            onOpenDocument={documentPlaces.has(place) ? () => setDocumentPlace(place) : undefined}
           />
         ))}
       </ol>
+      </div>
+      {documents && documentPlace !== null && (
+        <DocumentPane workspaceId={documents.workspaceId} identity={documents.identity} caseId={answer.case_id} records={answer.records}
+          documentColumn={documents.column} place={documentPlace} onPlace={setDocumentPlace} onClose={closeDocument} client={documents.client} />
+      )}
+      </div>
     </>
   );
 }
@@ -118,9 +148,11 @@ interface HistoryEntryProps {
   /** Whether that gap is the longest of the incident. */
   longest: boolean;
   highlighted: boolean;
+  /** Opens the record's document beside the timeline; absent when the record names no document. */
+  onOpenDocument?: () => void;
 }
 
-function HistoryEntry({ record, omitted, columns, names, gap, longest, highlighted }: HistoryEntryProps) {
+function HistoryEntry({ record, omitted, columns, names, gap, longest, highlighted, onOpenDocument }: HistoryEntryProps) {
   return (
     <li className={omitted ? "history-entry no-label" : "history-entry"} data-contributing={highlighted || undefined} tabIndex={-1}>
       <span className="history-marker" aria-hidden="true" />
@@ -132,6 +164,7 @@ function HistoryEntry({ record, omitted, columns, names, gap, longest, highlight
           {record.source_sequence !== null && <> · sequence {record.source_sequence}</>}
         </p>
         <GapSince gap={gap} longest={longest} />
+        {onOpenDocument && <button type="button" className="link-button" onClick={onOpenDocument}>Open document</button>}
         {record.context.length > 0 && (
           <dl className="history-context">
             {record.context.map((value) => (

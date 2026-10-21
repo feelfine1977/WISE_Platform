@@ -130,6 +130,8 @@
   --sequence-line-inset: calc(var(--font-size-base) * var(--line-height-base) / 2);
   --size-progress: 2px;
   --size-inspector: 440px;
+  /* The least width of the reading pane of a record document beside an incident's timeline. */
+  --size-document-pane: 288px;
   --size-column-number: 128px;
   --size-column-label: 120px;
   --size-column-id-least: 120px;

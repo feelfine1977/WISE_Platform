@@ -393,6 +393,10 @@
             "$ref": "#/$defs/ColumnIndex"
           },
           "uniqueItems": true
+        },
+        "document_reference_column": {
+          "$ref": "#/$defs/ColumnIndex",
+          "description": "Optional declared role: one of the context columns whose value names the record's document in the workspace's local document folder. Absent when no document reference is mapped; it is part of the preparation and its identity only when present."
         }
       },
       "required": [

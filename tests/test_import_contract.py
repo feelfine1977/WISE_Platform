@@ -23,7 +23,7 @@ VALID = envelope("confirm_mapping_request", workspace_id="workspace.v1:example12
 def test_import_schema_and_generated_mapping_request_agree():
     Draft202012Validator.check_schema(SCHEMA)
     Draft202012Validator(SCHEMA, format_checker=FormatChecker()).validate(VALID)
-    assert ConfirmMappingRequest.model_validate(VALID).model_dump(mode="json") == VALID
+    assert ConfirmMappingRequest.model_validate(VALID).model_dump(mode="json", exclude_unset=True) == VALID
 
 
 @pytest.mark.parametrize("time_format", ["dmy_dot_minute", "mdy_dot_minute", "dmy_slash_minute", "mdy_slash_minute", "iso8601", "dmy_dot_second", "mdy_dot_second", "dmy_slash_second", "mdy_slash_second", "mdy_slash_12h_minute", "mdy_slash_12h_second"])
@@ -31,7 +31,7 @@ def test_timestamp_candidates_require_a_named_explicit_interpretation(time_forma
     value = deepcopy(VALID)
     value["policies"]["time"]["parameters"]["format"] = time_format
     Draft202012Validator(SCHEMA, format_checker=FormatChecker()).validate(value)
-    assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json") == value
+    assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json", exclude_unset=True) == value
 
 
 def test_date_time_format_checker_is_installed_and_rejects_impossible_dates():
@@ -64,7 +64,7 @@ def test_utc_and_recorded_wall_cutoff_domains_are_separate():
     value = deepcopy(VALID)
     value["policies"] = policies("iso8601", wall=True)
     Draft202012Validator(SCHEMA, format_checker=FormatChecker()).validate(value)
-    assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json") == value
+    assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json", exclude_unset=True) == value
     value["policies"]["time"]["parameters"]["snapshot_cutoff_local"] += "Z"
     assert list(Draft202012Validator(SCHEMA).iter_errors(value))
     value = deepcopy(VALID)
@@ -88,7 +88,7 @@ def test_tolerant_reading_is_an_explicit_new_policy():
     value = deepcopy(VALID)
     value["policies"]["rows"] = tolerant_policy()
     Draft202012Validator(SCHEMA).validate(value)
-    assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json") == value
+    assert ConfirmMappingRequest.model_validate(value).model_dump(mode="json", exclude_unset=True) == value
 
 
 @pytest.mark.parametrize("mutation", ["v1-with-tolerance", "v2-without-limit", "changed-fraction", "changed-limit"])

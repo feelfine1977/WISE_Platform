@@ -45,6 +45,10 @@ export type TimestampFormat =
   | "mdy_slash_second"
   | "mdy_slash_12h_minute"
   | "mdy_slash_12h_second";
+/**
+ * Optional declared role: one of the context columns whose value names the record's document in the workspace's local document folder. Absent when no document reference is mapped; it is part of the preparation and its identity only when present.
+ */
+export type ColumnIndex1 = number;
 export type TimePolicy = UtcTimePolicy | WallTimePolicy;
 export type Timezone = RecordedTimezone | FixedOffsetTimezone;
 export type UtcInstant = string;
@@ -284,6 +288,7 @@ export interface Mapping {
   timestamp_column: ColumnIndex;
   sequence_column: ColumnIndex | null;
   context_columns: ColumnIndex[];
+  document_reference_column?: ColumnIndex1;
 }
 export interface ImportPolicies {
   time: TimePolicy;

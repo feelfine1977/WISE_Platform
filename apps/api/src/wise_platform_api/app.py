@@ -27,6 +27,7 @@ from .expectations import Expectations, ScoringReply
 from .generated.health import HealthResponse
 from .imports import ImportReply, Imports
 from .memory_budget import BudgetScope, MemoryBudget
+from .record_documents import DocumentOriginGuard, RecordDocuments
 from .investigations import Investigations, Reply
 from .population_views import PopulationViews, ViewReply
 from .rule_groups import RuleGroups
@@ -64,6 +65,7 @@ def create_app(
     application = FastAPI(title="WISE Platform", version=__version__)
     budget = MemoryBudget(memory_budget_bytes)
     application.add_middleware(BudgetScope, budget=budget)
+    application.add_middleware(DocumentOriginGuard)
     application.state.memory = budget
     examples = examples_dir if examples_dir is not None else PACKAGED_EXAMPLES
     investigations = Investigations(examples)
@@ -73,6 +75,7 @@ def create_app(
     case_lists = CaseLists(imports)
     start_trends = StartTrends(imports)
     rule_group_views = RuleGroups(imports)
+    record_documents = RecordDocuments(imports)
     comparisons = Comparisons(imports)
     expectations = Expectations(imports)
     bpic19_profiles = Bpic19Profiles(imports)
@@ -178,6 +181,21 @@ def create_app(
     @application.post("/api/investigations/bpic19-measures")
     async def bpic19_measure(request: Request) -> JSONResponse:
         reply = await run_in_threadpool(bpic19_measures.measures, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/workspaces/document-folder")
+    async def document_folder(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(record_documents.folder, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/documents/read")
+    async def read_document(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(record_documents.read, await request.body())
+        return JSONResponse(reply.body, status_code=reply.status)
+
+    @application.post("/api/documents/open-attachment")
+    async def open_attachment(request: Request) -> JSONResponse:
+        reply = await run_in_threadpool(record_documents.open_attachment, await request.body())
         return JSONResponse(reply.body, status_code=reply.status)
 
     @application.post("/api/investigations/case-list")

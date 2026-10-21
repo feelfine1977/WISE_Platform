@@ -24,7 +24,7 @@ def test_cutoff_proposal_and_existing_request_have_generated_shapes(name):
         value = EXAMPLES[name][side]
         VALIDATOR.validate(value)
         model = ImportMessage.model_validate_json(json.dumps(value), strict=True)
-        assert model.model_dump(mode="json") == value
+        assert model.model_dump(mode="json", exclude_unset=True) == value
 
 
 @pytest.mark.parametrize("clock", ["utc", "wall"])
