@@ -219,6 +219,17 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
       {/* A saved investigation opens on its map or on its incidents; the list of paths is the map's and is saved as the map. */}
       {saving && saveOpen && answer && <SaveForm saving={saving} investigation={state} view={view === "paths" ? "map" : view} onClose={() => setSaveOpen(false)} />}
       {state.saved && <SavedLine binding={state.saved} />}
+      {answer && answer.cases.length > 0 && answer.cases.every((summary) => !summary.sequence_evaluable) && (
+        <div className="state-line state-confirm" role="note">
+          <p>
+            The order of no incident is known: every incident has a record without a usable time. So this reading has no paths, no variants and no
+            durations; the incidents and all their records stay as recorded. The times may be written in another format than the one chosen.
+          </p>
+          <button type="button" onClick={onShowData}>
+            Change how the times are read, in the Data area
+          </button>
+        </div>
+      )}
       {answer && (
         <div className="selection-bar">
           <div className="view-switch" role="group" aria-label="View">

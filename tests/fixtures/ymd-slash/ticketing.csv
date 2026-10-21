@@ -1,0 +1,11 @@
+Case ID,Activity,Complete Timestamp,Resource
+Case 1,Insert ticket,2010/01/13 08:40:25.000,Value 1
+Case 1,Assign seriousness,2010/01/13 08:40:25.000,Value 1
+Case 1,Take in charge ticket,2010/01/13 08:40:25.123,Value 2
+Case 1,Resolve ticket,2010/01/20 10:31:12.500,Value 2
+Case 1,Closed,2010/01/30 11:00:00.000,Value 3
+Case 2,Insert ticket,2010/02/01 09:00:00.000,Value 1
+Case 2,Resolve ticket,2010/02/30 09:00:00.000,Value 2
+Case 2,Closed,2010/03/02 09:00:00.000,Value 3
+Case 3,Insert ticket,2012/02/29 23:59:59.999999,Value 1
+Case 3,Closed,2012/03/01 00:00:00.000,Value 1

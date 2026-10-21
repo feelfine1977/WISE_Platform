@@ -66,6 +66,15 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
     - the focus returns to the preparation control;
     - a reading without the sequence number is compared with the first and published as its own preparation.
   - Reopen, after an actual restart: a fresh browser opens the first preparation, which keeps its order.
+- `tools/qualify_ymd_slash.py` (#52): the invented `tests/fixtures/ymd-slash/ticketing.csv`, in the year-first slash shape, against its own `expected.json`.
+  - It is read first with a format that reads none of its times. The summary and the investigation say why no order, path or variant follows, and lead back to the Data area.
+  - There, the year-first format is offered with how many values it reads. The new reading is compared with the first and published; it has paths, and its original cells keep their fractional seconds.
+
+`tools/qualify_local_ymd_sample.py` is run by the owner on a local year-first export of their own, such as a public helpdesk benchmark sample, with its three role columns named by header:
+
+- It reads the file through the product's operations in a temporary workspace.
+- Its receipt holds the file's SHA-256, the reads of each format, and records, usable times, incidents in a known order, paths and variants, both with the year-first format and with every time unreadable.
+- It holds no path, header or value.
 
 ## Human release checklist
 

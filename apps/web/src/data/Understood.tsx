@@ -99,6 +99,12 @@ export function Understood({ request, answer, names, filename, cutoffEntered = f
         recorded event or change of its incident. The records outside every incident stay in the report below with their original text; no incident is
         made of them.
       </p>
+      {report.raw_record_count > 0 && report.usable_timestamp_record_count === 0 && (
+        <p className="state-line state-confirm" role="note">
+          No record has a usable time with these choices, so the order of no incident is known: there will be no paths, no variants and no durations,
+          though every record is kept. The count beside each time format above says how many values it reads; choose one that reads them.
+        </p>
+      )}
       {oneRecordPerIncident(answer) && (
         <p className="state-line state-confirm" role="note">
           Every incident has exactly one record. A file with one row per incident lists incidents rather than their histories: its incidents have no
