@@ -53,8 +53,8 @@ describe("the measure the map is asked for", () => {
 
     act(() => asked().onMeasureChange?.("performance"));
     expect(asked().measure).toBe("performance");
-    // Over the library's own performance style: the same widths, and a dash where no time until the next event is supplied.
-    expect(asked().style).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] }, nodeLine: { metric: "medianNextHours", missing: "dash" } });
+    // Over the library's own performance style: the same widths, a dash where no time until the next event is supplied, and the lag in classes (#86).
+    expect(asked().style).toEqual({ edgeWidth: { metric: "cases", range: [1, 6] }, nodeLine: { metric: "medianNextHours", missing: "dash" }, edgeColor: { bins: [24, 168] } });
     // The same graph, arrangement, detail, panels and menu: only what is written on the map changes.
     expect(theRest(asked())).toEqual(counted);
     expect(asked().graph).toBe(counted.graph);
