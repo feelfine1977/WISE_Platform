@@ -335,5 +335,33 @@ def issue122(client, workspace: Path) -> dict:
         "Monetary totals remain separate; every clearing record is retained. A clearing-window deletion policy is unavailable until a separate selector, window and tie rule are declared; no financial-breach verdict is inferred."]}
 
 
-SCENARIOS = {"issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue128(client, workspace: Path) -> dict:
+    import test_issue128_quantified_rules_tcp as literal
+    from import_requests import envelope
+    wid, base = literal.prepare(client, workspace, literal.RAW)
+    identity = selection(client, wid, base, None)
+    query = {"roles": literal.PROFILE_ROLES, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
+    profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
+        identity=identity, query=query)).json()["profile"]
+    given = literal.request(wid, identity, literal.RULE, limit=100)
+    answer = client.post(literal.ROUTE, json=given).json()
+    saved = save(client, wid, base, None, "T26 quantified rule", [
+        lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
+                         "selection_prefix_length": 0},
+        lambda current: {"operation": "bpic19_rule", "identity": current, "query": given["query"], "definition_id": answer["definition_id"],
+                         "selection_prefix_length": 0}])
+    # By hand (eventual response A→B, every, reuse, equal time allowed). Items (records): evaluated E, M, P 3/7;
+    # not activated N 1/2; unknown U 1/2. Occurrences: matched M's a1→b1 and E's a→b (items M, E 2/5); unmatched M's a2
+    # and P's a (items M, P 2/5); unknown U's a (1/2). Truth: E true, M and P false, U unknown. Lags 1 and 0 days:
+    # 2 available, 3 not, mean and median .5, one zero; per item M 1, E 0.
+    return {"name": "T26 quantified rule", "saved": saved, "texts": [
+        "5 complete PO items · 11 original records · 5 inferred observations · Quantified recorded-event rules.",
+        "evaluated37", "not activated12", "observation matched25", "observation unknown12", "observation unmatched25",
+        "truth false25", "truth true12", "truth unknown12",
+        "relation lag / per episode2 / 30.50.51", "relation lag / per item mean2 / 30.50.51",
+        "Item M · evaluated · rule false · 3 original records", "Item N · not activated · 2 original records",
+        "Item U · unknown · rule unknown · 2 original records"]}
+
+
+SCENARIOS = {"issue128": issue128, "issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}

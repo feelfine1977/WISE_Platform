@@ -59,14 +59,20 @@ class Bpic19OperatorReply:
     body: dict
 
 
-def _repeats(value: object) -> bool:
+def _repeats(value: object, path: str = "") -> str | None:
+    """The field of the first label set that repeats a label, if any."""
     if isinstance(value, dict):
-        return any(
-            (name in _UNIQUE and isinstance(item, list) and len(set(item)) != len(item))
-            or _repeats(item)
-            for name, item in value.items()
-        )
-    return isinstance(value, list) and any(_repeats(item) for item in value)
+        for name, item in value.items():
+            here = f"{path}.{name}" if path else name
+            if name in _UNIQUE and isinstance(item, list) and len(set(item)) != len(item):
+                return here
+            if found := _repeats(item, here):
+                return found
+    elif isinstance(value, list):
+        for item in value:
+            if found := _repeats(item, path):
+                return found
+    return None
 
 
 def _refused(
@@ -218,12 +224,12 @@ class Bpic19Operators:
                 "Choose an admitted operator intent.",
                 "intent",
             )
-        if _repeats(given):
+        if repeated := _repeats(given):
             return _refused(
                 given,
                 "invalid_request",
                 "Activity label sets must not repeat labels.",
-                "query.recipe",
+                repeated,
             )
         failures = version_failures(given, (("identity", "implementation_version"),))
         if failures:
