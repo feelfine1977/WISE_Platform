@@ -140,8 +140,9 @@ async function journey(size) {
     const fitDisclosure = await disclosed();
     const fitNames = await smallestName();
     sized.fit = {zoom: fitted.zoom, disclosure: fitDisclosure, names: fitNames, start_in_view: await startInView(), overview: await overviewShown()};
+    // The whole map in view, readable, or else the map from Start at the floor with the overview; a map that fits whole exactly at the floor is both.
     const whole = fitDisclosure === null;
-    check(name('fit_stays_readable'), fitted.zoom >= floor - 1e-6 && fitNames.smallest >= READABLE_PX && (whole ? fitted.zoom > floor + 1e-6 : Math.abs(fitted.zoom - floor) < 1e-3 && sized.fit.start_in_view && sized.fit.overview), sized.fit);
+    check(name('fit_stays_readable'), fitted.zoom >= floor - 1e-6 && fitNames.smallest >= READABLE_PX && (whole || (Math.abs(fitted.zoom - floor) < 1e-3 && sized.fit.start_in_view && sized.fit.overview)), sized.fit);
     await shot('fit');
 
     // ---- the frame with the panel of a selected activity open ----
