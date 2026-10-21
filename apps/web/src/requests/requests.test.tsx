@@ -63,9 +63,90 @@ function turnValues(request: StageProposalRequest): StageProposalAnswer {
 
 describe("requests without a later answer beside the investigation", () => {
   let asked: UnansweredRequestsRequest[], replies: ((outcome: RequestsOutcome) => void)[], proposals: ((outcome: ProposalOutcome) => void)[], proposed: StageProposalRequest[];
-  beforeEach(() => { asked = []; replies = []; proposals = []; proposed = []; });
-  const client: RequestsClient = { unanswered: (request) => new Promise((reply) => { asked.push(request); replies.push(reply); }) };
-  const proposalClient: ProposalClient = { propose: (request) => new Promise((reply) => { proposed.push(request); proposals.push(reply); }) };
+  let signals: AbortSignal[], proposalSignals: AbortSignal[];
+  beforeEach(() => { asked = []; replies = []; proposals = []; proposed = []; signals = []; proposalSignals = []; });
+  const client: RequestsClient = { unanswered: (request, signal) => new Promise((reply) => { asked.push(request); replies.push(reply); signals.push(signal); }) };
+  const proposalClient: ProposalClient = { propose: (request, signal) => new Promise((reply) => { proposed.push(request); proposals.push(reply); proposalSignals.push(signal); }) };
+
+  it.each(["success", "failure"])("discards an obsolete %s after the reviewed definition is edited", async (replyKind) => {
+    const store = new RequestsStore(memory());
+    store.change(reading, () => ({ ...emptyDraft, requests: ["Asked customer"], answers: ["Customer replied"] }));
+    store.change(reading, (current) => ({ ...current, reviewed: true }));
+    const user = userEvent.setup();
+    render(<RequestsPanel workspaceId={workspaceId} preparationId={preparationId} identity={identity} revision={2} activities={["Asked customer", "Customer replied"]}
+      columns={[{ index: 4, name: "Turn" }]} onOpenCase={vi.fn()} openCaseId={null} client={client} proposalClient={proposalClient} store={store} />);
+
+    await user.click(screen.getByRole("button", { name: "Find the incidents" }));
+    expect(asked).toHaveLength(1);
+    await user.type(screen.getByLabelText(/starts a new matter after a gap/), "48");
+    await act(async () => replies[0](replyKind === "success" ? { ok: true, answer: answerOf(asked[0]) } : { ok: false, problem: { kind: "unreachable" } }));
+    expect(screen.queryByRole("table", { name: "Incidents whose last request has no later answer" })).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(signals[0].aborted).toBe(true);
+
+    // Reviewing the edited meaning permits a new request; it does not issue one by itself.
+    await user.click(screen.getByRole("checkbox", { name: /I have reviewed this definition/ }));
+    expect(asked).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Find the incidents" }));
+    expect(asked).toHaveLength(2);
+    expect(asked[1].definition.gap_hours).toBe(48);
+    await act(async () => replies[1]({ ok: true, answer: answerOf(asked[1]) }));
+    expect(screen.getByRole("table", { name: "Incidents whose last request has no later answer" })).toBeTruthy();
+  });
+
+  it.each(["success", "failure"])("discards obsolete turn-column %s without replacing the current values", async (replyKind) => {
+    const store = new RequestsStore(memory());
+    const user = userEvent.setup();
+    render(<RequestsPanel workspaceId={workspaceId} preparationId={preparationId} identity={identity} revision={2} activities={["Asked customer", "Customer replied"]}
+      columns={[{ index: 4, name: "Turn" }, { index: 5, name: "Desk" }]} onOpenCase={vi.fn()} openCaseId={null} client={client} proposalClient={proposalClient} store={store} />);
+
+    await user.selectOptions(screen.getByLabelText("Turn column"), "4");
+    await user.click(screen.getByRole("button", { name: "Read the values of this column" }));
+    await user.selectOptions(screen.getByLabelText("Turn column"), "5");
+    await user.click(screen.getByRole("button", { name: "Read the values of this column" }));
+    const current = turnValues(proposed[1]);
+    current.activities = [{ ...current.activities[0], activity: "Asked customer", values: [{ value: "Current desk", record_count: 8 }] }];
+    await act(async () => proposals[1]({ ok: true, answer: current }));
+    await act(async () => proposals[0](replyKind === "success" ? { ok: true, answer: turnValues(proposed[0]) } : { ok: false, problem: { kind: "unreachable" } }));
+    expect(screen.getByRole("option", { name: "Current desk" })).toBeTruthy();
+    expect(screen.queryByRole("option", { name: "Customer" })).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(proposalSignals[0].aborted).toBe(true);
+    await user.selectOptions(screen.getByLabelText(/A request counts while the turn is/), "Current desk");
+    expect(store.stateOf(reading).draft.turn).toEqual({ column: 5, value: "Current desk" });
+  });
+
+  it("does not propose activities from another column that happens to contain the same value", async () => {
+    const store = new RequestsStore(memory());
+    store.change(reading, () => ({ ...emptyDraft, turn: { column: 4, value: "Customer" } }));
+    const user = userEvent.setup();
+    render(<RequestsPanel workspaceId={workspaceId} preparationId={preparationId} identity={identity} revision={2} activities={["Asked customer", "Customer replied"]}
+      columns={[{ index: 4, name: "Turn" }, { index: 5, name: "Desk" }]} onOpenCase={vi.fn()} openCaseId={null} client={client} proposalClient={proposalClient} store={store} />);
+    await user.selectOptions(screen.getByLabelText("Turn column"), "5");
+    await user.click(screen.getByRole("button", { name: "Read the values of this column" }));
+    await act(async () => proposals[0]({ ok: true, answer: turnValues(proposed[0]) }));
+    expect(screen.getByRole("option", { name: "Customer" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Use the proposal as the request activities" })).toBeNull();
+    await user.selectOptions(screen.getByLabelText(/A request counts while the turn is/), "Customer");
+    expect(screen.getByText(/activities recorded while Desk is “Customer”/)).toBeTruthy();
+  });
+
+  it("fences an earlier read of the same column and aborts on leaving the panel", async () => {
+    const store = new RequestsStore(memory());
+    const user = userEvent.setup();
+    const { unmount } = render(<RequestsPanel workspaceId={workspaceId} preparationId={preparationId} identity={identity} revision={2} activities={["Asked customer", "Customer replied"]}
+      columns={[{ index: 4, name: "Turn" }]} onOpenCase={vi.fn()} openCaseId={null} client={client} proposalClient={proposalClient} store={store} />);
+    await user.selectOptions(screen.getByLabelText("Turn column"), "4");
+    await user.click(screen.getByRole("button", { name: "Read the values of this column" }));
+    await user.click(screen.getByRole("button", { name: "Read the values of this column" }));
+    await act(async () => proposals[1]({ ok: true, answer: turnValues(proposed[1]) }));
+    await act(async () => proposals[0]({ ok: false, problem: { kind: "unreachable" } }));
+    expect(screen.getByRole("option", { name: "Customer" })).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(proposalSignals[0].aborted).toBe(true);
+    unmount();
+    expect(proposalSignals[1].aborted).toBe(true);
+  });
 
   it("proposes the request activities from the observed turn values, reads a reviewed definition only, and opens the evidence", async () => {
     const onOpenCase = vi.fn();

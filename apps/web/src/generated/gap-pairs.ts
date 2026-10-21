@@ -35,6 +35,10 @@ export interface GapPairsRequest {
   limit: number;
   chosen: GapPair | null;
   case_limit: number;
+  /**
+   * Offset in the chosen pair’s stable order: longest gap descending, then incident ID. Omission starts at zero.
+   */
+  case_offset?: number;
 }
 export interface AnswerIdentity {
   source_id: SourceId;
@@ -119,7 +123,13 @@ export interface ChosenGapPair {
   to_activity: string | null;
   case_count: number;
   cases: ChosenGapCase[];
+  /**
+   * More incidents follow this page in the chosen pair’s order.
+   */
   cases_truncated: boolean;
+  case_offset: number;
+  kept: GapFigures;
+  parent: GapFigures;
 }
 export interface ChosenGapCase {
   case_id: string;

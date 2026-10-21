@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { countOf } from "../data/wording";
 import type { GapFigures, GapPairsAnswer, GapPairsRequest } from "../generated/gap-pairs";
 import type { AnswerIdentity } from "../generated/selection";
@@ -54,6 +54,8 @@ export function GapPairs({ workspaceId, revision, identity, onOrder, ordered, cl
   const [threshold, setThreshold] = useState(24);
   const [read, setRead] = useState<Read>({ phase: "loading" });
   const [choosing, setChoosing] = useState<string | null>(null);
+  const [choiceError, setChoiceError] = useState<string | null>(null);
+  const choiceRequest = useRef<AbortController | null>(null);
   const identityKey = JSON.stringify(identity);
 
   const request = (chosen: GapPairsRequest["chosen"]): GapPairsRequest => ({
@@ -64,6 +66,8 @@ export function GapPairs({ workspaceId, revision, identity, onOrder, ordered, cl
   useEffect(() => {
     const controller = new AbortController();
     setRead({ phase: "loading" });
+    setChoosing(null);
+    setChoiceError(null);
     client.gaps(request(null), controller.signal).then(
       (outcome) => {
         if (controller.signal.aborted) return;
@@ -72,25 +76,55 @@ export function GapPairs({ workspaceId, revision, identity, onOrder, ordered, cl
       },
       () => !controller.signal.aborted && setRead({ phase: "failed", message: "The gaps could not be read from the local service." }),
     );
-    return () => controller.abort();
+    return () => { controller.abort(); choiceRequest.current?.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client, workspaceId, revision, identityKey, relation, threshold, asked]);
 
   async function choose(from: string | null, to: string | null) {
     const id = `gap-${relation}-${JSON.stringify([from, to])}`;
+    choiceRequest.current?.abort();
     if (ordered === id) {
       onOrder(null);
       return;
     }
+    const controller = new AbortController();
+    choiceRequest.current = controller;
     setChoosing(id);
-    const outcome = await client.gaps(request({ from_activity: from, to_activity: to }), new AbortController().signal);
-    setChoosing(null);
-    if (!outcome.ok || outcome.answer.chosen === null) return;
-    const chosen = outcome.answer.chosen;
-    onOrder({
-      id, label: pairName(from, to), ordered: true, caseIds: chosen.cases.map((item) => item.case_id),
-      note: `The table lists the ${countOf(chosen.case_count, "kept incident")} with a gap ${pairName(from, to)}, the longest of their gaps first. This is an order of the list: the selection and every count stay as they are until a step is taken.`,
-    });
+    setChoiceError(null);
+    try {
+      const base = request({ from_activity: from, to_activity: to });
+      const caseIds: string[] = [];
+      const seen = new Set<string>();
+      let caseCount: number | null = null;
+      for (;;) {
+        const offset = caseIds.length;
+        const outcome = await client.gaps({ ...base, request_id: `${base.request_id}-${offset}`, case_offset: offset }, controller.signal);
+        if (controller.signal.aborted) return;
+        if (!outcome.ok || outcome.answer.chosen === null) throw new Error("Unavailable gap members");
+        const chosen = outcome.answer.chosen;
+        caseCount ??= chosen.case_count;
+        if (chosen.case_offset !== offset || chosen.case_count !== caseCount) throw new Error("Changed gap members");
+        for (const item of chosen.cases) {
+          if (seen.has(item.case_id)) throw new Error("Repeated gap member");
+          seen.add(item.case_id);
+          caseIds.push(item.case_id);
+        }
+        if (caseIds.length > caseCount || chosen.cases_truncated !== (caseIds.length < caseCount)) throw new Error("Incomplete gap members");
+        if (!chosen.cases_truncated) break;
+        if (chosen.cases.length === 0) throw new Error("Empty gap page");
+      }
+      onOrder({
+        id, label: pairName(from, to), ordered: true, caseIds,
+        note: `The table lists the ${countOf(caseIds.length, "kept incident")} with a gap ${pairName(from, to)}, the longest of their gaps first. This is an order of the list: the selection and every count stay as they are until a step is taken.`,
+      });
+    } catch {
+      if (!controller.signal.aborted) setChoiceError("Every incident of this pair could not be read. Try choosing the pair again.");
+    } finally {
+      if (!controller.signal.aborted && choiceRequest.current === controller) {
+        choiceRequest.current = null;
+        setChoosing(null);
+      }
+    }
   }
 
   const answer = read.phase === "ready" ? read.answer : null;
@@ -130,6 +164,8 @@ export function GapPairs({ workspaceId, revision, identity, onOrder, ordered, cl
       </div>
       {read.phase === "loading" && <p className="working-text">Reading the gaps…</p>}
       {read.phase === "failed" && <p className="inline-error" role="alert">{read.message}</p>}
+      {choosing !== null && <p role="status">Reading every incident of this pair…</p>}
+      {choiceError && <p className="inline-error" role="alert">{choiceError}</p>}
       {answer && (
         <>
           <p className="muted gap-pairs-basis">
