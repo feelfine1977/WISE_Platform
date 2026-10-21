@@ -1,8 +1,9 @@
 // The built browser through the places of the activities (#56) on the branching map of the invented
 // tests/fixtures/variants file. The places are read from the map's own nodes, in the map's coordinates. A preview and
 // its cancel, an applied step and its Undo, the lowest detail, an activity removed and brought back, and an incident read
-// beside the map move no activity that stays; Rearrange and the way back are explicit, by keyboard, ask for no incident
-// and change no identity; the direction is named; another parent (tests/fixtures/pinned) is arranged anew.
+// beside the map move no activity that stays while the parent's places are kept, which is asked for by keyboard, since
+// unless told otherwise the map is arranged for what is shown; Rearrange and the way back are explicit, by keyboard, ask
+// for no incident and change no identity; the direction is named; another parent (tests/fixtures/pinned) is arranged anew.
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -69,6 +70,12 @@ try {
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${reading.preparation_id}$`)}).click();
   await settled(0);
   await page.getByRole('group', {name: 'View'}).getByRole('button', {name: 'Map', exact: true}).click();
+  // Unless told otherwise the map is arranged for what is shown; the parent's places are kept on request, here by keyboard.
+  await line().waitFor();
+  check('arranged_for_what_is_shown_unless_told_otherwise', (await line().textContent()).startsWith('Arranged for what is shown, anew after each step and each change of the detail.'), await line().textContent());
+  await page.getByRole('button', {name: "Keep the parent's places", exact: true}).focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', {name: 'Rearrange for this view', exact: true}).waitFor();
   const opening = await places(activities);
   const points = Object.values(opening);
   check('places_read_from_the_map', points.length === activities.length && points.every(point => Array.isArray(point)) && new Set(points.map(point => point.join(','))).size === points.length, opening);
@@ -125,11 +132,11 @@ try {
   const answered = selections.length;
   await page.getByRole('button', {name: 'Rearrange for this view', exact: true}).focus();
   await page.keyboard.press('Enter');
-  await page.getByRole('button', {name: "Back to the parent's places", exact: true}).waitFor();
-  check('rearrange_said_as_presentation', (await line().textContent()).startsWith('Arranged anew for what is shown; places change with each step or detail.'), await line().textContent());
+  await page.getByRole('button', {name: "Keep the parent's places", exact: true}).waitFor();
+  check('rearrange_said_as_presentation', (await line().textContent()).startsWith('Arranged for what is shown, anew after each step and each change of the detail.'), await line().textContent());
   await places(activities);
   await shot('rearranged');
-  await page.getByRole('button', {name: "Back to the parent's places", exact: true}).focus();
+  await page.getByRole('button', {name: "Keep the parent's places", exact: true}).focus();
   await page.keyboard.press('Enter');
   check('back_restores_the_parent_places', same(await places(activities), opening), null);
   // No selection and no map is asked for, so the incidents, their numbers and the identity shown stay those of the parent.
@@ -148,6 +155,9 @@ try {
   // Another parent is arranged anew, from its own map.
   await areas.getByRole('button', {name: 'Data', exact: true}).click();
   await page.getByRole('table', {name: 'Prepared readings in this workspace'}).getByRole('button', {name: new RegExp(`preparation ${other.preparation_id}$`)}).click();
+  await page.waitForFunction(() => document.querySelector('.map-arrangement')?.textContent?.startsWith('Arranged for what is shown'));
+  await page.getByRole('button', {name: "Keep the parent's places", exact: true}).focus();
+  await page.keyboard.press('Enter');
   await page.waitForFunction(n => document.querySelector('.map-arrangement')?.textContent?.includes(`parent's ${n} incidents`), other.incidents);
   check('another_parent_arranged_anew', true);
   assert.deepEqual(errors, []);

@@ -24,7 +24,8 @@ import {
   support,
   suppliedGraph,
 } from "../test/selections";
-import { leastPaths, MANY_ACTIVITIES, MANY_PATHS, openingDetail } from "./MapView";
+import { LEFT_TO_RIGHT, TOP_TO_BOTTOM } from "./arrange";
+import { leastPaths, MANY_ACTIVITIES, MANY_PATHS, openingDetail, openKeyOf } from "./MapView";
 
 vi.mock("wise-flow", async (original) => {
   const library = await original<typeof import("wise-flow")>();
@@ -49,13 +50,13 @@ async function deliver(action: () => void) {
   });
 }
 
-/** The investigation with its population and every incident selected, its map not yet shown. */
-async function renderInvestigation(parentGraph: (caseIds: string[]) => SuppliedGraph = suppliedGraph, inPlace = true) {
+/** The investigation with its population and every incident selected, its map not yet shown; its map in place unless the caller leaves that to the investigation ("default"). */
+async function renderInvestigation(parentGraph: (caseIds: string[]) => SuppliedGraph = suppliedGraph, inPlace: boolean | "default" = true) {
   const imports = scriptedImportClient();
   const selecting = scriptedSelectionClient();
   const coordinator = new ImportedInvestigationCoordinator(imports.client, selecting.client);
   const user = userEvent.setup();
-  render(<ImportedInvestigation coordinator={coordinator} mapInPlace={inPlace} onShowData={() => undefined} />);
+  render(<ImportedInvestigation coordinator={coordinator} mapInPlace={inPlace === "default" ? undefined : inPlace} onShowData={() => undefined} />);
   act(() => coordinator.open({ workspaceId, preparationId }));
   await deliver(() => imports.populations[0].reply({ ok: true, answer: populationAnswer(imports.populations[0].request) }));
   const app = { imports, selecting, coordinator, user, parentGraph };
@@ -182,25 +183,30 @@ describe("the map of the kept incidents", () => {
     expect(app.selecting.selections[5].request.predicates).toEqual([]);
   });
 
-  it("keeps the parent's places by default, and arranges anew for the view only on request, saying which", async () => {
-    const app = await renderInvestigation();
+  it("arranges the map for what is shown unless told otherwise, and keeps the parent's places on request, saying which", async () => {
+    const app = await renderInvestigation(undefined, "default");
     const map = await openMap(app, [closed]);
-    // One arrangement of the parent, asked for once; the map reads its places from it.
-    await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
     const line = () => document.querySelector(".map-arrangement")!;
-    // The line stands with the tools in the row above the map and says where the places come from and which way the map runs.
+    // The line stands with the tools in the row above the map and says what the map is arranged for and which way it runs.
     expect(line().closest(".map-detail")).not.toBeNull();
-    expect(line().textContent).toBe("Places from the map of the parent's 2 incidents; they stay through previews, steps, Undo and the detail. Runs top to bottom. Rearrange for this view");
-    expect(screen.queryByRole("button", { name: "Keep activities in place" })).toBeNull();
+    expect(line().textContent).toBe("Arranged for what is shown, anew after each step and each change of the detail. Runs top to bottom. Keep the parent's places");
+    // No arrangement of the parent is asked for while its places are not wanted.
+    expect(flow.layoutUnion).not.toHaveBeenCalled();
     expect(screen.queryByRole("checkbox")).toBeNull();
     expect(nodeOf(map, closed)).not.toBeNull();
 
-    await app.user.click(screen.getByRole("button", { name: "Rearrange for this view" }));
-    expect(line().textContent).toBe("Arranged anew for what is shown; places change with each step or detail. Runs top to bottom. Back to the parent's places");
-    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
-    // Back to the parent's places by keyboard: the arrangement of the parent is not asked for anew.
-    screen.getByRole("button", { name: "Back to the parent's places" }).focus();
+    // The parent's places by keyboard: one arrangement of the parent, asked for once; the map reads its places from it.
+    screen.getByRole("button", { name: "Keep the parent's places" }).focus();
     await app.user.keyboard("{Enter}");
+    await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
+    expect(line().textContent).toBe("Places from the map of the parent's 2 incidents; they stay through previews, steps, Undo and the detail. Runs top to bottom. Rearrange for this view");
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
+
+    // Arranged for the view again, and the parent's places once more: their arrangement is not asked for anew.
+    await app.user.click(screen.getByRole("button", { name: "Rearrange for this view" }));
+    expect(line().textContent).toContain("Arranged for what is shown");
+    await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
+    await app.user.click(screen.getByRole("button", { name: "Keep the parent's places" }));
     expect(line().textContent).toContain("Places from the map of the parent's 2 incidents");
     await waitFor(() => expect(nodeOf(screen.getByLabelText("Process map of the kept incidents"), closed)).not.toBeNull());
     expect(flow.layoutUnion).toHaveBeenCalledTimes(1);
@@ -212,7 +218,7 @@ describe("the map of the kept incidents", () => {
     expect(document.querySelector(".map-limit")).toBeNull();
 
     vi.mocked(flow.layoutUnion).mockRejectedValueOnce(new Error("The arrangement failed."));
-    await app.user.click(screen.getByRole("button", { name: "Back to the parent's places" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep the parent's places" }));
     const limit = await screen.findByText("The arrangement of every incident of the parent could not be computed, so activities can move from one selection to the next.");
     // Short enough for one line; what the map does instead is said in full in its tooltip.
     expect(limit.getAttribute("title")).toBe(
@@ -395,7 +401,7 @@ describe("the map of the kept incidents", () => {
     await waitFor(() => expect(numberLine(map, opened)).toBe("26 h to next · 50 %"));
 
     // The map is taken away while every incident of the parent is arranged, and drawn again after.
-    await app.user.click(screen.getByRole("button", { name: "Back to the parent's places" }));
+    await app.user.click(screen.getByRole("button", { name: "Keep the parent's places" }));
     await waitFor(() => expect(flow.layoutUnion).toHaveBeenCalledTimes(1));
     await waitFor(() => {
       const again = screen.getByLabelText("Process map of the kept incidents");

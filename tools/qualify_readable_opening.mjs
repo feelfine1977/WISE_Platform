@@ -4,7 +4,8 @@
 // whole map where that stays readable and otherwise the map from Start at that zoom; an omitted low-frequency path is found in
 // the list of every path, drawn on the map and brought into view, and the opening is returned to by pointer and by keyboard;
 // a loop is drawn both ways; activities shortened alike are told apart; stages are collapsed and expanded; a path is selected.
-// Through all of it no incident, count, step, identity or place of an activity changes, and every request stays on this host.
+// Arranged for what is shown, the detail arranges the map anew and opens it again; the parent's places, kept on request, hold
+// through the detail. Through all of it no incident, count, step or identity changes, and every request stays on this host.
 // The report holds checks, counts and sizes only.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -163,7 +164,7 @@ async function journey(size) {
   }
 }
 
-/** The rest of the journey at the first size, on a fresh page: the omitted path, the return to the opening, the loop, the names, the stages, a selected path. */
+/** The rest of the journey at the first size, on a fresh page: the omitted path, the return to the opening, the loop, the names and the detail's new arrangement, the parent's places, the stages, a selected path. */
 async function wholeJourney(size) {
   const context = await browser.newContext({viewport: size});
   const page = await context.newPage();
@@ -312,10 +313,30 @@ async function wholeJourney(size) {
     sized.told_apart = told;
     check(name('activities_shortened_alike_told_apart'), told.every(pair => pair.shown[0] && pair.shown[1] && pair.shown[0] !== pair.shown[1] && pair.named_in_full), told);
     await shot('all-activities');
-    // Through the reveal, the return, the loop and the detail, every activity of the opening kept its place.
-    const placesNow = await places();
-    const moved = Object.keys(placesAtOpening).filter(id => id in placesNow && placesNow[id] !== placesAtOpening[id]);
-    check(name('parent_places_fixed'), moved.length === 0, moved.slice(0, 5));
+    // ---- arranged for what is shown: the detail arranged the map anew and opened it again, readable ----
+    const placesAtAll = await places();
+    const rearranged = Object.keys(placesAtOpening).filter(id => id in placesAtAll && placesAtAll[id] !== placesAtOpening[id]);
+    const reopened = await viewOf();
+    sized.rearranged = {moved: rearranged.length, of_the_opening: Object.keys(placesAtOpening).length, zoom: reopened.zoom, start_in_view: await startInView()};
+    check(name('detail_arranges_anew_and_opens_again'), rearranged.length > 0 && sized.rearranged.start_in_view && reopened.zoom >= sized.floor.zoom - 1e-6, sized.rearranged);
+
+    // ---- the parent's places, kept on request: the detail then moves no activity that stays, and every one comes back in its place ----
+    await page.getByRole('button', {name: "Keep the parent's places", exact: true}).click();
+    await page.getByRole('button', {name: 'Rearrange for this view', exact: true}).waitFor();
+    await page.waitForFunction(() => !document.querySelector('.map-arranging') && document.querySelectorAll('.react-flow__node-activity').length > 0, null, {timeout: 60000});
+    await rest(1500);
+    const placesInPlace = await places();
+    await activities.focus();
+    await page.keyboard.press('Home');
+    await rest(1500);
+    const placesFewer = await places();
+    const movedFewer = Object.keys(placesFewer).filter(id => !(id in placesInPlace) || placesFewer[id] !== placesInPlace[id]);
+    await page.keyboard.press('End');
+    await rest(1500);
+    const placesAgain = await places();
+    const movedBack = Object.keys(placesAgain).filter(id => placesAgain[id] !== placesInPlace[id]);
+    sized.parent_places = {shown: Object.keys(placesInPlace).length, shown_at_the_lowest_detail: Object.keys(placesFewer).length, moved_at_the_lowest_detail: movedFewer.length, moved_back: movedBack.length};
+    check(name('parent_places_fixed'), sized.parent_places.shown_at_the_lowest_detail > 0 && sized.parent_places.shown_at_the_lowest_detail < sized.parent_places.shown && movedFewer.length === 0 && movedBack.length === 0 && same(Object.keys(placesAgain).sort(), Object.keys(placesInPlace).sort()), sized.parent_places);
 
     // ---- stages collapsed and expanded: stages shape the arrangement anew, by design ----
     if (config.phase_column) {

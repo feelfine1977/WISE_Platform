@@ -112,6 +112,28 @@ function useParentArrangement(parentGraph: SuppliedGraph, parent: FlowGraph, sta
   return arranged?.parent === parent && arranged.direction === direction ? arranged.arrangement : { phase: "arranging" };
 }
 
+/** What the map is arranged for: in place, one arrangement of the parent for every revision and detail; else the revision and the detail shown. */
+const arrangedFor = (inPlace: boolean, revision: number, detail?: { activityDetail?: number; pathDetail?: number }): string =>
+  inPlace ? "in-place" : `${revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`;
+
+/**
+ * The key under which the map opens; a new key opens it again, readable near Start. Other stages, the other way, the
+ * stages shown as nodes and the analyst's own request open it again either way. Arranged for what is shown, another
+ * revision and another detail arrange the map anew, so it opens again for them; in place, a revision and a detail
+ * keep the view, since nothing on the map moves.
+ */
+export function openKeyOf(
+  inPlace: boolean,
+  revision: number,
+  detail: { activityDetail?: number; pathDetail?: number } | undefined,
+  stagesRevision: number,
+  direction: MapDirection,
+  stageNodes: boolean,
+  openings: number,
+): string {
+  return `${arrangedFor(inPlace, revision, detail)}:${stagesRevision}:${direction}:${stageNodes ? "stages" : "activities"}#${openings}`;
+}
+
 interface MapViewProps {
   shown: ShownSelection;
   /** Where the long lags of a selected path are read from; without it the card of a path does not offer them. */
@@ -123,7 +145,7 @@ interface MapViewProps {
   previewStep?: StepPreviewer;
   /** The id of the text saying why no step can be taken now; while it is given, the map offers none. */
   waitingFor?: string;
-  /** Whether the map starts with every activity in the place the parent's arrangement gives it; the investigation starts it so. */
+  /** Whether the map starts with every activity in the place the parent's arrangement gives it; unless told otherwise it starts arranged for what is shown. */
   initiallyInPlace?: boolean;
   /**
    * What stands in the frame: the map, or the list of every path of the kept incidents. The list
@@ -224,12 +246,13 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
   /** Whether the map is shown as the map library's table of its activities and paths; the detail controls switch it. */
   const [view, setView] = useState<"map" | "table">("map");
   /**
-   * How the map is arranged. By default every activity keeps the place one arrangement of the parent gives it, so that
-   * previews, steps, Undo and the detail move nothing that stays on the map. That arrangement is computed once for each
-   * parent from its map thinned to the paths the map opens on, with every activity, so that the paths the detail
-   * leaves out do not shape it and every activity that comes back has its place. Rearranging for the view shown, on
-   * request, arranges the map anew and compactly for exactly what is shown, and again after each change, until the
-   * parent's places are asked for again. Neither changes an incident or a number.
+   * How the map is arranged. Unless told otherwise the map is arranged anew and compactly for exactly what is shown,
+   * and again after each step and each change of the detail, so that the activities and paths shown stand close and
+   * the lines are routed for them. On request every activity keeps instead the place one arrangement of the parent
+   * gives it, so that previews, steps, Undo and the detail move nothing that stays on the map. That arrangement is
+   * computed once for each parent from its map thinned to the paths the map opens on, with every activity, so that
+   * the paths the detail leaves out do not shape it and every activity that comes back has its place. Neither changes
+   * an incident or a number.
    */
   const [inPlace, setInPlace] = useState(initiallyInPlace);
   const arrangedParent = useMemo(
@@ -369,10 +392,10 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
       <p className="map-arrangement">
         {inPlace
           ? `Places from the map of the parent's ${countOf(parentGraph.meta.selected_case_count, "incident")}; they stay through previews, steps, Undo and the detail.`
-          : "Arranged anew for what is shown; places change with each step or detail."}{" "}
+          : "Arranged for what is shown, anew after each step and each change of the detail."}{" "}
         {direction === TOP_TO_BOTTOM ? "Runs top to bottom." : "Runs left to right."}{" "}
         <button type="button" className="link-button" onClick={() => setInPlace(!inPlace)}>
-          {inPlace ? "Rearrange for this view" : "Back to the parent's places"}
+          {inPlace ? "Rearrange for this view" : "Keep the parent's places"}
         </button>
       </p>
       )}
@@ -464,15 +487,16 @@ export function MapView({ shown, gaps, parentGraph, onStep, previewStep, waiting
                 // Arranged anew, the map is fitted each time. In place, the map of the whole parent is fitted
                 // and a selection keeps that view, so nothing moves on screen.
                 fitView={inPlace ? shown.steps.length === 0 : true}
-                // The map opens again, readable near Start, for another revision, other stages, the other way or the stages shown as
-                // nodes, and when the analyst asks for the opening; another detail keeps the view. It never zooms below the readable
-                // floor, says what its view shows, and brings into view what the list of every path, the table view or the legend ask for.
-                openKey={`${inPlace ? "in-place" : shown.revision}:${stagesRevision}:${direction}:${stageNodes ? "stages" : "activities"}#${openings}`}
+                // The map opens again, readable near Start, for other stages, the other way or the stages shown as nodes, and when the
+                // analyst asks for the opening; arranged for what is shown, also for another revision and another detail, which arrange
+                // it anew; in place, a revision and a detail keep the view. It never zooms below the readable floor, says what its view
+                // shows, and brings into view what the list of every path, the table view or the legend ask for.
+                openKey={openKeyOf(inPlace, shown.revision, detail, stagesRevision, direction, stageNodes, openings)}
                 minZoom={READABLE_FLOOR}
                 onInView={setInView}
                 bringIntoView={bringIntoView}
                 // An activity moved by hand goes back when the map is arranged anew for other content, for other stages or to run the other way.
-                layoutResetKey={`${inPlace ? "in-place" : `${shown.revision}:${detail?.activityDetail ?? 1}:${detail?.pathDetail ?? 1}`}:${stagesRevision}:${direction}`}
+                layoutResetKey={`${arrangedFor(inPlace, shown.revision, detail)}:${stagesRevision}:${direction}`}
                 // Names are drawn from a smaller zoom on than the library's default, so that an overview still names its activities.
                 lod={LABELS_FROM}
                 // The detail controls stand above the canvas and the legend under it; the paths of an activity are listed beside the

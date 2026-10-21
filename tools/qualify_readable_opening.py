@@ -7,7 +7,8 @@ the built browser opens the map of every incident: it opens readable near Start 
 its cards, discloses how much of the map is in view, keeps every name on the screen readable at the smallest zoom and
 when the map is fitted, tells activities shortened alike apart, finds an omitted low-frequency path in the list of every
 path and brings it into view, returns to the opening by pointer and by keyboard, draws a loop both ways, collapses and
-expands stages, selects a path, and through all of it changes no incident, count, step, identity or place of an activity.
+expands stages, selects a path, and through all of it changes no incident, count, step or identity. Arranged for what is
+shown, the detail arranges the map anew and opens it again; the parent's places, kept on request, hold through the detail.
 The receipt holds checks, counts and sizes only; with WISE_SCREENSHOT_DIR set, pictures are written there.
 
     python tools/qualify_readable_opening.py --output receipt.json --node node --playwright .../index.mjs --chrome ...
