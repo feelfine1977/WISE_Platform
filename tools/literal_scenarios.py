@@ -309,5 +309,31 @@ def issue121(client, workspace: Path) -> dict:
         "A smaller mean under one recipe describes different matched support; it is not a proven process improvement."]}
 
 
-SCENARIOS = {"issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue122(client, workspace: Path) -> dict:
+    import test_issue122_cancellation_links_tcp as literal
+    from import_requests import envelope
+    wid, base = literal.prepare(client, workspace, literal.RAW)
+    identity = selection(client, wid, base, None)
+    query = {"roles": literal.PROFILE_ROLES, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
+    profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
+        identity=identity, query=query)).json()["profile"]
+    given = literal.request(wid, identity, literal.CANCELLATION, limit=100)
+    answer = client.post(literal.ROUTE, json=given).json()
+    saved = save(client, wid, base, None, "T20 cancellation links", [
+        lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
+                         "selection_prefix_length": 0},
+        lambda current: {"operation": "bpic19_cancellation", "identity": current, "query": given["query"], "definition_id": answer["definition_id"],
+                         "selection_prefix_length": 0}])
+    # By hand (amounts ignored, consuming, strict predecessor, ties refused). Observations: C, Z, M and D's first
+    # cancellation matched; T ambiguous (two equally latest receipts); N and D's second cancellation unmatched.
+    # Item cohorts (items, records): evaluated 6/14; matched C, Z, M, D 4/10; ambiguous T 1/3; unmatched N, D 2/4.
+    # Every link spans one day: per episode 4 available, 3 not; per item C, Z, M, D 4 available, T and N not.
+    return {"name": "T20 cancellation links", "saved": saved, "texts": [
+        "6 complete PO items · 14 original records · 7 inferred observations · Latest preceding cancellation links.",
+        "evaluated614", "observation ambiguous13", "observation matched410", "observation unmatched24",
+        "receipt to cancellation / per episode4 / 3110", "receipt to cancellation / per item mean4 / 2110",
+        "Monetary totals remain separate; every clearing record is retained. A clearing-window deletion policy is unavailable until a separate selector, window and tie rule are declared; no financial-breach verdict is inferred."]}
+
+
+SCENARIOS = {"issue122": issue122, "issue112": issue112, "issue119": issue119, "issue120": issue120, "issue121": issue121, "issue115": issue115, "issue116": issue116, "issue117": issue117, "issue118": issue118, "issue129": issue129, "issue113": issue113, "issue114": issue114, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}

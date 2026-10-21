@@ -180,7 +180,7 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
         _labels(r["target_activities"])
         _labels(r["cancellation_activities"])
         if set(r["target_activities"]) & set(r["cancellation_activities"]):
-            raise ValueError("Receipt and cancellation label sets must be disjoint.")
+            raise _RecipeRefusal("invalid_parameter", "Receipt and cancellation label sets must be disjoint.", "query.recipe.cancellation_activities")
         enum("reuse", {"allow", "consume"})
         enum("ties", {"strict_before", "allow_equal_source_before"})
         enum("ambiguity", {"refuse", "source_position"})
@@ -193,11 +193,9 @@ def checked_recipe(prepared: PreparedData, recipe: Mapping, roles: Mapping) -> d
                 or not math.isfinite(r[name])
                 or r[name] < 0
             ):
-                raise ValueError(f"{name} must be a finite nonnegative number.")
+                raise _RecipeRefusal("invalid_parameter", f"{name} must be a finite nonnegative number.", "query.recipe." + name)
         if r["amount_filter"] != "ignore" and roles["net_worth"] is None:
-            raise ValueError(
-                "Amount-dependent matching requires a reviewed value field."
-            )
+            raise _RecipeRefusal("invalid_parameter", "Amount-dependent matching requires a reviewed value field.", "query.roles.net_worth")
     elif kind == "rule":
         _labels(r["left_activities"])
         _labels(r["right_activities"])

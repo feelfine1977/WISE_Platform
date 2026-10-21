@@ -151,7 +151,7 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
     try { outcome = await client.operators(request, abort.signal); } catch { outcome = { ok: false, problem: { kind: "unreachable" } }; }
     if (token !== serial.current || abort.signal.aborted) return;
     setBusy(false);
-    if (!outcome.ok) { setProblem(outcome.problem.kind === "refusal" ? `${outcome.problem.refusal.message} (${outcome.problem.refusal.code})` : outcome.problem.kind === "unreachable" ? "The local service could not be reached. Retry this recipe." : outcome.problem.detail); return; }
+    if (!outcome.ok) { setProblem(outcome.problem.kind === "refusal" ? `${outcome.problem.refusal.message} (${outcome.problem.refusal.code}${outcome.problem.refusal.field ? ` · ${outcome.problem.refusal.field}` : ""})` : outcome.problem.kind === "unreachable" ? "The local service could not be reached. Retry this recipe." : outcome.problem.detail); return; }
     if (!answersBpic19Operators(request, outcome.answer)) { setProblem("The answer belongs to another source, population or recipe."); return; }
     setCatalogue(outcome.answer.catalogue);
     if (next.recipe !== null) { setAnswer(outcome.answer); callbacks.current.onReviewed?.(outcome.answer); }
@@ -227,7 +227,7 @@ export function Bpic19Operators({ workspaceId, identity, revision, roles, query,
     setCompareBusy(false);
     const supplied: Bpic19OperatorAnswer[] = [];
     for (const [index, outcome] of outcomes.entries()) {
-      if (!outcome.ok) { setCompareProblem(outcome.problem.kind === "refusal" ? outcome.problem.refusal.message : outcome.problem.kind === "unreachable" ? "The retained comparison could not be read. Retry both definitions." : outcome.problem.detail); return; }
+      if (!outcome.ok) { setCompareProblem(outcome.problem.kind === "refusal" ? `${outcome.problem.refusal.message} (${outcome.problem.refusal.code}${outcome.problem.refusal.field ? ` · ${outcome.problem.refusal.field}` : ""})` : outcome.problem.kind === "unreachable" ? "The retained comparison could not be read. Retry both definitions." : outcome.problem.detail); return; }
       if (!answersBpic19Operators(requests[index], outcome.answer)) { setCompareProblem("A comparison answer differs from its retained source, population or definition."); return; }
       supplied.push(outcome.answer);
     }
