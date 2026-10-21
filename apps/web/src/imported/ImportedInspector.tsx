@@ -24,6 +24,8 @@ interface ImportedInspectorProps {
   documents?: RecordDocuments;
   /** When the export the incident was read from was taken, on the preparation's clock. */
   observation?: Observation;
+  /** The selection the incident was opened from, which reading it does not change. */
+  selection?: { kept: number; parent: number; steps: number };
 }
 
 export interface Observation {
@@ -40,7 +42,7 @@ export interface RecordDocuments {
 }
 
 /** Every record of one imported incident in the declared order, as a vertical sequence. */
-export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds, documents, observation }: ImportedInspectorProps) {
+export function ImportedInspector({ inspected, summary, layout, onLayout, onReturn, onRetry, waitingFor, headingRef, highlightedRowIds, documents, observation, selection }: ImportedInspectorProps) {
   const collapsed = layout === "collapsed";
   return (
     <section className="imported-inspector" aria-labelledby="imported-inspector-title">
@@ -53,6 +55,7 @@ export function ImportedInspector({ inspected, summary, layout, onLayout, onRetu
             {summary && <>{countOf(summary.record_count, "record")} · </>}
             Complete history in the declared order. Escape returns to the incidents.
           </p>
+          {selection && <p className="muted focus-line">{focusLine(selection)}</p>}
         </div>
         <div className="inspector-actions">
           <button type="button" aria-expanded={!collapsed} aria-controls="imported-inspector-body" onClick={() => onLayout(collapsed ? "side" : "collapsed")}>
@@ -240,4 +243,11 @@ export function observationLine(records: readonly ImportedSourceRecord[], observ
   const hours = (parse(observation.cutoff) - last) / 3_600_000;
   const age = hours >= 48 ? `${Math.floor(hours / 24).toLocaleString("en")} days` : `${Math.round(hours * 10) / 10} hours`;
   return `The export was taken at ${cutoff}, ${age} after the last usable time of this incident; records after the export are not in it, so this is no sign that the incident was complete.`;
+}
+
+/** The incident read beside the selection it comes from: reading one incident changes no step and no membership. */
+export function focusLine({ kept, parent, steps }: { kept: number; parent: number; steps: number }): string {
+  return steps === 0
+    ? `You are reading one incident of all ${countOf(parent, "incident")}; no step is taken, and reading it takes none.`
+    : `You are reading one incident of the ${countOf(kept, "incident")} the selection keeps of ${countOf(parent, "incident")} (${countOf(steps, "step")}); reading it changes no step.`;
 }

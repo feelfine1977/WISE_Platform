@@ -88,6 +88,16 @@ try {
     await view('Incidents').click();
     await page.waitForFunction(n => document.querySelectorAll('table tbody tr button.row-open').length === n, expected.step.kept.length);
     check('incidents_one_action_away', true);
+    // #59: the incident read is marked and named apart from the selection, which reading it does not change.
+    const asked = selections.length;
+    const focused = expected.step.kept[0];
+    await page.locator('table tbody tr button.row-open', {hasText: new RegExp(`^${focused}$`)}).first().click();
+    await page.getByRole('heading', {name: `Incident ${focused}`}).waitFor();
+    const line = (await page.locator('.focus-line').textContent()) ?? '';
+    const marked = await page.locator('table tbody tr button.row-open[aria-current="true"]').allTextContents();
+    check('focused_history_distinct_from_selection', line === `You are reading one incident of the ${expected.step.kept.length} incidents the selection keeps of ${expected.incidents} incidents (1 step); reading it changes no step.`
+      && same(marked, [focused]) && selections.length === asked && await page.getByRole('list', {name: 'Steps of the selection'}).getByRole('listitem').count() === 1, [line, marked]);
+    await page.getByRole('button', {name: 'Return to incidents', exact: true}).click();
     // Kept against removed in Compare.
     await areas.getByRole('button', {name: 'Compare', exact: true}).click();
     await page.getByRole('button', {name: 'Kept against removed', exact: true}).click();
