@@ -4,6 +4,7 @@ import type { AnswerIdentity, SelectionPredicate } from "../generated/selection"
 import type { CaseListRequest } from "../generated/case-list";
 import type { ViewState } from "../imported/coordinator";
 import type { OpeningContextAnswer } from "../views/messages";
+import type { StepPreviewer } from "../map/StepPreviewLine";
 import { Filters, type RecordedRange } from "./Filters";
 import { answersCaseList, httpCaseListClient, type CaseListClient } from "./client";
 
@@ -14,13 +15,14 @@ interface Props {
   revision: number;
   opening: ViewState<OpeningContextAnswer>;
   onStep: (step: SelectionPredicate) => void;
+  previewStep?: StepPreviewer;
   waitingFor?: string;
   client?: CaseListClient;
 }
 type RangeState = { phase: "loading" } | { phase: "ready"; range: RecordedRange | null } | { phase: "failed"; message: string };
 
 /** Loads the fixed parent's recorded range, without selecting or reading individual histories. */
-export function FilterPanel({ population, parentIds, parentIdentity, revision, opening, onStep, waitingFor, client = httpCaseListClient }: Props) {
+export function FilterPanel({ population, parentIds, parentIdentity, revision, opening, onStep, previewStep, waitingFor, client = httpCaseListClient }: Props) {
   const requestName = useId();
   const [range, setRange] = useState<RangeState>({ phase: "loading" });
   const [retry, setRetry] = useState(0);
@@ -53,7 +55,7 @@ export function FilterPanel({ population, parentIds, parentIdentity, revision, o
 
   return <>
     {range.phase === "failed" && <div role="alert" className="inline-error"><p>{range.message}</p><button type="button" onClick={() => setRetry((value) => value + 1)} disabled={waitingFor !== undefined}>Retry recorded range</button></div>}
-    <Filters key={identityKey} population={population} parentIds={parentIds} opening={opening} onStep={onStep}
+    <Filters key={identityKey} population={population} parentIds={parentIds} opening={opening} onStep={onStep} previewStep={previewStep}
       range={range.phase === "ready" ? range.range : undefined}
       rangeProblem={range.phase === "ready" && range.range === null ? "No usable recorded timestamps in this parent." : range.phase === "failed" ? range.message : undefined}
       waitingFor={waitingFor} />

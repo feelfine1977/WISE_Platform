@@ -3,6 +3,8 @@ import type { ImportedPopulationAnswer } from "../generated/imports";
 import type { SelectionPredicate } from "../generated/selection";
 import type { OpeningContextAnswer } from "../views/messages";
 import type { ViewState } from "../imported/coordinator";
+import { StepPreviewLine, type StepPreviewer } from "../map/StepPreviewLine";
+import { stepWording } from "../map/wording";
 import "./filters.css";
 
 export interface RecordedRange {
@@ -16,6 +18,8 @@ interface FiltersProps {
   parentIds: readonly string[] | null;
   opening: ViewState<OpeningContextAnswer>;
   onStep: (step: SelectionPredicate) => void;
+  /** Counts what a filter would keep before it is taken; with it, a filter is previewed first and taken on request. */
+  previewStep?: StepPreviewer;
   range?: RecordedRange | null;
   rangeProblem?: string;
   waitingFor?: string;
@@ -24,8 +28,11 @@ interface FiltersProps {
 const openingPolicy = "incident.context.first_record_in_declared_order.v1";
 
 /** Typed filters keep complete incidents; only the local service evaluates membership. */
-export function Filters({ population, parentIds, opening, onStep, range, rangeProblem, waitingFor }: FiltersProps) {
+export function Filters({ population, parentIds, opening, onStep, previewStep, range, rangeProblem, waitingFor }: FiltersProps) {
   const title = useId();
+  const previewId = useId();
+  // The filter previewed and not yet taken; a new filter or a taken one replaces it.
+  const [pending, setPending] = useState<SelectionPredicate | null>(null);
   const [ids, setIds] = useState("");
   const [measure, setMeasure] = useState<"observed_span_at_least" | "max_raw_gap_at_least">("observed_span_at_least");
   const [hours, setHours] = useState("");
@@ -48,13 +55,28 @@ export function Filters({ population, parentIds, opening, onStep, range, rangePr
   const lastDate = maxDate ? new Date(maxDate + "T00:00:00Z") : null;
   if (lastDate) lastDate.setUTCDate(lastDate.getUTCDate() + 1);
   const maximumEnd = lastDate?.toISOString().slice(0, 19);
-  const submit = (step: SelectionPredicate) => { setError(null); onStep(step); };
+  const submit = (step: SelectionPredicate) => {
+    setError(null);
+    if (previewStep) setPending(step);
+    else onStep(step);
+  };
 
   return (
     <section className="incident-filters" aria-labelledby={title}>
       <h3 id={title} className="view-title">Filter whole incidents</h3>
       <p className="muted">Each filter adds a step inside the same parent. Every record of a kept incident remains available. Undo removes the last step.</p>
       {error && <p className="inline-error" role="alert">{error}</p>}
+      {pending && previewStep && (
+        <div className="filter-preview" role="group" aria-label="Filter not yet taken">
+          <p>{stepWording(pending)}</p>
+          <StepPreviewLine id={previewId} step={pending} previewer={previewStep} />
+          <button type="button" className="primary" disabled={waitingFor !== undefined} aria-describedby={[waitingFor, previewId].filter(Boolean).join(" ")}
+            onClick={() => { onStep(pending); setPending(null); }}>
+            Take this step
+          </button>
+          <button type="button" onClick={() => setPending(null)}>Change the filter</button>
+        </div>
+      )}
       <details open>
         <summary>Incident numbers</summary>
         <form onSubmit={(event) => {

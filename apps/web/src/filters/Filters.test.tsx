@@ -97,3 +97,28 @@ describe("map-side whole-incident filters", () => {
     expect(selectionContract.selectCasesRequest({ ...request, predicates: [{ kind: "case_id_in", case_ids: ["A-1", "A-1"], negate: false }] })).toBe(false);
   });
 });
+
+describe("#6 a filter previewed before it is taken", () => {
+  it("shows what the filter would keep, takes nothing until asked, and can be changed instead", async () => {
+    const population = populationAnswer({ schema_version: 1, message_type: "open_population_request", request_id: "p", query_revision: 1, workspace_id: workspaceId, preparation_id: preparationId });
+    const onStep = vi.fn();
+    const previewStep = vi.fn(async () => ({ ok: true as const, parent: 2, kept: 1, removed: 1, unevaluable: 0 }));
+    const opening = openingContextAnswer({ schema_version: 1, message_type: "opening_context_request", request_id: "c", query_revision: 1, workspace_id: workspaceId, identity: population.identity });
+    render(<Filters population={population} parentIds={null} opening={{ phase: "ready", answer: opening }} onStep={onStep} previewStep={previewStep} />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Exact incident numbers"), "A-1");
+    await user.click(screen.getByRole("button", { name: "Keep these incidents" }));
+    const step = { kind: "case_id_in", case_ids: ["A-1"], negate: false };
+    expect(previewStep).toHaveBeenCalledWith(step, expect.any(AbortSignal));
+    expect(onStep).not.toHaveBeenCalled();
+    const pending = screen.getByRole("group", { name: "Filter not yet taken" });
+    expect(await screen.findByText("Preview: would keep 1 incident of 2 incidents; 1 removed, 0 not evaluable. Nothing changes until the step is taken.")).toBeTruthy();
+    expect(pending.textContent).toContain(stepWording(step as SelectionPredicate));
+    await user.click(screen.getByRole("button", { name: "Change the filter" }));
+    expect(screen.queryByRole("group", { name: "Filter not yet taken" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Keep these incidents" }));
+    await user.click(screen.getByRole("button", { name: "Take this step" }));
+    expect(onStep).toHaveBeenCalledWith(step);
+    expect(screen.queryByRole("group", { name: "Filter not yet taken" })).toBeNull();
+  });
+});

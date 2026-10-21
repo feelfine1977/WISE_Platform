@@ -25,10 +25,10 @@ describe("the words of a step", () => {
   it("names a missing opening value as missing and the text Unknown as a value", () => {
     const anchor = "incident.context.first_record_in_declared_order.v1" as const;
     expect(stepWording({ kind: "opening_attribute_equals", column_index: 3, value: null, negate: false, anchor_policy: anchor })).toBe(
-      "Keep incidents whose first record has no value in column 3",
+      "Keep incidents whose first record has no value in column 3 (its name is not known)",
     );
     expect(stepWording({ kind: "opening_attribute_equals", column_index: 3, value: "Unknown", negate: true, anchor_policy: anchor })).toBe(
-      "Keep incidents whose first record does not have the value “Unknown” in column 3",
+      "Keep incidents whose first record does not have the value “Unknown” in column 3 (its name is not known)",
     );
   });
 
@@ -111,11 +111,11 @@ describe("a step on a context column", () => {
   const step = { kind: "opening_attribute_equals", column_index: 11, value: "Medium", negate: false, anchor_policy: "incident.context.first_record_in_declared_order.v1" } as const;
 
   it("names the column by its name once the reading's names are known, and by its place before", () => {
-    expect(stepWording(step)).toBe("Keep incidents whose first record has the value “Medium” in column 11");
+    expect(stepWording(step)).toBe("Keep incidents whose first record has the value “Medium” in column 11 (its name is not known)");
     nameContextColumns(new Map([[11, "impact"]]));
     try {
       expect(stepWording(step)).toBe("Keep incidents whose first record has the value “Medium” in the column “impact”");
-      expect(stepWording({ ...step, column_index: 3, negate: true })).toBe("Keep incidents whose first record does not have the value “Medium” in column 3");
+      expect(stepWording({ ...step, column_index: 3, negate: true })).toBe("Keep incidents whose first record does not have the value “Medium” in column 3 (its name is not known)");
     } finally {
       nameContextColumns(new Map());
     }

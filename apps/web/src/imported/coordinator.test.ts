@@ -278,3 +278,49 @@ describe("the selection of whole incidents of an imported preparation", () => {
     expect(app.imports.evidence[1].request.case_id).toBe("B-2");
   });
 });
+
+describe("#6 a preview before a step, and an undo that restores the exact selection", () => {
+  it("counts what one more step would keep without changing the selection, its steps or its undo", async () => {
+    const app = await opening();
+    await answer(app, 0, everyIncident);
+    const before = app.coordinator.getState();
+    const pending = app.coordinator.previewStep(contains(opened), new AbortController().signal);
+    const preview = app.selecting.previews[0];
+    expect(selectionContract.selectCasesRequest(preview.request)).toBe(true);
+    expect(preview.request.predicates).toEqual([contains(opened)]);
+    expect(preview.request.query_revision).toBe(2);
+    preview.reply({ ok: true, answer: selectionAnswer(preview.request, containingOpened) });
+    expect(await pending).toEqual({
+      ok: true,
+      parent: 2,
+      kept: containingOpened.kept.case_ids.length,
+      removed: containingOpened.removed.case_ids.length,
+      unevaluable: containingOpened.unevaluable.case_ids.length,
+    });
+    // Nothing was taken: no selection was asked for and the state is the one before.
+    expect(app.selecting.selections).toHaveLength(1);
+    expect(app.coordinator.getState()).toBe(before);
+  });
+
+  it("refuses an undo whose answer is not exactly the selection those steps had, however many incidents it keeps", async () => {
+    const app = await opening();
+    await answer(app, 0, everyIncident);
+    app.coordinator.addStep(contains(opened));
+    await answer(app, 1, containingOpened);
+    app.coordinator.addStep(follows(opened, closed));
+    await answer(app, 2, bothSteps);
+    app.coordinator.undo();
+    // The service answers the undone steps with other incidents: the selection is not shown as the undone one.
+    await answer(app, 3, followingOpened);
+    const selection = app.coordinator.getState().selection;
+    expect(selection.phase).toBe("failed");
+    expect(selection.phase === "failed" && selection.problem.kind === "unsupported_reply" && selection.problem.detail).toBe(
+      "The incidents selected now are not exactly those these steps kept before.",
+    );
+    // Answered with the same incidents, the undo restores the selection with its identity.
+    app.coordinator.retrySelection();
+    await answer(app, 4, containingOpened);
+    expect(app.coordinator.getState().selection.phase).toBe("ready");
+    expect(chips(app)).toEqual([contains(opened)]);
+  });
+});
