@@ -80,7 +80,8 @@ export type Bpic19ProfileKeepGroup =
   | SourceInclusionKeepGroup
   | AttributeValueKeepGroup
   | ActivityCohortKeepGroup
-  | CompletionCohortKeepGroup;
+  | CompletionCohortKeepGroup
+  | IntervalSideKeepGroup;
 export type PreparedInputId = string;
 export type PreparedDefinitionId = string;
 export type PreparedRunId = string;
@@ -395,13 +396,17 @@ export interface Bpic19PipelineAction {
   selection_keep?: Bpic19SelectionKeep;
 }
 /**
- * Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort or completion-cohort stage. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
+ * Exact complete-case selection step justified by this frozen parent profile, reviewed activity-measure cohort, completion-cohort stage or interval-comparison side. Save/reopen verifies the closed selector, predicate membership and supports against the replayed answer.
  */
 export interface Bpic19SelectionKeep {
   /**
-   * Profile groups use the profile policy; activity cohorts of a reviewed measures answer and stages of a reviewed completion-cohort answer use their own policies.
+   * Each Keep names the policy of the reviewed answer that supplies its group: a profile, activity measures, completion cohorts or an interval comparison.
    */
-  policy_id: "bpic19.profile_group_keep.v1" | "bpic19.measure_cohort_keep.v1" | "bpic19.completion_cohort_keep.v1";
+  policy_id:
+    | "bpic19.profile_group_keep.v1"
+    | "bpic19.measure_cohort_keep.v1"
+    | "bpic19.completion_cohort_keep.v1"
+    | "bpic19.interval_side_keep.v1";
   step_index: number;
   group: Bpic19ProfileKeepGroup;
 }
@@ -463,6 +468,14 @@ export interface CompletionCohortKeepGroup {
     | "open_recorded"
     | "completion_unknown"
     | "retention_retained";
+}
+export interface IntervalSideKeepGroup {
+  kind: "interval_side";
+  side: "target" | "reference";
+  /**
+   * All of the side's items, its known zero-day items, or its items without an admitted interval.
+   */
+  support: "items" | "zero" | "unavailable";
 }
 export interface Bpic19LiteratureClaim {
   claim_id: string;

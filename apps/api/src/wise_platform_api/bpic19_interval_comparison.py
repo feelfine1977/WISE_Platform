@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
-from wise_platform_analytics.bpic19_interval_comparison import compare_intervals
+from wise_platform_analytics.bpic19_interval_comparison import POLICY_ID, compare_intervals
 from wise_platform_analytics.mapping import ImportRefusal
 
 from .boundary import first_difference, read_object
@@ -42,6 +42,10 @@ class Bpic19IntervalComparisons:
         if isinstance(given, str): return _refused({}, "invalid_request", given)
         if type(given.get("schema_version")) is int and given["schema_version"] != 1:
             return _refused(given, "unsupported_schema", "Only interval comparison schema version 1 is registered.", "schema_version")
+        query = given.get("query")
+        for name, registered in (("policy_id", POLICY_ID), ("interval_policy", "independent_minimum")):
+            if isinstance(query, dict) and isinstance(query.get(name), str) and query[name] != registered:
+                return _refused(given, "unsupported_policy", f"Only the registered {name.replace('_', ' ')} {registered} is admitted.", "query." + name)
         try:
             parsed = Bpic19IntervalComparisonRequest.model_validate_json(json.dumps(given, allow_nan=False), strict=True)
             difference = first_difference(given, parsed.model_dump(mode="json", exclude_unset=True))

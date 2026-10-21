@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { AnswerIdentity, Bpic19IntervalComparisonAnswer, IntervalComparisonQuery, IntervalSide, Milestone } from "../generated/bpic19-interval-comparison";
 import { sameJson } from "../data/coordinator";
 import { answersIntervalComparison, httpIntervalComparisonClient, type Bpic19IntervalComparisonClient, type Bpic19IntervalComparisonOutcome } from "./interval-comparison-client";
+import type { IntervalSideSupport } from "./interval-keep";
 import "./measures.css";
 
 export function intervalComparisonQuery(target: IntervalSide, reference: IntervalSide,
@@ -14,6 +15,8 @@ export interface Bpic19IntervalComparisonProps {
   client?: Bpic19IntervalComparisonClient;
   onReviewed?: (answer: Bpic19IntervalComparisonAnswer) => void; onValidityChange?: (valid: boolean) => void;
   onInspect: (caseId: string, rowIds?: string[]) => void; onKeepCases: (caseIds: string[]) => void; onReturn?: () => void;
+  /** Keeps one side's items, zero-day items or unavailable items as a typed selection step; without it they are kept as plain item lists. */
+  onKeepSide?: (answer: Bpic19IntervalComparisonAnswer, side: "target" | "reference", support: IntervalSideSupport) => void;
 }
 const number = new Intl.NumberFormat("en", { maximumFractionDigits: 4 });
 const display = (value: number | null) => value === null ? "unavailable" : number.format(value);
@@ -27,12 +30,13 @@ function EndpointEvidence({ label, endpoint, inspect, paused }: { label: string;
   return <tr><th scope="row">{label}</th><td>{endpoint.timestamp ?? "unavailable"}<small>{reason(endpoint.reason)} · {reason(endpoint.endpoint_state)}</small></td><td>
     <p>Co-minimum records: {ids(endpoint.row_ids)}. Display representative: {endpoint.selected_row_id ?? "none"}.</p>
     <p>Later parsed candidates: {ids(endpoint.later_row_ids)}. Unparseable candidates: {ids(endpoint.unparseable_row_ids)}. Unknown activity records: {ids(endpoint.unknown_activity_row_ids)}.</p>
+    <button type="button" disabled={paused || !endpoint.row_ids.length} onClick={() => inspect(endpoint.row_ids)}>Inspect {label.toLowerCase()} selected minimum</button>
     <button type="button" disabled={paused || !endpoint.candidate_row_ids.length && !endpoint.unknown_activity_row_ids.length} onClick={() => inspect([...new Set([...endpoint.candidate_row_ids, ...endpoint.unknown_activity_row_ids])])}>Inspect {label.toLowerCase()} endpoint evidence</button>
   </td></tr>;
 }
 
 /** One frozen parent, explicit whole-item side recipes, independently admitted endpoint minima. */
-export function Bpic19IntervalComparison({ workspaceId, identity, revision, query, client = httpIntervalComparisonClient, onReviewed, onValidityChange, onInspect, onKeepCases, onReturn }: Bpic19IntervalComparisonProps) {
+export function Bpic19IntervalComparison({ workspaceId, identity, revision, query, client = httpIntervalComparisonClient, onReviewed, onValidityChange, onInspect, onKeepCases, onReturn, onKeepSide }: Bpic19IntervalComparisonProps) {
   const heading = useId();
   const [draft, setDraft] = useState(query), [answer, setAnswer] = useState<Bpic19IntervalComparisonAnswer | null>(null);
   const [text, setText] = useState(() => textOf(query));
@@ -49,7 +53,7 @@ export function Bpic19IntervalComparison({ workspaceId, identity, revision, quer
     catch { result = { ok: false, problem: { kind: "unreachable" } }; }
     if (token !== serial.current || abort.signal.aborted) return;
     setBusy(false);
-    if (!result.ok) { setProblem(result.problem.kind === "refusal" ? `${result.problem.refusal.message} (${result.problem.refusal.code})` : result.problem.kind === "unreachable" ? "The local service could not be reached. Retry the interval comparison." : result.problem.detail); return; }
+    if (!result.ok) { setProblem(result.problem.kind === "refusal" ? `${result.problem.refusal.message} (${result.problem.refusal.code}${result.problem.refusal.field ? ` · ${result.problem.refusal.field}` : ""})` : result.problem.kind === "unreachable" ? "The local service could not be reached. Retry the interval comparison." : result.problem.detail); return; }
     if (!answersIntervalComparison(request, result.answer)) { setProblem("The reply belongs to a different source, parent or interval recipe."); return; }
     setAnswer(result.answer); setDraft(next); setText(textOf(next)); callbacks.current.onReviewed?.(result.answer);
   }
@@ -65,6 +69,10 @@ export function Bpic19IntervalComparison({ workspaceId, identity, revision, quer
     ++serial.current; controller.current?.abort(); setBusy(false); setProblem(null); setCancelled(false); setDraft(next); callbacks.current.onValidityChange?.(false);
   }
   function cancel() { ++serial.current; controller.current?.abort(); setBusy(false); setCancelled(true); callbacks.current.onValidityChange?.(false); }
+  function keepSide(role: "target" | "reference", support: IntervalSideSupport, ids: string[]) {
+    if (paused || !answer || !ids.length) return;
+    if (onKeepSide) onKeepSide(answer, role, support); else onKeepCases(ids);
+  }
   function restore() { if (answer) { ++serial.current; controller.current?.abort(); setBusy(false); setDraft(answer.query); setText(textOf(answer.query)); setProblem(null); setCancelled(false); callbacks.current.onReviewed?.(answer); } }
   const comparison = answer?.comparison;
   const sideControls = (role: "target" | "reference") => <fieldset><legend>{role === "target" ? "Target" : "Comparator"} membership</legend>
@@ -94,9 +102,9 @@ export function Bpic19IntervalComparison({ workspaceId, identity, revision, quer
       <table className="plain-table"><caption>Interval distributions over explicitly named item sides</caption><thead><tr><th>Role / name</th><th>Items / records</th><th>Eligible</th><th>Known zero</th><th>Unavailable</th><th>Min</th><th>Median</th><th>Mean</th><th>Max</th><th>Whole-item actions</th></tr></thead><tbody>{(["target", "reference"] as const).map(role => {
         const side = comparison[role], summary = side.summary;
         return <tr key={role}><th scope="row">{role === "target" ? "Target" : "Comparator"}: {side.label}</th><td>{side.case_count} / {side.record_count}</td><td>{summary.available_case_count}</td><td>{summary.zero_case_count}</td><td>{summary.unavailable_case_count}<small>{Object.entries(side.unavailable_reasons).map(([key, count]) => `${reason(key)}: ${count}`).join("; ") || "none"}</small></td><td>{display(summary.minimum)}</td><td>{display(summary.median)}</td><td>{display(summary.mean)}</td><td>{display(summary.maximum)}</td><td>
-          <button type="button" disabled={paused || !side.case_count} onClick={() => onKeepCases(side.case_ids)}>Keep {role} items</button>
-          <button type="button" disabled={paused || !side.unavailable_case_ids.length} onClick={() => onKeepCases(side.unavailable_case_ids)}>Keep {role} unavailable items</button>
-          <button type="button" disabled={paused || !side.zero_case_ids.length} onClick={() => onKeepCases(side.zero_case_ids)}>Keep {role} zero-day items</button>
+          <button type="button" disabled={paused || !side.case_count} onClick={() => keepSide(role, "items", side.case_ids)}>Keep {role} items</button>
+          <button type="button" disabled={paused || !side.unavailable_case_ids.length} onClick={() => keepSide(role, "unavailable", side.unavailable_case_ids)}>Keep {role} unavailable items</button>
+          <button type="button" disabled={paused || !side.zero_case_ids.length} onClick={() => keepSide(role, "zero", side.zero_case_ids)}>Keep {role} zero-day items</button>
         </td></tr>;
       })}</tbody></table>
       <p>Unavailable values are excluded from numeric summaries and retained in the named side denominator. Missing intervals and reversed signed differences never become zero observations.</p>

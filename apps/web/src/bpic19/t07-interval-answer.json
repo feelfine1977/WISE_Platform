@@ -1,0 +1,450 @@
+{
+ "schema_version": 1,
+ "message_type": "bpic19_interval_comparison_answer",
+ "operation": "bpic19_interval_comparison",
+ "identity": {
+  "source_id": "source.v1:sha256:c19687b2ecb30c68275d1cf927d44b450f39dfe96ef3e17e5b1252cfc043b532",
+  "preparation_id": "preparation.v1:sha256:b0d834e9370671df7b2c7883a22e89b83d0c86d268010f3dfcd906035dd70b91",
+  "representation_id": "representation.v1:sha256:74a7a84c52290b9e01747d31d1e79ca5afeca1fa16717587f66a73818ae68578",
+  "case_dictionary_id": "case-dictionary.v1:sha256:f04317ba3b6ef12016d6771b2e311896cd9e9e5fc128c8ca19e3f821946c4db2",
+  "population_id": "population.v1:sha256:7e57337ee51f2c326491e646600a121f8d9f373e318dac689d05746445aacda6",
+  "implementation_version": "0.1.0"
+ },
+ "parent_identity": {
+  "source_id": "source.v1:sha256:c19687b2ecb30c68275d1cf927d44b450f39dfe96ef3e17e5b1252cfc043b532",
+  "preparation_id": "preparation.v1:sha256:b0d834e9370671df7b2c7883a22e89b83d0c86d268010f3dfcd906035dd70b91",
+  "representation_id": "representation.v1:sha256:74a7a84c52290b9e01747d31d1e79ca5afeca1fa16717587f66a73818ae68578",
+  "case_dictionary_id": "case-dictionary.v1:sha256:f04317ba3b6ef12016d6771b2e311896cd9e9e5fc128c8ca19e3f821946c4db2",
+  "population_id": "population.v1:sha256:7e57337ee51f2c326491e646600a121f8d9f373e318dac689d05746445aacda6",
+  "implementation_version": "0.1.0"
+ },
+ "query": {
+  "policy_id": "bpic19.interval_distribution_comparison.v1",
+  "interval_policy": "independent_minimum",
+  "interval_source": [
+   "Record Invoice Receipt"
+  ],
+  "interval_target": [
+   "Clear Invoice"
+  ],
+  "target": {
+   "label": "Admitted invoice-to-clearing items",
+   "recipe": {
+    "kind": "complete_case_ids",
+    "case_ids": [
+     "A",
+     "T",
+     "Z"
+    ]
+   }
+  },
+  "reference": {
+   "label": "Reversed or gated items",
+   "recipe": {
+    "kind": "complete_case_ids",
+    "case_ids": [
+     "O",
+     "R"
+    ]
+   }
+  },
+  "page": {
+   "role": "target",
+   "offset": 0,
+   "limit": 100
+  }
+ },
+ "definition_id": "bpic19-interval-comparison.v1:sha256:b50b4051fc12e35ddca3f79f884920eea741a04b235a1ad7977e3c097eb95301",
+ "definition": {
+  "policy_id": "bpic19.interval_distribution_comparison.v1",
+  "time_policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+  "membership_policy_id": "bpic19.explicit_complete_case_ids.v1",
+  "interval_policy": "independent_minimum",
+  "interval_source": [
+   "Record Invoice Receipt"
+  ],
+  "interval_target": [
+   "Clear Invoice"
+  ],
+  "target": {
+   "label": "Admitted invoice-to-clearing items",
+   "recipe": {
+    "kind": "complete_case_ids",
+    "case_ids": [
+     "A",
+     "T",
+     "Z"
+    ]
+   }
+  },
+  "reference": {
+   "label": "Reversed or gated items",
+   "recipe": {
+    "kind": "complete_case_ids",
+    "case_ids": [
+     "O",
+     "R"
+    ]
+   }
+  },
+  "parent_case_ids": [
+   "A",
+   "G",
+   "O",
+   "R",
+   "T",
+   "Z"
+  ],
+  "activity_column": 1,
+  "clock_kind": "wall_clock",
+  "clock_policy_id": "incident.time.wall_clock_as_recorded.v1",
+  "endpoint_admissibility": "select_parsed_minimum_then_2017_inclusive_2020_exclusive",
+  "direction_policy": "nonnegative_recorded_difference",
+  "elapsed_unit": "days",
+  "source_representation": "complete_original_item_histories"
+ },
+ "comparison": {
+  "definition_id": "bpic19-interval-comparison.v1:sha256:b50b4051fc12e35ddca3f79f884920eea741a04b235a1ad7977e3c097eb95301",
+  "definition": {
+   "policy_id": "bpic19.interval_distribution_comparison.v1",
+   "time_policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+   "membership_policy_id": "bpic19.explicit_complete_case_ids.v1",
+   "interval_policy": "independent_minimum",
+   "interval_source": [
+    "Record Invoice Receipt"
+   ],
+   "interval_target": [
+    "Clear Invoice"
+   ],
+   "target": {
+    "label": "Admitted invoice-to-clearing items",
+    "recipe": {
+     "kind": "complete_case_ids",
+     "case_ids": [
+      "A",
+      "T",
+      "Z"
+     ]
+    }
+   },
+   "reference": {
+    "label": "Reversed or gated items",
+    "recipe": {
+     "kind": "complete_case_ids",
+     "case_ids": [
+      "O",
+      "R"
+     ]
+    }
+   },
+   "parent_case_ids": [
+    "A",
+    "G",
+    "O",
+    "R",
+    "T",
+    "Z"
+   ],
+   "activity_column": 1,
+   "clock_kind": "wall_clock",
+   "clock_policy_id": "incident.time.wall_clock_as_recorded.v1",
+   "endpoint_admissibility": "select_parsed_minimum_then_2017_inclusive_2020_exclusive",
+   "direction_policy": "nonnegative_recorded_difference",
+   "elapsed_unit": "days",
+   "source_representation": "complete_original_item_histories"
+  },
+  "parent": {
+   "case_ids": [
+    "A",
+    "G",
+    "O",
+    "R",
+    "T",
+    "Z"
+   ],
+   "case_count": 6,
+   "record_count": 16
+  },
+  "target": {
+   "label": "Admitted invoice-to-clearing items",
+   "case_ids": [
+    "A",
+    "T",
+    "Z"
+   ],
+   "case_count": 3,
+   "record_count": 9,
+   "available_case_ids": [
+    "A",
+    "T",
+    "Z"
+   ],
+   "zero_case_ids": [
+    "Z"
+   ],
+   "unavailable_case_ids": [],
+   "unavailable_reasons": {},
+   "summary": {
+    "available_case_count": 3,
+    "zero_case_count": 1,
+    "minimum": 0.0,
+    "maximum": 3.0,
+    "mean": 1.3333333333333333,
+    "median": 1.0,
+    "reason": null,
+    "unavailable_case_count": 0
+   }
+  },
+  "reference": {
+   "label": "Reversed or gated items",
+   "case_ids": [
+    "O",
+    "R"
+   ],
+   "case_count": 2,
+   "record_count": 4,
+   "available_case_ids": [],
+   "zero_case_ids": [],
+   "unavailable_case_ids": [
+    "O",
+    "R"
+   ],
+   "unavailable_reasons": {
+    "minimum_outside_admissible_range": 1,
+    "reversed_interval": 1
+   },
+   "summary": {
+    "available_case_count": 0,
+    "zero_case_count": 0,
+    "minimum": null,
+    "maximum": null,
+    "mean": null,
+    "median": null,
+    "reason": "empty_eligible_support",
+    "unavailable_case_count": 2
+   }
+  },
+  "union_case_ids": [
+   "A",
+   "O",
+   "R",
+   "T",
+   "Z"
+  ],
+  "overlap_case_ids": [],
+  "outside_case_ids": [
+   "G"
+  ],
+  "page": {
+   "role": "target",
+   "offset": 0,
+   "limit": 100,
+   "total": 3,
+   "items": [
+    {
+     "case_id": "A",
+     "record_count": 4,
+     "record_row_ids": [
+      "row.v1:sha256:d08dac053575242b04fd51bd8babb8a70a3205e39aba727ed3b7e2675332471e",
+      "row.v1:sha256:24e84e48d3d4c32bb65e89e2c6c52cabe265730ac495732ac03978e845dfe93d",
+      "row.v1:sha256:2145aaa32a4cd504af0d31f375efbcbb94bd87abedf03dca5c666c6a0167733a",
+      "row.v1:sha256:5ca7ddfdd16a83f9ae6a6645010792649e35eff91eb993d00540c15036626548"
+     ],
+     "source": {
+      "available": true,
+      "reason": null,
+      "endpoint_state": "available",
+      "timestamp": "2018-01-01T00:00:00",
+      "selected_row_id": "row.v1:sha256:d08dac053575242b04fd51bd8babb8a70a3205e39aba727ed3b7e2675332471e",
+      "row_ids": [
+       "row.v1:sha256:d08dac053575242b04fd51bd8babb8a70a3205e39aba727ed3b7e2675332471e"
+      ],
+      "later_row_ids": [
+       "row.v1:sha256:2145aaa32a4cd504af0d31f375efbcbb94bd87abedf03dca5c666c6a0167733a"
+      ],
+      "candidate_row_ids": [
+       "row.v1:sha256:d08dac053575242b04fd51bd8babb8a70a3205e39aba727ed3b7e2675332471e",
+       "row.v1:sha256:2145aaa32a4cd504af0d31f375efbcbb94bd87abedf03dca5c666c6a0167733a"
+      ],
+      "unparseable_row_ids": [],
+      "unknown_activity_row_ids": []
+     },
+     "target": {
+      "available": true,
+      "reason": null,
+      "endpoint_state": "available",
+      "timestamp": "2018-01-02T00:00:00",
+      "selected_row_id": "row.v1:sha256:24e84e48d3d4c32bb65e89e2c6c52cabe265730ac495732ac03978e845dfe93d",
+      "row_ids": [
+       "row.v1:sha256:24e84e48d3d4c32bb65e89e2c6c52cabe265730ac495732ac03978e845dfe93d"
+      ],
+      "later_row_ids": [
+       "row.v1:sha256:5ca7ddfdd16a83f9ae6a6645010792649e35eff91eb993d00540c15036626548"
+      ],
+      "candidate_row_ids": [
+       "row.v1:sha256:24e84e48d3d4c32bb65e89e2c6c52cabe265730ac495732ac03978e845dfe93d",
+       "row.v1:sha256:5ca7ddfdd16a83f9ae6a6645010792649e35eff91eb993d00540c15036626548"
+      ],
+      "unparseable_row_ids": [],
+      "unknown_activity_row_ids": []
+     },
+     "interval": {
+      "value": 1.0,
+      "available": true,
+      "reason": null,
+      "row_ids": [
+       "row.v1:sha256:d08dac053575242b04fd51bd8babb8a70a3205e39aba727ed3b7e2675332471e",
+       "row.v1:sha256:24e84e48d3d4c32bb65e89e2c6c52cabe265730ac495732ac03978e845dfe93d"
+      ],
+      "interval_state": "available",
+      "activation_row_ids": [
+       "row.v1:sha256:d08dac053575242b04fd51bd8babb8a70a3205e39aba727ed3b7e2675332471e"
+      ],
+      "response_row_ids": [
+       "row.v1:sha256:24e84e48d3d4c32bb65e89e2c6c52cabe265730ac495732ac03978e845dfe93d"
+      ],
+      "activation_timestamp": "2018-01-01T00:00:00",
+      "response_timestamp": "2018-01-02T00:00:00",
+      "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+      "unit": "days",
+      "recorded_difference_days": 1.0
+     }
+    },
+    {
+     "case_id": "T",
+     "record_count": 3,
+     "record_row_ids": [
+      "row.v1:sha256:4307f3762f383583a239214fd3d27f4450f7c7bdb461faada8961d4d7cff4d26",
+      "row.v1:sha256:e82641f2b4562374ec5c4ca38dfd21bb07ab32364c8d251c7b09b9b3c15a53d1",
+      "row.v1:sha256:8213a67e77ebf3eb95fac1645432b0b78f05933055eaf3c9f3e29f7bdc8aae4d"
+     ],
+     "source": {
+      "available": true,
+      "reason": null,
+      "endpoint_state": "available",
+      "timestamp": "2018-01-01T00:00:00",
+      "selected_row_id": "row.v1:sha256:4307f3762f383583a239214fd3d27f4450f7c7bdb461faada8961d4d7cff4d26",
+      "row_ids": [
+       "row.v1:sha256:4307f3762f383583a239214fd3d27f4450f7c7bdb461faada8961d4d7cff4d26",
+       "row.v1:sha256:e82641f2b4562374ec5c4ca38dfd21bb07ab32364c8d251c7b09b9b3c15a53d1"
+      ],
+      "later_row_ids": [],
+      "candidate_row_ids": [
+       "row.v1:sha256:4307f3762f383583a239214fd3d27f4450f7c7bdb461faada8961d4d7cff4d26",
+       "row.v1:sha256:e82641f2b4562374ec5c4ca38dfd21bb07ab32364c8d251c7b09b9b3c15a53d1"
+      ],
+      "unparseable_row_ids": [],
+      "unknown_activity_row_ids": []
+     },
+     "target": {
+      "available": true,
+      "reason": null,
+      "endpoint_state": "available",
+      "timestamp": "2018-01-04T00:00:00",
+      "selected_row_id": "row.v1:sha256:8213a67e77ebf3eb95fac1645432b0b78f05933055eaf3c9f3e29f7bdc8aae4d",
+      "row_ids": [
+       "row.v1:sha256:8213a67e77ebf3eb95fac1645432b0b78f05933055eaf3c9f3e29f7bdc8aae4d"
+      ],
+      "later_row_ids": [],
+      "candidate_row_ids": [
+       "row.v1:sha256:8213a67e77ebf3eb95fac1645432b0b78f05933055eaf3c9f3e29f7bdc8aae4d"
+      ],
+      "unparseable_row_ids": [],
+      "unknown_activity_row_ids": []
+     },
+     "interval": {
+      "value": 3.0,
+      "available": true,
+      "reason": null,
+      "row_ids": [
+       "row.v1:sha256:4307f3762f383583a239214fd3d27f4450f7c7bdb461faada8961d4d7cff4d26",
+       "row.v1:sha256:e82641f2b4562374ec5c4ca38dfd21bb07ab32364c8d251c7b09b9b3c15a53d1",
+       "row.v1:sha256:8213a67e77ebf3eb95fac1645432b0b78f05933055eaf3c9f3e29f7bdc8aae4d"
+      ],
+      "interval_state": "available",
+      "activation_row_ids": [
+       "row.v1:sha256:4307f3762f383583a239214fd3d27f4450f7c7bdb461faada8961d4d7cff4d26",
+       "row.v1:sha256:e82641f2b4562374ec5c4ca38dfd21bb07ab32364c8d251c7b09b9b3c15a53d1"
+      ],
+      "response_row_ids": [
+       "row.v1:sha256:8213a67e77ebf3eb95fac1645432b0b78f05933055eaf3c9f3e29f7bdc8aae4d"
+      ],
+      "activation_timestamp": "2018-01-01T00:00:00",
+      "response_timestamp": "2018-01-04T00:00:00",
+      "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+      "unit": "days",
+      "recorded_difference_days": 3.0
+     }
+    },
+    {
+     "case_id": "Z",
+     "record_count": 2,
+     "record_row_ids": [
+      "row.v1:sha256:590e5b7697fafa5fc032885d4ef2357d5947985bfd1a8a95df7e5babab5b19fb",
+      "row.v1:sha256:fc1868f4110ba44f36c32fdb70b9b53b75dc5907a0c84f6b902495104054b13b"
+     ],
+     "source": {
+      "available": true,
+      "reason": null,
+      "endpoint_state": "available",
+      "timestamp": "2018-01-01T10:00:00",
+      "selected_row_id": "row.v1:sha256:590e5b7697fafa5fc032885d4ef2357d5947985bfd1a8a95df7e5babab5b19fb",
+      "row_ids": [
+       "row.v1:sha256:590e5b7697fafa5fc032885d4ef2357d5947985bfd1a8a95df7e5babab5b19fb"
+      ],
+      "later_row_ids": [],
+      "candidate_row_ids": [
+       "row.v1:sha256:590e5b7697fafa5fc032885d4ef2357d5947985bfd1a8a95df7e5babab5b19fb"
+      ],
+      "unparseable_row_ids": [],
+      "unknown_activity_row_ids": []
+     },
+     "target": {
+      "available": true,
+      "reason": null,
+      "endpoint_state": "available",
+      "timestamp": "2018-01-01T10:00:00",
+      "selected_row_id": "row.v1:sha256:fc1868f4110ba44f36c32fdb70b9b53b75dc5907a0c84f6b902495104054b13b",
+      "row_ids": [
+       "row.v1:sha256:fc1868f4110ba44f36c32fdb70b9b53b75dc5907a0c84f6b902495104054b13b"
+      ],
+      "later_row_ids": [],
+      "candidate_row_ids": [
+       "row.v1:sha256:fc1868f4110ba44f36c32fdb70b9b53b75dc5907a0c84f6b902495104054b13b"
+      ],
+      "unparseable_row_ids": [],
+      "unknown_activity_row_ids": []
+     },
+     "interval": {
+      "value": 0.0,
+      "available": true,
+      "reason": null,
+      "row_ids": [
+       "row.v1:sha256:590e5b7697fafa5fc032885d4ef2357d5947985bfd1a8a95df7e5babab5b19fb",
+       "row.v1:sha256:fc1868f4110ba44f36c32fdb70b9b53b75dc5907a0c84f6b902495104054b13b"
+      ],
+      "interval_state": "available",
+      "activation_row_ids": [
+       "row.v1:sha256:590e5b7697fafa5fc032885d4ef2357d5947985bfd1a8a95df7e5babab5b19fb"
+      ],
+      "response_row_ids": [
+       "row.v1:sha256:fc1868f4110ba44f36c32fdb70b9b53b75dc5907a0c84f6b902495104054b13b"
+      ],
+      "activation_timestamp": "2018-01-01T10:00:00",
+      "response_timestamp": "2018-01-01T10:00:00",
+      "policy_id": "bpic19.paper.independent_parsed_minima.2017_2020.v1",
+      "unit": "days",
+      "recorded_difference_days": 0.0
+     }
+    }
+   ],
+   "next_offset": null
+  },
+  "limitations": [
+   "Descriptive elapsed days do not establish active work, contractual lateness or a causal cohort effect.",
+   "Missing, reversed and out-of-range intervals are unavailable; they never become zero-day observations.",
+   "The two explicitly named sides can overlap. The reference is not an implicit target complement.",
+   "Independent minima preserve every co-minimum and later or unparseable candidate in complete original histories."
+  ]
+ }
+}

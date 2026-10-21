@@ -79,6 +79,7 @@ function Endpoint({ label, endpoint, disabled, inspect }: { label: string; endpo
     <td>Co-minimum records: {rows(endpoint.row_ids)}<small>Display representative: {endpoint.selected_row_id ?? "none"}</small>
       <small>Later parsed candidates: {rows(endpoint.later_row_ids)}</small><small>Unparseable candidates: {rows(endpoint.unparseable_row_ids)}</small>
       {!!endpoint.unknown_activity_row_ids.length && <small>Unknown activity records: {rows(endpoint.unknown_activity_row_ids)}</small>}
+      <button type="button" disabled={disabled || !endpoint.row_ids.length} onClick={() => inspect(endpoint.row_ids)}>Inspect {label.toLowerCase()} selected minimum</button>
       <button type="button" disabled={disabled || !endpoint.candidate_row_ids.length} onClick={() => inspect(endpoint.candidate_row_ids)}>Inspect {label.toLowerCase()} candidates</button></td></tr>;
 }
 

@@ -23,13 +23,14 @@ import { Bpic19FlowComparison, flowComparisonQuery } from "./Bpic19FlowCompariso
 import { profileKeepAction } from "./profile-keep";
 import { measureKeepAction } from "./measure-keep";
 import { cohortKeepAction, completionSupport } from "./cohort-keep";
+import { intervalKeepAction, intervalSideMembers } from "./interval-keep";
 import { Bpic19RetainedFlowComparisons, retainedFlowComparisonRequest, type RecordedFlowReturn } from "./Bpic19RetainedFlowComparisons";
 import type { Bpic19FlowComparisonAnswer, FlowComparisonQuery } from "../generated/bpic19-flow-comparison";
 import type { AnswerIdentity, Bpic19PipelineAction } from "../generated/saving";
 import { Bpic19RetainedCohorts } from "./Bpic19RetainedCohorts";
 import { useLineageEvidence } from "./useLineageEvidence";
 import { Bpic19RecordFilter } from "./Bpic19RecordFilter";
-import type { RecordAttributesAll } from "../generated/selection";
+import type { RecordAttributesAll, SelectionPredicate } from "../generated/selection";
 import { Bpic19IntervalComparison, intervalComparisonQuery } from "./Bpic19IntervalComparison";
 import type { Bpic19IntervalComparisonAnswer, IntervalComparisonQuery, IntervalSide } from "../generated/bpic19-interval-comparison";
 import type { Bpic19Session } from "./session";
@@ -303,6 +304,19 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
     return { ok: true };
   }, [investigation, session, lineage.close]);
 
+  /** Keep a reviewed answer's group as a typed step: the association is recorded first, and only for exactly that answer. */
+  function keepTyped(answerIdentity: AnswerIdentity, members: string[],
+    build: (predicate: SelectionPredicate, step: number, parent: number | null) => Bpic19PipelineAction | null, what: string) {
+    if (!members.length || !shown || !population) return;
+    const predicate: SelectionPredicate = { kind: "case_id_in", case_ids: [members[0], ...members.slice(1)], negate: false };
+    if (shown.steps.some(step => sameJson(step, predicate))) return;
+    const action = build(predicate, shown.steps.length, sameJson(answerIdentity, population.identity) ? null : shown.steps.length);
+    if (!action || !session.recordKeep(action, predicate)) {
+      setProfileKeepProblem(`Review this ${what} on the current purchasing parent before keeping it.`); return;
+    }
+    setProfileKeepProblem(null); investigation.addStep(predicate);
+  }
+
   if (!engaged) return null;
   if (!population || !identity) return <main className="bpic19-workspace"><h1>Purchasing analysis</h1><p>Open a reviewed source to inspect its purchasing flows and recorded measures.</p><button onClick={onShowData}>Open Data</button></main>;
   const profileQuery = queries.current.profile;
@@ -358,8 +372,8 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
           }} />
         {profileKeepProblem && <p role="alert">{profileKeepProblem}</p>}
         {session.reviewedDeclarations().some(action=>action.selection_keep) && <details className="bpic19-profile"><summary>Reviewed purchasing selection recipes</summary>
-          <p>Each typed Keep is tied to its recorded selection step and reviewed parent. The saved profile, measures or cohort answer supplies its exact field roles, definitions, policies and supports.</p>
-          <ol>{session.reviewedDeclarations().filter(action=>action.selection_keep).map((action,index)=><li key={index}>Selection step {action.selection_keep!.step_index+1}: {JSON.stringify(action.selection_keep!.group)}. Parent {action.identity.population_id}. {action.operation === "bpic19_measures" ? "Measures" : action.operation === "bpic19_cohorts" ? "Cohorts" : "Profile"} {action.definition_id}.</li>)}</ol>
+          <p>Each typed Keep is tied to its recorded selection step and reviewed parent. The saved profile, measures, cohort or interval answer supplies its exact field roles, definitions, policies and supports.</p>
+          <ol>{session.reviewedDeclarations().filter(action=>action.selection_keep).map((action,index)=><li key={index}>Selection step {action.selection_keep!.step_index+1}: {JSON.stringify(action.selection_keep!.group)}. Parent {action.identity.population_id}. {({ bpic19_measures: "Measures", bpic19_cohorts: "Cohorts", bpic19_interval_comparison: "Interval comparison" } as Record<string, string>)[action.operation] ?? "Profile"} {action.definition_id}.</li>)}</ol>
         </details>}
         {flowComparison && sameJson(flowComparison.identity,identity) && <Bpic19FlowComparison key={JSON.stringify(flowComparison)} workspaceId={population.workspace_id}
           identity={flowComparison.identity} revision={revision} query={flowComparison.query} recordedDefinitionId={flowComparison.definitionId} onReviewed={reviewedFlowComparison} onValidityChange={flowComparisonValid}
@@ -374,18 +388,8 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
         {currentProfile && <Bpic19Measures workspaceId={population.workspace_id} identity={identity} revision={revision} roles={roles} columns={currentProfile.columns} query={measuresQuery} onReviewed={reviewedMeasures} onValidityChange={measuresValid} onInspect={inspect}
           onRetain={retainMeasures} retainedQueries={session.retainedActions().filter(action=>action.operation==='bpic19_measures').map(action=>({definition_id:action.definition_id,label:`${String(action.query.measure_profile)} · ${action.definition_id}`,query:action.query as unknown as MeasureQuery}))}
           onKeepCases={(caseIds) => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }}
-          onKeepCohort={(answer, cohort) => {
-            const members = answer.activity_cohorts[`${cohort}_case_ids`];
-            if (!members.length || !shown) return;
-            const predicate = { kind: "case_id_in" as const, case_ids: [members[0], ...members.slice(1)] as [string, ...string[]], negate: false };
-            if (shown.steps.some(step => sameJson(step, predicate))) return;
-            const action = measureKeepAction(answer, cohort, predicate, shown.steps.length,
-              sameJson(answer.identity, population.identity) ? null : shown.steps.length);
-            if (!action || !session.recordKeep(action, predicate)) {
-              setProfileKeepProblem("Review this activity cohort on the current purchasing parent before keeping it."); return;
-            }
-            setProfileKeepProblem(null); investigation.addStep(predicate);
-          }} />}
+          onKeepCohort={(answer, cohort) => keepTyped(answer.identity, answer.activity_cohorts[`${cohort}_case_ids`],
+            (predicate, step, parent) => measureKeepAction(answer, cohort, predicate, step, parent), "activity cohort")} />}
         {currentProfile && !intervalComparison && <button onClick={()=>{
           const sides=flowIntervalSides.current && sameJson(flowIntervalSides.current.identity,identity) ? flowIntervalSides.current :
             {target:{label:'Target complete PO items',recipe:{kind:'complete_case_ids' as const,case_ids:[]}},reference:{label:'Comparator complete PO items',recipe:{kind:'complete_case_ids' as const,case_ids:[]}}};
@@ -393,7 +397,9 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
         }}>Compare recorded intervals on two named item sides</button>}
         {intervalComparison && sameJson(intervalComparison.identity,identity) && <Bpic19IntervalComparison workspaceId={population.workspace_id} identity={intervalComparison.identity}
           revision={revision} query={intervalComparison.query} onReviewed={reviewedIntervalComparison} onValidityChange={intervalComparisonValid} onInspect={inspect}
-          onKeepCases={caseIds=>{if(caseIds.length)investigation.addStep({kind:'case_id_in',case_ids:[caseIds[0],...caseIds.slice(1)],negate:false});}} />}
+          onKeepCases={caseIds=>{if(caseIds.length)investigation.addStep({kind:'case_id_in',case_ids:[caseIds[0],...caseIds.slice(1)],negate:false});}}
+          onKeepSide={(answer, side, support) => keepTyped(answer.identity, intervalSideMembers(answer, side, support),
+            (predicate, step, parent) => intervalKeepAction(answer, side, support, predicate, step, parent), "interval side")} />}
         {currentProfile?.profile && <>
           <Bpic19RecordFilter columns={currentProfile.columns} initialColumns={[currentProfile.profile.definition.roles.goods_receipt,currentProfile.profile.definition.roles.gr_based_iv]}
             initialPredicate={recordPredicate.current} disabled={paused}
@@ -410,18 +416,8 @@ export function Bpic19Workspace({ investigation, saving, session, prepared, acti
             restoredComparison={recipeComparisons.bpic19_cohort_comparison?{...recipeComparisons.bpic19_cohort_comparison.query,identity:recipeComparisons.bpic19_cohort_comparison.identity} as unknown as Bpic19CohortComparison:undefined}
             onCompared={comparedCohorts} onComparisonValidityChange={cohortComparisonDraftValid}
             onKeepCases={caseIds => { if (caseIds.length) investigation.addStep({ kind: "case_id_in", case_ids: [caseIds[0], ...caseIds.slice(1)], negate: false }); }}
-            onKeepSupport={(answer, support) => {
-              const members = completionSupport(answer, support)?.case_ids ?? [];
-              if (!members.length || !shown) return;
-              const predicate = { kind: "case_id_in" as const, case_ids: [members[0], ...members.slice(1)] as [string, ...string[]], negate: false };
-              if (shown.steps.some(step => sameJson(step, predicate))) return;
-              const action = cohortKeepAction(answer, support, predicate, shown.steps.length,
-                sameJson(answer.identity, population.identity) ? null : shown.steps.length);
-              if (!action || !session.recordKeep(action, predicate)) {
-                setProfileKeepProblem("Review this cohort on the current purchasing parent before keeping it."); return;
-              }
-              setProfileKeepProblem(null); investigation.addStep(predicate);
-            }} />}
+            onKeepSupport={(answer, support) => keepTyped(answer.identity, completionSupport(answer, support)?.case_ids ?? [],
+              (predicate, step, parent) => cohortKeepAction(answer, support, predicate, step, parent), "cohort")} />}
         </>}
         <Bpic19RetainedCohorts workspaceId={population.workspace_id} currentIdentity={identity} actions={session.declarations()} revision={revision}
           onInspect={(parentIdentity,caseId,rowIds,reason)=>{investigation.closeCase();setLayout('side');void lineage.open({identity:parentIdentity,caseId,rowIds,reason});}} />

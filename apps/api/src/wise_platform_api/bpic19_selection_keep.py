@@ -10,9 +10,11 @@ from .workspace import Problem
 PROFILE_KEEP_POLICY = "bpic19.profile_group_keep.v1"
 MEASURE_KEEP_POLICY = "bpic19.measure_cohort_keep.v1"
 COMPLETION_KEEP_POLICY = "bpic19.completion_cohort_keep.v1"
+INTERVAL_KEEP_POLICY = "bpic19.interval_side_keep.v1"
 # Which operation may justify a Keep of which group kind, under which policy.
 _KEEPS = {"activity_cohort": ("bpic19_measures", MEASURE_KEEP_POLICY),
-          "completion_cohort": ("bpic19_cohorts", COMPLETION_KEEP_POLICY)}
+          "completion_cohort": ("bpic19_cohorts", COMPLETION_KEEP_POLICY),
+          "interval_side": ("bpic19_interval_comparison", INTERVAL_KEEP_POLICY)}
 
 
 def keep_step_problem(action: dict, recipe: dict | None, prefix_identities: list[dict] | None,
@@ -25,7 +27,7 @@ def keep_step_problem(action: dict, recipe: dict | None, prefix_identities: list
     operation, policy = _KEEPS.get(keep["group"]["kind"], ("bpic19_profile", PROFILE_KEEP_POLICY))
     if action["operation"] != operation:
         return Problem("invalid_parameter", "A Keep belongs only to the reviewed answer that supplies its group: a profile group to its profile, "
-                       "an activity cohort to its measures and a completion stage to its cohorts.", field)
+                       "an activity cohort to its measures, a completion stage to its cohorts and a side to its interval comparison.", field)
     if keep["policy_id"] != policy:
         return Problem("unsupported_policy", "This Keep names another group's policy.", field + ".policy_id")
     position = keep["step_index"]
@@ -110,6 +112,26 @@ def completion_keep_problem(answer: dict, keep: dict, recipe: dict | None,
     return None
 
 
+def interval_keep_problem(answer: dict, keep: dict, recipe: dict | None,
+                          prefix_supports: list[dict] | None, field: str) -> Problem | None:
+    """The kept step holds exactly the named side's items, taken from exactly the compared parent."""
+    comparison, group = answer["comparison"], keep["group"]
+    side = comparison[group["side"]]
+    members = side["case_ids" if group["support"] == "items" else group["support"] + "_case_ids"]
+    position = keep["step_index"]
+    if recipe is None or prefix_supports is None or position + 1 >= len(prefix_supports):
+        return Problem("identity_mismatch", "The actual interval side Keep step is unavailable.", field + ".step_index")
+    if sorted(members) != sorted(recipe["predicates"][position]["case_ids"]):
+        return Problem("selection_mismatch", "The complete item IDs differ from the replayed interval side. No membership was substituted.", f"selection_recipe.predicates.{position}.case_ids")
+    parent, selected = prefix_supports[position], prefix_supports[position + 1]
+    if (parent["case_count"], parent["record_count"]) != (comparison["parent"]["case_count"], comparison["parent"]["record_count"]):
+        return Problem("selection_mismatch", "The interval side Keep denominator differs from its exact replayed parent.", field + ".group")
+    if sorted(selected["case_ids"]) != sorted(members) or selected["case_count"] != len(members) or (
+            group["support"] == "items" and selected["record_count"] != side["record_count"]):
+        return Problem("selection_mismatch", "The interval side differs from the complete histories in the replayed step.", field + ".group")
+    return None
+
+
 def profile_keep_problem(action: dict, answer: dict, recipe: dict | None,
                          prefix_supports: list[dict] | None, field: str) -> Problem | None:
     keep = action.get("selection_keep")
@@ -119,6 +141,8 @@ def profile_keep_problem(action: dict, answer: dict, recipe: dict | None,
         return measure_keep_problem(answer, keep, recipe, prefix_supports, field)
     if keep["group"]["kind"] == "completion_cohort":
         return completion_keep_problem(answer, keep, recipe, prefix_supports, field)
+    if keep["group"]["kind"] == "interval_side":
+        return interval_keep_problem(answer, keep, recipe, prefix_supports, field)
     profile = answer.get("profile")
     support = None if profile is None else profile_keep_support(profile, keep["group"])
     if support is None:
