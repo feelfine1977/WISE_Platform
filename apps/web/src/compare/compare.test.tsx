@@ -185,7 +185,7 @@ describe("the Compare view", () => {
     await app.user.click(screen.getByRole("button", { name: "Use these ids as B" }));
     await rename(app, "Name of group B", "Listed");
     const groupB = screen.getByRole("group", { name: "Group B" });
-    expect(groupB.textContent).toContain("3 listed incident ids; the list says nothing about why these incidents belong together");
+    expect(groupB.textContent).toContain("3 listed incident ids (C-1, C-2, C-3); the list says nothing about why these incidents belong together");
 
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     expect(app.comparisons.groups).toHaveLength(1);
@@ -240,7 +240,7 @@ describe("the Compare view", () => {
 
     const overlap = screen.getByRole("note", { name: "Overlap" });
     expect(overlap.textContent).toContain(
-      "1 incident with 3 records is in both With assignment and Listed. They are counted in each group, so the counts and records of the two groups overlap and cannot be added.",
+      "Membership: overlapping. 1 incident with 3 records is in both With assignment and Listed. They are counted in each group, so the counts and records of the two groups overlap and cannot be added.",
     );
     const view = screen.getByRole("main");
     expect(view.textContent).toContain("These figures say how With assignment and Listed differ. They do not say why they differ.");

@@ -317,6 +317,12 @@ export class CompareCoordinator {
     this.change({ split: { predicates: [clause], targetSide: "kept", taken }, parent: parent && { ...parent, revision: this.parents }, names: clauseNames(clause) });
   }
 
+  /** Compares within a frozen parent, for example one stratum of the population, whatever the groups are. */
+  freeze(parent: Omit<FrozenParent, "revision">): void {
+    this.parents += 1;
+    this.change({ parent: { ...parent, revision: this.parents } });
+  }
+
   /** Makes every incident of the population the parent again, explicitly: the retained steps no longer narrow it. */
   rebase(): void {
     if (this.state.draft.parent === null) return;

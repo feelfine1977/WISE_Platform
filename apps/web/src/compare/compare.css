@@ -182,3 +182,5 @@
 .compare-outcome h4 { margin: 0; }
 .compare-outcome-choice { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-2) var(--space-4); }
 .compare-outcome-choice label, .compare-outcome-choice fieldset { display: grid; gap: var(--space-1); }
+.compare-stratum { display: grid; gap: var(--space-1); margin: var(--space-2) 0; }
+.compare-stratum label { display: grid; gap: var(--space-1); }

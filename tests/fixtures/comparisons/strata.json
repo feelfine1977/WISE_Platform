@@ -1,0 +1,59 @@
+{
+ "about": "Hand-written expectations for #17 (tests/test_issue17_explicit_groups.py and tools/qualify_explicit_groups.py) over groups-and-periods.csv. Columns: Team (3), Service (4), Priority (5), each read at the first record in declared order. The stratum is Priority High at the first record: G01, G02, G04, G08. Within it, group A is the incidents first recorded with Team A, group B those with Team B: disjoint and of unequal size; G08's first Team is not recorded, so it is in neither. Their Service at the first record: G01 and G02 ERP, G04 not recorded. The overlapping explicit groups are those of expected.json. Never read by product code.",
+ "stratum": {
+  "column_index": 5,
+  "column": "Priority",
+  "value": "High",
+  "case_ids": [
+   "G01",
+   "G02",
+   "G04",
+   "G08"
+  ]
+ },
+ "team_groups": {
+  "column_index": 3,
+  "target": {
+   "name": "Team A first",
+   "value": "A"
+  },
+  "reference": {
+   "name": "Team B first",
+   "value": "B"
+  }
+ },
+ "within_high": {
+  "target": [
+   "G01",
+   "G02"
+  ],
+  "reference": [
+   "G04"
+  ],
+  "neither": [
+   "G08"
+  ],
+  "service": {
+   "ERP": [
+    2,
+    0
+   ],
+   "not recorded": [
+    0,
+    1
+   ]
+  }
+ },
+ "whole": {
+  "target": [
+   "G01",
+   "G02",
+   "G05"
+  ],
+  "reference": [
+   "G03",
+   "G04",
+   "G06"
+  ]
+ }
+}
