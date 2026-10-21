@@ -1,0 +1,584 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/transition-matrix.v1.schema.json",
+  "title": "TransitionMatrixMessage",
+  "description": "The transition matrix of the incidents of a checked population: for each pair of activities directly following each other in the activity sequence of an incident whose order is known, its distinct incidents, passages, outgoing share and usable lag, with bridge and tie disclosures and raw-row witnesses. No co-occurrence, no indirect relation, nothing computed in the browser.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/TransitionMatrixRequest"
+    },
+    {
+      "$ref": "#/$defs/TransitionMatrixAnswer"
+    },
+    {
+      "$ref": "#/$defs/TransitionMatrixRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RowId": {
+      "title": "RowId",
+      "type": "string",
+      "pattern": "^row\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "CaseId": {
+      "title": "CaseId",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "MatrixRelation": {
+      "title": "MatrixRelation",
+      "description": "How a cell's pair is defined: two labelled records directly following each other in the declared order of an incident whose order is known (the activity sequence). Records without a label between them are passed over and disclosed as a bridge. Not a co-occurrence and not an indirect relation.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "const": "incident.relation.direct_succession_in_activity_sequence.v1"
+        },
+        "activity_projection_policy": {
+          "type": "string",
+          "const": "incident.activity.omit_missing_retain_raw_gaps.v1"
+        },
+        "adjacency": {
+          "type": "string",
+          "const": "mapped_sequence_with_disclosed_raw_gaps"
+        },
+        "order_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_basis": {
+          "type": "string",
+          "const": "sequence_evaluable_cases"
+        }
+      },
+      "required": [
+        "policy",
+        "activity_projection_policy",
+        "adjacency",
+        "order_policy",
+        "case_basis"
+      ]
+    },
+    "MatrixLagClock": {
+      "title": "MatrixLagClock",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "type": "string",
+          "const": "hours"
+        },
+        "timestamp_kind": {
+          "type": "string",
+          "enum": [
+            "utc_instant",
+            "wall_clock"
+          ]
+        },
+        "lag_clock": {
+          "type": "string",
+          "enum": [
+            "elapsed_utc_hours",
+            "recorded_wall_clock_hours"
+          ]
+        }
+      },
+      "required": [
+        "unit",
+        "timestamp_kind",
+        "lag_clock"
+      ]
+    },
+    "MatrixRow": {
+      "title": "MatrixRow",
+      "description": "One activity as the start of pairs: its outgoing passages, the denominator of the outgoing share of its cells. Zero when no pair leaves it: an empty denominator, never a share of zero.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "outgoing_passage_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "activity",
+        "outgoing_passage_count"
+      ]
+    },
+    "MatrixLag": {
+      "title": "MatrixLag",
+      "description": "The hours from the first record of each passage to the second, on the lag clock. A zero is a measured zero; null means no usable lag.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "usable_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "mean_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "median_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "zero_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "usable_count",
+        "mean_hours",
+        "median_hours",
+        "zero_count"
+      ]
+    },
+    "MatrixWitness": {
+      "title": "MatrixWitness",
+      "description": "One passage of the pair: its incident, the rows of its two labelled records, the rows without a label passed over between them, and its hours.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/CaseId"
+        },
+        "source_row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "target_row_id": {
+          "$ref": "#/$defs/RowId"
+        },
+        "omitted_row_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RowId"
+          }
+        },
+        "hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "tied": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "case_id",
+        "source_row_id",
+        "target_row_id",
+        "omitted_row_ids",
+        "hours",
+        "tied"
+      ]
+    },
+    "MatrixCell": {
+      "title": "MatrixCell",
+      "description": "One supplied pair. Distinct incidents (with their share of the incidents whose order is known) and passages are separate measures; the outgoing share is the pair's passages over the outgoing passages of its row.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaseId"
+          }
+        },
+        "case_share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "The pair's distinct incidents over the incidents whose order is known (case_denominator)."
+        },
+        "passage_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "outgoing_share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "lag": {
+          "$ref": "#/$defs/MatrixLag"
+        },
+        "bridged_passage_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "bridged_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "tied_passage_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "witnesses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MatrixWitness"
+          }
+        },
+        "witnesses_truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source_activity",
+        "target_activity",
+        "case_count",
+        "case_ids",
+        "case_share",
+        "passage_count",
+        "outgoing_share",
+        "lag",
+        "bridged_passage_count",
+        "bridged_case_count",
+        "tied_passage_count",
+        "witnesses",
+        "witnesses_truncated"
+      ]
+    },
+    "TransitionMatrixRequest": {
+      "title": "TransitionMatrixRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "transition_matrix_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "witness_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "witness_limit"
+      ]
+    },
+    "TransitionMatrixAnswer": {
+      "title": "TransitionMatrixAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "transition_matrix_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "representation": {
+          "type": "string",
+          "const": "activity"
+        },
+        "relation": {
+          "$ref": "#/$defs/MatrixRelation"
+        },
+        "clock": {
+          "$ref": "#/$defs/MatrixLagClock"
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "case_denominator": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unevaluable_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MatrixRow"
+          }
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MatrixCell"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "representation",
+        "relation",
+        "clock",
+        "case_count",
+        "case_denominator",
+        "unevaluable_case_count",
+        "activities",
+        "rows",
+        "cells"
+      ]
+    },
+    "TransitionMatrixRefusal": {
+      "title": "TransitionMatrixRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "transition_matrix_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "transition_matrix"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "memory_unavailable",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

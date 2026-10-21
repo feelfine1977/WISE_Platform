@@ -1,0 +1,141 @@
+{
+ "about": "Hand-written expectations for #12 (tests/test_issue12_transition_matrix.py and tools/qualify_transition_matrix.py). Invented incidents. A cell is a pair of labelled records directly following each other in the declared order (time, then Seq), records without a label passed over; incidents are distinct, a repeat adds a passage; the outgoing share divides by all passages leaving the row's activity; lags are the hours between the two records. M-L1 repeats Opened\u2192Assigned; M-B1 bridges a record without a label (source position 11); M-T1 has Assigned and Resolved at the same time, ordered by Seq against the file order; M-Z1 has one record, so Closed has an empty denominator; M-U1 has no known order. Source positions count data rows from 0. Never read by product code. Activities are ordered by their labelled records in incidents of known order, most first (Opened 6, Resolved 5, Assigned 4, Closed 1); cells by their row, then their column, in that order.",
+ "file": "matrix.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": [
+   4
+  ]
+ },
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "incidents": 7,
+ "case_denominator": 6,
+ "unevaluable": 1,
+ "activities": [
+  "Opened",
+  "Resolved",
+  "Assigned",
+  "Closed"
+ ],
+ "rows": {
+  "Opened": 6,
+  "Resolved": 0,
+  "Assigned": 4,
+  "Closed": 0
+ },
+ "cells": [
+  {
+   "from": "Opened",
+   "to": "Resolved",
+   "cases": [
+    "M-B1",
+    "M-S2"
+   ],
+   "passages": 2,
+   "outgoing_share": 0.3333333333333333,
+   "cohort_share": 0.3333333333333333,
+   "lag": {
+    "usable": 2,
+    "mean": 3.0,
+    "median": 3.0,
+    "zeros": 0
+   },
+   "bridged": 1,
+   "tied": 0
+  },
+  {
+   "from": "Opened",
+   "to": "Assigned",
+   "cases": [
+    "M-L1",
+    "M-S1",
+    "M-T1"
+   ],
+   "passages": 4,
+   "outgoing_share": 0.6666666666666666,
+   "cohort_share": 0.5,
+   "lag": {
+    "usable": 4,
+    "mean": 1.5,
+    "median": 1.5,
+    "zeros": 0
+   },
+   "bridged": 0,
+   "tied": 0
+  },
+  {
+   "from": "Assigned",
+   "to": "Opened",
+   "cases": [
+    "M-L1"
+   ],
+   "passages": 1,
+   "outgoing_share": 0.25,
+   "cohort_share": 0.16666666666666666,
+   "lag": {
+    "usable": 1,
+    "mean": 1.0,
+    "median": 1.0,
+    "zeros": 0
+   },
+   "bridged": 0,
+   "tied": 0
+  },
+  {
+   "from": "Assigned",
+   "to": "Resolved",
+   "cases": [
+    "M-L1",
+    "M-S1",
+    "M-T1"
+   ],
+   "passages": 3,
+   "outgoing_share": 0.75,
+   "cohort_share": 0.5,
+   "lag": {
+    "usable": 3,
+    "mean": 0.6666666666666666,
+    "median": 1.0,
+    "zeros": 1
+   },
+   "bridged": 0,
+   "tied": 1
+  }
+ ],
+ "bridge_witness": {
+  "case": "M-B1",
+  "source_position": 10,
+  "target_position": 12,
+  "omitted_positions": [
+   11
+  ]
+ },
+ "tie_witness": {
+  "case": "M-T1",
+  "source_position": 15,
+  "target_position": 14
+ },
+ "keep_opened_assigned": {
+  "kept": [
+   "M-L1",
+   "M-S1",
+   "M-T1"
+  ],
+  "unevaluable": [
+   "M-U1"
+  ]
+ },
+ "never_opened_assigned": {
+  "kept": [
+   "M-B1",
+   "M-S2",
+   "M-Z1"
+  ],
+  "unevaluable": [
+   "M-U1"
+  ]
+ }
+}

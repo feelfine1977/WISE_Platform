@@ -94,6 +94,7 @@ describe("the first use of the application", () => {
       "Map:true",
       "Incidents:false",
       "Paths:false",
+      "Matrix:false",
     ]);
     expect(screen.getByRole("heading", { name: "Map of the kept incidents" })).toBeTruthy();
 
