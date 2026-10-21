@@ -24,6 +24,9 @@ import { IntervalPanel } from "../intervals/IntervalPanel";
 import { OpenedAs } from "../views/OpenedAs";
 import type { VariantId } from "../views/messages";
 import { Variants } from "../views/Variants";
+import { PairedHistories } from "../pinned/PairedHistories";
+import { PinControl } from "../pinned/PinControl";
+import { PinnedIndex } from "../pinned/PinnedIndex";
 
 interface ImportedInvestigationProps {
   coordinator: ImportedInvestigationCoordinator;
@@ -39,7 +42,7 @@ interface ImportedInvestigationProps {
 /** What the centre shows: the map, the incidents, or every path of the map in one list. */
 type View = InvestigationView | "paths";
 /** What the side panel shows beside the map or the table. */
-type Rail = "filters" | "context" | "patterns" | "interval";
+type Rail = "filters" | "context" | "patterns" | "interval" | "pinned";
 
 /** The orders of the list of kept incidents, with the words of their buttons. */
 const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
@@ -71,6 +74,11 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [focusInspector, setFocusInspector] = useState(0);
   const [focusIncidents, setFocusIncidents] = useState(0);
+  // The incidents the table lists while a step is taken: those the selection keeps, or those it removes, read in its parent.
+  const [listed, setListed] = useState<"kept" | "removed">("kept");
+  // Two pins read beside each other in place of the map and the table, and the button that asked for it.
+  const [pair, setPair] = useState<[number, number] | null>(null);
+  const pairOpener = useRef<HTMLElement | null>(null);
   const inspectorHeading = useRef<HTMLHeadingElement>(null);
   const incidentsHeading = useRef<HTMLHeadingElement>(null);
   const waitingReason = useId();
@@ -78,7 +86,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   // While another question opens, nothing new is asked of the one shown.
   const waitingFor = replacement?.phase === "running" ? waitingReason : undefined;
   const inspectorOpen = inspected.phase !== "closed";
-  const openCaseId = inspected.phase === "closed" ? null : inspected.caseId;
+  const openCaseId = inspected.phase === "closed" || inspected.side === "pinned" ? null : inspected.caseId;
+  const openPinId = inspected.phase === "closed" || inspected.side !== "pinned" ? null : inspected.pinId ?? null;
 
   useEffect(() => {
     if (focusInspector > 0) inspectorHeading.current?.focus();
@@ -126,12 +135,40 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
     },
     [coordinator],
   );
+  const openRemoved = useCallback(
+    (caseId: CaseId) => {
+      coordinator.openCase(caseId, "removed");
+      setLayout((current) => (current === "collapsed" ? "side" : current));
+      setFocusInspector((count) => count + 1);
+    },
+    [coordinator],
+  );
+  const openPin = useCallback(
+    (pinId: number) => {
+      coordinator.openPin(pinId);
+      setLayout((current) => (current === "collapsed" ? "side" : current));
+      setFocusInspector((count) => count + 1);
+    },
+    [coordinator],
+  );
+  const openPair = useCallback((pinIds: [number, number]) => {
+    pairOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setPair(pinIds);
+  }, []);
+  const closePair = useCallback(() => {
+    setPair(null);
+    const opener = pairOpener.current;
+    pairOpener.current = null;
+    requestAnimationFrame(() => opener?.focus());
+  }, []);
+  const pairEvidence = useCallback((pinId: number, signal: AbortSignal) => coordinator.pinEvidence(pinId, signal), [coordinator]);
 
   const returnToIncidents = useCallback(() => {
     const current = coordinator.getState().inspected;
     if (current.phase === "closed") return;
     coordinator.closeCase();
-    setFocusRequest((previous) => ({ caseId: current.caseId, token: (previous?.token ?? 0) + 1 }));
+    // A pinned history returns the focus to its pin; another to its row of the table.
+    if (current.side !== "pinned") setFocusRequest((previous) => ({ caseId: current.caseId, token: (previous?.token ?? 0) + 1 }));
   }, [coordinator]);
 
   useEffect(() => {
@@ -185,7 +222,23 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
     () => (state.parentGraph ? [...state.parentGraph.nodes].sort((one, other) => other.metrics.cases - one.metrics.cases).map((node) => node.label) : []),
     [state.parentGraph],
   );
-  const shownCases = variantView ? variantView.cases : groupView ? groupView.cases : kept;
+  // The incidents the selection removes, while a step is taken; they are opened in the selection's parent.
+  const removedCases = useMemo(() => {
+    if (!answer || !shown) return [];
+    const summaries = new Map(answer.cases.map((item) => [item.case_id, item]));
+    return shown.answer.removed.case_ids.flatMap((caseId) => summaries.get(caseId) ?? []);
+  }, [answer, shown]);
+  const steps = shown?.answer.predicate_results.length ?? 0;
+  const listingRemoved = listed === "removed" && steps > 0 && !variantView && !groupView;
+  useEffect(() => {
+    if (steps === 0) setListed("kept");
+  }, [steps]);
+  const pairPins = pair ? pair.map((id) => state.pins.find((pin) => pin.id === id)) : null;
+  const shownPair = pairPins && pairPins[0] && pairPins[1] ? ([pairPins[0], pairPins[1]] as const) : null;
+  useEffect(() => {
+    if (pair && !shownPair) setPair(null);
+  }, [pair, shownPair]);
+  const shownCases = listingRemoved ? removedCases : variantView ? variantView.cases : groupView ? groupView.cases : kept;
   /** Keeps or removes the incidents of the chosen group as a step; the table shows every kept incident again. */
   const stepFromGroup = (negate: boolean) => {
     if (groupView === null || groupView.caseIds.length === 0) return;
@@ -289,6 +342,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   {variants.phase === "failed" ? "Patterns · not shown" : "Patterns"}
                 </button>
                 <button type="button" aria-pressed={rail === "interval"} onClick={() => setRail("interval")}>Interval</button>
+                <button type="button" aria-pressed={rail === "pinned"} onClick={() => setRail("pinned")}>Pinned</button>
               </div>
               <button type="button" aria-label="Hide the side panel" onClick={() => setRailOpen(false)}>
                 Hide
@@ -314,6 +368,16 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   waitingFor={waitingFor}
                 />
               )}
+              {rail === "pinned" && (
+                <PinnedIndex
+                  pins={state.pins}
+                  currentPopulationId={shown?.answer.identity.population_id ?? null}
+                  onOpen={openPin}
+                  onUnpin={(pinId) => coordinator.unpin(pinId)}
+                  onPair={openPair}
+                  openPinId={openPinId}
+                />
+              )}
               <div hidden={rail !== "patterns"}>
                 <Variants
                   state={variants}
@@ -330,9 +394,12 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
           </aside>
         )}
         <div className="main-column">
+          {shownPair && (
+            <PairedHistories pins={[shownPair[0], shownPair[1]]} evidence={pairEvidence} currentPopulationId={shown?.answer.identity.population_id ?? null} onReturn={closePair} />
+          )}
           {/* The map and the list of its paths are one view of the kept incidents: its detail, its selection and its steps stay from one to the other. */}
           {answer && view !== "incidents" && (
-            <section className="map-pane" aria-labelledby="imported-map-title">
+            <section className="map-pane" aria-labelledby="imported-map-title" hidden={shownPair !== null}>
               <h3 id="imported-map-title" className="pane-title">
                 {view === "map" ? "Map of the kept incidents" : "Paths of the kept incidents"}
               </h3>
@@ -354,9 +421,9 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               )}
             </section>
           )}
-          <section className="table-pane" aria-labelledby="imported-incidents-title" hidden={answer !== null && view !== "incidents"}>
+          <section className="table-pane" aria-labelledby="imported-incidents-title" hidden={shownPair !== null || (answer !== null && view !== "incidents")}>
             <h3 id="imported-incidents-title" className="pane-title" tabIndex={-1} ref={incidentsHeading}>
-              {variantView ? `Kept incidents of variant ${variantView.rank}` : "Kept incidents"}
+              {variantView ? `Kept incidents of variant ${variantView.rank}` : listingRemoved ? "Removed incidents" : "Kept incidents"}
             </h3>
             <p role="status" className="visually-hidden">
               {variantView ? `The table lists the ${countOf(variantView.caseCount, "incident")} of variant ${variantView.rank}.` : ""}
@@ -396,12 +463,12 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             {answer && answer.cases.length === 0 && (
               <p className="working-text">This preparation has no incident with an incident id, so there is no incident to open.</p>
             )}
-            {answer && answer.cases.length > 0 && kept.length === 0 && (
+            {answer && answer.cases.length > 0 && kept.length === 0 && !listingRemoved && (
               <p className="working-text">The selection keeps no incident. Remove a step or undo it to keep incidents again.</p>
             )}
-            {answer && kept.length > 0 && (
-              <div className="incident-area" data-groups={groupsOpen && shown && !variantView ? "open" : "closed"}>
-                {groupsOpen && shown && !variantView && (
+            {answer && (kept.length > 0 || listingRemoved) && (
+              <div className="incident-area" data-groups={groupsOpen && shown && !variantView && !listingRemoved ? "open" : "closed"}>
+                {groupsOpen && shown && !variantView && !listingRemoved && (
                   <GroupsPanel
                     workspaceId={answer.workspace_id}
                     revision={revision}
@@ -415,10 +482,24 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 )}
                 <div className="incident-table">
                   <p className="muted pane-hint" id="imported-incidents-hint">
-                    {variantView ? `The kept incidents that follow variant ${variantView.rank}.` : "The incidents the selection keeps; with no step, every incident with an incident id."}{" "}
+                    {variantView
+                      ? `The kept incidents that follow variant ${variantView.rank}.`
+                      : listingRemoved
+                        ? "The incidents the selection removes; each opens in the selection's parent, and opening one changes no step."
+                        : "The incidents the selection keeps; with no step, every incident with an incident id."}{" "}
                     Tab enters the table; the arrow keys, Page Up, Page Down, Home and End move; Enter opens every record of an incident.
                   </p>
-                  {!variantView && shown && (
+                  {!variantView && !groupView && steps > 0 && (
+                    <div className="incident-listed" role="group" aria-label="Incidents listed">
+                      <button type="button" aria-pressed={!listingRemoved} onClick={() => setListed("kept")}>
+                        Kept ({kept.length.toLocaleString("en")})
+                      </button>
+                      <button type="button" aria-pressed={listingRemoved} onClick={() => setListed("removed")}>
+                        Removed ({removedCases.length.toLocaleString("en")})
+                      </button>
+                    </div>
+                  )}
+                  {!variantView && shown && !listingRemoved && (
                     <div className="incident-tools">
                       <button
                         type="button"
@@ -441,7 +522,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                       )}
                     </div>
                   )}
-                  {!variantView && !groupView && shown && incidentOrder !== "case" ? (
+                  {!variantView && !groupView && !listingRemoved && shown && incidentOrder !== "case" ? (
                     <IncidentsInTimeOrder
                       workspaceId={answer.workspace_id}
                       revision={revision}
@@ -457,10 +538,10 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                     />
                   ) : (
                     <IncidentWindow
-                      key={variantView ? `variant-${chosenVariant}` : groupView ? `group-${groupView.id}` : "every-incident"}
+                      key={listingRemoved ? "removed" : variantView ? `variant-${chosenVariant}` : groupView ? `group-${groupView.id}` : "every-incident"}
                       cases={shownCases}
                       openCaseId={openCaseId}
-                      onOpen={openCase}
+                      onOpen={listingRemoved ? openRemoved : openCase}
                       focusRequest={focusRequest}
                       labelledBy="imported-incidents-title"
                       describedBy="imported-incidents-hint"
@@ -481,7 +562,13 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             onReturn={returnToIncidents}
             onRetry={() => coordinator.retryCase()}
             observation={observationOf(answer)}
-            selection={shown ? { kept: shown.answer.kept.case_count, parent: shown.answer.parent.case_count, steps: shown.answer.predicate_results.length } : undefined}
+            selection={shown ? { kept: shown.answer.kept.case_count, parent: shown.answer.parent.case_count, steps: shown.answer.predicate_results.length,
+              removed: shown.answer.removed.case_count } : undefined}
+            actions={inspected.phase === "ready" && inspected.side !== "pinned" && shown ? (
+              <PinControl key={`${inspected.caseId}-${inspected.side ?? "kept"}`} caseId={inspected.caseId}
+                pinned={state.pins.filter((pin) => pin.caseId === inspected.caseId && pin.side === (inspected.side === "removed" ? "removed" : "kept"))}
+                onPin={(role, words) => coordinator.pin(role, words)} onUnpin={(pinId) => coordinator.unpin(pinId)} />
+            ) : undefined}
             waitingFor={waitingFor}
             headingRef={inspectorHeading}
             documents={answer.preparation.mapping.document_reference_column != null

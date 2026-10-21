@@ -504,6 +504,7 @@
 .explorer .workbench-body[data-inspector="side"] { grid-template-columns: auto minmax(0, 1fr) var(--size-inspector); }
 .explorer-rail { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; width: var(--size-rail); min-width: 0; background: var(--color-surface); border-right: var(--line-width) solid var(--color-line); }
 .rail-head { display: flex; flex: none; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: var(--size-header-row); padding: var(--space-1) var(--space-4); border-bottom: var(--line-width) solid var(--color-line); }
+.rail-head .view-switch { flex-wrap: wrap; min-width: 0; }
 .rail-body { flex: 1 1 auto; min-height: 0; padding: var(--space-4); }
 .explorer-rail .view-panel { padding: 0; background: none; border: 0; border-radius: 0; }
 .explorer .main-column { grid-column: 2; grid-row: 2; }
@@ -572,3 +573,28 @@
 /* In the side panel a value takes two lines: its name in full width, then its bars and figures. */
 .explorer-rail .opening-values { grid-template-columns: minmax(var(--size-share-least), 1fr) auto; }
 .explorer-rail .opening-label { grid-column: 1 / -1; }
+
+/* Two pinned histories beside each other, one under the other on a narrow window; every record stays reachable by scrolling. */
+.paired-histories { display: grid; gap: var(--space-3); min-width: 0; padding: var(--space-3); }
+.paired-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.paired-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); min-width: 0; }
+.paired-side { display: grid; gap: var(--space-2); align-content: start; min-width: 0; padding: var(--space-2); border: var(--line-width) solid var(--color-line); border-radius: var(--radius); }
+.paired-side h4, .pin-label, .pinned-index p { margin: 0; overflow-wrap: anywhere; }
+.paired-records, .paired-context { min-width: 0; overflow-x: auto; }
+.paired-records table, .paired-context table { border-collapse: collapse; font-size: var(--font-size-small); }
+.paired-records th, .paired-records td, .paired-context th, .paired-context td { padding: var(--space-1) var(--space-2); border-bottom: var(--line-width) solid var(--color-line-row); text-align: left; vertical-align: top; }
+.pin-notes { display: grid; gap: var(--space-1); margin: 0; }
+.pin-notes dt { font-weight: var(--font-weight-strong); }
+.pin-notes dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 900px) { .paired-sides { grid-template-columns: minmax(0, 1fr); } }
+
+/* Pinning the history read, and the index of the pinned ones. */
+.pin-control { display: grid; gap: var(--space-2); margin: var(--space-2) 0; padding: var(--space-2); border: var(--line-width) solid var(--color-line); border-radius: var(--radius); }
+.pin-control h3 { margin: 0; }
+.pin-control label { display: grid; gap: var(--space-1); }
+.pin-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.pin-list { margin: 0; padding-left: var(--space-4); overflow-wrap: anywhere; }
+.pinned-index { width: 100%; border-collapse: collapse; font-size: var(--font-size-small); }
+.pinned-index td, .pinned-index th { padding: var(--space-1); border-bottom: var(--line-width) solid var(--color-line-row); text-align: left; vertical-align: top; }
+.incident-listed { display: flex; gap: var(--space-1); margin-bottom: var(--space-2); }
+.workbench .incident-listed button[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }

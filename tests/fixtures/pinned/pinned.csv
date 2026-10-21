@@ -1,0 +1,15 @@
+Ticket,Status,At,Seq,Desk,Priority
+P-S1,Opened,2026-06-01T08:00:00Z,1,East,High
+P-S1,Assigned,2026-06-01T09:00:00Z,2,East,High
+P-S1,Assigned,2026-06-01T10:00:00Z,3,West,High
+P-S1,Resolved,2026-06-01T11:00:00Z,4,West,High
+P-S2,Opened,2026-06-02T08:00:00Z,1,East,Low
+P-S2,Resolved,2026-06-02T12:00:00Z,2,East,Low
+P-C1,Opened,2026-06-03T08:00:00Z,1,West,
+P-C1,,2026-06-03T09:00:00Z,2,West,
+P-C1,Resolved,2026-06-03T10:00:00Z,4,West,
+P-C1,Closed,2026-06-03T10:00:00Z,3,West,
+P-C2,Opened,2026-06-04T08:00:00Z,1,North,Low
+P-C2,Resolved,2026-06-04T09:00:00Z,2,North,Low
+P-U1,Assigned,,1,East,High
+P-U1,Opened,2026-06-05T08:00:00Z,2,East,High

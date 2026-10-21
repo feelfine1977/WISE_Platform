@@ -68,11 +68,61 @@ export type ImportedPopulationState =
   | { phase: "ready"; revision: number; target: PreparationTarget; answer: ImportedPopulationAnswer }
   | { phase: "failed"; revision: number; target: PreparationTarget; problem: ImportProblem };
 
+/**
+ * Where an incident was opened from: the incidents the selection keeps, those it removes (read in the selection's parent), or
+ * a pin, which keeps the population it was pinned in whatever the selection becomes.
+ */
+export type CaseSide = "kept" | "removed" | "pinned";
+
+/** The population an incident's history is asked in, and where it was opened from; kept when absent. */
+export interface CaseHandle {
+  side?: CaseSide;
+  /** The population of a pinned incident; the others are asked in the selection shown or its parent. */
+  identity?: AnswerIdentity;
+  /** The pin an incident was opened from. */
+  pinId?: number;
+}
+
 export type ImportedCaseState =
   | { phase: "closed" }
-  | { phase: "loading"; caseId: CaseId }
-  | { phase: "ready"; caseId: CaseId; answer: ImportedCaseEvidenceAnswer }
-  | { phase: "failed"; caseId: CaseId; problem: ImportProblem };
+  | ({ phase: "loading"; caseId: CaseId } & CaseHandle)
+  | ({
+      phase: "ready";
+      caseId: CaseId;
+      answer: ImportedCaseEvidenceAnswer;
+      /** A pinned history that could not be read when asked for after this one; this history stays as it was read. */
+      refusal?: { caseId: CaseId; problem: ImportProblem };
+    } & CaseHandle)
+  | ({ phase: "failed"; caseId: CaseId; problem: ImportProblem } & CaseHandle);
+
+/** The analyst's reading of a pinned history; WISE does not decide it. */
+export type PinRole = "supporting" | "contrary";
+
+/** What the analyst writes on a pin: a label, and optionally an observation, a limitation and a next check. */
+export interface PinWords {
+  label: string;
+  observation: string;
+  limitation: string;
+  nextCheck: string;
+}
+
+/**
+ * A complete history pinned with the exact population it was opened in (its evidence handle), the question it was pinned
+ * under and the analyst's role and words. A contrary incident removed by the selection keeps the identity of the
+ * selection's parent: it is asked there, never relabelled from the kept incidents.
+ */
+export interface Pin extends PinWords {
+  id: number;
+  role: PinRole;
+  caseId: CaseId;
+  side: "kept" | "removed";
+  identity: AnswerIdentity;
+  rowIds: string[];
+  /** The selection shown when the history was pinned: its identity, steps and supports. */
+  question: { populationId: string; steps: SelectionPredicate[]; kept: number; removed: number; parent: number };
+}
+
+export type PinEvidence = { ok: true; answer: ImportedCaseEvidenceAnswer } | { ok: false; problem: ImportProblem };
 
 /** An answer about the shown selection that is requested once the selection and its map are answered. */
 export type ViewState<Answer> =
@@ -123,6 +173,8 @@ export interface ImportedInvestigationState {
   variants: ViewState<VariantsAnswer>;
   /** The variant whose incidents the table lists until the choice is cleared; a view, not a selection step. */
   chosenVariant: VariantId | null;
+  /** The histories pinned in this question, in the order they were pinned. */
+  pins: Pin[];
   /** The map of every incident of the parent, from which the map's arrangement is computed once. */
   parentGraph: SuppliedGraph | null;
   /** The saved investigation this question was reopened from or saved as; null until it is saved. */
@@ -157,6 +209,7 @@ const initialState: ImportedInvestigationState = {
   openingContext: { phase: "idle" },
   variants: { phase: "idle" },
   chosenVariant: null,
+  pins: [],
   parentGraph: null,
   saved: null,
   restoredView: null,
@@ -181,8 +234,13 @@ export class ImportedInvestigationCoordinator {
   /** The last revision issued, to the question shown or to the one asked for in its place. */
   private issued = 0;
   private caseRequestSequence = 0;
+  private pinSequence = 0;
   private viewRequestSequence = 0;
   private currentCaseRequestId: string | null = null;
+  /** The handle of the history last asked for, published with its answer. */
+  private caseHandle: CaseHandle = {};
+  /** The history read before a pinned one was asked for, kept if the pinned one cannot be read. */
+  private priorHistory: Extract<ImportedCaseState, { phase: "ready" }> | null = null;
   private readonly populationRequest = new AwaitedRequest();
   /** The question shown, or being opened when none is shown yet; a retry asks for it again. */
   private asked: AskedQuestion | null = null;
@@ -295,28 +353,51 @@ export class ImportedInvestigationCoordinator {
     return this.state.replacement?.phase === "running";
   }
 
-  /** Opens the complete history of an incident of the selection shown, or of the population before one is. */
-  openCase(caseId: CaseId): void {
-    if (!this.replacing()) this.requestCase(caseId);
+  /**
+   * Opens the complete history of an incident of the selection shown, or of the population before one is; an incident the
+   * selection removes is asked in the selection's parent, whose identity it is then read under.
+   */
+  openCase(caseId: CaseId, side: "kept" | "removed" = "kept"): void {
+    if (!this.replacing()) this.requestCase(caseId, side === "removed" ? { side } : {});
   }
 
-  private requestCase(caseId: CaseId): void {
+  /** Opens a pinned history in the population it was pinned in, whatever the selection shown now. */
+  openPin(pinId: number): void {
+    const pin = this.state.pins.find((candidate) => candidate.id === pinId);
+    if (pin && !this.replacing()) this.requestCase(pin.caseId, { side: "pinned", identity: pin.identity, pinId });
+  }
+
+  /** The handle an incident is asked under: the pin's population, the selection's parent for a removed incident, or the selection shown. */
+  private handleIdentity(handle: CaseHandle): AnswerIdentity | null {
     const population = this.state.population;
-    if (population.phase !== "ready") return;
+    if (population.phase !== "ready") return null;
+    if (handle.identity) return handle.identity;
+    const shown = shownSelection(this.state.selection);
+    if (handle.side === "removed") return shown ? shown.answer.parent_identity : null;
+    return shown ? shown.answer.identity : population.answer.identity;
+  }
+
+  private requestCase(caseId: CaseId, handle: CaseHandle = {}): void {
+    const population = this.state.population;
+    const identity = this.handleIdentity(handle);
+    if (population.phase !== "ready" || identity === null) return;
     this.cancelCaseRequest();
     this.caseRequestSequence += 1;
-    const shown = shownSelection(this.state.selection);
     const request: ImportedCaseEvidenceRequest = {
       schema_version: 1,
       message_type: "imported_case_evidence_request",
       request_id: `case-${this.revision}-${this.caseRequestSequence}`,
       query_revision: this.revision,
       workspace_id: population.answer.workspace_id,
-      identity: shown ? shown.answer.identity : population.answer.identity,
+      identity,
       case_id: caseId,
     };
     this.currentCaseRequestId = request.request_id;
-    this.publish({ ...this.state, inspected: { phase: "loading", caseId } });
+    this.caseHandle = { ...handle, identity: handle.side === "pinned" ? identity : handle.identity };
+    // A pinned history that cannot be read leaves the history read before it as it was.
+    const before = this.state.inspected;
+    this.priorHistory = handle.side === "pinned" && before.phase === "ready" ? { ...before, refusal: undefined } : null;
+    this.publish({ ...this.state, inspected: { phase: "loading", caseId, ...handleOf(handle) } });
     const controller = new AbortController();
     this.caseRequest = controller;
     this.client.caseEvidence(request, controller.signal).then(
@@ -326,7 +407,65 @@ export class ImportedInvestigationCoordinator {
   }
 
   retryCase(): void {
-    if (this.state.inspected.phase === "failed") this.openCase(this.state.inspected.caseId);
+    const inspected = this.state.inspected;
+    if (inspected.phase === "failed" && !this.replacing()) this.requestCase(inspected.caseId, handleOf(inspected));
+  }
+
+  /**
+   * Pins the history open in the inspector with the population it was read in, the question shown and the analyst's role
+   * and words; nothing is pinned while no history is read. Returns the pin.
+   */
+  pin(role: PinRole, words: PinWords): Pin | null {
+    const inspected = this.state.inspected;
+    const shown = shownSelection(this.state.selection);
+    if (inspected.phase !== "ready" || inspected.side === "pinned" || shown === null) return null;
+    this.pinSequence += 1;
+    const answer = inspected.answer;
+    const pin: Pin = {
+      id: this.pinSequence,
+      role,
+      caseId: inspected.caseId,
+      side: inspected.side === "removed" ? "removed" : "kept",
+      identity: answer.identity,
+      rowIds: answer.records.map((record) => record.row_id),
+      question: {
+        populationId: shown.answer.identity.population_id,
+        steps: shown.answer.predicate_results.map((result) => result.predicate),
+        kept: shown.answer.kept.case_count,
+        removed: shown.answer.removed.case_count,
+        parent: shown.answer.parent.case_count,
+      },
+      label: words.label.trim() === "" ? `Incident ${inspected.caseId}` : words.label.trim(),
+      observation: words.observation.trim(),
+      limitation: words.limitation.trim(),
+      nextCheck: words.nextCheck.trim(),
+    };
+    this.publish({ ...this.state, pins: [...this.state.pins, pin] });
+    return pin;
+  }
+
+  unpin(pinId: number): void {
+    if (this.state.pins.some((pin) => pin.id === pinId)) this.publish({ ...this.state, pins: this.state.pins.filter((pin) => pin.id !== pinId) });
+  }
+
+  /** The complete history of a pinned incident, asked in exactly the population it was pinned in; a refusal is returned as it is. */
+  async pinEvidence(pinId: number, signal: AbortSignal): Promise<PinEvidence> {
+    const pin = this.state.pins.find((candidate) => candidate.id === pinId);
+    const population = this.state.population;
+    if (!pin || population.phase !== "ready") return { ok: false, problem: { kind: "unsupported_reply", detail: "This pin is no longer held." } };
+    this.caseRequestSequence += 1;
+    const request: ImportedCaseEvidenceRequest = {
+      schema_version: 1,
+      message_type: "imported_case_evidence_request",
+      request_id: `pin-${this.revision}-${this.caseRequestSequence}`,
+      query_revision: this.revision,
+      workspace_id: population.answer.workspace_id,
+      identity: pin.identity,
+      case_id: pin.caseId,
+    };
+    const outcome = await this.client.caseEvidence(request, signal).catch(() => unreachable);
+    const checked = outcome.ok ? checkCase(request, outcome.answer) : checkProblem(request, outcome.problem);
+    return checked.ok ? { ok: true, answer: checked.answer } : { ok: false, problem: checked.problem };
   }
 
   closeCase(): void {
@@ -538,14 +677,18 @@ export class ImportedInvestigationCoordinator {
     this.publish({ ...this.state, selection: { phase: "failed", revision, history, shown, problem } });
     // A history whose request the selection abandoned is asked for again under the selection still shown.
     const inspected = this.state.inspected;
-    if (inspected.phase === "loading" && this.currentCaseRequestId === null) this.requestCase(inspected.caseId);
+    if (inspected.phase === "loading" && this.currentCaseRequestId === null) this.requestCase(inspected.caseId, handleOf(inspected));
   }
 
-  /** The inspector shows the complete history of a kept incident under the new selection, or closes. */
+  /**
+   * The inspector shows the complete history of a kept incident under the new selection, or of a removed one in its parent,
+   * or closes; a pinned history stays in the population it was pinned in.
+   */
   private followSelection(selected: SelectionAnswer): void {
     const inspected = this.state.inspected;
-    if (inspected.phase === "closed") return;
-    if (selected.kept.case_ids.includes(inspected.caseId)) this.requestCase(inspected.caseId);
+    if (inspected.phase === "closed" || inspected.side === "pinned") return;
+    const side = inspected.side === "removed" ? "removed" : "kept";
+    if (selected[side].case_ids.includes(inspected.caseId)) this.requestCase(inspected.caseId, side === "removed" ? { side } : {});
     else this.publish({ ...this.state, inspected: { phase: "closed" } });
   }
 
@@ -697,9 +840,17 @@ export class ImportedInvestigationCoordinator {
     this.currentCaseRequestId = null;
     const caseId = request.case_id;
     const checked = outcome.ok ? checkCase(request, outcome.answer) : checkProblem(request, outcome.problem);
+    const prior = this.priorHistory;
+    this.priorHistory = null;
+    if (!checked.ok && prior !== null) {
+      this.publish({ ...this.state, inspected: { ...prior, refusal: { caseId, problem: checked.problem } } });
+      return;
+    }
     this.publish({
       ...this.state,
-      inspected: checked.ok ? { phase: "ready", caseId, answer: checked.answer } : { phase: "failed", caseId, problem: checked.problem },
+      inspected: checked.ok
+        ? { phase: "ready", caseId, answer: checked.answer, ...handleOf(this.caseHandle) }
+        : { phase: "failed", caseId, problem: checked.problem, ...handleOf(this.caseHandle) },
     });
   }
 
@@ -837,4 +988,13 @@ function checkGraph(request: ProcessGraphRequest, selected: SelectionAnswer, ans
   if (!sameJson(answer.identity, request.identity)) return mismatch("The map belongs to a different population identity.");
   if (!sameJson(answer.graph.meta.selected_case_ids, selected.kept.case_ids)) return mismatch("The map is of different incidents than the selection.");
   return { ok: true, answer };
+}
+
+/** The handle of an inspected incident, without the parts it does not have. */
+function handleOf(handle: CaseHandle): CaseHandle {
+  return {
+    ...(handle.side ? { side: handle.side } : {}),
+    ...(handle.side === "pinned" && handle.identity ? { identity: handle.identity } : {}),
+    ...(handle.pinId !== undefined ? { pinId: handle.pinId } : {}),
+  };
 }

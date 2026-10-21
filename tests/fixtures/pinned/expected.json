@@ -1,0 +1,95 @@
+{
+ "about": "Hand-written expectations for #19 (tests/test_issue19_pinned_histories.py and tools/qualify_pinned_histories.py). Invented incidents. The step keeps the incidents whose first record in declared order has Desk East; P-U1 has a record without a usable time, so its first record is not known. P-S1 repeats Assigned and changes Desk; P-C1 has a record without a label, no Priority, and Closed and Resolved at the same time, ordered by Seq against their file order. Source positions count data rows from 0. Never read by product code.",
+ "file": "pinned.csv",
+ "mapping": {
+  "case_column": 0,
+  "activity_column": 1,
+  "timestamp_column": 2,
+  "sequence_column": 3,
+  "context_columns": [
+   4,
+   5
+  ]
+ },
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "incidents": 5,
+ "step": {
+  "column": "Desk",
+  "column_index": 4,
+  "value": "East"
+ },
+ "kept": [
+  "P-S1",
+  "P-S2"
+ ],
+ "removed": [
+  "P-C1",
+  "P-C2"
+ ],
+ "unevaluable": [
+  "P-U1"
+ ],
+ "supporting": {
+  "case": "P-S1",
+  "source_positions": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "activities": [
+   "Opened",
+   "Assigned",
+   "Assigned",
+   "Resolved"
+  ],
+  "marks": [
+   [],
+   [],
+   [
+    "repeat of an earlier activity",
+    "Desk changed"
+   ],
+   []
+  ]
+ },
+ "contrary": {
+  "case": "P-C1",
+  "source_positions": [
+   6,
+   7,
+   9,
+   8
+  ],
+  "activities": [
+   "Opened",
+   null,
+   "Closed",
+   "Resolved"
+  ],
+  "marks": [
+   [],
+   [
+    "no activity label: left out of the sequence"
+   ],
+   [],
+   [
+    "same time as the record before"
+   ]
+  ]
+ },
+ "context_at_first": [
+  {
+   "name": "Desk",
+   "supporting": "East",
+   "contrary": "West",
+   "reading": "different values"
+  },
+  {
+   "name": "Priority",
+   "supporting": "High",
+   "contrary": null,
+   "reading": "recorded on one side only"
+  }
+ ]
+}
