@@ -28,6 +28,8 @@ import { PairedHistories } from "../pinned/PairedHistories";
 import { TransitionMatrix } from "../matrix/TransitionMatrix";
 import { PinControl } from "../pinned/PinControl";
 import { PinnedIndex } from "../pinned/PinnedIndex";
+import { GapPairs } from "../gaps/GapPairs";
+import { httpGapsClient } from "../gaps/client";
 
 interface ImportedInvestigationProps {
   coordinator: ImportedInvestigationCoordinator;
@@ -43,7 +45,7 @@ interface ImportedInvestigationProps {
 /** What the centre shows: the map, the incidents, or every path of the map in one list. */
 type View = InvestigationView | "paths" | "matrix";
 /** What the side panel shows beside the map or the table. */
-type Rail = "filters" | "context" | "patterns" | "interval" | "pinned";
+type Rail = "filters" | "context" | "patterns" | "interval" | "gaps" | "pinned";
 
 /** The orders of the list of kept incidents, with the words of their buttons. */
 const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
@@ -68,7 +70,8 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   const [incidentOrder, setIncidentOrder] = useState<"case" | TimeOrder>("case");
   // The groups of the kept incidents beside their table, and the group whose incidents the table shows.
   const [groupsOpen, setGroupsOpen] = useState(false);
-  const [chosenGroup, setChosenGroup] = useState<{ id: string; label: string; caseIds: readonly string[] } | null>(null);
+  // A group of the groups panel, or the order a pair of the longest gaps gives the table: `ordered` keeps the order given, `note` says what it is.
+  const [chosenGroup, setChosenGroup] = useState<{ id: string; label: string; caseIds: readonly string[]; ordered?: true; note?: string } | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [rail, setRail] = useState<Rail>("context");
   // Closed until it is asked for: the map and the table open on the whole width.
@@ -218,6 +221,10 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
   }, [chosenVariant, variants, answer, kept]);
   const groupView = useMemo(() => {
     if (chosenGroup === null || variantView) return null;
+    if (chosenGroup.ordered) {
+      const byId = new Map(kept.map((item) => [item.case_id, item]));
+      return { ...chosenGroup, cases: chosenGroup.caseIds.flatMap((caseId) => byId.get(caseId) ?? []) };
+    }
     const members = new Set(chosenGroup.caseIds);
     return { ...chosenGroup, cases: kept.filter((item) => members.has(item.case_id)) };
   }, [chosenGroup, variantView, kept]);
@@ -361,6 +368,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   {variants.phase === "failed" ? "Patterns · not shown" : "Patterns"}
                 </button>
                 <button type="button" aria-pressed={rail === "interval"} onClick={() => setRail("interval")}>Interval</button>
+                <button type="button" aria-pressed={rail === "gaps"} onClick={() => setRail("gaps")}>Gaps</button>
                 <button type="button" aria-pressed={rail === "pinned"} onClick={() => setRail("pinned")}>Pinned</button>
               </div>
               <button type="button" aria-label="Hide the side panel" onClick={() => setRailOpen(false)}>
@@ -385,6 +393,19 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                   onOpenCase={openCase}
                   openCaseId={openCaseId}
                   waitingFor={waitingFor}
+                />
+              )}
+              {rail === "gaps" && (
+                <GapPairs
+                  workspaceId={answer.workspace_id}
+                  revision={revision}
+                  identity={shown?.answer.identity ?? answer.identity}
+                  ordered={chosenGroup?.ordered ? chosenGroup.id : null}
+                  onOrder={(order) => {
+                    setChosenGroup(order);
+                    // The order is read in the table of the incidents.
+                    if (order !== null) setView("incidents");
+                  }}
                 />
               )}
               {rail === "pinned" && (
@@ -431,6 +452,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
               {shown && state.parentGraph ? (
                 <MapView
                   shown={shown}
+                  gaps={httpGapsClient}
                   parentGraph={state.parentGraph}
                   onStep={addStep}
                   previewStep={previewStep}
@@ -468,8 +490,11 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
             {groupView && (
               <div className="view-note">
                 <p>
-                  The table lists the {countOf(groupView.cases.length, "incident")} of the group “{groupView.label}”. This is a view until a step is
-                  taken.
+                  {groupView.note ?? (
+                    <>
+                      The table lists the {countOf(groupView.cases.length, "incident")} of the group “{groupView.label}”. This is a view until a step is taken.
+                    </>
+                  )}
                 </p>
                 <button type="button" onClick={() => stepFromGroup(false)} disabled={waitingFor !== undefined || groupView.caseIds.length === 0} aria-describedby={waitingFor}>
                   Keep these incidents

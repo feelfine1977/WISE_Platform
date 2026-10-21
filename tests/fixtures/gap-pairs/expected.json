@@ -1,0 +1,29 @@
+{
+ "about": "Hand-written expectations for #61 (tests/test_issue61_gap_pairs.py and tools/qualify_gap_pairs.py). Invented incidents. Gaps in hours, raw adjacent: G-1 Open>Assign 2, Assign>Resolve 48; G-2 Open>Assign 1, Assign>(no label) 9, (no label)>Resolve 20; G-3 Open>Assign 4, Assign>Assign 2, Assign>Resolve 4; G-4 Open>Assign 3, Assign>Resolve 97; G-5 Open>Resolve 5; G-6 Open>Assign 1, Assign>Assign 20, Assign>Resolve 1; G-7 Open>Assign 1, Assign>Open 1, Open>Assign 10 (one incident passes Open>Assign twice); G-UNK order unknown. Under mapped_path G-2's unlabelled record is passed over: Assign>Resolve 29. Median: the middle passage or the midpoint of the two middle ones; 90th percentile: the ceil(0.9 n)-th smallest passage; each passage counts once. Kept: recorded span at least 10 hours (G-5 removed, G-UNK unevaluable). Threshold 24 hours, longer than. Never read by product code.",
+ "file": "gaps.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": null, "context_columns": []},
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "kept_step": {"kind": "observed_span_at_least", "hours": 10, "negate": false},
+ "threshold_hours": 24,
+ "groups": {"kept": {"case_count": 6, "evaluable_case_count": 6, "order_unknown_case_count": 0}, "parent": {"case_count": 8, "evaluable_case_count": 7, "order_unknown_case_count": 1}},
+ "raw_adjacent": {
+  "order": [["Assign", "Resolve"], ["Assign", "Assign"], [null, "Resolve"], ["Open", "Assign"], ["Assign", null], ["Assign", "Open"], ["Open", "Resolve"]],
+  "pairs": {
+   "Open>Assign": {"kept": {"incident_count": 6, "passage_count": 7, "median_hours": 2, "p90_hours": 10, "above_threshold_passage_count": 0, "above_threshold_incident_count": 0},
+                   "parent": {"incident_count": 6, "passage_count": 7, "median_hours": 2, "p90_hours": 10, "above_threshold_passage_count": 0, "above_threshold_incident_count": 0}},
+   "Assign>Resolve": {"kept": {"incident_count": 4, "passage_count": 4, "median_hours": 26, "p90_hours": 97, "above_threshold_passage_count": 2, "above_threshold_incident_count": 2},
+                      "parent": {"incident_count": 4, "passage_count": 4, "median_hours": 26, "p90_hours": 97, "above_threshold_passage_count": 2, "above_threshold_incident_count": 2}},
+   "Assign>Assign": {"kept": {"incident_count": 2, "passage_count": 2, "median_hours": 11, "p90_hours": 20, "above_threshold_passage_count": 0, "above_threshold_incident_count": 0}},
+   "Assign>(no label)": {"kept": {"incident_count": 1, "passage_count": 1, "median_hours": 9, "p90_hours": 9, "above_threshold_passage_count": 0, "above_threshold_incident_count": 0}},
+   "(no label)>Resolve": {"kept": {"incident_count": 1, "passage_count": 1, "median_hours": 20, "p90_hours": 20, "above_threshold_passage_count": 0, "above_threshold_incident_count": 0}},
+   "Open>Resolve": {"kept": {"incident_count": 0, "passage_count": 0, "median_hours": null, "p90_hours": null, "above_threshold_passage_count": 0, "above_threshold_incident_count": 0},
+                    "parent": {"incident_count": 1, "passage_count": 1, "median_hours": 5, "p90_hours": 5, "above_threshold_passage_count": 0, "above_threshold_incident_count": 0}}
+  },
+  "shares": {"Open>Assign": {"kept": 1.0, "parent": 0.8571428571428571}}
+ },
+ "mapped_path": {
+  "pairs": {"Assign>Resolve": {"kept": {"incident_count": 5, "passage_count": 5, "median_hours": 29, "p90_hours": 97, "above_threshold_passage_count": 3, "above_threshold_incident_count": 3}}},
+  "no_unlabelled_endpoint": true
+ },
+ "chosen": {"pair": ["Assign", "Resolve"], "cases": [["G-4", 97], ["G-1", 48], ["G-3", 4], ["G-6", 1]]}
+}

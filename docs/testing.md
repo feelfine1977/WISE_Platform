@@ -226,6 +226,12 @@ These tools take the same arguments and refuse a stale build in the same way. Ea
   - A line says the share of the time on all paths the first five rows carry.
   - The rare long path comes first in the order by median lag.
 
+- `tools/qualify_gap_pairs.py` (#61): the longest recorded gaps over the invented `tests/fixtures/gap-pairs` file, against its own `expected.json`.
+  - A step keeps the incidents of at least ten hours. The Gaps panel lists each pair with its kept and parent incidents, passages, median and 90th percentile, the longest 90th percentile first.
+  - The unlabelled endpoint is named, the policies and the incidents of unknown order are said, and no gap is called a working or waiting time.
+  - A pair orders the incident list by its longest gap without a step.
+  - A path of the map gives its 90th percentile lag and its passages longer than the threshold.
+
 - `tools/qualify_long_incidents.py` (#60): long incidents of `tests/fixtures/intervals/intervals.csv`, against `long-incidents.json`.
   - The chart of spans keeps at least four hours by keyboard (exactly four included, the order-unknown incident unevaluable).
   - The incident list ordered by span shows the same incidents; the typed filter gives the same identity.
