@@ -291,7 +291,7 @@ class Saving:
         presentation = given.get("presentation_state")
         # Stages are presentation, bound to the reading they were defined for: saved with another reading's, or
         # inconsistent, they are refused rather than kept to be applied to a log they do not belong to.
-        stages = _stages_problem(presentation, given["base_identity"])
+        stages = _stages_problem(presentation, given["base_identity"]) or _requests_problem(presentation, given["base_identity"])
         if stages is not None:
             return _refused(SAVE, "invalid_request", stages[0] + " Nothing was saved.", given, stages[1])
         published = SavedInvestigations(workspace).publish(
@@ -889,6 +889,20 @@ def _stages_problem(presentation: object, base_identity: Mapping[str, object]) -
     return None
 
 
+def _requests_problem(presentation: object, base_identity: Mapping[str, object]) -> tuple[str, str] | None:
+    """Why the definition of requests of a presentation cannot belong to this reading, with the field; None when it can or there is none."""
+    requests = presentation.get("requests") if isinstance(presentation, Mapping) else None
+    if not isinstance(requests, Mapping):
+        return None
+    field = "presentation_state.requests"
+    if requests.get("preparation_id") != base_identity.get("preparation_id"):
+        return ("The definition of requests and answers was made for another reading of the source; it belongs to the preparation it was made for.",
+                field + ".preparation_id")
+    if set(requests["request_activities"]) & set(requests["answer_activities"]):
+        return "An activity is both a request and an answer.", field + ".answer_activities"
+    return None
+
+
 def _recovery(stored: object, base_identity: Mapping[str, object] | None = None) -> dict[str, object]:
     """The saved presentation, or none with a warning when it cannot be used; the question is unaffected."""
     if stored is None:
@@ -906,13 +920,18 @@ def _recovery(stored: object, base_identity: Mapping[str, object] | None = None)
                 }
             ],
         }
-    problem = _stages_problem(stored, base_identity) if base_identity is not None else None
-    if problem is not None:
-        # The stages are left out and said to be; the rest of the presentation and the question are as saved.
-        kept = {key: value for key, value in stored.items() if key != "stages"}
-        return {"presentation_state": kept, "warnings": [{"code": "stages_not_applied", "message": "The stages saved with this "
-                "investigation were not applied: " + problem[0][0].lower() + problem[0][1:] + " The incidents and every count are as saved."}]}
-    return {"presentation_state": stored, "warnings": []}
+    if base_identity is None:
+        return {"presentation_state": stored, "warnings": []}
+    # What cannot belong to this reading is left out and said to be; the rest of the presentation and the question are as saved.
+    kept, warnings = dict(stored), []
+    for key, check, code, what in (("stages", _stages_problem, "stages_not_applied", "The stages saved with this investigation"),
+                                   ("requests", _requests_problem, "requests_not_applied", "The definition of requests saved with this investigation")):
+        problem = check(stored, base_identity)
+        if problem is not None:
+            kept.pop(key, None)
+            warnings.append({"code": code, "message": f"{what} {'were' if key == 'stages' else 'was'} not applied: " + problem[0][0].lower() + problem[0][1:]
+                             + " The incidents and every count are as saved."})
+    return {"presentation_state": kept if warnings else stored, "warnings": warnings}
 
 
 def _whole_numbers(value: object) -> object:

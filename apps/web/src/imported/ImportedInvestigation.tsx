@@ -1,3 +1,4 @@
+import { RequestsPanel } from "../requests/RequestsPanel";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { InfoPopover } from "../components/InfoPopover";
 import type { InspectorLayout } from "../components/Inspector";
@@ -46,7 +47,7 @@ interface ImportedInvestigationProps {
 /** What the centre shows: the map, the incidents, their variants, every path of the map in one list, or the matrix of its paths. */
 type View = InvestigationView | "variants" | "paths" | "matrix";
 /** What the side panel shows beside the map or the table. */
-type Rail = "context" | "patterns" | "interval" | "gaps" | "pinned";
+type Rail = "context" | "patterns" | "interval" | "gaps" | "requests" | "pinned";
 
 /** The orders of the list of kept incidents, with the words of their buttons. */
 const INCIDENT_ORDERS: readonly ["case" | TimeOrder, string][] = [
@@ -426,6 +427,7 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                 </button>
                 <button type="button" aria-pressed={rail === "interval"} onClick={() => setRail("interval")}>Interval</button>
                 <button type="button" aria-pressed={rail === "gaps"} onClick={() => setRail("gaps")}>Gaps</button>
+                <button type="button" aria-pressed={rail === "requests"} onClick={() => setRail("requests")}>Requests</button>
                 <button type="button" aria-pressed={rail === "pinned"} onClick={() => setRail("pinned")}>Pinned</button>
               </div>
               <button type="button" aria-label="Hide the side panel" onClick={() => setRailOpen(false)}>
@@ -461,6 +463,18 @@ export function ImportedInvestigation({ coordinator, onShowData, saving, initial
                     // The order is read in the table of the incidents.
                     if (order !== null) setView("incidents");
                   }}
+                />
+              )}
+              {rail === "requests" && (
+                <RequestsPanel
+                  workspaceId={answer.workspace_id}
+                  preparationId={answer.identity.preparation_id}
+                  identity={shown?.answer.identity ?? answer.identity}
+                  revision={revision}
+                  activities={parentActivities}
+                  columns={contextColumns}
+                  onOpenCase={openWitness}
+                  openCaseId={openCaseId}
                 />
               )}
               {rail === "pinned" && (

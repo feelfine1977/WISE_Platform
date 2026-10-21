@@ -1,0 +1,516 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wise-platform.local/contracts/unanswered-requests.v1.schema.json",
+  "title": "UnansweredRequestsMessage",
+  "description": "The kept incidents whose last request, as the analyst defines request and answer activities, an optional turn and a gap that starts a new matter, has no later answer in the recorded history; with the last request as evidence and the hours from the last record to the cutoff accepted at import. No resolved or unresolved label, rate or closure activity is inferred.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/UnansweredRequestsRequest"
+    },
+    {
+      "$ref": "#/$defs/UnansweredRequestsAnswer"
+    },
+    {
+      "$ref": "#/$defs/UnansweredRequestsRefusal"
+    }
+  ],
+  "$defs": {
+    "RequestId": {
+      "title": "RequestId",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "QueryRevision": {
+      "title": "QueryRevision",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "WorkspaceId": {
+      "title": "WorkspaceId",
+      "type": "string",
+      "pattern": "^workspace\\.v1:[A-Za-z0-9-]{8,64}$"
+    },
+    "SourceId": {
+      "title": "SourceId",
+      "type": "string",
+      "pattern": "^source\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PreparationId": {
+      "title": "PreparationId",
+      "type": "string",
+      "pattern": "^preparation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "RepresentationId": {
+      "title": "RepresentationId",
+      "type": "string",
+      "pattern": "^representation\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "CaseDictionaryId": {
+      "title": "CaseDictionaryId",
+      "type": "string",
+      "pattern": "^case-dictionary\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "PopulationId": {
+      "title": "PopulationId",
+      "type": "string",
+      "pattern": "^population\\.v1:sha256:[a-f0-9]{64}$"
+    },
+    "ImplementationVersion": {
+      "title": "ImplementationVersion",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "AnswerIdentity": {
+      "title": "AnswerIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/SourceId"
+        },
+        "preparation_id": {
+          "$ref": "#/$defs/PreparationId"
+        },
+        "representation_id": {
+          "$ref": "#/$defs/RepresentationId"
+        },
+        "case_dictionary_id": {
+          "$ref": "#/$defs/CaseDictionaryId"
+        },
+        "population_id": {
+          "$ref": "#/$defs/PopulationId"
+        },
+        "implementation_version": {
+          "$ref": "#/$defs/ImplementationVersion"
+        }
+      },
+      "required": [
+        "source_id",
+        "preparation_id",
+        "representation_id",
+        "case_dictionary_id",
+        "population_id",
+        "implementation_version"
+      ]
+    },
+    "Turn": {
+      "title": "Turn",
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A request counts only on a record whose value in this context column is exactly this value.",
+      "properties": {
+        "column_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "column_index",
+        "value"
+      ]
+    },
+    "RequestDefinition": {
+      "title": "RequestDefinition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request_activities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 200,
+          "uniqueItems": true
+        },
+        "answer_activities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 200,
+          "uniqueItems": true
+        },
+        "turn": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Turn"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gap_hours": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A record that follows the record before it by more than this starts a new matter; only the latest matter is read."
+        }
+      },
+      "required": [
+        "request_activities",
+        "answer_activities",
+        "turn",
+        "gap_hours"
+      ]
+    },
+    "LastRequest": {
+      "title": "LastRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "row_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "activity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "time": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "row_id",
+        "position",
+        "activity",
+        "time"
+      ]
+    },
+    "UnansweredCase": {
+      "title": "UnansweredCase",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "last_request": {
+          "$ref": "#/$defs/LastRequest"
+        },
+        "records_after_request": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "matter_record_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "last_record_time": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hours_since_last_record": {
+          "type": "number",
+          "description": "From the incident's last record to the cutoff accepted at import, on the reading's clock: not a waiting time."
+        }
+      },
+      "required": [
+        "case_id",
+        "last_request",
+        "records_after_request",
+        "matter_record_count",
+        "record_count",
+        "last_record_time",
+        "hours_since_last_record"
+      ]
+    },
+    "Outcomes": {
+      "title": "Outcomes",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "without_answer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "answered": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "no_request": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "order_unknown": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "without_answer",
+        "answered",
+        "no_request",
+        "order_unknown"
+      ]
+    },
+    "UnansweredRequestsRequest": {
+      "title": "UnansweredRequestsRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "unanswered_requests_request"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "definition": {
+          "$ref": "#/$defs/RequestDefinition"
+        },
+        "case_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "definition",
+        "case_limit"
+      ]
+    },
+    "UnansweredRequestsAnswer": {
+      "title": "UnansweredRequestsAnswer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "unanswered_requests_answer"
+        },
+        "request_id": {
+          "$ref": "#/$defs/RequestId"
+        },
+        "query_revision": {
+          "$ref": "#/$defs/QueryRevision"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/WorkspaceId"
+        },
+        "identity": {
+          "$ref": "#/$defs/AnswerIdentity"
+        },
+        "policy": {
+          "type": "string",
+          "const": "incident.request.last_unanswered.v1"
+        },
+        "definition": {
+          "$ref": "#/$defs/RequestDefinition"
+        },
+        "clock": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "timestamp_kind": {
+              "type": "string",
+              "enum": [
+                "utc_instant",
+                "wall_clock"
+              ]
+            },
+            "snapshot_cutoff": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "timestamp_kind",
+            "snapshot_cutoff"
+          ]
+        },
+        "kept_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "outcomes": {
+          "$ref": "#/$defs/Outcomes"
+        },
+        "order_unknown_case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UnansweredCase"
+          }
+        },
+        "cases_truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "identity",
+        "policy",
+        "definition",
+        "clock",
+        "kept_case_count",
+        "outcomes",
+        "order_unknown_case_ids",
+        "cases",
+        "cases_truncated"
+      ]
+    },
+    "UnansweredRequestsRefusal": {
+      "title": "UnansweredRequestsRefusal",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "message_type": {
+          "type": "string",
+          "const": "unanswered_requests_refusal"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QueryRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkspaceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "const": "unanswered_requests"
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "unsupported_schema",
+            "invalid_parameter",
+            "workspace_unavailable",
+            "workspace_not_writable",
+            "workspace_incompatible",
+            "source_unavailable",
+            "preparation_unavailable",
+            "identity_mismatch",
+            "population_unavailable",
+            "memory_unavailable",
+            "column_not_context",
+            "activity_unknown",
+            "definition_invalid",
+            "computation_failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "message_type",
+        "request_id",
+        "query_revision",
+        "workspace_id",
+        "operation",
+        "code",
+        "message",
+        "field",
+        "retryable"
+      ]
+    }
+  }
+}

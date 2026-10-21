@@ -1,0 +1,26 @@
+{
+ "about": "Hand-written expectations for #66 (tests/test_issue66_unanswered_requests.py and tools/qualify_unanswered_requests.py). Invented incidents; Turn and Desk are invented context columns. Cutoff 2026-10-20T00:00:00Z. R-5 has a gap of 239 hours before its second Opened; R-6 asks on a record whose Turn is Agent; R-7 has a record without a time, so its order is not known. Hours run from the last record of the incident to the cutoff. Never read by product code.",
+ "file": "requests.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": [4, 5]},
+ "turn_column": 4,
+ "cutoff_utc": "2026-10-20T00:00:00Z",
+ "incidents": ["R-1", "R-2", "R-3", "R-4", "R-5", "R-6", "R-7"],
+ "with_turn_and_gap": {
+  "definition": {"request_activities": ["Asked customer"], "answer_activities": ["Customer replied"], "turn": {"column_index": 4, "value": "Customer"}, "gap_hours": 72},
+  "outcomes": {"without_answer": 2, "answered": 1, "no_request": 3, "order_unknown": 1},
+  "cases": [
+   {"case_id": "R-2", "position": 2, "records_after_request": 0, "last_record_time": "2026-10-10T10:00:00Z", "hours": 230},
+   {"case_id": "R-3", "position": 4, "records_after_request": 1, "last_record_time": "2026-10-12T09:00:00Z", "hours": 183}
+  ]
+ },
+ "plain": {
+  "definition": {"request_activities": ["Asked customer"], "answer_activities": ["Customer replied"], "turn": null, "gap_hours": null},
+  "outcomes": {"without_answer": 4, "answered": 1, "no_request": 1, "order_unknown": 1},
+  "cases": [
+   {"case_id": "R-6", "position": 2, "records_after_request": 0, "last_record_time": "2026-10-05T08:00:00Z", "hours": 352},
+   {"case_id": "R-2", "position": 2, "records_after_request": 0, "last_record_time": "2026-10-10T10:00:00Z", "hours": 230},
+   {"case_id": "R-5", "position": 2, "records_after_request": 2, "last_record_time": "2026-10-11T09:00:00Z", "hours": 207},
+   {"case_id": "R-3", "position": 4, "records_after_request": 1, "last_record_time": "2026-10-12T09:00:00Z", "hours": 183}
+  ]
+ }
+}

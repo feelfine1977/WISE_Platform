@@ -10,6 +10,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PositiveFloat,
     RootModel,
     confloat,
     conint,
@@ -278,6 +279,7 @@ class RecoveryWarning(BaseModel):
         'presentation_invalid',
         'layout_version_mismatch',
         'stages_not_applied',
+        'requests_not_applied',
     ]
     message: constr(min_length=1)
 
@@ -945,6 +947,34 @@ class StagesPresentation(BaseModel):
     assignments: list[StageAssignment] = Field(..., max_length=20000)
 
 
+class RequestTurn(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    column_index: ColumnIndex
+    value: constr(min_length=1)
+
+
+class RequestActivity(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class AnswerActivity(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class RequestsPresentation(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    preparation_id: PreparationId
+    request_activities: list[RequestActivity] = Field(..., max_length=200, min_length=1)
+    answer_activities: list[AnswerActivity] = Field(..., max_length=200, min_length=1)
+    turn: RequestTurn | None
+    gap_hours: PositiveFloat | None
+    reviewed: Literal[True]
+
+
 class AnswerIdentity(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -1021,6 +1051,7 @@ class PresentationRecovery(BaseModel):
     flow_artifact_sha256: constr(pattern=r'^[a-f0-9]{64}$') | None
     graph_positions: FlowPositions | None
     stages: StagesPresentation | None = None
+    requests: RequestsPresentation | None = None
 
 
 class RecoveryAnswer(BaseModel):
