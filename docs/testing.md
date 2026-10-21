@@ -45,6 +45,20 @@ python tools/qualify_literal_browser.py --scenario issue107 --output receipt.jso
 
 The web app is rebuilt first. Both browser tools refuse to run on a build older than the web sources. `tests/test_literal_browser_scenarios.py` runs every scenario's HTTP setup in each test run.
 
+## First use, the own workspace and the import wizard in the built browser
+
+These tools take the same arguments and refuse a stale build in the same way. Each starts the service as its own process over temporary folders and writes a receipt of checks and identities only.
+
+- `tools/qualify_first_use.py` (#2, #3): an empty workspace, the packaged example S0 with its counts, one incident opened by keyboard and another by pointer, then an actual restart with the same identities and no second example read.
+- `tools/qualify_default_workspace.py` (#47): the service without a workspace, for synthetic users. It covers creation at first launch, reuse, a launch override, a Data-area override with a refused foreign folder, an unwritable default recovered by Try again, and a damaged default recovered by another folder. Every refused folder must keep its bytes.
+- `tools/qualify_import_wizard.py` (#4): on a 1366 × 768 window, the guide's synthetic example, then the invented files of `tests/fixtures/import-journey` against their own `expected.json`:
+  - a wrong delimiter is corrected;
+  - roles are chosen, and the reading and its confirmation are done by keyboard;
+  - "What WISE understood" is checked;
+  - the incidents and their records are opened;
+  - a saved investigation is made, and a corrected reading is published as a new preparation, after which the saved investigation reopens on its own;
+  - a malformed file is refused and never published.
+
 ## Human release checklist
 
 On the supported Windows target, a novice follows the README, imports the synthetic event-history input, asks a useful question, compares context, switches to map/matrix/variants, opens full evidence, optionally scores, saves, stops and reopens. Repeat using keyboard/table paths and recover from one intentional error.

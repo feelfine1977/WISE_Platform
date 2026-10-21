@@ -1,0 +1,32 @@
+{
+ "about": "Hand-written expectations for the built-browser import journey of #4 (tools/qualify_import_wizard.py). Every name, incident and value is invented. Source positions are zero-based data records after the header. Never read by product code.",
+ "journey": {
+  "file": "journey.csv",
+  "delimiter": "Semicolon ;",
+  "columns": ["Ticket", "Status", "Zeitpunkt", "Gruppe", "Zuständige Organisationseinheit laut Quellsystem zum Zeitpunkt der Erfassung des Vorgangs einschließlich aller Unterabteilungen"],
+  "roles": {"Incident id": "Ticket", "Activity": "Status", "Time": "Zeitpunkt"},
+  "context": ["Gruppe", "Zuständige Organisationseinheit laut Quellsystem zum Zeitpunkt der Erfassung des Vorgangs einschließlich aller Unterabteilungen"],
+  "time_format": "Day.Month.Year, 24-hour clock (31.12.2026 17:45)",
+  "records_read": 8,
+  "with_incident_id": 7,
+  "outside": 1,
+  "incidents": 3,
+  "usable_times": 7,
+  "unusable_times": 1,
+  "known_order_incidents": 2,
+  "unknown_order_incidents": 1,
+  "without_activity_label": 1,
+  "outside_original_text": ";Eröffnet;06.04.2026 11:00;Service Desk;False",
+  "issues": {"missing_case_id": [5], "invalid_timestamp": [4], "missing_activity": [6]},
+  "case_records": {"INC-1": 3, "INC-2": 2, "INC-3": 2},
+  "case_ids": ["INC-1", "INC-2", "INC-3"],
+  "literal_values_of": {"case": "INC-1", "column": "Zuständige Organisationseinheit laut Quellsystem zum Zeitpunkt der Erfassung des Vorgangs einschließlich aller Unterabteilungen", "values": ["0", "False", "Unknown"]},
+  "missing_value_of": {"case": "INC-2", "column": "Gruppe", "position": 3}
+ },
+ "broken": {
+  "file": "broken.csv",
+  "records_read": 5,
+  "ragged_records": 3,
+  "published": false
+ }
+}

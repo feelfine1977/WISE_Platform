@@ -2,6 +2,7 @@ import { type FormEvent, useId, useState, useSyncExternalStore } from "react";
 import type { PreparationTarget } from "../imported/coordinator";
 import type { DataCoordinator, DataState } from "./coordinator";
 import { workspaceExamples } from "./examples";
+import { ImportGuide } from "./ImportGuide";
 import { ImportProblemNotice } from "./ImportProblemNotice";
 import { ReadingChoices } from "./ReadingChoices";
 import { byteSize } from "./wording";
@@ -186,6 +187,7 @@ function SourceStep({
           Load the example
         </button>
       </div>
+      <ImportGuide onLoadExample={(chosen) => coordinator.loadExample(chosen)} />
       {source.phase === "fetching" && (
         <Working label={`Fetching ${source.filename} from the application…`} startedAt={source.startedAt} onStop={() => coordinator.stopWaiting()} />
       )}
