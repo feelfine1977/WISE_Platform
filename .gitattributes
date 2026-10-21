@@ -20,3 +20,4 @@ contracts/import.schema.json -text
 apps/api/src/wise_platform_api/bpic19_reference/historical-notebook-norm.json -text
 tests/fixtures/incident-time/** -text
 tests/fixtures/mean-times/*.csv -text
+tests/fixtures/catalogue/collection/** -text
