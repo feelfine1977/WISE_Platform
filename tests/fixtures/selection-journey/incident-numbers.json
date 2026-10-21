@@ -1,0 +1,55 @@
+{
+ "about": "Hand-written expectations for #57 (tools/qualify_incident_numbers.py) over tests/fixtures/explorer/core-v1.csv: 8 incidents, 17 records; C and H have 3 records each, one without activity label. Never read by product code.",
+ "source": "tests/fixtures/explorer/core-v1.csv",
+ "parent": {
+  "incidents": 8,
+  "records": 17
+ },
+ "unknown_entry": [
+  "A",
+  "Z-404"
+ ],
+ "unknown_named": "Z-404",
+ "duplicate_entry": [
+  "A",
+  "A"
+ ],
+ "entry": [
+  "H",
+  "C"
+ ],
+ "reordered_entry": [
+  "C",
+  "H"
+ ],
+ "kept": {
+  "ids": [
+   "C",
+   "H"
+  ],
+  "records": 6
+ },
+ "removed": {
+  "ids": [
+   "A",
+   "B",
+   "D",
+   "E",
+   "F",
+   "G"
+  ],
+  "records": 11
+ },
+ "records": {
+  "C": {
+   "all": 3,
+   "unlabelled": 1
+  },
+  "H": {
+   "all": 3,
+   "unlabelled": 1
+  }
+ },
+ "chip": "Keep incidents with these exact numbers: “H”, “C”",
+ "reordered_chip": "Keep incidents with these exact numbers: “C”, “H”"
+}
