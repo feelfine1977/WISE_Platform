@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { nodeIds, opened, closed, pathId, suppliedGraph } from "../test/selections";
 import { mapDetail, WHOLE_DETAIL } from "./detail";
 import { endFlowId, leastFlowIncidents, rankedDetail, startFlowId, toFlowGraph } from "./graph";
-import { OPENING_ORDER, orderBy, type PathColumn, pathRows, sortedRows } from "./paths";
+import { leadingShare, OPENING_ORDER, orderBy, type PathColumn, pathRows, type PathRow, sortedRows } from "./paths";
 import { busyGraph, busyIds, stepName } from "./testGraphs";
 
 describe("the rows of the list of every path", () => {
@@ -12,7 +12,7 @@ describe("the rows of the list of every path", () => {
     const rows = pathRows(graph, mapDetail(toFlowGraph(graph), WHOLE_DETAIL).drawn);
     expect(rows).toEqual([
       { id: startFlowId(nodeIds[opened]), kind: "start", from: "Start", to: opened, title: "Flow from Start to “Eröffnet”", incidents: 1, drawn: true },
-      { id: pathId, kind: "path", from: opened, to: closed, title: "Path from “Eröffnet” to “Geschlossen”", incidents: 1, passages: 1, medianLagHours: 25.5, drawn: true },
+      { id: pathId, kind: "path", from: opened, to: closed, title: "Path from “Eröffnet” to “Geschlossen”", incidents: 1, passages: 1, medianLagHours: 25.5, totalLagHours: 25.5, drawn: true },
       { id: endFlowId(nodeIds[closed]), kind: "end", from: closed, to: "End", title: "Flow from “Geschlossen” to End", incidents: 1, drawn: true },
     ]);
     expect(pathRows(suppliedGraph(["B-2"]), mapDetail(toFlowGraph(suppliedGraph(["B-2"])), WHOLE_DETAIL).drawn)).toEqual([]);
@@ -77,14 +77,16 @@ describe("the order of the list of every path", () => {
     return [take(sorted[0]), take(sorted[sorted.length - 1])];
   };
 
-  it("opens on the most incidents, and a column chosen first starts where it reads best", () => {
-    expect(OPENING_ORDER).toEqual({ column: "incidents", descending: true });
+  it("opens on the time spent on the paths, and a column chosen first starts where it reads best", () => {
+    // Without supplied totals the rows stand by their incidents, the most first.
+    expect(OPENING_ORDER).toEqual({ column: "total", descending: true });
     expect(sortedRows(rows, OPENING_ORDER).slice(0, 3).map((row) => [row.from, row.to, row.incidents])).toEqual([
       [stepName(0), stepName(1), 105],
       ["Start", stepName(0), 100],
       [stepName(1), stepName(2), 95],
     ]);
-    expect(orderBy(OPENING_ORDER, "incidents")).toEqual({ column: "incidents", descending: false });
+    expect(orderBy(OPENING_ORDER, "incidents")).toEqual({ column: "incidents", descending: true });
+    expect(orderBy(OPENING_ORDER, "total")).toEqual({ column: "total", descending: false });
     expect(orderBy(OPENING_ORDER, "from")).toEqual({ column: "from", descending: false });
     expect(orderBy(OPENING_ORDER, "to")).toEqual({ column: "to", descending: false });
     expect(orderBy(OPENING_ORDER, "passages")).toEqual({ column: "passages", descending: true });
@@ -135,5 +137,24 @@ describe("the order of the list of every path", () => {
       [stepName(11), stepName(10)],
       [stepName(8), stepName(11)],
     ]);
+  });
+});
+
+describe("the time spent on the paths (#88)", () => {
+  const timed = (from: string, to: string, incidents: number, total?: number): PathRow => ({
+    id: `${from}>${to}`, kind: "path", from, to, title: `${from} to ${to}`, incidents, passages: incidents, medianLagHours: total === undefined ? undefined : total / incidents, totalLagHours: total, drawn: true });
+  const rows = [timed("A", "B", 30, 300), timed("B", "C", 20, 20), timed("C", "D", 2, 100), timed("D", "E", 1, 60), timed("E", "F", 10, 50), timed("F", "G", 5, 10),
+    timed("G", "H", 3, 90), { id: "start", kind: "start" as const, from: "Start", to: "A", title: "Flow", incidents: 71, drawn: true }];
+
+  it("orders by the total time, the largest first, ties by incidents and the flows last; the rare long path stays first by median lag", () => {
+    expect(sortedRows(rows, OPENING_ORDER).map((row) => row.id)).toEqual(["A>B", "C>D", "G>H", "D>E", "E>F", "B>C", "F>G", "start"]);
+    expect(sortedRows(rows, { column: "lag", descending: true })[0].id).toBe("D>E");
+  });
+
+  it("says which share of the time on all paths the first five rows carry, in the order shown", () => {
+    expect(leadingShare(sortedRows(rows, OPENING_ORDER))).toEqual({ share: 600 / 630, rows: 5, totalHours: 630 });
+    // By incidents the flow from Start comes first and carries no time: A>B, B>C, E>F and F>G follow.
+    expect(leadingShare(sortedRows(rows, { column: "incidents", descending: true }))?.share).toBeCloseTo((300 + 20 + 50 + 10) / 630);
+    expect(leadingShare([rows[7]])).toBeNull();
   });
 });

@@ -163,7 +163,7 @@ export function suppliedGraph(caseIds: string[]): SuppliedGraph {
             kind: "follows",
             source: nodeIds[opened],
             target: nodeIds[closed],
-            metrics: { count: 1, cases: 1, medianLagHours: 25.5, meanLagHours: 25.5, usableLagCount: 1 },
+            metrics: { count: 1, cases: 1, medianLagHours: 25.5, meanLagHours: 25.5, totalLagHours: 25.5, usableLagCount: 1 },
             payload: { source_activity: opened, target_activity: closed, case_ids: ["A-1"], gap_case_ids: [], omitted_row_ids: [], bridged_passage_count: 0 },
           },
         ]

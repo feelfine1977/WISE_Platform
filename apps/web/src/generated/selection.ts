@@ -362,6 +362,10 @@ export interface PathMetrics {
    * Mean lag over exactly the passages of medianLagHours, on the same clock. Optional: a graph without it is still read.
    */
   meanLagHours?: number;
+  /**
+   * The sum of the lags of all the path's passages, over exactly the passages of medianLagHours, on the same clock: the time spent on the path. Optional: a graph without it is still read.
+   */
+  totalLagHours?: number;
   usableLagCount: number;
 }
 export interface PathWitnesses {

@@ -4,10 +4,11 @@ import { emptySelection, type Selection } from "wise-flow/react";
 import type { SuppliedGraph } from "../generated/selection";
 import "./canvas.css";
 import "./paths.css";
-import { OPENING_ORDER, orderBy, type PathColumn, type PathOrder, pathRows, type PathRow, sortedRows } from "./paths";
+import { leadingShare, OPENING_ORDER, orderBy, type PathColumn, type PathOrder, pathRows, type PathRow, sortedRows } from "./paths";
 
 const whole = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 const oneDecimal = new Intl.NumberFormat("en", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 });
 
 /** Why a row of a flow from Start or to End has a dash in a column. */
 const FLOW_NOTE = "A flow has incidents only";
@@ -19,6 +20,7 @@ const COLUMNS: { column: PathColumn; label: string; number?: true; note?: string
   { column: "incidents", label: "Incidents", number: true },
   { column: "passages", label: "Passages", number: true, note: FLOW_NOTE },
   { column: "lag", label: "Median lag of the passages (h)", number: true, note: FLOW_NOTE },
+  { column: "total", label: "Total time (days, all passages)", number: true, note: `The sum of the lags of all the path's passages: the time spent on it. ${FLOW_NOTE}` },
   { column: "drawn", label: "On the map", note: "Drawn at the current detail" },
 ];
 
@@ -58,6 +60,7 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
   const [order, setOrder] = useState<PathOrder>(OPENING_ORDER);
   const rows = useMemo(() => sortedRows(pathRows(graph, drawn), order), [graph, drawn, order]);
   const [active, setActive] = useState<string | null>(null);
+  const leading = useMemo(() => leadingShare(rows), [rows]);
   const controls = useRef(new Map<string, HTMLButtonElement>()).current;
   const hint = useId();
   // The row the keyboard was on last, or the first one while that row is not listed.
@@ -158,6 +161,7 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
                   <td className="number">{whole.format(row.incidents)}</td>
                   <td className="number">{row.passages === undefined ? none : whole.format(row.passages)}</td>
                   <td className="number">{row.medianLagHours === undefined ? none : oneDecimal.format(row.medianLagHours)}</td>
+                  <td className="number">{row.totalLagHours === undefined ? none : oneDecimal.format(row.totalLagHours / 24)}</td>
                   <td title={row.drawn ? "Drawn" : "Not drawn"}>
                     <span className="path-drawn" data-drawn={row.drawn} aria-hidden="true" />
                     <span className="visually-hidden">{row.drawn ? "Drawn" : "Not drawn"}</span>
@@ -167,6 +171,12 @@ export function PathsTable({ graph, drawn, selection, onSelect }: PathsTableProp
             })}
           </tbody>
         </table>
+      )}
+      {leading !== null && (
+        <p className="muted path-leading">
+          The first {leading.rows} rows in this order carry {percent.format(leading.share)} of the time spent on all paths ({oneDecimal.format(leading.totalHours / 24)} days
+          over all passages).
+        </p>
       )}
     </div>
   );

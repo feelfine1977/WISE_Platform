@@ -21,6 +21,8 @@ export interface PathRow {
   incidents: number;
   passages?: number;
   medianLagHours?: number;
+  /** The supplied time spent on the path: the sum of the lags of all its passages, in hours. */
+  totalLagHours?: number;
   /** Whether the map draws it at its detail. */
   drawn: boolean;
 }
@@ -50,13 +52,14 @@ export function pathRows(graph: SuppliedGraph, drawn: FlowGraph): PathRow[] {
       incidents: edge.metrics.cases,
       passages: edge.metrics.count,
       medianLagHours: edge.metrics.medianLagHours,
+      totalLagHours: edge.metrics.usableLagCount > 0 ? edge.metrics.totalLagHours : undefined,
       drawn: onTheMap.has(edge.id),
     }),
   );
   return [...flows("start"), ...paths, ...flows("end")];
 }
 
-export type PathColumn = "from" | "to" | "incidents" | "passages" | "lag" | "drawn";
+export type PathColumn = "from" | "to" | "incidents" | "passages" | "lag" | "total" | "drawn";
 
 /** The column the list is sorted by, and in which direction. */
 export interface PathOrder {
@@ -64,8 +67,11 @@ export interface PathOrder {
   descending: boolean;
 }
 
-/** The list opens on the paths with the most incidents, the number the map ranks its paths by. */
-export const OPENING_ORDER: PathOrder = { column: "incidents", descending: true };
+/**
+ * The list opens on the paths where most time goes, the total time spent on them, the largest first: the owner's ranking
+ * of what to investigate first. A rare long path stays findable in the order by median lag.
+ */
+export const OPENING_ORDER: PathOrder = { column: "total", descending: true };
 
 /**
  * The order after a column is chosen: the other direction when the list is sorted by it already,
@@ -92,6 +98,8 @@ function valueOf(row: PathRow, column: PathColumn): string | number | undefined 
       return row.passages;
     case "lag":
       return row.medianLagHours;
+    case "total":
+      return row.totalLagHours;
     case "drawn":
       return row.drawn ? 1 : 0;
   }
@@ -114,4 +122,16 @@ export function sortedRows(rows: readonly PathRow[], order: PathOrder): PathRow[
     }
     return other.incidents - one.incidents;
   });
+}
+
+/**
+ * The share of the time spent on all paths that the first rows carry, in the order shown, from the supplied totals;
+ * null where no path has a supplied total or all totals are zero.
+ */
+export function leadingShare(rows: readonly PathRow[], first = 5): { share: number; rows: number; totalHours: number } | null {
+  const timed = rows.filter((row) => row.totalLagHours !== undefined);
+  const totalHours = timed.reduce((sum, row) => sum + (row.totalLagHours ?? 0), 0);
+  if (timed.length === 0 || totalHours <= 0) return null;
+  const leading = rows.slice(0, first).reduce((sum, row) => sum + (row.totalLagHours ?? 0), 0);
+  return { share: leading / totalHours, rows: Math.min(first, rows.length), totalHours };
 }
