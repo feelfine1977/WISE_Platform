@@ -1,0 +1,21 @@
+Ticket,Status,At,Seq,Desk,Agent
+S-ONE,Opened,2026-05-01T08:00:00Z,1,East,Ann
+S-TIE,Opened,2026-05-02T08:00:00Z,1,West,Ben
+S-TIE,Assigned,2026-05-02T08:00:00Z,2,West,Ben
+S-TIE,Resolved,2026-05-02T10:00:00Z,3,West,Cy
+S-ALLTIE,Opened,2026-05-03T08:00:00Z,1,East,Ann
+S-ALLTIE,Resolved,2026-05-03T08:00:00Z,2,East,Ann
+S-UNLAB,Opened,2026-05-04T08:00:00Z,1,East,Ann
+S-UNLAB,,2026-05-04T09:00:00Z,2,North,
+S-UNLAB,Resolved,2026-05-04T15:00:00Z,3,West,Cy
+S-B,Opened,2026-05-05T08:00:00Z,1,West,Ben
+S-B,Resolved,2026-05-05T18:00:00Z,2,West,Ben
+S-A,Opened,2026-05-06T08:00:00Z,1,East,Ann
+S-A,Assigned,2026-05-06T12:00:00Z,2,East,Ann
+S-A,Resolved,2026-05-06T18:00:00Z,3,East,Cy
+S-LONG,Opened,2026-05-07T08:00:00Z,1,North,Dee
+S-LONG,Assigned,2026-05-07T20:00:00Z,2,North,Dee
+S-LONG,Waiting,2026-05-09T20:00:00Z,3,North,Dee
+S-LONG,Resolved,2026-05-10T08:00:00Z,4,North,Cy
+S-UNK,Opened,2026-05-08T08:00:00Z,1,West,Ben
+S-UNK,Resolved,not a time,2,West,Ben

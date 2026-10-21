@@ -44,3 +44,26 @@
 .record-marks-span { stroke: var(--color-line); stroke-width: var(--line-width); }
 .record-marks-mark { stroke: var(--color-line-strong); stroke-width: var(--line-width); }
 .record-marks-none { font-size: var(--font-size-small); }
+.record-marks-gap { fill: var(--color-accent-tint); stroke: var(--color-accent); stroke-width: var(--line-width); vector-effect: non-scaling-stroke; }
+
+/* The order said in words, its reversal, and the search by incident number, on one line above the list. */
+.incident-search-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); font-size: var(--font-size-small); }
+.incident-search-line > button[aria-pressed="true"] { background: var(--color-tint); font-weight: var(--font-weight-strong); }
+.incident-order-said { margin: 0; }
+.incident-search { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.incident-search-said { margin: 0; font-size: var(--font-size-small); }
+/* With more columns than its width holds, the table keeps a readable width and scrolls sideways. */
+.window-table.wide { min-width: var(--size-wide-table); }
+/* What is said under the list never squeezes the list itself below the least height of a table. */
+.window-scroll.wide { min-height: var(--size-table-least); }
+.window-table.wide thead th:first-child { width: var(--size-wide-first-column); }
+
+/* What the list says of the incident in its current row, under the list. */
+.incident-focus { display: grid; gap: var(--space-1); padding: var(--space-2) 0; font-size: var(--font-size-small); }
+.incident-focus > p { margin: 0; }
+.incident-focus > button { justify-self: start; }
+.incident-focus-title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-strong); }
+.incident-focus-context { border-collapse: collapse; }
+.incident-focus-context caption { text-align: left; color: var(--color-ink-muted); padding-bottom: var(--space-1); }
+.incident-focus-context th,
+.incident-focus-context td { padding: var(--space-half) var(--space-2); border-bottom: var(--line-width) solid var(--color-line-row); text-align: left; }

@@ -36,8 +36,18 @@ interface IncidentWindowProps {
   times?: ReadonlyMap<CaseId, IncidentTimes>;
   /** How a duration in hours is written in a cell. */
   duration?: (hours: number) => string;
-  /** One more column at the end, with its head and the cell of each incident in view. */
-  extra?: { head: string; cell: (caseId: CaseId) => ReactNode };
+  /** More columns at the end, each with its head and the cell of each incident in view. */
+  extras?: readonly ExtraColumn[];
+  /** Told the incident of the current row whenever it changes, so that what is said of it can stand beside the table. */
+  onActive?: (caseId: CaseId) => void;
+}
+
+/** A column after the counts and times of an incident: its head, and its cell for each incident in view. */
+export interface ExtraColumn {
+  head: string;
+  cell: (caseId: CaseId) => ReactNode;
+  /** "number" aligns the cell to the right. */
+  className?: string;
 }
 
 /**
@@ -45,8 +55,8 @@ interface IncidentWindowProps {
  * single tab stop: Tab enters the table at the current row, the arrow keys, Page Up, Page Down,
  * Home and End move between rows, and Enter opens the incident.
  */
-export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy, waitingFor, times, duration = String, extra }: IncidentWindowProps) {
-  const columns = (times === undefined ? COLUMNS : COLUMNS + 2) + (extra === undefined ? 0 : 1);
+export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labelledBy, describedBy, waitingFor, times, duration = String, extras = [], onActive }: IncidentWindowProps) {
+  const columns = (times === undefined ? COLUMNS : COLUMNS + 2) + extras.length;
   const scroller = useRef<HTMLDivElement>(null);
   const controls = useRef(new Map<number, HTMLButtonElement>()).current;
   const [scrollTop, setScrollTop] = useState(0);
@@ -70,6 +80,12 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
   useEffect(() => {
     setActive((current) => Math.min(current, Math.max(last, 0)));
   }, [last]);
+
+  const activeCase = cases[active]?.case_id;
+  useEffect(() => {
+    if (activeCase !== undefined) onActive?.(activeCase);
+    // Only another incident in the current row is told; a new callback alone is not.
+  }, [activeCase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rowsInView = Math.max(1, Math.floor((height - ROW_HEIGHT) / ROW_HEIGHT));
   const first = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
@@ -180,7 +196,9 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
             <td className="number">{durationCell(times.get(summary.case_id)?.gap ?? null)}</td>
           </>
         )}
-        {extra !== undefined && <td className="extra-cell">{extra.cell(summary.case_id)}</td>}
+        {extras.map((extra) => (
+          <td key={extra.head} className={extra.className ?? "extra-cell"}>{extra.cell(summary.case_id)}</td>
+        ))}
       </tr>
     );
   }
@@ -202,11 +220,11 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
 
   return (
     <div
-      className="window-scroll"
+      className={extras.length > 1 ? "window-scroll wide" : "window-scroll"}
       ref={scroller}
       onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
     >
-      <table className="window-table" aria-labelledby={labelledBy} aria-describedby={describedBy} aria-rowcount={cases.length + 1}>
+      <table className={extras.length > 1 ? "window-table wide" : "window-table"} aria-labelledby={labelledBy} aria-describedby={describedBy} aria-rowcount={cases.length + 1}>
         <thead>
           <tr aria-rowindex={1}>
             <th scope="col">Incident</th>
@@ -220,7 +238,9 @@ export function IncidentWindow({ cases, openCaseId, onOpen, focusRequest, labell
                 <th scope="col" className="number">Longest gap</th>
               </>
             )}
-            {extra !== undefined && <th scope="col">{extra.head}</th>}
+            {extras.map((extra) => (
+              <th key={extra.head} scope="col" className={extra.className}>{extra.head}</th>
+            ))}
           </tr>
         </thead>
         <tbody>

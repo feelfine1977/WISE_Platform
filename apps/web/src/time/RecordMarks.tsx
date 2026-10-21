@@ -73,10 +73,12 @@ interface RecordMarksProps {
   loader: MarksLoader;
   /** The length of the common axis in hours: the longest recorded span among the incidents listed. */
   axisHours: number;
+  /** The longest gap of the incident as the list supplies it: where it begins after the first record, and how long it is. */
+  gap?: { fromHours: number; hours: number } | null;
 }
 
 /** The records of one incident as marks on the common axis of its list, the first record at the left. */
-export function RecordMarks({ caseId, loader, axisHours }: RecordMarksProps) {
+export function RecordMarks({ caseId, loader, axisHours, gap = null }: RecordMarksProps) {
   const [marks, setMarks] = useState<IncidentMarks | null>(null);
   useEffect(() => {
     let current = true;
@@ -93,12 +95,18 @@ export function RecordMarks({ caseId, loader, axisHours }: RecordMarksProps) {
   }
   const width = axisHours > 0 ? axisHours * HOUR : 1;
   const last = marks.offsets[marks.offsets.length - 1] ?? 0;
+  const place = (microseconds: number) => Math.min(1000, (microseconds / width) * 1000);
+  // The longest gap is marked as a band between its two records; a gap of zero has no width and is not drawn.
+  const band = gap !== null && gap.hours > 0 ? { from: place(gap.fromHours * HOUR), to: place((gap.fromHours + gap.hours) * HOUR) } : null;
+  const said = `${marks.offsets.length} records over ${durationName(last / HOUR)}, from the first record`;
   return (
-    <span className="record-marks" role="img" aria-label={`${marks.offsets.length} records over ${durationName(last / HOUR)}, from the first record`}>
+    <span className="record-marks" role="img"
+      aria-label={band !== null && gap !== null ? `${said}; the longest gap, ${durationName(gap.hours)}, marked from ${durationName(gap.fromHours)}` : said}>
       <svg viewBox="0 0 1000 12" preserveAspectRatio="none" aria-hidden="true">
-        <line className="record-marks-span" x1={0} x2={Math.min(1000, (last / width) * 1000)} y1={6} y2={6} vectorEffect="non-scaling-stroke" />
-        {marks.offsets.map((offset, place) => (
-          <line key={place} className="record-marks-mark" x1={Math.min(1000, (offset / width) * 1000)} x2={Math.min(1000, (offset / width) * 1000)} y1={1} y2={11} vectorEffect="non-scaling-stroke" />
+        {band !== null && <rect className="record-marks-gap" x={band.from} width={Math.max(0, band.to - band.from)} y={3} height={6} />}
+        <line className="record-marks-span" x1={0} x2={place(last)} y1={6} y2={6} vectorEffect="non-scaling-stroke" />
+        {marks.offsets.map((offset, index) => (
+          <line key={index} className="record-marks-mark" x1={place(offset)} x2={place(offset)} y1={1} y2={11} vectorEffect="non-scaling-stroke" />
         ))}
       </svg>
     </span>

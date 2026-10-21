@@ -1,0 +1,41 @@
+{
+ "about": "Hand-written expectations for #58 (tests/test_issue58_span_gap_list.py and tools/qualify_span_gap_list.py). Invented incidents; Desk and Agent are invented context columns. Span: last minus first recorded time in declared order (time, then Seq); longest gap: the largest difference of two adjacent records, the first such pair on ties; share: gap over span when the span is not zero. Never read by product code.",
+ "file": "span-gap.csv",
+ "mapping": {"case_column": 0, "activity_column": 1, "timestamp_column": 2, "sequence_column": 3, "context_columns": [4, 5]},
+ "context_names": ["Desk", "Agent"],
+ "cutoff_utc": "2026-12-31T00:00:00Z",
+ "spans": {"S-ONE": 0, "S-TIE": 2, "S-ALLTIE": 0, "S-UNLAB": 7, "S-B": 10, "S-A": 10, "S-LONG": 72},
+ "gaps": {"S-TIE": 2, "S-ALLTIE": 0, "S-UNLAB": 6, "S-B": 10, "S-A": 6, "S-LONG": 48},
+ "unknown_order": ["S-UNK"],
+ "one_record": ["S-ONE"],
+ "witnesses": {
+  "S-TIE": {"from_position": 2, "to_position": 3, "from_activity": "Assigned", "to_activity": "Resolved", "from_offset_hours": 0, "share": 1.0},
+  "S-ALLTIE": {"from_position": 1, "to_position": 2, "from_activity": "Opened", "to_activity": "Resolved", "from_offset_hours": 0, "share": null},
+  "S-UNLAB": {"from_position": 2, "to_position": 3, "from_activity": null, "to_activity": "Resolved", "from_offset_hours": 1, "share": 0.857142857142857},
+  "S-B": {"from_position": 1, "to_position": 2, "from_activity": "Opened", "to_activity": "Resolved", "from_offset_hours": 0, "share": 1.0},
+  "S-A": {"from_position": 2, "to_position": 3, "from_activity": "Assigned", "to_activity": "Resolved", "from_offset_hours": 4, "share": 0.6},
+  "S-LONG": {"from_position": 2, "to_position": 3, "from_activity": "Assigned", "to_activity": "Waiting", "from_offset_hours": 12, "share": 0.6666666666666666}
+ },
+ "first_last": {
+  "S-UNLAB": {"first": "2026-05-04T08:00:00Z", "first_activity": "Opened", "last": "2026-05-04T15:00:00Z", "last_activity": "Resolved"},
+  "S-ONE": {"first": "2026-05-01T08:00:00Z", "first_activity": "Opened", "last": "2026-05-01T08:00:00Z", "last_activity": "Opened"}
+ },
+ "gap_context": {"S-UNLAB": {"from": ["North", null], "to": ["West", "Cy"]}},
+ "tied_groups": {"S-TIE": 1, "S-ALLTIE": 1, "S-LONG": 0},
+ "unlabelled": {"S-UNLAB": {"record_count": 3, "mapped_record_count": 2, "omitted_activity_record_count": 1}},
+ "orders": {
+  "observed_span_hours descending": ["S-LONG", "S-A", "S-B", "S-UNLAB", "S-TIE", "S-ALLTIE", "S-ONE", "S-UNK"],
+  "observed_span_hours ascending": ["S-ALLTIE", "S-ONE", "S-TIE", "S-UNLAB", "S-A", "S-B", "S-LONG", "S-UNK"],
+  "maximum_adjacent_raw_gap_hours descending": ["S-LONG", "S-B", "S-A", "S-UNLAB", "S-TIE", "S-ALLTIE", "S-ONE", "S-UNK"],
+  "maximum_adjacent_raw_gap_hours ascending": ["S-ALLTIE", "S-TIE", "S-A", "S-UNLAB", "S-B", "S-LONG", "S-ONE", "S-UNK"],
+  "record_count descending": ["S-LONG", "S-A", "S-TIE", "S-UNLAB", "S-ALLTIE", "S-B", "S-UNK", "S-ONE"],
+  "first_recorded_time ascending": ["S-ONE", "S-TIE", "S-ALLTIE", "S-UNLAB", "S-B", "S-A", "S-LONG", "S-UNK"],
+  "first_recorded_time descending": ["S-LONG", "S-A", "S-B", "S-UNLAB", "S-ALLTIE", "S-TIE", "S-ONE", "S-UNK"]
+ },
+ "search": {"text": "-A", "span_descending": ["S-A", "S-ALLTIE"]},
+ "span_bins_default": [2, 4, 1, 0, 0, 0],
+ "span_unavailable": {"case_count": 1, "order_unknown_case_count": 1, "fewer_than_two_records_case_count": 0},
+ "gap_bins_default": [1, 4, 1, 0, 0, 0],
+ "gap_unavailable": {"case_count": 2, "order_unknown_case_count": 1, "fewer_than_two_records_case_count": 1},
+ "kept_span_at_least_5": {"case_ids": ["S-A", "S-B", "S-LONG", "S-UNLAB"], "span_bins_kept": [0, 3, 1, 0, 0, 0]}
+}
