@@ -409,6 +409,11 @@
           "minimum": 0,
           "description": "Median hours from the labelled record before a record of the activity to that record, over the passages of the paths into the activity, on the clock of lag_clock. Absent exactly when usablePreviousCount is 0."
         },
+        "meanPreviousHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Mean hours over exactly the passages of medianPreviousHours, on the same clock. Absent exactly when usablePreviousCount is 0; a graph without means is still read, the mean then said not to be available."
+        },
         "usablePreviousCount": {
           "type": "integer",
           "minimum": 0,
@@ -418,6 +423,11 @@
           "type": "number",
           "minimum": 0,
           "description": "Median hours from a record of the activity to the labelled record after it, over the passages of the paths out of the activity, on the clock of lag_clock. Absent exactly when usableNextCount is 0."
+        },
+        "meanNextHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Mean hours over exactly the passages of medianNextHours, on the same clock. Absent exactly when usableNextCount is 0; a graph without means is still read, the mean then said not to be available."
         },
         "usableNextCount": {
           "type": "integer",
@@ -482,6 +492,44 @@
               "medianNextHours"
             ]
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "usablePreviousCount": {
+                "const": 0
+              }
+            },
+            "required": [
+              "usablePreviousCount"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "meanPreviousHours"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "usableNextCount": {
+                "const": 0
+              }
+            },
+            "required": [
+              "usableNextCount"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "meanNextHours"
+              ]
+            }
+          }
         }
       ]
     },
@@ -529,6 +577,11 @@
         "medianLagHours": {
           "type": "number",
           "minimum": 0
+        },
+        "meanLagHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Mean lag over exactly the passages of medianLagHours, on the same clock. Optional: a graph without it is still read."
         },
         "usableLagCount": {
           "type": "integer",

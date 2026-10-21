@@ -34,7 +34,9 @@ export function ActivityTimesCard({ graph, nodeId, onSelectPath }: ActivityTimes
                 <span className="muted">Not available: {row.reason}.</span>
               ) : (
                 <>
-                  median <strong>{duration(row.median)}</strong> · {integer.format(row.passages)} {row.passages === 1 ? "passage" : "passages"}
+                  median <strong>{duration(row.median)}</strong> · mean{" "}
+                  {row.mean === null ? <span className="muted">not available from this service</span> : <strong>{duration(row.mean)}</strong>} ·{" "}
+                  {integer.format(row.passages)} {row.passages === 1 ? "passage" : "passages"}
                   <span className="muted"> of {integer.format(node.metrics.count)} {node.metrics.count === 1 ? "record" : "records"}</span>
                 </>
               )}
@@ -77,7 +79,7 @@ function PathList({ title, side, activity, paths, onSelectPath }: PathListProps)
               <button
                 type="button"
                 className="activity-path"
-                aria-label={`${side === "from" ? `From ${path.other}` : `To ${path.other}`}: ${integer.format(path.passages)} passages, median lag ${path.lag === null ? "not available" : duration(path.lag)}. Select this path on the map.`}
+                aria-label={`${side === "from" ? `From ${path.other}` : `To ${path.other}`}: ${integer.format(path.passages)} passages, median lag ${path.lag === null ? "not available" : duration(path.lag)}, mean lag ${path.meanLag === null ? "not available" : duration(path.meanLag)}. Select this path on the map.`}
                 onClick={() => onSelectPath(path.id)}
               >
                 <span className="activity-path-name">

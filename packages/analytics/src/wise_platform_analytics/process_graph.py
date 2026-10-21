@@ -5,7 +5,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 import hashlib
 import json
-from statistics import median
+from statistics import fmean, median
 
 from .selection import BOUNDARY_POLICY, PreparedDataLike, SelectionError, boundary_activities, case_ids
 
@@ -32,7 +32,8 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
     time since the event before for the activity the passage leads into, and the
     time until the next event for the activity it leaves. An activity's two
     medians are therefore medians over the lags of the paths into it and out of
-    it, on the clock of ``lag_clock``; one without such a passage has no median.
+    it, on the clock of ``lag_clock``; one without such a passage has no median. Each median has its mean beside it,
+    over the very same passages: waits between records, never durations of an activity.
     """
     selected = case_ids(prepared, selected_ids)
     eligible = tuple(case_id for case_id in selected if prepared.sequence_evaluable(case_id))
@@ -101,11 +102,14 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
         metrics: dict[str, object] = {
             "count": occurrences[activity], "events": occurrences[activity],
             "cases": len(activity_cases[activity]), "starts": starts[activity], "ends": ends[activity]}
+        # The mean rests on exactly the passages of the median: the same hours, the same clock, the same count.
         if before:
             metrics["medianPreviousHours"] = median(before)
+            metrics["meanPreviousHours"] = fmean(before)
         metrics["usablePreviousCount"] = len(before)
         if after:
             metrics["medianNextHours"] = median(after)
+            metrics["meanNextHours"] = fmean(after)
         metrics["usableNextCount"] = len(after)
         nodes.append({"id": activity_node_id(activity), "kind": "activity", "label": activity, "metrics": metrics})
     edges = []
@@ -114,7 +118,7 @@ def build_process_graph(prepared: PreparedDataLike, selected_ids: Iterable[str] 
         edge = {"id": path_edge_id(source, target), "kind": "follows",
                 "source": activity_node_id(source), "target": activity_node_id(target),
                 "metrics": {"count": passages[key], "cases": len(path_cases[key]),
-                            "medianLagHours": median(lags[key]), "usableLagCount": len(lags[key])},
+                            "medianLagHours": median(lags[key]), "meanLagHours": fmean(lags[key]), "usableLagCount": len(lags[key])},
                 "payload": {"source_activity": source, "target_activity": target,
                             "case_ids": sorted(path_cases[key]), "gap_case_ids": sorted(gap_cases[key]),
                             "omitted_row_ids": sorted(gap_rows[key]), "bridged_passage_count": gap_passages[key]}}

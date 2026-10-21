@@ -42,8 +42,8 @@ describe("the supplied graph as the map library's graph", () => {
     const supplied = suppliedGraph(["A-1", "B-2"]);
     const flow = toFlowGraph(supplied);
     const metricsOf = (label: string) => flow.nodes.find((node) => node.label === label)?.metrics;
-    expect(metricsOf(opened)).toStrictEqual({ count: 1, events: 1, cases: 1, starts: 1, ends: 0, usablePreviousCount: 0, medianNextHours: 25.5, usableNextCount: 1 });
-    expect(metricsOf(closed)).toStrictEqual({ count: 1, events: 1, cases: 1, starts: 0, ends: 1, medianPreviousHours: 25.5, usablePreviousCount: 1, usableNextCount: 0 });
+    expect(metricsOf(opened)).toStrictEqual({ count: 1, events: 1, cases: 1, starts: 1, ends: 0, usablePreviousCount: 0, medianNextHours: 25.5, meanNextHours: 25.5, usableNextCount: 1 });
+    expect(metricsOf(closed)).toStrictEqual({ count: 1, events: 1, cases: 1, starts: 0, ends: 1, medianPreviousHours: 25.5, meanPreviousHours: 25.5, usablePreviousCount: 1, usableNextCount: 0 });
     // A time that is not supplied stays left out, so the map library reads it as not given rather than as a number.
     expect(metricsOf(checked)).toStrictEqual({ count: 1, events: 1, cases: 1, starts: 0, ends: 0, usablePreviousCount: 0, usableNextCount: 0 });
     expect(metricsOf("Start")).toStrictEqual({ cases: 1, count: 1 });

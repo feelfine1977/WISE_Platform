@@ -171,6 +171,10 @@ class NodeMetrics(BaseModel):
         None,
         description='Median hours from the labelled record before a record of the activity to that record, over the passages of the paths into the activity, on the clock of lag_clock. Absent exactly when usablePreviousCount is 0.',
     )
+    meanPreviousHours: confloat(ge=0.0) | None = Field(
+        None,
+        description='Mean hours over exactly the passages of medianPreviousHours, on the same clock. Absent exactly when usablePreviousCount is 0; a graph without means is still read, the mean then said not to be available.',
+    )
     usablePreviousCount: conint(ge=0) = Field(
         ...,
         description='Passages of the paths into the activity, in sequence-evaluable cases: the occurrences medianPreviousHours rests on.',
@@ -178,6 +182,10 @@ class NodeMetrics(BaseModel):
     medianNextHours: confloat(ge=0.0) | None = Field(
         None,
         description='Median hours from a record of the activity to the labelled record after it, over the passages of the paths out of the activity, on the clock of lag_clock. Absent exactly when usableNextCount is 0.',
+    )
+    meanNextHours: confloat(ge=0.0) | None = Field(
+        None,
+        description='Mean hours over exactly the passages of medianNextHours, on the same clock. Absent exactly when usableNextCount is 0; a graph without means is still read, the mean then said not to be available.',
     )
     usableNextCount: conint(ge=0) = Field(
         ...,
@@ -202,6 +210,10 @@ class PathMetrics(BaseModel):
     count: conint(ge=0)
     cases: conint(ge=0)
     medianLagHours: confloat(ge=0.0)
+    meanLagHours: confloat(ge=0.0) | None = Field(
+        None,
+        description='Mean lag over exactly the passages of medianLagHours, on the same clock. Optional: a graph without it is still read.',
+    )
     usableLagCount: conint(ge=0)
 
 

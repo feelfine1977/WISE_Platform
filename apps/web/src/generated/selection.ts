@@ -325,6 +325,10 @@ export interface NodeMetrics1 {
    */
   medianPreviousHours?: number;
   /**
+   * Mean hours over exactly the passages of medianPreviousHours, on the same clock. Absent exactly when usablePreviousCount is 0; a graph without means is still read, the mean then said not to be available.
+   */
+  meanPreviousHours?: number;
+  /**
    * Passages of the paths into the activity, in sequence-evaluable cases: the occurrences medianPreviousHours rests on.
    */
   usablePreviousCount: number;
@@ -332,6 +336,10 @@ export interface NodeMetrics1 {
    * Median hours from a record of the activity to the labelled record after it, over the passages of the paths out of the activity, on the clock of lag_clock. Absent exactly when usableNextCount is 0.
    */
   medianNextHours?: number;
+  /**
+   * Mean hours over exactly the passages of medianNextHours, on the same clock. Absent exactly when usableNextCount is 0; a graph without means is still read, the mean then said not to be available.
+   */
+  meanNextHours?: number;
   /**
    * Passages of the paths out of the activity, in sequence-evaluable cases: the occurrences medianNextHours rests on.
    */
@@ -350,6 +358,10 @@ export interface PathMetrics {
   count: number;
   cases: number;
   medianLagHours: number;
+  /**
+   * Mean lag over exactly the passages of medianLagHours, on the same clock. Optional: a graph without it is still read.
+   */
+  meanLagHours?: number;
   usableLagCount: number;
 }
 export interface PathWitnesses {
