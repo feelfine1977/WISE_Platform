@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { type FocusEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import type { SelectionPredicate } from "../generated/selection";
 import { type ImportedSelectionState, shownSelection } from "../imported/coordinator";
 import type { Replacement } from "../replacement/replacement";
@@ -46,6 +46,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
   }, [stepCount]);
   // The incidents kept after each step of a trail, by the steps up to it, as answered: a later step not applied now keeps its count.
   const keptAfter = useRef(new Map<string, number>()).current;
+  const keyboard = useStepsKeyboard(selection);
   if (selection.phase === "idle") return null;
   const shown = shownSelection(selection);
   const { history } = selection;
@@ -67,17 +68,20 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
           Steps
         </h3>
         {/* Three fixed slots: an action that cannot be used now stays in its place, disabled, with the reason in its description. */}
-        <div className="selection-actions" role="group" aria-label="Steps">
-          <IconButton icon="undo" label="Undo" onClick={onUndo} disabled={waiting || !canUndo(history)} describedBy={waitingFor}
+        <div className="selection-actions" role="group" aria-label="Steps" ref={keyboard.bar} onKeyDown={keyboard.onBarKey} onFocus={keyboard.onBarFocus}
+          tabIndex={waiting || (!canUndo(history) && !canRedo(history) && history.present.length === 0) ? 0 : undefined}>
+          <IconButton icon="undo" label="Undo" onClick={keyboard.acting("undo", onUndo)} disabled={waiting || !canUndo(history)} describedBy={waitingFor}
             hint={canUndo(history) ? "Takes back the last change of the steps." : "Nothing to undo: the steps have not been changed."} />
-          <IconButton icon="redo" label="Redo" onClick={onRedo} disabled={waiting || !canRedo(history)} describedBy={waitingFor}
+          <IconButton icon="redo" label="Redo" onClick={keyboard.acting("redo", onRedo)} disabled={waiting || !canRedo(history)} describedBy={waitingFor}
             hint={canRedo(history) ? "Takes the change that was undone again." : "Nothing to redo: no change of the steps has been undone."} />
-          <IconButton icon="clearAll" label="Clear all" onClick={onClear} disabled={waiting || history.present.length === 0} describedBy={waitingFor}
+          <IconButton icon="clearAll" label="Clear all" onClick={keyboard.acting("clear", onClear)} disabled={waiting || history.present.length === 0} describedBy={waitingFor}
             hint={history.present.length > 0 ? "Removes every step: every incident of the parent is kept again." : "No step to clear: every incident of the parent is kept."} />
         </div>
         <p role="status" className="selection-status">
           {selection.phase === "loading" ? "Selecting the incidents and drawing their map…" : ""}
         </p>
+        {/* What changed and how many incidents are kept, said politely once the selection is answered. */}
+        <p className="visually-hidden steps-announcement" aria-live="polite" aria-atomic="true">{keyboard.announcement}</p>
       </div>
       {/* One line of guidance at most: what can be done first, or, after the first step, how to go back or on. */}
       {shown && results.length === 0 && (
@@ -97,6 +101,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
           One step taken: Undo takes it back, or <button type="button" className="link-button" onClick={guide.onAddStep}>add another step</button>.
         </p>
       )}
+      <div className="trail" role="group" aria-label="Trail of steps" ref={keyboard.trail} onKeyDown={keyboard.onTrailKey} onFocus={keyboard.onTrailFocus}>
       {shown && (results.length > 0 || later.length > 0) && onShowAfter && (
         <p className="trail-start">
           <button type="button" disabled={waiting || results.length === 0} aria-describedby={waitingFor} onClick={() => onShowAfter(0)}>
@@ -178,6 +183,7 @@ export function SelectionSteps({ selection, onRemove, onClear, onUndo, onRedo, o
           })}
         </ul>
       )}
+      </div>
       {shown && results.length > 0 && (
         <p className="combined-line">{combinedLine(shown.answer.parent, shown.answer.kept, shown.answer.removed, shown.answer.unevaluable)}</p>
       )}
@@ -231,4 +237,129 @@ function SelectionProblemNotice({ title, problem, onRetry }: { title: string; pr
       )}
     </div>
   );
+}
+
+type BarAction = "undo" | "redo" | "clear";
+
+/** The pressed button of the views, where Escape leaves the bar of steps and its trail for. */
+function leave() {
+  document.querySelector<HTMLElement>('[aria-label="View"] button[aria-pressed="true"]')?.focus();
+}
+
+/** Moves the focus among some elements by the arrow keys, Home and End; true when the key was one of them. */
+function rove(event: KeyboardEvent, items: HTMLElement[], current: number): number | null {
+  if (items.length === 0) return null;
+  const at = Math.max(0, current);
+  const next = { ArrowRight: at + 1, ArrowDown: at + 1, ArrowLeft: at - 1, ArrowUp: at - 1, Home: 0, End: items.length - 1 }[event.key];
+  if (next === undefined) return null;
+  event.preventDefault();
+  const index = Math.min(items.length - 1, Math.max(0, next));
+  items[index].focus();
+  return index;
+}
+
+/**
+ * The keyboard of the bar of steps and of its trail, and what is said when the steps change. Each is one tab stop: the
+ * arrow keys, Home and End move within it and Escape leaves it for the views. After Undo, Redo or Clear all the focus stays
+ * on the action, or moves to one that can still be used; after a new step it moves to the new chip; it is never lost to
+ * the page. Each change is announced politely with the incidents kept.
+ */
+function useStepsKeyboard(selection: ImportedSelectionState) {
+  const bar = useRef<HTMLDivElement>(null);
+  const trail = useRef<HTMLDivElement>(null);
+  const action = useRef<BarAction | null>(null);
+  const trailAt = useRef(-1);
+  const [announcement, setAnnouncement] = useState("");
+  const shown = shownSelection(selection);
+  const answered = selection.phase === "ready" ? shown : null;
+  const previous = useRef<{ key: string; steps: string[] } | null>(null);
+
+  const barButtons = () => Array.from(bar.current?.querySelectorAll<HTMLButtonElement>("button") ?? []);
+  const trailItems = () => Array.from(trail.current?.querySelectorAll<HTMLElement>(".trail-start button, li > details > summary") ?? []);
+
+  // One tab stop in the bar: the button that last had the focus, else the first that can be used.
+  useEffect(() => {
+    const buttons = barButtons();
+    const usable = buttons.filter((button) => !button.disabled);
+    const keep = usable.find((button) => button === document.activeElement) ?? usable[0];
+    for (const button of buttons) button.tabIndex = button === keep ? 0 : -1;
+    // One tab stop in the trail: the item last focused, else the chip of the state shown.
+    const items = trailItems();
+    const applied = trail.current?.querySelectorAll<HTMLElement>('ul[aria-label="Steps of the selection"] > li > details > summary') ?? [];
+    const stop = items[trailAt.current] ?? applied[applied.length - 1] ?? items[0];
+    for (const item of items) item.tabIndex = item === stop ? 0 : -1;
+  });
+
+  // After an action of the bar the focus stays on it, or goes to one that can still be used, or to the trail: never to the page.
+  useEffect(() => {
+    if (action.current === null) return;
+    const active = document.activeElement as HTMLButtonElement | null;
+    if (!active || active === document.body || active.disabled) {
+      const usable = barButtons().find((button) => !button.disabled);
+      (usable ?? trailItems().at(-1) ?? bar.current)?.focus();
+    }
+  });
+
+  // What changed, said once the selection is answered; a new step takes the focus to its chip.
+  useEffect(() => {
+    if (answered === null) return;
+    const key = JSON.stringify(answered.answer.identity);
+    const steps = answered.answer.predicate_results.map((result) => JSON.stringify(result.predicate));
+    const before = previous.current;
+    previous.current = { key, steps };
+    const done = action.current;
+    action.current = null;
+    if (before === null || before.key === key) return;
+    const results = answered.answer.predicate_results;
+    const shortOf = (step: string) => shortStepWording(JSON.parse(step));
+    const added = steps.filter((step) => !before.steps.includes(step));
+    const removed = before.steps.filter((step) => !steps.includes(step));
+    const what =
+      done === "clear" ? "Every step removed."
+        : added.length === 1 && removed.length === 0 ? `${done === "redo" ? "Redone" : "Step added"}: ${shortOf(added[0])}.`
+          : removed.length === 1 && added.length === 0 ? `${done === "undo" ? "Undone" : "Step removed"}: ${shortOf(removed[0])}.`
+            : steps.length === 0 ? "Every step removed."
+              : `Steps changed: ${steps.length === 1 ? "one step" : `${steps.length} steps`}.`;
+    const parent = answered.answer.parent.case_count;
+    setAnnouncement(`${what} ${answered.answer.kept.case_count.toLocaleString("en")} of ${parent.toLocaleString("en")} ${parent === 1 ? "incident" : "incidents"} kept.`);
+    // A new step takes the focus to its chip where the focus would otherwise be lost: on the page, on "+ Add step" whose panel
+    // has closed, or in the bar itself; the focus is left where the analyst is reading anything else.
+    const active = document.activeElement;
+    const adrift = !active || active === document.body || active.classList.contains("add-step-entry") || !!bar.current?.contains(active) || !!trail.current?.contains(active);
+    if (done === null && added.length === 1 && removed.length === 0 && results.length > 0 && adrift) {
+      trailAt.current = -1;
+      const chips = trail.current?.querySelectorAll<HTMLElement>('ul[aria-label="Steps of the selection"] > li > details > summary');
+      chips?.[chips.length - 1]?.focus();
+    }
+  }, [answered]);
+
+  return {
+    bar,
+    trail,
+    announcement,
+    acting: (kind: BarAction, act: () => void) => () => {
+      action.current = kind;
+      act();
+    },
+    onBarKey: (event: KeyboardEvent) => {
+      if (event.key === "Escape") return leave();
+      const usable = barButtons().filter((button) => !button.disabled);
+      rove(event, usable, usable.indexOf(document.activeElement as HTMLButtonElement));
+    },
+    onBarFocus: (event: FocusEvent) => {
+      if (event.target === bar.current) barButtons().find((button) => !button.disabled)?.focus();
+    },
+    onTrailKey: (event: KeyboardEvent) => {
+      const items = trailItems();
+      const current = items.indexOf(event.target as HTMLElement);
+      if (current < 0) return;
+      if (event.key === "Escape") return leave();
+      const moved = rove(event, items, current);
+      if (moved !== null) trailAt.current = moved;
+    },
+    onTrailFocus: (event: FocusEvent) => {
+      const index = trailItems().indexOf(event.target as HTMLElement);
+      if (index >= 0) trailAt.current = index;
+    },
+  };
 }

@@ -64,7 +64,9 @@ describe("the investigation of an imported preparation", () => {
     expect(focusedText()).toBe("Paths");
     await app.user.tab();
     expect(focusedText()).toBe("Matrix");
-    // "+ Add step" and the switch of the side panel stand before the table; the panel itself is closed until it is asked for.
+    // The bar of steps (one tab stop, even with nothing to undo), "+ Add step" and the switch of the side panel stand before the table.
+    await app.user.tab();
+    expect(document.activeElement?.getAttribute("aria-label")).toBe("Steps");
     await app.user.tab();
     expect(focusedText()).toBe("+ Add step");
     await app.user.tab();
@@ -110,8 +112,8 @@ describe("the investigation of an imported preparation", () => {
     const app = renderInvestigation();
     await deliver(() => app.populations[0].reply({ ok: true, answer: populationAnswer(app.populations[0].request, caseSummaries(40000)) }));
     const scroller = screen.getByRole("table", { name: "Kept incidents" }).parentElement!;
-    // Data and the button about the data, then the four views, "+ Add step", the switch of the side panel, then the table.
-    for (let stop = 0; stop < 9; stop += 1) await app.user.tab();
+    // Data and the button about the data, then the four views, the bar of steps, "+ Add step", the switch of the side panel, then the table.
+    for (let stop = 0; stop < 10; stop += 1) await app.user.tab();
     await app.user.keyboard("{End}");
     expect(focusedText()).toBe("INC-39999");
 
