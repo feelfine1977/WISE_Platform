@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useMemo, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { countOf } from "../data/wording";
 import type {
   CategoryComparison,
@@ -11,13 +11,17 @@ import type {
 } from "../generated/comparison";
 import type { ImportedPopulationAnswer } from "../generated/imports";
 import { type ImportedInvestigationCoordinator, shownSelection } from "../imported/coordinator";
+import { describeImportProblem } from "../data/wording";
+import type { ImportedCaseEvidenceAnswer } from "../generated/imports";
 import { stepWording, supportText } from "../map/wording";
+import { RecordsTable } from "../pinned/PairedHistories";
 import type { ComparisonProblem } from "./client";
 import {
   type CompareBasis,
   type CompareCoordinator,
   type CompareDraft,
   contextPolicy,
+  type FrozenParent,
   groupDefinition,
   periodDefinition,
   type Role,
@@ -129,9 +133,7 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
         <h2 id="compare-title" className="compare-title">
           Compare
         </h2>
-        <p className="compare-muted">
-          In {population.source.filename}: the parent is every incident, {supportText(population.population)}.
-        </p>
+        <ParentLine filename={population.source.filename} every={supportText(population.population)} parent={draft.parent} onRebase={() => coordinator.rebase()} />
       </div>
       <div className="compare-body">
         <section className="compare-setup" aria-labelledby="compare-setup-title">
@@ -147,7 +149,8 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
             </button>
           </div>
           {draft.mode === "groups" ? (
-            <GroupsSetup coordinator={coordinator} draft={draft} selection={selection} activities={activities} openings={openings} />
+            <GroupsSetup coordinator={coordinator} draft={draft} selection={selection} activities={activities} openings={openings} investigation={investigation}
+              parentCaseIds={investigated.parentCaseIds} />
           ) : (
             <PeriodsSetup coordinator={coordinator} draft={draft} clock={state.basis.clock} activities={activities} />
           )}
@@ -194,6 +197,8 @@ export function CompareView({ coordinator, investigation, onShowData, onShowInve
             </p>
           )}
           {shown && <ComparisonTable shown={shown} columnName={columnName(shown.answer.context_column_index)} onStep={addStep} waitingFor={waitingFor} />}
+          {shown && <EmptySide shown={shown} frozen={draft.parent !== null} onRebase={() => coordinator.rebase()} onSwap={() => coordinator.swap()} onShowInvestigation={onShowInvestigation} />}
+          {shown && shown.kind === "groups" && <SideIncidents key={shown.answer.comparison_id} shown={shown} investigation={investigation} />}
         </section>
       </div>
     </main>
@@ -204,6 +209,10 @@ interface GroupsSetupProps {
   coordinator: CompareCoordinator;
   draft: CompareDraft;
   selection: ReturnType<typeof shownSelection>;
+  /** Freezes the parent of a split: the incidents the steps before the last keep. */
+  investigation?: ImportedInvestigationCoordinator;
+  /** The investigation's own parent; null for every incident. */
+  parentCaseIds?: string[] | null;
   /** The activities of the parent's map, to choose a group by. */
   activities: string[];
   /** The context columns with the opening values the investigation shows, to choose a group by. */
@@ -217,8 +226,32 @@ interface OpeningChoice {
   values: (string | null)[];
 }
 
-function GroupsSetup({ coordinator, draft, selection, activities, openings }: GroupsSetupProps) {
+function GroupsSetup({ coordinator, draft, selection, activities, openings, investigation, parentCaseIds = null }: GroupsSetupProps) {
   const steps = selection?.steps ?? [];
+  const [freezing, setFreezing] = useState<{ phase: "idle" } | { phase: "working" } | { phase: "failed"; message: string }>({ phase: "idle" });
+  /**
+   * A on the incidents the last step keeps and B on those it removes, within the parent frozen after every earlier
+   * step: the incidents the earlier steps keep. With one step the parent is the investigation's own.
+   */
+  async function split() {
+    if (selection === null || steps.length === 0) return;
+    const clause = steps[steps.length - 1];
+    if (steps.length === 1 || !investigation) {
+      // One step: the parent is the investigation's own, every incident unless a saved parent narrows it.
+      coordinator.splitWithin(clause, parentCaseIds === null ? null : { caseIds: [...parentCaseIds], retained: [], count: selection.answer.parent.case_count, eligibilityUnknown: 0 },
+        { kept: selection.answer.kept, removed: selection.answer.removed, unevaluable: selection.answer.unevaluable });
+      return;
+    }
+    const retained = steps.slice(0, -1);
+    setFreezing({ phase: "working" });
+    const frozen = await investigation.keptBy(retained, new AbortController().signal);
+    if (!frozen.ok) {
+      setFreezing({ phase: "failed", message: frozen.problem.kind === "refusal" ? frozen.problem.refusal.message : "The parent could not be selected; try again." });
+      return;
+    }
+    setFreezing({ phase: "idle" });
+    coordinator.splitWithin(clause, { caseIds: frozen.keptIds, retained, count: frozen.keptIds.length, eligibilityUnknown: frozen.unevaluable });
+  }
   return (
     <>
       <p className="compare-muted">
@@ -238,17 +271,17 @@ function GroupsSetup({ coordinator, draft, selection, activities, openings }: Gr
         <button
           type="button"
           disabled={selection === null || steps.length === 0}
-          onClick={() =>
-            selection &&
-            coordinator.splitSelection(selection.steps, {
-              kept: selection.answer.kept,
-              removed: selection.answer.removed,
-              unevaluable: selection.answer.unevaluable,
-            })
-          }
+          aria-describedby="compare-split-hint"
+          onClick={() => void split()}
         >
           Kept against removed
         </button>
+        <p id="compare-split-hint" className="compare-muted">
+          The last step splits the parent: A holds what it keeps, B what it removes. The parent is frozen after every earlier step, so an incident an
+          earlier step removed is in neither side.
+        </p>
+        {freezing.phase === "working" && <p className="working-text">Freezing the parent of the earlier steps…</p>}
+        {freezing.phase === "failed" && <p role="alert">{freezing.message}</p>}
         {selection !== null && steps.length === 0 && (
           <p className="compare-muted">Add a step to the selection in Investigations to compare its kept and removed incidents.</p>
         )}
@@ -311,7 +344,15 @@ function GroupSlot({ role, coordinator, draft, selection, activities, openings }
       : null;
   const listed = [...new Set(ids.split(/[\s,;]+/).filter((id) => id !== ""))];
   let description: ReactNode;
-  if (draft.split) {
+  if (draft.split && draft.split.taken === null) {
+    const side = role === "target" ? draft.split.targetSide : draft.split.targetSide === "kept" ? "removed" : "kept";
+    description = (
+      <>
+        The incidents of the frozen parent the clause {side === "kept" ? "keeps (included)" : "removes (excluded)"}: {draft.split.predicates.map(stepWording).join("; and ")}.
+        Those it cannot evaluate belong to neither side.
+      </>
+    );
+  } else if (draft.split && draft.split.taken) {
     const side = role === "target" ? draft.split.targetSide : draft.split.targetSide === "kept" ? "removed" : "kept";
     const support = side === "kept" ? draft.split.taken.kept : draft.split.taken.removed;
     description = (
@@ -658,9 +699,14 @@ function roleDefinitions(shown: ShownComparison): string {
   if (shown.kind === "periods") return "Periods take incidents by the start of their first record.";
   const definition = shown.request.definition;
   if (definition.mode === "selection_partition") {
-    const target = definition.target_side;
-    const reference = target === "kept" ? "removed" : "kept";
-    return `A holds the ${target} and B the ${reference} incidents of the selection: ${definition.predicates.map(stepWording).join("; and ")}.`;
+    const included = definition.target_side === "kept";
+    const clause = definition.predicates.map(stepWording).join("; and ");
+    const absent = definition.predicates.length === 1 && definition.predicates[0].kind === "contains_activity" ? definition.predicates[0].activity : null;
+    return (
+      `A is the target and B the reference: A holds the incidents of the parent the clause ${included ? "includes" : "excludes"}, B those it ${included ? "excludes" : "includes"}, ` +
+      `and the incidents it cannot evaluate are in neither. The clause: ${clause}.` +
+      (absent === null ? "" : ` “No recorded “${absent}”” says only that the export holds no record of it: not that the incident is open or unresolved.`)
+    );
   }
   return `A: ${groupWording(definition.target.definition)}. B: ${groupWording(definition.reference.definition)}.`;
 }
@@ -768,7 +814,9 @@ function ProfileNotes({ profile, columnName }: { profile: ContextProfile; column
     );
   }
   if (profile.parent_fixed.status === "fixed") {
-    notes.push(`Every incident of the parent was first recorded with ${columnName} ${valueText(profile.parent_fixed.value)}, so this column cannot tell the groups apart.`);
+    notes.push(`${columnName} is fixed in the parent: every incident of the parent was first recorded with ${columnName} ${valueText(profile.parent_fixed.value)}, so this column cannot tell the groups apart.`);
+  } else if (profile.parent_fixed.status === "varying") {
+    notes.push(`${columnName} varies in the parent: its incidents were first recorded with more than one value.`);
   }
   if (notes.length === 0) return null;
   return (
@@ -812,5 +860,120 @@ function ComparisonProblemNotice({ title, problem, onRetry }: { title: string; p
         </button>
       )}
     </div>
+  );
+}
+
+/** The parent of the comparisons: every incident, or the parent frozen after retained steps, with the way back to every incident. */
+function ParentLine({ filename, every, parent, onRebase }: { filename: string; every: string; parent: FrozenParent | null; onRebase: () => void }) {
+  if (parent === null) return <p className="compare-muted">In {filename}: the parent is every incident, {every}.</p>;
+  const retained = parent.retained.length === 0 ? "the investigation's parent" : `kept by ${parent.retained.map(stepWording).join("; and ")}`;
+  return (
+    <div className="compare-parent" role="note" aria-label="Parent">
+      <p>
+        In {filename}: the parent P is frozen (parent {parent.revision}): {countOf(parent.count, "incident")} {retained}.
+        {parent.eligibilityUnknown > 0 &&
+          ` ${countOf(parent.eligibilityUnknown, "incident")} whose eligibility is unknown, as a step could not evaluate ${parent.eligibilityUnknown === 1 ? "it" : "them"}, ${parent.eligibilityUnknown === 1 ? "is" : "are"} outside it.`}
+      </p>
+      <button type="button" onClick={onRebase}>
+        Use every incident as the parent
+      </button>
+    </div>
+  );
+}
+
+/** A side without an incident cannot be described: the ways on are said. */
+function EmptySide({ shown, frozen, onRebase, onSwap, onShowInvestigation }: { shown: ShownComparison; frozen: boolean; onRebase: () => void; onSwap: () => void; onShowInvestigation: () => void }) {
+  const empty = [shown.answer.target, shown.answer.reference].filter((cohort) => cohort.included.case_count === 0);
+  if (empty.length === 0) return null;
+  return (
+    <div className="compare-problem" role="note" aria-label="Empty side">
+      <p className="compare-problem-title">{empty.map((cohort) => cohort.name).join(" and ")} {empty.length === 1 ? "has" : "have"} no incident in this parent.</p>
+      <p>Choose another clause in Investigations{frozen ? ", or compare in every incident instead of the frozen parent" : ""}; exchanging A and B changes only which side is the target.</p>
+      <div className="compare-actions">
+        <button type="button" onClick={onShowInvestigation}>Choose another clause in Investigations</button>
+        {frozen && <button type="button" onClick={onRebase}>Use every incident as the parent</button>}
+        <button type="button" onClick={onSwap}>Exchange A and B</button>
+      </div>
+    </div>
+  );
+}
+
+type SideChoice = "target" | "reference" | "both";
+
+/**
+ * The incidents of A, of B or of both, each opened with its complete history in the population of its side; the
+ * comparison stays shown, and returning gives the focus back to the incident's button.
+ */
+function SideIncidents({ shown, investigation }: { shown: Extract<ShownComparison, { kind: "groups" }>; investigation: ImportedInvestigationCoordinator }) {
+  const [side, setSide] = useState<SideChoice | null>(null);
+  const [open, setOpen] = useState<{ caseId: string; role: Role; loaded: { ok: true; answer: ImportedCaseEvidenceAnswer } | { ok: false; message: string } | null } | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const { target, reference } = shown.answer;
+  const inTarget = new Set(target.included.case_ids);
+  const inReference = new Set(reference.included.case_ids);
+  const listed = side === null ? [] : side === "target" ? target.included.case_ids : side === "reference" ? reference.included.case_ids
+    : [...new Set([...target.included.case_ids, ...reference.included.case_ids])].sort();
+  useEffect(() => {
+    if (open?.loaded) heading.current?.focus();
+  }, [open?.loaded]);
+  async function openCase(caseId: string, role: Role, element: HTMLElement) {
+    opener.current = element;
+    setOpen({ caseId, role, loaded: null });
+    const identity = role === "target" ? target.identity : reference.identity;
+    const outcome = await investigation.evidenceIn(identity, caseId, new AbortController().signal);
+    setOpen({ caseId, role, loaded: outcome.ok ? outcome : { ok: false, message: describeImportProblem(outcome.problem).message } });
+  }
+  function close() {
+    setOpen(null);
+    const element = opener.current;
+    requestAnimationFrame(() => element?.focus());
+  }
+  const roleName = (role: Role) => `${role === "target" ? "A" : "B"}, ${role === "target" ? target.name : reference.name}`;
+  return (
+    <section className="compare-sides" aria-labelledby="compare-sides-title">
+      <h4 id="compare-sides-title">Incidents of the sides</h4>
+      <div className="compare-modes" role="group" aria-label="Inspect the incidents of">
+        {(["target", "reference", "both"] as const).map((choice) => (
+          <button key={choice} type="button" aria-pressed={side === choice} onClick={() => setSide(side === choice ? null : choice)}>
+            {choice === "target" ? `A: ${target.name}` : choice === "reference" ? `B: ${reference.name}` : "Both"}
+          </button>
+        ))}
+      </div>
+      {side !== null && (
+        <ul className="compare-side-list" aria-label={side === "both" ? "Incidents of A and B" : `Incidents of ${roleName(side)}`}>
+          {listed.map((caseId) => {
+            const role: Role = inTarget.has(caseId) ? "target" : "reference";
+            const of = inTarget.has(caseId) && inReference.has(caseId) ? "A and B" : role === "target" ? "A" : "B";
+            return (
+              <li key={caseId}>
+                <span className="identifier">{caseId}</span> · {of}{" "}
+                <button type="button" className="link-button" onClick={(event) => void openCase(caseId, role, event.currentTarget)}>
+                  Open {caseId}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {open && (
+        <section className="compare-history" aria-labelledby="compare-history-title" onKeyDown={(event) => event.key === "Escape" && close()}>
+          <h4 id="compare-history-title" tabIndex={-1} ref={heading}>
+            Incident <span className="identifier">{open.caseId}</span>, of {roleName(open.role)}
+          </h4>
+          <p className="compare-muted">Read in the population of its side; the comparison and its parent stay as they are. Escape returns.</p>
+          {open.loaded === null ? (
+            <p className="working-text">Reading every record of {open.caseId}…</p>
+          ) : open.loaded.ok ? (
+            <RecordsTable answer={open.loaded.answer} />
+          ) : (
+            <p role="alert">{open.loaded.message}</p>
+          )}
+          <button type="button" onClick={close}>
+            Return to the comparison
+          </button>
+        </section>
+      )}
+    </section>
   );
 }

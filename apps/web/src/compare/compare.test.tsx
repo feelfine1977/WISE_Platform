@@ -14,7 +14,7 @@ import {
   scriptedComparisonClient,
   teamColumn,
 } from "../test/comparisons";
-import { preparationId, scriptedImportClient, workspaceId } from "../test/imports";
+import { evidenceAnswer, preparationId, scriptedImportClient, workspaceId } from "../test/imports";
 import { contains, scriptedSelectionClient } from "../test/selections";
 import { scriptedViewClient } from "../test/views";
 import { comparisonContract } from "./client";
@@ -250,16 +250,17 @@ describe("the Compare view", () => {
     expect(split.hasAttribute("disabled")).toBe(true);
     await selectAssigned(app);
     await app.user.click(screen.getByRole("button", { name: "Kept against removed" }));
-    expect((screen.getByLabelText("Name of group A") as HTMLInputElement).value).toBe("Kept");
-    expect((screen.getByLabelText("Name of group B") as HTMLInputElement).value).toBe("Removed");
+    // The roles are named from the clause as what is recorded, apart from the kept and removed membership.
+    expect((screen.getByLabelText("Name of group A") as HTMLInputElement).value).toBe("Recorded “Assigned”");
+    expect((screen.getByLabelText("Name of group B") as HTMLInputElement).value).toBe("No recorded “Assigned”");
     expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("The removed incidents of the selection");
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     const request = app.comparisons.groups[0].request;
     expect(comparisonContract.groupRequest(request)).toBe(true);
     expect(request.definition).toEqual({
       mode: "selection_partition",
-      target_name: "Kept",
-      reference_name: "Removed",
+      target_name: "Recorded “Assigned”",
+      reference_name: "No recorded “Assigned”",
       predicates: [contains("Assigned")],
       target_side: "kept",
     });
@@ -268,8 +269,8 @@ describe("the Compare view", () => {
     await app.user.click(screen.getByRole("button", { name: "Compare" }));
     expect(app.comparisons.groups[1].request.definition).toEqual({
       mode: "selection_partition",
-      target_name: "Removed",
-      reference_name: "Kept",
+      target_name: "No recorded “Assigned”",
+      reference_name: "Recorded “Assigned”",
       predicates: [contains("Assigned")],
       target_side: "removed",
     });
@@ -394,7 +395,7 @@ describe("the Compare view", () => {
     const [, second, third] = app.comparisons.groups;
     expect(second.signal.aborted).toBe(true);
     await deliver(() => second.reply({ ok: true, answer: groupAnswer(second.request) }));
-    expect(screen.getByRole("columnheader", { name: "A: Kept" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "A: Recorded “Assigned”" })).toBeTruthy();
     expect(screen.getByText("Comparing…")).toBeTruthy();
 
     await deliver(() => third.reply(comparisonRefusal(third.request, "compare_groups", "invalid_predicate", "The step cannot be evaluated.")));
@@ -403,7 +404,7 @@ describe("the Compare view", () => {
     expect(alert.textContent).toContain("The step cannot be evaluated.");
     expect(alert.textContent).toContain("Take the group again from a selection in Investigations.");
     expect(within(alert).queryByRole("button", { name: "Try again" })).toBeNull();
-    expect(screen.getByRole("columnheader", { name: "A: Kept" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "A: Recorded “Assigned”" })).toBeTruthy();
   });
 
   it("asks again when a retryable comparison failed, under a new revision", async () => {
@@ -445,5 +446,82 @@ describe("the areas of the application", () => {
     expect(screen.getByRole("heading", { name: "Compare" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Go to the Data area" }));
     expect(within(areas).getByRole("button", { name: "Data" }).getAttribute("aria-current")).toBe("page");
+  });
+});
+
+describe("#14 the sides of the last step within a parent frozen after the earlier steps", () => {
+  it("freezes the parent the earlier steps keep, names the roles apart from kept and removed, and makes every incident the parent again on request", async () => {
+    const app = await openCompare();
+    await selectAssigned(app);
+    act(() => app.investigation.addStep(contains("Resolved")));
+    await answerSelection(app, 2);
+    await app.user.click(screen.getByRole("button", { name: "Kept against removed" }));
+    // The parent is asked for with the earlier step only, and nothing is shown of it in Investigations.
+    const parentCall = app.selections.selections[3];
+    expect(parentCall.request.request_id).toMatch(/^parent-/);
+    expect(parentCall.request.predicates).toEqual([contains("Assigned")]);
+    await deliver(() => parentCall.reply({ ok: true, answer: comparedSelection(parentCall.request) }));
+    const parentLine = await screen.findByRole("note", { name: "Parent" });
+    expect(parentLine.textContent).toContain("the parent P is frozen (parent 1): 2 incidents kept by Keep incidents that contain “Assigned”.");
+    expect((screen.getByLabelText("Name of group A") as HTMLInputElement).value).toBe("Recorded “Resolved”");
+    expect((screen.getByLabelText("Name of group B") as HTMLInputElement).value).toBe("No recorded “Resolved”");
+    expect(screen.getByRole("group", { name: "Group B" }).textContent).toContain("The incidents of the frozen parent the clause removes (excluded)");
+    await app.user.click(screen.getByRole("button", { name: "Compare" }));
+    const request = app.comparisons.groups[0].request;
+    expect(request.parent_case_ids).toEqual(["C-2", "C-4"]);
+    expect(request.definition).toMatchObject({ mode: "selection_partition", predicates: [contains("Resolved")], target_side: "kept" });
+    await deliver(() => app.comparisons.groups[0].reply({ ok: true, answer: groupAnswer(request) }));
+    const roles = document.querySelector(".compare-roles")!.textContent ?? "";
+    expect(roles).toContain("A is the target and B the reference: A holds the incidents of the parent the clause includes, B those it excludes");
+    expect(roles).toContain("says only that the export holds no record of it: not that the incident is open or unresolved");
+
+    // Back to every incident, explicitly: the next comparison is made in the whole population.
+    await app.user.click(within(parentLine).getByRole("button", { name: "Use every incident as the parent" }));
+    expect(screen.queryByRole("note", { name: "Parent" })).toBeNull();
+    await app.user.click(screen.getByRole("button", { name: "Compare" }));
+    expect(app.comparisons.groups[1].request.parent_case_ids).toBeNull();
+  });
+
+  it("opens an incident of either side in its side's population and returns the focus, the comparison kept", async () => {
+    const app = await openCompare();
+    await selectAssigned(app);
+    await app.user.click(screen.getByRole("button", { name: "Kept against removed" }));
+    await app.user.click(screen.getByRole("button", { name: "Compare" }));
+    const request = app.comparisons.groups[0].request;
+    const answer = groupAnswer(request);
+    await deliver(() => app.comparisons.groups[0].reply({ ok: true, answer }));
+    await app.user.click(screen.getByRole("button", { name: "Both" }));
+    const list = screen.getByRole("list", { name: "Incidents of A and B" });
+    expect(within(list).getAllByRole("listitem").map((item) => item.textContent?.split(" Open")[0])).toEqual(["C-1 · B", "C-2 · A and B", "C-3 · B", "C-4 · A"]);
+    const open = within(list).getByRole("button", { name: "Open C-4" });
+    await app.user.click(open);
+    const call = app.imports.evidence.at(-1)!;
+    expect(call.request.identity).toEqual(answer.target.identity);
+    await deliver(() => call.reply({ ok: true, answer: evidenceAnswer(call.request) }));
+    const history = screen.getByRole("region", { name: /^Incident C-4, of A/ });
+    expect(within(history).getByRole("table", { name: /^All 3 records of incident C-4/ })).toBeTruthy();
+    expect(screen.getByRole("table", { name: /each figure with what it is a share of/ })).toBeTruthy();
+    await app.user.click(within(history).getByRole("button", { name: "Return to the comparison" }));
+    await vi.waitFor(() => expect(document.activeElement).toBe(within(screen.getByRole("list", { name: "Incidents of A and B" })).getByRole("button", { name: "Open C-4" })));
+  });
+});
+
+describe("#14 an empty side", () => {
+  it("says which side has no incident and offers the ways on", async () => {
+    const app = await openCompare();
+    await selectAssigned(app);
+    await app.user.click(screen.getByRole("button", { name: "Kept against removed" }));
+    await app.user.click(screen.getByRole("button", { name: "Compare" }));
+    const request = app.comparisons.groups[0].request;
+    const answer = groupAnswer(request);
+    const emptied = { ...answer, target: { ...answer.target, included: { case_ids: [], case_count: 0, record_count: 0 } } };
+    await deliver(() => app.comparisons.groups[0].reply({ ok: true, answer: emptied }));
+    const note = screen.getByRole("note", { name: "Empty side" });
+    expect(note.textContent).toContain(`${answer.target.name} has no incident in this parent.`);
+    await app.user.click(within(note).getByRole("button", { name: "Choose another clause in Investigations" }));
+    expect(app.onShowInvestigation).toHaveBeenCalledOnce();
+    // The parent is the investigation's own, every incident: no rebase is offered where there is nothing to rebase.
+    expect(within(note).queryByRole("button", { name: "Use every incident as the parent" })).toBeNull();
+    expect(within(note).getByRole("button", { name: "Exchange A and B" })).toBeTruthy();
   });
 });
