@@ -124,8 +124,8 @@ def issue111(client, workspace: Path) -> dict:
         "11 PO items · 13 original records", "Reviewed fixed value bands · tied values stay together", "Declared amount unit: EUR"]}
 
 
-def issue112(client, workspace: Path) -> dict:
-    import test_issue112_completion_norm_tcp as literal
+def scored_scenario(client, workspace: Path, literal, family: str, name: str) -> dict:
+    """Review the scoring literal's profile and score it with one criteria family, both on the selected population."""
     from import_requests import envelope
     wid, base = literal.prepare(client, workspace, literal.literal())
     identity = selection(client, wid, base, None)
@@ -133,15 +133,20 @@ def issue112(client, workspace: Path) -> dict:
     query = {"roles": roles, "profile_columns": None, "policy_id": "bpic19.all_raw_case_attributes.v1"}
     profile = client.post("/api/investigations/bpic19-profile", json=envelope("bpic19_profile_request", workspace_id=wid,
         identity=identity, query=query)).json()["profile"]
-    request = literal.given(wid, base, **literal.COMPLETION)
-    request["named_population"] = {"name": "T10 literal items", "identity": identity}
+    request = literal.given(wid, base, criteria_family=family)
+    request["named_population"] = {"name": name + " literal items", "identity": identity}
     scored = client.post("/api/investigations/bpic19-score", json=request).json()
-    saved = save(client, wid, base, None, "T10 completion norm", [
+    return save(client, wid, base, None, name, [
         lambda current: {"operation": "bpic19_profile", "identity": current, "query": query, "definition_id": profile["definition_id"],
                          "selection_prefix_length": 0},
         lambda current: {"operation": "bpic19_score", "identity": current, "definition_id": scored["definition_id"],
                          "query": {"run_id": scored["run_id"], "case_offset": 0, "case_limit": 50, "group_offset": 0, "group_limit": 50},
                          "selection_prefix_length": 0}])
+
+
+def issue112(client, workspace: Path) -> dict:
+    import test_issue112_completion_norm_tcp as literal
+    saved = scored_scenario(client, workspace, literal, "completion", "T10 completion norm")
     # Criterion rows read: id, total, out of scope, scope unknown, in-scope unavailable, eligible.
     return {"name": "T10 completion norm", "saved": saved, "texts": [
         "4 of 6 items scored · mean score 0.916667 · mean evidence coverage 1", "Partial profile: 3 of 10 criteria admitted.",
@@ -149,5 +154,16 @@ def issue112(client, workspace: Path) -> dict:
         "C0161104", "C0261104", "C0362103"]}
 
 
-SCENARIOS = {"issue112": issue112, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
+def issue113(client, workspace: Path) -> dict:
+    import test_issue113_timing_norm_tcp as literal
+    saved = scored_scenario(client, workspace, literal, "completion_timing", "T11 timing norm")
+    # Scores by hand: K30 1, K60 .9, K90 .8, M .75, E 1, V .8, B 1, R 1, G 1 (mean 11/12); coverage M .8, R .8 and
+    # G .6 (its 2016 receipt and invoice minima are outside the gate), others 1 (mean 8.2/9). Criterion rows read:
+    # id, total, out of scope, scope unknown, in-scope unavailable, eligible, positive.
+    return {"name": "T11 timing norm", "saved": saved, "texts": [
+        "9 of 9 items scored · mean score 0.916667 · mean evidence coverage 0.911111", "Partial profile: 5 of 10 criteria admitted.",
+        "5 criteria compiled for Balanced", "C02900091", "C04900362", "C05910171"]}
+
+
+SCENARIOS = {"issue112": issue112, "issue113": issue113, "issue104": issue104, "issue107": issue107, "issue108": issue108, "issue109": issue109,
              "issue110": issue110, "issue111": issue111}
